@@ -605,6 +605,13 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
     }
 
     const MODULES = {
+      wiseowl: {
+        title: 'WISEowl',
+        sub: 'Opening the AI verification workspace…',
+        render() {
+          window.location.assign(new URL('pages/ai-chat.html', window.location.href).href);
+        },
+      },
       dashboard:   { title:'Portfolio Overview',    sub:'1,248 SKUs across 6 categories · last refresh 2 minutes ago', render: renderDashboardModule },
       products:    { title:'Product Intelligence',  sub:'1,248 active products · 6 categories · 54 brands', render: renderProductsModule },
       ingredients: { title:'Ingredient Intelligence', sub:'9,420 ingredients tracked · 214 flagged this cycle', render: renderIngredientsModule },

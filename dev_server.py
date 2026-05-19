@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Local dev server with live reload (browser refresh on file changes)."""
+"""Local dev server with live reload (browser refresh on file changes).
+
+Start and stop this only from a terminal you own (e.g. Terminal.app, iTerm).
+It is not wired to Cursor; closing a chat does not start or stop the process."""
 
 import os
 
