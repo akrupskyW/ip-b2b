@@ -402,11 +402,17 @@
       100% { transform: perspective(700px) translateX(0) rotateY(0deg) scale(1); opacity: 1; }
     }
 
-    /* Side panels: OUTER = width clip only (no transform / no “card” motion). INNER = card + bounce. */
+    /* Side panels: OUTER = width clip only (no transform / no “card” motion). INNER = card + bounce.
+       Per-agent panels (#tier-panel etc) are also reset to transparent here so
+       the inner card is the only visible surface. */
     #history-panel,
     #scout-panel,
     #upf-panel,
     #notif-panel,
+    #tier-panel,
+    #shield-panel,
+    #lens-panel,
+    #vault-panel,
     #verification-sidebar {
       background: transparent !important;
       box-shadow: none !important;
@@ -525,6 +531,155 @@
       font-size: 28px !important;
       color: var(--text-subtle);
     }
+
+    /* ===== Menu module navigation (Overview / WISE Portfolio / WISE Studio) ===== */
+    #menu-panel .menu-panel-body { padding: 10px 8px; }
+    .menu-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .menu-nav-section-label {
+      font-size: var(--fs-label);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      padding: 10px 12px 4px;
+    }
+    .menu-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-size: var(--fs-ui);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: background-color 0.18s ease, color 0.18s ease;
+    }
+    .menu-nav-item:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .menu-nav-item.is-active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .menu-nav-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: var(--primary-soft);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    .menu-nav-icon .material-icons {
+      font-size: 16px !important;
+      color: var(--primary);
+    }
+    .menu-nav-label {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .menu-nav-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-subtle);
+      transition: transform 0.2s ease;
+      margin-left: 4px;
+    }
+    .menu-nav-chevron .material-icons { font-size: 18px !important; }
+    .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
+      transform: rotate(180deg);
+      color: var(--primary);
+    }
+    .menu-nav-group[data-open="true"] > .menu-nav-toggle {
+      color: var(--primary);
+    }
+    .menu-nav-children {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.22s ease;
+    }
+    .menu-nav-group[data-open="true"] > .menu-nav-children {
+      grid-template-rows: 1fr;
+    }
+    .menu-nav-children-inner {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 2px 0 6px 16px;
+      margin-left: 16px;
+      border-left: 1px dashed var(--border);
+    }
+    html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); }
+    .menu-nav-subitem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: var(--fs-ui);
+      font-weight: 500;
+      transition: background-color 0.18s ease, color 0.18s ease;
+    }
+    .menu-nav-subitem:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .menu-nav-subicon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-subtle);
+    }
+    .menu-nav-subicon .material-icons {
+      font-size: 16px !important;
+      color: inherit;
+    }
+    .menu-nav-subitem:hover .menu-nav-subicon { color: var(--primary); }
+    .menu-nav-count {
+      margin-left: auto;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-subtle);
+      background: var(--surface-2);
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    html.dark .menu-nav-count {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+      color: var(--text-muted);
+    }
+    .menu-nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 6px;
+    }
+    html.dark .menu-nav-divider { background: rgba(255,255,255,0.06); }
 
     #history-panel {
       display: none;
@@ -1067,10 +1222,124 @@
       #history-panel.open .panel-inner,
       #scout-panel.sp-open .scout-inner,
       #upf-panel.up-open .upf-inner,
-      #notif-panel.notif-open .notif-inner {
+      #notif-panel.notif-open .notif-inner,
+      #tier-panel.tp-open .tier-inner,
+      #shield-panel.sd-open .shield-inner,
+      #lens-panel.ln-open .lens-inner,
+      #vault-panel.vt-open .vault-inner {
         animation: none !important;
       }
     }
+
+    /* ── Per-agent side panel modules — TIER / SHIELD / LENS / VAULT ─────
+       Each agent toggle in Agent Settings spins up its own module here.
+       The matching LIR icon at the top opens/closes the module; click the
+       left/right pip to flip the module to the opposite panels row. */
+    #tier-panel,
+    #shield-panel,
+    #lens-panel,
+    #vault-panel {
+      display: none;
+      flex-shrink: 0;
+      flex-direction: column;
+      position: relative;
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      transform: none !important;
+      animation: none !important;
+    }
+    #tier-panel.tp-open,
+    #shield-panel.sd-open,
+    #lens-panel.ln-open,
+    #vault-panel.vt-open { display: flex; width: 268px; }
+
+    #tier-panel .tier-inner,
+    #shield-panel .shield-inner,
+    #lens-panel .lens-inner,
+    #vault-panel .vault-inner {
+      width: 268px;
+      min-height: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 16px;
+      transform-origin: left center;
+      font-size: var(--fs-ui);
+    }
+    #tier-panel .tier-inner {
+      background: linear-gradient(155deg, #0a1f1a 0%, #08171a 60%, #061614 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(78, 224, 183, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    }
+    #shield-panel .shield-inner {
+      background: linear-gradient(155deg, #161028 0%, #110b22 60%, #0e0a20 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(164, 170, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    }
+    #lens-panel .lens-inner {
+      background: linear-gradient(155deg, #0a1729 0%, #081223 60%, #061626 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(91, 155, 213, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    }
+    #vault-panel .vault-inner {
+      background: linear-gradient(155deg, #1a1308 0%, #150f06 60%, #181206 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(212, 168, 83, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    }
+    #tier-panel.tp-open .tier-inner,
+    #shield-panel.sd-open .shield-inner,
+    #lens-panel.ln-open .lens-inner,
+    #vault-panel.vt-open .vault-inner {
+      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    /* When any flippable panel sits inside #panels-row-right, mirror its
+       entrance animation so it bounces in from the right edge instead of
+       the left. This applies to the per-agent modules AND to the original
+       scout / upf panels — so the animation always matches the side. */
+    #panels-row-right > #scout-panel.sp-open .scout-inner,
+    #panels-row-right > #upf-panel.up-open .upf-inner,
+    #panels-row-right > #tier-panel.tp-open .tier-inner,
+    #panels-row-right > #shield-panel.sd-open .shield-inner,
+    #panels-row-right > #lens-panel.ln-open .lens-inner,
+    #panels-row-right > #vault-panel.vt-open .vault-inner {
+      animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      transform-origin: right center;
+    }
+
+    .tier-panel-header,
+    .shield-panel-header,
+    .lens-panel-header,
+    .vault-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      flex-shrink: 0;
+    }
+    .tier-panel-header {
+      background: linear-gradient(135deg, rgba(0, 42, 34, 0.85) 0%, rgba(8, 20, 17, 0.95) 100%);
+      border-bottom: 1px solid rgba(78, 224, 183, 0.12);
+    }
+    .shield-panel-header {
+      background: linear-gradient(135deg, rgba(26, 10, 46, 0.85) 0%, rgba(17, 11, 34, 0.95) 100%);
+      border-bottom: 1px solid rgba(164, 170, 255, 0.12);
+    }
+    .lens-panel-header {
+      background: linear-gradient(135deg, rgba(0, 26, 46, 0.85) 0%, rgba(8, 18, 35, 0.95) 100%);
+      border-bottom: 1px solid rgba(91, 155, 213, 0.12);
+    }
+    .vault-panel-header {
+      background: linear-gradient(135deg, rgba(38, 26, 10, 0.85) 0%, rgba(21, 15, 6, 0.95) 100%);
+      border-bottom: 1px solid rgba(212, 168, 83, 0.12);
+    }
+
+    /* LIR active button colors for the new agents */
+    .lir-btn.lir-active.lir-tier    { color: #4EE0B7; background: transparent; }
+    .lir-btn.lir-active.lir-shield  { color: #A4AAFF; background: transparent; }
+    .lir-btn.lir-active.lir-lens    { color: #5B9BD5; background: transparent; }
+    .lir-btn.lir-active.lir-vault   { color: #D4A853; background: transparent; }
+
+    /* Hide a LIR icon when its agent is toggled OFF in Agent Settings. */
+    .lir-btn.lir-hidden { display: none !important; }
 
     /* ── NFP+ — Nutrition Fact Panel Plus (light-mode card) ─────────────── */
     @keyframes panelBounceRight {
@@ -1769,7 +2038,11 @@
     /* Light: side rails + verification use index tokens (no dark “oyster” chrome on cream). */
     html:not(.dark) .side-panel-header,
     html:not(.dark) .scout-panel-header,
-    html:not(.dark) .upf-panel-header {
+    html:not(.dark) .upf-panel-header,
+    html:not(.dark) .tier-panel-header,
+    html:not(.dark) .shield-panel-header,
+    html:not(.dark) .lens-panel-header,
+    html:not(.dark) .vault-panel-header {
       background: var(--surface-2) !important;
       background-image: none !important;
       border-bottom-color: var(--border) !important;
@@ -1797,6 +2070,18 @@
     }
     html:not(.dark) #upf-panel .panel-header-icon .material-icons {
       color: var(--ter-violet) !important;
+    }
+    html:not(.dark) #tier-panel .panel-header-icon .material-icons {
+      color: var(--sec-green) !important;
+    }
+    html:not(.dark) #shield-panel .panel-header-icon .material-icons {
+      color: var(--primary) !important;
+    }
+    html:not(.dark) #lens-panel .panel-header-icon .material-icons {
+      color: var(--ter-cyan) !important;
+    }
+    html:not(.dark) #vault-panel .panel-header-icon .material-icons {
+      color: var(--ter-amber) !important;
     }
     html:not(.dark) .side-panel-search-row {
       border-bottom-color: var(--border) !important;
@@ -2340,31 +2625,201 @@
       padding: 7px;
     }
 
-    @media (max-width: 768px) {
-      #left-icon-rail { display: none; }
-      #panels-row { display: none; }
-      #menu-panel, #history-panel, #scout-panel, #upf-panel {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 1000;
-        margin: 0 !important;
-        border-radius: 0;
+    /* ─────────────────────────────────────────────────────────────────
+       RESPONSIVE — tablet + mobile (≤ 1023px).
+       The chat surface drops from a horizontally-scrolling carousel into
+       a single-column stack. Every open module renders as a full-width
+       card, one above the other — the same visual language as the desktop
+       "grid view" toggle, just collapsed to one column. The top-bar
+       navigation rail keeps every control accessible via horizontal
+       scroll, and irrelevant chrome (column/grid toggle, left/right
+       flip pips) is hidden because there is no left/right on a stack.
+       Two modes only: desktop (≥1024px) and mobile/tablet (≤1023px).
+       ───────────────────────────────────────────────────────────────── */
+    @media (max-width: 1023px) {
+      body.ai-chat-page {
+        padding: 0.375rem 0 8px;
       }
-      #menu-panel.mp-open { width: min(260px, 85vw); }
-      #history-panel.open { width: min(280px, 85vw); }
-      #scout-panel.sp-open { width: min(268px, 90vw); }
-      #upf-panel.up-open { width: min(272px, 90vw); }
+
+      /* ── Top bar / navigation ───────────────────────────────────── */
+      #topbar-row { margin-bottom: 6px; }
+      #left-icon-rail {
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0 6px;
+        gap: 2px;
+      }
+      #left-icon-rail::-webkit-scrollbar { display: none; }
+      /* Force-stack mode — hide the column/grid layout toggle entirely.
+         Also hide the divider that sat next to it so the rail collapses
+         cleanly. */
+      .lir-layout-group { display: none !important; }
+      .lir-rail-trailing > .lir-divider { display: none !important; }
+      /* Side-flip pips are meaningless when modules are column-stacked. */
+      #left-icon-rail .lir-pip-l,
+      #left-icon-rail .lir-pip-r { display: none !important; }
+      /* Narrower panel pills so more icons fit on a phone-sized rail. */
+      #left-icon-rail .lir-panel-btn {
+        width: 40px !important;
+        min-width: 40px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      .lir-rail-trailing { gap: 4px; }
+
+      /* ── Modules row — vertical single-column stack ─────────────── */
+      #modules-row,
+      #modules-row.modules-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        padding: 0 8px var(--modules-bottom-pad);
+        gap: 8px;
+        grid-template-columns: none !important;
+        grid-auto-rows: auto !important;
+        height: 100%;
+        max-height: 100%;
+      }
+      /* Left/right panel containers are transparent in the stack so their
+         children participate directly. */
+      #modules-row > #panels-row,
+      #modules-row > #panels-row-right {
+        display: contents !important;
+      }
+      /* Closed panels remain hidden (don't take a row in the stack). */
+      #menu-panel:not(.mp-open),
+      #history-panel:not(.open),
+      #scout-panel:not(.sp-open),
+      #upf-panel:not(.up-open),
+      #tier-panel:not(.tp-open),
+      #shield-panel:not(.sd-open),
+      #lens-panel:not(.ln-open),
+      #vault-panel:not(.vt-open),
+      #nfp-panel:not(.nfp-open),
+      #notif-panel:not(.notif-open),
+      #settings-screen:not(.ss-open) {
+        display: none !important;
+      }
+      /* Every visible module — full-width row card. Reset the desktop
+         sticky-pin behaviour of #menu-panel and the fixed/overlay rules
+         that used to apply below 768px. */
+      #menu-panel.mp-open,
+      #history-panel.open,
+      #scout-panel.sp-open,
+      #upf-panel.up-open,
+      #tier-panel.tp-open,
+      #shield-panel.sd-open,
+      #lens-panel.ln-open,
+      #vault-panel.vt-open,
+      #nfp-panel.nfp-open,
+      #notif-panel.notif-open,
+      #settings-screen.ss-open,
+      #modules-row > #chat-shell,
+      #modules-row > #verification-sidebar {
+        display: flex !important;
+        flex-direction: column;
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        margin: 0 !important;
+        flex: 0 0 auto !important;
+        align-self: stretch;
+        z-index: auto !important;
+        order: 0 !important;
+      }
+      /* Inner cards stretch to fill the parent module width. */
       #menu-panel .menu-inner,
       #history-panel .panel-inner,
       #scout-panel .scout-inner,
-      #upf-panel .upf-inner {
-        border-radius: 0;
+      #upf-panel .upf-inner,
+      #tier-panel .tier-inner,
+      #shield-panel .shield-inner,
+      #lens-panel .lens-inner,
+      #vault-panel .vault-inner,
+      #nfp-panel .nfp-inner,
+      #notif-panel .notif-inner,
+      #settings-screen .ss-inner,
+      #verification-sidebar .vs-inner {
+        width: 100% !important;
+        min-height: 0;
       }
-      #chat-shell { border-radius: 0; box-shadow: none; }
-      body.ai-chat-page { padding: 0; }
-      #verification-sidebar { display: none !important; }
+      /* Module height policy — chat is the protagonist. */
+      #modules-row > #chat-shell {
+        min-height: 70dvh;
+        height: 70dvh;
+        border-radius: var(--r-md);
+      }
+      /* Panels get a generous-but-bounded height so they remain
+         scannable without dominating the page. */
+      #menu-panel.mp-open,
+      #history-panel.open,
+      #scout-panel.sp-open,
+      #upf-panel.up-open,
+      #tier-panel.tp-open,
+      #shield-panel.sd-open,
+      #lens-panel.ln-open,
+      #vault-panel.vt-open,
+      #nfp-panel.nfp-open,
+      #notif-panel.notif-open,
+      #settings-screen.ss-open {
+        min-height: 280px;
+        max-height: 60dvh !important;
+      }
+      /* Verification sidebar — show on mobile/tablet too, but as a
+         stacked card; Tailwind's `hidden md:flex` is overridden here. */
+      #verification-sidebar {
+        display: flex !important;
+        min-height: 240px;
+        max-height: 50dvh !important;
+      }
+      #verification-sidebar.sp-collapsed {
+        min-height: 56px;
+        max-height: 56px !important;
+      }
+
+      /* ── Chat-shell internals — comfy padding on small screens ──── */
+      #chat-shell .chat-topbar {
+        padding: 10px 14px !important;
+        min-height: 56px;
+      }
+      .chat-messages-area {
+        padding: 1rem 1.25rem;
+      }
+      #welcome-screen {
+        padding: 1.25rem 1rem;
+        top: 60px;
+      }
+      .chat-input-rail {
+        padding: 10px 12px !important;
+      }
+    }
+
+    /* Phone-only refinements (≤ 640px) */
+    @media (max-width: 640px) {
+      #modules-row > #chat-shell {
+        min-height: 65dvh;
+        height: 65dvh;
+      }
+      .ws-heading { font-size: 1.375rem !important; }
+      #left-icon-rail .lir-panel-btn {
+        width: 36px !important;
+        min-width: 36px !important;
+      }
+      /* Tighten the chat topbar so the agent name + agents pill fit. */
+      #chat-shell .chat-topbar { padding: 8px 12px !important; }
     }
 
     /* Light theme: left stack panels use index surface tokens (not mixed cream + purple card) */
@@ -2378,7 +2833,11 @@
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
     }
-    html:not(.dark) #upf-panel .upf-inner {
+    html:not(.dark) #upf-panel .upf-inner,
+    html:not(.dark) #tier-panel .tier-inner,
+    html:not(.dark) #shield-panel .shield-inner,
+    html:not(.dark) #lens-panel .lens-inner,
+    html:not(.dark) #vault-panel .vault-inner {
       background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
@@ -2734,10 +3193,16 @@
       box-shadow: var(--shadow-2);
     }
 
-    /* History / Scout / UPF panels — same card surface as chat. */
+    /* History / Scout / UPF panels — same card surface as chat.
+       Per-agent panels (TIER / SHIELD / LENS / VAULT) ride the same tokens so
+       they look at home in both dark and light themes. */
     #history-panel .panel-inner,
     #scout-panel .scout-inner,
     #upf-panel .upf-inner,
+    #tier-panel .tier-inner,
+    #shield-panel .shield-inner,
+    #lens-panel .lens-inner,
+    #vault-panel .vault-inner,
     #notif-panel .notif-inner {
       background: var(--surface) !important;
       border: 1px solid var(--border) !important;
@@ -2747,7 +3212,11 @@
     /* Panel headers — soft surface-2 strip; override inline Tailwind gradients. */
     .side-panel-header,
     .scout-panel-header,
-    .upf-panel-header {
+    .upf-panel-header,
+    .tier-panel-header,
+    .shield-panel-header,
+    .lens-panel-header,
+    .vault-panel-header {
       background: var(--surface-2) !important;
       background-image: none !important;
       border-bottom: 1px solid var(--border) !important;
@@ -2771,7 +3240,50 @@
     #history-panel .panel-header-icon .material-icons { color: var(--primary) !important; }
     #scout-panel  .panel-header-icon .material-icons { color: var(--ter-amber) !important; }
     #upf-panel    .panel-header-icon .material-icons { color: var(--ter-violet) !important; }
+    #tier-panel   .panel-header-icon .material-icons { color: var(--sec-green) !important; }
+    #shield-panel .panel-header-icon .material-icons { color: var(--primary) !important; }
+    #lens-panel   .panel-header-icon .material-icons { color: var(--ter-cyan) !important; }
+    #vault-panel  .panel-header-icon .material-icons { color: var(--ter-amber) !important; }
     #notif-panel  .panel-header-icon .material-icons { color: var(--sec-red, #D94C4C) !important; }
+
+    /* Body text inside the agent panels — the new panels reuse text-oyster-*
+       Tailwind shades for emphasis; remap them onto the theme tokens so they
+       stay legible on the cream surface-2 in light mode and the deep
+       surface-1 in dark mode. */
+    #tier-panel .side-panel-body .text-oyster-100,
+    #tier-panel .side-panel-body .text-oyster-200,
+    #shield-panel .side-panel-body .text-oyster-100,
+    #shield-panel .side-panel-body .text-oyster-200,
+    #lens-panel .side-panel-body .text-oyster-100,
+    #lens-panel .side-panel-body .text-oyster-200,
+    #vault-panel .side-panel-body .text-oyster-100,
+    #vault-panel .side-panel-body .text-oyster-200 {
+      color: var(--text) !important;
+    }
+    #tier-panel .side-panel-body .text-oyster-300,
+    #tier-panel .side-panel-body .text-oyster-400,
+    #shield-panel .side-panel-body .text-oyster-300,
+    #shield-panel .side-panel-body .text-oyster-400,
+    #lens-panel .side-panel-body .text-oyster-300,
+    #lens-panel .side-panel-body .text-oyster-400,
+    #vault-panel .side-panel-body .text-oyster-300,
+    #vault-panel .side-panel-body .text-oyster-400 {
+      color: var(--text-muted) !important;
+    }
+
+    /* LIR icon active colors for the new agents — bind to theme tokens so
+       the highlight reads correctly on both backgrounds. */
+    .lir-btn.lir-active.lir-tier   { color: var(--sec-green)  !important; background: transparent; }
+    .lir-btn.lir-active.lir-shield { color: var(--primary)    !important; background: transparent; }
+    .lir-btn.lir-active.lir-lens   { color: var(--ter-cyan)   !important; background: transparent; }
+    .lir-btn.lir-active.lir-vault  { color: var(--ter-amber)  !important; background: transparent; }
+
+    /* The accent pip bars (left/right side flippers) inherit a panel-specific
+       color so the rail visually telegraphs which agent owns each button. */
+    .lir-panel-btn.lir-tier   .lir-pip-l, .lir-panel-btn.lir-tier   .lir-pip-r { background: var(--sec-green); }
+    .lir-panel-btn.lir-shield .lir-pip-l, .lir-panel-btn.lir-shield .lir-pip-r { background: var(--primary); }
+    .lir-panel-btn.lir-lens   .lir-pip-l, .lir-panel-btn.lir-lens   .lir-pip-r { background: var(--ter-cyan); }
+    .lir-panel-btn.lir-vault  .lir-pip-l, .lir-panel-btn.lir-vault  .lir-pip-r { background: var(--ter-amber); }
 
     /* Close buttons inside panel headers. */
     .side-panel-header button[onclick] {
@@ -3024,18 +3536,34 @@
     .lir-rail-actions .lir-pip-r {
       display: none !important;
     }
-    /* Keep verification sidebar always directly right of chat */
+    /* Module ordering inside #modules-row.
+       LEFT-of-chat:   #menu-panel (sticky) → #panels-row (order 1)
+       CENTER:         #chat-shell (order 2)
+       RIGHT-of-chat:  #verification-sidebar (order 3) → #panels-row-right (order 4) → #nfp-panel (order 5)
+       Flipping a panel left/right moves it between #panels-row and #panels-row-right
+       so the side label is literal: left of chat means visually left, right means right. */
     #panels-row   { order: 1; }
     #chat-shell   { order: 2; }
     #verification-sidebar { order: 3; }
     #panels-row-right { order: 4; }
     #nfp-panel    { order: 5; }
 
-    /* Right panels container */
+    /* Right panels container — a real flex row (NOT display: contents) so its
+       order: 4 actually applies. Children render to the RIGHT of the chat,
+       not in between menu and history. The grid-view and mobile breakpoints
+       restore display: contents below so each module stays its own grid cell
+       / stacked card in those modes. */
     #panels-row-right {
       flex-shrink: 0;
-      display: contents;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      height: 100%;
+      max-height: 100%;
+      gap: 8px;
     }
+    /* Empty right rail collapses cleanly so it doesn't add a phantom 8px gap. */
+    #panels-row-right:not(.pr-has-panels) { display: none; }
     /* Grid mode — ALL modules (panels + chat + progress) become rectangular cards */
     #modules-row.modules-grid {
       display: grid !important;
@@ -3057,6 +3585,10 @@
     #modules-row.modules-grid #history-panel:not(.open),
     #modules-row.modules-grid #scout-panel:not(.sp-open),
     #modules-row.modules-grid #upf-panel:not(.up-open),
+    #modules-row.modules-grid #tier-panel:not(.tp-open),
+    #modules-row.modules-grid #shield-panel:not(.sd-open),
+    #modules-row.modules-grid #lens-panel:not(.ln-open),
+    #modules-row.modules-grid #vault-panel:not(.vt-open),
     #modules-row.modules-grid #nfp-panel:not(.nfp-open),
     #modules-row.modules-grid #notif-panel:not(.notif-open) {
       display: none !important;
@@ -3066,6 +3598,10 @@
     #modules-row.modules-grid #history-panel.open,
     #modules-row.modules-grid #scout-panel.sp-open,
     #modules-row.modules-grid #upf-panel.up-open,
+    #modules-row.modules-grid #tier-panel.tp-open,
+    #modules-row.modules-grid #shield-panel.sd-open,
+    #modules-row.modules-grid #lens-panel.ln-open,
+    #modules-row.modules-grid #vault-panel.vt-open,
     #modules-row.modules-grid #nfp-panel.nfp-open,
     #modules-row.modules-grid #notif-panel.notif-open,
     #modules-row.modules-grid #chat-shell,
@@ -3087,6 +3623,10 @@
     #modules-row.modules-grid .panel-inner,
     #modules-row.modules-grid .scout-inner,
     #modules-row.modules-grid .upf-inner,
+    #modules-row.modules-grid .tier-inner,
+    #modules-row.modules-grid .shield-inner,
+    #modules-row.modules-grid .lens-inner,
+    #modules-row.modules-grid .vault-inner,
     #modules-row.modules-grid .notif-inner,
     #modules-row.modules-grid #verification-sidebar .vs-inner {
       width: 100% !important;
@@ -3111,6 +3651,10 @@
     #history-panel .panel-inner,
     #scout-panel .scout-inner,
     #upf-panel .upf-inner,
+    #tier-panel .tier-inner,
+    #shield-panel .shield-inner,
+    #lens-panel .lens-inner,
+    #vault-panel .vault-inner,
     #notif-panel .notif-inner,
     #nfp-panel .nfp-inner,
     #chat-shell,
@@ -3177,6 +3721,34 @@
         <span class="material-icons">biotech</span>
         <span class="lir-dot" style="background:#E879F9"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
+      </button>
+      <!-- Per-agent LIR icons. Each one is shown only while its agent is toggled ON
+           in Agent Settings (the .lir-hidden class is added/removed by toggleAgent).
+           Clicking the icon opens/closes that agent's panel module. Clicking either
+           pip flips the panel to the opposite side of the chat. -->
+      <button type="button" class="lir-btn lir-panel-btn lir-tier lir-hidden" id="lir-tier-btn" data-tip="TIER — UPF Classification" onclick="toggleTierPanel()" title="TIER" aria-label="Toggle TIER panel">
+        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
+        <span class="material-icons">auto_awesome</span>
+        <span class="lir-dot" style="background:#4EE0B7"></span>
+        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
+      </button>
+      <button type="button" class="lir-btn lir-panel-btn lir-shield lir-hidden" id="lir-shield-btn" data-tip="SHIELD — Compliance" onclick="toggleShieldPanel()" title="SHIELD" aria-label="Toggle SHIELD panel">
+        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
+        <span class="material-icons">shield</span>
+        <span class="lir-dot" style="background:#A4AAFF"></span>
+        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
+      </button>
+      <button type="button" class="lir-btn lir-panel-btn lir-lens lir-hidden" id="lir-lens-btn" data-tip="LENS — Analytics" onclick="toggleLensPanel()" title="LENS" aria-label="Toggle LENS panel">
+        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
+        <span class="material-icons">analytics</span>
+        <span class="lir-dot" style="background:#5B9BD5"></span>
+        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
+      </button>
+      <button type="button" class="lir-btn lir-panel-btn lir-vault lir-hidden" id="lir-vault-btn" data-tip="VAULT — Documents" onclick="toggleVaultPanel()" title="VAULT" aria-label="Toggle VAULT panel">
+        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
+        <span class="material-icons">lock</span>
+        <span class="lir-dot" style="background:#D4A853"></span>
+        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
       </button>
       <div class="lir-divider" style="display:none"></div>
       <button type="button" class="lir-btn lir-panel-btn flip-right lir-nfp" id="lir-nfp-btn" data-tip="NFP+" onclick="toggleNfpPanel()" title="NFP+ — Nutrition Fact Panel" aria-label="Toggle NFP+ panel">
@@ -3270,11 +3842,91 @@
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
         <div class="menu-panel-body">
-          <div class="menu-panel-placeholder">
-            <span class="material-icons">widgets</span>
-            <div style="font-weight:600;color:var(--text-muted);">Module card placeholder</div>
-            <div>Content coming soon.</div>
-          </div>
+          <nav class="menu-nav" aria-label="WISE module navigation">
+            <a class="menu-nav-item" href="../index.html#/dashboard" data-menu-id="overview">
+              <span class="menu-nav-icon"><span class="material-icons">home</span></span>
+              <span class="menu-nav-label">Overview</span>
+            </a>
+
+            <div class="menu-nav-group" data-group="portfolio" data-open="true">
+              <button type="button" class="menu-nav-item menu-nav-toggle" data-toggle-group="portfolio" aria-expanded="true" aria-controls="menu-nav-portfolio">
+                <span class="menu-nav-icon"><span class="material-icons">business_center</span></span>
+                <span class="menu-nav-label">WISE Portfolio</span>
+                <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+              </button>
+              <div class="menu-nav-children" id="menu-nav-portfolio" role="region" aria-label="WISE Portfolio links">
+                <div class="menu-nav-children-inner">
+                  <a class="menu-nav-subitem" href="../index.html#/dashboard">
+                    <span class="menu-nav-subicon"><span class="material-icons">dashboard</span></span>
+                    <span class="menu-nav-label">Dashboard</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/products">
+                    <span class="menu-nav-subicon"><span class="material-icons">inventory_2</span></span>
+                    <span class="menu-nav-label">Products</span>
+                    <span class="menu-nav-count">1,248</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/ingredients">
+                    <span class="menu-nav-subicon"><span class="material-icons">science</span></span>
+                    <span class="menu-nav-label">Ingredients</span>
+                    <span class="menu-nav-count">9,420</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/processing">
+                    <span class="menu-nav-subicon"><span class="material-icons">precision_manufacturing</span></span>
+                    <span class="menu-nav-label">Processing</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/verification">
+                    <span class="menu-nav-subicon"><span class="material-icons">verified</span></span>
+                    <span class="menu-nav-label">Verification</span>
+                    <span class="menu-nav-count">38</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/compliance">
+                    <span class="menu-nav-subicon"><span class="material-icons">policy</span></span>
+                    <span class="menu-nav-label">Compliance</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/insights">
+                    <span class="menu-nav-subicon"><span class="material-icons">insights</span></span>
+                    <span class="menu-nav-label">Insights</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="../index.html#/reports">
+                    <span class="menu-nav-subicon"><span class="material-icons">summarize</span></span>
+                    <span class="menu-nav-label">Reports</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="menu-nav-group" data-group="studio" data-open="false">
+              <button type="button" class="menu-nav-item menu-nav-toggle" data-toggle-group="studio" aria-expanded="false" aria-controls="menu-nav-studio">
+                <span class="menu-nav-icon"><span class="material-icons">auto_awesome</span></span>
+                <span class="menu-nav-label">WISE Studio</span>
+                <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+              </button>
+              <div class="menu-nav-children" id="menu-nav-studio" role="region" aria-label="WISE Studio links">
+                <div class="menu-nav-children-inner">
+                  <a class="menu-nav-subitem" href="#/studio/chats">
+                    <span class="menu-nav-subicon"><span class="material-icons">chat</span></span>
+                    <span class="menu-nav-label">Chats</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="#/studio/projects">
+                    <span class="menu-nav-subicon"><span class="material-icons">folder_special</span></span>
+                    <span class="menu-nav-label">Projects</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="#/studio/templates">
+                    <span class="menu-nav-subicon"><span class="material-icons">dashboard_customize</span></span>
+                    <span class="menu-nav-label">Templates</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="#/studio/prompts">
+                    <span class="menu-nav-subicon"><span class="material-icons">tune</span></span>
+                    <span class="menu-nav-label">Prompts</span>
+                  </a>
+                  <a class="menu-nav-subitem" href="#/studio/workflows">
+                    <span class="menu-nav-subicon"><span class="material-icons">account_tree</span></span>
+                    <span class="menu-nav-label">Workflows</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </nav>
         </div>
       </div>
     </div>
@@ -3391,6 +4043,148 @@
       </div>
     </div>
 
+    <!-- TIER — UPF Classification Engine (agent nova) -->
+    <div id="tier-panel">
+      <div class="tier-inner">
+        <div class="side-panel-header tier-panel-header">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#002A22] flex items-center justify-center shrink-0 ring-1 ring-emerald-400/30">
+              <span class="material-icons text-[15px] text-emerald-300">auto_awesome</span>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-oyster-100">TIER <span class="font-bold text-oyster-500 ml-1">v2.1</span></div>
+              <p class="text-xs text-oyster-600">Processing Tier Engine</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
+          <div class="rounded-lg px-3 py-2" style="background:#4EE0B711;border-left:3px solid #4EE0B7;">
+            <strong style="color:#4EE0B7">Whole</strong> — Unprocessed / minimally processed
+          </div>
+          <div class="rounded-lg px-3 py-2" style="background:#A3E63511;border-left:3px solid #A3E635;">
+            <strong style="color:#A3E635">Refined</strong> — Culinary ingredients
+          </div>
+          <div class="rounded-lg px-3 py-2" style="background:#FFB34711;border-left:3px solid #FFB347;">
+            <strong style="color:#FFB347">Processed</strong> — Canned, cured, aged
+          </div>
+          <div class="rounded-lg px-3 py-2" style="background:#FF7C7E11;border-left:3px solid #FF7C7E;">
+            <strong style="color:#FF7C7E">Ultra-Processed</strong> — Industrial formulations
+          </div>
+          <p class="text-oyster-600 mt-2">TIER scores every ingredient against the four-tier UPF framework in real time.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHIELD — Badge &amp; Compliance (agent shield) -->
+    <div id="shield-panel">
+      <div class="shield-inner">
+        <div class="side-panel-header shield-panel-header">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1A0A2E] flex items-center justify-center shrink-0 ring-1 ring-indigo-300/30">
+              <span class="material-icons text-[15px]" style="color:#A4AAFF">shield</span>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-oyster-100">SHIELD <span class="font-bold text-oyster-500 ml-1">v1.5</span></div>
+              <p class="text-xs text-oyster-600">Badge &amp; Compliance</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
+          <div class="rounded-lg p-3" style="background:rgba(164,170,255,0.06);border:1px solid rgba(164,170,255,0.18);">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-oyster-200">WISE Verified — Sample Co.</span>
+              <span class="font-semibold" style="color:#A4AAFF">In Review</span>
+            </div>
+            <p class="mt-1 text-oyster-600">Badge issuance pending 3 compliance checks.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-lg p-2 text-center" style="background:rgba(78,224,183,0.06);"><div class="text-base font-bold" style="color:#4EE0B7">12</div><div class="text-oyster-600">Active badges</div></div>
+            <div class="rounded-lg p-2 text-center" style="background:rgba(255,179,71,0.06);"><div class="text-base font-bold" style="color:#FFB347">4</div><div class="text-oyster-600">Re-certs due</div></div>
+          </div>
+          <p class="text-oyster-600 mt-2">SHIELD tracks badge eligibility, audit trails, and re-certification windows.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LENS — Analytics &amp; Insights (agent lens) -->
+    <div id="lens-panel">
+      <div class="lens-inner">
+        <div class="side-panel-header lens-panel-header">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#001A2E] flex items-center justify-center shrink-0 ring-1 ring-sky-400/30">
+              <span class="material-icons text-[15px]" style="color:#5B9BD5">analytics</span>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-oyster-100">LENS <span class="font-bold text-oyster-500 ml-1">v2.0</span></div>
+              <p class="text-xs text-oyster-600">Analytics &amp; Insights</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-3 text-xs text-oyster-500">
+          <div class="rounded-lg p-3" style="background:rgba(91,155,213,0.06);border:1px solid rgba(91,155,213,0.18);">
+            <div class="text-oyster-600 mb-1">Verifications this week</div>
+            <div class="text-xl font-bold text-oyster-100">128 <span class="text-xs font-semibold" style="color:#4EE0B7">+18%</span></div>
+            <div class="mt-2 flex items-end gap-1 h-10">
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:40%"></div>
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:55%"></div>
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:70%"></div>
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:60%"></div>
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:80%"></div>
+              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:90%"></div>
+              <div class="flex-1 rounded-sm" style="background:#7DC4F0;height:100%"></div>
+            </div>
+          </div>
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.03);">
+            <div class="font-semibold text-oyster-200 mb-1">Top risk SKUs</div>
+            <div class="flex items-center justify-between"><span>SF-8821 · Granola</span><span style="color:#FF7C7E">72</span></div>
+            <div class="flex items-center justify-between"><span>SF-2204 · Cereal</span><span style="color:#FFB347">61</span></div>
+            <div class="flex items-center justify-between"><span>SF-9013 · Bar</span><span style="color:#FFB347">58</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VAULT — Documents &amp; Attestation (agent vault) -->
+    <div id="vault-panel">
+      <div class="vault-inner">
+        <div class="side-panel-header vault-panel-header">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#261A0A] flex items-center justify-center shrink-0 ring-1 ring-amber-300/30">
+              <span class="material-icons text-[15px]" style="color:#D4A853">lock</span>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-oyster-100">VAULT <span class="font-bold text-oyster-500 ml-1">v1.2</span></div>
+              <p class="text-xs text-oyster-600">Documents &amp; Attestation</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
+          <div class="rounded-lg p-3" style="background:rgba(212,168,83,0.06);border:1px solid rgba(212,168,83,0.18);">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-oyster-200">Attestation — Q2-2026</span>
+              <span class="font-semibold" style="color:#D4A853">Awaiting sign</span>
+            </div>
+            <p class="mt-1 text-oyster-600">12 SKUs queued for e-signature.</p>
+          </div>
+          <div class="rounded-lg p-2 flex items-center gap-2" style="background:rgba(255,255,255,0.03);">
+            <span class="material-icons text-[16px]" style="color:#D4A853">description</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-oyster-200 truncate">cert_SF-8821.pdf</div>
+              <div class="text-oyster-600">Signed · Mar 12, 2026</div>
+            </div>
+          </div>
+          <div class="rounded-lg p-2 flex items-center gap-2" style="background:rgba(255,255,255,0.03);">
+            <span class="material-icons text-[16px]" style="color:#D4A853">description</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-oyster-200 truncate">cert_SF-2204.pdf</div>
+              <div class="text-oyster-600">Signed · Mar 11, 2026</div>
+            </div>
+          </div>
+          <p class="text-oyster-600 mt-2">VAULT manages e-signing flows and the immutable audit trail.</p>
+        </div>
+      </div>
+    </div>
+
       </div><!-- /panels-row -->
 
     <!-- Chat card -->
@@ -3410,7 +4204,7 @@
             <span class="topbar-title font-bold text-base shrink-0" style="line-height:1.2;">Scout</span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;margin-top:2px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
-              <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">4</span>
+              <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
               <span style="font-size:0.65rem;">agents running</span>
             </button>
           </div>
@@ -3521,12 +4315,12 @@
                 </div>
 
                 <!-- TIER (settings) -->
-                <div class="ss-agent-row ssr-on" id="ssr-nova">
+                <div class="ss-agent-row" id="ssr-nova">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#002A22;">
                         <span class="material-icons" style="font-size:20px;color:#4EE0B7">auto_awesome</span>
                     </div>
                     <div class="ss-agent-body">
-                        <div class="ss-agent-name" id="ssn-nova">
+                        <div class="ss-agent-name ssa-off" id="ssn-nova">
                             TIER
                             <span class="ss-version-badge">v2.1</span>
                         </div>
@@ -3540,7 +4334,7 @@
                         </div>
                     </div>
                     <label class="agent-toggle-wrap flex-shrink-0" style="margin-top:4px;" onclick="event.stopPropagation()" title="Toggle TIER">
-                        <input type="checkbox" id="ss-at-nova" checked onchange="toggleAgent('nova', this.checked); syncAgentToggle('nova', this.checked)">
+                        <input type="checkbox" id="ss-at-nova" onchange="toggleAgent('nova', this.checked); syncAgentToggle('nova', this.checked)">
                         <span class="agent-toggle-track"></span>
                     </label>
                 </div>
@@ -4120,13 +4914,25 @@
 
   <script>
     const AGENTS = {
-      wise: { name: 'Scout', color: '#7476FF', icon: 'verified', required: true, on: true, announce: null },
-      nova: { name: 'TIER', color: '#4EE0B7', icon: 'auto_awesome', required: false, on: true, announce: { on: 'TIER UPF scoring active.', off: 'TIER paused.' } },
-      scout: { name: 'WISE Foods', color: '#FFB347', icon: 'search', required: false, on: false, announce: { on: 'WISE Foods agent on.', off: 'WISE Foods agent paused.' } },
-      shield: { name: 'SHIELD', color: '#A4AAFF', icon: 'shield', required: false, on: false, announce: { on: 'SHIELD enabled.', off: 'SHIELD paused.' } },
-      lens: { name: 'LENS', color: '#5B9BD5', icon: 'analytics', required: false, on: false, announce: { on: 'LENS enabled.', off: 'LENS paused.' } },
-      vault: { name: 'VAULT', color: '#D4A853', icon: 'lock', required: false, on: false, announce: { on: 'VAULT enabled.', off: 'VAULT paused.' } },
-      pulse: { name: 'PULSE', color: '#E879F9', icon: 'biotech', required: false, on: false, announce: { on: 'PULSE — UPF panel on.', off: 'PULSE paused.' } },
+      wise:   { name: 'Scout',      color: '#7476FF', icon: 'verified',     required: true,  on: true,  announce: null },
+      nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
+      scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
+      shield: { name: 'SHIELD',     color: '#A4AAFF', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
+      lens:   { name: 'LENS',       color: '#5B9BD5', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, SKU-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
+      vault:  { name: 'VAULT',      color: '#D4A853', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
+      pulse:  { name: 'PULSE',      color: '#E879F9', icon: 'biotech',      required: false, on: false, announce: { on: 'PULSE activated — the UPF Analyzer panel is open. Score ingredients, visualize processing tiers, inspect additive risks side-by-side.', off: 'PULSE paused — UPF Analyzer panel closed.' } },
+    };
+
+    /* Maps agent id → its panel module, open-class, and LIR icon button.
+       togglePanel() and toggleAgent() drive both sides of the relationship
+       through this table — adding a new agent only needs an entry here. */
+    const AGENT_PANEL_CFG = {
+      scout:  { panelId: 'scout-panel',  openClass: 'sp-open', btnId: 'lir-scout-btn'  },
+      pulse:  { panelId: 'upf-panel',    openClass: 'up-open', btnId: 'lir-upf-btn'    },
+      nova:   { panelId: 'tier-panel',   openClass: 'tp-open', btnId: 'lir-tier-btn'   },
+      shield: { panelId: 'shield-panel', openClass: 'sd-open', btnId: 'lir-shield-btn' },
+      lens:   { panelId: 'lens-panel',   openClass: 'ln-open', btnId: 'lir-lens-btn'   },
+      vault:  { panelId: 'vault-panel',  openClass: 'vt-open', btnId: 'lir-vault-btn'  },
     };
 
     let activeAgentId = 'wise';
@@ -4312,38 +5118,38 @@
       }
     }
 
-    function toggleUpfPanel(force) {
-      const panel = document.getElementById('upf-panel');
+    /* Panel-only toggle — opens/closes an agent's module WITHOUT changing the
+       agent's on/off state. Clicking the top LIR icon flows through here, so
+       users can hide a panel without taking the agent offline (and losing its
+       icon). Agent on/off lives in toggleAgent() below. */
+    function togglePanel(agentId, force) {
+      const cfg = AGENT_PANEL_CFG[agentId];
+      if (!cfg) return;
+      const panel = document.getElementById(cfg.panelId);
       if (!panel) return;
-      const open = force !== undefined ? !!force : !panel.classList.contains('up-open');
-      panel.classList.toggle('up-open', open);
-      const ssToggle = document.getElementById('ss-at-pulse');
-      if (ssToggle) ssToggle.checked = open;
-      AGENTS.pulse.on = open;
-      const row = document.getElementById('ssr-pulse');
-      if (row) row.classList.toggle('ssr-on', open);
-      const ssName = document.getElementById('ssn-pulse');
-      if (ssName) ssName.classList.toggle('ssa-off', !open);
-      updateAgentsCount();
-      syncLirBtn('lir-upf-btn', open);
+      const open = force !== undefined ? !!force : !panel.classList.contains(cfg.openClass);
+      panel.classList.toggle(cfg.openClass, open);
+      syncLirBtn(cfg.btnId, open);
       syncPanelsRowRight();
     }
 
-    function toggleScoutPanel(force) {
-      const panel = document.getElementById('scout-panel');
-      if (!panel) return;
-      const open = force !== undefined ? !!force : !panel.classList.contains('sp-open');
-      panel.classList.toggle('sp-open', open);
-      const ssToggle = document.getElementById('ss-at-scout');
-      if (ssToggle) ssToggle.checked = open;
-      if (AGENTS.scout) AGENTS.scout.on = open;
-      const row = document.getElementById('ssr-scout');
-      if (row) row.classList.toggle('ssr-on', open);
-      const ssName = document.getElementById('ssn-scout');
-      if (ssName) ssName.classList.toggle('ssa-off', !open);
-      updateAgentsCount();
-      syncLirBtn('lir-scout-btn', open);
-      syncPanelsRowRight();
+    /* Thin aliases — HTML onclick handlers stay readable, and existing call
+       sites (welcome shims, boot, keyboard handler) keep working unchanged. */
+    function toggleUpfPanel(force)    { togglePanel('pulse',  force); }
+    function toggleScoutPanel(force)  { togglePanel('scout',  force); }
+    function toggleTierPanel(force)   { togglePanel('nova',   force); }
+    function toggleShieldPanel(force) { togglePanel('shield', force); }
+    function toggleLensPanel(force)   { togglePanel('lens',   force); }
+    function toggleVaultPanel(force)  { togglePanel('vault',  force); }
+
+    /* Hide / show the agent's top LIR icon based on its on/off state. */
+    function syncLirVisibility(agentId) {
+      const cfg = AGENT_PANEL_CFG[agentId];
+      if (!cfg) return;
+      const btn = document.getElementById(cfg.btnId);
+      if (!btn) return;
+      const isOn = !!(AGENTS[agentId] && AGENTS[agentId].on);
+      btn.classList.toggle('lir-hidden', !isOn);
     }
 
     function selectAgent(id) {
@@ -4361,15 +5167,31 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    /* Drop a small "agent · message" line into the chat so the user sees the
+       newly-joined agent introduce itself (mirrors the IP2 reference flow). */
+    function addAgentMessage(id, html) {
+      const box = document.getElementById('chat-messages');
+      const agent = AGENTS[id];
+      if (!box || !agent) return;
+      box.insertAdjacentHTML(
+        'beforeend',
+        `<div class="mb-3">
+           <div class="text-xs mb-0.5" style="color:${agent.color};font-weight:700;letter-spacing:0.02em;">
+             <span class="material-icons" style="font-size:12px;vertical-align:-2px;margin-right:4px;">${agent.icon}</span>${agent.name}
+           </div>
+           <div class="text-xs text-oyster-300" style="line-height:1.55;">${html}</div>
+         </div>`
+      );
+      box.scrollTop = box.scrollHeight;
+    }
+
     function toggleAgent(id, isOn) {
       if (AGENTS[id] && AGENTS[id].required) return;
       if (AGENTS[id]) AGENTS[id].on = isOn;
 
-      if (id === 'pulse') {
-        toggleUpfPanel(isOn);
-      } else if (id === 'scout') {
-        toggleScoutPanel(isOn);
-      }
+      /* Auto-open / auto-close the agent's panel and toggle its top LIR icon. */
+      togglePanel(id, isOn);
+      syncLirVisibility(id);
 
       const row = document.getElementById('ssr-' + id);
       if (row) row.classList.toggle('ssr-on', isOn);
@@ -4382,6 +5204,10 @@
       if (agentDef && !wsVisible) {
         setTimeout(() => {
           addJoinBanner(agentDef.name, agentDef.color, agentDef.icon, isOn);
+          if (agentDef.announce) {
+            const msg = isOn ? agentDef.announce.on : agentDef.announce.off;
+            if (msg) setTimeout(() => addAgentMessage(id, msg), 220);
+          }
         }, 120);
       }
 
@@ -4442,8 +5268,12 @@
       if (!row) return;
       const hasOpen = Array.from(row.children).some((el) =>
         el.classList.contains('open')      || /* history */
-        el.classList.contains('up-open')   || /* UPF */
-        el.classList.contains('sp-open')   || /* scout */
+        el.classList.contains('up-open')   || /* UPF / PULSE */
+        el.classList.contains('sp-open')   || /* scout / WISE Foods */
+        el.classList.contains('tp-open')   || /* TIER */
+        el.classList.contains('sd-open')   || /* SHIELD */
+        el.classList.contains('ln-open')   || /* LENS */
+        el.classList.contains('vt-open')   || /* VAULT */
         el.classList.contains('notif-open')||
         el.classList.contains('nfp-open')  ||
         el.classList.contains('ss-open')
@@ -4693,22 +5523,26 @@
           toggleHistoryPanel();
           return;
         }
-        if (document.getElementById('scout-panel')?.classList.contains('sp-open')) {
-          toggleScoutPanel(false);
-          return;
-        }
-        if (document.getElementById('upf-panel')?.classList.contains('up-open')) toggleUpfPanel(false);
+        /* Close the right-most open agent panel — handles original scout/upf
+           AND the new TIER / SHIELD / LENS / VAULT modules. */
+        const openAgentId = Object.keys(AGENT_PANEL_CFG).find((aid) => {
+          const cfg = AGENT_PANEL_CFG[aid];
+          return document.getElementById(cfg.panelId)?.classList.contains(cfg.openClass);
+        });
+        if (openAgentId) togglePanel(openAgentId, false);
       }
     });
 
     document.getElementById('chat-messages')?.addEventListener('click', () => {
       if (window.innerWidth <= 768) {
-        if (document.getElementById('upf-panel')?.classList.contains('up-open')) {
-          toggleUpfPanel(false);
-          return;
-        }
-        if (document.getElementById('scout-panel')?.classList.contains('sp-open')) {
-          toggleScoutPanel(false);
+        /* On narrow screens, tapping the chat collapses any open agent module
+           or the history panel so the conversation has room to breathe. */
+        const openAgentId = Object.keys(AGENT_PANEL_CFG).find((aid) => {
+          const cfg = AGENT_PANEL_CFG[aid];
+          return document.getElementById(cfg.panelId)?.classList.contains(cfg.openClass);
+        });
+        if (openAgentId) {
+          togglePanel(openAgentId, false);
           return;
         }
         if (document.getElementById('history-panel')?.classList.contains('open')) {
@@ -4821,6 +5655,10 @@
         history:  { id: 'history-panel',  btnId: 'lir-history-btn',  defaultRight: false },
         scout:    { id: 'scout-panel',    btnId: 'lir-scout-btn',    defaultRight: true  },
         upf:      { id: 'upf-panel',      btnId: 'lir-upf-btn',      defaultRight: true  },
+        tier:     { id: 'tier-panel',     btnId: 'lir-tier-btn',     defaultRight: true  },
+        shield:   { id: 'shield-panel',   btnId: 'lir-shield-btn',   defaultRight: true  },
+        lens:     { id: 'lens-panel',     btnId: 'lir-lens-btn',     defaultRight: true  },
+        vault:    { id: 'vault-panel',    btnId: 'lir-vault-btn',    defaultRight: true  },
         settings: { id: 'settings-screen',btnId: 'lir-settings-btn', defaultRight: true  },
         nfp:      { id: 'nfp-panel',      btnId: 'lir-nfp-btn',      defaultRight: true  },
       };
@@ -4878,14 +5716,27 @@
       })();
     })();
 
-    /* Boot — match reference defaults: history + PULSE open */
+    /* Boot — sync rail icons and per-agent module visibility from initial state. */
     syncLirBtn('topbar-menu-toggle', document.getElementById('menu-panel')?.classList.contains('mp-open'));
-    syncLirBtn('lir-history-btn', document.getElementById('history-panel')?.classList.contains('open'));
-    syncLirBtn('lir-upf-btn', document.getElementById('upf-panel')?.classList.contains('up-open'));
-    syncLirBtn('lir-scout-btn', document.getElementById('scout-panel')?.classList.contains('sp-open'));
-    syncLirBtn('lir-nfp-btn', document.getElementById('nfp-panel')?.classList.contains('nfp-open'));
+    syncLirBtn('lir-history-btn',  document.getElementById('history-panel')?.classList.contains('open'));
+    syncLirBtn('lir-upf-btn',      document.getElementById('upf-panel')?.classList.contains('up-open'));
+    syncLirBtn('lir-scout-btn',    document.getElementById('scout-panel')?.classList.contains('sp-open'));
+    syncLirBtn('lir-tier-btn',     document.getElementById('tier-panel')?.classList.contains('tp-open'));
+    syncLirBtn('lir-shield-btn',   document.getElementById('shield-panel')?.classList.contains('sd-open'));
+    syncLirBtn('lir-lens-btn',     document.getElementById('lens-panel')?.classList.contains('ln-open'));
+    syncLirBtn('lir-vault-btn',    document.getElementById('vault-panel')?.classList.contains('vt-open'));
+    syncLirBtn('lir-nfp-btn',      document.getElementById('nfp-panel')?.classList.contains('nfp-open'));
     syncLirBtn('lir-settings-btn', document.getElementById('settings-screen')?.classList.contains('ss-open'));
-    syncLirBtn('lir-notif-btn', document.getElementById('notif-panel')?.classList.contains('notif-open'));
+    syncLirBtn('lir-notif-btn',    document.getElementById('notif-panel')?.classList.contains('notif-open'));
+
+    /* For every agent that has a top icon, hide the icon if the agent starts
+       OFF and auto-open its module if it starts ON — so the page reflects the
+       initial AGENTS state without any user interaction. */
+    Object.keys(AGENT_PANEL_CFG).forEach((agentId) => {
+      syncLirVisibility(agentId);
+      if (AGENTS[agentId] && AGENTS[agentId].on) togglePanel(agentId, true);
+    });
+
     syncPanelsRowRight();
 
     /* Pin the Module card placeholder (menu-panel) to the leftmost DOM slot
@@ -4899,6 +5750,21 @@
       if (modulesRow.firstElementChild !== menuPanel) {
         modulesRow.insertBefore(menuPanel, modulesRow.firstElementChild);
       }
+    })();
+
+    /* Menu module nav: expandable group toggles (WISE Portfolio, WISE Studio). */
+    (function initMenuNavToggles() {
+      const panel = document.getElementById('menu-panel');
+      if (!panel) return;
+      panel.addEventListener('click', (e) => {
+        const toggle = e.target.closest('[data-toggle-group]');
+        if (!toggle || !panel.contains(toggle)) return;
+        const group = toggle.closest('.menu-nav-group');
+        if (!group) return;
+        const isOpen = group.getAttribute('data-open') === 'true';
+        group.setAttribute('data-open', String(!isOpen));
+        toggle.setAttribute('aria-expanded', String(!isOpen));
+      });
     })();
 
     /* ===== Profile-avatar popover (mirrors dashboard) ===== */
