@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Trends Agent</title>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint so the page
+       never flashes dark→light (or vice versa). Mirrors ai-chat.html storage. */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="agent-page.css" />
+</head>
+<body data-agent-id="trends-agent">
+  <div id="agent-shell-wrap">
+    <div id="topbar-row">
+      <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Toggle menu" aria-label="Toggle menu panel">
+        <span class="material-icons">menu_open</span>
+        <span class="lir-label">Menu</span>
+      </button>
+      <div class="topbar-logo" aria-hidden="true"></div>
+
+      <div class="topbar-trailing">
+        <div class="topbar-menu-wrap">
+          <button type="button" class="lir-btn has-dot" id="topbar-notif-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+            <span class="material-icons">notifications</span>
+            <span class="lir-label">Alerts</span>
+          </button>
+        </div>
+        <div class="topbar-menu-wrap">
+          <button type="button" class="lir-btn" id="topbar-more-btn" title="More options" aria-label="More options" aria-haspopup="true" aria-expanded="false">
+            <span class="material-icons">more_vert</span>
+            <span class="lir-label">More</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="topbar-profile" title="Maya Chen · Product Intelligence Lead">MC</div>
+    </div>
+
+    <div id="modules-row">
+      <div id="menu-panel" class="mp-open">
+        <div class="menu-inner">
+          <div class="menu-panel-header">
+            <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
+            <div class="menu-panel-titles">
+              <div class="menu-panel-title">Agents</div>
+              <div class="menu-panel-sub">WISEcode AI</div>
+            </div>
+          </div>
+          <div class="menu-panel-body">
+            <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
+          </div>
+        </div>
+      </div>
+
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="../js/agent-overview.js"></script>
+</body>
+</html>

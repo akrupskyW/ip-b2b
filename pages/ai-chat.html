@@ -140,7 +140,7 @@
       justify-content: flex-start;
       margin-bottom: 8px;
       /* leave room for the absolutely-positioned menu toggle + wordmark on left and profile on right */
-      padding: 0 calc(1.5rem + 34px + 12px) 0 calc(1.5rem + 36px + 12px + 177px + 16px);
+      padding: 0 calc(1.5rem + 34px + 12px) 0 calc(1.5rem + 40px + 12px + 177px + 16px);
       flex-shrink: 0;
     }
     /* Menu collapse toggle — sits to the LEFT of the logo, mirrors dashboard pattern. */
@@ -150,16 +150,20 @@
       top: 50%;
       transform: translateY(-50%);
       z-index: 11;
-      width: 36px !important;
-      height: 36px !important;
-      border-radius: 50% !important;
+      width: 40px !important;
+      height: auto !important;
+      min-height: 46px !important;
+      border-radius: 8px !important;
       background: transparent !important;
       color: var(--text-muted) !important;
       border: 0 !important;
       box-shadow: none !important;
       display: flex !important;
-      align-items: center !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
       justify-content: center !important;
+      gap: 2px !important;
+      padding: 5px 0 4px !important;
       cursor: pointer;
       transition: color 0.15s;
     }
@@ -173,8 +177,10 @@
       box-shadow: none !important;
     }
     .topbar-menu-toggle .material-icons {
-      font-size: 24px !important;
+      font-size: 20px !important;
       line-height: 1 !important;
+      display: block !important;
+      text-align: center !important;
     }
     /* Profile avatar — outline ring + initials; primary only when popover is open. */
     .topbar-profile {
@@ -214,7 +220,9 @@
     }
     .topbar-logo {
       position: absolute;
-      left: calc(1.5rem + 36px + 12px);
+      left: calc(1.5rem + 40px + 12px);
+      top: 50%;
+      transform: translateY(-50%);
       display: flex;
       align-items: center;
       color: var(--text);
@@ -228,13 +236,13 @@
     @media (max-width: 1023px) {
       .topbar-logo svg.tl-full { display: none  !important; }
       .topbar-logo svg.tl-bug  { display: block !important; }
-      #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(1.5rem + 36px + 12px + 54px + 12px); }
+      #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(1.5rem + 40px + 12px + 54px + 12px); }
     }
     @media (max-width: 767px) {
       .topbar-menu-toggle { left: 1rem; }
       .topbar-profile { right: 1rem; }
-      .topbar-logo { left: calc(1rem + 36px + 10px); }
-      #topbar-row { padding: 0 calc(1rem + 34px + 10px) 0 calc(1rem + 36px + 10px + 54px + 10px); }
+      .topbar-logo { left: calc(1rem + 40px + 10px); }
+      #topbar-row { padding: 0 calc(1rem + 34px + 10px) 0 calc(1rem + 40px + 10px + 54px + 10px); }
     }
     #modules-row {
       flex: 1 1 0%;
@@ -474,19 +482,26 @@
     }
     #menu-panel.mp-open .menu-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     html.dark #menu-panel .menu-inner {
-      background: linear-gradient(155deg, #342640 0%, #2c2439 60%, #261d34 100%);
-      border: none;
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+      border: 1px solid rgba(2, 94, 211, 0.18);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     .menu-panel-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       padding: 12px;
+      min-height: var(--panel-header-h);
+      box-sizing: border-box;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
     }
-    html.dark .menu-panel-header { border-bottom-color: rgba(255,255,255,0.08); }
+    html.dark .menu-panel-header {
+      border-bottom-color: rgba(2, 94, 211, 0.20);
+      background: linear-gradient(135deg, rgba(2, 94, 211, 0.24) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+    }
+    .menu-panel-titles { display: flex; flex-direction: column; min-width: 0; }
     .menu-panel-icon {
       width: 30px; height: 30px;
       border-radius: 999px;
@@ -506,7 +521,7 @@
       letter-spacing: 0.02em;
     }
     .menu-panel-sub {
-      font-size: var(--fs-ui);
+      font-size: 0.6875rem;
       color: var(--text-muted);
       margin-top: 1px;
     }
@@ -604,6 +619,20 @@
       margin-left: 4px;
     }
     .menu-nav-chevron .material-icons { font-size: 18px !important; }
+    .menu-nav-chevron-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
+      width: 22px;
+      height: 22px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
     .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
       transform: rotate(180deg);
       color: var(--primary);
@@ -615,6 +644,10 @@
       display: grid;
       grid-template-rows: 0fr;
       transition: grid-template-rows 0.22s ease;
+    }
+    /* Belt-and-braces fallback for browsers that ignore the `inert` attribute. */
+    .menu-nav-group[data-open="false"] > .menu-nav-children {
+      pointer-events: none;
     }
     .menu-nav-group[data-open="true"] > .menu-nav-children {
       grid-template-rows: 1fr;
@@ -904,6 +937,34 @@
     }
     .notif-view-all:hover { background: rgba(255, 255, 255, 0.09); color: #fbf9ff; }
     .notif-view-all .material-icons { font-size: 16px !important; color: #827c90; }
+
+    /* "More" — three-dot menu popover (anchored to the button). */
+    .topbar-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 240px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      box-shadow: var(--shadow-card);
+      z-index: 200;
+      padding: 6px;
+      animation: fadeSlideUp 0.15s ease-out both;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .topbar-popover.hidden { display: none; }
+    html.dark .topbar-popover {
+      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+      border-color: rgba(2, 94, 211, 0.22);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    /* "More" button active state — flips colour when its popover is open. */
+    #topbar-menu-btn.lir-active {
+      color: var(--primary);
+      background: transparent;
+    }
 
     .scout-panel-header, .upf-panel-header {
       display: flex;
@@ -1722,21 +1783,6 @@
     .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
     /* ===== end user-menu popover ===== */
 
-    .topbar-popover {
-      position: absolute;
-      top: calc(100% + 6px);
-      right: 0;
-      min-width: 220px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-strong);
-      border-radius: 12px;
-      box-shadow: var(--shadow-card);
-      z-index: 200;
-      padding: 6px;
-      animation: fadeSlideUp 0.15s ease-out both;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-    .topbar-popover.hidden { display: none; }
     .topbar-menu-item {
       display: flex;
       align-items: center;
@@ -2663,10 +2709,10 @@
       #left-icon-rail .lir-pip-r { display: none !important; }
       /* Narrower panel pills so more icons fit on a phone-sized rail. */
       #left-icon-rail .lir-panel-btn {
-        width: 40px !important;
-        min-width: 40px !important;
-        padding: 0 !important;
-        gap: 0 !important;
+        width: 44px !important;
+        min-width: 44px !important;
+        padding: 5px 2px 4px !important;
+        gap: 2px !important;
       }
       .lir-rail-trailing { gap: 4px; }
 
@@ -3477,9 +3523,90 @@
     .lir-panel-btn.lir-active.flip-right .lir-pip-l { opacity: 0.5; }
     .lir-panel-btn.lir-active.flip-right .lir-pip-r { opacity: 0.75; }
 
+    /* ── Nav rail: labels below icons ───────────────────────────── */
+    /* Block + full-width so text-align: center works off the button midpoint,
+       not the glyph's intrinsic box — guarantees icon and label share the same X */
+    .lir-label {
+      display: block;
+      width: 100%;
+      font-size: 9px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-align: center;
+      color: currentColor;
+      opacity: 0.65;
+      pointer-events: none;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    /* Same treatment for icon glyphs: block + text-center aligns them on the
+       same axis as the label regardless of the glyph's natural advance width */
+    #left-icon-rail .lir-btn .material-icons,
+    .topbar-menu-toggle .material-icons {
+      display: block !important;
+      text-align: center !important;
+      line-height: 1 !important;
+      font-size: 20px !important;
+    }
+    /* Taller rail to fit icon + label */
+    #left-icon-rail { height: 54px; }
+    /* Panel buttons: column so label stacks below icon.
+       align-items: stretch lets children fill the full button width so
+       text-align: center is measured from the same left/right edges for both. */
+    #left-icon-rail .lir-panel-btn {
+      height: auto !important;
+      min-height: 46px !important;
+      border-radius: 10px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: center !important;
+      padding: 5px 6px 4px !important;
+      gap: 2px !important;
+      position: relative !important;
+    }
+    /* Pips go absolute so they don't disrupt column flow */
+    #left-icon-rail .lir-panel-btn .lir-pip-l,
+    #left-icon-rail .lir-panel-btn .lir-pip-r {
+      position: absolute !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      width: 4px !important;
+      border-radius: 2px !important;
+    }
+    #left-icon-rail .lir-panel-btn .lir-pip-l { left: 2px !important; }
+    #left-icon-rail .lir-panel-btn .lir-pip-r { right: 2px !important; }
+    /* Rail-actions (notif, agents, more-vert): column with label */
+    #left-icon-rail .lir-rail-actions .lir-btn,
+    #left-icon-rail .lir-rail-actions .lir-panel-btn,
+    #left-icon-rail .lir-rail-actions #topbar-menu-btn {
+      width: 40px !important;
+      min-width: 40px !important;
+      max-width: 40px !important;
+      height: auto !important;
+      min-height: 46px !important;
+      padding: 5px 0 4px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: center !important;
+      gap: 2px !important;
+      border-radius: 8px !important;
+    }
+    #left-icon-rail .lir-rail-actions #topbar-menu-wrap { height: auto; min-height: 46px; }
+
     /* Layout toggle group */
     .lir-layout-group { display: flex; align-items: center; gap: 2px; }
-    .lir-layout-btn { width: 30px !important; height: 30px !important; }
+    .lir-layout-btn {
+      width: 36px !important;
+      height: auto !important;
+      min-height: 46px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: center !important;
+      gap: 2px !important;
+      padding: 5px 0 4px !important;
+      border-radius: 8px !important;
+    }
     .lir-layout-btn.lir-layout-active {
       background: transparent;
       color: #a4aaff;
@@ -3673,6 +3800,7 @@
     <div id="topbar-row">
       <button type="button" id="topbar-menu-toggle" class="lir-btn topbar-menu-toggle" data-tip="Menu" title="Menu" aria-label="Toggle menu panel" onclick="toggleMenuPanel()">
         <span class="material-icons">menu_open</span>
+        <span class="lir-label">Menu</span>
       </button>
       <div class="topbar-logo" aria-hidden="true">
         <!-- Full wordmark — desktop -->
@@ -3709,18 +3837,21 @@
         <span class="material-icons">history</span>
         <span class="lir-dot"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('history')" title="On left — tap to move right"></span>
+        <span class="lir-label">History</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="toggleScoutPanel()" title="WISE Foods" aria-label="Toggle WISE Foods panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="material-icons">search</span>
         <span class="lir-dot" style="background:#FFB347"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
+        <span class="lir-label">Foods</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-upf lir-active" id="lir-upf-btn" data-tip="UPF Analyzer" onclick="toggleUpfPanel()" title="UPF Analyzer" aria-label="Toggle UPF Analyzer panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
         <span class="material-icons">biotech</span>
         <span class="lir-dot" style="background:#E879F9"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
+        <span class="lir-label">UPF</span>
       </button>
       <!-- Per-agent LIR icons. Each one is shown only while its agent is toggled ON
            in Agent Settings (the .lir-hidden class is added/removed by toggleAgent).
@@ -3731,24 +3862,28 @@
         <span class="material-icons">auto_awesome</span>
         <span class="lir-dot" style="background:#4EE0B7"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
+        <span class="lir-label">TIER</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-shield lir-hidden" id="lir-shield-btn" data-tip="SHIELD — Compliance" onclick="toggleShieldPanel()" title="SHIELD" aria-label="Toggle SHIELD panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
         <span class="material-icons">shield</span>
         <span class="lir-dot" style="background:#A4AAFF"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
+        <span class="lir-label">Shield</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-lens lir-hidden" id="lir-lens-btn" data-tip="LENS — Analytics" onclick="toggleLensPanel()" title="LENS" aria-label="Toggle LENS panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
         <span class="material-icons">analytics</span>
         <span class="lir-dot" style="background:#5B9BD5"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
+        <span class="lir-label">LENS</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-vault lir-hidden" id="lir-vault-btn" data-tip="VAULT — Documents" onclick="toggleVaultPanel()" title="VAULT" aria-label="Toggle VAULT panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
         <span class="material-icons">lock</span>
         <span class="lir-dot" style="background:#D4A853"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
+        <span class="lir-label">Vault</span>
       </button>
       <div class="lir-divider" style="display:none"></div>
       <button type="button" class="lir-btn lir-panel-btn flip-right lir-nfp" id="lir-nfp-btn" data-tip="NFP+" onclick="toggleNfpPanel()" title="NFP+ — Nutrition Fact Panel" aria-label="Toggle NFP+ panel">
@@ -3756,6 +3891,7 @@
         <span class="material-icons">receipt_long</span>
         <span class="lir-dot" style="background:var(--primary);display:none"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('nfp')" title="On right — tap to move left"></span>
+        <span class="lir-label">NFP+</span>
       </button>
       <!-- Spacer pushes layout toggles + menu to the right -->
       <div style="flex:1"></div>
@@ -3764,9 +3900,11 @@
       <div class="lir-layout-group">
         <button type="button" class="lir-btn lir-layout-btn lir-layout-active" id="lir-layout-col" data-tip="Column view" onclick="setModuleLayout('col')" title="Column view" aria-label="Switch to column layout">
           <span class="material-icons">view_column</span>
+          <span class="lir-label">Cols</span>
         </button>
         <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-grid" data-tip="Grid view" onclick="setModuleLayout('grid')" title="Grid view" aria-label="Switch to grid layout">
           <span class="material-icons">grid_view</span>
+          <span class="lir-label">Grid</span>
         </button>
       </div>
       <div class="lir-divider" aria-hidden="true"></div>
@@ -3774,15 +3912,18 @@
       <!-- Notifications — mirrors the dashboard's notification bell -->
       <button type="button" class="lir-btn lir-notif has-dot" id="lir-notif-btn" data-tip="Notifications" onclick="toggleNotifications(event)" title="Notifications" aria-label="Notifications">
         <span class="material-icons">notifications</span>
+        <span class="lir-label">Alerts</span>
       </button>
       <!-- Agent Settings — its own module (panel) with left/right flip pips -->
       <button type="button" class="lir-btn lir-panel-btn lir-settings" id="lir-settings-btn" data-tip="Agent Settings" onclick="toggleSettingsPanel()" title="Agent Settings" aria-label="Toggle Agent Settings panel">
         <span class="material-icons">tune</span>
         <span class="lir-dot" style="background:#7476FF;display:none"></span>
+        <span class="lir-label">Agents</span>
       </button>
       <div style="position:relative;" id="topbar-menu-wrap">
-        <button id="topbar-menu-btn" type="button" onclick="toggleTopbarMenu(event)" title="More options" class="lir-btn topbar-muted">
+        <button id="topbar-menu-btn" type="button" onclick="toggleTopbarMenu(event)" title="More options" class="lir-btn topbar-muted" aria-expanded="false" aria-haspopup="menu" aria-controls="topbar-menu">
           <span class="material-icons">more_vert</span>
+          <span class="lir-label">More</span>
         </button>
         <div id="topbar-menu" class="topbar-popover hidden" role="menu">
           <button type="button" class="topbar-menu-item" onclick="openAddMemberModal(); closeTopbarMenu()">
@@ -3841,95 +3982,23 @@
          order: -9999. -->
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
+        <div class="menu-panel-header">
+          <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
+          <div class="menu-panel-titles">
+            <div class="menu-panel-title">Agents</div>
+            <div class="menu-panel-sub">WISEcode AI</div>
+          </div>
+        </div>
         <div class="menu-panel-body">
-          <nav class="menu-nav" aria-label="WISE module navigation">
-            <a class="menu-nav-item" href="../index.html#/dashboard" data-menu-id="overview">
-              <span class="menu-nav-icon"><span class="material-icons">home</span></span>
-              <span class="menu-nav-label">Overview</span>
-            </a>
-
-            <div class="menu-nav-group" data-group="portfolio" data-open="true">
-              <button type="button" class="menu-nav-item menu-nav-toggle" data-toggle-group="portfolio" aria-expanded="true" aria-controls="menu-nav-portfolio">
-                <span class="menu-nav-icon"><span class="material-icons">business_center</span></span>
-                <span class="menu-nav-label">WISE Portfolio</span>
-                <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
-              </button>
-              <div class="menu-nav-children" id="menu-nav-portfolio" role="region" aria-label="WISE Portfolio links">
-                <div class="menu-nav-children-inner">
-                  <a class="menu-nav-subitem" href="../index.html#/dashboard">
-                    <span class="menu-nav-subicon"><span class="material-icons">dashboard</span></span>
-                    <span class="menu-nav-label">Dashboard</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/products">
-                    <span class="menu-nav-subicon"><span class="material-icons">inventory_2</span></span>
-                    <span class="menu-nav-label">Products</span>
-                    <span class="menu-nav-count">1,248</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/ingredients">
-                    <span class="menu-nav-subicon"><span class="material-icons">science</span></span>
-                    <span class="menu-nav-label">Ingredients</span>
-                    <span class="menu-nav-count">9,420</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/processing">
-                    <span class="menu-nav-subicon"><span class="material-icons">precision_manufacturing</span></span>
-                    <span class="menu-nav-label">Processing</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/verification">
-                    <span class="menu-nav-subicon"><span class="material-icons">verified</span></span>
-                    <span class="menu-nav-label">Verification</span>
-                    <span class="menu-nav-count">38</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/compliance">
-                    <span class="menu-nav-subicon"><span class="material-icons">policy</span></span>
-                    <span class="menu-nav-label">Compliance</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/insights">
-                    <span class="menu-nav-subicon"><span class="material-icons">insights</span></span>
-                    <span class="menu-nav-label">Insights</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="../index.html#/reports">
-                    <span class="menu-nav-subicon"><span class="material-icons">summarize</span></span>
-                    <span class="menu-nav-label">Reports</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div class="menu-nav-group" data-group="studio" data-open="false">
-              <button type="button" class="menu-nav-item menu-nav-toggle" data-toggle-group="studio" aria-expanded="false" aria-controls="menu-nav-studio">
-                <span class="menu-nav-icon"><span class="material-icons">auto_awesome</span></span>
-                <span class="menu-nav-label">WISE Studio</span>
-                <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
-              </button>
-              <div class="menu-nav-children" id="menu-nav-studio" role="region" aria-label="WISE Studio links">
-                <div class="menu-nav-children-inner">
-                  <a class="menu-nav-subitem" href="#/studio/chats">
-                    <span class="menu-nav-subicon"><span class="material-icons">chat</span></span>
-                    <span class="menu-nav-label">Chats</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="#/studio/projects">
-                    <span class="menu-nav-subicon"><span class="material-icons">folder_special</span></span>
-                    <span class="menu-nav-label">Projects</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="#/studio/templates">
-                    <span class="menu-nav-subicon"><span class="material-icons">dashboard_customize</span></span>
-                    <span class="menu-nav-label">Templates</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="#/studio/prompts">
-                    <span class="menu-nav-subicon"><span class="material-icons">tune</span></span>
-                    <span class="menu-nav-label">Prompts</span>
-                  </a>
-                  <a class="menu-nav-subitem" href="#/studio/workflows">
-                    <span class="menu-nav-subicon"><span class="material-icons">account_tree</span></span>
-                    <span class="menu-nav-label">Workflows</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </nav>
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
         </div>
       </div>
     </div>
+    <script type="module">
+      import { mountAgentMenu } from '../js/agent-menu.js';
+      const navEl = document.getElementById('agent-menu-nav');
+      if (navEl) mountAgentMenu(navEl, null, { fromAgentPage: true });
+    </script>
       <div id="panels-row">
     <!-- History -->
     <div id="history-panel" class="open">
@@ -4986,12 +5055,28 @@
       }
     }
 
+    /* "More" — three-dot menu opens a small POPOVER anchored to the
+       button, the same way the avatar / user-menu popover behaves. */
     function toggleTopbarMenu(e) {
-      e.stopPropagation();
-      document.getElementById('topbar-menu').classList.toggle('hidden');
+      if (e) e.stopPropagation();
+      const pop = document.getElementById('topbar-menu');
+      const btn = document.getElementById('topbar-menu-btn');
+      if (!pop) return;
+      const opening = pop.classList.contains('hidden');
+      pop.classList.toggle('hidden', !opening);
+      if (btn) {
+        btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        btn.classList.toggle('lir-active', opening);
+      }
     }
     function closeTopbarMenu() {
-      document.getElementById('topbar-menu').classList.add('hidden');
+      const pop = document.getElementById('topbar-menu');
+      const btn = document.getElementById('topbar-menu-btn');
+      if (pop) pop.classList.add('hidden');
+      if (btn) {
+        btn.setAttribute('aria-expanded', 'false');
+        btn.classList.remove('lir-active');
+      }
     }
 
     const FZ_SCALE = { sm: 0.82, md: 1, lg: 1.18, xl: 1.36 };

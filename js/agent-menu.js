@@ -1,0 +1,341 @@
+/**
+ * Single source of truth for the agent hierarchy.
+ *
+ * The top-level orchestrator (WISEcode AI) is intentionally omitted from the
+ * navigation; its workspace is the WISEowl chat (`pages/ai-chat.html`).
+ *
+ * Each agent record:
+ *   id          — used for hash slugs and for matching the active page
+ *   slug        — relative file inside `pages/` (top-level agents only)
+ *   label       — display name in the menu
+ *   icon        — Material Icons glyph
+ *   parent      — id of the parent (or null for top-level)
+ *   description — one-liner shown on the overview page
+ *   children    — child agent ids in display order
+ */
+export const AGENTS = {
+  'portfolio-agent': {
+    id: 'portfolio-agent',
+    slug: 'portfolio-agent.html',
+    label: 'Portfolio Agent',
+    icon: 'business_center',
+    parent: null,
+    description:
+      "Manages the brand's truth. Orchestrates data, identity, eligibility, verification, and recipes.",
+    children: [
+      'data-ingestion-agent',
+      'brand-profile-agent',
+      'food-discovery-agent',
+      'verification-lifecycle-agent',
+      'recipe-builder-agent',
+    ],
+  },
+  'data-ingestion-agent': {
+    id: 'data-ingestion-agent',
+    label: 'Data Ingestion Agent',
+    icon: 'cloud_upload',
+    parent: 'portfolio-agent',
+    description:
+      'Multi-source product data acquisition from files, URLs, ERP exports, and images.',
+    children: ['ingredient-parsing-agent'],
+  },
+  'ingredient-parsing-agent': {
+    id: 'ingredient-parsing-agent',
+    label: 'Ingredient Parsing Agent',
+    icon: 'science',
+    parent: 'data-ingestion-agent',
+    description:
+      'Specialized ingredient extraction, normalization, and reconciliation.',
+    children: [],
+  },
+  'brand-profile-agent': {
+    id: 'brand-profile-agent',
+    label: 'Brand Profile Agent',
+    icon: 'badge',
+    parent: 'portfolio-agent',
+    description:
+      'B2B and B2C identity management. Discovery Tags. Ecosystem presence.',
+    children: [],
+  },
+  'food-discovery-agent': {
+    id: 'food-discovery-agent',
+    label: 'Food Discovery Agent',
+    icon: 'travel_explore',
+    parent: 'portfolio-agent',
+    description:
+      'Free search across the public food registry. Filter and exploration.',
+    children: [],
+  },
+  'verification-lifecycle-agent': {
+    id: 'verification-lifecycle-agent',
+    label: 'Verification Lifecycle Agent',
+    icon: 'verified',
+    parent: 'portfolio-agent',
+    description:
+      'Pre-qualification, attestation, payment, asset unlock, annual renewal.',
+    children: [],
+  },
+  'recipe-builder-agent': {
+    id: 'recipe-builder-agent',
+    label: 'Recipe Builder Agent',
+    icon: 'restaurant_menu',
+    parent: 'portfolio-agent',
+    description:
+      'Composed dishes, multi-ingredient formulations, live NFP+ calculation.',
+    children: [],
+  },
+
+  'code-studio-agent': {
+    id: 'code-studio-agent',
+    slug: 'code-studio-agent.html',
+    label: 'Code Studio Agent',
+    icon: 'terminal',
+    parent: null,
+    description:
+      'Orchestrates the logic layer for proprietary code authoring and publishing.',
+    children: ['code-builder-agent'],
+  },
+  'code-builder-agent': {
+    id: 'code-builder-agent',
+    label: 'Code Builder Agent',
+    icon: 'integration_instructions',
+    parent: 'code-studio-agent',
+    description:
+      'Natural-language-to-deterministic-logic synthesis. Sandbox testing.',
+    children: [],
+  },
+
+  'analytics-agent': {
+    id: 'analytics-agent',
+    slug: 'analytics-agent.html',
+    label: 'Analytics Agent',
+    icon: 'analytics',
+    parent: null,
+    description:
+      'Conversational analytics across portfolio and the public registry.',
+    children: ['analytical-search-agent'],
+  },
+  'analytical-search-agent': {
+    id: 'analytical-search-agent',
+    label: 'Analytical Search Agent',
+    icon: 'manage_search',
+    parent: 'analytics-agent',
+    description:
+      'Advanced multi-faceted search with inference and ranking.',
+    children: [],
+  },
+
+  'audit-reformulation-agent': {
+    id: 'audit-reformulation-agent',
+    slug: 'audit-reformulation-agent.html',
+    label: 'Audit & Reformulation Agent',
+    icon: 'fact_check',
+    parent: null,
+    description:
+      "What's Next optimization, impact simulation, formulation alternatives.",
+    children: [],
+  },
+
+  'marketing-agent': {
+    id: 'marketing-agent',
+    slug: 'marketing-agent.html',
+    label: 'Marketing Agent',
+    icon: 'campaign',
+    parent: null,
+    description:
+      'Brand-ready deliverable generation for retail, social, and presentation.',
+    children: [],
+  },
+
+  'trends-agent': {
+    id: 'trends-agent',
+    slug: 'trends-agent.html',
+    label: 'Trends Agent',
+    icon: 'trending_up',
+    parent: null,
+    description:
+      'Hot Topic Intelligence. Category signals. Contextual market shifts.',
+    children: [],
+  },
+
+  'brand-engagement-agent': {
+    id: 'brand-engagement-agent',
+    slug: 'brand-engagement-agent.html',
+    label: 'Brand Engagement Agent',
+    icon: 'handshake',
+    parent: null,
+    description:
+      'Calls for Innovation, partner matching, intros, deal flow. Paid V2+.',
+    children: [],
+  },
+};
+
+/** Top-level agents, in display order. */
+export const TOP_LEVEL_AGENT_IDS = [
+  'portfolio-agent',
+  'code-studio-agent',
+  'analytics-agent',
+  'audit-reformulation-agent',
+  'marketing-agent',
+  'trends-agent',
+  'brand-engagement-agent',
+];
+
+/** href for an agent — top-level agents resolve to a real page; child agents
+ *  scroll the parent overview to their card via a hash anchor. */
+export function hrefForAgent(id, opts = {}) {
+  const fromAgentPage = opts.fromAgentPage === true;
+  const node = AGENTS[id];
+  if (!node) return '#';
+  const prefix = fromAgentPage ? '' : 'pages/';
+  if (node.parent === null) {
+    return `${prefix}${node.slug}`;
+  }
+  const top = topLevelAncestor(id);
+  const anchor = `#${id}`;
+  if (!top) return anchor;
+  return `${prefix}${AGENTS[top].slug}${anchor}`;
+}
+
+function topLevelAncestor(id) {
+  let cur = AGENTS[id];
+  while (cur && cur.parent) cur = AGENTS[cur.parent];
+  return cur ? cur.id : null;
+}
+
+function escAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * Mount the agent navigation into a `<nav>` element.
+ *
+ * @param {HTMLElement} navEl       container element (the existing `nav.menu-nav`)
+ * @param {string}      activeId    id of the agent whose page is currently rendered
+ * @param {object}      [options]
+ * @param {boolean}     [options.fromAgentPage=true]  true when the page lives in /pages/
+ */
+export function mountAgentMenu(navEl, activeId, options = {}) {
+  if (!navEl) return;
+  const fromAgentPage = options.fromAgentPage !== false;
+  const prefix = fromAgentPage ? '' : 'pages/';
+  const activeTop = activeId ? topLevelAncestor(activeId) : null;
+
+  const renderSubitem = (id, depth = 1) => {
+    const node = AGENTS[id];
+    if (!node) return '';
+    const top = topLevelAncestor(id);
+    const href = `${prefix}${AGENTS[top].slug}#${id}`;
+    const isActive = id === activeId ? ' is-active' : '';
+    const indent = (depth - 1) * 14;
+    const indentStyle = indent > 0 ? ` style="padding-left:${10 + indent}px;"` : '';
+    return `
+      <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}" data-depth="${depth}"${indentStyle}>
+        <span class="menu-nav-subicon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+        <span class="menu-nav-label">${escAttr(node.label)}</span>
+      </a>`;
+  };
+
+  const renderTopLevel = (id) => {
+    const node = AGENTS[id];
+    if (!node) return '';
+    const href = `${prefix}${node.slug}`;
+    const isOpen = id === activeTop;
+    const isActive = id === activeId ? ' is-active' : '';
+
+    if (!node.children || node.children.length === 0) {
+      return `
+        <a class="menu-nav-item${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}">
+          <span class="menu-nav-icon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(node.label)}</span>
+        </a>`;
+    }
+
+    const childIds = collectDescendantIds(id);
+    const childrenHtml = childIds.map(({ id: cid, depth }) => renderSubitem(cid, depth)).join('');
+
+    /* `inert` + `aria-hidden` make the collapsed children non-interactive
+       (no hover, no click, no tab focus, no screen-reader read-out) without
+       affecting the grid-template-rows expand/collapse animation. */
+    const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
+
+    return `
+      <div class="menu-nav-group" data-group="${escAttr(id)}" data-open="${isOpen ? 'true' : 'false'}">
+        <a class="menu-nav-item menu-nav-toggle${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}" data-toggle-group="${escAttr(id)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(id)}">
+          <span class="menu-nav-icon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(node.label)}</span>
+          <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(id)}" aria-label="Toggle ${escAttr(node.label)} children">
+            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+          </button>
+        </a>
+        <div class="menu-nav-children" id="menu-nav-${escAttr(id)}" role="region" aria-label="${escAttr(node.label)} agents"${collapsedAttrs}>
+          <div class="menu-nav-children-inner">
+            ${childrenHtml}
+          </div>
+        </div>
+      </div>`;
+  };
+
+  navEl.setAttribute('aria-label', 'WISE agent navigation');
+  navEl.innerHTML = TOP_LEVEL_AGENT_IDS.map(renderTopLevel).join('');
+
+  navEl.addEventListener('click', (e) => {
+    const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');
+    if (chevron) {
+      e.preventDefault();
+      e.stopPropagation();
+      const groupId = chevron.dataset.toggleGroup;
+      const group = navEl.querySelector(`.menu-nav-group[data-group="${groupId}"]`);
+      if (!group) return;
+      const willOpen = group.dataset.open !== 'true';
+      group.dataset.open = willOpen ? 'true' : 'false';
+      const toggleEl = group.querySelector('.menu-nav-toggle');
+      if (toggleEl) toggleEl.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      const childrenEl = group.querySelector('.menu-nav-children');
+      if (childrenEl) {
+        if (willOpen) {
+          childrenEl.removeAttribute('inert');
+          childrenEl.removeAttribute('aria-hidden');
+        } else {
+          childrenEl.setAttribute('inert', '');
+          childrenEl.setAttribute('aria-hidden', 'true');
+        }
+      }
+    }
+  });
+}
+
+/** Returns descendants in DFS order with their depth (1-based) under the root. */
+function collectDescendantIds(rootId) {
+  const out = [];
+  const walk = (id, depth) => {
+    const node = AGENTS[id];
+    if (!node) return;
+    for (const childId of node.children || []) {
+      out.push({ id: childId, depth });
+      walk(childId, depth + 1);
+    }
+  };
+  walk(rootId, 1);
+  return out;
+}
+
+export function getAgent(id) {
+  return AGENTS[id] || null;
+}
+
+export function getDirectChildren(id) {
+  const node = AGENTS[id];
+  if (!node) return [];
+  return (node.children || []).map((cid) => AGENTS[cid]).filter(Boolean);
+}
+
+/** Returns the full descendant list (depth 1+) of a top-level agent, in display
+ *  order, with depth metadata for indentation in the overview list. */
+export function getDescendants(id) {
+  return collectDescendantIds(id);
+}
