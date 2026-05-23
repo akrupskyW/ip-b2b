@@ -656,18 +656,13 @@ html.dark .menu-panel-header {
 .menu-nav-item:hover { background: var(--primary-soft); color: var(--primary); }
 .menu-nav-item.is-active { background: var(--primary-soft); color: var(--primary); }
 .menu-nav-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: var(--primary-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .menu-nav-icon .material-icons {
-  font-size: 16px !important;
+  font-size: 20px !important;
   color: var(--primary);
 }
 .menu-nav-label {
@@ -811,17 +806,12 @@ html.dark .agent-main-header {
   background: linear-gradient(135deg, rgba(2, 94, 211, 0.22) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
 }
 .agent-main-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  background: var(--primary-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
 }
-.agent-main-icon .material-icons { font-size: 16px !important; color: var(--primary); }
+.agent-main-icon .material-icons { font-size: 20px !important; color: var(--primary); }
 .agent-main-titles { display: flex; flex-direction: column; min-width: 0; }
 .agent-main-title {
   font-size: var(--fs-ui);
@@ -952,17 +942,12 @@ html.dark .agent-card {
   gap: 10px;
 }
 .agent-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--primary-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
-.agent-card-icon .material-icons { font-size: 18px !important; color: var(--primary); }
+.agent-card-icon .material-icons { font-size: 24px !important; color: var(--primary); }
 .agent-card-eyebrow {
   font-size: var(--fs-label);
   letter-spacing: 0.12em;
@@ -1008,18 +993,12 @@ html.dark .agent-child { background: rgba(255,255,255,0.03); border-color: rgba(
   box-shadow: 0 0 0 2px var(--primary-soft);
 }
 .agent-child-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--border);
 }
-.agent-child-icon .material-icons { font-size: 16px !important; color: var(--text-muted); }
-html.dark .agent-child-icon { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.agent-child-icon .material-icons { font-size: 20px !important; color: var(--text-muted); }
 .agent-child-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .agent-child-name {
   font-size: 0.75rem;

@@ -28,11 +28,11 @@ def main():
         return False
 
     server.watch("index.html", ignore=ignore)
-    server.watch("js", ignore=ignore)
-    server.watch("pages", ignore=ignore)
+    server.watch("js/*.js", ignore=ignore)
+    server.watch("pages/*.html", ignore=ignore)
 
     print(f"WISE dev: http://{HOST}:{PORT}/")
-    print("Watching index.html, js/, pages/ — save a file to reload the browser.")
+    print("Watching index.html, js/*.js, pages/*.html — save a file to reload the browser.")
     server.serve(port=PORT, host=HOST, root=ROOT, open_url=False, live_css=True)
 
 

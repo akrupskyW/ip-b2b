@@ -347,6 +347,9 @@
       align-items: center;
       gap: 10px;
       padding-right: 6px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
     }
     .sidebar-logo {
       width: 32px; height: 32px;
@@ -1689,7 +1692,7 @@
       <button class="icon-btn" id="sidebarToggle" title="Toggle sidebar">
         <span class="material-symbols-rounded" id="sidebarToggleIcon">menu</span>
       </button>
-      <div class="topnav-logo">
+      <a class="topnav-logo" href="pages/portfolio-agent.html" aria-label="WISE home">
         <div class="sidebar-logo">
           <span class="material-symbols-rounded">eco</span>
         </div>
@@ -1697,7 +1700,7 @@
           <div class="topnav-brand-name">WISE Enterprise</div>
           <div class="topnav-brand-sub">Intelligence Platform</div>
         </div>
-      </div>
+      </a>
       <span class="topnav-divider"></span>
       <div class="workspace-switcher" title="Switch workspace" data-action="workspace-switcher" id="workspaceSwitcher">
         <div class="ws-avatar">AF</div>
