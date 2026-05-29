@@ -9,7 +9,6 @@
  */
 
 import {
-  AGENTS,
   getAgent,
   getDirectChildren,
   mountAgentMenu,
@@ -89,7 +88,7 @@ function renderMain(agent) {
 /* Logo SVGs (full wordmark + bug) — kept in one place and rendered into the
  * topbar of every agent overview page so the markup matches ai-chat.html. */
 const TOPBAR_LOGO_HTML = `
-  <a href="portfolio-agent.html" aria-label="WISE home" style="display:flex;align-items:center;pointer-events:auto;color:inherit;text-decoration:none;cursor:pointer;">
+  <a href="portfolio-agent.html" aria-label="WISE home" style="display:flex;flex-direction:column;align-items:flex-end;pointer-events:auto;color:inherit;text-decoration:none;cursor:pointer;">
   <svg class="tl-full" width="177" height="28" viewBox="0 0 656 104" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="WISE">
     <path d="M362.659 21.7629C366.348 21.7629 369.907 22.3486 373.334 23.5183C376.793 24.6553 379.828 26.3275 382.438 28.5362C385.082 30.713 386.977 33.3619 388.119 36.4808L378.474 39.942C377.92 38.35 376.857 36.9699 375.291 35.8003C373.724 34.5984 371.832 33.6552 369.613 32.9729C367.426 32.2906 365.107 31.9477 362.659 31.9477C360.048 31.9153 357.6 32.3381 355.315 33.2154C353.063 34.0601 351.22 35.2316 349.784 36.7262C348.348 38.2207 347.628 39.958 347.628 41.9398C347.628 44.3767 348.299 46.2281 349.638 47.4952C350.976 48.7622 352.77 49.7053 355.022 50.3226C357.307 50.9074 359.852 51.4446 362.659 51.9319C367.164 52.6467 371.325 53.8324 375.144 55.4895C378.996 57.1465 382.081 59.355 384.398 62.1168C386.748 64.8459 387.922 68.2091 387.922 72.2053C387.922 76.2342 386.748 79.777 384.398 82.8312C382.081 85.8528 378.996 88.2071 375.144 89.8966C371.325 91.5537 367.164 92.3823 362.659 92.3823C358.906 92.3822 355.298 91.7994 351.838 90.6298C348.379 89.4601 345.359 87.7857 342.781 85.6089C340.202 83.3996 338.359 80.7821 337.25 77.7607L346.797 74.2031C347.352 75.7623 348.412 77.16 349.978 78.3945C351.577 79.5967 353.472 80.5395 355.659 81.2218C357.878 81.9041 360.211 82.247 362.659 82.247C365.27 82.247 367.719 81.8241 370.004 80.9794C372.321 80.1346 374.181 78.9632 375.584 77.4686C377.02 75.974 377.738 74.2197 377.738 72.2053C377.738 70.1261 376.989 68.42 375.487 67.088C374.019 65.7559 372.124 64.7016 369.807 63.9219C367.522 63.1421 365.14 62.5563 362.659 62.1665C357.862 61.3867 353.553 60.2495 349.734 58.7549C345.948 57.2603 342.946 55.1632 340.727 52.4664C338.54 49.7697 337.446 46.2612 337.446 41.9398C337.446 37.8785 338.603 34.3356 340.92 31.3139C343.27 28.2925 346.356 25.9551 350.175 24.2981C354.026 22.6086 358.188 21.7629 362.659 21.7629Z" fill="currentColor"/>
     <path d="M471.956 40.9614C475.938 40.9615 479.627 41.8872 483.021 43.7391C486.447 45.5908 489.269 48.0773 491.489 51.1959L482.384 56.1204C481.013 54.496 479.414 53.2586 477.587 52.4139C475.759 51.5368 473.881 51.0997 471.956 51.0995C469.28 51.0995 466.846 51.8309 464.659 53.293C462.505 54.7226 460.791 56.623 459.518 58.9945C458.278 61.3334 457.658 63.9001 457.658 66.6937C457.658 69.4555 458.295 72.024 459.568 74.3959C460.841 76.7349 462.555 78.6182 464.709 80.0477C466.896 81.4773 469.312 82.1945 471.956 82.1945C473.979 82.1943 475.906 81.7371 477.733 80.8275C479.561 79.9179 481.111 78.7173 482.384 77.2232L491.489 82.1448C489.269 85.2309 486.447 87.7002 483.021 89.552C479.627 91.4038 475.938 92.3295 471.956 92.3297C467.452 92.3297 463.339 91.1779 459.618 88.8714C455.93 86.5645 452.974 83.476 450.754 79.6095C448.568 75.7109 447.477 71.4045 447.477 66.6937C447.477 63.1205 448.111 59.7906 449.384 56.7045C450.657 53.5855 452.405 50.8568 454.624 48.5175C456.876 46.1458 459.485 44.2913 462.455 42.9592C465.426 41.627 468.594 40.9614 471.956 40.9614Z" fill="currentColor"/>
@@ -112,6 +111,7 @@ const TOPBAR_LOGO_HTML = `
     <path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>
     <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>
   </svg>
+  <span class="topbar-tagline">Intelligence Platform</span>
   </a>`;
 
 export function bootstrapAgentPage() {
@@ -246,15 +246,54 @@ function isDarkMode() {
   return document.documentElement.classList.contains('dark');
 }
 
+/* Theme + text-size accessibility controls now live in the MC / avatar
+   popover (see setupAvatarPopover) instead of the three-dot More menu, so
+   setDarkMode just needs to flip the class, persist it, and let the avatar
+   popover re-render itself if it happens to be open. */
 function setDarkMode(on) {
   const html = document.documentElement;
   html.classList.toggle('dark', on);
   try { localStorage.setItem('wise-theme', on ? 'dark' : 'light'); } catch {}
-  refreshMorePopover();
+  refreshAvatarPopover();
+}
+
+/* Mirrors the chat-page scale so a user's accessibility choice is
+   consistent across pages (same localStorage key as ai-chat.html). */
+const FZ_SCALE = { sm: 0.82, md: 1, lg: 1.18, xl: 1.36 };
+const FZ_LINE  = { sm: 1.45, md: 1.6, lg: 1.65, xl: 1.7 };
+
+function getStoredFontSize() {
+  let fz = 'md';
+  try { fz = localStorage.getItem('chat-font-size') || 'md'; } catch (_) {}
+  if (!(fz in FZ_SCALE)) fz = 'md';
+  return fz;
+}
+
+/* Scale the agent main content (hero + cards) so changing text size has a
+   visible effect on every overview page, while leaving the global top bar,
+   the sticky menu rail, AND the module header at their authored size. The
+   zoom is applied to the scrollable content only (#agent-main-scroll) — never
+   to #agent-main itself — so the .agent-main-header strip always renders at
+   the same size as the .menu-panel-header in the navigation rail. */
+function setAgentFontSize(size) {
+  if (!FZ_SCALE[size]) return;
+  const content = document.getElementById('agent-main-scroll');
+  if (content) {
+    content.style.zoom = String(FZ_SCALE[size]);
+    content.style.setProperty('--chat-line-height', String(FZ_LINE[size]));
+  }
+  document.querySelectorAll('.fz-btn[data-fz]').forEach((b) => {
+    const s = b.dataset.fz;
+    if (s in FZ_SCALE) b.classList.toggle('fz-active', s === size);
+  });
+  try { localStorage.setItem('chat-font-size', size); } catch (_) {}
+}
+
+function applyStoredFontSize() {
+  setAgentFontSize(getStoredFontSize());
 }
 
 function renderMorePopover() {
-  const dark = isDarkMode();
   return `
     <button type="button" class="topbar-menu-item" data-action="back-workspace">
       <span class="material-icons topbar-menu-icon">arrow_back</span>
@@ -265,10 +304,6 @@ function renderMorePopover() {
       <span>Open WISEowl chat</span>
     </button>
     <div class="topbar-menu-divider"></div>
-    <button type="button" class="topbar-menu-item" data-action="toggle-theme">
-      <span class="material-icons topbar-menu-icon">${dark ? 'light_mode' : 'dark_mode'}</span>
-      <span>${dark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
-    </button>
     <button type="button" class="topbar-menu-item" data-action="add-member">
       <span class="material-icons topbar-menu-icon">person_add</span>
       <span>Add team member</span>
@@ -287,11 +322,6 @@ function renderMorePopover() {
       <span class="material-icons topbar-menu-icon">close</span>
       <span>Close</span>
     </button>`;
-}
-
-function refreshMorePopover() {
-  const more = document.getElementById('topbar-more-popover');
-  if (more) more.innerHTML = renderMorePopover();
 }
 
 function ensureSidePanel(id, render) {
@@ -398,10 +428,6 @@ function setupTrailingRail() {
       const action = e.target.closest('[data-action]');
       if (!action) return;
       const a = action.dataset.action;
-      if (a === 'toggle-theme') {
-        setDarkMode(!isDarkMode());
-        return;
-      }
       closeMorePopover();
       switch (a) {
         case 'back-workspace':
@@ -437,4 +463,124 @@ function setupTrailingRail() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', bootstrapAgentPage);
+/* ====================================================================
+   MC / avatar popover.
+     Mirrors ai-chat.html — surfaces the user-menu plus the text-size and
+     light/dark accessibility controls. Text-size and theme rows leave the
+     popover open while the user iterates; every other row closes it.
+==================================================================== */
+
+let activeAvatarPopover = null;
+let activeAvatarAnchor  = null;
+
+function closeAvatarPopover() {
+  if (!activeAvatarPopover) return;
+  activeAvatarAnchor?.classList.remove('is-open');
+  activeAvatarPopover.classList.remove('open');
+  const p = activeAvatarPopover;
+  setTimeout(() => p.remove(), 210);
+  activeAvatarPopover = null;
+  activeAvatarAnchor  = null;
+}
+
+function refreshAvatarPopover() {
+  if (!activeAvatarPopover) return;
+  renderAvatarBody(activeAvatarPopover);
+}
+
+function renderAvatarBody(pop) {
+  const fz     = getStoredFontSize();
+  const isDark = isDarkMode();
+  pop.innerHTML = `
+    <div class="wise-popover-header">Maya Chen</div>
+    <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
+    <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
+    <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
+    <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
+    <div class="wise-popover-divider"></div>
+    <div class="fz-row">
+      <span class="fz-row-label">Text size</span>
+      <div class="fz-btns">
+        <button type="button" class="fz-btn${fz==='sm'?' fz-active':''}" data-fz="sm">S</button>
+        <button type="button" class="fz-btn${fz==='md'?' fz-active':''}" data-fz="md">M</button>
+        <button type="button" class="fz-btn${fz==='lg'?' fz-active':''}" data-fz="lg">L</button>
+        <button type="button" class="fz-btn${fz==='xl'?' fz-active':''}" data-fz="xl">XL</button>
+      </div>
+    </div>
+    <div class="wise-popover-item" data-pop-action="theme">
+      <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
+      <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
+    </div>
+    <div class="wise-popover-divider"></div>
+    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
+  `;
+}
+
+function openAvatarPopover(anchor) {
+  if (activeAvatarAnchor === anchor) { closeAvatarPopover(); return; }
+  closeAvatarPopover();
+  const pop = document.createElement('div');
+  pop.className = 'wise-popover';
+  document.body.appendChild(pop);
+  renderAvatarBody(pop);
+  const rect = anchor.getBoundingClientRect();
+  const pw   = pop.offsetWidth || 240;
+  const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
+  pop.style.left = left + 'px';
+  pop.style.top  = (rect.bottom + 8) + 'px';
+  requestAnimationFrame(() => pop.classList.add('open'));
+  activeAvatarPopover = pop;
+  activeAvatarAnchor  = anchor;
+  anchor.classList.add('is-open');
+
+  pop.addEventListener('click', (ev) => {
+    const fzBtn = ev.target.closest('.fz-btn[data-fz]');
+    if (fzBtn && pop.contains(fzBtn)) {
+      ev.stopPropagation();
+      setAgentFontSize(fzBtn.dataset.fz);
+      return;
+    }
+    const themeItem = ev.target.closest('[data-pop-action="theme"]');
+    if (themeItem && pop.contains(themeItem)) {
+      ev.stopPropagation();
+      setDarkMode(!isDarkMode());
+      return;
+    }
+    if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) {
+      ev.stopPropagation();
+      return;
+    }
+    closeAvatarPopover();
+  });
+}
+
+function setupAvatarPopover() {
+  const avatarBtn = document.querySelector('.topbar-profile');
+  if (!avatarBtn) return;
+  avatarBtn.setAttribute('role', 'button');
+  if (!avatarBtn.hasAttribute('tabindex')) avatarBtn.setAttribute('tabindex', '0');
+  if (!avatarBtn.hasAttribute('aria-label')) avatarBtn.setAttribute('aria-label', 'User menu');
+  avatarBtn.setAttribute('aria-haspopup', 'menu');
+  avatarBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAvatarPopover(avatarBtn);
+  });
+  avatarBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      avatarBtn.click();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (activeAvatarPopover && !activeAvatarPopover.contains(e.target)) closeAvatarPopover();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAvatarPopover();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bootstrapAgentPage();
+  setupAvatarPopover();
+  applyStoredFontSize();
+});

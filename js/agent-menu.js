@@ -1,8 +1,8 @@
 /**
- * Single source of truth for the agent hierarchy.
+ * Single source of truth for the agent hierarchy and product navigation.
  *
- * The top-level orchestrator (WISEcode AI) is intentionally omitted from the
- * navigation; its workspace is the WISEowl chat (`pages/ai-chat.html`).
+ * Product nav (WISEcode AI / Studio / Portfolio) wraps the agent tree. All agents
+ * live under WISEcode AI; Studio and Portfolio link to the enterprise workspace.
  *
  * Each agent record:
  *   id          — used for hash slugs and for matching the active page
@@ -170,7 +170,7 @@ export const AGENTS = {
   },
 };
 
-/** Top-level agents, in display order. */
+/** Top-level agents, in display order (nested under WISEcode AI in the menu). */
 export const TOP_LEVEL_AGENT_IDS = [
   'portfolio-agent',
   'code-studio-agent',
@@ -181,8 +181,48 @@ export const TOP_LEVEL_AGENT_IDS = [
   'brand-engagement-agent',
 ];
 
+/** Platform products shown above the agent tree. */
+export const NAV_PRODUCTS = {
+  'wisecode-ai': {
+    id: 'wisecode-ai',
+    label: 'WISEcode AI',
+    icon: 'hub',
+    slug: 'ai-chat.html',
+  },
+  'wisecode-studio': {
+    id: 'wisecode-studio',
+    label: 'WISEcode Studio',
+    icon: 'design_services',
+    hash: 'processing',
+  },
+  'wisecode-portfolio': {
+    id: 'wisecode-portfolio',
+    label: 'WISEcode Portfolio',
+    icon: 'inventory_2',
+    hash: 'dashboard',
+  },
+};
+
+export const TOP_LEVEL_PRODUCT_IDS = [
+  'wisecode-ai',
+  'wisecode-studio',
+  'wisecode-portfolio',
+];
+
 /** href for an agent — top-level agents resolve to a real page; child agents
  *  scroll the parent overview to their card via a hash anchor. */
+export function hrefForProduct(id, opts = {}) {
+  const fromAgentPage = opts.fromAgentPage !== false;
+  const product = NAV_PRODUCTS[id];
+  if (!product) return '#';
+  if (product.slug) {
+    const prefix = fromAgentPage ? '' : 'pages/';
+    return `${prefix}${product.slug}`;
+  }
+  const base = fromAgentPage ? '../index.html' : 'index.html';
+  return product.hash ? `${base}#/${product.hash}` : base;
+}
+
 export function hrefForAgent(id, opts = {}) {
   const fromAgentPage = opts.fromAgentPage === true;
   const node = AGENTS[id];
@@ -212,17 +252,20 @@ function escAttr(s) {
 }
 
 /**
- * Mount the agent navigation into a `<nav>` element.
+ * Mount the product + agent navigation into a `<nav>` element.
  *
  * @param {HTMLElement} navEl       container element (the existing `nav.menu-nav`)
  * @param {string}      activeId    id of the agent whose page is currently rendered
  * @param {object}      [options]
  * @param {boolean}     [options.fromAgentPage=true]  true when the page lives in /pages/
+ * @param {string}      [options.activeProductId]     active product id (defaults to wisecode-ai)
  */
 export function mountAgentMenu(navEl, activeId, options = {}) {
   if (!navEl) return;
   const fromAgentPage = options.fromAgentPage !== false;
   const prefix = fromAgentPage ? '' : 'pages/';
+  const activeProduct =
+    options.activeProductId || 'wisecode-ai';
   const activeTop = activeId ? topLevelAncestor(activeId) : null;
 
   const renderSubitem = (id, depth = 1) => {
@@ -264,7 +307,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
 
     return `
-      <div class="menu-nav-group" data-group="${escAttr(id)}" data-open="${isOpen ? 'true' : 'false'}">
+      <div class="menu-nav-group" data-tier="agent" data-group="${escAttr(id)}" data-open="${isOpen ? 'true' : 'false'}">
         <a class="menu-nav-item menu-nav-toggle${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}" data-toggle-group="${escAttr(id)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(id)}">
           <span class="menu-nav-icon"><span class="material-icons">${escAttr(node.icon)}</span></span>
           <span class="menu-nav-label">${escAttr(node.label)}</span>
@@ -280,8 +323,43 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
       </div>`;
   };
 
-  navEl.setAttribute('aria-label', 'WISE agent navigation');
-  navEl.innerHTML = TOP_LEVEL_AGENT_IDS.map(renderTopLevel).join('');
+  const renderProduct = (productId) => {
+    const product = NAV_PRODUCTS[productId];
+    if (!product) return '';
+    const href = hrefForProduct(productId, { fromAgentPage });
+    const isActive = productId === activeProduct ? ' is-active' : '';
+
+    if (productId !== 'wisecode-ai') {
+      return `
+        <a class="menu-nav-item menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}">
+          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(product.label)}</span>
+        </a>`;
+    }
+
+    const isOpen = activeProduct === 'wisecode-ai';
+    const agentsHtml = TOP_LEVEL_AGENT_IDS.map(renderTopLevel).join('');
+    const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
+
+    return `
+      <div class="menu-nav-group menu-nav-product-group" data-tier="product" data-group="${escAttr(productId)}" data-open="${isOpen ? 'true' : 'false'}">
+        <a class="menu-nav-item menu-nav-toggle menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}" data-toggle-group="${escAttr(productId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(productId)}">
+          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(product.label)}</span>
+          <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(productId)}" aria-label="Toggle ${escAttr(product.label)} agents">
+            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+          </button>
+        </a>
+        <div class="menu-nav-children" id="menu-nav-${escAttr(productId)}" role="region" aria-label="${escAttr(product.label)} agents"${collapsedAttrs}>
+          <div class="menu-nav-children-inner menu-nav-agents-inner">
+            ${agentsHtml}
+          </div>
+        </div>
+      </div>`;
+  };
+
+  navEl.setAttribute('aria-label', 'WISE platform navigation');
+  navEl.innerHTML = TOP_LEVEL_PRODUCT_IDS.map(renderProduct).join('');
 
   navEl.addEventListener('click', (e) => {
     const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');

@@ -73,7 +73,7 @@ body {
   flex-direction: column;
   background-color: var(--bg) !important;
   color: var(--text);
-  font-family: Inter, Figtree, system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   font-size: var(--fs-ui);
   letter-spacing: 0;
   padding: 0.375rem 0 var(--modules-bottom-pad);
@@ -139,16 +139,28 @@ body {
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   color: var(--text);
   pointer-events: none;
   z-index: 10;
 }
 .topbar-logo svg.tl-full { display: block; }
 .topbar-logo svg.tl-bug  { display: none; }
+.topbar-tagline {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1;
+  margin-top: 4px;
+  white-space: nowrap;
+}
 @media (max-width: 1023px) {
   .topbar-logo svg.tl-full { display: none; }
   .topbar-logo svg.tl-bug  { display: block; }
+  .topbar-tagline { display: none; }
   #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(1.5rem + 40px + 12px + 54px + 12px); }
 }
 @media (max-width: 767px) {
@@ -327,6 +339,7 @@ html.dark #alerts-panel .alerts-inner {
   align-items: center;
   gap: 10px;
   padding: 12px;
+  height: var(--panel-header-h, 60px);
   min-height: var(--panel-header-h, 60px);
   box-sizing: border-box;
   border-bottom: 1px solid var(--border);
@@ -338,8 +351,8 @@ html.dark .alerts-panel-header {
   background: linear-gradient(135deg, rgba(217, 76, 76, 0.18) 0%, rgba(217, 76, 76, 0.05) 60%, transparent 100%);
 }
 .alerts-panel-icon {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--sec-red) 14%, transparent);
   display: flex;
@@ -429,6 +442,101 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
   color: #ff7c7e;
 }
 
+/* ===== Avatar / user-menu popover (matches ai-chat.html) =====
+   Used by the MC profile chip in the top bar to surface profile actions,
+   text-size accessibility controls, and the light/dark theme toggle. */
+.wise-popover {
+  position: fixed;
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  z-index: 9999;
+  overflow: hidden;
+  padding: 6px 0;
+  transform: translateY(-6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .2s ease, opacity .18s ease;
+}
+.wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+html.dark .wise-popover {
+  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+  border-color: rgba(2, 94, 211, 0.22);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.wise-popover-header {
+  padding: 10px 14px 6px;
+  font-size: 11px;
+  letter-spacing: .12em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.wise-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  font-size: var(--fs-ui);
+  color: var(--text);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color .15s ease;
+}
+.wise-popover-item:hover { background: var(--surface-3); }
+html.dark .wise-popover-item:hover { background: rgba(255,255,255,0.06); }
+.wise-popover-item.danger { color: #f87171; }
+.wise-popover-item .material-icons { font-size: 17px; color: var(--text-subtle); }
+.wise-popover-item.danger .material-icons { color: #f87171; }
+.wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
+html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
+
+/* Text-size segmented row inside the avatar popover. */
+.fz-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+}
+.fz-row-label {
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.fz-btns {
+  display: flex;
+  gap: 3px;
+}
+.fz-btn {
+  width: 30px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: var(--fs-ui);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.fz-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.fz-btn.fz-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 /* Alerts list rows */
 .notif-row {
   display: flex;
@@ -492,6 +600,7 @@ html.dark .notif-row-icon { background: rgba(255,255,255,0.04); border-color: rg
 .notif-view-all:hover { background: var(--primary-soft); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
 .notif-view-all .material-icons { font-size: 16px !important; }
 html.dark .notif-view-all { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+
 
 /* Active state for trailing rail buttons when their module is open. */
 .topbar-trailing .lir-btn.lir-active {
@@ -583,7 +692,10 @@ html.dark #menu-panel .menu-inner {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
+  /* Left padding matches body 8px + item 10px so the header icon sits in the
+     same vertical column as the per-agent icons below. */
+  padding: 12px 12px 12px 18px;
+  height: var(--panel-header-h, 60px);
   min-height: var(--panel-header-h, 60px);
   box-sizing: border-box;
   border-bottom: 1px solid var(--border);
@@ -595,8 +707,10 @@ html.dark .menu-panel-header {
   background: linear-gradient(135deg, rgba(2, 94, 211, 0.24) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
 }
 .menu-panel-icon {
-  width: 30px;
-  height: 30px;
+  /* Match .menu-nav-icon size so the header icon shares the exact column
+     (center + left edge + right edge) with the per-agent icons below. */
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: var(--primary-soft);
   display: flex;
@@ -633,13 +747,21 @@ html.dark .menu-panel-header {
 .menu-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* Uniform vertical rhythm: applies between every row whether the row is a
+     plain link (.menu-nav-item) or an expandable group (.menu-nav-group). */
+  gap: 4px;
 }
+/* Every row in the menu is exactly the same height regardless of whether it
+   is expandable. The chevron-btn on toggle rows (22px) is smaller than the
+   icon disc (26px) so this min-height locks the row at icon-height + 2 × 8px
+   padding = 42px, which matches plain rows exactly. */
 .menu-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
+  min-height: 42px;
+  box-sizing: border-box;
   border-radius: 10px;
   color: var(--text);
   text-decoration: none;
@@ -656,13 +778,18 @@ html.dark .menu-panel-header {
 .menu-nav-item:hover { background: var(--primary-soft); color: var(--primary); }
 .menu-nav-item.is-active { background: var(--primary-soft); color: var(--primary); }
 .menu-nav-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--primary-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .menu-nav-icon .material-icons {
-  font-size: 20px !important;
+  font-size: 16px !important;
   color: var(--primary);
 }
 .menu-nav-label {
@@ -695,6 +822,13 @@ html.dark .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
   transition: transform 0.2s ease;
 }
 .menu-nav-chevron .material-icons { font-size: 18px !important; }
+.menu-nav-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+.menu-nav-group[data-open="true"] { gap: 4px; }
 .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
   transform: rotate(180deg);
   color: var(--primary);
@@ -704,22 +838,43 @@ html.dark .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.22s ease;
+  /* `overflow: hidden` on the OUTER grid container (not just the inner
+     element) is what guarantees the collapsed track is a true 0 px tall.
+     Without this the inner div's 8 px of vertical padding + dashed
+     border-left would bleed through and make every expandable row ~14 px
+     taller than a plain row. */
+  overflow: hidden;
 }
 /* Belt-and-braces fallback for browsers that ignore the `inert` attribute. */
 .menu-nav-group[data-open="false"] > .menu-nav-children {
   pointer-events: none;
+  margin: 0;
+  padding: 0;
+  max-height: 0;
 }
 .menu-nav-group[data-open="true"] > .menu-nav-children { grid-template-rows: 1fr; }
 .menu-nav-children-inner {
   overflow: hidden;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 2px 0 6px 16px;
+  padding: 4px 0 6px 16px;
   margin-left: 16px;
   border-left: 1px dashed var(--border);
 }
 html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); }
+/* Collapsed: zero footprint so nested row backgrounds cannot peek below the toggle. */
+.menu-nav-group[data-open="false"] > .menu-nav-children .menu-nav-children-inner,
+.menu-nav-group[data-open="false"] > .menu-nav-children .menu-nav-agents-inner {
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  min-height: 0;
+  border: none;
+  visibility: hidden;
+  opacity: 0;
+}
 .menu-nav-subitem {
   display: flex;
   align-items: center;
@@ -754,6 +909,20 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
 }
 .menu-nav-subitem:hover .menu-nav-subicon,
 .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary); }
+
+/* Agents nested under WISEcode AI (product tier) */
+.menu-nav-agents-inner {
+  gap: 4px;
+}
+.menu-nav-agents-inner > .menu-nav-item,
+.menu-nav-agents-inner > .menu-nav-group > .menu-nav-toggle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.menu-nav-agents-inner > .menu-nav-group > .menu-nav-children > .menu-nav-children-inner {
+  margin-left: 12px;
+  padding-left: 12px;
+}
 
 /* ===== MAIN MODULE (overview content) =====
    Mirrors the chat-shell / scout-panel module pattern from ai-chat.html:
@@ -790,39 +959,58 @@ html.dark .agent-main-inner {
   border-color: rgba(255,255,255,0.06);
 }
 
+/* The overview's main module header is the *exact* visual twin of the
+   .side-panel-header used in pages/ai-chat.html (HISTORY / Scout / PULSE /
+   TIER / SHIELD / LENS / VAULT / NFP+ / Alerts). Everything below — the
+   gap, padding, fixed height, plain surface-2 strip, the 30×30 round icon
+   chip, and the title/subtitle scale — is copied 1:1 from the chat shell
+   so module headers read at one rhythm across every WISE surface.
+
+   `height` (not just `min-height`) locks the strip at 60 px regardless of
+   how lean or tall the title block is, so a one-line label can never make
+   the header shorter than its multi-line cousins. */
 .agent-main-header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px;
+  height: var(--panel-header-h);
   min-height: var(--panel-header-h);
   box-sizing: border-box;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
+  background: var(--surface-2);
 }
 html.dark .agent-main-header {
-  border-bottom-color: rgba(2, 94, 211, 0.18);
-  background: linear-gradient(135deg, rgba(2, 94, 211, 0.22) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
+  border-bottom-color: var(--border);
+  background: var(--surface-2);
 }
 .agent-main-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface-3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px var(--border);
 }
-.agent-main-icon .material-icons { font-size: 20px !important; color: var(--primary); }
-.agent-main-titles { display: flex; flex-direction: column; min-width: 0; }
+.agent-main-icon .material-icons { font-size: 16px !important; color: var(--primary); }
+.agent-main-titles { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .agent-main-title {
   font-size: var(--fs-ui);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   color: var(--text);
+  line-height: 1.2;
 }
 .agent-main-sub {
   font-size: 0.6875rem;
+  font-weight: 400;
   color: var(--text-muted);
   margin-top: 1px;
+  line-height: 1.2;
 }
 
 .agent-main-scroll {
