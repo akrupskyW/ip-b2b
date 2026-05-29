@@ -1,0 +1,650 @@
+/* =============================================================
+   WISEcode Portfolio — The Truth Layer.
+   Portfolio-specific content styles layered on top of the shared
+   shell (agent-page.css): Pulse gauges, the Ledger, the three
+   Pathways, the Verified flow, the Identity Portal, Recipe Lab,
+   the Asset Vault, the persistent AI Portfolio Agent command bar,
+   and the Product Detail deep-dive.
+============================================================= */
+
+/* ===== Section hero ===== */
+.pf-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
+  border: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+html.dark .pf-hero {
+  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
+  border-color: rgba(2, 94, 211, 0.18);
+}
+.pf-hero-eyebrow {
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--primary);
+}
+.pf-hero-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+.pf-hero-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 760px;
+  margin: 0;
+}
+.pf-hero-quote {
+  margin-top: 4px;
+  font-style: italic;
+  font-size: 0.8125rem;
+  color: var(--text-subtle);
+}
+
+.pf-section-label {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 26px 0 12px 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pf-section-label .material-icons { font-size: 15px !important; color: var(--primary); }
+
+/* ===== Pulse — status bar ===== */
+.pf-pulse-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+html.dark .pf-stat { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.pf-stat-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.pf-stat-meta { font-size: 0.6875rem; color: var(--text-subtle); }
+.pf-stat-meta.is-up { color: var(--sec-green); }
+.pf-stat-meta.is-warn { color: var(--ter-amber); }
+
+/* ===== Brand-health gauges ===== */
+.pf-gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+.pf-gauge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+html.dark .pf-gauge { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-gauge:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+.pf-ring {
+  --val: 0;
+  --ring: var(--primary);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(closest-side, var(--surface) 0 70%, transparent 71% 100%),
+    conic-gradient(var(--ring) calc(var(--val) * 1%), color-mix(in srgb, var(--text-subtle) 22%, transparent) 0);
+}
+html.dark .pf-ring {
+  background:
+    radial-gradient(closest-side, #0e1c26 0 70%, transparent 71% 100%),
+    conic-gradient(var(--ring) calc(var(--val) * 1%), rgba(255,255,255,0.10) 0);
+}
+.pf-ring-num { font-size: 0.9375rem; font-weight: 800; color: var(--text); }
+.pf-gauge-body { min-width: 0; }
+.pf-gauge-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.pf-gauge-sub { font-size: 0.6875rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+
+/* ===== AI Portfolio Agent intelligence briefing / mission cards ===== */
+.pf-briefing {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: linear-gradient(150deg, rgba(2,94,211,0.10), transparent 75%);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+html.dark .pf-briefing { border-color: rgba(2,94,211,0.20); }
+.pf-agent-avatar {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--ter-cyan));
+  color: #fff; box-shadow: 0 4px 14px rgba(2,94,211,0.35);
+}
+.pf-agent-avatar .material-icons { font-size: 22px !important; }
+.pf-briefing-body { min-width: 0; flex: 1; }
+.pf-briefing-name { font-size: 0.75rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.pf-live-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--sec-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green) 25%, transparent); }
+.pf-briefing-text { font-size: 0.875rem; color: var(--text); line-height: 1.55; margin: 6px 0 0; }
+.pf-briefing-text strong { color: var(--primary); font-weight: 700; }
+
+.pf-mission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.pf-mission {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+html.dark .pf-mission { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-mission:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); border-color: color-mix(in srgb, var(--primary) 28%, var(--border)); }
+.pf-mission-head { display: flex; align-items: center; gap: 10px; }
+.pf-mission-icon {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.pf-mission-icon .material-icons { font-size: 17px !important; }
+.pf-mission-tag {
+  font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+.pf-mission-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.pf-mission-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.pf-mission-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+
+/* Pill buttons (shared by missions, pathways, vault, etc.) */
+.pf-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600; font-family: inherit;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pf-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+.pf-btn .material-icons { font-size: 15px !important; }
+.pf-btn--primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pf-btn--primary:hover { background: color-mix(in srgb, var(--primary) 88%, black); color: #fff; border-color: color-mix(in srgb, var(--primary) 88%, black); }
+.pf-btn--ghost { background: transparent; color: var(--text-muted); }
+html.dark .pf-btn { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+
+/* ===== Generic card / panel ===== */
+.pf-card {
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+html.dark .pf-card { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pf-card-title { font-size: 0.875rem; font-weight: 700; color: var(--text); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+.pf-card-title .material-icons { font-size: 18px !important; color: var(--primary); }
+.pf-card-desc { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
+
+/* ===== The Ledger (table) ===== */
+.pf-ledger-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.pf-search {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px;
+  padding: 8px 12px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+html.dark .pf-search { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.pf-search .material-icons { font-size: 17px !important; color: var(--text-subtle); }
+.pf-search input { flex: 1; border: 0; background: transparent; color: var(--text); font-family: inherit; font-size: 0.8125rem; outline: none; }
+.pf-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 11px; border-radius: 999px; font-size: 0.6875rem; font-weight: 600;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+  cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pf-chip:hover, .pf-chip.is-on { background: var(--primary-soft); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+.pf-chip .material-icons { font-size: 14px !important; }
+
+.pf-table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-1); }
+.pf-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.pf-table thead th {
+  text-align: left; padding: 10px 14px; font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle);
+  background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.pf-table tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+.pf-table tbody tr { cursor: pointer; transition: background 0.12s; }
+.pf-table tbody tr:hover { background: var(--primary-soft); }
+.pf-table tbody tr:last-child td { border-bottom: 0; }
+.pf-prod { display: flex; align-items: center; gap: 10px; }
+.pf-prod-thumb { width: 30px; height: 30px; border-radius: 8px; background: var(--surface-3); display: grid; place-items: center; flex-shrink: 0; }
+.pf-prod-thumb .material-icons { font-size: 17px !important; color: var(--text-subtle); }
+.pf-prod-name { font-weight: 700; }
+.pf-prod-cat { font-size: 0.6875rem; color: var(--text-subtle); }
+
+/* Status badges */
+.pf-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px; font-size: 0.625rem; font-weight: 700;
+  letter-spacing: 0.02em; white-space: nowrap;
+}
+.pf-badge .material-icons { font-size: 12px !important; }
+.pf-badge--gold { background: color-mix(in srgb, var(--ter-amber) 16%, transparent); color: var(--ter-amber); }
+.pf-badge--green { background: color-mix(in srgb, var(--sec-green) 16%, transparent); color: var(--sec-green); }
+.pf-badge--blue { background: var(--primary-soft); color: var(--primary); }
+.pf-badge--muted { background: var(--surface-3); color: var(--text-muted); }
+.pf-badge--red { background: color-mix(in srgb, var(--sec-red) 16%, transparent); color: var(--sec-red); }
+
+/* ===== Verified flow stepper ===== */
+.pf-stepper { display: flex; flex-direction: column; gap: 12px; }
+.pf-step {
+  display: flex; gap: 14px; padding: 16px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+html.dark .pf-step { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center; font-weight: 800; font-size: 0.875rem;
+  background: var(--primary); color: #fff;
+}
+.pf-step-num.is-done { background: var(--sec-green); }
+.pf-step-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.pf-step-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; margin: 4px 0 0; }
+
+/* ===== Tags / chips list (discovery tags, certs) ===== */
+.pf-taglist { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.pf-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 999px; font-size: 0.6875rem; font-weight: 600;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+}
+.pf-tag .material-icons { font-size: 13px !important; color: var(--primary); }
+
+/* ===== Recipe Lab ===== */
+.pf-recipe { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+@media (max-width: 720px) { .pf-recipe { grid-template-columns: 1fr; } }
+.pf-ingredient-row {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 8px;
+}
+.pf-ingredient-row .pf-ing-name { flex: 1; font-weight: 600; }
+.pf-ingredient-row .pf-ing-amt { font-size: 0.75rem; color: var(--text-muted); }
+.pf-nfp-line { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.8125rem; }
+.pf-nfp-line:last-child { border-bottom: 0; }
+.pf-nfp-line .pf-nfp-k { color: var(--text-muted); }
+.pf-nfp-line .pf-nfp-v { font-weight: 700; color: var(--text); }
+
+/* ===== Asset Vault ===== */
+.pf-vault-gate {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+  padding: 36px 24px; border-radius: var(--r-lg);
+  background: linear-gradient(150deg, rgba(245,165,36,0.10), transparent 70%);
+  border: 1px dashed color-mix(in srgb, var(--ter-amber) 40%, var(--border));
+}
+.pf-vault-lock { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: var(--ter-amber); }
+.pf-vault-lock .material-icons { font-size: 28px !important; }
+.pf-vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.pf-asset {
+  border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border);
+  background: var(--surface); box-shadow: var(--shadow-1); cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+html.dark .pf-asset { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-asset:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.pf-asset-art { height: 96px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), var(--ter-cyan)); color: #fff; }
+.pf-asset-art .material-icons { font-size: 34px !important; }
+.pf-asset-art.art-green { background: linear-gradient(135deg, var(--sec-green), #15803d); }
+.pf-asset-art.art-amber { background: linear-gradient(135deg, var(--ter-amber), #b45309); }
+.pf-asset-art.art-violet { background: linear-gradient(135deg, var(--ter-violet), #6d28d9); }
+.pf-asset-meta { padding: 10px 12px; }
+.pf-asset-name { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+.pf-asset-sub { font-size: 0.625rem; color: var(--text-subtle); margin-top: 2px; }
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ===== Top-bar alignment — match ai-chat.html exactly =====
+   The shared agent-page.css positions the menu toggle + wordmark off a generic
+   1.5rem gutter, which lands ~14px to the right of where ai-chat puts them
+   (ai-chat tunes 19px / 62px so the menu icon and wordmark line up with the
+   icon + label columns of the nav panel below). Pin them to ai-chat's exact
+   coordinates so the left cluster reads identically across both pages. */
+.topbar-menu-toggle { left: 19px; }
+.topbar-logo { left: 62px; }
+#topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 177px + 16px); }
+@media (max-width: 1023px) {
+  #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 54px + 16px); }
+}
+@media (max-width: 767px) {
+  .topbar-menu-toggle { left: 19px; }
+  .topbar-logo { left: 62px; }
+  .topbar-profile { right: 1rem; }
+  #topbar-row { padding: 0 calc(1rem + 34px + 10px) 0 calc(62px + 54px + 12px); }
+}
+
+/* ===== Top-bar section rail =====
+   One icon per Portfolio surface, mirroring the LIR rail in ai-chat.html.
+   Lives in the flex flow of #topbar-row, between the absolutely-positioned
+   logo (left) and profile (right). Each button toggles its module open, and
+   several modules can be popped open side by side in #modules-row below. */
+#left-icon-rail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 0%;
+  width: 100%;
+  min-width: 0;
+  height: 54px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border-radius: 16px;
+  position: relative;
+  background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+html.dark #left-icon-rail {
+  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+  border: 1px solid rgba(2, 94, 211, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+.pf-module-rail {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pf-module-rail::-webkit-scrollbar { height: 0; display: none; }
+.lir-spacer { flex: 1 1 auto; min-width: 8px; }
+.lir-rail-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.lir-rail-actions #topbar-notif-btn.lir-active { color: var(--sec-red); }
+
+/* Column / grid layout toggle — mirrors ai-chat.html's .lir-layout-group. */
+.lir-layout-group { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.lir-layout-btn { width: 40px; flex-shrink: 0; }
+.lir-layout-btn.lir-layout-active { color: var(--primary); background: transparent; }
+
+/* Section buttons mirror the ai-chat LIR panel buttons: a compact column pill
+   (icon over a 9px label). Off = muted grey, on = primary blue. Nothing else,
+   exactly like the rail in ai-chat.html. */
+.pf-module-btn {
+  width: auto;
+  min-width: 46px;
+  padding: 5px 8px 4px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.pf-module-btn.lir-active { color: var(--primary); background: transparent; }
+.pf-module-btn.lir-active .lir-label { opacity: 1; }
+
+/* ===== Section module panel =====
+   A self-contained, openable card in #modules-row — the visual twin of the
+   shared #agent-main module, but fixed-width so multiple can sit side by side.
+   Scout fills the remaining space and Alerts always docks to its right. */
+.pf-module {
+  display: none;
+  flex: 0 0 auto;
+  width: 340px;
+  max-width: 90vw;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  flex-direction: column;
+  position: relative;
+  align-self: stretch;
+}
+.pf-module.is-open { display: flex; }
+@media (max-width: 767px) { .pf-module { width: 86vw; } }
+
+.pf-module-inner {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: var(--fs-ui);
+  transform-origin: center left;
+  animation: panelBounceLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+html.dark .pf-module-inner {
+  background: linear-gradient(165deg, #0F1B26 0%, #0B141C 100%);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.pf-module-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  height: var(--panel-header-h);
+  min-height: var(--panel-header-h);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+/* In-header side switcher — moves the module to the other side of Scout.
+   Mirrors flipPanel() / .panel-flip in ai-chat.html (the side_navigation glyph
+   rotates 180° to point at the side the module currently sits on). */
+.panel-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+}
+.panel-flip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  flex-shrink: 0;
+}
+.panel-flip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.panel-flip-btn .material-symbols-outlined {
+  font-size: 18px !important;
+  line-height: 1 !important;
+  transition: transform 0.22s ease;
+}
+.panel-flip[data-side="right"] .panel-flip-btn .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+.panel-flip-btn:hover {
+  opacity: 1;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.panel-width-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  opacity: 0.75;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.panel-width-toggle-btn .material-symbols-outlined {
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+.panel-width-toggle-btn:hover,
+.panel-width-toggle-btn.is-on {
+  opacity: 1;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.pf-module.panel-wide { width: 680px; }
+@media (max-width: 767px) { .pf-module.panel-wide { width: 86vw; } }
+.pf-module-scroll {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  padding: 24px 28px 28px;
+}
+@media (max-width: 767px) { .pf-module-scroll { padding: 18px 16px 22px; } }
+
+/* ===== Module row ordering =====
+   menu (sticky, -9999) → section modules (10–16) → Scout (99) → Alerts (200).
+   Scout grows to fill the gap; Alerts always opens to the right of Scout. */
+#pf-chat-panel.scout-dock.scout-dock-open {
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 360px;
+}
+@media (max-width: 1100px) {
+  #pf-chat-panel.scout-dock.scout-dock-open { min-width: 320px; }
+}
+#alerts-panel { order: 200; }
+
+/* ===== Grid layout =====
+   Column view (default) lays modules out left-to-right with horizontal scroll.
+   Grid view tiles every OPEN module — including Scout and Alerts — into uniform
+   cards that wrap and scroll vertically, mirroring ai-chat.html's grid mode. */
+#modules-row.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(220px, 1fr);
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+@media (max-width: 1180px) { #modules-row.modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px)  { #modules-row.modules-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* The menu rail un-pins from sticky and becomes a normal grid cell. */
+#modules-row.modules-grid #menu-panel {
+  position: relative;
+  left: auto;
+}
+/* Every visible module fills its grid cell; clear the fixed column widths. */
+#modules-row.modules-grid > * {
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: 100% !important;
+}
+
+/* ===== Product Detail deep-dive (slide-over) ===== */
+.pf-deepdive-scrim {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(2, 10, 16, 0.55);
+  opacity: 0; pointer-events: none; transition: opacity 0.22s ease;
+}
+.pf-deepdive-scrim.is-open { opacity: 1; pointer-events: auto; }
+.pf-deepdive {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 401;
+  width: min(480px, 92vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px rgba(0,0,0,0.35);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column;
+}
+html.dark .pf-deepdive { background: linear-gradient(165deg, #0F1B26 0%, #0B141C 100%); border-left-color: rgba(255,255,255,0.08); }
+.pf-deepdive.is-open { transform: translateX(0); }
+.pf-deepdive-head {
+  display: flex; align-items: center; gap: 12px; padding: 16px 18px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.pf-deepdive-head .pf-prod-thumb { width: 38px; height: 38px; }
+.pf-deepdive-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); }
+.pf-deepdive-sub { font-size: 0.6875rem; color: var(--text-muted); margin-top: 2px; }
+.pf-deepdive-close {
+  margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; cursor: pointer;
+  background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center;
+}
+.pf-deepdive-close:hover { color: var(--text); background: var(--surface-3); }
+.pf-deepdive-body { flex: 1; overflow-y: auto; padding: 18px; }
+.pf-dd-section { margin-bottom: 18px; }
+.pf-dd-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); margin-bottom: 8px; }
+
+/* ===== Toast ===== */
+#pf-toast-wrap {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  z-index: 500; display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none;
+}
+.pf-toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow-2); color: var(--text); font-size: 0.8125rem; font-weight: 600;
+  animation: pfToastIn 0.25s ease both;
+}
+html.dark .pf-toast { background: #142a3a; border-color: rgba(2,94,211,0.3); }
+.pf-toast .material-icons { font-size: 18px !important; color: var(--primary); }
+@keyframes pfToastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

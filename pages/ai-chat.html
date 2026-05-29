@@ -3715,16 +3715,22 @@
        right, the icon flips 180° so its sidebar bar faces the matching edge —
        a self-explanatory replacement for the old `first_page`/`last_page` pair
        of arrow buttons. Mirrors `flipPanel()` from the LIR rail. */
+    .panel-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-self: center;
+    }
     .panel-flip {
       display: inline-flex;
       align-items: center;
-      margin-left: auto;
       padding: 0;
       color: var(--text-muted);
       background: transparent;
       border: 0;
       flex-shrink: 0;
-      align-self: center;
     }
     .panel-flip-btn {
       display: inline-flex;
@@ -3757,13 +3763,57 @@
       color: var(--primary);
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
-    /* On narrow stacked layouts the flip control still belongs floated right;
-       reset any flex-1 absorbing it accidentally. */
-    .side-panel-header .panel-flip,
-    .nfp-panel-header  .panel-flip,
-    .notif-panel-header .panel-flip {
+    .panel-width-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      opacity: 0.75;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .panel-width-toggle-btn .material-symbols-outlined {
+      font-size: 18px !important;
+      line-height: 1 !important;
+    }
+    .panel-width-toggle-btn:hover,
+    .panel-width-toggle-btn.is-on {
+      opacity: 1;
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+    }
+    /* On narrow stacked layouts the header controls still belong floated right;
+       reset any flex-1 absorbing them accidentally. */
+    .side-panel-header .panel-controls,
+    .nfp-panel-header  .panel-controls,
+    .notif-panel-header .panel-controls {
       margin-left: auto;
     }
+
+    /* Panel width expand — doubles the module column when .panel-wide is set */
+    #history-panel.panel-wide.open { width: 560px; }
+    #history-panel.panel-wide .panel-inner { width: 560px; }
+    #upf-panel.panel-wide.up-open { width: 544px; }
+    #upf-panel.panel-wide .upf-inner { width: 544px; }
+    #tier-panel.panel-wide.tp-open,
+    #shield-panel.panel-wide.sd-open,
+    #lens-panel.panel-wide.ln-open,
+    #vault-panel.panel-wide.vt-open { width: 536px; }
+    #tier-panel.panel-wide .tier-inner,
+    #shield-panel.panel-wide .shield-inner,
+    #lens-panel.panel-wide .lens-inner,
+    #vault-panel.panel-wide .vault-inner { width: 536px; }
+    #notif-panel.panel-wide.notif-open { width: 600px; }
+    #notif-panel.panel-wide .notif-inner { width: 600px; }
+    #nfp-panel.panel-wide.nfp-open { width: 592px; }
+    #nfp-panel.panel-wide .nfp-inner { width: 592px; }
 
     /* Small kebab/more button used inside a panel header (mirror of the
        global topbar more_vert). Always floats to the far right. */
@@ -4257,8 +4307,11 @@
             <div class="text-xs font-bold text-oyster-100">HISTORY</div>
             <p class="text-xs text-oyster-600 mt-0.5">Chats &amp; Projects</p>
           </div>
-          <div class="panel-flip" data-panel="history" role="group" aria-label="Dock History panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('history')" title="Move to the other side of chat" aria-label="Move History to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="history" role="group" aria-label="Dock History panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('history')" title="Move to the other side of chat" aria-label="Move History to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="history" onclick="togglePanelWidth('history')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double History module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="history-tabs-row">
@@ -4331,8 +4384,11 @@
               <p class="text-xs text-oyster-600">UPF Analysis</p>
             </div>
           </div>
-          <div class="panel-flip" data-panel="upf" role="group" aria-label="Dock PULSE panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('upf')" title="Move to the other side of chat" aria-label="Move PULSE to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="upf" role="group" aria-label="Dock PULSE panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('upf')" title="Move to the other side of chat" aria-label="Move PULSE to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="upf" onclick="togglePanelWidth('upf')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double PULSE module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="side-panel-search-row px-3 py-2 border-b border-oyster-800">
@@ -4377,8 +4433,11 @@
               <p class="text-xs text-oyster-600">Processing Tier Engine</p>
             </div>
           </div>
-          <div class="panel-flip" data-panel="tier" role="group" aria-label="Dock TIER panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('tier')" title="Move to the other side of chat" aria-label="Move TIER to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="tier" role="group" aria-label="Dock TIER panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('tier')" title="Move to the other side of chat" aria-label="Move TIER to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="tier" onclick="togglePanelWidth('tier')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double TIER module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -4412,8 +4471,11 @@
               <p class="text-xs text-oyster-600">Badge &amp; Compliance</p>
             </div>
           </div>
-          <div class="panel-flip" data-panel="shield" role="group" aria-label="Dock SHIELD panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('shield')" title="Move to the other side of chat" aria-label="Move SHIELD to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="shield" role="group" aria-label="Dock SHIELD panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('shield')" title="Move to the other side of chat" aria-label="Move SHIELD to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="shield" onclick="togglePanelWidth('shield')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double SHIELD module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -4446,8 +4508,11 @@
               <p class="text-xs text-oyster-600">Analytics &amp; Insights</p>
             </div>
           </div>
-          <div class="panel-flip" data-panel="lens" role="group" aria-label="Dock LENS panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('lens')" title="Move to the other side of chat" aria-label="Move LENS to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="lens" role="group" aria-label="Dock LENS panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('lens')" title="Move to the other side of chat" aria-label="Move LENS to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="lens" onclick="togglePanelWidth('lens')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double LENS module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-3 text-xs text-oyster-500">
@@ -4487,8 +4552,11 @@
               <p class="text-xs text-oyster-600">Documents &amp; Attestation</p>
             </div>
           </div>
-          <div class="panel-flip" data-panel="vault" role="group" aria-label="Dock VAULT panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('vault')" title="Move to the other side of chat" aria-label="Move VAULT to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="vault" role="group" aria-label="Dock VAULT panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('vault')" title="Move to the other side of chat" aria-label="Move VAULT to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="vault" onclick="togglePanelWidth('vault')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double VAULT module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -4968,8 +5036,11 @@
               <div class="text-xs font-bold text-oyster-100">NOTIFICATIONS</div>
               <p class="text-xs text-oyster-600 mt-0.5">3 unread</p>
             </div>
-            <div class="panel-flip" data-panel="notif" role="group" aria-label="Dock Notifications panel">
-              <button type="button" class="panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="notif" role="group" aria-label="Dock Notifications panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width"><span class="material-symbols-outlined">transition_slide</span></button>
             </div>
           </div>
           <div class="notif-scroll-body side-panel-body">
@@ -5018,8 +5089,11 @@
             <div style="font-size:var(--fs-ui);font-weight:700;color:var(--text);">NFP<span style="color:var(--primary)">+</span></div>
             <p style="font-size:var(--fs-ui);color:var(--text-muted);margin-top:1px;">Nutrition Fact Panel</p>
           </div>
-          <div class="panel-flip" data-panel="nfp" role="group" aria-label="Dock NFP+ panel">
-            <button type="button" class="panel-flip-btn" onclick="flipPanel('nfp')" title="Move to the other side of chat" aria-label="Move NFP+ to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="nfp" role="group" aria-label="Dock NFP+ panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('nfp')" title="Move to the other side of chat" aria-label="Move NFP+ to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="nfp" onclick="togglePanelWidth('nfp')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double NFP+ module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
 
@@ -6228,6 +6302,52 @@
           applyFlip(key, toRight);
         });
       })();
+    })();
+
+    /* ── Panel width expand: toggle double-width modules ───────────── */
+    (function() {
+      const WIDTH_STORAGE_KEY = 'wise-panel-wide-v1';
+      const PANEL_IDS = {
+        history: 'history-panel',
+        upf:     'upf-panel',
+        tier:    'tier-panel',
+        shield:  'shield-panel',
+        lens:    'lens-panel',
+        vault:   'vault-panel',
+        notif:   'notif-panel',
+        nfp:     'nfp-panel',
+      };
+
+      function loadWide() {
+        try { return JSON.parse(localStorage.getItem(WIDTH_STORAGE_KEY) || '{}') || {}; } catch (_) { return {}; }
+      }
+
+      function saveWide(state) {
+        try { localStorage.setItem(WIDTH_STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+      }
+
+      function syncPanelWidthUI(key, isWide) {
+        const panel = document.getElementById(PANEL_IDS[key]);
+        panel?.classList.toggle('panel-wide', !!isWide);
+        document.querySelectorAll(`.panel-width-toggle-btn[data-panel="${key}"]`).forEach((btn) => {
+          btn.classList.toggle('is-on', !!isWide);
+          btn.setAttribute('aria-pressed', isWide ? 'true' : 'false');
+          btn.title = isWide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+        });
+      }
+
+      window.togglePanelWidth = function(key) {
+        if (!PANEL_IDS[key]) return;
+        const saved = loadWide();
+        const next = !saved[key];
+        saved[key] = next;
+        saveWide(saved);
+        syncPanelWidthUI(key, next);
+      };
+
+      Object.keys(PANEL_IDS).forEach((key) => {
+        if (loadWide()[key]) syncPanelWidthUI(key, true);
+      });
     })();
 
     /* Boot — sync rail icons and per-agent module visibility from initial state. */

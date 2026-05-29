@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Portfolio — The Truth Layer</title>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint so the page
+       never flashes dark→light (or vice versa). Mirrors ai-chat.html storage. */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="scout-chat.css" />
+  <link rel="stylesheet" href="portfolio.css" />
+</head>
+<body data-product-id="wisecode-portfolio">
+  <div id="agent-shell-wrap">
+    <div id="topbar-row">
+      <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Toggle menu" aria-label="Toggle menu panel">
+        <span class="material-icons">menu_open</span>
+        <span class="lir-label">Menu</span>
+      </button>
+      <div class="topbar-logo" aria-hidden="true"></div>
+
+      <!-- Section module rail: one icon per Portfolio surface. Each toggles its
+           module open/closed, and several can be popped open side by side.
+           Populated by portfolio-module.js. The trailing actions (Alerts, More)
+           sit at the far right of the same bar — Alerts always opens to the
+           right of Scout in the modules row below. -->
+      <div id="left-icon-rail" aria-label="Portfolio modules">
+        <nav id="pf-module-rail" class="pf-module-rail" aria-label="Portfolio module shortcuts"></nav>
+        <div class="lir-spacer" aria-hidden="true"></div>
+        <div class="lir-layout-group" role="group" aria-label="Module layout">
+          <button type="button" class="lir-btn lir-layout-btn lir-layout-active" id="lir-layout-col" title="Column view" aria-label="Switch to column layout" aria-pressed="true">
+            <span class="material-icons">view_column</span>
+            <span class="lir-label">Cols</span>
+          </button>
+          <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-grid" title="Grid view" aria-label="Switch to grid layout" aria-pressed="false">
+            <span class="material-icons">grid_view</span>
+            <span class="lir-label">Grid</span>
+          </button>
+        </div>
+        <div class="lir-divider" aria-hidden="true"></div>
+        <div class="lir-rail-actions">
+          <div class="topbar-menu-wrap">
+            <button type="button" class="lir-btn has-dot" id="topbar-notif-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+              <span class="material-icons">notifications</span>
+              <span class="lir-label">Alerts</span>
+            </button>
+          </div>
+          <div class="topbar-menu-wrap">
+            <button type="button" class="lir-btn" id="topbar-more-btn" title="More options" aria-label="More options" aria-haspopup="true" aria-expanded="false">
+              <span class="material-icons">more_vert</span>
+              <span class="lir-label">More</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-profile" title="Maya Chen · Product Intelligence Lead">MC</div>
+    </div>
+
+    <div id="modules-row">
+      <div id="menu-panel" class="mp-open">
+        <div class="menu-inner">
+          <div class="menu-panel-header">
+            <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
+            <div class="menu-panel-titles">
+              <div class="menu-panel-title">Navigation</div>
+              <div class="menu-panel-sub">WISE Platform</div>
+            </div>
+          </div>
+          <div class="menu-panel-body">
+            <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section modules are injected here by portfolio-module.js, between the
+           sticky menu rail and the persistent Scout chat. -->
+
+      <aside id="pf-chat-panel" class="scout-dock scout-dock-open" aria-label="Scout chat"></aside>
+    </div>
+  </div>
+
+  <script type="module" src="../js/portfolio-module.js"></script>
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

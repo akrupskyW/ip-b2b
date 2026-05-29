@@ -181,6 +181,88 @@ export const TOP_LEVEL_AGENT_IDS = [
   'brand-engagement-agent',
 ];
 
+/**
+ * WISEcode Portfolio sub-navigation — the "Truth Layer" structure.
+ *
+ * These are not agents; they are the navigable surfaces (Missions / views)
+ * inside the Portfolio module. Each maps to a section in `pages/portfolio.html`
+ * via a `#<id>` hash anchor.
+ *
+ *   id     — hash slug + active-state key
+ *   label  — display name in the menu and module header
+ *   icon   — Material Icons glyph
+ *   sub    — short module-header subtitle
+ *   tagline— one-liner shown on the section's hero
+ */
+export const PORTFOLIO_SECTIONS = {
+  'command-deck': {
+    id: 'command-deck',
+    label: 'Command Deck',
+    icon: 'space_dashboard',
+    sub: 'The Nexus · Pulse',
+    tagline:
+      'Your high-altitude entry point. Brand-health gauges and the AI Portfolio Agent’s intelligence briefing.',
+  },
+  ledger: {
+    id: 'ledger',
+    label: 'The Ledger',
+    icon: 'table_rows',
+    sub: 'Zoom In · Full portfolio',
+    tagline:
+      'The high-fidelity list view. Filter, sort, and bulk-manage every product in your portfolio.',
+  },
+  intake: {
+    id: 'intake',
+    label: 'Intake & Growth',
+    icon: 'cloud_upload',
+    sub: 'Pathway 1 · Managing the Truth',
+    tagline:
+      'AI-first ingestion, the Brand Verified gold standard, market governance, Smart Sets, and Discovery Tags.',
+  },
+  verified: {
+    id: 'verified',
+    label: 'Verified Pipeline',
+    icon: 'verified',
+    sub: 'Pathway 2 · Managing the Trust',
+    tagline:
+      'Pre-qualification, the 1-2-3 Get Verified flow, and the lifecycle watchdog for renewals.',
+  },
+  identity: {
+    id: 'identity',
+    label: 'Identity Portal',
+    icon: 'badge',
+    sub: 'Pathway 3 · Managing the Presence',
+    tagline:
+      'B2B/B2C synthesis, identity assets, certifications, and ecosystem connectivity.',
+  },
+  recipes: {
+    id: 'recipes',
+    label: 'Recipe Lab',
+    icon: 'restaurant_menu',
+    sub: 'Composed formulations',
+    tagline:
+      'Build composed recipes in real-time with live NFP+™ calculation.',
+  },
+  vault: {
+    id: 'vault',
+    label: 'Asset Vault',
+    icon: 'folder_special',
+    sub: 'Premium wing · Trust assets',
+    tagline:
+      'Your living library of Verified Shields, retail sheets, and social assets — organized by standard.',
+  },
+};
+
+export const PORTFOLIO_SECTION_IDS = [
+  'command-deck',
+  'ledger',
+  'intake',
+  'verified',
+  'identity',
+  'recipes',
+  'vault',
+];
+
 /** Platform products shown above the agent tree. */
 export const NAV_PRODUCTS = {
   'wisecode-ai': {
@@ -199,9 +281,14 @@ export const NAV_PRODUCTS = {
     id: 'wisecode-portfolio',
     label: 'WISEcode Portfolio',
     icon: 'inventory_2',
-    hash: 'dashboard',
+    slug: 'portfolio.html',
+    sections: PORTFOLIO_SECTION_IDS,
   },
 };
+
+export function getPortfolioSection(id) {
+  return PORTFOLIO_SECTIONS[id] || null;
+}
 
 export const TOP_LEVEL_PRODUCT_IDS = [
   'wisecode-ai',
@@ -266,6 +353,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   const prefix = fromAgentPage ? '' : 'pages/';
   const activeProduct =
     options.activeProductId || 'wisecode-ai';
+  const activeSection = options.activeSectionId || null;
   const activeTop = activeId ? topLevelAncestor(activeId) : null;
 
   const renderSubitem = (id, depth = 1) => {
@@ -323,11 +411,47 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
       </div>`;
   };
 
+  const renderSection = (product, sectionId) => {
+    const sec = PORTFOLIO_SECTIONS[sectionId];
+    if (!sec) return '';
+    const href = `${prefix}${product.slug}#${sectionId}`;
+    const isActive = sectionId === activeSection ? ' is-active' : '';
+    return `
+      <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-section-id="${escAttr(sectionId)}" data-depth="1">
+        <span class="menu-nav-subicon"><span class="material-icons">${escAttr(sec.icon)}</span></span>
+        <span class="menu-nav-label">${escAttr(sec.label)}</span>
+      </a>`;
+  };
+
   const renderProduct = (productId) => {
     const product = NAV_PRODUCTS[productId];
     if (!product) return '';
     const href = hrefForProduct(productId, { fromAgentPage });
     const isActive = productId === activeProduct ? ' is-active' : '';
+
+    /* Products with section children (WISEcode Portfolio) render as an
+       expandable group whose children are module views, mirroring the
+       WISEcode AI agent tree but linking to `#section` anchors. */
+    if (productId !== 'wisecode-ai' && product.sections && product.sections.length) {
+      const isOpen = activeProduct === productId;
+      const sectionsHtml = product.sections.map((sid) => renderSection(product, sid)).join('');
+      const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
+      return `
+        <div class="menu-nav-group menu-nav-product-group" data-tier="product" data-group="${escAttr(productId)}" data-open="${isOpen ? 'true' : 'false'}">
+          <a class="menu-nav-item menu-nav-toggle menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}" data-toggle-group="${escAttr(productId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(productId)}">
+            <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+            <span class="menu-nav-label">${escAttr(product.label)}</span>
+            <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(productId)}" aria-label="Toggle ${escAttr(product.label)} sections">
+              <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+            </button>
+          </a>
+          <div class="menu-nav-children" id="menu-nav-${escAttr(productId)}" role="region" aria-label="${escAttr(product.label)} sections"${collapsedAttrs}>
+            <div class="menu-nav-children-inner">
+              ${sectionsHtml}
+            </div>
+          </div>
+        </div>`;
+    }
 
     if (productId !== 'wisecode-ai') {
       return `
