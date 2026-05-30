@@ -549,8 +549,8 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
 /* ====================================================================
    Menu-rail collapse.
 
-   Injects a collapse toggle into the menu panel header (floated to the
-   right). Toggling adds `.mp-rail` to `#menu-panel`, which shrinks the
+   Injects a collapse toggle into the menu brand strip (to the right of the
+   logo). Toggling adds `.mp-rail` to `#menu-panel`, which shrinks the panel
    panel to an icon-only rail (labels, titles, chevrons hidden). Hovering
    a collapsed icon surfaces its label in a floating tooltip pinned to the
    right of the row — mirroring the top-bar icon tooltips. The collapsed
@@ -561,17 +561,13 @@ const MENU_RAIL_STORE_KEY = 'wise-menu-rail';
 function setupMenuRail(navEl) {
   const panel = navEl.closest('#menu-panel');
   if (!panel) return;
-  const header = panel.querySelector('.menu-panel-header');
-  if (!header) return;
+  const brand = panel.querySelector('.menu-brand-bar');
+  if (!brand) return;
 
-  let btn = header.querySelector('.menu-rail-toggle');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'menu-rail-toggle';
-    btn.innerHTML = '<span class="material-icons" aria-hidden="true">chevron_left</span>';
-    header.appendChild(btn);
-  }
+  brand.querySelector('.menu-rail-toggle')?.remove();
+
+  const btn = document.getElementById('topbar-menu-toggle');
+  if (!btn) return;
 
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
@@ -587,16 +583,18 @@ function setupMenuRail(navEl) {
   try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
   apply(railed);
 
-  if (!btn.dataset.bound) {
-    btn.dataset.bound = '1';
+  if (!btn.dataset.railBound) {
+    btn.dataset.railBound = '1';
     btn.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const next = !panel.classList.contains('mp-rail');
       apply(next);
       try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
     });
   }
 
+  brand.appendChild(btn);
   setupMenuRailTooltip();
 }
 

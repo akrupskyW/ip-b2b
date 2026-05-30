@@ -29,28 +29,20 @@
   <link rel="stylesheet" href="portfolio.css" />
 </head>
 <body data-product-id="wisecode-portfolio">
-  <div id="agent-shell-wrap">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
     <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar).
          The 'portfolio' variant adds the section-module rail + layout switcher;
          #pf-module-rail is populated by portfolio-module.js. -->
     <div id="topbar-row"></div>
 
     <div id="modules-row">
-      <div id="menu-panel" class="mp-open">
-        <div class="menu-inner">
-          <div class="menu-panel-header">
-            <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
-            <div class="menu-panel-titles">
-              <div class="menu-panel-title">Navigation</div>
-              <div class="menu-panel-sub">WISE Platform</div>
-            </div>
-          </div>
-          <div class="menu-panel-body">
-            <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
-          </div>
-        </div>
-      </div>
-
       <!-- Section modules are injected here by portfolio-module.js, between the
            sticky menu rail and the persistent Scout chat. -->
 

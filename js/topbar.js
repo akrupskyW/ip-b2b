@@ -6,20 +6,20 @@
  * (agent overview pages + the Portfolio workspace). The bar is identical
  * everywhere except for its CENTER content, which is page-specific:
  *
- *   variant: 'agent'      → just the trailing actions (Alerts + More).
+ *   variant: 'agent'      → just the trailing actions (Alerts).
  *   variant: 'portfolio'  → the section-module rail + layout switcher +
  *                           the same trailing actions.
  *
  * Each page calls mountTopbar() once, then wires up the controls it cares
  * about (the IDs/classes below are stable so existing wiring keeps working):
- *   #topbar-menu-toggle, .topbar-logo, #topbar-notif-btn, #topbar-more-btn,
+ *   #topbar-menu-toggle, .topbar-logo, #topbar-notif-btn,
  *   .topbar-profile, #pf-module-rail, .lir-layout-btn …
  */
 
 /* WISE wordmark (full) + bug (mobile). Shared by every page so the SVG
    lives in exactly one place. */
 export const TOPBAR_LOGO_HTML = `
-  <a href="LOGO_HREF" aria-label="WISE home" style="display:flex;flex-direction:column;align-items:flex-end;pointer-events:auto;color:inherit;text-decoration:none;cursor:pointer;">
+  <a href="LOGO_HREF" aria-label="WISE home" style="display:flex;flex-direction:column;align-items:flex-start;pointer-events:auto;color:inherit;text-decoration:none;cursor:pointer;">
   <svg class="tl-full" width="177" height="28" viewBox="0 0 656 104" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="WISE">
     <path d="M362.659 21.7629C366.348 21.7629 369.907 22.3486 373.334 23.5183C376.793 24.6553 379.828 26.3275 382.438 28.5362C385.082 30.713 386.977 33.3619 388.119 36.4808L378.474 39.942C377.92 38.35 376.857 36.9699 375.291 35.8003C373.724 34.5984 371.832 33.6552 369.613 32.9729C367.426 32.2906 365.107 31.9477 362.659 31.9477C360.048 31.9153 357.6 32.3381 355.315 33.2154C353.063 34.0601 351.22 35.2316 349.784 36.7262C348.348 38.2207 347.628 39.958 347.628 41.9398C347.628 44.3767 348.299 46.2281 349.638 47.4952C350.976 48.7622 352.77 49.7053 355.022 50.3226C357.307 50.9074 359.852 51.4446 362.659 51.9319C367.164 52.6467 371.325 53.8324 375.144 55.4895C378.996 57.1465 382.081 59.355 384.398 62.1168C386.748 64.8459 387.922 68.2091 387.922 72.2053C387.922 76.2342 386.748 79.777 384.398 82.8312C382.081 85.8528 378.996 88.2071 375.144 89.8966C371.325 91.5537 367.164 92.3823 362.659 92.3823C358.906 92.3822 355.298 91.7994 351.838 90.6298C348.379 89.4601 345.359 87.7857 342.781 85.6089C340.202 83.3996 338.359 80.7821 337.25 77.7607L346.797 74.2031C347.352 75.7623 348.412 77.16 349.978 78.3945C351.577 79.5967 353.472 80.5395 355.659 81.2218C357.878 81.9041 360.211 82.247 362.659 82.247C365.27 82.247 367.719 81.8241 370.004 80.9794C372.321 80.1346 374.181 78.9632 375.584 77.4686C377.02 75.974 377.738 74.2197 377.738 72.2053C377.738 70.1261 376.989 68.42 375.487 67.088C374.019 65.7559 372.124 64.7016 369.807 63.9219C367.522 63.1421 365.14 62.5563 362.659 62.1665C357.862 61.3867 353.553 60.2495 349.734 58.7549C345.948 57.2603 342.946 55.1632 340.727 52.4664C338.54 49.7697 337.446 46.2612 337.446 41.9398C337.446 37.8785 338.603 34.3356 340.92 31.3139C343.27 28.2925 346.356 25.9551 350.175 24.2981C354.026 22.6086 358.188 21.7629 362.659 21.7629Z" fill="currentColor"/>
     <path d="M471.956 40.9614C475.938 40.9615 479.627 41.8872 483.021 43.7391C486.447 45.5908 489.269 48.0773 491.489 51.1959L482.384 56.1204C481.013 54.496 479.414 53.2586 477.587 52.4139C475.759 51.5368 473.881 51.0997 471.956 51.0995C469.28 51.0995 466.846 51.8309 464.659 53.293C462.505 54.7226 460.791 56.623 459.518 58.9945C458.278 61.3334 457.658 63.9001 457.658 66.6937C457.658 69.4555 458.295 72.024 459.568 74.3959C460.841 76.7349 462.555 78.6182 464.709 80.0477C466.896 81.4773 469.312 82.1945 471.956 82.1945C473.979 82.1943 475.906 81.7371 477.733 80.8275C479.561 79.9179 481.111 78.7173 482.384 77.2232L491.489 82.1448C489.269 85.2309 486.447 87.7002 483.021 89.552C479.627 91.4038 475.938 92.3295 471.956 92.3297C467.452 92.3297 463.339 91.1779 459.618 88.8714C455.93 86.5645 452.974 83.476 450.754 79.6095C448.568 75.7109 447.477 71.4045 447.477 66.6937C447.477 63.1205 448.111 59.7906 449.384 56.7045C450.657 53.5855 452.405 50.8568 454.624 48.5175C456.876 46.1458 459.485 44.2913 462.455 42.9592C465.426 41.627 468.594 40.9614 471.956 40.9614Z" fill="currentColor"/>
@@ -48,23 +48,18 @@ export const TOPBAR_LOGO_HTML = `
 /* Menu toggle (far left) — opens/closes the navigation rail. Identical
    on every page. */
 const MENU_TOGGLE_HTML = `
-  <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Toggle menu" aria-label="Toggle menu panel">
-    <span class="material-icons">menu_open</span>
+  <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false">
+    <span class="material-icons">chevron_left</span>
     <span class="lir-label">Menu</span>
   </button>`;
 
-/* Trailing actions (Alerts + More) — shared by both variants. */
+/* Trailing actions (Alerts) — shared by both variants. The three-dot "More"
+   menu was removed from the top bar. */
 const TRAILING_ACTIONS_HTML = `
   <div class="topbar-menu-wrap">
     <button type="button" class="lir-btn has-dot" id="topbar-notif-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
       <span class="material-icons">notifications</span>
       <span class="lir-label">Alerts</span>
-    </button>
-  </div>
-  <div class="topbar-menu-wrap">
-    <button type="button" class="lir-btn" id="topbar-more-btn" title="More options" aria-label="More options" aria-haspopup="true" aria-expanded="false">
-      <span class="material-icons">more_vert</span>
-      <span class="lir-label">More</span>
     </button>
   </div>`;
 
@@ -131,5 +126,42 @@ export function mountTopbar({
     ${center}
     <div class="topbar-profile" title="${profileTitle}">MC</div>`;
 
+  mountMenuBrand({ logoHref });
+
   return row;
+}
+
+/** Pin the menu toggle to the right of the logo in the nav brand strip. */
+export function syncMenuTogglePlacement() {
+  const brand = document.querySelector('.menu-brand-bar');
+  const toggle = document.getElementById('topbar-menu-toggle');
+  if (!toggle || !brand) return;
+  brand.appendChild(toggle);
+}
+
+/*
+ * Lift the WISE wordmark into the navigation panel's brand strip so the menu
+ * module spans the full left column (including the old logo row). The menu
+ * toggle sits to the right of the logo and collapses the panel to an icon
+ * rail (.mp-rail). When collapsed only the owl bug mark shows.
+ */
+export function mountMenuBrand({ logoHref = 'portfolio-agent.html' } = {}) {
+  const shell = document.getElementById('agent-shell-wrap');
+  const inner = document.querySelector('#menu-panel .menu-inner');
+  if (!inner) return null;
+
+  let brand = inner.querySelector('.menu-brand-bar');
+  if (!brand) {
+    brand = document.createElement('div');
+    brand.className = 'menu-brand-bar';
+    const logoWrap = document.createElement('div');
+    logoWrap.className = 'menu-brand-logo';
+    logoWrap.innerHTML = TOPBAR_LOGO_HTML.replace('LOGO_HREF', logoHref);
+    brand.appendChild(logoWrap);
+    inner.insertBefore(brand, inner.firstChild);
+  }
+
+  shell?.classList.add('menu-brand-integrated');
+  syncMenuTogglePlacement();
+  return brand;
 }

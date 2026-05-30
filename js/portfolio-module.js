@@ -2197,9 +2197,6 @@ function bootstrap() {
     });
   }
 
-  const toggle = document.getElementById('topbar-menu-toggle');
-  toggle?.addEventListener('click', () => document.getElementById('menu-panel')?.classList.toggle('mp-open'));
-
   /* Seed open modules (persisted, default Command Deck) + per-module sides,
      build the top-bar section rail + the module shells, then apply state. */
   loadOpenModules();

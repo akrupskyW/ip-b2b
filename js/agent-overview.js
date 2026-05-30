@@ -301,6 +301,7 @@ export function bootstrapAgentPage() {
   /* Build the shared top bar (menu toggle, WISE logo, Alerts/More, profile).
      The agent variant has no center rail — just the trailing actions. */
   mountTopbar({ variant: 'agent', logoHref: 'portfolio-agent.html' });
+  /* Logo lives in the nav panel brand strip (mountTopbar → mountMenuBrand). */
 
   const headerEl = document.getElementById('agent-main-header');
   if (headerEl) {
@@ -334,15 +335,6 @@ export function bootstrapAgentPage() {
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) mountAgentMenu(navEl, agent.id, { fromAgentPage: true });
-
-  const toggle = document.getElementById('topbar-menu-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      const panel = document.getElementById('menu-panel');
-      if (!panel) return;
-      panel.classList.toggle('mp-open');
-    });
-  }
 
   setupTrailingRail();
 

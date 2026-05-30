@@ -410,23 +410,24 @@ html.dark .pf-asset { background: rgba(255,255,255,0.025); border-color: rgba(25
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* ===== Top-bar alignment — match ai-chat.html exactly =====
-   The shared agent-page.css positions the menu toggle + wordmark off a generic
-   1.5rem gutter, which lands ~14px to the right of where ai-chat puts them
-   (ai-chat tunes 19px / 62px so the menu icon and wordmark line up with the
-   icon + label columns of the nav panel below). Pin them to ai-chat's exact
-   coordinates so the left cluster reads identically across both pages. */
+/* ===== Top-bar alignment — menu toggle lives in the nav brand strip when open. ===== */
 .topbar-menu-toggle { left: 19px; }
 .topbar-logo { left: 62px; }
-#topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 177px + 16px); }
+.menu-brand-integrated:not(:has(#menu-panel.mp-open)) #topbar-row {
+  padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 177px + 16px);
+}
 @media (max-width: 1023px) {
-  #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 54px + 16px); }
+  .menu-brand-integrated:not(:has(#menu-panel.mp-open)) #topbar-row {
+    padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 54px + 16px);
+  }
 }
 @media (max-width: 767px) {
   .topbar-menu-toggle { left: 19px; }
   .topbar-logo { left: 62px; }
   .topbar-profile { right: 1rem; }
-  #topbar-row { padding: 0 calc(1rem + 34px + 10px) 0 calc(62px + 54px + 12px); }
+  .menu-brand-integrated:not(:has(#menu-panel.mp-open)) #topbar-row {
+    padding: 0 calc(1rem + 34px + 10px) 0 calc(62px + 54px + 12px);
+  }
 }
 
 /* ===== Top-bar section rail =====
@@ -682,18 +683,15 @@ html.dark .pf-module-scroll { background: transparent; }
   scroll-snap-type: x proximity;
   scroll-padding-left: 12px;
 }
-#modules-row:not(.modules-grid):has(#menu-panel.mp-open) {
-  scroll-padding-left: 276px; /* 260 rail + 8 gap + 8 breathing room */
-}
 #modules-row:not(.modules-grid) > .pf-module,
 #modules-row:not(.modules-grid) > #pf-chat-panel,
 #modules-row:not(.modules-grid) > #alerts-panel {
   scroll-snap-align: start;
 }
-#modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
+.menu-brand-integrated #menu-panel.mp-open .menu-inner {
   box-shadow: var(--shadow-card), 12px 0 24px -14px rgba(0, 0, 0, 0.45);
 }
-html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
+html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   box-shadow:
     0 4px 56px rgba(0, 0, 0, 0.5),
     inset -1px 0 0 rgba(255, 255, 255, 0.05),
@@ -716,8 +714,7 @@ html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
 @media (max-width: 1180px) { #modules-row.modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px)  { #modules-row.modules-grid { grid-template-columns: minmax(0, 1fr); } }
 
-/* The menu rail and Scout dock un-pin from sticky and become normal grid cells. */
-#modules-row.modules-grid #menu-panel,
+/* Scout dock un-pins from sticky when in grid/stack — menu stays in shell grid. */
 #modules-row.modules-grid .scout-dock.scout-dock-open,
 #modules-row.modules-grid #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
   position: relative;
@@ -806,8 +803,7 @@ html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
   overflow-x: hidden;
   overflow-y: auto;
 }
-/* The menu rail and Scout dock un-pin from sticky and become normal stacked rows. */
-#modules-row.modules-stack #menu-panel,
+/* Scout dock un-pins from sticky when stacked — menu stays in shell grid. */
 #modules-row.modules-stack .scout-dock.scout-dock-open,
 #modules-row.modules-stack #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
   position: relative;

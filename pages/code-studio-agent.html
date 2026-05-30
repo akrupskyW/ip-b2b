@@ -26,26 +26,18 @@
   <link rel="stylesheet" href="agent-page.css" />
 </head>
 <body data-agent-id="code-studio-agent">
-  <div id="agent-shell-wrap">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
+        </div>
+      </div>
+    </div>
     <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
     <div id="topbar-row"></div>
 
     <div id="modules-row">
-      <div id="menu-panel" class="mp-open">
-        <div class="menu-inner">
-          <div class="menu-panel-header">
-            <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
-            <div class="menu-panel-titles">
-              <div class="menu-panel-title">Navigation</div>
-              <div class="menu-panel-sub">WISE Platform</div>
-            </div>
-          </div>
-          <div class="menu-panel-body">
-            <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
-          </div>
-        </div>
-      </div>
-
       <main id="agent-main">
         <div class="agent-main-inner">
           <header class="agent-main-header" id="agent-main-header"></header>
