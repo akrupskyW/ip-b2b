@@ -89,6 +89,7 @@
       --border-strong: rgba(255,255,255,0.14);
 
       --primary-soft: rgba(2, 94, 211, 0.18);
+      --primary-bright: #93C5FD;
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
       --shadow-3: 0 8px 24px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5);
@@ -261,6 +262,12 @@
       margin-top: 4px;
       white-space: nowrap;
     }
+    .topbar-tagline .tagline-tm {
+      font-size: 0.65em;
+      letter-spacing: 0;
+      vertical-align: super;
+      margin-left: 1px;
+    }
     /* Desktop default: only the full wordmark is visible. */
     .topbar-logo svg.tl-full { display: block !important; }
     .topbar-logo svg.tl-bug  { display: none  !important; }
@@ -372,6 +379,14 @@
       font-size: var(--fs-ui);
       --chat-line-height: 1.6;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    /* Scout "double width": the chat normally grows to fill the centre of the
+       modules row, so wide means it claims more of the row and refuses to
+       shrink — neighbouring panels compress and the row scrolls. Most visible
+       when side modules are open beside the chat. */
+    #chat-shell.panel-wide {
+      flex-grow: 2;
+      min-width: min(760px, 92vw);
     }
 
     :root { --panel-header-h: 60px; }
@@ -833,6 +848,34 @@
     }
     html.dark .menu-nav-divider { background: rgba(255,255,255,0.06); }
 
+    /* Dark mode — invert nav labels/icons on gradient panel chrome. */
+    html.dark .menu-nav-item { color: var(--text); }
+    html.dark .menu-nav-item:hover,
+    html.dark .menu-nav-item.is-active {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle {
+      color: var(--text);
+      background: rgba(147, 197, 253, 0.08);
+    }
+    html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
+      color: #93C5FD;
+    }
+    html.dark .menu-nav-icon .material-icons { color: #93C5FD; }
+    html.dark .menu-nav-subitem { color: var(--text-muted); }
+    html.dark .menu-nav-subitem:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    html.dark .menu-nav-subitem:hover .menu-nav-subicon { color: var(--text); }
+    html.dark .menu-nav-subicon { color: var(--text-muted); }
+    html.dark .menu-nav-subitem.is-active {
+      color: var(--text);
+      background: rgba(2, 94, 211, 0.22);
+    }
+    html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: #93C5FD; }
+
     /* Agents nested under WISEcode AI (product tier) */
     .menu-nav-agents-inner {
       gap: 4px;
@@ -900,8 +943,8 @@
       border-radius: 0 !important;
     }
     .history-tab-btn.active {
-      color: #A4AAFF !important;
-      border-bottom-color: #7476FF !important;
+      color: var(--primary) !important;
+      border-bottom-color: var(--primary) !important;
       font-weight: 600;
     }
     .history-item {
@@ -923,7 +966,7 @@
       flex-shrink: 0;
     }
     .hb-progress { background: #3D2200; color: #FFB347; }
-    .hb-awaiting { background: #0A0969; color: #A4AAFF; }
+    .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
     .hb-complete { background: #003326; color: #4EE0B7; }
     .hb-flagged { background: #3E0F10; color: #FF7C7E; }
 
@@ -1124,7 +1167,7 @@
       background: #2C2439;
       border: 1px solid #413A4D;
     }
-    .panel-search-pill:focus-within { border-color: #7476FF; box-shadow: 0 0 0 2px rgba(116, 118, 255, 0.18); }
+    .panel-search-pill:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent); }
     .upf-product-card {
       background: #1E1430;
       border: 1px solid #2C2439;
@@ -1270,7 +1313,7 @@
       padding: 0 8px;
       gap: 4px;
       border-radius: 14px;
-      background: linear-gradient(90deg, #251b3a 0%, #1e1530 100%);
+      background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface) 100%);
       box-shadow: 0 4px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
       position: relative;
       z-index: 500;
@@ -1296,10 +1339,10 @@
     }
     .lir-btn.lir-active {
       background: transparent;
-      color: #a4aaff;
+      color: var(--primary);
     }
     .lir-btn.lir-active.lir-history {
-      color: #a4aaff;
+      color: var(--primary);
       background: transparent;
     }
     .lir-btn.lir-active.lir-scout {
@@ -1311,7 +1354,7 @@
       background: transparent;
     }
     .lir-btn.lir-active.lir-settings {
-      color: #a4aaff;
+      color: var(--primary);
       background: transparent;
     }
     .lir-btn.lir-active.lir-notif {
@@ -1337,16 +1380,16 @@
     #lir-tooltip {
       position: fixed;
       z-index: 10000;
-      background: #1a102c;
-      color: #fbf9ff;
+      background: var(--surface);
+      color: var(--text);
       font-size: var(--fs-ui);
       font-weight: 600;
       white-space: nowrap;
       padding: 5px 10px;
       border-radius: var(--radius-pill);
       pointer-events: none;
-      border: 1px solid rgba(116, 118, 255, 0.3);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-2);
       font-family: inherit;
       opacity: 0;
       transform: translateX(-50%) translateY(-4px);
@@ -1534,7 +1577,7 @@
 
     /* LIR active button colors for the new agents */
     .lir-btn.lir-active.lir-tier    { color: #4EE0B7; background: transparent; }
-    .lir-btn.lir-active.lir-shield  { color: #A4AAFF; background: transparent; }
+    .lir-btn.lir-active.lir-shield  { color: var(--primary); background: transparent; }
     .lir-btn.lir-active.lir-lens    { color: #5B9BD5; background: transparent; }
     .lir-btn.lir-active.lir-vault   { color: #D4A853; background: transparent; }
 
@@ -1660,7 +1703,7 @@
     .nfp-pill-red   { background: rgba(220,38,38,0.78);  color: #fff; }
     .nfp-pill-mint  { background: rgba(0,177,165,0.84);  color: #fff; }
     .nfp-pill-green { background: rgba(5,150,105,0.78);  color: #fff; }
-    .nfp-pill-indigo{ background: rgba(67,56,202,0.9);   color: #fff; }
+    .nfp-pill-primary{ background: rgba(2, 94, 211, 0.92); color: #fff; }
     /* Hero bottom info */
     .nfp-hero-info {
       position: absolute;
@@ -1765,8 +1808,8 @@
     .nfp-fi-badge {
       font-size: 0.58rem;
       font-weight: 600;
-      color: #6366f1;
-      background: #eef2ff;
+      color: var(--primary);
+      background: var(--primary-soft);
       border-radius: 4px;
       padding: 1px 5px;
     }
@@ -1793,8 +1836,8 @@
       transition: border-color 0.15s, transform 0.12s;
       flex-shrink: 0;
     }
-    .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: #a5b4fc; transform: scale(1.08); }
-    .nfp-fi-thumb.active .nfp-fi-thumb-img { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.22); }
+    .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); transform: scale(1.08); }
+    .nfp-fi-thumb.active .nfp-fi-thumb-img { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent); }
     .nfp-fi-thumb-label {
       font-size: 0.58rem;
       font-weight: 600;
@@ -2252,8 +2295,8 @@
     }
     /* Dark: top bar matches card surface (no lighter strip). */
     html.dark .chat-topbar {
-      background: var(--surface);
-      border-bottom-color: var(--border);
+      background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%), var(--surface);
+      border-bottom-color: rgba(2, 94, 211, 0.20);
     }
 
     /* Light: side rails + verification use index tokens (no dark “oyster” chrome on cream). */
@@ -2851,10 +2894,8 @@
     .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
     .fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
 
-    /* Light-mode override for the Scout bug in the chat topbar — the
-       shared .panel-header-icon styles flip to a cream surface, so the
-       indigo dark-mode tint loses contrast. Re-tint to primary on cream. */
-    html:not(.dark) #chat-shell .chat-topbar .panel-header-icon svg {
+    /* Light-mode override for the Scout bug in the chat topbar — re-tint to primary. */
+    #chat-shell .chat-topbar .panel-header-icon svg {
       color: var(--primary);
     }
 
@@ -3145,10 +3186,10 @@
     }
     .amm-dialog {
       width: min(440px, calc(100vw - 32px));
-      background: linear-gradient(155deg, #221740 0%, #1c1130 60%, #180e28 100%);
-      border: 1px solid #3a3050;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(116, 118, 255, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      box-shadow: var(--shadow-card);
       overflow: hidden;
       transform: translateY(16px) scale(0.96);
       transition: transform 0.22s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.18s;
@@ -3164,32 +3205,32 @@
       align-items: center;
       gap: 14px;
       padding: 20px 20px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      background: linear-gradient(135deg, rgba(116, 118, 255, 0.07) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 100%);
       position: relative;
     }
     .amm-header-icon {
       width: 40px;
       height: 40px;
       border-radius: var(--radius-pill);
-      background: #2a1f4e;
-      border: 1px solid rgba(116, 118, 255, 0.25);
+      background: var(--surface-3);
+      border: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 0 16px rgba(116, 118, 255, 0.18);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent);
     }
     .amm-header-text { flex: 1; min-width: 0; }
     .amm-title {
       font-size: var(--fs-ui);
       font-weight: 800;
-      color: #fbf9ff;
+      color: var(--text);
       letter-spacing: -0.01em;
     }
     .amm-subtitle {
       font-size: var(--fs-ui);
-      color: #6b6480;
+      color: var(--text-muted);
       margin-top: 2px;
     }
     .amm-close-btn {
@@ -3238,8 +3279,8 @@
       transition: border-color 0.15s, background 0.15s;
     }
     .amm-search:focus {
-      border-color: rgba(116, 118, 255, 0.5);
-      background: rgba(116, 118, 255, 0.05);
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+      background: var(--primary-soft);
     }
     .amm-search::placeholder { color: #413a4d; }
     .amm-section-label {
@@ -3318,9 +3359,9 @@
     .amm-add-btn {
       padding: 5px 13px;
       border-radius: var(--radius-pill);
-      border: 1px solid #3a3050;
+      border: 1px solid var(--border);
       background: transparent;
-      color: #a4aaff;
+      color: var(--primary);
       font-size: var(--fs-ui);
       font-weight: 600;
       cursor: pointer;
@@ -3330,9 +3371,9 @@
       flex-shrink: 0;
     }
     .amm-add-btn:hover {
-      background: rgba(116, 118, 255, 0.12);
-      border-color: #7476ff;
-      color: #c8caff;
+      background: var(--primary-soft);
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+      color: var(--primary);
     }
     .amm-add-btn.amm-added {
       background: #00261a;
@@ -3355,9 +3396,9 @@
       gap: 5px;
       padding: 6px 13px;
       border-radius: var(--radius-pill);
-      border: 1px solid #3a3050;
+      border: 1px solid var(--border);
       background: transparent;
-      color: #7476ff;
+      color: var(--primary);
       font-size: var(--fs-ui);
       font-weight: 600;
       cursor: pointer;
@@ -3366,8 +3407,8 @@
       white-space: nowrap;
     }
     .amm-invite-btn:hover {
-      background: rgba(116, 118, 255, 0.1);
-      border-color: rgba(116, 118, 255, 0.4);
+      background: var(--primary-soft);
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
     }
     html:not(.dark) .amm-dialog {
       background: var(--surface) !important;
@@ -3394,9 +3435,18 @@
       border: 1px solid var(--border) !important;
       box-shadow: var(--shadow-card) !important;
     }
+    html.dark #left-icon-rail {
+      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
+      border-color: rgba(2, 94, 211, 0.18) !important;
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
+    }
     .lir-btn { color: var(--text-muted); }
     .lir-btn:hover {
       background: var(--surface-2);
+      color: var(--text);
+    }
+    #left-icon-rail .lir-btn:hover {
+      background: transparent !important;
       color: var(--text);
     }
     .lir-btn.lir-active,
@@ -3407,6 +3457,24 @@
       background: transparent;
       color: var(--primary);
     }
+    html.dark .lir-btn { color: var(--text-muted); }
+    html.dark .lir-btn .lir-label { opacity: 0.88; }
+    html.dark .lir-btn.lir-active,
+    html.dark .lir-btn.lir-active.lir-history,
+    html.dark .lir-btn.lir-active.lir-scout,
+    html.dark .lir-btn.lir-active.lir-upf,
+    html.dark .lir-btn.lir-active.lir-settings,
+    html.dark .lir-btn.lir-active.lir-nfp,
+    html.dark .lir-layout-btn.lir-layout-active {
+      color: #93C5FD !important;
+      background: transparent !important;
+    }
+    html.dark .lir-btn.lir-active .lir-label { opacity: 1; }
+    html.dark .lir-btn.lir-active.lir-tier   { color: #6EE7B7 !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-shield { color: #93C5FD !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-lens   { color: #67E8F9 !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-vault  { color: #FCD34D !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-notif  { color: #FCA5A5 !important; background: transparent !important; }
     .lir-divider { background: var(--border); }
     #lir-more-popover {
       background: var(--surface);
@@ -3441,6 +3509,19 @@
       border: 1px solid var(--border) !important;
       box-shadow: var(--shadow-card) !important;
     }
+    html.dark #chat-shell,
+    html.dark #history-panel .panel-inner,
+    html.dark #scout-panel .scout-inner,
+    html.dark #upf-panel .upf-inner,
+    html.dark #tier-panel .tier-inner,
+    html.dark #shield-panel .shield-inner,
+    html.dark #lens-panel .lens-inner,
+    html.dark #vault-panel .vault-inner,
+    html.dark #notif-panel .notif-inner {
+      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
+      border-color: rgba(2, 94, 211, 0.18) !important;
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
+    }
 
     /* Panel headers — soft surface-2 strip; override inline Tailwind gradients. */
     .side-panel-header,
@@ -3453,6 +3534,16 @@
       background: var(--surface-2) !important;
       background-image: none !important;
       border-bottom: 1px solid var(--border) !important;
+    }
+    html.dark .side-panel-header,
+    html.dark .scout-panel-header,
+    html.dark .upf-panel-header,
+    html.dark .tier-panel-header,
+    html.dark .shield-panel-header,
+    html.dark .lens-panel-header,
+    html.dark .vault-panel-header {
+      background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%) !important;
+      border-bottom-color: rgba(2, 94, 211, 0.20) !important;
     }
     .side-panel-header .text-oyster-100,
     .side-panel-header .font-bold.text-oyster-100 {
@@ -3600,15 +3691,26 @@
     html:not(.dark) #ssr-pulse  .w-10 .material-icons { color: #C026D3 !important; }
     html:not(.dark) #ssr-vault  .w-10 .material-icons { color: #B4691B !important; }
 
-    /* New conversation button + send button — unified primary. */
-    #history-panel button.bg-indigo-600,
-    #send-btn.bg-indigo-600 {
+    /* Settings module — agent icon tints (dark mode). */
+    html.dark #settings-screen .ss-agent-row > .w-10 {
+      background: var(--surface-3) !important;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+    }
+    html.dark #ssr-wise   .w-10 .material-icons { color: var(--primary) !important; }
+    html.dark #ssr-nova   .w-10 .material-icons { color: var(--sec-green) !important; }
+    html.dark #ssr-scout  .w-10 .material-icons { color: var(--ter-amber) !important; }
+    html.dark #ssr-shield .w-10 .material-icons { color: var(--primary) !important; }
+    html.dark #ssr-lens   .w-10 .material-icons { color: var(--ter-cyan) !important; }
+    html.dark #ssr-pulse  .w-10 .material-icons { color: #C026D3 !important; }
+    html.dark #ssr-vault  .w-10 .material-icons { color: #B4691B !important; }
+
+    /* Primary action buttons (new conversation, send). */
+    .btn-primary {
       background: var(--primary) !important;
       color: #fff !important;
       font-weight: 500;
     }
-    #history-panel button.bg-indigo-600:hover,
-    #send-btn.bg-indigo-600:hover { filter: brightness(1.06); }
+    .btn-primary:hover { filter: brightness(1.06); }
 
     /* =====================================================================
        INPUT BAR — compact single-line input, no chunky floating label,
@@ -3938,7 +4040,7 @@
     }
     .lir-layout-btn.lir-layout-active {
       background: transparent;
-      color: #a4aaff;
+      color: var(--primary);
       box-shadow: none;
     }
     /* Trailing rail icons (layout, notifications, settings, menu) — color only, no pill. */
@@ -4024,7 +4126,7 @@
     #modules-row.modules-grid {
       display: grid !important;
       grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: minmax(0, 1fr);
+      grid-auto-rows: minmax(440px, 1fr);
       gap: 8px;
       overflow-y: auto;
       align-content: stretch;
@@ -4170,7 +4272,7 @@
           <path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>
           <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>
         </svg>
-        <span class="topbar-tagline">Intelligence Platform</span>
+        <span class="topbar-tagline">Intelligence<sup class="tagline-tm">TM</sup></span>
         </a>
       </div>
       <div id="left-icon-rail" aria-label="Panel shortcuts">
@@ -4212,7 +4314,7 @@
       <button type="button" class="lir-btn lir-panel-btn lir-shield lir-hidden" id="lir-shield-btn" data-tip="SHIELD — Compliance" onclick="toggleShieldPanel()" title="SHIELD" aria-label="Toggle SHIELD panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
         <span class="material-icons">shield</span>
-        <span class="lir-dot" style="background:#A4AAFF"></span>
+        <span class="lir-dot" style="background:var(--primary)"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
         <span class="lir-label">Shield</span>
       </button>
@@ -4262,7 +4364,7 @@
       <!-- Agent Settings — its own module (panel) with left/right flip pips -->
       <button type="button" class="lir-btn lir-panel-btn lir-settings" id="lir-settings-btn" data-tip="Agent Settings" onclick="toggleSettingsPanel()" title="Agent Settings" aria-label="Toggle Agent Settings panel">
         <span class="material-icons">tune</span>
-        <span class="lir-dot" style="background:#7476FF;display:none"></span>
+        <span class="lir-dot" style="background:var(--primary);display:none"></span>
         <span class="lir-label">Agents</span>
       </button>
       </div>
@@ -4299,9 +4401,9 @@
     <!-- History -->
     <div id="history-panel" class="open">
       <div class="panel-inner">
-        <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3 border-b border-indigo-500/15 bg-gradient-to-br from-[#2a1a40]/80 to-[#1a102c]/90">
-          <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#2A1F4E] flex items-center justify-center shrink-0 ring-1 ring-indigo-500/25">
-            <span class="material-icons text-[15px] text-indigo-400">history</span>
+        <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+          <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+            <span class="material-icons text-[15px]">history</span>
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">HISTORY</div>
@@ -4319,7 +4421,7 @@
           <button type="button" class="history-tab-btn" id="tab-projects" onclick="switchHistoryTab('projects')">Projects</button>
         </div>
         <div class="px-3 pt-2 pb-1 shrink-0">
-          <button type="button" onclick="restartConversation()" class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium">
+          <button type="button" onclick="restartConversation()" class="btn-primary w-full flex items-center justify-center gap-2 px-3 py-2 text-white text-xs font-medium">
             <span class="material-icons">add</span>
             New conversation
           </button>
@@ -4463,8 +4565,8 @@
       <div class="shield-inner">
         <div class="side-panel-header shield-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1A0A2E] flex items-center justify-center shrink-0 ring-1 ring-indigo-300/30">
-              <span class="material-icons text-[15px]" style="color:#A4AAFF">shield</span>
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]" style="color:var(--primary)">shield</span>
             </div>
             <div>
               <div class="text-xs font-bold text-oyster-100">SHIELD <span class="font-bold text-oyster-500 ml-1">v1.5</span></div>
@@ -4482,7 +4584,7 @@
           <div class="rounded-lg p-3" style="background:rgba(164,170,255,0.06);border:1px solid rgba(164,170,255,0.18);">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-oyster-200">WISE Verified — Sample Co.</span>
-              <span class="font-semibold" style="color:#A4AAFF">In Review</span>
+              <span class="font-semibold" style="color:var(--primary)">In Review</span>
             </div>
             <p class="mt-1 text-oyster-600">Badge issuance pending 3 compliance checks.</p>
           </div>
@@ -4592,8 +4694,8 @@
     <div id="chat-shell">
       <div class="chat-topbar flex items-center shrink-0 relative z-50 px-6 py-3">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#2A1F4E] flex items-center justify-center shrink-0 ring-1 ring-indigo-500/25">
-            <svg viewBox="0 0 193 100" style="width:18px;height:10px;" fill="currentColor" class="text-indigo-400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 193 100" style="width:18px;height:10px;" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/>
               <path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/>
               <path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/>
@@ -4610,7 +4712,8 @@
             </button>
           </div>
         </div>
-        <div class="panel-more-wrap" id="scout-menu-wrap">
+        <div class="flex items-center gap-1" style="margin-left:auto;">
+        <div class="panel-more-wrap" id="scout-menu-wrap" style="margin-left:0;">
           <button id="scout-menu-btn" type="button" class="panel-more-btn" onclick="toggleScoutMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="scout-menu" aria-label="More options">
             <span class="material-icons">more_vert</span>
           </button>
@@ -4643,6 +4746,8 @@
               <span>Close conversation</span>
             </button>
           </div>
+        </div>
+        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Scout module width"><span class="material-symbols-outlined">transition_slide</span></button>
         </div>
       </div>
 
@@ -4726,8 +4831,8 @@
 
                 <!-- WISE (settings) -->
                 <div class="ss-agent-row ssr-on" id="ssr-wise">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#2A1F4E;">
-                        <span class="material-icons" style="font-size:20px;color:#7476FF">verified</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons" style="font-size:20px;color:var(--primary)">verified</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
@@ -4807,8 +4912,8 @@
 
                 <!-- SHIELD (settings) -->
                 <div class="ss-agent-row" id="ssr-shield">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1A0A2E;">
-                        <span class="material-icons" style="font-size:20px;color:#A4AAFF">shield</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons" style="font-size:20px;color:var(--primary)">shield</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name ssa-off" id="ssn-shield">
@@ -5017,7 +5122,7 @@
               </div>
             </div>
           </div>
-          <button type="button" id="send-btn" class="w-12 h-12 shrink-0 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center">
+          <button type="button" id="send-btn" class="btn-primary w-12 h-12 shrink-0 rounded-full text-white flex items-center justify-center">
             <span class="material-icons">send</span>
           </button>
         </div>
@@ -5110,7 +5215,7 @@
             <span class="nfp-pill nfp-pill-red"><span class="material-icons">warning</span>Ultra-Processed</span>
             <span class="nfp-pill nfp-pill-mint"><span class="material-icons">verified</span>Verified</span>
             <span class="nfp-pill nfp-pill-green"><span class="material-icons">check_box</span>Fully Organized</span>
-            <span class="nfp-pill nfp-pill-indigo">Powered by <svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="currentColor"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="currentColor"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/></svg> WISEparser™ AI</span>
+            <span class="nfp-pill nfp-pill-primary">Powered by <svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="currentColor"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="currentColor"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/></svg> WISEparser™ AI</span>
           </div>
           <div class="nfp-hero-info">
             <div class="nfp-product-name">Chipotle Chicken Empanadas</div>
@@ -5331,7 +5436,7 @@
           <!-- Header -->
           <div class="amm-header">
               <div class="amm-header-icon">
-                  <span class="material-icons" style="font-size:20px;color:#7476FF">group_add</span>
+                  <span class="material-icons" style="font-size:20px;color:var(--primary)">group_add</span>
               </div>
               <div class="amm-header-text">
                   <div class="amm-title" id="amm-title-id">Add to conversation</div>
@@ -5367,10 +5472,10 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'Scout',      color: '#7476FF', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'Scout',      color: '#025ED3', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
       scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
-      shield: { name: 'SHIELD',     color: '#A4AAFF', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
+      shield: { name: 'SHIELD',     color: '#025ED3', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
       lens:   { name: 'LENS',       color: '#5B9BD5', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, SKU-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
       vault:  { name: 'VAULT',      color: '#D4A853', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
       pulse:  { name: 'PULSE',      color: '#E879F9', icon: 'biotech',      required: false, on: false, announce: { on: 'PULSE activated — the UPF Analyzer panel is open. Score ingredients, visualize processing tiers, inspect additive risks side-by-side.', off: 'PULSE paused — UPF Analyzer panel closed.' } },
@@ -5392,7 +5497,7 @@
 
     const TEAM_MEMBERS = [
       { id: 'tm-sara', name: 'Sara Chen', role: 'Data Quality Lead', initials: 'SC', color: '#4EE0B7', bg: '#002A22', added: false },
-      { id: 'tm-marco', name: 'Marco Reyes', role: 'Brand Compliance Mgr', initials: 'MR', color: '#A4AAFF', bg: '#1A0A2E', added: false },
+      { id: 'tm-marco', name: 'Marco Reyes', role: 'Brand Compliance Mgr', initials: 'MR', color: '#60A5FA', bg: '#00162E', added: false },
       { id: 'tm-priya', name: 'Priya Nair', role: 'Ingredient Specialist', initials: 'PN', color: '#FFB347', bg: '#2A1A00', added: false },
       { id: 'tm-jordan', name: 'Jordan Blake', role: 'Attestation Reviewer', initials: 'JB', color: '#F472B6', bg: '#2A0820', added: false },
       { id: 'tm-luca', name: 'Luca Ferretti', role: 'Certification Analyst', initials: 'LF', color: '#60A5FA', bg: '#00162E', added: false },
@@ -6349,6 +6454,19 @@
         if (loadWide()[key]) syncPanelWidthUI(key, true);
       });
     })();
+
+    /* Scout chat width toggle — mirrors the .panel-width-toggle-btn on the
+       side modules. Scout is the flexible centre column, so "wide" flags the
+       shell (#chat-shell.panel-wide) and reflects the pressed state. */
+    window.toggleScoutWidth = function(btn) {
+      const shell = document.getElementById('chat-shell');
+      if (!shell || !btn) return;
+      const wide = !shell.classList.contains('panel-wide');
+      shell.classList.toggle('panel-wide', wide);
+      btn.classList.toggle('is-on', wide);
+      btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
+      btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+    };
 
     /* Boot — sync rail icons and per-agent module visibility from initial state. */
     syncLirBtn('topbar-menu-toggle', document.getElementById('menu-panel')?.classList.contains('mp-open'));

@@ -68,6 +68,7 @@ let _seq = 0;
  *   placeholder  {string}  input placeholder
  *   flLabel      {string}  floating label text
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
+ *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
  *   reply        {fn}      (text) => html string for Scout's response
  * @returns {{ addUser, addScout, reset, root }}
  */
@@ -101,7 +102,8 @@ export function mountScoutChat(rootEl, opts = {}) {
           </button>
         </div>
       </div>
-      <div class="panel-more-wrap">
+      <div class="sc-topbar-controls">
+        <div class="panel-more-wrap">
         <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-icons">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
@@ -110,6 +112,8 @@ export function mountScoutChat(rootEl, opts = {}) {
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
+        </div>
+        <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Scout module width"><span class="material-symbols-outlined">transition_slide</span></button>
       </div>
     </div>
 
@@ -221,6 +225,18 @@ export function mountScoutChat(rootEl, opts = {}) {
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* Module width toggle (mirrors the .panel-width-toggle-btn on the other
+     modules — doubles the module column when active). */
+  const widthBtn = rootEl.querySelector(`#${id}-width`);
+  widthBtn?.addEventListener('click', () => {
+    const wide = !rootEl.classList.contains('panel-wide');
+    rootEl.classList.toggle('panel-wide', wide);
+    widthBtn.classList.toggle('is-on', wide);
+    widthBtn.setAttribute('aria-pressed', wide ? 'true' : 'false');
+    widthBtn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+    if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(wide);
   });
 
   /* Input more popover */

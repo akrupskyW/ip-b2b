@@ -52,6 +52,8 @@ html.dark {
   --border: rgba(255,255,255,0.08);
   --border-strong: rgba(255,255,255,0.14);
   --primary-soft: rgba(2, 94, 211, 0.18);
+  /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. */
+  --primary-bright: #93C5FD;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -156,6 +158,12 @@ body {
   line-height: 1;
   margin-top: 4px;
   white-space: nowrap;
+}
+.topbar-tagline .tagline-tm {
+  font-size: 0.65em;
+  letter-spacing: 0;
+  vertical-align: super;
+  margin-left: 1px;
 }
 @media (max-width: 1023px) {
   .topbar-logo svg.tl-full { display: none; }
@@ -262,6 +270,32 @@ body {
 html.dark .lir-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 .lir-btn .material-icons { font-size: 20px !important; line-height: 1 !important; display: block !important; text-align: center !important; }
 .lir-btn.lir-active { color: var(--primary); }
+html.dark .lir-btn { color: var(--text-muted); }
+html.dark .lir-btn .lir-label { opacity: 0.88; }
+html.dark .lir-btn.lir-active {
+  color: var(--primary-bright);
+  background: transparent;
+}
+html.dark .lir-btn.lir-active .lir-label { opacity: 1; }
+html.dark .topbar-menu-toggle { color: var(--text-muted) !important; }
+html.dark .topbar-menu-toggle:hover { color: var(--text) !important; background: transparent !important; }
+
+/* Top bar rail — on/off is color only; never a background pill behind icons. */
+#left-icon-rail .lir-btn,
+#left-icon-rail .lir-btn:hover,
+#left-icon-rail .lir-btn.lir-active,
+#left-icon-rail .lir-layout-btn,
+#left-icon-rail .lir-layout-btn:hover,
+#left-icon-rail .lir-layout-btn.lir-layout-active,
+.lir-rail-actions .lir-btn,
+.lir-rail-actions .lir-btn:hover,
+.lir-rail-actions .lir-btn.lir-active,
+.topbar-menu-toggle,
+.topbar-menu-toggle:hover,
+.topbar-menu-toggle.lir-active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
 .lir-btn.has-dot::after {
   content: '';
   position: absolute;
@@ -599,12 +633,16 @@ html.dark .notif-row-icon { background: rgba(255,255,255,0.04); border-color: rg
 }
 .notif-view-all:hover { background: var(--primary-soft); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
 .notif-view-all .material-icons { font-size: 16px !important; }
-html.dark .notif-view-all { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+html.dark .notif-view-all { background: rgba(255,255,255,0.04); border-color: var(--primary); }
 
 
 /* Active state for trailing rail buttons when their module is open. */
 .topbar-trailing .lir-btn.lir-active {
   color: var(--primary);
+  background: transparent;
+}
+html.dark .topbar-trailing .lir-btn.lir-active {
+  color: var(--primary-bright);
   background: transparent;
 }
 .topbar-trailing #topbar-notif-btn.lir-active { color: var(--sec-red); }
@@ -910,6 +948,36 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
 .menu-nav-subitem:hover .menu-nav-subicon,
 .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary); }
 
+/* Dark mode — invert nav labels/icons for legibility on gradient panel chrome.
+   Light mode uses primary blue accents; on dark navy those read as near-invisible. */
+html.dark .menu-nav-item { color: var(--text); }
+html.dark .menu-nav-item:hover,
+html.dark .menu-nav-item.is-active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle {
+  color: var(--text);
+  background: rgba(147, 197, 253, 0.08);
+}
+html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
+  color: var(--primary-bright);
+}
+html.dark .menu-nav-icon .material-icons { color: var(--primary-bright); }
+html.dark .menu-nav-subitem { color: var(--text-muted); }
+html.dark .menu-nav-subitem[data-depth="2"] { color: var(--text-subtle); }
+html.dark .menu-nav-subicon { color: var(--text-muted); }
+html.dark .menu-nav-subitem:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+html.dark .menu-nav-subitem:hover .menu-nav-subicon { color: var(--text); }
+html.dark .menu-nav-subitem.is-active {
+  color: var(--text);
+  background: rgba(2, 94, 211, 0.22);
+}
+html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-bright); }
+
 /* Agents nested under WISEcode AI (product tier) */
 .menu-nav-agents-inner {
   gap: 4px;
@@ -955,8 +1023,9 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
   animation-delay: 0.05s;
 }
 html.dark .agent-main-inner {
-  background: linear-gradient(165deg, #0F1B26 0%, #0B141C 100%);
-  border-color: rgba(255,255,255,0.06);
+  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+  border: 1px solid rgba(2, 94, 211, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 
 /* The overview's main module header is the *exact* visual twin of the
@@ -982,8 +1051,8 @@ html.dark .agent-main-inner {
   background: var(--surface-2);
 }
 html.dark .agent-main-header {
-  border-bottom-color: var(--border);
-  background: var(--surface-2);
+  border-bottom-color: rgba(2, 94, 211, 0.20);
+  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
 }
 .agent-main-icon {
   width: 26px;
@@ -1019,6 +1088,7 @@ html.dark .agent-main-header {
   padding: 28px 32px 48px;
   background: var(--bg);
 }
+html.dark .agent-main-scroll { background: transparent; }
 @media (max-width: 767px) {
   .agent-main-scroll { padding: 20px 16px 36px; }
   .agent-main-header { padding: 12px; }

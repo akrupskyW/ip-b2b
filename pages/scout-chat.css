@@ -20,7 +20,16 @@
   max-height: 100%;
   order: 99;
 }
-.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; }
+/* Stay pinned during horizontal scroll, like the #menu-panel rail, so Scout
+   never scrolls off-screen — it sticks to whichever edge it would otherwise
+   scroll past. The position lives on the higher-specificity .scout-dock-open
+   selector because the dock element is also a .sc-card (position: relative),
+   which would otherwise win on source order and cancel the stickiness. */
+.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; position: sticky; left: 0; right: 0; z-index: 40; }
+/* When the sticky menu rail is open, pin Scout just to the RIGHT of it
+   (260px rail + 8px row gap) so the two sit side-by-side as frozen columns
+   instead of Scout disappearing behind the higher-z menu. */
+#menu-panel.mp-open ~ .scout-dock.scout-dock-open { left: 268px; }
 @media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; } }
 .scout-dock .sc-card {
   transform-origin: right center;
@@ -61,18 +70,23 @@ html.dark .sc-card {
   background: var(--surface-2); border-bottom: 1px solid var(--border);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-html.dark .chat-topbar { background: var(--surface); border-bottom-color: var(--border); }
+html.dark .chat-topbar {
+  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%), var(--surface);
+  border-bottom-color: rgba(2, 94, 211, 0.20);
+}
 .sc-topbar-lead { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
 /* WISE-owl bug icon (the .panel-header-icon container in the real app) */
 .sc-bug {
   width: 30px; height: 30px; border-radius: 9999px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: #2A1F4E; box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25);
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
-.sc-bug svg { width: 18px; height: 10px; color: #818cf8; }
-html:not(.dark) .sc-bug { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border); }
-html:not(.dark) .sc-bug svg { color: var(--primary); }
+.sc-bug svg { width: 18px; height: 10px; color: var(--primary); }
+html.dark .sc-bug {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+}
 
 .sc-topbar-titles { display: flex; flex-direction: column; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: 1rem; line-height: 1.2; }
@@ -108,6 +122,32 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
 .panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .sc-card .topbar-popover { position: absolute; top: calc(100% + 6px); right: 0; left: auto; }
+
+/* Header controls cluster — groups the width toggle with the more menu and
+   floats the pair to the far right of the topbar. */
+.sc-topbar-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.sc-topbar-controls .panel-more-wrap { margin-left: 0; }
+
+/* Module width toggle (verbatim from .panel-width-toggle-btn on the other
+   modules — doubles the module column when active). */
+.panel-width-toggle-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  color: var(--text-muted); opacity: 0.75; cursor: pointer; padding: 0; flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.panel-width-toggle-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-width-toggle-btn:hover,
+.panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+
+/* Wide state — the Scout card normally grows to fill its row, so "double width"
+   means it claims more of the row and refuses to shrink (the neighbouring
+   modules compress / the row scrolls). Most visible when other modules are
+   open alongside Scout. */
+.sc-card.panel-wide {
+  flex-grow: 2;
+  min-width: min(760px, 92vw);
+}
 
 /* ===== Body (messages + welcome overlay) ===== */
 .sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden; }
@@ -182,8 +222,10 @@ html.dark .sc-welcome { background: transparent; }
 .chip .material-icons { font-size: 16px !important; }
 .ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
 .ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-html.dark .chip { background: rgba(255,255,255,0.04); }
-html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); }
+/* Dark mode: faint-white chip fills get our royal-blue border so they don't
+   read as white-bordered pills on the navy chrome. */
+html.dark .chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
 
 /* ===== Input rail — compact single-line bar (verbatim from ai-chat.html's
    refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
@@ -227,7 +269,7 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #163950 0%, #10
 .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
 .fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
 
-/* Send button — 40px indigo circle (bg-indigo-600), aligned to the input */
+/* Send button — 40px primary circle, aligned to the input */
 .sc-send {
   width: 40px; height: 40px; flex-shrink: 0; align-self: center;
   border-radius: 9999px; border: 0; cursor: pointer;

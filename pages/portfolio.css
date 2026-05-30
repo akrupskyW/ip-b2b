@@ -210,7 +210,11 @@ html.dark .pf-mission { background: rgba(255,255,255,0.025); border-color: rgba(
 .pf-btn--primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 .pf-btn--primary:hover { background: color-mix(in srgb, var(--primary) 88%, black); color: #fff; border-color: color-mix(in srgb, var(--primary) 88%, black); }
 .pf-btn--ghost { background: transparent; color: var(--text-muted); }
-html.dark .pf-btn { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+/* Dark mode: these pills read as faint-white fills. Give them our royal-blue
+   border (instead of a near-white one) so they don't look like white-on-white
+   chips floating on the navy chrome. Ghost buttons stay borderless-subtle. */
+html.dark .pf-btn { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+html.dark .pf-btn--ghost { border-color: rgba(255, 255, 255, 0.08); }
 
 /* ===== Generic card / panel ===== */
 .pf-card {
@@ -249,7 +253,8 @@ html.dark .pf-search { background: rgba(255,255,255,0.04); border-color: rgba(25
 .pf-chip:hover, .pf-chip.is-on { background: var(--primary-soft); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
 .pf-chip .material-icons { font-size: 14px !important; }
 
-.pf-table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-1); }
+.pf-table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-1); }
+.pf-table { min-width: 380px; }
 .pf-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .pf-table thead th {
   text-align: left; padding: 10px 14px; font-size: 0.625rem; font-weight: 700;
@@ -306,6 +311,10 @@ html.dark .pf-step { background: rgba(255,255,255,0.025); border-color: rgba(255
 
 /* ===== Recipe Lab ===== */
 .pf-recipe { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+/* Stacks based on the MODULE width (container query) rather than the viewport,
+   so a narrow side-docked module collapses to one column even on a wide screen.
+   A viewport fallback keeps it sane in browsers without container queries. */
+@container pfmod (max-width: 540px) { .pf-recipe { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .pf-recipe { grid-template-columns: 1fr; } }
 .pf-ingredient-row {
   display: flex; align-items: center; gap: 10px; padding: 9px 12px;
@@ -423,6 +432,15 @@ html.dark #left-icon-rail {
 }
 .pf-module-btn.lir-active { color: var(--primary); background: transparent; }
 .pf-module-btn.lir-active .lir-label { opacity: 1; }
+html.dark #left-icon-rail .pf-module-btn { color: var(--text-muted); }
+html.dark #left-icon-rail .pf-module-btn .lir-label { opacity: 0.88; }
+html.dark #left-icon-rail .pf-module-btn:hover { color: var(--text); background: transparent !important; }
+html.dark #left-icon-rail .pf-module-btn.lir-active {
+  color: var(--primary-bright);
+  background: transparent !important;
+}
+html.dark #left-icon-rail .pf-module-btn.lir-active .lir-label { opacity: 1; }
+html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--primary-bright); }
 
 /* ===== Section module panel =====
    A self-contained, openable card in #modules-row — the visual twin of the
@@ -458,8 +476,9 @@ html.dark #left-icon-rail {
   animation: panelBounceLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 html.dark .pf-module-inner {
-  background: linear-gradient(165deg, #0F1B26 0%, #0B141C 100%);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+  border: 1px solid rgba(2, 94, 211, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 .pf-module-header {
   display: flex;
@@ -473,6 +492,11 @@ html.dark .pf-module-inner {
   flex-shrink: 0;
   background: var(--surface-2);
 }
+html.dark .pf-module-header {
+  border-bottom-color: rgba(2, 94, 211, 0.20);
+  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+}
+html.dark .pf-module-scroll { background: transparent; }
 /* In-header side switcher — moves the module to the other side of Scout.
    Mirrors flipPanel() / .panel-flip in ai-chat.html (the side_navigation glyph
    rotates 180° to point at the side the module currently sits on). */
@@ -553,12 +577,37 @@ html.dark .pf-module-inner {
   flex: 1 1 0%;
   overflow-y: auto;
   padding: 24px 28px 28px;
+  /* Establish an inline-size container so the content inside each module can
+     respond to the MODULE's own width (340px / 680px / grid cell), not the
+     viewport. Drives the @container queries below. */
+  container-type: inline-size;
+  container-name: pfmod;
 }
 @media (max-width: 767px) { .pf-module-scroll { padding: 18px 16px 22px; } }
+
+/* ===== Module-width responsiveness =====
+   The auto-fit grids (.pf-pulse-bar, .pf-gauge-grid, .pf-mission-grid,
+   .pf-grid-2, .pf-vault-grid) already reflow to the available width. These
+   container queries tighten the fixed/2-up layouts so everything stays legible
+   when a module is narrow, and relax the minimums on very tight widths. */
+@container pfmod (max-width: 460px) {
+  .pf-grid-2 { grid-template-columns: 1fr; }
+  .pf-mission-grid { grid-template-columns: 1fr; }
+  .pf-pulse-bar { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .pf-gauge-grid { grid-template-columns: 1fr; }
+}
+@container pfmod (max-width: 320px) {
+  .pf-vault-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .pf-ledger-toolbar .pf-search { min-width: 0; flex: 1 1 100%; }
+}
 
 /* ===== Module row ordering =====
    menu (sticky, -9999) → section modules (10–16) → Scout (99) → Alerts (200).
    Scout grows to fill the gap; Alerts always opens to the right of Scout. */
+#pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+  flex-grow: 2;
+  min-width: min(760px, 92vw);
+}
 #pf-chat-panel.scout-dock.scout-dock-open {
   flex: 1 1 0%;
   width: auto;
@@ -569,6 +618,39 @@ html.dark .pf-module-inner {
 }
 #alerts-panel { order: 200; }
 
+/* ===== Column-view scroll polish =====
+   In column view the nav rail is a frozen first column (position: sticky).
+   Previously, as you scrolled the row horizontally, modules slid messily
+   *underneath* the nav and a half-hidden module's content peeked out beside it.
+   Two fixes:
+     1. A right-edge shadow so the rail reads as a pinned panel that content
+        tucks cleanly behind (a frozen-pane convention).
+     2. Scroll snapping + scroll-padding equal to the rail width, so a module
+        can never come to rest half-tucked behind the nav — the left-most
+        module always lands flush against the rail's right edge. */
+#modules-row:not(.modules-grid) {
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 12px;
+}
+#modules-row:not(.modules-grid):has(#menu-panel.mp-open) {
+  scroll-padding-left: 276px; /* 260 rail + 8 gap + 8 breathing room */
+}
+#modules-row:not(.modules-grid) > .pf-module,
+#modules-row:not(.modules-grid) > #pf-chat-panel,
+#modules-row:not(.modules-grid) > #alerts-panel {
+  scroll-snap-align: start;
+}
+#modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
+  box-shadow: var(--shadow-card), 12px 0 24px -14px rgba(0, 0, 0, 0.45);
+}
+html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
+  box-shadow:
+    0 4px 56px rgba(0, 0, 0, 0.5),
+    inset -1px 0 0 rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    16px 0 30px -12px rgba(0, 0, 0, 0.65);
+}
+
 /* ===== Grid layout =====
    Column view (default) lays modules out left-to-right with horizontal scroll.
    Grid view tiles every OPEN module — including Scout and Alerts — into uniform
@@ -576,7 +658,7 @@ html.dark .pf-module-inner {
 #modules-row.modules-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: minmax(220px, 1fr);
+  grid-auto-rows: minmax(440px, 1fr);
   align-items: stretch;
   overflow-x: hidden;
   overflow-y: auto;
@@ -584,12 +666,17 @@ html.dark .pf-module-inner {
 @media (max-width: 1180px) { #modules-row.modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px)  { #modules-row.modules-grid { grid-template-columns: minmax(0, 1fr); } }
 
-/* The menu rail un-pins from sticky and becomes a normal grid cell. */
-#modules-row.modules-grid #menu-panel {
+/* The menu rail and Scout dock un-pin from sticky and become normal grid cells. */
+#modules-row.modules-grid #menu-panel,
+#modules-row.modules-grid .scout-dock.scout-dock-open,
+#modules-row.modules-grid #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
   position: relative;
   left: auto;
+  right: auto;
 }
-/* Every visible module fills its grid cell; clear the fixed column widths. */
+/* Every visible module fills its grid cell; clear the fixed column widths. Each
+   card keeps its own internal scroll (.pf-module-scroll), so its header stays
+   pinned at the top of the card no matter how far the card body is scrolled. */
 #modules-row.modules-grid > * {
   width: auto !important;
   min-width: 0 !important;
@@ -614,7 +701,10 @@ html.dark .pf-module-inner {
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex; flex-direction: column;
 }
-html.dark .pf-deepdive { background: linear-gradient(165deg, #0F1B26 0%, #0B141C 100%); border-left-color: rgba(255,255,255,0.08); }
+html.dark .pf-deepdive {
+  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+  border-left-color: rgba(2, 94, 211, 0.18);
+}
 .pf-deepdive.is-open { transform: translateX(0); }
 .pf-deepdive-head {
   display: flex; align-items: center; gap: 12px; padding: 16px 18px;

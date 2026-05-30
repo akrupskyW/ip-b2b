@@ -351,7 +351,7 @@ function viewVerified() {
 function viewIdentity() {
   return `
     ${heroFor('identity', 'Pathway 3 · Managing the Presence')}
-    <div class="pf-recipe" style="grid-template-columns:1.3fr 1fr;">
+    <div class="pf-recipe">
       <div class="pf-card">
         <div class="pf-card-title"><span class="material-icons">badge</span>Public-Facing Profile</div>
         <p class="pf-card-desc">B2B/B2C synthesis — logos, mission, and Identity Assets that sync across the platform and the consumer app.</p>
@@ -1102,7 +1102,7 @@ const TOPBAR_LOGO_HTML = `
     <path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>
     <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>
   </svg>
-  <span class="topbar-tagline">Intelligence Platform</span>
+  <span class="topbar-tagline">Intelligence<sup class="tagline-tm">TM</sup></span>
   </a>`;
 
 /* ------------------------------------------------------------------ */
