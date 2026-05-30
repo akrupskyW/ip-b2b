@@ -137,6 +137,59 @@ html.dark .pf-ring {
 .pf-gauge-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
 .pf-gauge-sub { font-size: 0.6875rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
 
+/* ===== Analytics — KPI cards + charts ===== */
+.pf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pf-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+html.dark .pf-kpi { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.pf-kpi:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+.pf-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pf-kpi-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.pf-kpi-delta { font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle); }
+.pf-kpi-delta.is-up { color: var(--sec-green); }
+.pf-kpi-delta.is-warn { color: var(--ter-amber); }
+.pf-kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.pf-kpi-spark { height: 38px; margin-top: 2px; }
+.pf-kpi-spark canvas { width: 100% !important; height: 100% !important; }
+
+.pf-chart-card { display: flex; flex-direction: column; }
+.pf-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pf-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.pf-chart-wrap { position: relative; height: 240px; margin-top: 12px; }
+.pf-chart-wrap--lg { height: 300px; }
+.pf-chart-wrap canvas { width: 100% !important; }
+@container pfmod (max-width: 460px) {
+  .pf-chart-grid { grid-template-columns: 1fr; }
+  .pf-kpi-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
 /* ===== AI Portfolio Agent intelligence briefing / mission cards ===== */
 .pf-briefing {
   display: flex;
@@ -684,6 +737,64 @@ html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
   max-height: 100% !important;
 }
 
+/* ===== Split layout =====
+   The toggle's third mode. setModuleLayout() wraps every non-Scout child in
+   #modules-top, so the row becomes two stacked regions: a shorter strip of
+   modules on top that behaves exactly like column view (horizontal scroll, each
+   module keeps its own internal scroll), and Scout pinned across the full width
+   of the bottom half of the screen so it is always present. */
+#modules-row.modules-split {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  gap: 8px;
+}
+#modules-row.modules-split > #modules-top {
+  order: 0;
+  flex: 1 1 0%;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
+}
+#modules-row.modules-split > #modules-top::-webkit-scrollbar { height: 8px; }
+#modules-row.modules-split > #modules-top::-webkit-scrollbar-track { background: transparent; }
+#modules-row.modules-split > #modules-top::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
+  border-radius: 999px;
+}
+#modules-row.modules-split > #modules-top > * {
+  height: 100%;
+  max-height: 100%;
+  align-self: stretch;
+}
+/* Scout un-pins from its sticky right-rail slot and spans the bottom half. */
+#modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open {
+  order: 1;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  flex: 0 0 52vh !important;
+  height: 52vh !important;
+  min-height: 50vh;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+@media (max-width: 720px) {
+  #modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open {
+    flex-basis: 50vh !important;
+    height: 50vh !important;
+  }
+}
+
 /* ===== Product Detail deep-dive (slide-over) ===== */
 .pf-deepdive-scrim {
   position: fixed; inset: 0; z-index: 400;
@@ -721,6 +832,150 @@ html.dark .pf-deepdive {
 .pf-deepdive-body { flex: 1; overflow-y: auto; padding: 18px; }
 .pf-dd-section { margin-bottom: 18px; }
 .pf-dd-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); margin-bottom: 8px; }
+
+/* ===== Bottom sheet (action surface) =====
+   Slides up from the bottom; runs progress flows + forms and lands on a
+   result. Centered, capped width, with a grabber handle. */
+.pf-sheet-scrim {
+  position: fixed; inset: 0; z-index: 460;
+  background: rgba(2, 10, 16, 0.55);
+  opacity: 0; pointer-events: none; transition: opacity 0.22s ease;
+}
+.pf-sheet-scrim.is-open { opacity: 1; pointer-events: auto; }
+.pf-sheet {
+  position: fixed; left: 50%; bottom: 0; z-index: 461;
+  width: min(560px, 96vw);
+  max-height: min(86vh, 720px);
+  transform: translate(-50%, 110%);
+  transition: transform 0.32s cubic-bezier(0.34, 1.3, 0.5, 1);
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.34);
+}
+html.dark .pf-sheet {
+  background: linear-gradient(160deg, #163950 0%, #102B3C 55%, #0A1C28 100%);
+  border-color: rgba(2, 94, 211, 0.22);
+}
+.pf-sheet.is-open { transform: translate(-50%, 0); }
+.pf-sheet-handle {
+  width: 38px; height: 4px; border-radius: 999px; margin: 9px auto 2px;
+  background: var(--text-subtle); opacity: 0.4;
+}
+.pf-sheet-head {
+  display: flex; align-items: center; gap: 12px; padding: 8px 18px 14px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.pf-sheet-icon {
+  width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--primary);
+}
+.pf-sheet-icon .material-icons { font-size: 20px !important; }
+.pf-sheet-titles { min-width: 0; flex: 1; }
+.pf-sheet-eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); }
+.pf-sheet-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+.pf-sheet-close {
+  margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; cursor: pointer;
+  background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; flex-shrink: 0;
+}
+.pf-sheet-close:hover { color: var(--text); background: var(--surface-3); }
+.pf-sheet-body { padding: 18px; overflow-y: auto; }
+.pf-sheet-lead { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0 0 14px; }
+.pf-sheet-lead strong { color: var(--primary); }
+.pf-sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+
+/* ----- Progress flow ----- */
+.pf-flow { padding: 6px 0 2px; }
+.pf-flow-bar { height: 7px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+html.dark .pf-flow-bar { background: rgba(255,255,255,0.08); }
+.pf-flow-fill {
+  display: block; height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--ter-cyan));
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pf-flow-pct { text-align: right; font-size: 0.6875rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
+.pf-flow-steps { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pf-flow-step { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--text-subtle); transition: color 0.2s ease; }
+.pf-flow-step .pf-flow-dot { display: grid; place-items: center; color: inherit; }
+.pf-flow-step .material-icons { font-size: 18px !important; }
+.pf-flow-step.is-active { color: var(--text); font-weight: 600; }
+.pf-flow-step.is-active .material-icons { color: var(--primary); animation: pfSpin 0.9s linear infinite; }
+.pf-flow-step.is-done { color: var(--text-muted); }
+.pf-flow-step.is-done .material-icons { color: var(--sec-green); animation: none; }
+@keyframes pfSpin { to { transform: rotate(360deg); } }
+
+.pf-flow-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 6px 0; }
+.pf-flow-done-icon {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px;
+  background: color-mix(in srgb, var(--sec-green) 16%, transparent); color: var(--sec-green);
+}
+.pf-flow-done-icon .material-icons { font-size: 30px !important; }
+.pf-flow-done-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+.pf-flow-done-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0; max-width: 420px; }
+.pf-flow-done .pf-sheet-actions { justify-content: center; }
+
+/* ----- Sheet form fields ----- */
+.pf-field { display: block; margin-bottom: 12px; }
+.pf-field-label { display: block; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle); margin-bottom: 5px; }
+.pf-input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 0.8125rem; outline: none;
+  transition: border-color 0.15s ease;
+}
+html.dark .pf-input { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+.pf-input:focus { border-color: color-mix(in srgb, var(--primary) 50%, var(--border)); }
+.pf-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.pf-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* ----- Ingredient picker ----- */
+.pf-pick-grid { display: flex; flex-direction: column; gap: 8px; }
+.pf-pick {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 12px; border-radius: 12px; cursor: pointer; font-family: inherit;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+html.dark .pf-pick { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.pf-pick:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+.pf-pick-icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); flex-shrink: 0; }
+.pf-pick-icon .material-icons { font-size: 18px !important; }
+.pf-pick-text { flex: 1; min-width: 0; }
+.pf-pick-name { display: block; font-size: 0.8125rem; font-weight: 700; }
+.pf-pick-sub { display: block; font-size: 0.6875rem; color: var(--text-subtle); margin-top: 1px; }
+.pf-pick-add { color: var(--text-subtle); display: grid; place-items: center; }
+.pf-pick-add .material-icons { font-size: 18px !important; }
+.pf-pick.is-added { border-color: color-mix(in srgb, var(--sec-green) 50%, var(--border)); }
+.pf-pick.is-added .pf-pick-add .material-icons { color: var(--sec-green); }
+.pf-pick.is-added .pf-pick-sub { color: var(--sec-green); }
+
+/* ----- Match list ----- */
+.pf-match-list { display: flex; flex-direction: column; gap: 8px; }
+.pf-match {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+html.dark .pf-match { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.pf-match-logo { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); flex-shrink: 0; }
+.pf-match-logo .material-icons { font-size: 18px !important; }
+.pf-match-body { flex: 1; min-width: 0; }
+.pf-match-name { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.pf-match-sub { font-size: 0.6875rem; color: var(--text-subtle); margin-top: 1px; }
+.pf-match .pf-btn { margin-left: auto; flex-shrink: 0; }
+
+/* ----- Clickable add-tag chip + connectivity rows ----- */
+.pf-tag--add { cursor: pointer; font-family: inherit; }
+.pf-tag--add:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+.pf-tag.is-done, .pf-btn.is-done { opacity: 0.6; cursor: default; }
+.pf-row-btn {
+  width: 100%; text-align: left; font-family: inherit; cursor: pointer;
+  color: var(--text); transition: border-color 0.15s ease;
+}
+.pf-row-btn:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+.pf-row-btn .pf-ing-amt .material-icons { color: var(--text-subtle); }
 
 /* ===== Toast ===== */
 #pf-toast-wrap {

@@ -2505,6 +2505,56 @@
       text-align: center;
       margin-bottom: 1.5rem;
     }
+
+    /* ===== Microcopy & trust =====
+       Kept byte-for-byte in step with pages/scout-chat.css so the inline chat
+       on this page and the shared mountScoutChat() surface read identically:
+       welcome trust badges, per-line timestamps + grounding caption, a
+       descriptive typing status, and the standing AI-limitations disclaimer. */
+    .ws-trust {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 6px 14px; margin-top: 1.25rem; max-width: 100%;
+    }
+    .sc-trust-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
+      color: var(--text-subtle);
+    }
+    .sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
+    html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #93C5FD); }
+
+    .sc-who-scout { color: var(--primary); font-weight: 700; letter-spacing: 0.02em; }
+    .sc-line-scout strong { color: var(--primary); font-weight: 700; }
+
+    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+    .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+    .sc-trust-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
+      color: color-mix(in srgb, var(--primary) 75%, var(--text-muted));
+    }
+    .sc-trust-chip .material-icons { font-size: 12px !important; }
+    html.dark .sc-trust-chip { color: var(--primary-bright, #93C5FD); }
+
+    .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+    .sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
+    .sc-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-subtle); animation: scBlink 1.2s infinite; }
+    .sc-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .sc-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes scBlink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+    .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
+
+    .sc-disclaimer {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      margin: 8px 4px 0; padding: 0;
+      font-size: 0.625rem; font-weight: 500; line-height: 1.3;
+      color: var(--text-subtle); text-align: center;
+    }
+    .sc-disclaimer .material-icons { font-size: 12px !important; opacity: 0.8; flex-shrink: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sc-typing span { animation: none; opacity: 0.5; }
+    }
     .chip {
       display: inline-flex;
       align-items: center;
@@ -4133,6 +4183,57 @@
       height: 100%;
       max-height: 100%;
     }
+    /* Split mode — Scout (#chat-shell) docks full-width across the bottom half.
+       setModuleLayout() wraps every other module in #modules-top, which becomes
+       a shorter horizontally-scrolling strip on top (column-view behaviour),
+       while #chat-shell pins below it taking at least half the screen height. */
+    #modules-row.modules-split {
+      display: flex !important;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      overflow: hidden;
+      gap: 8px;
+    }
+    #modules-row.modules-split > #modules-top {
+      order: 0;
+      flex: 1 1 0%;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
+    }
+    #modules-row.modules-split > #modules-top::-webkit-scrollbar { height: 8px; }
+    #modules-row.modules-split > #modules-top::-webkit-scrollbar-track { background: transparent; }
+    #modules-row.modules-split > #modules-top::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
+      border-radius: 999px;
+    }
+    #modules-row.modules-split > #modules-top > * {
+      height: 100%;
+      max-height: 100%;
+      align-self: stretch;
+    }
+    #modules-row.modules-split > #chat-shell {
+      order: 1;
+      flex: 0 0 52vh !important;
+      height: 52vh !important;
+      min-height: 50vh;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+    @media (max-width: 720px) {
+      #modules-row.modules-split > #chat-shell {
+        flex-basis: 50vh !important;
+        height: 50vh !important;
+      }
+    }
     /* Make panel wrapper divs transparent — children participate directly in the grid */
     #modules-row.modules-grid #panels-row,
     #modules-row.modules-grid #panels-row-right {
@@ -4352,6 +4453,10 @@
         <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-grid" data-tip="Grid view" onclick="setModuleLayout('grid')" title="Grid view" aria-label="Switch to grid layout">
           <span class="material-icons">grid_view</span>
           <span class="lir-label">Grid</span>
+        </button>
+        <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-split" data-tip="Split view — Scout docked at the bottom" onclick="setModuleLayout('split')" title="Split view — Scout docked at the bottom" aria-label="Switch to split layout">
+          <span class="material-symbols-outlined">splitscreen_bottom</span>
+          <span class="lir-label">Split</span>
         </button>
       </div>
       <div class="lir-divider" aria-hidden="true"></div>
@@ -4752,7 +4857,7 @@
       </div>
 
       <div class="flex flex-1 overflow-hidden relative">
-        <div id="chat-messages" class="chat-messages-area"></div>
+        <div id="chat-messages" class="chat-messages-area" aria-live="polite" aria-atomic="false"></div>
 
         <div id="welcome-screen">
             <!-- WISE logo + soft expanding rings -->
@@ -4798,6 +4903,13 @@
                 </button>
             </div>
             <p class="ws-hint">or type a message below</p>
+            <!-- Trust badges — mirror scout-chat.js so the welcome reads the same
+                 wherever Scout appears. -->
+            <div class="ws-trust" role="list" aria-label="How Scout handles your data">
+                <span class="sc-trust-badge" role="listitem"><span class="material-icons">verified_user</span>Grounded in your WISE data</span>
+                <span class="sc-trust-badge" role="listitem"><span class="material-icons">lock</span>Private &amp; encrypted</span>
+                <span class="sc-trust-badge" role="listitem"><span class="material-icons">history</span>Every action is logged</span>
+            </div>
         </div>
 
         <div id="settings-screen">
@@ -5126,6 +5238,7 @@
             <span class="material-icons">send</span>
           </button>
         </div>
+        <p class="sc-disclaimer"><span class="material-icons">shield</span>Scout can make mistakes — review important details before you publish.</p>
       </div>
     </div>
 
@@ -6015,15 +6128,79 @@
       }, 300);
     }
 
+    /* ── Microcopy & trust helpers ──────────────────────────────────────
+       Kept in lockstep with js/scout-chat.js so the inline chat here and the
+       shared mountScoutChat() surface behave identically: every line is
+       time-stamped, every Scout reply is grounded in a cited source, and the
+       typing indicator says what Scout is actually doing. */
+    const SCOUT_SOURCE_LABEL = 'Grounded in WISE data';
+    const SCOUT_STATUS_LABEL = 'Scout is checking the registry';
+
+    function scoutNowLabel() {
+      try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+      catch (_) { return ''; }
+    }
+    function scoutMetaRow(withSource) {
+      const src = withSource && SCOUT_SOURCE_LABEL
+        ? `<span class="sc-trust-chip" title="Scout cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
+        : '';
+      return `<div class="sc-line-meta">${src}<span class="sc-line-time">${scoutNowLabel()}</span></div>`;
+    }
+
     function addUserMessage(text) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
       const safe = String(text).replace(/</g, '&lt;');
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 text-oyster-300"><span class="text-oyster-500 text-xs">You · </span>${safe}</div>`
+        `<div class="mb-3 text-oyster-300 sc-line-you"><span class="text-oyster-500 text-xs">You · </span>${safe}${scoutMetaRow(false)}</div>`
       );
       box.scrollTop = box.scrollHeight;
+    }
+
+    /* Drop a Scout reply with a grounding caption + timestamp. Pass
+       { source: false } for a plain acknowledgement that shouldn't claim a source. */
+    function addScoutMessage(html, opts = {}) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const withSource = opts.source !== false;
+      box.insertAdjacentHTML(
+        'beforeend',
+        `<div class="mb-3 sc-line-scout"><span class="text-xs sc-who-scout">Scout · </span><span class="text-oyster-300" style="line-height:1.55;">${html}</span>${scoutMetaRow(withSource)}</div>`
+      );
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function showScoutTyping() {
+      const box = document.getElementById('chat-messages');
+      if (!box) return null;
+      const el = document.createElement('div');
+      el.className = 'mb-3 sc-line-scout sc-line-typing';
+      el.innerHTML = `<span class="text-xs sc-who-scout">Scout · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${SCOUT_STATUS_LABEL}…</span></span>`;
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+      return el;
+    }
+
+    /* Canned, intent-aware reply — mirrors defaultReply() in scout-chat.js. */
+    function scoutReply(text) {
+      const q = String(text).toLowerCase();
+      if (/(verif|shield|non-upf|clean label|attest)/.test(q))
+        return 'I can run the verification flow — <strong>Confirm → Attest → Activate</strong>. Want me to start with your eligible UPCs?';
+      if (/(food|registry|sku|product|search)/.test(q))
+        return 'Searching the WISE Foods registry now. I’ll match SKUs and pull nutritional metadata for you.';
+      if (/(add|new food|ingest|upload|parse)/.test(q))
+        return 'Let’s add it. Paste a label, spec sheet, or URL and I’ll parse it toward the Brand Verified standard.';
+      if (/(edit|update|change)/.test(q))
+        return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
+      if (/(agent|choose)/.test(q))
+        return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout layout and controls.';
+    }
+
+    function scoutRespond(text) {
+      const typing = showScoutTyping();
+      setTimeout(() => { typing?.remove(); addScoutMessage(scoutReply(text)); }, 600);
     }
 
     /* Each intent chip on the Scout welcome screen pairs with the side
@@ -6056,15 +6233,7 @@
       applyIntentSummary(nextStage);
       hideWelcomeScreen(() => {
         addUserMessage(label);
-        setTimeout(() => {
-          const box = document.getElementById('chat-messages');
-          if (!box) return;
-          box.insertAdjacentHTML(
-            'beforeend',
-            `<div class="mb-3 text-xs text-oyster-500">Scout · <span class="text-oyster-400">${nextStage}</span> — full conversational flow lives in the reference app; this page mirrors layout and controls.</div>`
-          );
-          box.scrollTop = box.scrollHeight;
-        }, 320);
+        scoutRespond(label);
       });
     }
 
@@ -6198,6 +6367,7 @@
       hideWelcomeScreen(() => {
         addUserMessage(v);
         if (input) input.value = '';
+        scoutRespond(v);
       });
     });
     document.getElementById('chat-input')?.addEventListener('keydown', (e) => {
@@ -6255,21 +6425,49 @@
       svg.innerHTML = rects;
     })();
 
-    /* ── Layout toggle: column view vs grid view ────────────────────── */
-    function setModuleLayout(mode) {
+    /* ── Layout toggle: column view vs grid view vs split view ──────────
+       Split docks Scout (#chat-shell) full-width across the bottom half of the
+       screen. Since the chat sits mid-row between sibling panels, every
+       non-chat child is gathered into a #modules-top wrapper so the row can
+       become two stacked regions (modules on top, Scout below). Removing the
+       wrapper restores the panels; visual order is driven by CSS `order`, so
+       the chat's DOM position landing last is harmless. */
+    function applySplitWrap(on) {
       const row = document.getElementById('modules-row');
-      const colBtn = document.getElementById('lir-layout-col');
-      const gridBtn = document.getElementById('lir-layout-grid');
-      if (!row) return;
-      if (mode === 'grid') {
-        row.classList.add('modules-grid');
-        colBtn?.classList.remove('lir-layout-active');
-        gridBtn?.classList.add('lir-layout-active');
-      } else {
-        row.classList.remove('modules-grid');
-        colBtn?.classList.add('lir-layout-active');
-        gridBtn?.classList.remove('lir-layout-active');
+      const scout = document.getElementById('chat-shell');
+      if (!row || !scout) return;
+      const wrapped = row.classList.contains('modules-split');
+      if (on && !wrapped) {
+        const top = document.createElement('div');
+        top.id = 'modules-top';
+        Array.from(row.children).forEach((child) => {
+          if (child !== scout) top.appendChild(child);
+        });
+        row.appendChild(top);
+        row.appendChild(scout);
+        row.classList.add('modules-split');
+      } else if (!on && wrapped) {
+        const top = document.getElementById('modules-top');
+        row.classList.remove('modules-split');
+        if (top) {
+          while (top.firstChild) row.insertBefore(top.firstChild, top);
+          top.remove();
+        }
       }
+    }
+    function setModuleLayout(mode) {
+      if (mode !== 'grid' && mode !== 'split') mode = 'col';
+      const row = document.getElementById('modules-row');
+      if (!row) return;
+      applySplitWrap(mode === 'split');
+      row.classList.toggle('modules-grid', mode === 'grid');
+      const setBtn = (id, active) => {
+        const btn = document.getElementById(id);
+        btn?.classList.toggle('lir-layout-active', active);
+      };
+      setBtn('lir-layout-col', mode === 'col');
+      setBtn('lir-layout-grid', mode === 'grid');
+      setBtn('lir-layout-split', mode === 'split');
       try { localStorage.setItem('wise-module-layout', mode); } catch (_) {}
     }
 
@@ -6640,7 +6838,7 @@
     /* Restore persisted layout mode */
     try {
       const savedLayout = localStorage.getItem('wise-module-layout');
-      if (savedLayout === 'grid' || savedLayout === 'col') setModuleLayout(savedLayout);
+      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split') setModuleLayout(savedLayout);
     } catch (_) {}
     selectAgent('wise');
     updateAgentsCount();

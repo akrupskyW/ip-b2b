@@ -23,6 +23,207 @@ function escHtml(s) {
     .replace(/>/g, '&gt;');
 }
 
+/* ====================================================================
+   Shared toast + bottom sheet for every agent overview page.
+   Mirrors the Portfolio engine so clicks produce visible progress +
+   results (the same bottom-sheet / progress-flow language app-wide).
+==================================================================== */
+
+function agToast(msg, icon = 'check_circle') {
+  let wrap = document.getElementById('ag-toast-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
+  const t = document.createElement('div');
+  t.className = 'ag-toast';
+  t.innerHTML = `<span class="material-icons">${escHtml(icon)}</span><span>${escHtml(msg)}</span>`;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s ease, transform .3s ease';
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+    setTimeout(() => t.remove(), 320);
+  }, 2600);
+}
+
+let agSheetEls = null;
+let agPendingDownload = null;
+
+function ensureAgSheet() {
+  if (agSheetEls) return agSheetEls;
+  const scrim = document.createElement('div');
+  scrim.id = 'ag-sheet-scrim';
+  scrim.className = 'ag-sheet-scrim';
+  const sheet = document.createElement('div');
+  sheet.id = 'ag-sheet';
+  sheet.className = 'ag-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  document.body.appendChild(scrim);
+  document.body.appendChild(sheet);
+  scrim.addEventListener('click', closeAgSheet);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAgSheet(); });
+  sheet.addEventListener('click', (e) => {
+    const dl = e.target.closest('[data-sheet-download]');
+    if (dl) { e.preventDefault(); agPendingDownload?.(); return; }
+    const nav = e.target.closest('[data-sheet-nav]');
+    if (nav) { e.preventDefault(); window.location.href = nav.dataset.sheetNav; return; }
+    const flow = e.target.closest('[data-ag-flow]');
+    if (flow) { e.preventDefault(); openAgFlow(flow.dataset.agFlow, flow); return; }
+    if (e.target.closest('[data-sheet-close]')) { e.preventDefault(); closeAgSheet(); }
+  });
+  agSheetEls = { scrim, sheet };
+  return agSheetEls;
+}
+
+function openAgSheet({ eyebrow = 'WISEcode AI', title = '', icon = 'bolt' } = {}) {
+  const { scrim, sheet } = ensureAgSheet();
+  sheet.innerHTML = `
+    <div class="ag-sheet-handle" aria-hidden="true"></div>
+    <header class="ag-sheet-head">
+      <span class="ag-sheet-icon"><span class="material-icons">${escHtml(icon)}</span></span>
+      <div class="ag-sheet-titles">
+        <div class="ag-sheet-eyebrow">${escHtml(eyebrow)}</div>
+        <div class="ag-sheet-title">${escHtml(title)}</div>
+      </div>
+      <button class="ag-sheet-close" data-sheet-close="1" aria-label="Close"><span class="material-icons">close</span></button>
+    </header>
+    <div class="ag-sheet-body" id="ag-sheet-body"></div>`;
+  requestAnimationFrame(() => { scrim.classList.add('is-open'); sheet.classList.add('is-open'); });
+  return sheet.querySelector('#ag-sheet-body');
+}
+
+function closeAgSheet() {
+  if (!agSheetEls) return;
+  agSheetEls.scrim.classList.remove('is-open');
+  agSheetEls.sheet.classList.remove('is-open');
+}
+
+function runAgProgress(host, cfg = {}) {
+  const { steps = [], doneTitle = 'Done', doneText = '', doneIcon = 'check_circle', cta = null } = cfg;
+  host.innerHTML = `
+    <div class="ag-flow">
+      <div class="ag-flow-bar"><span class="ag-flow-fill" id="ag-flow-fill"></span></div>
+      <div class="ag-flow-pct" id="ag-flow-pct">0%</div>
+      <ul class="ag-flow-steps">
+        ${steps.map((s) => `<li class="ag-flow-step"><span class="ag-flow-dot"><span class="material-icons">radio_button_unchecked</span></span><span>${escHtml(s)}</span></li>`).join('')}
+      </ul>
+    </div>`;
+  const fill = host.querySelector('#ag-flow-fill');
+  const pct = host.querySelector('#ag-flow-pct');
+  const stepEls = Array.from(host.querySelectorAll('.ag-flow-step'));
+  const n = steps.length || 1;
+  return new Promise((resolve) => {
+    let i = 0;
+    const tick = () => {
+      if (i > 0) {
+        const prev = stepEls[i - 1];
+        prev?.classList.remove('is-active');
+        prev?.classList.add('is-done');
+        const ic = prev?.querySelector('.material-icons');
+        if (ic) ic.textContent = 'check_circle';
+      }
+      if (i < n) {
+        const cur = stepEls[i];
+        cur?.classList.add('is-active');
+        const ic = cur?.querySelector('.material-icons');
+        if (ic) ic.textContent = 'autorenew';
+        const target = Math.round(((i + 1) / n) * 100);
+        if (fill) fill.style.width = target + '%';
+        if (pct) pct.textContent = target + '%';
+        i++;
+        setTimeout(tick, 560);
+      } else {
+        host.innerHTML = `
+          <div class="ag-flow-done">
+            <div class="ag-flow-done-icon"><span class="material-icons">${escHtml(doneIcon)}</span></div>
+            <div class="ag-flow-done-title">${escHtml(doneTitle)}</div>
+            ${doneText ? `<p class="ag-flow-done-text">${doneText}</p>` : ''}
+            <div class="ag-sheet-actions">
+              ${cta ? `<button class="agent-cta agent-cta--primary" data-sheet-nav="${escHtml(cta.href)}"><span class="material-icons">${escHtml(cta.icon || 'chat')}</span>${escHtml(cta.label)}</button>` : ''}
+              <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Close</button>
+            </div>
+          </div>`;
+        resolve();
+      }
+    };
+    setTimeout(tick, 220);
+  });
+}
+
+const AG_FLOWS = {
+  'invite-member': { icon: 'person_add', title: 'Invite team member',
+    steps: ['Validating the email…', 'Provisioning a seat…', 'Sending the invite…'],
+    doneTitle: 'Invite sent', doneText: 'They’ll get an email to join this workspace with the role you chose.' },
+};
+
+function openAgFlow(key, btn) {
+  const f = AG_FLOWS[key];
+  if (!f) { agToast('Working on it…', 'autorenew'); return; }
+  const body = openAgSheet({ title: f.title, icon: f.icon });
+  runAgProgress(body, f);
+  void btn;
+}
+
+/* ---- Content sheets ---- */
+
+function openAgentDetailSheet(agentId) {
+  const a = getAgent(agentId);
+  if (!a) return;
+  const kids = getDirectChildren(a.id);
+  const kidsHtml = kids.length
+    ? `<div class="ag-detail-label">Sub-agents</div>${kids.map((k) => `
+        <div class="ag-detail-row">
+          <span class="ag-detail-ic"><span class="material-icons">${escHtml(k.icon)}</span></span>
+          <div><div class="ag-detail-name">${escHtml(k.label)}</div><div class="ag-detail-sub">${escHtml(k.description)}</div></div>
+        </div>`).join('')}`
+    : '<p class="ag-sheet-lead">This agent operates on its own — capabilities are delivered directly.</p>';
+  const body = openAgSheet({ eyebrow: 'Agent', title: a.label, icon: a.icon });
+  body.innerHTML = `
+    <p class="ag-sheet-lead">${escHtml(a.description)}</p>
+    ${kidsHtml}
+    <div class="ag-sheet-actions">
+      <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
+      <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Close</button>
+    </div>`;
+}
+
+function openAddMemberSheet() {
+  const body = openAgSheet({ title: 'Add team member', icon: 'person_add' });
+  body.innerHTML = `
+    <p class="ag-sheet-lead">Invite a teammate to this WISEcode workspace.</p>
+    <label class="ag-field"><span class="ag-field-label">Email</span><input class="ag-input" id="ag-mem-email" type="email" placeholder="name@company.com" autocomplete="off" /></label>
+    <label class="ag-field"><span class="ag-field-label">Role</span>
+      <select class="ag-input" id="ag-mem-role"><option>Viewer</option><option>Editor</option><option>Admin</option></select>
+    </label>
+    <div class="ag-sheet-actions">
+      <button class="agent-cta agent-cta--primary" id="ag-mem-send"><span class="material-icons">send</span>Send invite</button>
+      <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Cancel</button>
+    </div>`;
+  const email = body.querySelector('#ag-mem-email');
+  email.focus();
+  body.querySelector('#ag-mem-send').addEventListener('click', () => {
+    if (!email.value.trim() || !email.value.includes('@')) { email.focus(); return; }
+    openAgFlow('invite-member');
+  });
+}
+
+function exportOverview(agentLabel) {
+  const blob = new Blob([`WISEcode · ${agentLabel} overview\nGenerated ${new Date().toLocaleString()}\n\nExported from the WISEcode AI agent overview.\n`], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${String(agentLabel).replace(/[^\w]+/g, '-').toLowerCase()}-overview.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  agToast('Overview exported.', 'download');
+}
+
+function shareOverview() {
+  const url = window.location.href;
+  if (navigator.share) navigator.share({ title: document.title, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => agToast('Link copied to clipboard.', 'link')).catch(() => agToast('Could not copy link.', 'error'));
+  else agToast('Sharing is not supported here.', 'info');
+}
+
 function renderChildCard(agent) {
   if (!agent) return '';
   const grandkids = getDirectChildren(agent.id);
@@ -30,7 +231,7 @@ function renderChildCard(agent) {
     ? `<div class="agent-card-children">
         ${grandkids
           .map(
-            (gk) => `<div class="agent-child" id="${escHtml(gk.id)}">
+            (gk) => `<div class="agent-child" id="${escHtml(gk.id)}" role="button" tabindex="0" aria-label="View ${escHtml(gk.label)}">
               <span class="agent-child-icon"><span class="material-icons">${escHtml(gk.icon)}</span></span>
               <div class="agent-child-body">
                 <span class="agent-child-name">${escHtml(gk.label)}</span>
@@ -42,7 +243,7 @@ function renderChildCard(agent) {
       </div>`
     : '';
   return `
-    <article class="agent-card" id="${escHtml(agent.id)}">
+    <article class="agent-card is-interactive" id="${escHtml(agent.id)}" role="button" tabindex="0" aria-label="View ${escHtml(agent.label)}">
       <div class="agent-card-head">
         <span class="agent-card-icon"><span class="material-icons">${escHtml(agent.icon)}</span></span>
         <div>
@@ -140,7 +341,24 @@ export function bootstrapAgentPage() {
   }
 
   const mainEl = document.getElementById('agent-main-scroll');
-  if (mainEl) mainEl.innerHTML = renderMain(agent);
+  if (mainEl) {
+    mainEl.innerHTML = renderMain(agent);
+    /* Agent + sub-agent cards open a detail bottom sheet. A child click wins
+       over its containing card. */
+    const openFromTarget = (target) => {
+      const child = target.closest('.agent-child[id]');
+      if (child) { openAgentDetailSheet(child.id); return; }
+      const card = target.closest('.agent-card[id]');
+      if (card) openAgentDetailSheet(card.id);
+    };
+    mainEl.addEventListener('click', (e) => openFromTarget(e.target));
+    mainEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (!e.target.closest('.agent-child[id], .agent-card[id]')) return;
+      e.preventDefault();
+      openFromTarget(e.target);
+    });
+  }
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) mountAgentMenu(navEl, agent.id, { fromAgentPage: true });
@@ -209,8 +427,8 @@ function escHtmlSafe(s) {
 }
 
 function renderAlertsBody() {
-  const items = NOTIFICATIONS.map((n) => `
-    <button type="button" class="notif-row">
+  const items = NOTIFICATIONS.map((n, i) => `
+    <button type="button" class="notif-row" data-notif="${i}">
       <span class="notif-row-icon notif-ic-${escHtmlSafe(n.tone)}"><span class="material-icons">${escHtmlSafe(n.icon)}</span></span>
       <div class="notif-row-body">
         <div class="notif-row-title">${escHtmlSafe(n.title)}</div>
@@ -415,10 +633,24 @@ function setupTrailingRail() {
   if (alertsPanel) {
     alertsPanel.addEventListener('click', (e) => {
       const action = e.target.closest('[data-action]');
-      if (!action) return;
-      if (action.dataset.action === 'mark-all-read') {
+      if (action && action.dataset.action === 'mark-all-read') {
         notifBtn?.classList.add('is-read');
         closeSidePanel(alertsPanel, 'alerts-open', notifBtn);
+        return;
+      }
+      const row = e.target.closest('.notif-row[data-notif]');
+      if (row) {
+        const n = NOTIFICATIONS[Number(row.dataset.notif)];
+        row.classList.add('is-read');
+        closeSidePanel(alertsPanel, 'alerts-open', notifBtn);
+        const body = openAgSheet({ eyebrow: 'Alert', title: n.title, icon: n.icon });
+        body.innerHTML = `
+          <p class="ag-sheet-lead">${escHtmlSafe(n.sub)}</p>
+          <p class="ag-sheet-lead">Open the WISEowl chat to act on this alert with the relevant agent.</p>
+          <div class="ag-sheet-actions">
+            <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
+            <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Dismiss</button>
+          </div>`;
       }
     });
   }
@@ -437,8 +669,13 @@ function setupTrailingRail() {
           window.location.href = 'ai-chat.html';
           break;
         case 'add-member':
+          openAddMemberSheet();
+          break;
         case 'export':
+          exportOverview(getAgent(document.body.dataset.agentId)?.label || 'WISEcode');
+          break;
         case 'share':
+          shareOverview();
           break;
         case 'close':
           if (window.history.length > 1) window.history.back();

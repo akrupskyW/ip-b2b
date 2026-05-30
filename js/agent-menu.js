@@ -203,6 +203,14 @@ export const PORTFOLIO_SECTIONS = {
     tagline:
       'Your high-altitude entry point. Brand-health gauges and the AI Portfolio Agent’s intelligence briefing.',
   },
+  analytics: {
+    id: 'analytics',
+    label: 'Dashboard',
+    icon: 'dashboard',
+    sub: 'Visual intelligence · Charts & graphs',
+    tagline:
+      'The visual intelligence layer — charts and graphs that track verification, trust coverage, portfolio composition, and competitive position over time.',
+  },
   ledger: {
     id: 'ledger',
     label: 'The Ledger',
@@ -254,6 +262,7 @@ export const PORTFOLIO_SECTIONS = {
 };
 
 export const PORTFOLIO_SECTION_IDS = [
+  'analytics',
   'command-deck',
   'ledger',
   'intake',

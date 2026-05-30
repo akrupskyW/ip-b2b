@@ -29,6 +29,70 @@ const DEFAULT_INTENTS = [
   { intent: 'edit_food_select', label: 'Edit an Existing Food', icon: 'edit_note' },
 ];
 
+/* Default agent roster shown in the in-chat "Agent Settings" panel — mirrors
+   the roster in pages/ai-chat.html so the shared Scout surface exposes the
+   same agents everywhere it's mounted. Callers can override via opts.agents.
+   `group` buckets a row under "Core" or "Specialist"; `required` agents
+   (Scout) can't be switched off. */
+const DEFAULT_AGENTS = [
+  {
+    id: 'wise', name: 'Scout', version: 'v3.2', group: 'core',
+    icon: 'verified', color: 'var(--primary)', bg: '',
+    tagline: 'Verification Orchestrator',
+    desc: 'The core Scout agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.',
+    tags: ['Verification', 'Routing', 'Payments', 'Onboarding'],
+    required: true, on: true,
+  },
+  {
+    id: 'nova', name: 'TIER', version: 'v2.1', group: 'core',
+    icon: 'auto_awesome', color: '#4EE0B7', bg: '#002A22',
+    tagline: 'UPF Classification Engine',
+    desc: 'Scores every ingredient and product against UPF, WFPB, and clean-label frameworks. Identifies ultra-processed markers, additives, and clean-label alternatives in real time.',
+    tags: ['UPF Scoring', 'Ingredients', 'Processing Tier', 'Clean Label'],
+    on: false,
+  },
+  {
+    id: 'scout', name: 'WISE Foods', version: 'v1.8', group: 'core',
+    icon: 'search', color: '#FFB347', bg: '#2A1A00',
+    tagline: 'WISE Foods Agent',
+    desc: 'Queries the WISE Foods registry to match SKUs, look up nutritional metadata, cross-reference product databases, and handle bulk import validation.',
+    tags: ['SKU Lookup', 'Registry', 'Bulk Import', 'Matching'],
+    on: false,
+  },
+  {
+    id: 'shield', name: 'SHIELD', version: 'v1.5', group: 'specialist',
+    icon: 'shield', color: 'var(--primary)', bg: '',
+    tagline: 'Badge & Compliance Agent',
+    desc: 'Manages WISE Verified Shield Badge issuance, validates compliance criteria against certification standards, handles audit workflows, and tracks re-certification timelines.',
+    tags: ['Badge Issuance', 'Compliance', 'Audits', 'Certification'],
+    on: false,
+  },
+  {
+    id: 'lens', name: 'LENS', version: 'v2.0', group: 'specialist',
+    icon: 'analytics', color: '#5B9BD5', bg: '#001A2E',
+    tagline: 'Analytics & Insights Agent',
+    desc: 'Deep-dives into verification trends, brand-level SKU analytics, ingredient risk scoring, and generates scheduled insight reports for brands and retail partners.',
+    tags: ['Trend Reports', 'SKU Analytics', 'Risk Scoring', 'Dashboards'],
+    on: false,
+  },
+  {
+    id: 'vault', name: 'VAULT', version: 'v1.2', group: 'specialist',
+    icon: 'lock', color: '#D4A853', bg: '#261A0A',
+    tagline: 'Documents & Attestation Agent',
+    desc: 'Handles product attestation documents, manages secure e-signing workflows, maintains immutable audit trails, and archives verification certificates.',
+    tags: ['Attestation', 'E-Signing', 'Audit Trail', 'Archives'],
+    on: false,
+  },
+  {
+    id: 'pulse', name: 'PULSE', version: 'v1.4', group: 'specialist',
+    icon: 'biotech', color: '#E879F9', bg: '#1A0026',
+    tagline: 'Deep UPF Analysis Panel',
+    desc: 'Activates a dedicated analysis panel with real-time ingredient scoring, processing-tier visualization, additive risk flags, and clean-label alternatives — all in sync with your conversation.',
+    tags: ['Ingredient Scoring', 'Processing Tier', 'Additive Flags', 'Live Panel'],
+    on: false,
+  },
+];
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -37,6 +101,28 @@ function esc(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+/* Short, locale-aware clock label (e.g. "9:42 AM") for message timestamps —
+   a small accountability cue so every line is attributable to a moment. */
+function nowLabel() {
+  try {
+    return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch (_) {
+    return '';
+  }
+}
+
+/* Trust signals shown on the welcome screen. Kept generic here; call sites
+   (e.g. the Portfolio) override with context-specific copy. */
+const DEFAULT_TRUST = [
+  { icon: 'verified_user', label: 'Grounded in your WISE data' },
+  { icon: 'lock', label: 'Private & encrypted' },
+  { icon: 'history', label: 'Every action is logged' },
+];
+
+/* Standing reminder under the input that Scout is an assistant, not the
+   source of record — the single most important piece of AI trust microcopy. */
+const DEFAULT_DISCLAIMER = 'Scout can make mistakes — review important details before you publish.';
 
 function defaultReply(text) {
   const q = String(text).toLowerCase();
@@ -53,6 +139,55 @@ function defaultReply(text) {
   return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout layout and controls.';
 }
 
+/* Build the in-chat "Agent Settings" overlay from an agent roster. Mirrors the
+   #settings-screen markup in pages/ai-chat.html, scoped to the Scout card so
+   the same panel is available wherever the shared chat is mounted. */
+function buildAgentsPanelHtml(agents, id) {
+  const row = (a) => `
+    <div class="ss-agent-row${a.on ? ' ssr-on' : ''}${a.required ? ' ssr-required' : ''}" id="${id}-ssr-${esc(a.id)}">
+      <div class="ss-agent-icon" style="${a.bg ? `background:${esc(a.bg)};` : ''}">
+        <span class="material-icons" style="color:${esc(a.color || 'var(--primary)')}">${esc(a.icon || 'smart_toy')}</span>
+      </div>
+      <div class="ss-agent-body">
+        <div class="ss-agent-name${a.on ? '' : ' ssa-off'}" id="${id}-ssn-${esc(a.id)}">
+          ${esc(a.name)}${a.version ? `<span class="ss-version-badge">${esc(a.version)}</span>` : ''}
+        </div>
+        <p class="ss-agent-tagline">${esc(a.tagline || '')}</p>
+        <p class="ss-agent-desc">${esc(a.desc || '')}</p>
+        <div class="ss-tag-row">${(a.tags || []).map((t) => `<span class="ss-capability-tag">${esc(t)}</span>`).join('')}</div>
+      </div>
+      <label class="agent-toggle-wrap" title="${a.required ? esc(a.name) + ' is required' : 'Toggle ' + esc(a.name)}">
+        <input type="checkbox" data-sc-agent="${esc(a.id)}"${a.on ? ' checked' : ''}${a.required ? ' disabled' : ''}>
+        <span class="agent-toggle-track"${a.required ? ' style="cursor:not-allowed;opacity:0.7;"' : ''}></span>
+      </label>
+    </div>`;
+
+  const core = agents.filter((a) => a.group !== 'specialist');
+  const specialist = agents.filter((a) => a.group === 'specialist');
+
+  return `
+    <div class="ss-header">
+      <button type="button" class="ss-back-btn" data-sc="agents-close" title="Back to chat" aria-label="Back to chat"><span class="material-icons">arrow_back</span></button>
+      <div class="ss-header-icon"><span class="material-icons">tune</span></div>
+      <div class="ss-header-titles">
+        <h2 class="ss-header-title">Agent Settings</h2>
+        <p class="ss-header-subtitle"><span id="${id}-ss-active">0</span> of ${agents.length} active · Manage AI agents</p>
+      </div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-info-card">
+        <div class="ss-info-icon"><span class="material-icons">info</span></div>
+        <div>
+          <p class="ss-info-title">How agents work together</p>
+          <p class="ss-info-desc">Scout orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Scout is always required.</p>
+        </div>
+      </div>
+      <p class="ss-section-title">Core Agents</p>
+      ${core.map(row).join('')}
+      ${specialist.length ? `<div class="ss-divider"></div><p class="ss-section-title">Specialist Agents</p>${specialist.map(row).join('')}` : ''}
+    </div>`;
+}
+
 let _seq = 0;
 
 /**
@@ -60,13 +195,19 @@ let _seq = 0;
  * @param {HTMLElement} rootEl
  * @param {object} [opts]
  *   title        {string}  topbar title (default 'Scout')
- *   agentCount   {number}  "N agents running" pill (default 1)
+ *   agentCount   {number}  "N agents running" pill (default: # of on agents)
+ *   agents       {Array}   agent roster for the in-chat settings panel
+ *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
  *   heading      {string}  welcome heading (default 'What can Scout help with?')
  *   sub          {string}  welcome subheading
  *   hint         {string}  welcome hint line
  *   intents      {Array}   welcome intent chips [{intent,label,icon}]
  *   placeholder  {string}  input placeholder
  *   flLabel      {string}  floating label text
+ *   trust        {Array}   welcome trust badges [{icon,label}] (''/[] hides)
+ *   disclaimer   {string}  standing AI-limitations note under the input ('' hides)
+ *   sourceLabel  {string}  grounding caption appended to each Scout reply ('' hides)
+ *   statusLabel  {string}  what Scout is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
  *   reply        {fn}      (text) => html string for Scout's response
@@ -76,17 +217,32 @@ export function mountScoutChat(rootEl, opts = {}) {
   if (!rootEl) return null;
   const id = `sc${++_seq}`;
   const title = opts.title || 'Scout';
-  const agentCount = opts.agentCount != null ? opts.agentCount : 1;
+  /* Agent roster powering the in-chat settings panel + the "N agents running"
+     pill. Clone so a caller's array isn't mutated as toggles flip. */
+  const agents = (Array.isArray(opts.agents) ? opts.agents : DEFAULT_AGENTS).map((a) => ({ ...a }));
+  const onCount = () => agents.filter((a) => a.on).length;
+  const agentCount = opts.agentCount != null ? opts.agentCount : onCount();
   const heading = opts.heading || 'What can Scout help with?';
   const sub = opts.sub || 'Your AI Verification assistant — NON-UPF & beyond';
   const hint = opts.hint || 'or type a message below';
   const intents = opts.intents || DEFAULT_INTENTS;
   const placeholder = opts.placeholder || 'Type a message…';
   const reply = typeof opts.reply === 'function' ? opts.reply : defaultReply;
+  /* Trust + microcopy (use `!== undefined` so a caller can pass '' / [] to hide). */
+  const trust = opts.trust !== undefined ? opts.trust : DEFAULT_TRUST;
+  const disclaimer = opts.disclaimer !== undefined ? opts.disclaimer : DEFAULT_DISCLAIMER;
+  const sourceLabel = opts.sourceLabel !== undefined ? opts.sourceLabel : 'Grounded in WISE data';
+  const statusLabel = opts.statusLabel || `${title} is thinking`;
 
   const chipsHtml = intents.map((c, i) =>
     `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-icons">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
   ).join('');
+
+  const trustHtml = (Array.isArray(trust) && trust.length)
+    ? `<div class="ws-trust" role="list" aria-label="How Scout handles your data">${trust.map((t) =>
+        `<span class="sc-trust-badge" role="listitem"><span class="material-icons">${esc(t.icon || 'verified_user')}</span>${esc(t.label)}</span>`
+      ).join('')}</div>`
+    : '';
 
   rootEl.classList.add('sc-card');
   rootEl.innerHTML = `
@@ -118,7 +274,7 @@ export function mountScoutChat(rootEl, opts = {}) {
     </div>
 
     <div class="sc-body">
-      <div class="chat-messages-area" id="${id}-messages"></div>
+      <div class="chat-messages-area" id="${id}-messages" aria-live="polite" aria-atomic="false"></div>
       <div class="sc-welcome" id="${id}-welcome">
         <div class="ws-logo-wrap">
           <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -130,7 +286,9 @@ export function mountScoutChat(rootEl, opts = {}) {
         <p class="ws-sub">${esc(sub)}</p>
         <div class="ws-chips">${chipsHtml}</div>
         <p class="ws-hint">${esc(hint)}</p>
+        ${trustHtml}
       </div>
+      <div class="sc-settings sc-hidden" id="${id}-settings">${buildAgentsPanelHtml(agents, id)}</div>
     </div>
 
     <div class="chat-input-rail">
@@ -148,29 +306,67 @@ export function mountScoutChat(rootEl, opts = {}) {
         </div>
         <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-icons">send</span></button>
       </div>
+      ${disclaimer ? `<p class="sc-disclaimer"><span class="material-icons">shield</span>${esc(disclaimer)}</p>` : ''}
     </div>`;
 
   const messages = rootEl.querySelector(`#${id}-messages`);
   const welcome = rootEl.querySelector(`#${id}-welcome`);
   const input = rootEl.querySelector(`#${id}-input`);
+  const settings = rootEl.querySelector(`#${id}-settings`);
+  const countPill = rootEl.querySelector(`#${id}-count`);
+  const activeLabel = rootEl.querySelector(`#${id}-ss-active`);
 
   const scrollDown = () => { if (messages) messages.scrollTop = messages.scrollHeight; };
 
+  /* Reflect the live agent roster into the topbar pill + panel header. */
+  function updateAgentCount() {
+    const n = onCount();
+    if (countPill) countPill.textContent = String(n);
+    if (activeLabel) activeLabel.textContent = String(n);
+  }
+  updateAgentCount();
+
+  /* The in-chat "Agent Settings" panel slides over the messages, just like the
+     welcome screen. Opening it hides the welcome so they never stack. */
+  function openAgents() {
+    settings?.classList.remove('sc-hidden');
+    if (typeof opts.onAgentsOpen === 'function') opts.onAgentsOpen();
+  }
+  function closeAgents() { settings?.classList.add('sc-hidden'); }
+  function toggleAgent(agentId, on) {
+    const a = agents.find((x) => x.id === agentId);
+    if (!a || a.required) return;
+    a.on = on;
+    rootEl.querySelector(`#${id}-ssr-${agentId}`)?.classList.toggle('ssr-on', on);
+    rootEl.querySelector(`#${id}-ssn-${agentId}`)?.classList.toggle('ssa-off', !on);
+    updateAgentCount();
+    if (typeof opts.onAgentToggle === 'function') opts.onAgentToggle(agentId, on, onCount());
+  }
+
   function addUser(text) {
     if (!messages) return;
-    messages.insertAdjacentHTML('beforeend', `<div class="sc-line"><span class="sc-line-who sc-who-you">You · </span>${esc(text)}</div>`);
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-you"><span class="sc-line-who sc-who-you">You · </span>${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`);
     scrollDown();
   }
-  function addScout(html) {
+  /* @param {string} html  Scout's reply markup.
+     @param {object} [meta] { source } — overrides the default grounding caption
+     for a single line (pass '' to drop it, e.g. a plain acknowledgement). */
+  function addScout(html, meta = {}) {
     if (!messages) return;
-    messages.insertAdjacentHTML('beforeend', `<div class="sc-line sc-line-scout"><span class="sc-line-who sc-who-scout">${esc(title)} · </span>${html}</div>`);
+    const src = meta.source !== undefined ? meta.source : sourceLabel;
+    const footer = `<div class="sc-line-meta">${
+      src ? `<span class="sc-trust-chip" title="Scout cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
+    }<span class="sc-line-time">${esc(nowLabel())}</span></div>`;
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-scout"><span class="sc-line-who sc-who-scout">${esc(title)} · </span>${html}${footer}</div>`);
     scrollDown();
   }
   function showTyping() {
     if (!messages) return null;
     const el = document.createElement('div');
-    el.className = 'sc-line sc-line-scout';
-    el.innerHTML = `<span class="sc-line-who sc-who-scout">${esc(title)} · </span><span class="sc-typing"><span></span><span></span><span></span></span>`;
+    el.className = 'sc-line sc-line-scout sc-line-typing';
+    el.innerHTML = `<span class="sc-line-who sc-who-scout">${esc(title)} · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${esc(statusLabel)}…</span></span>`;
     messages.appendChild(el);
     scrollDown();
     return el;
@@ -179,9 +375,62 @@ export function mountScoutChat(rootEl, opts = {}) {
     const typing = showTyping();
     setTimeout(() => { typing?.remove(); addScout(reply(text)); }, 600);
   }
+  /* Hidden file input reused by Attach + Camera; a chosen file posts as a
+     message so the action has a visible result in the thread. */
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.style.display = 'none';
+  rootEl.appendChild(fileInput);
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    hideWelcome();
+    addUser(`📎 ${f.name}`);
+    scoutRespond(`Reviewing ${f.name}`);
+    fileInput.value = '';
+  });
+  function pickFile({ camera = false } = {}) {
+    fileInput.accept = camera ? 'image/*' : '';
+    if (camera) fileInput.setAttribute('capture', 'environment');
+    else fileInput.removeAttribute('capture');
+    fileInput.click();
+  }
+
+  /* Voice dictation via the Web Speech API where available, with a graceful
+     placeholder fallback so the button is never a no-op. */
+  let recognizing = false;
+  let recognition = null;
+  function toggleVoice() {
+    const flBtn = rootEl.querySelector(`#${id}-fl-more`);
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      const prev = input?.getAttribute('placeholder');
+      input?.setAttribute('placeholder', 'Voice input isn’t supported in this browser');
+      setTimeout(() => input?.setAttribute('placeholder', prev || ''), 1900);
+      return;
+    }
+    if (recognizing) { recognition?.stop(); return; }
+    recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognizing = true;
+    flBtn?.classList.add('sc-recording');
+    const prev = input?.getAttribute('placeholder');
+    input?.setAttribute('placeholder', 'Listening…');
+    const restore = () => { recognizing = false; flBtn?.classList.remove('sc-recording'); input?.setAttribute('placeholder', prev || ''); };
+    recognition.onresult = (ev) => {
+      const text = Array.from(ev.results).map((r) => r[0].transcript).join('');
+      if (input) input.value = text;
+    };
+    recognition.onend = () => { restore(); input?.focus(); };
+    recognition.onerror = restore;
+    recognition.start();
+  }
+
   function hideWelcome() { welcome?.classList.add('sc-hidden'); }
   function reset() {
     if (messages) messages.innerHTML = '';
+    closeAgents();
     welcome?.classList.remove('sc-hidden');
   }
   function submit() {
@@ -189,6 +438,16 @@ export function mountScoutChat(rootEl, opts = {}) {
     const v = input.value.trim();
     if (!v) return;
     input.value = '';
+    hideWelcome();
+    addUser(v);
+    scoutRespond(v);
+  }
+  /* Programmatically post a user message + Scout reply (used by host modules
+     to route a contextual question into the shared chat). */
+  function ask(text) {
+    const v = String(text || '').trim();
+    if (!v) return;
+    closeAgents();
     hideWelcome();
     addUser(v);
     scoutRespond(v);
@@ -201,6 +460,9 @@ export function mountScoutChat(rootEl, opts = {}) {
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    /* "Choose Agents" opens the in-chat settings panel rather than starting a
+       chat turn — it's a control, not a question. */
+    if (def.intent === 'choose_agents') { openAgents(); return; }
     hideWelcome();
     addUser(def.label);
     if (!handled) scoutRespond(def.label);
@@ -209,6 +471,13 @@ export function mountScoutChat(rootEl, opts = {}) {
   /* Send */
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+  /* Agent toggles inside the settings panel */
+  settings?.addEventListener('change', (e) => {
+    const cb = e.target.closest('input[data-sc-agent]');
+    if (!cb) return;
+    toggleAgent(cb.dataset.scAgent, cb.checked);
+  });
 
   /* Topbar more popover (.hidden toggle + .is-open on the trigger — matches
      the shared .topbar-popover / .panel-more-btn behavior in the app). */
@@ -252,7 +521,10 @@ export function mountScoutChat(rootEl, opts = {}) {
     if (action === 'new') { reset(); closeMore(); }
     else if (action === 'agents') {
       closeMore();
+      openAgents();
       if (opts.onIntent) opts.onIntent('choose_agents', 'Choose Agents');
+    } else if (action === 'agents-close') {
+      closeAgents();
     } else if (action === 'export') {
       closeMore();
       const blob = new Blob(['Scout export placeholder\n'], { type: 'text/plain' });
@@ -269,8 +541,15 @@ export function mountScoutChat(rootEl, opts = {}) {
       closeMore();
       if (typeof opts.onClose === 'function') opts.onClose();
       else window.history.back();
-    } else if (action === 'attach' || action === 'camera' || action === 'voice') {
+    } else if (action === 'attach') {
       flPop?.classList.remove('open');
+      pickFile();
+    } else if (action === 'camera') {
+      flPop?.classList.remove('open');
+      pickFile({ camera: true });
+    } else if (action === 'voice') {
+      flPop?.classList.remove('open');
+      toggleVoice();
     }
   });
 
@@ -284,5 +563,5 @@ export function mountScoutChat(rootEl, opts = {}) {
     }
   });
 
-  return { addUser, addScout, reset, root: rootEl };
+  return { addUser, addScout, ask, reset, openAgents, closeAgents, root: rootEl };
 }
