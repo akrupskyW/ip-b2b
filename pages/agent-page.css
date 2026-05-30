@@ -237,10 +237,25 @@ body {
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
   position: relative;
   flex-shrink: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* The rail icons are Material Icons text ligatures; without this, dragging
+   across the bar selects them and paints highlight boxes the width of the
+   underlying word ("monitoring", "space_dashboard", …). */
+.lir-btn .material-icons,
+.lir-btn .material-symbols-outlined,
+.lir-btn .material-symbols-rounded,
+.topbar-menu-toggle,
+.topbar-menu-toggle .material-icons {
+  -webkit-user-select: none;
+  user-select: none;
 }
 /* Block display so text-align: center is measured from the button edges,
    keeping icon and label on the exact same horizontal center */
-.lir-btn .material-icons {
+.lir-btn .material-icons,
+.lir-btn .material-symbols-outlined,
+.lir-btn .material-symbols-rounded {
   display: block !important;
   text-align: center !important;
   line-height: 1 !important;
@@ -252,31 +267,47 @@ body {
   line-height: 1 !important;
   font-size: 20px !important;
 }
-.lir-label {
-  display: block;
-  width: 100%;
-  font-size: 9px;
+/* Labels are no longer a static caption under each icon — their text is
+   surfaced as a hover/focus/tap tooltip (#lir-tooltip, positioned by JS just
+   below the button). The caption itself is hidden, leaving an icon-only rail. */
+.lir-label { display: none !important; }
+
+/* Floating tooltip shared by every top-bar icon. Fixed-positioned by JS so it
+   escapes the rail's horizontal-scroll clipping, centered under the button. */
+#lir-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  text-align: center;
-  color: currentColor;
-  opacity: 0.65;
-  pointer-events: none;
-  flex-shrink: 0;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 8px;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: inherit;
+  opacity: 0;
+  transform: translateX(-50%) translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+#lir-tooltip.lir-tip-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 .lir-btn:hover { background: rgba(0,0,0,0.04); color: var(--text); }
 html.dark .lir-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-.lir-btn .material-icons { font-size: 20px !important; line-height: 1 !important; display: block !important; text-align: center !important; }
+.lir-btn .material-icons,
+.lir-btn .material-symbols-outlined,
+.lir-btn .material-symbols-rounded { font-size: 20px !important; line-height: 1 !important; display: block !important; text-align: center !important; }
 .lir-btn.lir-active { color: var(--primary); }
 html.dark .lir-btn { color: var(--text-muted); }
-html.dark .lir-btn .lir-label { opacity: 0.88; }
 html.dark .lir-btn.lir-active {
   color: var(--primary-bright);
   background: transparent;
 }
-html.dark .lir-btn.lir-active .lir-label { opacity: 1; }
 html.dark .topbar-menu-toggle { color: var(--text-muted) !important; }
 html.dark .topbar-menu-toggle:hover { color: var(--text) !important; background: transparent !important; }
 
@@ -749,17 +780,14 @@ html.dark .menu-panel-header {
      (center + left edge + right edge) with the per-agent icons below. */
   width: 26px;
   height: 26px;
-  border-radius: 999px;
-  background: var(--primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 .menu-panel-icon .material-icons {
   font-size: 16px !important;
-  color: var(--primary);
+  color: var(--text);
 }
 .menu-panel-titles { display: flex; flex-direction: column; min-width: 0; }
 .menu-panel-title {
@@ -941,7 +969,8 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
   flex-shrink: 0;
   color: var(--text-subtle);
 }
-.menu-nav-subicon .material-icons {
+.menu-nav-subicon .material-icons,
+.menu-nav-subicon .material-symbols-outlined {
   font-size: 16px !important;
   color: inherit;
 }
@@ -990,6 +1019,89 @@ html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-b
 .menu-nav-agents-inner > .menu-nav-group > .menu-nav-children > .menu-nav-children-inner {
   margin-left: 12px;
   padding-left: 12px;
+}
+
+/* ===== MENU RAIL COLLAPSE =====
+   A collapse control floated to the right of the menu-panel header shrinks
+   the panel to an icon-only rail (.mp-rail). Labels, titles and chevrons are
+   hidden; each row centers on its icon and reveals its label on hover via the
+   floating #menu-rail-tip tooltip. */
+.menu-rail-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.menu-rail-toggle:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
+html.dark .menu-rail-toggle:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+.menu-rail-toggle .material-icons { font-size: 20px !important; }
+
+#menu-panel,
+#menu-panel .menu-inner {
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#menu-panel.mp-rail.mp-open { width: 66px; min-width: 66px; }
+#menu-panel.mp-rail .menu-inner { width: 66px; }
+#menu-panel.mp-rail .menu-panel-header {
+  padding: 12px 0;
+  justify-content: center;
+}
+#menu-panel.mp-rail .menu-panel-icon,
+#menu-panel.mp-rail .menu-panel-titles { display: none; }
+#menu-panel.mp-rail .menu-rail-toggle { margin-left: 0; }
+#menu-panel.mp-rail .menu-panel-body { padding: 10px 8px; }
+#menu-panel.mp-rail .menu-nav-label,
+#menu-panel.mp-rail .menu-nav-chevron-btn,
+#menu-panel.mp-rail .menu-nav-section-label { display: none; }
+#menu-panel.mp-rail .menu-nav-item,
+#menu-panel.mp-rail .menu-nav-subitem {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+#menu-panel.mp-rail .menu-nav-children-inner {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+  align-items: center;
+}
+
+/* Floating label tooltip for collapsed rail rows — pinned to the right of the
+   hovered icon, position:fixed so it escapes the panel's overflow clipping. */
+#menu-rail-tip {
+  position: fixed;
+  z-index: 10000;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 8px;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card, 0 8px 24px rgba(0, 0, 0, 0.18));
+  font-family: inherit;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+#menu-rail-tip.menu-rail-tip-visible {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 /* ===== MAIN MODULE (overview content) =====
@@ -1057,15 +1169,13 @@ html.dark .agent-main-header {
 .agent-main-icon {
   width: 26px;
   height: 26px;
-  border-radius: 999px;
-  background: var(--surface-3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px var(--border);
 }
-.agent-main-icon .material-icons { font-size: 16px !important; color: var(--primary); }
+.agent-main-icon .material-icons,
+.agent-main-icon .material-symbols-outlined { font-size: 16px !important; color: var(--text); }
 .agent-main-titles { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .agent-main-title {
   font-size: var(--fs-ui);

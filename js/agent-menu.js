@@ -198,7 +198,7 @@ export const PORTFOLIO_SECTIONS = {
   'command-deck': {
     id: 'command-deck',
     label: 'Command Deck',
-    icon: 'space_dashboard',
+    icon: 'cadence',
     sub: 'The Nexus · Pulse',
     tagline:
       'Your high-altitude entry point. Brand-health gauges and the AI Portfolio Agent’s intelligence briefing.',
@@ -206,7 +206,7 @@ export const PORTFOLIO_SECTIONS = {
   analytics: {
     id: 'analytics',
     label: 'Dashboard',
-    icon: 'dashboard',
+    icon: 'insert_chart',
     sub: 'Visual intelligence · Charts & graphs',
     tagline:
       'The visual intelligence layer — charts and graphs that track verification, trust coverage, portfolio composition, and competitive position over time.',
@@ -214,7 +214,7 @@ export const PORTFOLIO_SECTIONS = {
   ledger: {
     id: 'ledger',
     label: 'The Ledger',
-    icon: 'table_rows',
+    icon: 'receipt',
     sub: 'Zoom In · Full portfolio',
     tagline:
       'The high-fidelity list view. Filter, sort, and bulk-manage every product in your portfolio.',
@@ -347,6 +347,29 @@ function escAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+/* The legacy "Material Icons" font lacks some newer glyphs that only ship in
+   "Material Symbols Outlined" (e.g. `cadence`). Render those with the symbols
+   class so they resolve instead of showing a tofu box. */
+const SYMBOLS_ONLY_ICONS = new Set(['cadence']);
+export function iconClassFor(name) {
+  return SYMBOLS_ONLY_ICONS.has(name) ? 'material-symbols-outlined' : 'material-icons';
+}
+
+/* Make sure the Material Symbols Outlined webfont is loaded. Agent pages only
+   link the legacy Material Icons font, so any symbols-only glyph used in the
+   shared menu would otherwise render as a blank box. Idempotent. */
+export function ensureSymbolsFont() {
+  if (typeof document === 'undefined') return;
+  if (document.querySelector('link[data-wise-symbols]')) return;
+  if (document.querySelector('link[href*="Material+Symbols+Outlined"]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href =
+    'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+  link.setAttribute('data-wise-symbols', '');
+  document.head.appendChild(link);
+}
+
 /**
  * Mount the product + agent navigation into a `<nav>` element.
  *
@@ -358,6 +381,7 @@ function escAttr(s) {
  */
 export function mountAgentMenu(navEl, activeId, options = {}) {
   if (!navEl) return;
+  ensureSymbolsFont();
   const fromAgentPage = options.fromAgentPage !== false;
   const prefix = fromAgentPage ? '' : 'pages/';
   const activeProduct =
@@ -427,7 +451,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     const isActive = sectionId === activeSection ? ' is-active' : '';
     return `
       <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-section-id="${escAttr(sectionId)}" data-depth="1">
-        <span class="menu-nav-subicon"><span class="material-icons">${escAttr(sec.icon)}</span></span>
+        <span class="menu-nav-subicon"><span class="${iconClassFor(sec.icon)}">${escAttr(sec.icon)}</span></span>
         <span class="menu-nav-label">${escAttr(sec.label)}</span>
       </a>`;
   };
@@ -494,6 +518,8 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   navEl.setAttribute('aria-label', 'WISE platform navigation');
   navEl.innerHTML = TOP_LEVEL_PRODUCT_IDS.map(renderProduct).join('');
 
+  setupMenuRail(navEl);
+
   navEl.addEventListener('click', (e) => {
     const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');
     if (chevron) {
@@ -518,6 +544,112 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
       }
     }
   });
+}
+
+/* ====================================================================
+   Menu-rail collapse.
+
+   Injects a collapse toggle into the menu panel header (floated to the
+   right). Toggling adds `.mp-rail` to `#menu-panel`, which shrinks the
+   panel to an icon-only rail (labels, titles, chevrons hidden). Hovering
+   a collapsed icon surfaces its label in a floating tooltip pinned to the
+   right of the row — mirroring the top-bar icon tooltips. The collapsed
+   preference persists in localStorage so it carries across pages.
+==================================================================== */
+const MENU_RAIL_STORE_KEY = 'wise-menu-rail';
+
+function setupMenuRail(navEl) {
+  const panel = navEl.closest('#menu-panel');
+  if (!panel) return;
+  const header = panel.querySelector('.menu-panel-header');
+  if (!header) return;
+
+  let btn = header.querySelector('.menu-rail-toggle');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'menu-rail-toggle';
+    btn.innerHTML = '<span class="material-icons" aria-hidden="true">chevron_left</span>';
+    header.appendChild(btn);
+  }
+
+  const apply = (railed) => {
+    panel.classList.toggle('mp-rail', railed);
+    btn.setAttribute('aria-pressed', railed ? 'true' : 'false');
+    const label = railed ? 'Expand menu' : 'Collapse menu to icons';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    const icon = btn.querySelector('.material-icons');
+    if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
+  };
+
+  let railed = false;
+  try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
+  apply(railed);
+
+  if (!btn.dataset.bound) {
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = !panel.classList.contains('mp-rail');
+      apply(next);
+      try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
+    });
+  }
+
+  setupMenuRailTooltip();
+}
+
+/** Single delegated floating tooltip for collapsed menu-rail rows. */
+function setupMenuRailTooltip() {
+  if (window.__menuRailTipReady) return;
+  window.__menuRailTipReady = true;
+
+  let tip = document.getElementById('menu-rail-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'menu-rail-tip';
+    tip.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tip);
+  }
+
+  const ROW_SELECTOR = '.menu-nav-item, .menu-nav-subitem';
+  let current = null;
+
+  const show = (row) => {
+    const panel = row.closest('#menu-panel.mp-rail');
+    if (!panel) return;
+    const labelEl = row.querySelector('.menu-nav-label');
+    const label = labelEl ? labelEl.textContent.trim() : '';
+    if (!label) return;
+    current = row;
+    tip.textContent = label;
+    const r = row.getBoundingClientRect();
+    tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
+    tip.style.left = `${Math.round(r.right + 10)}px`;
+    tip.offsetWidth; /* reflow so the enter transition plays */
+    tip.classList.add('menu-rail-tip-visible');
+  };
+  const hide = () => {
+    current = null;
+    tip.classList.remove('menu-rail-tip-visible');
+  };
+
+  document.addEventListener('mouseover', (e) => {
+    const row = e.target.closest(ROW_SELECTOR);
+    if (row && row !== current) show(row);
+  });
+  document.addEventListener('mouseout', (e) => {
+    const row = e.target.closest(ROW_SELECTOR);
+    if (row && !row.contains(e.relatedTarget)) hide();
+  });
+  document.addEventListener('focusin', (e) => {
+    const row = e.target.closest(ROW_SELECTOR);
+    if (row) show(row);
+  });
+  document.addEventListener('focusout', hide);
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
 }
 
 /** Returns descendants in DFS order with their depth (1-based) under the root. */

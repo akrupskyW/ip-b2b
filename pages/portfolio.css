@@ -458,7 +458,7 @@ html.dark #left-icon-rail {
 .pf-module-rail {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -477,22 +477,19 @@ html.dark #left-icon-rail {
    (icon over a 9px label). Off = muted grey, on = primary blue. Nothing else,
    exactly like the rail in ai-chat.html. */
 .pf-module-btn {
-  width: auto;
-  min-width: 46px;
-  padding: 5px 8px 4px;
+  width: 40px;
+  min-width: 40px;
+  padding: 5px 0 4px;
   border-radius: 10px;
   flex-shrink: 0;
 }
 .pf-module-btn.lir-active { color: var(--primary); background: transparent; }
-.pf-module-btn.lir-active .lir-label { opacity: 1; }
 html.dark #left-icon-rail .pf-module-btn { color: var(--text-muted); }
-html.dark #left-icon-rail .pf-module-btn .lir-label { opacity: 0.88; }
 html.dark #left-icon-rail .pf-module-btn:hover { color: var(--text); background: transparent !important; }
 html.dark #left-icon-rail .pf-module-btn.lir-active {
   color: var(--primary-bright);
   background: transparent !important;
 }
-html.dark #left-icon-rail .pf-module-btn.lir-active .lir-label { opacity: 1; }
 html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--primary-bright); }
 
 /* ===== Section module panel =====
@@ -795,6 +792,62 @@ html.dark #modules-row:not(.modules-grid) #menu-panel.mp-open .menu-inner {
   }
 }
 
+/* ===== Stack layout =====
+   The toggle's fourth mode. Every OPEN module becomes a full-width row stacked
+   on top of the next, turning the surface into one long top-to-bottom scroll
+   instead of the horizontal column carousel. Mirrors grid mode's module
+   flattening but lays the cards out in a single column. */
+#modules-row.modules-stack {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+/* The menu rail and Scout dock un-pin from sticky and become normal stacked rows. */
+#modules-row.modules-stack #menu-panel,
+#modules-row.modules-stack .scout-dock.scout-dock-open,
+#modules-row.modules-stack #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
+  position: relative;
+  left: auto;
+  right: auto;
+}
+/* Every visible module spans the full width; each keeps its own internal scroll
+   (.pf-module-scroll) so its header stays pinned within its own row. */
+#modules-row.modules-stack > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 440px;
+  max-height: none !important;
+  align-self: stretch;
+}
+/* Scout stays docked at the bottom of the stack: ordered last and pinned with
+   position: sticky so the modules scroll behind it while the chat stays visible
+   and reachable across the bottom. An opaque surface fill masks the content
+   scrolling underneath. */
+#modules-row.modules-stack > #pf-chat-panel.scout-dock.scout-dock-open {
+  order: 999;
+  position: sticky !important;
+  top: auto !important;
+  bottom: 0;
+  left: auto !important;
+  right: auto !important;
+  z-index: 30;
+  flex: 0 0 auto !important;
+  height: 46vh !important;
+  min-height: 320px !important;
+  max-height: 60vh !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card), 0 -12px 28px -16px rgba(0, 0, 0, 0.55);
+}
 /* ===== Product Detail deep-dive (slide-over) ===== */
 .pf-deepdive-scrim {
   position: fixed; inset: 0; z-index: 400;

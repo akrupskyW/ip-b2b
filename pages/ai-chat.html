@@ -601,15 +601,12 @@
       /* Match .menu-nav-icon size so the header icon shares the exact column
          (center + left edge + right edge) with the per-agent icons below. */
       width: 26px; height: 26px;
-      border-radius: 999px;
-      background: var(--primary-soft);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
     }
     .menu-panel-icon .material-icons {
       font-size: 16px !important;
-      color: var(--primary);
+      color: var(--text);
     }
     .menu-panel-title {
       font-size: var(--fs-ui);
@@ -888,6 +885,86 @@
     .menu-nav-agents-inner > .menu-nav-group > .menu-nav-children > .menu-nav-children-inner {
       margin-left: 12px;
       padding-left: 12px;
+    }
+
+    /* ===== MENU RAIL COLLAPSE =====
+       Collapse control in the menu-panel header shrinks the panel to an
+       icon-only rail (.mp-rail); labels/titles/chevrons hide and each row's
+       label is surfaced on hover via the floating #menu-rail-tip tooltip. */
+    .menu-rail-toggle {
+      margin-left: auto;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .menu-rail-toggle:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
+    html.dark .menu-rail-toggle:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+    .menu-rail-toggle .material-icons { font-size: 20px !important; }
+
+    #menu-panel,
+    #menu-panel .menu-inner {
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                  min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #menu-panel.mp-rail.mp-open { width: 66px; min-width: 66px; }
+    #menu-panel.mp-rail .menu-inner { width: 66px; }
+    #menu-panel.mp-rail .menu-panel-header {
+      padding: 12px 0;
+      justify-content: center;
+    }
+    #menu-panel.mp-rail .menu-panel-icon,
+    #menu-panel.mp-rail .menu-panel-titles { display: none; }
+    #menu-panel.mp-rail .menu-rail-toggle { margin-left: 0; }
+    #menu-panel.mp-rail .menu-panel-body { padding: 10px 8px; }
+    #menu-panel.mp-rail .menu-nav-label,
+    #menu-panel.mp-rail .menu-nav-chevron-btn,
+    #menu-panel.mp-rail .menu-nav-count,
+    #menu-panel.mp-rail .menu-nav-section-label { display: none; }
+    #menu-panel.mp-rail .menu-nav-item,
+    #menu-panel.mp-rail .menu-nav-subitem {
+      justify-content: center;
+      gap: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    #menu-panel.mp-rail .menu-nav-children-inner {
+      margin-left: 0;
+      padding-left: 0;
+      border-left: 0;
+      align-items: center;
+    }
+
+    #menu-rail-tip {
+      position: fixed;
+      z-index: 10000;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      padding: 5px 10px;
+      border-radius: 8px;
+      pointer-events: none;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card, 0 8px 24px rgba(0, 0, 0, 0.18));
+      font-family: inherit;
+      opacity: 0;
+      transform: translateY(-50%) translateX(-4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    #menu-rail-tip.menu-rail-tip-visible {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
     }
 
     #history-panel {
@@ -1332,6 +1409,8 @@
       transition: background 0.15s, color 0.15s, box-shadow 0.15s;
       position: relative;
       flex-shrink: 0;
+      -webkit-user-select: none;
+      user-select: none;
     }
     .lir-btn:hover {
       background: #2c2245;
@@ -2323,29 +2402,14 @@
       color: var(--text-muted) !important;
     }
     html:not(.dark) .panel-header-icon {
-      background: var(--surface-3) !important;
+      background: transparent !important;
       box-shadow: none !important;
+      border-radius: 0 !important;
     }
-    html:not(.dark) #history-panel .panel-header-icon .material-icons {
-      color: var(--primary) !important;
-    }
-    html:not(.dark) #scout-panel .panel-header-icon .material-icons {
-      color: var(--ter-amber) !important;
-    }
-    html:not(.dark) #upf-panel .panel-header-icon .material-icons {
-      color: var(--ter-violet) !important;
-    }
-    html:not(.dark) #tier-panel .panel-header-icon .material-icons {
-      color: var(--sec-green) !important;
-    }
-    html:not(.dark) #shield-panel .panel-header-icon .material-icons {
-      color: var(--primary) !important;
-    }
-    html:not(.dark) #lens-panel .panel-header-icon .material-icons {
-      color: var(--ter-cyan) !important;
-    }
-    html:not(.dark) #vault-panel .panel-header-icon .material-icons {
-      color: var(--ter-amber) !important;
+    html:not(.dark) .panel-header-icon .material-icons,
+    html:not(.dark) .panel-header-icon .material-symbols-outlined,
+    html:not(.dark) .panel-header-icon svg {
+      color: var(--text) !important;
     }
     html:not(.dark) .side-panel-search-row {
       border-bottom-color: var(--border) !important;
@@ -2646,7 +2710,7 @@
       justify-content: center;
       flex-shrink: 0;
       background: transparent;
-      color: var(--primary);
+      color: var(--text);
     }
     #verification-sidebar .vs-header-text {
       flex: 1;
@@ -2944,9 +3008,8 @@
     .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
     .fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
 
-    /* Light-mode override for the Scout bug in the chat topbar — re-tint to primary. */
     #chat-shell .chat-topbar .panel-header-icon svg {
-      color: var(--primary);
+      color: var(--text);
     }
 
     /* ─────────────────────────────────────────────────────────────────
@@ -3508,7 +3571,6 @@
       color: var(--primary);
     }
     html.dark .lir-btn { color: var(--text-muted); }
-    html.dark .lir-btn .lir-label { opacity: 0.88; }
     html.dark .lir-btn.lir-active,
     html.dark .lir-btn.lir-active.lir-history,
     html.dark .lir-btn.lir-active.lir-scout,
@@ -3519,7 +3581,6 @@
       color: #93C5FD !important;
       background: transparent !important;
     }
-    html.dark .lir-btn.lir-active .lir-label { opacity: 1; }
     html.dark .lir-btn.lir-active.lir-tier   { color: #6EE7B7 !important; background: transparent !important; }
     html.dark .lir-btn.lir-active.lir-shield { color: #93C5FD !important; background: transparent !important; }
     html.dark .lir-btn.lir-active.lir-lens   { color: #67E8F9 !important; background: transparent !important; }
@@ -3607,18 +3668,15 @@
       color: var(--text-muted) !important;
     }
     .panel-header-icon {
-      background: var(--surface-3) !important;
+      background: transparent !important;
       box-shadow: none !important;
-      box-shadow: inset 0 0 0 1px var(--border) !important;
+      border-radius: 0 !important;
     }
-    #history-panel .panel-header-icon .material-icons { color: var(--primary) !important; }
-    #scout-panel  .panel-header-icon .material-icons { color: var(--ter-amber) !important; }
-    #upf-panel    .panel-header-icon .material-icons { color: var(--ter-violet) !important; }
-    #tier-panel   .panel-header-icon .material-icons { color: var(--sec-green) !important; }
-    #shield-panel .panel-header-icon .material-icons { color: var(--primary) !important; }
-    #lens-panel   .panel-header-icon .material-icons { color: var(--ter-cyan) !important; }
-    #vault-panel  .panel-header-icon .material-icons { color: var(--ter-amber) !important; }
-    #notif-panel  .panel-header-icon .material-icons { color: var(--sec-red, #D94C4C) !important; }
+    .panel-header-icon .material-icons,
+    .panel-header-icon .material-symbols-outlined,
+    .panel-header-icon svg {
+      color: var(--text) !important;
+    }
 
     /* Body text inside the agent panels — the new panels reuse text-oyster-*
        Tailwind shades for emphasis; remap them onto the theme tokens so they
@@ -3725,7 +3783,7 @@
       border-bottom: 1px solid var(--border) !important;
     }
     html:not(.dark) #settings-screen .ss-header .panel-header-icon .material-icons {
-      color: var(--primary) !important;
+      color: var(--text) !important;
     }
 
     /* Settings module — agent icon tints (light mode). Dark mode keeps inline tinted backgrounds. */
@@ -4004,23 +4062,9 @@
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
 
-    /* ── Nav rail: labels below icons ───────────────────────────── */
-    /* Block + full-width so text-align: center works off the button midpoint,
-       not the glyph's intrinsic box — guarantees icon and label share the same X */
-    .lir-label {
-      display: block;
-      width: 100%;
-      font-size: 9px;
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: 0.02em;
-      text-align: center;
-      color: currentColor;
-      opacity: 0.65;
-      pointer-events: none;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
+    /* ── Nav rail: labels are surfaced as the hover/tap tooltip (#lir-tooltip)
+       instead of a static caption under each icon — so the caption is hidden. */
+    .lir-label { display: none !important; }
     /* Same treatment for icon glyphs: block + text-center aligns them on the
        same axis as the label regardless of the glyph's natural advance width */
     #left-icon-rail .lir-btn .material-icons,
@@ -4292,6 +4336,91 @@
       min-height: 0 !important;
       flex: 1 1 0%;
     }
+    /* Stack mode — every module becomes a full-width row stacked vertically,
+       so the whole surface is one long top-to-bottom scroll instead of the
+       horizontal column carousel. Mirrors grid's module-flattening (panels-row
+       wrappers go display:contents, closed panels collapse) but lays the cards
+       out in a single column. */
+    #modules-row.modules-stack {
+      display: flex !important;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 8px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      align-items: stretch;
+      height: 100%;
+      max-height: 100%;
+    }
+    #modules-row.modules-stack #panels-row,
+    #modules-row.modules-stack #panels-row-right {
+      display: contents !important;
+    }
+    #modules-row.modules-stack #menu-panel:not(.mp-open),
+    #modules-row.modules-stack #history-panel:not(.open),
+    #modules-row.modules-stack #scout-panel:not(.sp-open),
+    #modules-row.modules-stack #upf-panel:not(.up-open),
+    #modules-row.modules-stack #tier-panel:not(.tp-open),
+    #modules-row.modules-stack #shield-panel:not(.sd-open),
+    #modules-row.modules-stack #lens-panel:not(.ln-open),
+    #modules-row.modules-stack #vault-panel:not(.vt-open),
+    #modules-row.modules-stack #nfp-panel:not(.nfp-open),
+    #modules-row.modules-stack #notif-panel:not(.notif-open) {
+      display: none !important;
+    }
+    #modules-row.modules-stack #menu-panel.mp-open,
+    #modules-row.modules-stack #history-panel.open,
+    #modules-row.modules-stack #scout-panel.sp-open,
+    #modules-row.modules-stack #upf-panel.up-open,
+    #modules-row.modules-stack #tier-panel.tp-open,
+    #modules-row.modules-stack #shield-panel.sd-open,
+    #modules-row.modules-stack #lens-panel.ln-open,
+    #modules-row.modules-stack #vault-panel.vt-open,
+    #modules-row.modules-stack #nfp-panel.nfp-open,
+    #modules-row.modules-stack #notif-panel.notif-open,
+    #modules-row.modules-stack #chat-shell,
+    #modules-row.modules-stack #verification-sidebar {
+      display: flex !important;
+      flex-direction: column;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      height: auto !important;
+      min-height: 440px;
+      margin: 0 !important;
+      flex: none !important;
+      align-self: stretch;
+      overflow: hidden;
+    }
+    #modules-row.modules-stack .menu-inner,
+    #modules-row.modules-stack .panel-inner,
+    #modules-row.modules-stack .scout-inner,
+    #modules-row.modules-stack .upf-inner,
+    #modules-row.modules-stack .tier-inner,
+    #modules-row.modules-stack .shield-inner,
+    #modules-row.modules-stack .lens-inner,
+    #modules-row.modules-stack .vault-inner,
+    #modules-row.modules-stack .notif-inner,
+    #modules-row.modules-stack #verification-sidebar .vs-inner {
+      width: 100% !important;
+      min-height: 0 !important;
+      flex: 1 1 0%;
+    }
+    /* Scout (#chat-shell) stays docked at the bottom of the stack: it's ordered
+       last and made position:sticky so the modules scroll behind it while the
+       chat remains visible and reachable across the bottom of the surface. Its
+       opaque surface background masks the content scrolling underneath. */
+    #modules-row.modules-stack > #chat-shell {
+      order: 999;
+      position: sticky;
+      bottom: 0;
+      z-index: 30;
+      flex: 0 0 auto !important;
+      height: 46vh !important;
+      min-height: 320px;
+      max-height: 60vh;
+      box-shadow: var(--shadow-card), 0 -12px 28px -16px rgba(0, 0, 0, 0.55);
+    }
     /* Light-mode overrides for flip + layout */
     html:not(.dark) .lir-flip-btn { color: var(--text-subtle); }
     html:not(.dark) .lir-flip-btn:hover { color: var(--primary); }
@@ -4380,21 +4509,21 @@
       <!-- Panel buttons: click the icon to toggle panel on/off.
            The thin bars on the LEFT and RIGHT of the icon show which side the panel is on
            (bright = active side). Click either bar to flip the panel to the other side. -->
-      <button type="button" class="lir-btn lir-panel-btn lir-history lir-active" id="lir-history-btn" data-tip="History &amp; Projects" onclick="toggleHistoryPanel()" title="History &amp; Projects" aria-label="Toggle History panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-history lir-active" id="lir-history-btn" data-tip="History &amp; Projects" onclick="revealHistoryPanel()" title="History &amp; Projects" aria-label="Toggle History panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('history')" title="On left — tap to move right"></span>
         <span class="material-icons">history</span>
         <span class="lir-dot"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('history')" title="On left — tap to move right"></span>
         <span class="lir-label">History</span>
       </button>
-      <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="toggleScoutPanel()" title="WISE Foods" aria-label="Toggle WISE Foods panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="revealPanel('scout')" title="WISE Foods" aria-label="Toggle WISE Foods panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="material-icons">search</span>
         <span class="lir-dot" style="background:#FFB347"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="lir-label">Foods</span>
       </button>
-      <button type="button" class="lir-btn lir-panel-btn lir-upf lir-active" id="lir-upf-btn" data-tip="UPF Analyzer" onclick="toggleUpfPanel()" title="UPF Analyzer" aria-label="Toggle UPF Analyzer panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-upf lir-active" id="lir-upf-btn" data-tip="UPF Analyzer" onclick="revealPanel('pulse')" title="UPF Analyzer" aria-label="Toggle UPF Analyzer panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
         <span class="material-icons">biotech</span>
         <span class="lir-dot" style="background:#E879F9"></span>
@@ -4405,28 +4534,28 @@
            in Agent Settings (the .lir-hidden class is added/removed by toggleAgent).
            Clicking the icon opens/closes that agent's panel module. Clicking either
            pip flips the panel to the opposite side of the chat. -->
-      <button type="button" class="lir-btn lir-panel-btn lir-tier lir-hidden" id="lir-tier-btn" data-tip="TIER — UPF Classification" onclick="toggleTierPanel()" title="TIER" aria-label="Toggle TIER panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-tier lir-hidden" id="lir-tier-btn" data-tip="TIER — UPF Classification" onclick="revealPanel('nova')" title="TIER" aria-label="Toggle TIER panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
         <span class="material-icons">auto_awesome</span>
         <span class="lir-dot" style="background:#4EE0B7"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
         <span class="lir-label">TIER</span>
       </button>
-      <button type="button" class="lir-btn lir-panel-btn lir-shield lir-hidden" id="lir-shield-btn" data-tip="SHIELD — Compliance" onclick="toggleShieldPanel()" title="SHIELD" aria-label="Toggle SHIELD panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-shield lir-hidden" id="lir-shield-btn" data-tip="SHIELD — Compliance" onclick="revealPanel('shield')" title="SHIELD" aria-label="Toggle SHIELD panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
         <span class="material-icons">shield</span>
         <span class="lir-dot" style="background:var(--primary)"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('shield')" title="On left — tap to move right"></span>
         <span class="lir-label">Shield</span>
       </button>
-      <button type="button" class="lir-btn lir-panel-btn lir-lens lir-hidden" id="lir-lens-btn" data-tip="LENS — Analytics" onclick="toggleLensPanel()" title="LENS" aria-label="Toggle LENS panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-lens lir-hidden" id="lir-lens-btn" data-tip="LENS — Analytics" onclick="revealPanel('lens')" title="LENS" aria-label="Toggle LENS panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
         <span class="material-icons">analytics</span>
         <span class="lir-dot" style="background:#5B9BD5"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
         <span class="lir-label">LENS</span>
       </button>
-      <button type="button" class="lir-btn lir-panel-btn lir-vault lir-hidden" id="lir-vault-btn" data-tip="VAULT — Documents" onclick="toggleVaultPanel()" title="VAULT" aria-label="Toggle VAULT panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-vault lir-hidden" id="lir-vault-btn" data-tip="VAULT — Documents" onclick="revealPanel('vault')" title="VAULT" aria-label="Toggle VAULT panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
         <span class="material-icons">lock</span>
         <span class="lir-dot" style="background:#D4A853"></span>
@@ -4434,7 +4563,7 @@
         <span class="lir-label">Vault</span>
       </button>
       <div class="lir-divider" style="display:none"></div>
-      <button type="button" class="lir-btn lir-panel-btn flip-right lir-nfp" id="lir-nfp-btn" data-tip="NFP+" onclick="toggleNfpPanel()" title="NFP+ — Nutrition Fact Panel" aria-label="Toggle NFP+ panel">
+      <button type="button" class="lir-btn lir-panel-btn flip-right lir-nfp" id="lir-nfp-btn" data-tip="NFP+" onclick="revealNfpPanel()" title="NFP+ — Nutrition Fact Panel" aria-label="Toggle NFP+ panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('nfp')" title="On right — tap to move left"></span>
         <span class="material-icons">receipt_long</span>
         <span class="lir-dot" style="background:var(--primary);display:none"></span>
@@ -4458,16 +4587,20 @@
           <span class="material-symbols-outlined">splitscreen_bottom</span>
           <span class="lir-label">Split</span>
         </button>
+        <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-stack" data-tip="Stacked view — modules stacked in one long scroll" onclick="setModuleLayout('stack')" title="Stacked view — modules stacked in one long scroll" aria-label="Switch to stacked layout">
+          <span class="material-symbols-outlined">horizontal_split</span>
+          <span class="lir-label">Stack</span>
+        </button>
       </div>
       <div class="lir-divider" aria-hidden="true"></div>
       <div class="lir-rail-actions">
       <!-- Notifications — mirrors the dashboard's notification bell -->
-      <button type="button" class="lir-btn lir-notif has-dot" id="lir-notif-btn" data-tip="Notifications" onclick="toggleNotifications(event)" title="Notifications" aria-label="Notifications">
+      <button type="button" class="lir-btn lir-notif has-dot" id="lir-notif-btn" data-tip="Notifications" onclick="revealNotifications(event)" title="Notifications" aria-label="Notifications">
         <span class="material-icons">notifications</span>
         <span class="lir-label">Alerts</span>
       </button>
       <!-- Agent Settings — its own module (panel) with left/right flip pips -->
-      <button type="button" class="lir-btn lir-panel-btn lir-settings" id="lir-settings-btn" data-tip="Agent Settings" onclick="toggleSettingsPanel()" title="Agent Settings" aria-label="Toggle Agent Settings panel">
+      <button type="button" class="lir-btn lir-panel-btn lir-settings" id="lir-settings-btn" data-tip="Agent Settings" onclick="revealSettingsPanel()" title="Agent Settings" aria-label="Toggle Agent Settings panel">
         <span class="material-icons">tune</span>
         <span class="lir-dot" style="background:var(--primary);display:none"></span>
         <span class="lir-label">Agents</span>
@@ -4915,7 +5048,7 @@
         <div id="settings-screen">
             <!-- Header -->
             <div class="ss-header">
-                <div class="panel-header-icon flex items-center justify-center shrink-0" style="width:24px;height:24px;color:var(--primary);">
+                <div class="panel-header-icon flex items-center justify-center shrink-0" style="width:24px;height:24px;">
                     <span class="material-icons" style="font-size:20px;">tune</span>
                 </div>
                 <div style="flex:1;min-width:0;">
@@ -5300,8 +5433,8 @@
 
         <!-- Header -->
         <div class="nfp-panel-header">
-          <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-soft);border:1px solid var(--primary-20);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <span class="material-icons" style="font-size:15px;color:var(--primary)">receipt_long</span>
+          <div class="panel-header-icon w-[30px] h-[30px] flex items-center justify-center shrink-0">
+            <span class="material-icons" style="font-size:16px;">receipt_long</span>
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:var(--fs-ui);font-weight:700;color:var(--text);">NFP<span style="color:var(--primary)">+</span></div>
@@ -5866,6 +5999,41 @@
     function toggleLensPanel(force)   { togglePanel('lens',   force); }
     function toggleVaultPanel(force)  { togglePanel('vault',  force); }
 
+    /* Smoothly bring a panel into view once layout has settled. */
+    function scrollPanelIntoView(panelId) {
+      const panel = panelId && document.getElementById(panelId);
+      if (!panel) return;
+      requestAnimationFrame(() => {
+        panel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
+      });
+    }
+
+    /* A top-bar icon always takes you to its panel: it turns the panel on if
+       it's off, and either way scrolls it into view. It never closes the panel
+       on click — clicking when already open just transports you to it. */
+    function revealPanel(agentId) {
+      togglePanel(agentId, true);
+      scrollPanelIntoView(AGENT_PANEL_CFG[agentId] && AGENT_PANEL_CFG[agentId].panelId);
+    }
+    function revealHistoryPanel() {
+      const panel = document.getElementById('history-panel');
+      if (panel && !panel.classList.contains('open')) toggleHistoryPanel();
+      scrollPanelIntoView('history-panel');
+    }
+    function revealNfpPanel() {
+      toggleNfpPanel(true);
+      scrollPanelIntoView('nfp-panel');
+    }
+    function revealSettingsPanel() {
+      toggleSettingsPanel(true);
+      scrollPanelIntoView('settings-screen');
+    }
+    function revealNotifications(e) {
+      if (e) e.stopPropagation();
+      toggleNotificationsPanel(true);
+      document.getElementById('lir-notif-btn')?.classList.add('is-read');
+    }
+
     /* Hide / show the agent's top LIR icon based on its on/off state. */
     function syncLirVisibility(agentId) {
       const cfg = AGENT_PANEL_CFG[agentId];
@@ -6182,8 +6350,22 @@
       return el;
     }
 
-    /* Canned, intent-aware reply — mirrors defaultReply() in scout-chat.js. */
-    function scoutReply(text) {
+    /* Intent-keyed openers so a clicked welcome chip ALWAYS continues the
+       conversation on its own feature — mirrors DEFAULT_INTENT_REPLIES in
+       scout-chat.js. */
+    const INTENT_REPLIES = {
+      customer_profile: 'Let’s start a new verification. I’ll set up the customer profile, then walk you through <strong>Confirm → Attest → Activate</strong> on your eligible UPCs. Who are we verifying first?',
+      resume_prompt: 'Picking up where you left off — you have verifications in progress. Want me to reopen your most recent draft, or list them all so you can choose which to continue?',
+      faq_intro: 'Ask me anything about verification, UPF scoring, the WISE Foods registry, or the Verified Shield Badge. What would you like to know?',
+      registry_home: 'Opening the WISE Foods registry. I can search SKUs, pull nutritional metadata, and cross-reference products. Which food should I look up?',
+      add_food_intro: 'Let’s add a new food. Paste a label, spec sheet, or product URL and I’ll parse it into NFP+ toward the <strong>Brand Verified</strong> standard.',
+      edit_food_select: 'Which product would you like to edit? I’ll open it so you can update NFP+, ingredients, images, and visibility.',
+    };
+
+    /* Canned, intent-aware reply — mirrors defaultReply() in scout-chat.js. An
+       intent id (from a clicked chip) wins over the label keyword regex. */
+    function scoutReply(text, intent) {
+      if (intent && INTENT_REPLIES[intent]) return INTENT_REPLIES[intent];
       const q = String(text).toLowerCase();
       if (/(verif|shield|non-upf|clean label|attest)/.test(q))
         return 'I can run the verification flow — <strong>Confirm → Attest → Activate</strong>. Want me to start with your eligible UPCs?';
@@ -6198,9 +6380,9 @@
       return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout layout and controls.';
     }
 
-    function scoutRespond(text) {
+    function scoutRespond(text, intent) {
       const typing = showScoutTyping();
-      setTimeout(() => { typing?.remove(); addScoutMessage(scoutReply(text)); }, 600);
+      setTimeout(() => { typing?.remove(); addScoutMessage(scoutReply(text, intent)); }, 600);
     }
 
     /* Each intent chip on the Scout welcome screen pairs with the side
@@ -6233,7 +6415,8 @@
       applyIntentSummary(nextStage);
       hideWelcomeScreen(() => {
         addUserMessage(label);
-        scoutRespond(label);
+        /* Continue the conversation on the chip's own intent, not its label. */
+        scoutRespond(label, nextStage);
       });
     }
 
@@ -6279,7 +6462,7 @@
       let hideTimer = null;
       function showTip(btn) {
         const label = btn.getAttribute('data-tip');
-        if (!label || btn.classList.contains('lir-active')) return;
+        if (!label) return;
         clearTimeout(hideTimer);
         tip.textContent = label;
         const r = btn.getBoundingClientRect();
@@ -6456,11 +6639,12 @@
       }
     }
     function setModuleLayout(mode) {
-      if (mode !== 'grid' && mode !== 'split') mode = 'col';
+      if (mode !== 'grid' && mode !== 'split' && mode !== 'stack') mode = 'col';
       const row = document.getElementById('modules-row');
       if (!row) return;
       applySplitWrap(mode === 'split');
       row.classList.toggle('modules-grid', mode === 'grid');
+      row.classList.toggle('modules-stack', mode === 'stack');
       const setBtn = (id, active) => {
         const btn = document.getElementById(id);
         btn?.classList.toggle('lir-layout-active', active);
@@ -6468,6 +6652,7 @@
       setBtn('lir-layout-col', mode === 'col');
       setBtn('lir-layout-grid', mode === 'grid');
       setBtn('lir-layout-split', mode === 'split');
+      setBtn('lir-layout-stack', mode === 'stack');
       try { localStorage.setItem('wise-module-layout', mode); } catch (_) {}
     }
 
@@ -6838,7 +7023,7 @@
     /* Restore persisted layout mode */
     try {
       const savedLayout = localStorage.getItem('wise-module-layout');
-      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split') setModuleLayout(savedLayout);
+      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split' || savedLayout === 'stack') setModuleLayout(savedLayout);
     } catch (_) {}
     selectAgent('wise');
     updateAgentsCount();

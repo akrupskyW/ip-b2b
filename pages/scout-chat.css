@@ -78,15 +78,10 @@ html.dark .chat-topbar {
 
 /* WISE-owl bug icon (the .panel-header-icon container in the real app) */
 .sc-bug {
-  width: 30px; height: 30px; border-radius: 9999px; flex-shrink: 0;
+  width: 30px; height: 30px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: var(--surface-3);
-  box-shadow: inset 0 0 0 1px var(--border);
 }
-.sc-bug svg { width: 18px; height: 10px; color: var(--primary); }
-html.dark .sc-bug {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
-}
+.sc-bug svg { width: 18px; height: 10px; color: var(--text); }
 
 .sc-topbar-titles { display: flex; flex-direction: column; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: 1rem; line-height: 1.2; }
@@ -367,10 +362,9 @@ html.dark .sc-settings .ss-header {
 .sc-settings .ss-back-btn:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--text); }
 .sc-settings .ss-back-btn .material-icons { font-size: 20px !important; }
 .sc-settings .ss-header-icon {
-  width: 28px; height: 28px; border-radius: 9999px; flex-shrink: 0;
+  width: 28px; height: 28px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: var(--surface-3); color: var(--primary);
-  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text);
 }
 .sc-settings .ss-header-icon .material-icons { font-size: 18px !important; }
 .sc-settings .ss-header-titles { flex: 1; min-width: 0; }

@@ -29,6 +29,20 @@ const DEFAULT_INTENTS = [
   { intent: 'edit_food_select', label: 'Edit an Existing Food', icon: 'edit_note' },
 ];
 
+/* Intent-keyed openers so a clicked chip ALWAYS continues the conversation with
+   an accurate, on-feature reply — instead of falling through to keyword regex on
+   the label (which left "Continue Existing" / "Ask a Question" with a generic
+   fallback). Keyed by the chip's `intent` id; callers can supply their own map
+   via opts.intentReplies for a different surface (e.g. the Portfolio). */
+const DEFAULT_INTENT_REPLIES = {
+  customer_profile: 'Let’s start a new verification. I’ll set up the customer profile, then walk you through <strong>Confirm → Attest → Activate</strong> on your eligible UPCs. Who are we verifying first?',
+  resume_prompt: 'Picking up where you left off — you have verifications in progress. Want me to reopen your most recent draft, or list them all so you can choose which to continue?',
+  faq_intro: 'Ask me anything about verification, UPF scoring, the WISE Foods registry, or the Verified Shield Badge. What would you like to know?',
+  registry_home: 'Opening the WISE Foods registry. I can search SKUs, pull nutritional metadata, and cross-reference products. Which food should I look up?',
+  add_food_intro: 'Let’s add a new food. Paste a label, spec sheet, or product URL and I’ll parse it into NFP+ toward the <strong>Brand Verified</strong> standard.',
+  edit_food_select: 'Which product would you like to edit? I’ll open it so you can update NFP+, ingredients, images, and visibility.',
+};
+
 /* Default agent roster shown in the in-chat "Agent Settings" panel — mirrors
    the roster in pages/ai-chat.html so the shared Scout surface exposes the
    same agents everywhere it's mounted. Callers can override via opts.agents.
@@ -124,7 +138,9 @@ const DEFAULT_TRUST = [
    source of record — the single most important piece of AI trust microcopy. */
 const DEFAULT_DISCLAIMER = 'Scout can make mistakes — review important details before you publish.';
 
-function defaultReply(text) {
+function defaultReply(text, intent) {
+  /* An intent-id match always wins so a clicked chip continues its own flow. */
+  if (intent && DEFAULT_INTENT_REPLIES[intent]) return DEFAULT_INTENT_REPLIES[intent];
   const q = String(text).toLowerCase();
   if (/(verif|shield|non-upf|clean label|attest)/.test(q))
     return 'I can run the verification flow — <strong>Confirm → Attest → Activate</strong>. Want me to start with your eligible UPCs?';
@@ -202,6 +218,8 @@ let _seq = 0;
  *   sub          {string}  welcome subheading
  *   hint         {string}  welcome hint line
  *   intents      {Array}   welcome intent chips [{intent,label,icon}]
+ *   intentReplies{object}  intent-id → reply (string|fn) so a clicked chip
+ *                          always continues with an on-feature answer
  *   placeholder  {string}  input placeholder
  *   flLabel      {string}  floating label text
  *   trust        {Array}   welcome trust badges [{icon,label}] (''/[] hides)
@@ -210,7 +228,7 @@ let _seq = 0;
  *   statusLabel  {string}  what Scout is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
- *   reply        {fn}      (text) => html string for Scout's response
+ *   reply        {fn}      (text,intent) => html string for Scout's response
  * @returns {{ addUser, addScout, reset, root }}
  */
 export function mountScoutChat(rootEl, opts = {}) {
@@ -227,7 +245,17 @@ export function mountScoutChat(rootEl, opts = {}) {
   const hint = opts.hint || 'or type a message below';
   const intents = opts.intents || DEFAULT_INTENTS;
   const placeholder = opts.placeholder || 'Type a message…';
-  const reply = typeof opts.reply === 'function' ? opts.reply : defaultReply;
+  /* Optional per-intent reply map for this surface; an intent-id hit here means
+     a clicked chip always continues with an on-feature answer. */
+  const intentReplies = opts.intentReplies && typeof opts.intentReplies === 'object' ? opts.intentReplies : null;
+  const baseReply = typeof opts.reply === 'function' ? opts.reply : defaultReply;
+  const reply = (text, intent) => {
+    if (intent && intentReplies && intentReplies[intent] != null) {
+      const r = intentReplies[intent];
+      return typeof r === 'function' ? r(text, intent) : r;
+    }
+    return baseReply(text, intent);
+  };
   /* Trust + microcopy (use `!== undefined` so a caller can pass '' / [] to hide). */
   const trust = opts.trust !== undefined ? opts.trust : DEFAULT_TRUST;
   const disclaimer = opts.disclaimer !== undefined ? opts.disclaimer : DEFAULT_DISCLAIMER;
@@ -371,9 +399,9 @@ export function mountScoutChat(rootEl, opts = {}) {
     scrollDown();
     return el;
   }
-  function scoutRespond(text) {
+  function scoutRespond(text, intent) {
     const typing = showTyping();
-    setTimeout(() => { typing?.remove(); addScout(reply(text)); }, 600);
+    setTimeout(() => { typing?.remove(); addScout(reply(text, intent)); }, 600);
   }
   /* Hidden file input reused by Attach + Camera; a chosen file posts as a
      message so the action has a visible result in the thread. */
@@ -465,7 +493,9 @@ export function mountScoutChat(rootEl, opts = {}) {
     if (def.intent === 'choose_agents') { openAgents(); return; }
     hideWelcome();
     addUser(def.label);
-    if (!handled) scoutRespond(def.label);
+    /* Route the reply by the chip's intent id (not just its label) so the
+       conversation always continues on the feature the chip represents. */
+    if (!handled) scoutRespond(def.label, def.intent);
   });
 
   /* Send */
