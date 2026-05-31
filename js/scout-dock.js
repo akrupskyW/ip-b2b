@@ -8,10 +8,13 @@
  * you just left — uniform across the whole app.
  *
  * Persisted state (key `wise-scout-dock`):
- *   { wide: boolean, side: 'left' | 'right' }
- *     • wide → the doubled-width column (also bridged to ai-chat.html's
- *              #chat-shell so "Scout is wide" carries everywhere).
- *     • side → which side of the modules row the dock pins to.
+ *   { wide: boolean, side: 'left' | 'right', visible: boolean }
+ *     • wide    → the doubled-width column (also bridged to ai-chat.html's
+ *                 #chat-shell so "Scout is wide" carries everywhere).
+ *     • side    → which side of the modules row the dock pins to.
+ *     • visible → whether the sticky dock is shown at all. Together with
+ *                 `side` this gives the Appearance control its three modes:
+ *                 off (visible:false), left and right (visible:true + side).
  *
  *   import { mountScoutDock } from './scout-dock.js';
  *   mountScoutDock(document.getElementById('scout-dock-panel'), { ... });
@@ -28,10 +31,18 @@ export function readScoutDockState() {
     return {
       wide: !!raw.wide,
       side: raw.side === 'left' ? 'left' : 'right',
+      visible: raw.visible !== false,
     };
   } catch (_) {
-    return { wide: false, side: 'right' };
+    return { wide: false, side: 'right', visible: true };
   }
+}
+
+/* The Appearance control speaks in three modes; the dock stores them as the
+   pair (visible, side). Translate between the two here so callers never have
+   to special-case the off state. */
+export function scoutDockMode(state = readScoutDockState()) {
+  return state.visible === false ? 'off' : state.side;
 }
 
 /* Persist a partial patch over the current state and return the result. */
@@ -46,6 +57,7 @@ export function writeScoutDockState(patch) {
 export function applyScoutDockState(dock, state = readScoutDockState()) {
   if (!dock) return;
 
+  dock.classList.toggle('scout-dock-open', state.visible !== false);
   dock.classList.toggle('panel-wide', state.wide);
   dock.classList.toggle('scout-dock-left', state.side === 'left');
 
@@ -57,14 +69,21 @@ export function applyScoutDockState(dock, state = readScoutDockState()) {
       ? 'Double width — tap for normal width'
       : 'Normal width — tap to double';
   }
+}
 
-  const flipBtn = dock.querySelector('.scout-dock-flip');
-  if (flipBtn) {
-    flipBtn.setAttribute('data-side', state.side);
-    flipBtn.title = state.side === 'left'
-      ? 'Docked left — tap to move to the right'
-      : 'Docked right — tap to move to the left';
-  }
+/**
+ * Set Scout's dock position from one of the three Appearance modes and apply
+ * it everywhere on the page at once. Persisted via `wise-scout-dock`, so the
+ * choice carries across navigations and syncs to other tabs.
+ * @param {'off'|'left'|'right'} mode
+ */
+export function setScoutDockPosition(mode) {
+  const patch = mode === 'off'
+    ? { visible: false }
+    : { visible: true, side: mode === 'left' ? 'left' : 'right' };
+  const state = writeScoutDockState(patch);
+  document.querySelectorAll('.scout-dock').forEach((dock) => applyScoutDockState(dock, state));
+  return state;
 }
 
 /**
@@ -88,22 +107,8 @@ export function mountScoutDock(dock, opts = {}) {
     },
   });
 
-  /* Add a side-flip control next to the width toggle so the dock's side is
-     adjustable (and therefore worth persisting) on every dock page. */
-  const controls = dock.querySelector('.sc-topbar-controls');
-  if (controls && !controls.querySelector('.scout-dock-flip')) {
-    const flip = document.createElement('button');
-    flip.type = 'button';
-    flip.className = 'panel-width-toggle-btn scout-dock-flip';
-    flip.setAttribute('aria-label', 'Move Scout to the other side');
-    flip.innerHTML = '<span class="material-icons">side_navigation</span>';
-    flip.addEventListener('click', () => {
-      const side = readScoutDockState().side === 'left' ? 'right' : 'left';
-      writeScoutDockState({ side });
-      applyScoutDockState(dock);
-    });
-    controls.insertBefore(flip, controls.firstChild);
-  }
+  /* Scout is the fixed anchor that modules flip around — it never flips sides
+     itself, so no side-flip control is added to its dock. */
 
   /* Restore the persisted place + size, then keep this dock in sync if the
      state changes in another tab/page. */

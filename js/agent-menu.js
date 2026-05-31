@@ -284,7 +284,7 @@ export const NAV_PRODUCTS = {
     id: 'wisecode-studio',
     label: 'WISEcode Studio',
     icon: 'design_services',
-    hash: 'processing',
+    locked: true,
   },
   'wisecode-portfolio': {
     id: 'wisecode-portfolio',
@@ -493,6 +493,17 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
         </div>`;
     }
 
+    /* Locked products stay visible in the nav but don't link anywhere — they
+       render as a non-interactive row with a trailing lock icon. */
+    if (product.locked) {
+      return `
+        <div class="menu-nav-item menu-nav-product menu-nav-locked" data-product-id="${escAttr(productId)}" aria-disabled="true">
+          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+          <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
+          <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+        </div>`;
+    }
+
     /* WISEcode AI renders as a plain product link — its agent tree is no
        longer expandable from the menu, so it stays closed (no children). */
     return `
@@ -506,6 +517,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   navEl.innerHTML = TOP_LEVEL_PRODUCT_IDS.map(renderProduct).join('');
 
   setupMenuRail(navEl);
+  setupMenuPivot(navEl);
 
   navEl.addEventListener('click', (e) => {
     const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');
@@ -601,17 +613,38 @@ function setupMenuRailTooltip() {
   const ROW_SELECTOR = '.menu-nav-item, .menu-nav-subitem';
   let current = null;
 
+  /* Read a row's label as plain text. The `.tagline-tm` <sup> carries the
+     literal characters "TM"; swap it for a proper ™ so the tooltip reads
+     "WISEcode AI™" instead of "WISEcode AITM". */
+  const labelText = (labelEl) => {
+    if (!labelEl) return '';
+    const clone = labelEl.cloneNode(true);
+    const hadTm = clone.querySelector('.tagline-tm');
+    clone.querySelectorAll('.tagline-tm').forEach((n) => n.remove());
+    let text = clone.textContent.trim();
+    if (hadTm) text += '\u2122';
+    return text;
+  };
+
   const show = (row) => {
-    const panel = row.closest('#menu-panel.mp-rail');
+    const panel = row.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot');
     if (!panel) return;
     const labelEl = row.querySelector('.menu-nav-label');
-    const label = labelEl ? labelEl.textContent.trim() : '';
+    const label = labelText(labelEl);
     if (!label) return;
     current = row;
     tip.textContent = label;
     const r = row.getBoundingClientRect();
-    tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
-    tip.style.left = `${Math.round(r.right + 10)}px`;
+    if (panel.classList.contains('mp-pivot')) {
+      /* Horizontal bar — float the label below the hovered icon. */
+      tip.classList.add('menu-rail-tip-below');
+      tip.style.top = `${Math.round(r.bottom + 8)}px`;
+      tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
+    } else {
+      tip.classList.remove('menu-rail-tip-below');
+      tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
+      tip.style.left = `${Math.round(r.right + 10)}px`;
+    }
     tip.offsetWidth; /* reflow so the enter transition plays */
     tip.classList.add('menu-rail-tip-visible');
   };
@@ -635,6 +668,82 @@ function setupMenuRailTooltip() {
   document.addEventListener('focusout', hide);
   window.addEventListener('scroll', hide, true);
   window.addEventListener('resize', hide);
+}
+
+/* ====================================================================
+   Pivot navigation.
+
+   The Appearance popover's "Pivot Navigation" toggle flips the vertical
+   nav module (#menu-panel) into a horizontal top bar — icon-only, every
+   row laid out side by side, mirroring the old top-bar rail. Adding
+   `.mp-pivot` to the panel + `.menu-pivoted` to the shell wrap restacks
+   the grid (nav row on top, modules below) and lays the nav out as a row.
+   The preference persists in localStorage so it carries across pages.
+==================================================================== */
+const MENU_PIVOT_STORE_KEY = 'wise-menu-pivot';
+
+function shellWrapEl() {
+  return (
+    document.getElementById('agent-shell-wrap') ||
+    document.getElementById('chat-shell-wrap')
+  );
+}
+
+/** Re-apply the inert/aria-hidden state on group children based on each
+ *  group's open state — used when leaving pivot so collapsed groups go
+ *  back to being non-interactive. */
+function syncGroupChildrenInert(panel) {
+  panel.querySelectorAll('.menu-nav-group').forEach((group) => {
+    const childrenEl = group.querySelector('.menu-nav-children');
+    if (!childrenEl) return;
+    if (group.dataset.open === 'true') {
+      childrenEl.removeAttribute('inert');
+      childrenEl.removeAttribute('aria-hidden');
+    } else {
+      childrenEl.setAttribute('inert', '');
+      childrenEl.setAttribute('aria-hidden', 'true');
+    }
+  });
+}
+
+/** True when the nav module is currently pivoted into the horizontal bar. */
+export function isMenuPivoted() {
+  const panel = document.getElementById('menu-panel');
+  return !!panel && panel.classList.contains('mp-pivot');
+}
+
+/** Toggle the nav module between the vertical panel and the horizontal bar. */
+export function setMenuPivot(on) {
+  const panel = document.getElementById('menu-panel');
+  if (!panel) return;
+  panel.classList.toggle('mp-pivot', on);
+  shellWrapEl()?.classList.toggle('menu-pivoted', on);
+
+  if (on) {
+    /* Flatten: every icon — including children of collapsed groups — is
+       shown in the row, so make them all interactive + readable. */
+    panel.querySelectorAll('.menu-nav-children').forEach((el) => {
+      el.removeAttribute('inert');
+      el.removeAttribute('aria-hidden');
+    });
+  } else {
+    syncGroupChildrenInert(panel);
+  }
+
+  try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
+}
+
+export function toggleMenuPivot() {
+  setMenuPivot(!isMenuPivoted());
+}
+
+/** Apply the persisted pivot preference on mount. */
+function setupMenuPivot(navEl) {
+  const panel = navEl.closest('#menu-panel');
+  if (!panel) return;
+  let pivoted = false;
+  try { pivoted = localStorage.getItem(MENU_PIVOT_STORE_KEY) === '1'; } catch (_) {}
+  if (pivoted) setMenuPivot(true);
 }
 
 /** Returns descendants in DFS order with their depth (1-based) under the root. */

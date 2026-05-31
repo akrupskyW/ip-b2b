@@ -197,7 +197,9 @@ body {
   vertical-align: super;
   margin-left: 1px;
 }
-@media (max-width: 1023px) {
+/* Collapse the brand to the compact owl bug only at the shared portrait-tablet
+   breakpoint (≤560px) — above it the nav keeps the full wordmark on every page. */
+@media (max-width: 560px) {
   .topbar-logo svg.tl-full { display: none; }
   .topbar-logo svg.tl-bug  { display: block; }
   .topbar-tagline { display: none; }
@@ -720,18 +722,44 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   color: #fff;
 }
 
+/* Icon variant of the segmented row, used by the Scout dock off/left/right
+   control in the Appearance popover. Widen the pill so the symbol breathes. */
+.fz-btns.scout-seg .fz-btn {
+  width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.fz-btns.scout-seg .fz-btn .material-symbols-outlined {
+  font-size: 18px;
+  line-height: 1;
+}
+
 /* Text-size accessibility — scale readable module bodies via --wise-text-scale.
-   Chrome (top bar, menu nav, module headers) stays at authored size. */
+   Chrome (top bar, menu nav, module headers) stays at authored size.
+
+   Scout note: the header (.chat-topbar) must NOT scale, or it stops matching the
+   other module headers (all locked to --panel-header-h = 60px) and the two Scout
+   surfaces diverge — the inline ai-chat shell rendered its header at 60×scale
+   (e.g. 70.8px at 'lg', 49.2px at 'sm') while the shared dock stayed 60px. So we
+   zoom only the body + composer of each Scout surface, never its header:
+     - ai-chat inline shell: every #chat-shell child EXCEPT .chat-topbar
+     - shared dock card:      .sc-body + .chat-input-rail (the old
+                              `.scout-dock .sc-card` rule never matched because the
+                              dock element is itself the .sc-card, so portfolio
+                              Scout text never scaled at all — fixed here). */
 .wise-text-scale,
-#chat-shell,
 .agent-main-scroll,
 .pf-module-scroll,
 .side-panel-body,
-.scout-dock .sc-card,
 .alerts-panel-body,
 #settings-screen .ss-inner,
 #notif-panel .notif-inner,
-#verification-sidebar .vs-inner {
+#verification-sidebar .vs-inner,
+#chat-shell > div:not(.chat-topbar),
+.scout-dock .sc-body,
+.scout-dock .chat-input-rail {
   zoom: var(--wise-text-scale);
 }
 
@@ -846,6 +874,45 @@ html.dark .topbar-trailing .lir-btn.lir-active {
 #modules-row {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   RESPONSIVE — portrait tablet + phone (≤ 560px). Mirrors the chat
+   page (pages/ai-chat.html) 1:1: below this width the modules drop
+   from a horizontally-scrolling row into a single-column stack. The
+   shell grid is kept at every width, so the navigation stays a left
+   nav (or pivoted to the top) exactly as on desktop — only the
+   modules stack. This is the single shared breakpoint for every page.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  #modules-row {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  #modules-row > #agent-main,
+  #modules-row > #scout-dock-panel,
+  #modules-row > #alerts-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+    align-self: stretch;
+  }
+  /* Agent main is the protagonist; Scout + alerts get a bounded,
+     scannable stacked height rather than dominating the page. */
+  #modules-row > #agent-main { min-height: 70dvh; }
+  #scout-dock-panel.scout-dock-open {
+    min-height: 60dvh;
+    max-height: 70dvh;
+  }
+  #modules-row > #alerts-panel {
+    min-height: 280px;
+    max-height: 60dvh;
+  }
 }
 
 @keyframes panelBounceLeft {
@@ -1059,23 +1126,38 @@ html.dark .menu-footer { border-top-color: rgba(255, 255, 255, 0.08); }
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
+  min-height: 44px;
   padding: 8px 10px;
   width: 100%;
   box-sizing: border-box;
 }
-.menu-footer .menu-nav-icon .material-symbols-outlined {
-  color: var(--primary);
+/* Footer actions (Appearance + profile) are buttons, NOT the current page —
+   so, exactly like the nav items, they show no disc and no accent colour until
+   hovered. Otherwise the avatar + Appearance read as permanently "on". */
+.menu-footer .menu-nav-icon {
+  background: transparent;
+  box-shadow: none;
+}
+.menu-footer .menu-nav-icon .material-symbols-outlined,
+.menu-footer .menu-nav-icon .material-icons {
+  color: var(--text-muted);
+}
+.menu-footer .menu-nav-item:hover .menu-nav-icon {
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+.menu-footer .menu-nav-item:hover .menu-nav-icon .material-icons,
 .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   color: var(--primary);
 }
 html.dark .menu-footer .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-footer .menu-nav-icon .material-icons,
 html.dark .menu-footer .menu-nav-icon.menu-footer-avatar {
-  color: var(--primary-bright);
+  color: var(--text-muted);
 }
 html.dark .menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-footer .menu-nav-item:hover .menu-nav-icon .material-icons,
 html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   color: var(--primary-bright);
 }
@@ -1083,7 +1165,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--primary);
+  color: var(--text-muted);
 }
 .menu-footer-profile .menu-nav-icon { position: relative; }
 .menu-footer-profile.has-dot .menu-nav-icon::after {
@@ -1120,14 +1202,14 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 /* Every row in the menu is exactly the same height regardless of whether it
    is expandable. The chevron-btn on toggle rows (22px) is smaller than the
-   icon disc (26px) so this min-height locks the row at icon-height + 2 × 8px
-   padding = 42px, which matches plain rows exactly. */
+   icon disc (28px) so this min-height locks the row at icon-height + 2 × 8px
+   padding = 44px, which matches plain rows exactly. */
 .menu-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  min-height: 42px;
+  min-height: 44px;
   box-sizing: border-box;
   border-radius: var(--radius-pill);
   color: var(--text);
@@ -1149,8 +1231,8 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   color: var(--primary);
 }
 .menu-nav-icon {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   background: var(--primary-soft);
   display: inline-flex;
@@ -1158,6 +1240,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
 }
 .menu-nav-icon .material-icons {
   font-size: 16px !important;
@@ -1176,11 +1259,36 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   text-overflow: ellipsis;
 }
 .menu-nav-label .tagline-tm {
-  font-size: 0.65em;
+  font-size: 0.6em;
   letter-spacing: 0;
-  vertical-align: super;
+  /* `top` (not `super`) keeps the glyph inside the line box so the label's
+     `overflow: hidden` (for ellipsis) never slices the top off the ™. */
+  vertical-align: top;
+  line-height: 1.4;
   margin-left: 1px;
 }
+/* Locked nav row — visible but not a link. Muted, no pointer, with a small
+   trailing lock glyph. */
+.menu-nav-item.menu-nav-locked {
+  cursor: default;
+  color: var(--text-muted);
+}
+.menu-nav-item.menu-nav-locked:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+.menu-nav-lock {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  color: var(--text-subtle, var(--text-muted));
+}
+.menu-nav-lock .material-icons {
+  font-size: 15px !important;
+}
+#menu-panel.mp-rail .menu-nav-lock { display: none; }
 .menu-nav-chevron-btn {
   display: inline-flex;
   align-items: center;
@@ -1333,6 +1441,56 @@ html.dark .menu-nav-subitem.is-active {
 }
 html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-bright); }
 
+/* ===== ACTIVE-ONLY ICON DISC =====
+   The blue disc behind a product/agent icon belongs to the HIGHLIGHTED row
+   only — the current page (.is-active), an open group, or the hovered row.
+   Every other (inactive) item reads as a plain muted glyph with no circle and
+   no accent colour, so the menu surfaces exactly one lit item. This also makes
+   the expanded panel match the icon-only rail/pivot, which already worked this
+   way. (Footer avatar / Appearance keep their own treatment — not `.menu-nav`.) */
+.menu-nav .menu-nav-icon {
+  background: transparent;
+  box-shadow: none;
+}
+.menu-nav .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-nav .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-icon .material-symbols-outlined {
+  color: var(--text-muted);
+}
+.menu-nav .menu-nav-item:not(.menu-nav-locked):hover .menu-nav-icon,
+.menu-nav .menu-nav-item.is-active .menu-nav-icon,
+.menu-nav .menu-nav-item.is-open .menu-nav-icon,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-icon,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-nav-icon {
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.menu-nav .menu-nav-item:not(.menu-nav-locked):hover .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-item:not(.menu-nav-locked):hover .menu-nav-icon .material-symbols-outlined,
+.menu-nav .menu-nav-item.is-active .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-item.is-active .menu-nav-icon .material-symbols-outlined,
+.menu-nav .menu-nav-item.is-open .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-item.is-open .menu-nav-icon .material-symbols-outlined,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-icon .material-symbols-outlined,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-nav-icon .material-icons,
+.menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-nav-icon .material-symbols-outlined {
+  color: var(--primary);
+}
+html.dark .menu-nav .menu-nav-item:not(.menu-nav-locked):hover .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-item:not(.menu-nav-locked):hover .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-nav .menu-nav-item.is-active .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-item.is-active .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-nav .menu-nav-item.is-open .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-item.is-open .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-nav-icon .material-icons,
+html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-nav-icon .material-symbols-outlined {
+  color: var(--primary-bright);
+}
+
 /* Agents nested under WISEcode AI (product tier) */
 .menu-nav-agents-inner {
   gap: 4px;
@@ -1456,6 +1614,192 @@ html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-b
   opacity: 1;
   transform: translateY(-50%) translateX(0);
 }
+/* Pivot (horizontal bar) — tooltip floats below the icon, centered on it. */
+#menu-rail-tip.menu-rail-tip-below {
+  transform: translateX(-50%) translateY(-4px);
+}
+#menu-rail-tip.menu-rail-tip-below.menu-rail-tip-visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== PIVOT NAVIGATION =====
+   The Appearance popover's "Pivot Navigation" toggle flips the vertical nav
+   module into a horizontal top bar (.mp-pivot on #menu-panel, .menu-pivoted on
+   the shell wrap). The shell grid restacks to nav-on-top / modules-below, and
+   the panel lays its rows out side by side — icon-only, exactly like the old
+   top-bar rail. */
+#agent-shell-wrap.menu-brand-integrated.menu-pivoted,
+#chat-shell-wrap.menu-brand-integrated.menu-pivoted {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "menu"
+    "modules";
+  column-gap: 0;
+}
+#menu-panel.mp-pivot.mp-open {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  /* Inset the bar from the shell edges so it reads as a floating pill (matching
+     the top gap), not a full-bleed strip. box-sizing keeps width:100% honest. */
+  box-sizing: border-box;
+  padding: 0 12px;
+}
+#menu-panel.mp-pivot .menu-inner {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: visible;
+  /* Soft rounded corners (matching the vertical panel), NOT extreme pill caps —
+     a 9999px radius carves big semicircles that crowd the owl on the left and
+     clip the avatar on the right. A clean radius gives the bar a tidy card edge
+     with real room at both ends. */
+  border-radius: 16px;
+}
+/* Brand strip → owl bug only, docked at the far left of the bar. */
+#menu-panel.mp-pivot .menu-brand-bar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  flex-shrink: 0;
+  min-height: var(--shell-topbar-h);
+  margin-bottom: 0;
+  /* Generous symmetric padding so the owl sits centered in its segment with
+     real breathing room on BOTH sides — clear of the rounded left corner and
+     well off the right divider. `!important` is required because the panel can
+     also carry `.mp-rail` (collapsed + pivoted at once), whose brand-bar rule
+     forces `padding: 0 !important` and would otherwise clobber this. */
+  padding: 0 26px !important;
+  border-right: 1px solid var(--border);
+}
+html.dark #menu-panel.mp-pivot .menu-brand-bar { border-right-color: rgba(255, 255, 255, 0.08); }
+#menu-panel.mp-pivot .menu-brand-logo svg.tl-full,
+#menu-panel.mp-pivot .menu-brand-logo .topbar-tagline { display: none !important; }
+#menu-panel.mp-pivot .menu-brand-logo svg.tl-bug {
+  display: block !important;
+  width: 28px;
+  height: auto;
+}
+#menu-panel.mp-pivot .menu-brand-bar .topbar-menu-toggle { display: none !important; }
+
+/* Body grows + scrolls horizontally; the nav becomes a row of icons. */
+.menu-brand-integrated #menu-panel.mp-pivot .menu-panel-body {
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#menu-panel.mp-pivot .menu-panel-body::-webkit-scrollbar { height: 0; display: none; }
+#menu-panel.mp-pivot .menu-nav {
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+#menu-panel.mp-pivot .menu-nav-group,
+#menu-panel.mp-pivot .menu-nav-product-group {
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  gap: 2px;
+}
+/* Vertical dividers between each top-level product cluster (WISEcode AI /
+   Portfolio / Studio + their sections), mirroring the section-rail grouping. */
+#menu-panel.mp-pivot .menu-nav > *:not(:first-child) {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+html.dark #menu-panel.mp-pivot .menu-nav > *:not(:first-child) {
+  border-left-color: rgba(255, 255, 255, 0.10);
+}
+/* Drop the grid expand/collapse — every group's children sit inline. */
+#menu-panel.mp-pivot .menu-nav-children,
+#menu-panel.mp-pivot .menu-nav-group[data-open="false"] > .menu-nav-children {
+  display: flex;
+  grid-template-rows: none;
+  overflow: visible;
+  max-height: none;
+  pointer-events: auto;
+  margin: 0;
+  padding: 0;
+}
+#menu-panel.mp-pivot .menu-nav-children-inner,
+#menu-panel.mp-pivot .menu-nav-group[data-open="false"] > .menu-nav-children .menu-nav-children-inner {
+  flex-direction: row;
+  align-items: center;
+  visibility: visible;
+  opacity: 1;
+  overflow: visible;
+  border-left: 0;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+}
+/* Icon-only rows, each centered on its icon. */
+#menu-panel.mp-pivot .menu-nav-label,
+#menu-panel.mp-pivot .menu-nav-chevron-btn,
+#menu-panel.mp-pivot .menu-nav-section-label { display: none !important; }
+#menu-panel.mp-pivot .menu-nav-item,
+#menu-panel.mp-pivot .menu-nav-subitem {
+  justify-content: center;
+  gap: 0;
+  width: auto;
+  min-height: 0;
+  padding: 8px;
+  flex-shrink: 0;
+}
+/* Inactive icons read as plain black glyphs — no blue accent, no circle disc,
+   not grayed. Only an open module (or the current/hovered item) keeps the
+   highlighted pill + accent color. */
+#menu-panel.mp-pivot .menu-nav-item:not(.is-active):not(.is-open):not(:hover) .menu-nav-icon,
+#menu-panel.mp-pivot .menu-nav-product:not(.is-active):not(:hover) .menu-nav-icon {
+  background: transparent;
+  box-shadow: none;
+}
+#menu-panel.mp-pivot .menu-nav-item:not(.is-active):not(.is-open):not(:hover) .menu-nav-icon .material-icons,
+#menu-panel.mp-pivot .menu-nav-item:not(.is-active):not(.is-open):not(:hover) .menu-nav-icon .material-symbols-outlined,
+#menu-panel.mp-pivot .menu-nav-subitem:not(.is-active):not(:hover) .menu-nav-subicon,
+#menu-panel.mp-pivot .menu-nav-subitem:not(.is-active):not(:hover) .menu-nav-subicon .material-icons,
+#menu-panel.mp-pivot .menu-nav-subitem:not(.is-active):not(:hover) .menu-nav-subicon .material-symbols-outlined {
+  color: var(--text);
+}
+
+/* Footer (Appearance + profile) docks at the far right of the bar. */
+#menu-panel.mp-pivot .menu-footer {
+  flex-shrink: 0;
+  margin-top: 0;
+  border-top: 0;
+  border-left: 1px solid var(--border);
+  /* Mirror the brand side: extra right padding so the avatar (and its unread
+     dot) clears the rounded right corner instead of being clipped against it. */
+  padding: 0 20px 0 10px;
+  display: flex;
+  align-items: center;
+}
+html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 255, 0.08); }
+#menu-panel.mp-pivot .menu-footer-actions {
+  flex-direction: row;
+  width: auto;
+  gap: 2px;
+}
+#menu-panel.mp-pivot .menu-footer-layout,
+#menu-panel.mp-pivot .menu-footer-profile { width: auto; }
+#menu-panel.mp-pivot .menu-footer .menu-nav-item {
+  justify-content: center;
+  gap: 0;
+  width: auto;
+  min-height: 0;
+  padding: 8px;
+}
+#menu-panel.mp-pivot .menu-footer .menu-nav-label { display: none !important; }
 
 /* ===== MAIN MODULE (overview content) =====
    Mirrors the chat-shell / scout-panel module pattern from ai-chat.html:

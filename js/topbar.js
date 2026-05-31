@@ -197,6 +197,13 @@ export function isMenuFooterAnchor(anchor) {
 
 /** Position a .wise-popover beside / above a menu-footer row (inside the nav module). */
 export function positionPopoverInMenuPanel(pop, anchor) {
+  /* Pivoted into the horizontal top bar, the "panel" spans the full screen
+     width — sizing the popover to it would make it huge. Fall back to the
+     compact top-bar placement (fit-to-content, dropped below the anchor). */
+  if (anchor.closest('#menu-panel.mp-pivot')) {
+    positionPopoverForTopbar(pop, anchor);
+    return;
+  }
   const panelInner = anchor.closest('#menu-panel .menu-inner') || anchor.closest('#menu-panel');
   const anchorRect = anchor.getBoundingClientRect();
   const panelRect = panelInner?.getBoundingClientRect() || anchorRect;

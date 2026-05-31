@@ -15,7 +15,7 @@ import {
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
-import { mountScoutDock } from './scout-dock.js';
+import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 
 function escHtml(s) {
@@ -765,11 +765,30 @@ function refreshAppearancePopover() {
   renderAppearanceBody(activeAppearancePopover);
 }
 
+/* Scout dock off / left / right segmented control — mirrors the portfolio
+   popover so Scout's sticky side stays uniform across every agent page. */
+function renderScoutDockRow() {
+  const mode = scoutDockMode();
+  const btn = (m, icon, label) =>
+    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
+  return `
+    <div class="fz-row">
+      <span class="fz-row-label">Scout chat</span>
+      <div class="fz-btns scout-seg" role="group" aria-label="Scout chat dock side">
+        ${btn('left', 'align_justify_flex_start', 'Dock Scout left')}
+        ${btn('off', 'align_justify_center', 'Hide Scout')}
+        ${btn('right', 'align_justify_flex_end', 'Dock Scout right')}
+      </div>
+    </div>`;
+}
+
 function renderAppearanceBody(pop) {
   const fz     = getStoredFontSize();
   const isDark = isDarkMode();
   pop.innerHTML = `
     <div class="wise-popover-header">Appearance</div>
+    ${renderScoutDockRow()}
+    <div class="wise-popover-divider"></div>
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>
       <div class="fz-btns">
@@ -804,6 +823,13 @@ function openAppearancePopover(anchor) {
   anchor.setAttribute('aria-expanded', 'true');
 
   pop.addEventListener('click', (ev) => {
+    const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
+    if (scoutBtn && pop.contains(scoutBtn)) {
+      ev.stopPropagation();
+      setScoutDockPosition(scoutBtn.dataset.scoutDock);
+      renderAppearanceBody(pop);
+      return;
+    }
     const fzBtn = ev.target.closest('.fz-btn[data-fz]');
     if (fzBtn && pop.contains(fzBtn)) {
       ev.stopPropagation();

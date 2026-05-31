@@ -11,7 +11,13 @@
  * the document so dynamically-rendered rail buttons are covered automatically.
  */
 
-const TOOLTIP_SELECTOR = '.lir-btn, .topbar-menu-toggle';
+/* Every icon-only control that lost its caption gets the same instant floating
+   tooltip: the top-bar rail buttons, the menu collapse toggle, and the
+   per-module header toggles (move-side / double-width / close). They expose
+   their name via `data-tip`, `aria-label`, or `title`. */
+const TOOLTIP_SELECTOR =
+  '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
+  '.panel-close-btn, .panel-ctrl-btn, .scout-dock-flip';
 
 function labelFor(btn) {
   const tip = btn.getAttribute('data-tip');

@@ -22,8 +22,10 @@ import {
   PORTFOLIO_SECTION_IDS,
   getPortfolioSection,
   iconClassFor,
+  toggleMenuPivot,
+  isMenuPivoted,
 } from './agent-menu.js';
-import { mountScoutDock } from './scout-dock.js';
+import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
@@ -2134,6 +2136,24 @@ function renderAvatarBody(pop) {
     <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
 }
 
+/* Scout dock off / left / right segmented control — keeps Scout stuck to a
+   side of the modules row (or hidden) across every page. Shared markup so the
+   portfolio and ai-chat popovers stay byte-for-byte in step. */
+function renderScoutDockRow() {
+  const mode = scoutDockMode();
+  const btn = (m, icon, label) =>
+    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
+  return `
+    <div class="fz-row">
+      <span class="fz-row-label">Scout chat</span>
+      <div class="fz-btns scout-seg" role="group" aria-label="Scout chat dock side">
+        ${btn('left', 'align_justify_flex_start', 'Dock Scout left')}
+        ${btn('off', 'align_justify_center', 'Hide Scout')}
+        ${btn('right', 'align_justify_flex_end', 'Dock Scout right')}
+      </div>
+    </div>`;
+}
+
 function renderAppearanceBody(pop) {
   const fz = getStoredFontSize();
   const dark = isDark();
@@ -2145,9 +2165,11 @@ function renderAppearanceBody(pop) {
         <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
       </div>`).join('')}
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pivot="1">
+    <div class="wise-popover-item${isMenuPivoted() ? ' is-active' : ''}" data-pivot="1">
       <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
     </div>
+    <div class="wise-popover-divider"></div>
+    ${renderScoutDockRow()}
     <div class="wise-popover-divider"></div>
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>
@@ -2231,6 +2253,20 @@ function openAppearance(anchor) {
     if (layoutItem) {
       ev.stopPropagation();
       setModuleLayout(layoutItem.dataset.layout);
+      return;
+    }
+    const pivotItem = ev.target.closest('[data-pivot]');
+    if (pivotItem) {
+      ev.stopPropagation();
+      toggleMenuPivot();
+      renderAppearanceBody(pop);
+      return;
+    }
+    const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
+    if (scoutBtn) {
+      ev.stopPropagation();
+      setScoutDockPosition(scoutBtn.dataset.scoutDock);
+      renderAppearanceBody(pop);
       return;
     }
     const fzBtn = ev.target.closest('.fz-btn[data-fz]');
@@ -2348,13 +2384,14 @@ function bootstrap() {
     if (asset) { e.preventDefault(); openAssetDownload(Number(asset.dataset.asset)); }
   });
 
-  /* Left-menu section links open (and scroll to) the matching module instead
-     of routing away — keeps the SPA, multi-module feel. */
+  /* Left-menu (and pivoted top-bar) section items are on/off toggles for their
+     module — same behaviour as the section rail buttons — instead of routing
+     away, keeping the SPA, multi-module feel. */
   navEl?.addEventListener('click', (e) => {
     const sub = e.target.closest('.menu-nav-subitem[data-section-id]');
     if (sub && !e.target.closest('.menu-nav-chevron-btn')) {
       e.preventDefault();
-      openModule(sub.dataset.sectionId);
+      toggleModule(sub.dataset.sectionId);
     }
   });
 

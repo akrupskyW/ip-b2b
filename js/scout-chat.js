@@ -227,6 +227,8 @@ let _seq = 0;
  *   sourceLabel  {string}  grounding caption appended to each Scout reply ('' hides)
  *   statusLabel  {string}  what Scout is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
+ *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
+ *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
  *   reply        {fn}      (text,intent) => html string for Scout's response
  * @returns {{ addUser, addScout, reset, root }}
@@ -290,6 +292,10 @@ export function mountScoutChat(rootEl, opts = {}) {
         <div class="panel-more-wrap">
         <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-icons">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
+          <button type="button" class="topbar-menu-item" data-sc="add-member"><span class="material-icons topbar-menu-icon">person_add</span><span>Add team member to chat</span></button>
+          <div class="topbar-menu-divider"></div>
+          <button type="button" class="topbar-menu-item" data-sc="history"><span class="material-icons topbar-menu-icon">history</span><span>History &amp; Projects</span></button>
+          <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-icons topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
@@ -548,7 +554,17 @@ export function mountScoutChat(rootEl, opts = {}) {
     const item = e.target.closest('[data-sc]');
     if (!item) return;
     const action = item.dataset.sc;
-    if (action === 'new') { reset(); closeMore(); }
+    if (action === 'add-member') {
+      closeMore();
+      if (typeof opts.onAddMember === 'function') opts.onAddMember();
+      else addScout('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this Scout conversation.');
+    }
+    else if (action === 'history') {
+      closeMore();
+      if (typeof opts.onHistory === 'function') opts.onHistory();
+      else addScout('History &amp; Projects lets you jump back into past Scout conversations. It’s coming to this workspace soon.');
+    }
+    else if (action === 'new') { reset(); closeMore(); }
     else if (action === 'agents') {
       closeMore();
       openAgents();

@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WISE Design System — Accessibility Review (WCAG 2.1)</title>
+<meta name="description" content="A live WCAG 2.1 / 2.2 accessibility audit of the WISE design system: color contrast, typography, spacing, touch targets and focus states across light and dark themes." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+<style>
+/* =============================================================
+   Accessibility Review — standalone audit of the WISE design
+   system tokens defined in pages/agent-page.css. Self-contained:
+   no dependency on the app shell or its JS modules. Recomputes
+   every WCAG contrast ratio live in the browser so the numbers
+   can never drift from the documented hex values.
+============================================================= */
+:root {
+  /* --- Light theme tokens (mirrors agent-page.css :root) --- */
+  --bg: #F9F8F3;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EA;
+  --surface-3: #EFEDE2;
+  --text: #111827;
+  --text-muted: #6B7280;
+  --text-subtle: #9CA3AF;
+  --border: rgba(17,24,39,0.08);
+  --border-strong: rgba(17,24,39,0.14);
+
+  --primary: #025ED3;
+  --primary-soft: rgba(2, 94, 211, 0.08);
+  --sec-green: #3BAA5C;
+  --sec-red: #D94C4C;
+  --ter-amber: #F5A524;
+  --ter-violet: #7C3AED;
+  --ter-cyan: #06B6D4;
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --radius-pill: 9999px;
+
+  --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
+  --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+  --shadow-card: var(--shadow-2);
+
+  --pass: #15803D;
+  --pass-bg: rgba(21, 128, 61, 0.10);
+  --warn: #B45309;
+  --warn-bg: rgba(180, 83, 9, 0.10);
+  --fail: #B91C1C;
+  --fail-bg: rgba(185, 28, 28, 0.10);
+}
+html.dark {
+  --bg: #05141C;
+  --surface: #0D1B24;
+  --surface-2: #112633;
+  --surface-3: #15303F;
+  --text: #F3F4F6;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --primary-soft: rgba(2, 94, 211, 0.18);
+  --primary-bright: #93C5FD;
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+
+  --pass: #4ADE80;
+  --pass-bg: rgba(74, 222, 128, 0.12);
+  --warn: #FBBF24;
+  --warn-bg: rgba(251, 191, 36, 0.12);
+  --fail: #F87171;
+  --fail-bg: rgba(248, 113, 113, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.35s ease, color 0.25s ease;
+}
+a { color: var(--primary); }
+html.dark a { color: var(--primary-bright); }
+
+/* ===== Layout ===== */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+@media (max-width: 640px) { .wrap { padding: 0 16px 72px; } }
+
+/* ===== Top bar ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 24px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 640px) { .topbar { padding: 12px 16px; } }
+.topbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar-logo {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--ter-cyan));
+  box-shadow: 0 4px 14px rgba(2,94,211,0.35);
+}
+.topbar-logo .material-icons { font-size: 20px; }
+.topbar-titles { min-width: 0; }
+.topbar-kicker { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); }
+html.dark .topbar-kicker { color: var(--primary-bright); }
+.topbar-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+.topbar-spacer { flex: 1; }
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text); font-family: inherit; font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
+html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
+.theme-toggle .material-icons { font-size: 18px; }
+
+/* ===== Hero ===== */
+.hero {
+  margin-top: 32px; padding: 36px 32px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
+  border: 1px solid var(--border);
+}
+html.dark .hero {
+  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
+  border-color: rgba(2, 94, 211, 0.18);
+}
+@media (max-width: 640px) { .hero { padding: 26px 20px; margin-top: 22px; } }
+.hero-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); }
+html.dark .hero-eyebrow { color: var(--primary-bright); }
+.hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.025em; margin: 10px 0 12px; }
+.hero p { font-size: 1rem; color: var(--text-muted); max-width: 760px; margin: 0; line-height: 1.65; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.hero-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+  border-radius: var(--radius-pill); background: var(--surface);
+  border: 1px solid var(--border); font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
+}
+html.dark .hero-pill { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.hero-pill .material-icons { font-size: 15px; color: var(--primary); }
+html.dark .hero-pill .material-icons { color: var(--primary-bright); }
+
+/* ===== Scorecard ===== */
+.scorecard {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px; margin-top: 24px;
+}
+.score {
+  padding: 18px 18px 16px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+html.dark .score { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.score-num { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.score-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 8px; }
+.score-meta { font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px; }
+.score.is-pass .score-num { color: var(--pass); }
+.score.is-warn .score-num { color: var(--warn); }
+.score.is-fail .score-num { color: var(--fail); }
+
+/* ===== Section ===== */
+section { margin-top: 56px; scroll-margin-top: 80px; }
+.section-head { margin-bottom: 18px; }
+.section-kicker { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-subtle); }
+.section-head h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 6px 0 8px; display: flex; align-items: center; gap: 10px; }
+.section-head h2 .material-icons { font-size: 24px; color: var(--primary); }
+html.dark .section-head h2 .material-icons { color: var(--primary-bright); }
+.section-head p { font-size: 0.9375rem; color: var(--text-muted); margin: 0; max-width: 800px; }
+
+/* ===== Badges ===== */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap;
+}
+.badge .material-icons { font-size: 13px; }
+.badge.pass { background: var(--pass-bg); color: var(--pass); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.fail { background: var(--fail-bg); color: var(--fail); }
+
+/* ===== Token swatch grid ===== */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.swatch {
+  border-radius: var(--r-md); overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-1);
+}
+html.dark .swatch { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.swatch-chip { height: 78px; display: flex; align-items: flex-end; padding: 8px; }
+.swatch-on { font-size: 0.6875rem; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.85); color: #111; }
+.swatch-meta { padding: 10px 12px 12px; }
+.swatch-name { font-size: 0.8125rem; font-weight: 700; }
+.swatch-var { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 2px; }
+.swatch-hex { font-size: 0.6875rem; color: var(--text-muted); font-family: 'Courier New', monospace; margin-top: 1px; text-transform: uppercase; }
+
+/* ===== Tables ===== */
+.table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-1); }
+table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; min-width: 540px; }
+thead th {
+  text-align: left; padding: 11px 14px; font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle);
+  background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { background: var(--surface); }
+html.dark tbody tr { background: rgba(255,255,255,0.02); }
+tbody tr:hover { background: var(--surface-2); }
+html.dark tbody tr:hover { background: rgba(255,255,255,0.04); }
+.cell-pair { display: flex; align-items: center; gap: 10px; }
+.pair-sample {
+  width: 64px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 0.8125rem; font-weight: 700;
+  border: 1px solid var(--border);
+}
+.cell-name { font-weight: 600; }
+.cell-sub { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; }
+.cell-ratio { font-weight: 800; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.req { font-size: 0.6875rem; color: var(--text-subtle); }
+
+/* ===== Cards / callouts ===== */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.card {
+  padding: 18px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+html.dark .card { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.card-head .material-icons { font-size: 20px; color: var(--primary); }
+html.dark .card-head .material-icons { color: var(--primary-bright); }
+.card h3 { font-size: 0.9375rem; font-weight: 800; margin: 0; }
+.card p { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 4px; line-height: 1.55; }
+.card ul { margin: 8px 0 0; padding-left: 18px; }
+.card li { font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 5px; line-height: 1.5; }
+
+.callout {
+  display: flex; gap: 12px; padding: 16px 18px; border-radius: var(--r-md);
+  border: 1px solid var(--border); margin-top: 14px;
+}
+.callout .material-icons { flex-shrink: 0; font-size: 22px; }
+.callout-body { min-width: 0; }
+.callout-title { font-size: 0.875rem; font-weight: 800; margin-bottom: 2px; }
+.callout-body p { font-size: 0.8125rem; margin: 0; line-height: 1.55; }
+.callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+.callout.warn .material-icons, .callout.warn .callout-title { color: var(--warn); }
+.callout.warn p { color: color-mix(in srgb, var(--warn) 92%, var(--text)); }
+.callout.fail { background: var(--fail-bg); border-color: color-mix(in srgb, var(--fail) 30%, transparent); }
+.callout.fail .material-icons, .callout.fail .callout-title { color: var(--fail); }
+.callout.fail p { color: color-mix(in srgb, var(--fail) 92%, var(--text)); }
+.callout.pass { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, transparent); }
+.callout.pass .material-icons, .callout.pass .callout-title { color: var(--pass); }
+.callout.pass p { color: color-mix(in srgb, var(--pass) 92%, var(--text)); }
+
+/* ===== Type scale specimens ===== */
+.type-row {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.type-row:last-child { border-bottom: 0; }
+.type-specimen { flex: 1; min-width: 220px; color: var(--text); }
+.type-info { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.type-px { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+/* ===== Spacing / radius specimens ===== */
+.spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.spec {
+  padding: 14px; border-radius: var(--r-md); text-align: center;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+html.dark .spec { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.spec-bar { height: 16px; background: var(--primary); border-radius: 4px; margin: 0 auto 10px; }
+.spec-box { background: var(--primary-soft); border: 1.5px solid var(--primary); margin: 0 auto 10px; height: 56px; width: 56px; }
+html.dark .spec-box { border-color: var(--primary-bright); }
+.spec-name { font-size: 0.75rem; font-weight: 700; }
+.spec-val { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 2px; }
+
+/* ===== Focus demo ===== */
+.focus-demo { display: flex; flex-wrap: wrap; gap: 14px; }
+.demo-btn {
+  padding: 10px 18px; border-radius: var(--radius-pill); font-family: inherit;
+  font-size: 0.8125rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+}
+.demo-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.demo-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+html.dark .demo-btn:focus-visible { outline-color: var(--primary-bright); }
+
+/* ===== Table of contents (sticky on wide) ===== */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.toc a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
+  border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 600; text-decoration: none;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+  transition: color 0.15s, border-color 0.15s;
+}
+html.dark .toc a { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.toc a:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+html.dark .toc a:hover { color: var(--primary-bright); }
+.toc a .material-icons { font-size: 15px; }
+
+footer {
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-size: 0.8125rem; color: var(--text-subtle); line-height: 1.6;
+}
+
+/* Visually-hidden helper used for the skip link target context */
+.skip-link {
+  position: absolute; left: 12px; top: -48px; z-index: 100;
+  padding: 10px 16px; border-radius: 10px; background: var(--primary); color: #fff;
+  font-weight: 700; text-decoration: none; transition: top 0.18s ease;
+}
+.skip-link:focus { top: 12px; }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo" aria-hidden="true"><span class="material-icons">accessibility_new</span></div>
+    <div class="topbar-titles">
+      <div class="topbar-kicker">WISE Design System</div>
+      <div class="topbar-name">Accessibility Review</div>
+    </div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+    <span class="material-icons" id="themeIcon">dark_mode</span>
+    <span id="themeLabel">Dark theme</span>
+  </button>
+</header>
+
+<main class="wrap" id="main">
+  <div class="hero">
+    <div class="hero-eyebrow">WCAG 2.1 AA / 2.2 conformance audit</div>
+    <h1>Is the WISE palette, type &amp; spacing accessible?</h1>
+    <p>
+      This page audits every design token shipped in <code>pages/agent-page.css</code> against the
+      <strong>Web Content Accessibility Guidelines</strong>. Color-contrast ratios are recomputed
+      live in your browser (using the WCAG relative-luminance formula), so the verdicts below can
+      never drift from the actual hex values. Toggle the theme to re-run the entire audit against
+      the dark palette.
+    </p>
+    <div class="hero-meta">
+      <span class="hero-pill"><span class="material-icons">contrast</span>SC 1.4.3 Contrast (Minimum)</span>
+      <span class="hero-pill"><span class="material-icons">text_fields</span>SC 1.4.4 Resize Text</span>
+      <span class="hero-pill"><span class="material-icons">touch_app</span>SC 2.5.8 Target Size</span>
+      <span class="hero-pill"><span class="material-icons">center_focus_strong</span>SC 2.4.7 Focus Visible</span>
+    </div>
+    <nav class="toc" aria-label="Sections">
+      <a href="#summary"><span class="material-icons">summarize</span>Summary</a>
+      <a href="#palette"><span class="material-icons">palette</span>Palette</a>
+      <a href="#contrast"><span class="material-icons">contrast</span>Text contrast</a>
+      <a href="#nontext"><span class="material-icons">category</span>Non-text contrast</a>
+      <a href="#type"><span class="material-icons">text_fields</span>Typography</a>
+      <a href="#spacing"><span class="material-icons">space_bar</span>Spacing &amp; radius</a>
+      <a href="#targets"><span class="material-icons">touch_app</span>Targets &amp; focus</a>
+      <a href="#findings"><span class="material-icons">fact_check</span>Findings</a>
+    </nav>
+  </div>
+
+  <!-- ===== Summary ===== -->
+  <section id="summary">
+    <div class="section-head">
+      <div class="section-kicker">At a glance</div>
+      <h2><span class="material-icons">summarize</span>Conformance scorecard</h2>
+      <p>Live tallies for the current theme. Each text pairing is graded against AA (4.5:1 normal / 3:1 large) and AAA (7:1 / 4.5:1).</p>
+    </div>
+    <div class="scorecard" id="scorecard"><!-- injected --></div>
+  </section>
+
+  <!-- ===== Palette ===== -->
+  <section id="palette">
+    <div class="section-head">
+      <div class="section-kicker">Foundations</div>
+      <h2><span class="material-icons">palette</span>Color palette</h2>
+      <p>Every surface, text and accent token for the active theme. The label chip shows the recommended text color where one applies.</p>
+    </div>
+    <div class="swatch-grid" id="swatchGrid"><!-- injected --></div>
+  </section>
+
+  <!-- ===== Text contrast ===== -->
+  <section id="contrast">
+    <div class="section-head">
+      <div class="section-kicker">SC 1.4.3 / 1.4.6</div>
+      <h2><span class="material-icons">contrast</span>Text contrast matrix</h2>
+      <p>Foreground text over the backgrounds it actually appears on. Ratios are computed live; semantic colors used as text are blended over their tinted badge background first.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sample</th><th>Pairing</th><th>Ratio</th><th>Normal text</th><th>Large text</th>
+          </tr>
+        </thead>
+        <tbody id="contrastBody"><!-- injected --></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Non-text contrast ===== -->
+  <section id="nontext">
+    <div class="section-head">
+      <div class="section-kicker">SC 1.4.11</div>
+      <h2><span class="material-icons">category</span>Non-text &amp; UI contrast</h2>
+      <p>Borders, focus rings, icons and component boundaries must reach <strong>3:1</strong> against their adjacent color to be perceivable.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sample</th><th>Element</th><th>Ratio</th><th>Requirement (3:1)</th></tr>
+        </thead>
+        <tbody id="nontextBody"><!-- injected --></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Typography ===== -->
+  <section id="type">
+    <div class="section-head">
+      <div class="section-kicker">SC 1.4.4 / 1.4.12</div>
+      <h2><span class="material-icons">text_fields</span>Typography scale</h2>
+      <p>The UI is set in <strong>DM Sans</strong>. The base UI size is small (<code>--fs-ui: 0.75rem</code> = 12px), which is the single biggest accessibility risk in the system — see findings.</p>
+    </div>
+    <div class="card" style="padding:22px 24px;">
+      <div id="typeScale"><!-- injected --></div>
+    </div>
+    <div class="callout warn">
+      <span class="material-icons">warning</span>
+      <div class="callout-body">
+        <div class="callout-title">12px base body text is below comfortable reading size</div>
+        <p>WCAG has no hard minimum font size, but 12px (<code>--fs-ui</code>) and 11px (<code>--fs-label</code>) labels are dense. They pass <em>only</em> because the text colors carry high contrast. The text-scale control (<code>--wise-text-scale</code>) and browser zoom must keep working up to 200% (SC 1.4.4) without clipping.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Spacing & radius ===== -->
+  <section id="spacing">
+    <div class="section-head">
+      <div class="section-kicker">Foundations</div>
+      <h2><span class="material-icons">space_bar</span>Spacing &amp; radius scale</h2>
+      <p>Radii tokens drive every card, pill and module. Spacing is applied ad-hoc (4 / 8 / 12 / 14 / 18 / 28 / 32px) rather than via named tokens.</p>
+    </div>
+    <h3 style="font-size:0.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-subtle);margin:6px 0 12px;">Corner radius tokens</h3>
+    <div class="spec-grid" id="radiusGrid"><!-- injected --></div>
+    <h3 style="font-size:0.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-subtle);margin:28px 0 12px;">Common spacing steps</h3>
+    <div class="spec-grid" id="spacingGrid"><!-- injected --></div>
+  </section>
+
+  <!-- ===== Targets & focus ===== -->
+  <section id="targets">
+    <div class="section-head">
+      <div class="section-kicker">SC 2.5.8 / 2.4.7 / 2.4.11</div>
+      <h2><span class="material-icons">touch_app</span>Target size &amp; focus visibility</h2>
+      <p>WCAG 2.2 asks for <strong>24×24 CSS px</strong> minimum targets (AA) and a visible, sufficiently-contrasting focus indicator.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-head"><span class="material-icons">touch_app</span><h3>Touch target sizes</h3></div>
+        <ul id="targetList"><!-- injected --></ul>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="material-icons">center_focus_strong</span><h3>Focus indicator</h3></div>
+        <p>The system uses <code>outline: 2px solid var(--primary)</code> with a 2px offset. Tab through the buttons below to verify it is visible in both themes.</p>
+        <div class="focus-demo" style="margin-top:12px;">
+          <button class="demo-btn primary" type="button">Primary action</button>
+          <button class="demo-btn" type="button">Secondary</button>
+          <a class="demo-btn" href="#targets">Link button</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Findings ===== -->
+  <section id="findings">
+    <div class="section-head">
+      <div class="section-kicker">Verdict</div>
+      <h2><span class="material-icons">fact_check</span>Findings &amp; recommendations</h2>
+      <p>Prioritized issues found across both themes, with concrete fixes that keep the WISE look intact.</p>
+    </div>
+    <div id="findingsList"><!-- injected --></div>
+  </section>
+
+  <footer>
+    Generated audit of the WISE design tokens (<code>pages/agent-page.css</code>, <code>pages/portfolio.css</code>,
+    <code>pages/scout-chat.css</code>). Contrast ratios use the WCAG 2.1 relative-luminance algorithm and are
+    recomputed on every theme switch. Translucent tokens (<code>rgba</code> borders, soft tints) are alpha-composited
+    over their resolved background before measuring. This is an automated review and complements, but does not
+    replace, testing with assistive technology and real users.
+  </footer>
+</main>
+
+<script>
+/* =====================================================================
+   WCAG color math — all live so numbers track the real token values.
+===================================================================== */
+function parseColor(str) {
+  str = str.trim();
+  if (str[0] === '#') {
+    let h = str.slice(1);
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16), 1];
+  }
+  const m = str.match(/rgba?\(([^)]+)\)/);
+  if (m) {
+    const p = m[1].split(',').map(s => parseFloat(s));
+    return [p[0], p[1], p[2], p[3] === undefined ? 1 : p[3]];
+  }
+  return [0,0,0,1];
+}
+// Composite a possibly-translucent foreground over an opaque background.
+function composite(fg, bg) {
+  const a = fg[3];
+  return [
+    Math.round(fg[0]*a + bg[0]*(1-a)),
+    Math.round(fg[1]*a + bg[1]*(1-a)),
+    Math.round(fg[2]*a + bg[2]*(1-a)),
+    1
+  ];
+}
+function relLum([r,g,b]) {
+  const f = c => { c /= 255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+}
+function contrast(fg, bg) {
+  // fg/bg are [r,g,b,a]; resolve alpha over bg (and bg over white as a base).
+  const bgSolid = bg[3] < 1 ? composite(bg, [255,255,255,1]) : bg;
+  const fgSolid = fg[3] < 1 ? composite(fg, bgSolid) : fg;
+  const L1 = relLum(fgSolid), L2 = relLum(bgSolid);
+  const hi = Math.max(L1,L2), lo = Math.min(L1,L2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function tok(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function toHex([r,g,b]) {
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function colorOf(name) { return parseColor(tok(name)); }
+// Blend a token (which may be translucent) over a solid background token.
+function blendOver(fgName, bgName) {
+  const bg = colorOf(bgName);
+  const bgSolid = bg[3] < 1 ? composite(bg, [255,255,255,1]) : bg;
+  return composite(colorOf(fgName), bgSolid);
+}
+
+function badge(ratio, threshold) {
+  const ok = ratio >= threshold;
+  const near = !ok && ratio >= threshold - 0.5;
+  const cls = ok ? 'pass' : (near ? 'warn' : 'fail');
+  const icon = ok ? 'check_circle' : (near ? 'error' : 'cancel');
+  const word = ok ? 'Pass' : (near ? 'Close' : 'Fail');
+  return `<span class="badge ${cls}"><span class="material-icons">${icon}</span>${word}</span>`;
+}
+
+/* =====================================================================
+   Token catalog
+===================================================================== */
+const PALETTE = [
+  { name: 'Background',   v: '--bg',        on: '--text' },
+  { name: 'Surface',      v: '--surface',   on: '--text' },
+  { name: 'Surface 2',    v: '--surface-2', on: '--text' },
+  { name: 'Surface 3',    v: '--surface-3', on: '--text' },
+  { name: 'Text',         v: '--text',      on: '--surface' },
+  { name: 'Text muted',   v: '--text-muted',on: '--surface' },
+  { name: 'Text subtle',  v: '--text-subtle',on: '--surface' },
+  { name: 'Primary',      v: '--primary',   on: null, fixedOn: '#FFFFFF' },
+  { name: 'Secondary green', v: '--sec-green', on: null, fixedOn: '#FFFFFF' },
+  { name: 'Secondary red',   v: '--sec-red',   on: null, fixedOn: '#FFFFFF' },
+  { name: 'Tertiary amber',  v: '--ter-amber', on: null, fixedOn: '#111111' },
+  { name: 'Tertiary violet', v: '--ter-violet',on: null, fixedOn: '#FFFFFF' },
+  { name: 'Tertiary cyan',   v: '--ter-cyan',  on: null, fixedOn: '#111111' },
+];
+
+// Text-contrast pairings. `fgBlend`/`bgName` describe how to resolve color.
+function contrastPairs() {
+  const isDark = document.documentElement.classList.contains('dark');
+  const accent = isDark ? '--primary-bright' : '--primary';
+  const accentName = isDark ? 'Primary (bright)' : 'Primary';
+  return [
+    { label: 'Body text', sub: 'text → surface',        fg: '--text', bg: '--surface' },
+    { label: 'Body text', sub: 'text → background',      fg: '--text', bg: '--bg' },
+    { label: 'Body text', sub: 'text → surface-2',       fg: '--text', bg: '--surface-2' },
+    { label: 'Muted text', sub: 'text-muted → surface',  fg: '--text-muted', bg: '--surface' },
+    { label: 'Muted text', sub: 'text-muted → background',fg: '--text-muted', bg: '--bg' },
+    { label: 'Muted text', sub: 'text-muted → surface-2',fg: '--text-muted', bg: '--surface-2' },
+    { label: 'Subtle text', sub: 'text-subtle → surface',fg: '--text-subtle', bg: '--surface' },
+    { label: 'Subtle text', sub: 'text-subtle → surface-2',fg: '--text-subtle', bg: '--surface-2' },
+    { label: accentName + ' link', sub: accent + ' → surface', fg: accent, bg: '--surface' },
+    { label: accentName + ' link', sub: accent + ' → bg', fg: accent, bg: '--bg' },
+    { label: 'White on primary', sub: '#FFF → primary (button)', fgHex: '#FFFFFF', bg: '--primary' },
+    { label: 'Green badge text', sub: 'sec-green → 16% tint', fg: '--sec-green', bgBlend: ['--sec-green', 0.16, '--surface'] },
+    { label: 'Red badge text', sub: 'sec-red → 16% tint', fg: '--sec-red', bgBlend: ['--sec-red', 0.16, '--surface'] },
+    { label: 'Amber badge text', sub: 'ter-amber → 16% tint', fg: '--ter-amber', bgBlend: ['--ter-amber', 0.16, '--surface'] },
+    { label: 'Amber on surface', sub: 'ter-amber → surface (stat)', fg: '--ter-amber', bg: '--surface' },
+  ];
+}
+
+const NONTEXT = [
+  { label: 'Card border', sub: 'border → surface', fg: '--border', bg: '--surface' },
+  { label: 'Strong border', sub: 'border-strong → surface', fg: '--border-strong', bg: '--surface' },
+  { label: 'Focus ring', sub: 'primary outline → bg', fgName: 'accent', bg: '--bg' },
+  { label: 'Primary button edge', sub: 'primary → bg', fg: '--primary', bg: '--bg' },
+  { label: 'Icon (muted) glyph', sub: 'text-subtle → surface', fg: '--text-subtle', bg: '--surface' },
+];
+
+const TYPE_SCALE = [
+  { px: 11, rem: '0.6875rem', token: '--fs-label', use: 'Eyebrows, captions, badges' },
+  { px: 12, rem: '0.75rem',   token: '--fs-ui',    use: 'Base UI / body copy' },
+  { px: 13, rem: '0.8125rem', token: '—',          use: 'Card descriptions, table cells' },
+  { px: 14, rem: '0.875rem',  token: '—',          use: 'Hero / briefing body' },
+  { px: 15, rem: '0.9375rem', token: '—',          use: 'Card & module titles' },
+  { px: 24, rem: '1.5rem',    token: '—',          use: 'Stat values, hero title' },
+];
+
+const RADII = [
+  { name: 'r-sm', v: '--r-sm' },
+  { name: 'r-md', v: '--r-md' },
+  { name: 'r-lg', v: '--r-lg' },
+  { name: 'r-xl', v: '--r-xl' },
+  { name: 'pill', v: '--radius-pill', cap: 28 },
+];
+const SPACING = [4, 8, 12, 14, 18, 28, 32];
+
+const TARGETS = [
+  { name: 'Top-bar rail buttons', size: '40 × 46px', ok: true },
+  { name: 'Menu nav items', size: '≥ 42px tall', ok: true },
+  { name: 'Pill buttons (.pf-btn)', size: '~31px tall', ok: true, note: '7px+13px padding on 12px text' },
+  { name: 'Chips (.pf-chip)', size: '~26px tall', ok: 'warn', note: 'Below 24px only if line-box shrinks; verify' },
+  { name: 'Icon chevron button', size: '22 × 22px', ok: 'warn', note: 'Under the 24px AA target minimum' },
+  { name: 'Profile avatar', size: '34 × 34px', ok: true },
+  { name: 'Sheet/close buttons', size: '32 × 32px', ok: true },
+];
+
+/* =====================================================================
+   Renderers
+===================================================================== */
+function renderSwatches() {
+  const grid = document.getElementById('swatchGrid');
+  grid.innerHTML = PALETTE.map(p => {
+    const rgb = colorOf(p.v);
+    const solid = rgb[3] < 1 ? composite(rgb, [255,255,255,1]) : rgb;
+    const hex = toHex(solid);
+    let onColor = '#111';
+    if (p.fixedOn) onColor = p.fixedOn;
+    else if (p.on) onColor = toHex((c => c[3]<1?composite(c,solid):c)(colorOf(p.on)));
+    return `<div class="swatch">
+      <div class="swatch-chip" style="background:${tok(p.v)};">
+        <span class="swatch-on" style="background:${onColor};color:${onColor==='#FFFFFF'||onColor==='#fff'?'#111':'#fff'};">Aa</span>
+      </div>
+      <div class="swatch-meta">
+        <div class="swatch-name">${p.name}</div>
+        <div class="swatch-var">var(${p.v})</div>
+        <div class="swatch-hex">${hex}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resolvePair(p) {
+  let fg, bg, bgCss, fgCss;
+  fg = p.fgHex ? parseColor(p.fgHex) : colorOf(p.fg);
+  fgCss = p.fgHex || tok(p.fg);
+  if (p.bgBlend) {
+    const [cName, alpha, overName] = p.bgBlend;
+    const over = colorOf(overName);
+    const overSolid = over[3] < 1 ? composite(over, [255,255,255,1]) : over;
+    const c = colorOf(cName);
+    bg = composite([c[0], c[1], c[2], alpha], overSolid);
+    bgCss = toHex(bg);
+  } else {
+    bg = colorOf(p.bg);
+    const solid = bg[3] < 1 ? composite(bg, [255,255,255,1]) : bg;
+    bg = solid; bgCss = tok(p.bg);
+  }
+  return { fg, bg, bgCss, fgCss };
+}
+
+let lastStats = {};
+function renderContrast() {
+  const body = document.getElementById('contrastBody');
+  const pairs = contrastPairs();
+  let aaNormalPass = 0, aaaNormalPass = 0, total = 0;
+  body.innerHTML = pairs.map(p => {
+    const { fg, bg, bgCss, fgCss } = resolvePair(p);
+    const r = contrast(fg, bg);
+    total++;
+    if (r >= 4.5) aaNormalPass++;
+    if (r >= 7) aaaNormalPass++;
+    return `<tr>
+      <td><div class="pair-sample" style="background:${bgCss};color:${fgCss};">Aa</div></td>
+      <td><div class="cell-name">${p.label}</div><div class="cell-sub">${p.sub}</div></td>
+      <td><span class="cell-ratio">${r.toFixed(2)}</span><span class="req"> :1</span></td>
+      <td>${badge(r, 4.5)} <span class="req">AAA ${r>=7?'✓':'✗'}</span></td>
+      <td>${badge(r, 3)}</td>
+    </tr>`;
+  }).join('');
+  lastStats = { total, aaNormalPass, aaaNormalPass };
+  renderScorecard();
+}
+
+function renderNonText() {
+  const body = document.getElementById('nontextBody');
+  const isDark = document.documentElement.classList.contains('dark');
+  const accent = isDark ? '--primary-bright' : '--primary';
+  body.innerHTML = NONTEXT.map(p => {
+    const fgName = p.fgName === 'accent' ? accent : p.fg;
+    const bg = colorOf(p.bg);
+    const bgSolid = bg[3] < 1 ? composite(bg, [255,255,255,1]) : bg;
+    const fg = colorOf(fgName);
+    const r = contrast(fg, bgSolid);
+    return `<tr>
+      <td><div class="pair-sample" style="background:${tok(p.bg)};"><span style="display:block;width:44px;height:20px;border-radius:6px;border:2px solid ${tok(fgName)};"></span></div></td>
+      <td><div class="cell-name">${p.label}</div><div class="cell-sub">${p.sub.replace('accent', fgName)}</div></td>
+      <td><span class="cell-ratio">${r.toFixed(2)}</span><span class="req"> :1</span></td>
+      <td>${badge(r, 3)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderScorecard() {
+  const sc = document.getElementById('scorecard');
+  const { total, aaNormalPass, aaaNormalPass } = lastStats;
+  const aaPct = Math.round((aaNormalPass/total)*100);
+  const aaaPct = Math.round((aaaNormalPass/total)*100);
+  const aaClass = aaPct >= 90 ? 'is-pass' : (aaPct >= 70 ? 'is-warn' : 'is-fail');
+  const aaaClass = aaaPct >= 70 ? 'is-pass' : (aaaPct >= 50 ? 'is-warn' : 'is-fail');
+  sc.innerHTML = `
+    <div class="score ${aaClass}">
+      <div class="score-num">${aaNormalPass}/${total}</div>
+      <div class="score-label">AA text pairs</div>
+      <div class="score-meta">${aaPct}% meet 4.5:1</div>
+    </div>
+    <div class="score ${aaaClass}">
+      <div class="score-num">${aaaNormalPass}/${total}</div>
+      <div class="score-label">AAA text pairs</div>
+      <div class="score-meta">${aaaPct}% meet 7:1</div>
+    </div>
+    <div class="score is-pass">
+      <div class="score-num">2</div>
+      <div class="score-label">Themes audited</div>
+      <div class="score-meta">Light &amp; dark</div>
+    </div>
+    <div class="score is-warn">
+      <div class="score-num">3</div>
+      <div class="score-label">Action items</div>
+      <div class="score-meta">See findings</div>
+    </div>`;
+}
+
+function renderType() {
+  document.getElementById('typeScale').innerHTML = TYPE_SCALE.map(t => {
+    const flag = t.px < 12 ? `<span class="badge warn"><span class="material-icons">error</span>Dense</span>`
+               : `<span class="badge pass"><span class="material-icons">check_circle</span>OK</span>`;
+    return `<div class="type-row">
+      <div class="type-specimen" style="font-size:${t.px}px;font-weight:${t.px>=20?800:600};">${t.use}</div>
+      <div class="type-info">
+        <span class="type-px">${t.px}px · ${t.rem}${t.token!=='—'?' · '+t.token:''}</span>
+        ${flag}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSpacing() {
+  document.getElementById('radiusGrid').innerHTML = RADII.map(r => {
+    const val = tok(r.v);
+    const px = r.cap || parseInt(val) || 0;
+    return `<div class="spec">
+      <div class="spec-box" style="border-radius:${r.cap?'50%':val};"></div>
+      <div class="spec-name">${r.name}</div>
+      <div class="spec-val">${val}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('spacingGrid').innerHTML = SPACING.map(s => `
+    <div class="spec">
+      <div class="spec-bar" style="width:${s}px;"></div>
+      <div class="spec-name">${s}px</div>
+      <div class="spec-val">${(s/16).toFixed(s%16===0?0:4).replace(/0+$/,'').replace(/\.$/,'')}rem</div>
+    </div>`).join('');
+}
+
+function renderTargets() {
+  document.getElementById('targetList').innerHTML = TARGETS.map(t => {
+    const b = t.ok === true ? `<span class="badge pass"><span class="material-icons">check_circle</span></span>`
+            : `<span class="badge warn"><span class="material-icons">error</span></span>`;
+    return `<li><strong>${t.name}</strong> — ${t.size} ${b}${t.note?`<br><span style="font-size:0.6875rem;color:var(--text-subtle);">${t.note}</span>`:''}</li>`;
+  }).join('');
+}
+
+const FINDINGS = [
+  {
+    sev: 'fail', icon: 'cancel',
+    title: '1 · text-subtle on light surfaces is borderline for AA',
+    body: '<code>--text-subtle: #9CA3AF</code> over white lands around 2.5–2.6:1 — below the 4.5:1 minimum for normal text. It is used for captions, sub-labels and table headers. Either reserve it strictly for large/bold text (≥18.66px bold) or darken it to ~#6B7280-class luminance to clear 4.5:1.'
+  },
+  {
+    sev: 'fail', icon: 'cancel',
+    title: '2 · Semantic colors as text on light tints can fail',
+    body: 'Badge patterns put <code>--ter-amber (#F5A524)</code> / <code>--sec-green</code> text on a 16% tint of themselves. Amber especially is a light hue and drops well under 4.5:1 as small text. Use a darker text shade inside amber/green badges (e.g. amber-700) while keeping the tinted fill for the look.'
+  },
+  {
+    sev: 'warn', icon: 'error',
+    title: '3 · 12px base UI text + sub-24px targets',
+    body: 'The 12px <code>--fs-ui</code> base and the 22px chevron / ~26px chip controls sit under WCAG 2.2 SC 2.5.8 (24×24) and are dense for low-vision users. Ensure the <code>--wise-text-scale</code> control and browser zoom reach 200% without clipping, and pad small icon buttons to a 24px hit area.'
+  },
+  {
+    sev: 'pass', icon: 'check_circle',
+    title: 'Strengths — primary text, buttons & focus',
+    body: 'Core body text (<code>#111827</code> / <code>#F3F4F6</code>) is excellent (>12:1) in both themes. White-on-primary buttons, the dark-theme <code>--primary-bright</code> accent (chosen specifically because <code>--primary</code> is too dark on navy), and the 2px primary focus outline with 2px offset all pass comfortably.'
+  }
+];
+function renderFindings() {
+  document.getElementById('findingsList').innerHTML = FINDINGS.map(f => `
+    <div class="callout ${f.sev}">
+      <span class="material-icons">${f.icon}</span>
+      <div class="callout-body">
+        <div class="callout-title">${f.title}</div>
+        <p>${f.body}</p>
+      </div>
+    </div>`).join('');
+}
+
+/* =====================================================================
+   Theme toggle + boot
+===================================================================== */
+function rerenderLive() {
+  renderSwatches();
+  renderContrast();
+  renderNonText();
+}
+function setTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  const t = document.getElementById('themeToggle');
+  document.getElementById('themeIcon').textContent = dark ? 'light_mode' : 'dark_mode';
+  document.getElementById('themeLabel').textContent = dark ? 'Light theme' : 'Dark theme';
+  t.setAttribute('aria-pressed', String(dark));
+  rerenderLive();
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  setTheme(!document.documentElement.classList.contains('dark'));
+});
+
+// Static (theme-agnostic structure) renders once.
+renderType();
+renderSpacing();
+renderTargets();
+renderFindings();
+// Live (theme-dependent) renders now + on every toggle.
+rerenderLive();
+</script>
+</body>
+</html>

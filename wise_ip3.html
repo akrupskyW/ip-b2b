@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · IP3 Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05141c;
+      --surface: #0d1b24;
+      --surface-2: #112633;
+      --surface-3: #15303f;
+      --text: #f3f8ff;
+      --text-muted: #9fc3e8;
+      --text-subtle: #6d94bd;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(147,197,253,0.22);
+      --primary: #025ed3;
+      --blue-300: #93c5fd;
+      --blue-400: #60a5fa;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --blue-soft: rgba(2, 94, 211, 0.18);
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 14% 14%, color-mix(in srgb, var(--blue-700) 24%, transparent), transparent 34%),
+        radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--blue-400) 18%, transparent), transparent 32%),
+        linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--bg) 82%, #000 18%));
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .home {
+      width: 100%;
+      max-width: 920px;
+    }
+
+    .home__header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .home__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue-300);
+      background: var(--blue-soft);
+      border: 1px solid var(--border-strong);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      margin-bottom: 18px;
+    }
+
+    .home__title {
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+    }
+
+    .home__subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin: 0 auto;
+      max-width: 520px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+      .home__title { font-size: 30px; }
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(155deg, var(--surface) 0%, var(--surface-2) 100%);
+      box-shadow: var(--shadow-card);
+      transition: transform 0.22s cubic-bezier(.4,0,.2,1), border-color 0.22s ease, box-shadow 0.22s ease;
+      overflow: hidden;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 78% 0%, var(--blue-soft), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      pointer-events: none;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-strong);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.5), 0 4px 12px rgba(2,94,211,0.25);
+    }
+
+    .card:hover::after { opacity: 1; }
+
+    .card__icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--blue-soft);
+      border: 1px solid var(--border-strong);
+      color: var(--blue-300);
+    }
+
+    .card__icon .material-icons { font-size: 24px; }
+
+    .card__title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .card__desc {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .card__cta {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue-300);
+    }
+
+    .card__cta .material-icons {
+      font-size: 18px;
+      transition: transform 0.22s ease;
+    }
+
+    .card:hover .card__cta .material-icons { transform: translateX(4px); }
+  </style>
+</head>
+<body>
+  <main class="home">
+    <header class="home__header">
+      <span class="home__eyebrow">
+        <span class="material-icons" style="font-size:14px;">auto_awesome</span>
+        WISE · IP3
+      </span>
+      <h1 class="home__title">WISE Workspace</h1>
+      <p class="home__subtitle">Jump into the WISE prototypes. Pick a destination below to get started.</p>
+    </header>
+
+    <div class="grid">
+      <a class="card" href="pages/app-vision-deck.html">
+        <span class="card__icon"><span class="material-icons">slideshow</span></span>
+        <h2 class="card__title">Product Vision Deck</h2>
+        <p class="card__desc">The WISEcode AI product vision presentation — strategy, narrative, and roadmap slides.</p>
+        <span class="card__cta">Open deck <span class="material-icons">arrow_forward</span></span>
+      </a>
+
+      <a class="card" href="pages/portfolio-agent.html">
+        <span class="card__icon"><span class="material-icons">dashboard</span></span>
+        <h2 class="card__title">Portfolio Agent</h2>
+        <p class="card__desc">Explore the portfolio agent workspace and its connected modules.</p>
+        <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+      </a>
+
+      <a class="card" href="pages/ai-chat.html">
+        <span class="card__icon"><span class="material-icons">forum</span></span>
+        <h2 class="card__title">Scout AI Chat</h2>
+        <p class="card__desc">Chat with Scout, the AI verification assistant, for guidance and answers.</p>
+        <span class="card__cta">Open chat <span class="material-icons">arrow_forward</span></span>
+      </a>
+
+      <a class="card" href="pages/accessibility-review.html">
+        <span class="card__icon"><span class="material-icons">accessibility_new</span></span>
+        <h2 class="card__title">Accessibility Review</h2>
+        <p class="card__desc">The WISE design system accessibility review against WCAG 2.1 standards.</p>
+        <span class="card__cta">Open review <span class="material-icons">arrow_forward</span></span>
+      </a>
+    </div>
+  </main>
+</body>
+</html>
