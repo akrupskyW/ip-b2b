@@ -347,6 +347,13 @@ function escAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+/** Product nav labels show TM after the second word (e.g. WISEcode AI™). */
+function formatProductNavLabel(label) {
+  const parts = String(label).trim().split(/\s+/);
+  if (parts.length < 2) return escAttr(label);
+  return `${escAttr(parts[0])} ${escAttr(parts[1])}<sup class="tagline-tm">TM</sup>`;
+}
+
 /* The legacy "Material Icons" font lacks some newer glyphs that only ship in
    "Material Symbols Outlined" (e.g. `cadence`). Render those with the symbols
    class so they resolve instead of showing a tofu box. */
@@ -473,7 +480,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
         <div class="menu-nav-group menu-nav-product-group" data-tier="product" data-group="${escAttr(productId)}" data-open="${isOpen ? 'true' : 'false'}">
           <a class="menu-nav-item menu-nav-toggle menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}" data-toggle-group="${escAttr(productId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(productId)}">
             <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
-            <span class="menu-nav-label">${escAttr(product.label)}</span>
+            <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
             <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(productId)}" aria-label="Toggle ${escAttr(product.label)} sections">
               <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
             </button>
@@ -486,33 +493,13 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
         </div>`;
     }
 
-    if (productId !== 'wisecode-ai') {
-      return `
-        <a class="menu-nav-item menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}">
-          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
-          <span class="menu-nav-label">${escAttr(product.label)}</span>
-        </a>`;
-    }
-
-    const isOpen = activeProduct === 'wisecode-ai';
-    const agentsHtml = TOP_LEVEL_AGENT_IDS.map(renderTopLevel).join('');
-    const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
-
+    /* WISEcode AI renders as a plain product link — its agent tree is no
+       longer expandable from the menu, so it stays closed (no children). */
     return `
-      <div class="menu-nav-group menu-nav-product-group" data-tier="product" data-group="${escAttr(productId)}" data-open="${isOpen ? 'true' : 'false'}">
-        <a class="menu-nav-item menu-nav-toggle menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}" data-toggle-group="${escAttr(productId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(productId)}">
-          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
-          <span class="menu-nav-label">${escAttr(product.label)}</span>
-          <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(productId)}" aria-label="Toggle ${escAttr(product.label)} agents">
-            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
-          </button>
-        </a>
-        <div class="menu-nav-children" id="menu-nav-${escAttr(productId)}" role="region" aria-label="${escAttr(product.label)} agents"${collapsedAttrs}>
-          <div class="menu-nav-children-inner menu-nav-agents-inner">
-            ${agentsHtml}
-          </div>
-        </div>
-      </div>`;
+      <a class="menu-nav-item menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}">
+        <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+        <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
+      </a>`;
   };
 
   navEl.setAttribute('aria-label', 'WISE platform navigation');

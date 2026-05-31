@@ -23,9 +23,10 @@ import {
   getPortfolioSection,
   iconClassFor,
 } from './agent-menu.js';
-import { mountScoutChat } from './scout-chat.js';
+import { mountScoutDock } from './scout-dock.js';
+import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { mountTopbar } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
 
 /* ------------------------------------------------------------------ */
 /* Utilities                                                           */
@@ -1789,6 +1790,21 @@ const RAIL_LABELS = {
 /* ------------------------------------------------------------------ */
 
 const LAYOUT_KEY = 'wise-module-layout';
+const APPEARANCE_LAYOUTS = [
+  { mode: 'col', sym: false, icon: 'view_column', label: 'Column' },
+  { mode: 'grid', sym: false, icon: 'grid_view', label: 'Grid' },
+  { mode: 'split', sym: true, icon: 'splitscreen_bottom', label: 'Split' },
+  { mode: 'stack', sym: true, icon: 'horizontal_split', label: 'Stacked' },
+];
+
+function currentModuleLayout() {
+  let mode = 'col';
+  try {
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    if (saved === 'grid' || saved === 'split' || saved === 'stack') mode = saved;
+  } catch (_) {}
+  return mode;
+}
 
 /* Split view docks Scout across the bottom half of the screen. Because Scout is
    a mid-row sibling of the other modules, the only way to pin it full-width
@@ -1832,29 +1848,23 @@ function setModuleLayout(mode) {
   if (mode === 'stack') {
     document.getElementById('menu-panel')?.classList.remove('mp-open');
   }
-  const setBtn = (id, active) => {
-    const btn = document.getElementById(id);
-    btn?.classList.toggle('lir-layout-active', active);
-    btn?.setAttribute('aria-pressed', active ? 'true' : 'false');
-  };
-  setBtn('lir-layout-col', mode === 'col');
-  setBtn('lir-layout-grid', mode === 'grid');
-  setBtn('lir-layout-split', mode === 'split');
-  setBtn('lir-layout-stack', mode === 'stack');
+  if (activeAppearancePopover) renderAppearanceBody(activeAppearancePopover);
   try { localStorage.setItem(LAYOUT_KEY, mode); } catch (_) {}
 }
 
-function setupLayoutToggle() {
-  document.getElementById('lir-layout-col')?.addEventListener('click', () => setModuleLayout('col'));
-  document.getElementById('lir-layout-grid')?.addEventListener('click', () => setModuleLayout('grid'));
-  document.getElementById('lir-layout-split')?.addEventListener('click', () => setModuleLayout('split'));
-  document.getElementById('lir-layout-stack')?.addEventListener('click', () => setModuleLayout('stack'));
-  let mode = 'col';
-  try {
-    const saved = localStorage.getItem(LAYOUT_KEY);
-    if (saved === 'grid' || saved === 'split' || saved === 'stack') mode = saved;
-  } catch (_) {}
+function setupAppearancePopover() {
+  let mode = currentModuleLayout();
   setModuleLayout(mode);
+
+  const bind = (btn) => {
+    if (!btn || btn.dataset.appearanceBound) return;
+    btn.dataset.appearanceBound = '1';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAppearance(btn);
+    });
+  };
+  bind(document.getElementById('lir-layout-btn'));
 }
 
 /* Holds the Ledger's active-filter applier so rebuildLedgerBody() can re-run it
@@ -1903,7 +1913,7 @@ let scout = null;
 function setupChat() {
   const panel = document.getElementById('pf-chat-panel');
   if (!panel) return;
-  scout = mountScoutChat(panel, {
+  scout = mountScoutDock(panel, {
     title: 'Scout',
     agentCount: 1,
     heading: 'What can Scout help with?',
@@ -1978,6 +1988,15 @@ function renderMorePopover() {
     <button type="button" class="topbar-menu-item" data-action="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
     <div class="topbar-menu-divider"></div>
     <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-action="close"><span class="material-icons topbar-menu-icon">close</span><span>Close</span></button>`;
+}
+
+/* Reveal the Alerts side panel (built + wired in setupTrailingRail). Now
+   triggered from the avatar menu instead of a standalone top-bar bell. */
+function openAlertsPanel() {
+  const panel = document.getElementById('alerts-panel');
+  if (!panel) return;
+  panel.classList.add('alerts-open');
+  requestAnimationFrame(() => panel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' }));
 }
 
 function setupTrailingRail() {
@@ -2084,42 +2103,51 @@ function setupTrailingRail() {
 /* Avatar / user popover + font size (mirrors agent pages)            */
 /* ------------------------------------------------------------------ */
 
-const FZ_SCALE = { sm: 0.82, md: 1, lg: 1.18, xl: 1.36 };
-const FZ_LINE = { sm: 1.45, md: 1.6, lg: 1.65, xl: 1.7 };
-
-function getStoredFontSize() {
-  let fz = 'md';
-  try { fz = localStorage.getItem('chat-font-size') || 'md'; } catch (_) {}
-  return fz in FZ_SCALE ? fz : 'md';
-}
-function setFontSize(size) {
-  if (!FZ_SCALE[size]) return;
-  document.querySelectorAll('.pf-module-scroll').forEach((content) => {
-    content.style.zoom = String(FZ_SCALE[size]);
-    content.style.setProperty('--chat-line-height', String(FZ_LINE[size]));
-  });
-  document.querySelectorAll('.fz-btn[data-fz]').forEach((b) => b.classList.toggle('fz-active', b.dataset.fz === size));
-  try { localStorage.setItem('chat-font-size', size); } catch (_) {}
-}
 function isDark() { return document.documentElement.classList.contains('dark'); }
 function setDark(on) {
   document.documentElement.classList.toggle('dark', on);
   try { localStorage.setItem('wise-theme', on ? 'dark' : 'light'); } catch (_) {}
-  if (activeAvatarPopover) renderAvatarBody(activeAvatarPopover);
+  if (activeAppearancePopover) renderAppearanceBody(activeAppearancePopover);
   rerenderAnalyticsCharts();
 }
 
 let activeAvatarPopover = null;
 let activeAvatarAnchor = null;
+let activeAppearancePopover = null;
+let activeAppearanceAnchor = null;
 
 function renderAvatarBody(pop) {
-  const fz = getStoredFontSize();
-  const dark = isDark();
+  const notifUnread = !document.querySelector('.topbar-profile')?.classList.contains('is-read');
   pop.innerHTML = `
     <div class="wise-popover-header">Maya Chen</div>
+    <div class="wise-popover-actions">
+      <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
+        <span class="material-icons">notifications</span>
+        <span>Alerts</span>
+      </button>
+    </div>
+    <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
     <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
     <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
+    <div class="wise-popover-divider"></div>
+    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
+}
+
+function renderAppearanceBody(pop) {
+  const fz = getStoredFontSize();
+  const dark = isDark();
+  const cur = currentModuleLayout();
+  pop.innerHTML = `
+    <div class="wise-popover-header">Appearance</div>
+    ${APPEARANCE_LAYOUTS.map((l) => `
+      <div class="wise-popover-item${l.mode === cur ? ' is-active' : ''}" data-layout="${l.mode}">
+        <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
+      </div>`).join('')}
+    <div class="wise-popover-divider"></div>
+    <div class="wise-popover-item" data-pivot="1">
+      <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
+    </div>
     <div class="wise-popover-divider"></div>
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>
@@ -2127,9 +2155,11 @@ function renderAvatarBody(pop) {
         ${['sm', 'md', 'lg', 'xl'].map((s) => `<button type="button" class="fz-btn${fz === s ? ' fz-active' : ''}" data-fz="${s}">${s === 'sm' ? 'S' : s === 'md' ? 'M' : s === 'lg' ? 'L' : 'XL'}</button>`).join('')}
       </div>
     </div>
-    <div class="wise-popover-item" data-pop-action="theme"><span class="material-icons">${dark ? 'light_mode' : 'dark_mode'}</span><span>${dark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span></div>
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
+    <div class="wise-popover-item" data-pop-action="theme">
+      <span class="material-icons js-theme-icon">${dark ? 'light_mode' : 'dark_mode'}</span>
+      <span class="js-theme-label">${dark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
+    </div>`;
 }
 
 function closeAvatar() {
@@ -2142,28 +2172,73 @@ function closeAvatar() {
   activeAvatarAnchor = null;
 }
 
+function closeAppearance() {
+  if (!activeAppearancePopover) return;
+  activeAppearanceAnchor?.classList.remove('is-open');
+  activeAppearanceAnchor?.setAttribute('aria-expanded', 'false');
+  activeAppearancePopover.classList.remove('open');
+  const p = activeAppearancePopover;
+  setTimeout(() => p.remove(), 210);
+  activeAppearancePopover = null;
+  activeAppearanceAnchor = null;
+}
+
 function openAvatar(anchor) {
   if (activeAvatarAnchor === anchor) { closeAvatar(); return; }
   closeAvatar();
+  closeAppearance();
   const pop = document.createElement('div');
   pop.className = 'wise-popover';
   document.body.appendChild(pop);
   renderAvatarBody(pop);
-  const rect = anchor.getBoundingClientRect();
-  const pw = pop.offsetWidth || 240;
-  pop.style.left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8)) + 'px';
-  pop.style.top = (rect.bottom + 8) + 'px';
+  if (isMenuFooterAnchor(anchor)) positionPopoverInMenuPanel(pop, anchor);
+  else positionPopoverForTopbar(pop, anchor);
   requestAnimationFrame(() => pop.classList.add('open'));
   activeAvatarPopover = pop;
   activeAvatarAnchor = anchor;
   anchor.classList.add('is-open');
   pop.addEventListener('click', (ev) => {
+    const notifItem = ev.target.closest('[data-pop-action="notifications"]');
+    if (notifItem) {
+      ev.stopPropagation();
+      document.querySelector('.topbar-profile')?.classList.add('is-read');
+      closeAvatar();
+      openAlertsPanel();
+      return;
+    }
+    if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+    closeAvatar();
+  });
+}
+
+function openAppearance(anchor) {
+  if (activeAppearanceAnchor === anchor) { closeAppearance(); return; }
+  closeAppearance();
+  closeAvatar();
+  const pop = document.createElement('div');
+  pop.className = 'wise-popover';
+  document.body.appendChild(pop);
+  renderAppearanceBody(pop);
+  if (isMenuFooterAnchor(anchor)) positionPopoverInMenuPanel(pop, anchor);
+  else positionPopoverForTopbar(pop, anchor);
+  requestAnimationFrame(() => pop.classList.add('open'));
+  activeAppearancePopover = pop;
+  activeAppearanceAnchor = anchor;
+  anchor.classList.add('is-open');
+  anchor.setAttribute('aria-expanded', 'true');
+  pop.addEventListener('click', (ev) => {
+    const layoutItem = ev.target.closest('[data-layout]');
+    if (layoutItem) {
+      ev.stopPropagation();
+      setModuleLayout(layoutItem.dataset.layout);
+      return;
+    }
     const fzBtn = ev.target.closest('.fz-btn[data-fz]');
-    if (fzBtn) { ev.stopPropagation(); setFontSize(fzBtn.dataset.fz); return; }
+    if (fzBtn) { ev.stopPropagation(); setTextSize(fzBtn.dataset.fz); return; }
     const theme = ev.target.closest('[data-pop-action="theme"]');
     if (theme) { ev.stopPropagation(); setDark(!isDark()); return; }
     if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
-    closeAvatar();
+    closeAppearance();
   });
 }
 
@@ -2175,8 +2250,15 @@ function setupAvatar() {
   btn.setAttribute('aria-haspopup', 'menu');
   btn.addEventListener('click', (e) => { e.stopPropagation(); openAvatar(btn); });
   btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); } });
-  document.addEventListener('click', (e) => { if (activeAvatarPopover && !activeAvatarPopover.contains(e.target)) closeAvatar(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAvatar(); });
+  document.addEventListener('click', (e) => {
+    if (activeAvatarPopover && !activeAvatarPopover.contains(e.target) && !activeAvatarAnchor?.contains(e.target)) closeAvatar();
+    if (activeAppearancePopover && !activeAppearancePopover.contains(e.target) && !activeAppearanceAnchor?.contains(e.target)) closeAppearance();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeAvatar(); closeAppearance(); }
+  });
+  document.addEventListener('wise:menu-footer-profile', (e) => { openAvatar(e.detail.anchor); });
+  document.addEventListener('wise:menu-footer-layout', (e) => { openAppearance(e.detail.anchor); });
 }
 
 /* ------------------------------------------------------------------ */
@@ -2286,14 +2368,14 @@ function bootstrap() {
   setupChat();
   setupTrailingRail();
   setupAvatar();
-  setupLayoutToggle();
+  setupAppearancePopover();
   initLirTooltip();
   syncModules();
   openFromHash();
   /* If Analytics was restored open from a previous session, build its charts
      (persisted modules are shown via syncModules, which doesn't call openModule). */
   if (openModules.has('analytics')) initAnalyticsCharts();
-  setFontSize(getStoredFontSize());
+  applyStoredTextSize();
 }
 
 document.addEventListener('DOMContentLoaded', bootstrap);

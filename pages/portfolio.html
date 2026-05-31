@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISE · Portfolio — The Truth Layer</title>
+  <script src="../js/text-size-fouc.js"></script>
   <script>
     /* FOUC guard — apply the persisted theme before first paint so the page
        never flashes dark→light (or vice versa). Mirrors ai-chat.html storage. */
@@ -40,7 +41,7 @@
     <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar).
          The 'portfolio' variant adds the section-module rail + layout switcher;
          #pf-module-rail is populated by portfolio-module.js. -->
-    <div id="topbar-row"></div>
+    <div id="topbar-row" hidden aria-hidden="true"></div>
 
     <div id="modules-row">
       <!-- Section modules are injected here by portfolio-module.js, between the

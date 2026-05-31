@@ -39,6 +39,8 @@
   --fs-label: 0.6875rem;
   --radius-pill: 9999px;
   --panel-header-h: 60px;
+  --wise-text-scale: 1;
+  --chat-line-height: 1.6;
 }
 
 html.dark {
@@ -102,21 +104,19 @@ body {
 }
 
 /* Integrated shell — nav column spans the logo row + modules row. */
-#agent-shell-wrap.menu-brand-integrated {
+#agent-shell-wrap.menu-brand-integrated,
+#chat-shell-wrap.menu-brand-integrated {
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "menu topbar"
-    "menu modules";
+  grid-template-rows: 1fr;
+  grid-template-areas: "menu modules";
   column-gap: 8px;
   row-gap: 0;
 }
-#agent-shell-wrap.menu-brand-integrated:not(:has(#menu-panel.mp-open)) {
+#agent-shell-wrap.menu-brand-integrated:not(:has(#menu-panel.mp-open)),
+#chat-shell-wrap.menu-brand-integrated:not(:has(#menu-panel.mp-open)) {
   grid-template-columns: 1fr;
-  grid-template-areas:
-    "topbar"
-    "modules";
+  grid-template-areas: "modules";
 }
 
 /* ===== TOP BAR ===== */
@@ -245,6 +245,20 @@ body {
   border-color: var(--text-subtle);
   color: var(--text);
 }
+/* The avatar inherits the unread notification dot now that the standalone
+   bell was folded into the avatar menu. */
+.topbar-profile.has-dot::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sec-red, #ef4444);
+  border: 2px solid var(--surface);
+}
+.topbar-profile.has-dot.is-read::after { display: none; }
 
 /* ===== TRAILING RAIL (notifications + three-dot menu) ===== */
 .topbar-trailing {
@@ -549,8 +563,8 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 }
 
 /* ===== Avatar / user-menu popover (matches ai-chat.html) =====
-   Used by the MC profile chip in the top bar to surface profile actions,
-   text-size accessibility controls, and the light/dark theme toggle. */
+   Used by the MC profile chip in the top bar to surface profile actions.
+   Text-size and theme controls live in the Appearance popover (crossword icon). */
 .wise-popover {
   position: fixed;
   min-width: 240px;
@@ -585,26 +599,89 @@ html.dark .wise-popover {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 14px;
+  margin: 0 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
   font-size: var(--fs-ui);
   color: var(--text);
   cursor: pointer;
   background: none;
   border: 0;
-  width: 100%;
+  width: calc(100% - 12px);
   text-align: left;
   font-family: inherit;
-  transition: background-color .15s ease;
+  transition: background-color .15s ease, color .15s ease;
 }
-.wise-popover-item:hover { background: var(--surface-3); }
-html.dark .wise-popover-item:hover { background: rgba(255,255,255,0.06); }
+.wise-popover-item:hover,
+.wise-popover-item.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+html.dark .wise-popover-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+html.dark .wise-popover-item.is-active {
+  background: rgba(2, 94, 211, 0.22);
+  color: var(--primary-bright);
+}
 .wise-popover-item.danger { color: #f87171; }
 .wise-popover-item .material-icons { font-size: 17px; color: var(--text-subtle); }
+.wise-popover-item:hover .material-icons,
+.wise-popover-item.is-active .material-icons { color: var(--primary); }
+html.dark .wise-popover-item.is-active .material-icons { color: var(--primary-bright); }
 .wise-popover-item.danger .material-icons { color: #f87171; }
 .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
 html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
 
-/* Text-size segmented row inside the avatar popover. */
+/* Notifications / Agents quick-actions docked at the top of the avatar menu,
+   split by a thin vertical rule. */
+.wise-popover-actions { display: flex; align-items: stretch; gap: 4px; padding: 8px; }
+.wise-pop-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  transition: background-color .15s ease, color .15s ease;
+}
+.wise-pop-action:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+html.dark .wise-pop-action:hover {
+  background: rgba(2, 94, 211, 0.18);
+  color: var(--primary-bright);
+}
+.wise-pop-action .material-icons { font-size: 20px; color: var(--text-subtle); }
+.wise-pop-action:hover .material-icons { color: var(--primary); }
+html.dark .wise-pop-action:hover .material-icons { color: var(--primary-bright); }
+.wise-pop-action.has-dot { position: relative; }
+.wise-pop-action.has-dot::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  margin-left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sec-red, #ef4444);
+}
+.wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
+html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
+
+/* Text-size segmented row inside the Appearance popover. */
 .fz-row {
   display: flex;
   align-items: center;
@@ -641,6 +718,21 @@ html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
+}
+
+/* Text-size accessibility — scale readable module bodies via --wise-text-scale.
+   Chrome (top bar, menu nav, module headers) stays at authored size. */
+.wise-text-scale,
+#chat-shell,
+.agent-main-scroll,
+.pf-module-scroll,
+.side-panel-body,
+.scout-dock .sc-card,
+.alerts-panel-body,
+#settings-screen .ss-inner,
+#notif-panel .notif-inner,
+#verification-sidebar .vs-inner {
+  zoom: var(--wise-text-scale);
 }
 
 /* Alerts list rows */
@@ -943,6 +1035,81 @@ html.dark .menu-panel-header {
   font-size: var(--fs-ui);
 }
 
+/* Footer — layout + profile rows match .menu-nav-item (icon disc left, label right). */
+.menu-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 10px 8px;
+}
+html.dark .menu-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+.menu-footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.menu-footer-layout,
+.menu-footer-profile {
+  width: 100%;
+}
+/* Lock footer rows to the same horizontal nav-item layout (icon disc left, label right). */
+.menu-footer .menu-nav-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.menu-footer .menu-nav-icon .material-symbols-outlined {
+  color: var(--primary);
+}
+.menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+.menu-footer .menu-nav-item:hover .menu-footer-avatar {
+  color: var(--primary);
+}
+html.dark .menu-footer .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-footer .menu-nav-icon.menu-footer-avatar {
+  color: var(--primary-bright);
+}
+html.dark .menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
+  color: var(--primary-bright);
+}
+.menu-footer-profile .menu-nav-icon.menu-footer-avatar {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--primary);
+}
+.menu-footer-profile .menu-nav-icon { position: relative; }
+.menu-footer-profile.has-dot .menu-nav-icon::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sec-red, #ef4444);
+  border: 2px solid var(--surface);
+}
+.menu-footer-profile.has-dot.is-read .menu-nav-icon::after { display: none; }
+#menu-panel.mp-rail .menu-footer {
+  padding: 10px 8px;
+}
+#menu-panel.mp-rail .menu-footer .menu-nav-item {
+  justify-content: center;
+  gap: 0;
+  padding: 8px 0;
+}
+#menu-panel.mp-rail .menu-footer .menu-nav-label {
+  display: none !important;
+}
+
 /* ===== MENU NAVIGATION ===== */
 .menu-nav {
   display: flex;
@@ -962,7 +1129,7 @@ html.dark .menu-panel-header {
   padding: 8px 10px;
   min-height: 42px;
   box-sizing: border-box;
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   color: var(--text);
   text-decoration: none;
   cursor: pointer;
@@ -975,8 +1142,12 @@ html.dark .menu-panel-header {
   letter-spacing: 0.01em;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
-.menu-nav-item:hover { background: var(--primary-soft); color: var(--primary); }
-.menu-nav-item.is-active { background: var(--primary-soft); color: var(--primary); }
+.menu-nav-item:hover,
+.menu-nav-item.is-active,
+.menu-nav-item.is-open {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
 .menu-nav-icon {
   width: 26px;
   height: 26px;
@@ -992,12 +1163,23 @@ html.dark .menu-panel-header {
   font-size: 16px !important;
   color: var(--primary);
 }
+.menu-nav-icon .material-symbols-outlined {
+  font-size: 16px !important;
+  color: var(--primary);
+  line-height: 1 !important;
+}
 .menu-nav-label {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.menu-nav-label .tagline-tm {
+  font-size: 0.65em;
+  letter-spacing: 0;
+  vertical-align: super;
+  margin-left: 1px;
 }
 .menu-nav-chevron-btn {
   display: inline-flex;
@@ -1033,7 +1215,11 @@ html.dark .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
   transform: rotate(180deg);
   color: var(--primary);
 }
-.menu-nav-group[data-open="true"] > .menu-nav-toggle { color: var(--primary); }
+.menu-nav-group[data-open="true"] > .menu-nav-toggle,
+.menu-nav-group[data-open="true"] > .menu-nav-product {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
 .menu-nav-children {
   display: grid;
   grid-template-rows: 0fr;
@@ -1080,15 +1266,18 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   color: var(--text-muted);
   text-decoration: none;
   font-size: var(--fs-ui);
   font-weight: 500;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
-.menu-nav-subitem:hover { background: var(--primary-soft); color: var(--primary); }
-.menu-nav-subitem.is-active { background: var(--primary-soft); color: var(--primary); }
+.menu-nav-subitem:hover,
+.menu-nav-subitem.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
 .menu-nav-subitem[data-depth="2"] {
   font-weight: 400;
   font-size: 0.7rem;
@@ -1115,11 +1304,13 @@ html.dark .menu-nav-children-inner { border-left-color: rgba(255,255,255,0.10); 
    Light mode uses primary blue accents; on dark navy those read as near-invisible. */
 html.dark .menu-nav-item { color: var(--text); }
 html.dark .menu-nav-item:hover,
-html.dark .menu-nav-item.is-active {
+html.dark .menu-nav-item.is-active,
+html.dark .menu-nav-item.is-open {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
 }
-html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle {
+html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.dark .menu-nav-group[data-open="true"] > .menu-nav-product {
   color: var(--text);
   background: rgba(147, 197, 253, 0.08);
 }
@@ -1127,6 +1318,7 @@ html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron
   color: var(--primary-bright);
 }
 html.dark .menu-nav-icon .material-icons { color: var(--primary-bright); }
+html.dark .menu-nav-icon .material-symbols-outlined { color: var(--primary-bright); }
 html.dark .menu-nav-subitem { color: var(--text-muted); }
 html.dark .menu-nav-subitem[data-depth="2"] { color: var(--text-subtle); }
 html.dark .menu-nav-subicon { color: var(--text-muted); }
@@ -1672,3 +1864,15 @@ html.dark .ag-toast { background: #142a3a; border-color: rgba(2,94,211,0.3); }
 
 /* Hide menu when collapsed via the topbar toggle */
 #menu-panel.mp-collapsed { display: none !important; }
+
+/* Shell top bar hidden app-wide (controls live in the nav panel). */
+#topbar-row {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}

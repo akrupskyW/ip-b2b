@@ -53,15 +53,10 @@ const MENU_TOGGLE_HTML = `
     <span class="lir-label">Menu</span>
   </button>`;
 
-/* Trailing actions (Alerts) — shared by both variants. The three-dot "More"
-   menu was removed from the top bar. */
-const TRAILING_ACTIONS_HTML = `
-  <div class="topbar-menu-wrap">
-    <button type="button" class="lir-btn has-dot" id="topbar-notif-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
-      <span class="material-icons">notifications</span>
-      <span class="lir-label">Alerts</span>
-    </button>
-  </div>`;
+/* Trailing actions — shared by both variants. Notifications (and the
+   three-dot "More" menu) were folded into the avatar (MC) menu, so the bar
+   no longer carries a standalone bell; the unread dot rides on the avatar. */
+const TRAILING_ACTIONS_HTML = '';
 
 /* Portfolio center rail: the section-module shortcuts (filled in by
    portfolio-module.js), the column/grid/split/stack layout switcher, and
@@ -70,27 +65,11 @@ const PORTFOLIO_RAIL_HTML = `
   <div id="left-icon-rail" aria-label="Portfolio modules">
     <nav id="pf-module-rail" class="pf-module-rail" aria-label="Portfolio module shortcuts"></nav>
     <div class="lir-spacer" aria-hidden="true"></div>
-    <div class="lir-layout-group" role="group" aria-label="Module layout">
-      <button type="button" class="lir-btn lir-layout-btn lir-layout-active" id="lir-layout-col" title="Column view" aria-label="Switch to column layout" aria-pressed="true">
-        <span class="material-icons">view_column</span>
-        <span class="lir-label">Cols</span>
+    <div class="lir-layout-group" role="group" aria-label="Appearance">
+      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-btn" data-tip="Appearance" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false">
+        <span class="material-symbols-outlined">crossword</span>
+        <span class="lir-label">Appearance</span>
       </button>
-      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-grid" title="Grid view" aria-label="Switch to grid layout" aria-pressed="false">
-        <span class="material-icons">grid_view</span>
-        <span class="lir-label">Grid</span>
-      </button>
-      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-split" title="Split view — Scout docked at the bottom" aria-label="Switch to split layout" aria-pressed="false">
-        <span class="material-symbols-outlined">splitscreen_bottom</span>
-        <span class="lir-label">Split</span>
-      </button>
-      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-stack" title="Stacked view — modules stacked in one long scroll" aria-label="Switch to stacked layout" aria-pressed="false">
-        <span class="material-symbols-outlined">horizontal_split</span>
-        <span class="lir-label">Stack</span>
-      </button>
-    </div>
-    <div class="lir-divider" aria-hidden="true"></div>
-    <div class="lir-rail-actions">
-      ${TRAILING_ACTIONS_HTML}
     </div>
   </div>`;
 
@@ -124,9 +103,12 @@ export function mountTopbar({
     ${MENU_TOGGLE_HTML}
     <div class="topbar-logo" aria-hidden="true">${logo}</div>
     ${center}
-    <div class="topbar-profile" title="${profileTitle}">MC</div>`;
+    <div class="topbar-profile has-dot" title="${profileTitle}">MC</div>`;
 
-  mountMenuBrand({ logoHref });
+  mountMenuBrand({ logoHref, profileTitle });
+
+  row.hidden = true;
+  row.setAttribute('aria-hidden', 'true');
 
   return row;
 }
@@ -145,8 +127,11 @@ export function syncMenuTogglePlacement() {
  * toggle sits to the right of the logo and collapses the panel to an icon
  * rail (.mp-rail). When collapsed only the owl bug mark shows.
  */
-export function mountMenuBrand({ logoHref = 'portfolio-agent.html' } = {}) {
-  const shell = document.getElementById('agent-shell-wrap');
+export function mountMenuBrand({
+  logoHref = 'portfolio-agent.html',
+  profileTitle = 'Maya Chen · Product Intelligence Lead',
+} = {}) {
+  const shell = document.getElementById('agent-shell-wrap') || document.getElementById('chat-shell-wrap');
   const inner = document.querySelector('#menu-panel .menu-inner');
   if (!inner) return null;
 
@@ -163,5 +148,138 @@ export function mountMenuBrand({ logoHref = 'portfolio-agent.html' } = {}) {
 
   shell?.classList.add('menu-brand-integrated');
   syncMenuTogglePlacement();
+  mountMenuFooter({ profileTitle });
   return brand;
+}
+
+/*
+ * Duplicate the top-bar layout + profile controls at the bottom of the menu
+ * module. Clicks delegate to the originals in #topbar-row so behaviour stays
+ * in one place; class changes on the source are mirrored onto the clones.
+ */
+export function mountMenuFooter({
+  profileTitle = 'Maya Chen · Product Intelligence Lead',
+} = {}) {
+  const inner = document.querySelector('#menu-panel .menu-inner');
+  if (!inner) return null;
+
+  const safeTitle = String(profileTitle).replace(/"/g, '&quot;');
+  const profileLabel = String(profileTitle).split(' · ')[0].trim() || 'Account';
+  const safeLabel = profileLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  let footer = inner.querySelector('.menu-footer');
+  if (!footer) {
+    footer = document.createElement('div');
+    footer.className = 'menu-footer';
+    inner.appendChild(footer);
+  }
+
+  footer.innerHTML = `
+    <div class="menu-footer-actions">
+      <button type="button" class="menu-nav-item menu-footer-layout" id="menu-footer-layout-btn" title="Appearance" aria-label="Appearance settings">
+        <span class="menu-nav-icon"><span class="material-symbols-outlined">crossword</span></span>
+        <span class="menu-nav-label">Appearance</span>
+      </button>
+      <button type="button" class="menu-nav-item menu-footer-profile has-dot" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
+        <span class="menu-nav-icon menu-footer-avatar">MC</span>
+        <span class="menu-nav-label">${safeLabel}</span>
+      </button>
+    </div>`;
+
+  wireMenuFooter();
+  return footer;
+}
+
+/** True when the popover anchor lives in the menu module footer. */
+export function isMenuFooterAnchor(anchor) {
+  return !!anchor?.closest?.('.menu-footer');
+}
+
+/** Position a .wise-popover beside / above a menu-footer row (inside the nav module). */
+export function positionPopoverInMenuPanel(pop, anchor) {
+  const panelInner = anchor.closest('#menu-panel .menu-inner') || anchor.closest('#menu-panel');
+  const anchorRect = anchor.getBoundingClientRect();
+  const panelRect = panelInner?.getBoundingClientRect() || anchorRect;
+  const maxW = Math.max(200, Math.round((panelRect.width || 240) - 16));
+  pop.style.width = maxW + 'px';
+  pop.style.maxWidth = maxW + 'px';
+  pop.classList.add('menu-footer-popover');
+
+  let ph = pop.offsetHeight;
+  if (ph < 1) {
+    pop.style.visibility = 'hidden';
+    ph = pop.offsetHeight;
+    pop.style.visibility = '';
+  }
+  const pw = pop.offsetWidth || maxW;
+
+  let left = panelRect.left + 8;
+  let top = anchorRect.top - ph - 8;
+  if (top < 8) top = anchorRect.bottom + 8;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  pop.style.left = Math.max(8, left) + 'px';
+  pop.style.top = Math.max(8, Math.min(top, window.innerHeight - ph - 8)) + 'px';
+}
+
+/** Position a .wise-popover for a top-bar anchor (below the trigger). */
+export function positionPopoverForTopbar(pop, anchor) {
+  pop.classList.remove('menu-footer-popover');
+  const rect = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth || 240;
+  const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
+  pop.style.left = left + 'px';
+  pop.style.top = (rect.bottom + 8) + 'px';
+}
+
+/** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
+export function wireMenuFooter() {
+  const footerLayout = document.getElementById('menu-footer-layout-btn');
+  if (footerLayout && !footerLayout.dataset.wireBound) {
+    footerLayout.dataset.wireBound = '1';
+    footerLayout.setAttribute('aria-haspopup', 'menu');
+    footerLayout.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.dispatchEvent(new CustomEvent('wise:menu-footer-layout', {
+        detail: { anchor: footerLayout },
+        bubbles: true,
+      }));
+    });
+  }
+
+  const sourceProfile =
+    document.querySelector('#topbar-row .topbar-profile') ||
+    document.getElementById('topbar-profile');
+  const footerProfile = document.getElementById('menu-footer-profile');
+  if (footerProfile && !footerProfile.dataset.wireBound) {
+    footerProfile.dataset.wireBound = '1';
+    if (sourceProfile) {
+      const syncProfile = () => {
+        footerProfile.classList.toggle('has-dot', sourceProfile.classList.contains('has-dot'));
+        footerProfile.classList.toggle('is-read', sourceProfile.classList.contains('is-read'));
+      };
+      syncProfile();
+      new MutationObserver(syncProfile).observe(sourceProfile, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    }
+    footerProfile.setAttribute('aria-haspopup', 'menu');
+    footerProfile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.dispatchEvent(new CustomEvent('wise:menu-footer-profile', {
+        detail: { anchor: footerProfile },
+        bubbles: true,
+      }));
+    });
+  }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const inner = document.querySelector('#menu-panel .menu-inner');
+    if (!inner) return;
+    const footer = inner.querySelector('.menu-footer');
+    if (!footer || !footer.querySelector('.menu-nav-item')) mountMenuFooter();
+    else wireMenuFooter();
+  });
 }

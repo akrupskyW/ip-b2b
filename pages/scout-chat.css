@@ -31,6 +31,14 @@
    instead of Scout disappearing behind the higher-z menu. */
 #menu-panel.mp-open ~ .scout-dock.scout-dock-open { left: 268px; }
 @media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; } }
+/* Side flip — the dock defaults to the far-right of the modules row (order
+   99). Flipping it left pins it just after the menu rail as the first module.
+   Persisted via js/scout-dock.js so the side carries across page switches. */
+.scout-dock.scout-dock-open.scout-dock-left { order: -1; }
+/* The flip control mirrors the side it would move Scout to: the glyph points
+   the opposite way once the dock is already on the left. */
+.scout-dock-flip .material-icons { transition: transform 0.2s ease; }
+.scout-dock-flip[data-side="left"] .material-icons { transform: scaleX(-1); }
 .scout-dock .sc-card {
   transform-origin: right center;
   animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;

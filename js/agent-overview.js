@@ -14,7 +14,9 @@ import {
   mountAgentMenu,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { mountTopbar } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
+import { mountScoutDock } from './scout-dock.js';
+import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 
 function escHtml(s) {
   return String(s)
@@ -337,6 +339,7 @@ export function bootstrapAgentPage() {
   if (navEl) mountAgentMenu(navEl, agent.id, { fromAgentPage: true });
 
   setupTrailingRail();
+  setupScoutDock();
 
   if (location.hash) {
     requestAnimationFrame(() => {
@@ -344,6 +347,38 @@ export function bootstrapAgentPage() {
       if (target && target.scrollIntoView) target.scrollIntoView({ block: 'start' });
     });
   }
+}
+
+/* ====================================================================
+   Persistent Scout dock.
+     The shared Scout chat lives in the modules row on every agent page,
+     in the exact same place + size as the portfolio and chat pages — its
+     width and side are restored from localStorage via mountScoutDock, so
+     Scout stays uniform as you move between pages.
+==================================================================== */
+
+function setupScoutDock() {
+  const row = document.getElementById('modules-row');
+  if (!row || document.getElementById('scout-dock-panel')) return;
+  const dock = document.createElement('aside');
+  dock.id = 'scout-dock-panel';
+  dock.className = 'scout-dock scout-dock-open';
+  dock.setAttribute('aria-label', 'Scout chat');
+  row.appendChild(dock);
+  mountScoutDock(dock, {
+    sub: 'Your AI assistant across every WISE agent',
+    /* Intent chips that map to a destination navigate there; everything
+       else continues the conversation inside the dock. */
+    onIntent: (intent) => {
+      const go = {
+        customer_profile: 'ai-chat.html',
+        resume_prompt: 'ai-chat.html',
+        registry_home: 'ai-chat.html',
+      }[intent];
+      if (go) { window.location.href = go; return true; }
+      return false;
+    },
+  });
 }
 
 /* ====================================================================
@@ -424,55 +459,27 @@ function renderAlertsPanel() {
     </div>`;
 }
 
+/* Reveal the Alerts side module (mounted + wired in setupTrailingRail). Now
+   triggered from the avatar menu instead of a standalone top-bar bell. */
+function openAlertsPanel() {
+  const panel = ensureSidePanel('alerts-panel', renderAlertsPanel);
+  if (!panel) return;
+  panel.classList.add('alerts-open');
+  requestAnimationFrame(() => {
+    panel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
+  });
+}
+
 function isDarkMode() {
   return document.documentElement.classList.contains('dark');
 }
 
-/* Theme + text-size accessibility controls now live in the MC / avatar
-   popover (see setupAvatarPopover) instead of the three-dot More menu, so
-   setDarkMode just needs to flip the class, persist it, and let the avatar
-   popover re-render itself if it happens to be open. */
+/* Theme + text-size accessibility controls live in the Appearance popover. */
 function setDarkMode(on) {
   const html = document.documentElement;
   html.classList.toggle('dark', on);
   try { localStorage.setItem('wise-theme', on ? 'dark' : 'light'); } catch {}
-  refreshAvatarPopover();
-}
-
-/* Mirrors the chat-page scale so a user's accessibility choice is
-   consistent across pages (same localStorage key as ai-chat.html). */
-const FZ_SCALE = { sm: 0.82, md: 1, lg: 1.18, xl: 1.36 };
-const FZ_LINE  = { sm: 1.45, md: 1.6, lg: 1.65, xl: 1.7 };
-
-function getStoredFontSize() {
-  let fz = 'md';
-  try { fz = localStorage.getItem('chat-font-size') || 'md'; } catch (_) {}
-  if (!(fz in FZ_SCALE)) fz = 'md';
-  return fz;
-}
-
-/* Scale the agent main content (hero + cards) so changing text size has a
-   visible effect on every overview page, while leaving the global top bar,
-   the sticky menu rail, AND the module header at their authored size. The
-   zoom is applied to the scrollable content only (#agent-main-scroll) — never
-   to #agent-main itself — so the .agent-main-header strip always renders at
-   the same size as the .menu-panel-header in the navigation rail. */
-function setAgentFontSize(size) {
-  if (!FZ_SCALE[size]) return;
-  const content = document.getElementById('agent-main-scroll');
-  if (content) {
-    content.style.zoom = String(FZ_SCALE[size]);
-    content.style.setProperty('--chat-line-height', String(FZ_LINE[size]));
-  }
-  document.querySelectorAll('.fz-btn[data-fz]').forEach((b) => {
-    const s = b.dataset.fz;
-    if (s in FZ_SCALE) b.classList.toggle('fz-active', s === size);
-  });
-  try { localStorage.setItem('chat-font-size', size); } catch (_) {}
-}
-
-function applyStoredFontSize() {
-  setAgentFontSize(getStoredFontSize());
+  refreshAppearancePopover();
 }
 
 function renderMorePopover() {
@@ -667,10 +674,7 @@ function setupTrailingRail() {
 }
 
 /* ====================================================================
-   MC / avatar popover.
-     Mirrors ai-chat.html — surfaces the user-menu plus the text-size and
-     light/dark accessibility controls. Text-size and theme rows leave the
-     popover open while the user iterates; every other row closes it.
+   MC / avatar popover — user menu (profile, alerts, sign out).
 ==================================================================== */
 
 let activeAvatarPopover = null;
@@ -686,21 +690,86 @@ function closeAvatarPopover() {
   activeAvatarAnchor  = null;
 }
 
-function refreshAvatarPopover() {
-  if (!activeAvatarPopover) return;
-  renderAvatarBody(activeAvatarPopover);
-}
-
 function renderAvatarBody(pop) {
-  const fz     = getStoredFontSize();
-  const isDark = isDarkMode();
+  const notifUnread = !document.querySelector('.topbar-profile')?.classList.contains('is-read');
   pop.innerHTML = `
     <div class="wise-popover-header">Maya Chen</div>
+    <div class="wise-popover-actions">
+      <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
+        <span class="material-icons">notifications</span>
+        <span>Alerts</span>
+      </button>
+    </div>
+    <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
     <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
     <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
     <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
     <div class="wise-popover-divider"></div>
+    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
+  `;
+}
+
+function openAvatarPopover(anchor) {
+  if (activeAvatarAnchor === anchor) { closeAvatarPopover(); return; }
+  closeAvatarPopover();
+  closeAppearancePopover();
+  const pop = document.createElement('div');
+  pop.className = 'wise-popover';
+  document.body.appendChild(pop);
+  renderAvatarBody(pop);
+  if (isMenuFooterAnchor(anchor)) positionPopoverInMenuPanel(pop, anchor);
+  else positionPopoverForTopbar(pop, anchor);
+  requestAnimationFrame(() => pop.classList.add('open'));
+  activeAvatarPopover = pop;
+  activeAvatarAnchor  = anchor;
+  anchor.classList.add('is-open');
+
+  pop.addEventListener('click', (ev) => {
+    const notifItem = ev.target.closest('[data-pop-action="notifications"]');
+    if (notifItem && pop.contains(notifItem)) {
+      ev.stopPropagation();
+      document.querySelector('.topbar-profile')?.classList.add('is-read');
+      closeAvatarPopover();
+      openAlertsPanel();
+      return;
+    }
+    if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) {
+      ev.stopPropagation();
+      return;
+    }
+    closeAvatarPopover();
+  });
+}
+
+/* ====================================================================
+   Appearance popover — text size + light/dark mode (crossword icon).
+==================================================================== */
+
+let activeAppearancePopover = null;
+let activeAppearanceAnchor  = null;
+
+function closeAppearancePopover() {
+  if (!activeAppearancePopover) return;
+  activeAppearanceAnchor?.classList.remove('is-open');
+  activeAppearanceAnchor?.setAttribute('aria-expanded', 'false');
+  activeAppearancePopover.classList.remove('open');
+  const p = activeAppearancePopover;
+  setTimeout(() => p.remove(), 210);
+  activeAppearancePopover = null;
+  activeAppearanceAnchor  = null;
+}
+
+function refreshAppearancePopover() {
+  if (!activeAppearancePopover) return;
+  renderAppearanceBody(activeAppearancePopover);
+}
+
+function renderAppearanceBody(pop) {
+  const fz     = getStoredFontSize();
+  const isDark = isDarkMode();
+  pop.innerHTML = `
+    <div class="wise-popover-header">Appearance</div>
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>
       <div class="fz-btns">
@@ -710,37 +779,35 @@ function renderAvatarBody(pop) {
         <button type="button" class="fz-btn${fz==='xl'?' fz-active':''}" data-fz="xl">XL</button>
       </div>
     </div>
+    <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
       <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
       <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
     </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
   `;
 }
 
-function openAvatarPopover(anchor) {
-  if (activeAvatarAnchor === anchor) { closeAvatarPopover(); return; }
+function openAppearancePopover(anchor) {
+  if (activeAppearanceAnchor === anchor) { closeAppearancePopover(); return; }
+  closeAppearancePopover();
   closeAvatarPopover();
   const pop = document.createElement('div');
   pop.className = 'wise-popover';
   document.body.appendChild(pop);
-  renderAvatarBody(pop);
-  const rect = anchor.getBoundingClientRect();
-  const pw   = pop.offsetWidth || 240;
-  const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
-  pop.style.left = left + 'px';
-  pop.style.top  = (rect.bottom + 8) + 'px';
+  renderAppearanceBody(pop);
+  if (isMenuFooterAnchor(anchor)) positionPopoverInMenuPanel(pop, anchor);
+  else positionPopoverForTopbar(pop, anchor);
   requestAnimationFrame(() => pop.classList.add('open'));
-  activeAvatarPopover = pop;
-  activeAvatarAnchor  = anchor;
+  activeAppearancePopover = pop;
+  activeAppearanceAnchor  = anchor;
   anchor.classList.add('is-open');
+  anchor.setAttribute('aria-expanded', 'true');
 
   pop.addEventListener('click', (ev) => {
     const fzBtn = ev.target.closest('.fz-btn[data-fz]');
     if (fzBtn && pop.contains(fzBtn)) {
       ev.stopPropagation();
-      setAgentFontSize(fzBtn.dataset.fz);
+      setTextSize(fzBtn.dataset.fz);
       return;
     }
     const themeItem = ev.target.closest('[data-pop-action="theme"]');
@@ -753,7 +820,7 @@ function openAvatarPopover(anchor) {
       ev.stopPropagation();
       return;
     }
-    closeAvatarPopover();
+    closeAppearancePopover();
   });
 }
 
@@ -775,16 +842,30 @@ function setupAvatarPopover() {
     }
   });
   document.addEventListener('click', (e) => {
-    if (activeAvatarPopover && !activeAvatarPopover.contains(e.target)) closeAvatarPopover();
+    if (activeAvatarPopover && !activeAvatarPopover.contains(e.target) && !activeAvatarAnchor?.contains(e.target)) {
+      closeAvatarPopover();
+    }
+    if (activeAppearancePopover && !activeAppearancePopover.contains(e.target) && !activeAppearanceAnchor?.contains(e.target)) {
+      closeAppearancePopover();
+    }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeAvatarPopover();
+    if (e.key === 'Escape') {
+      closeAvatarPopover();
+      closeAppearancePopover();
+    }
+  });
+  document.addEventListener('wise:menu-footer-profile', (e) => {
+    openAvatarPopover(e.detail.anchor);
+  });
+  document.addEventListener('wise:menu-footer-layout', (e) => {
+    openAppearancePopover(e.detail.anchor);
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   bootstrapAgentPage();
   setupAvatarPopover();
-  applyStoredFontSize();
+  applyStoredTextSize();
   initLirTooltip();
 });

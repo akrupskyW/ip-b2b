@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Scout — AI Verification Assistant</title>
+  <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
        font, e.g. `side_navigation` used by the menu toggle and panel-dock controls. -->
@@ -11,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="agent-page.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -75,6 +77,8 @@
       --fs-ui: 0.75rem;
       --fs-welcome-title: 1.0625rem;
       --fs-label: 0.6875rem;
+      --wise-text-scale: 1;
+      --chat-line-height: 1.6;
     }
 
     html.dark {
@@ -137,17 +141,69 @@
       z-index: 1;
       width: 100%;
     }
-    /* Top bar row: menu toggle + logo on the left, profile on the right, rail fills remaining width */
-    #topbar-row {
+    /* Shared shell grid (mirrors agent-page.css #agent-shell-wrap): the nav panel
+       is a full-height left column ("menu") and the top bar + modules sit to its
+       right — so the navigation reaches all the way to the top, identical to the
+       agent/portfolio pages. */
+    #chat-shell-wrap.menu-brand-integrated {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: 1fr;
+      grid-template-areas: "menu modules";
+      column-gap: 8px;
+      row-gap: 0;
+      align-items: stretch;
+    }
+    .menu-brand-integrated > #menu-panel {
+      grid-area: menu;
       position: relative;
-      display: flex;
+      left: auto;
+      order: unset !important;
+      align-self: stretch;
+      height: auto;
+      max-height: none;
+      min-height: 0;
+      z-index: 5;
+    }
+    .menu-brand-integrated > #menu-panel .menu-inner { height: 100%; min-height: 100%; }
+    .menu-brand-integrated > #topbar-row {
+      grid-area: topbar;
+      margin-bottom: 0;
+      padding-left: 8px;
+    }
+    .menu-brand-integrated > #modules-row {
+      grid-area: modules;
+      flex: unset;
+      min-height: 0;
+      padding-left: 0;
+      margin-top: 8px;
+    }
+    /* Tablet/phone: drop the grid back to the original vertical stack so the
+       chat panels keep their full width and horizontal-scroll behaviour. */
+    @media (max-width: 1023px) {
+      #chat-shell-wrap.menu-brand-integrated {
+        display: flex;
+        flex-direction: column;
+      }
+      .menu-brand-integrated > #menu-panel { align-self: stretch; height: auto; }
+    }
+    /* Top bar row hidden — brand + profile live in the nav panel (agent-page.css). */
+    #topbar-row {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+      position: relative;
       align-items: center;
       justify-content: flex-start;
-      margin-bottom: 8px;
-      /* Leave room for the absolutely-positioned menu toggle + wordmark on left and profile on right.
-         Left padding clears the logo (left:62px + 177px wordmark + 16px buffer) so it lines up
-         with the agents-module column below. */
-      padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 177px + 16px);
+      /* The menu toggle + wordmark now live in the nav panel's brand strip, so
+         the rail starts at the left edge; the right side reserves room for the
+         Appearance control and the absolutely-positioned profile avatar. */
+      padding: 0 calc(1.5rem + 34px + 16px + 34px + 12px) 0 14px;
       flex-shrink: 0;
     }
     /* Menu collapse toggle — sits to the LEFT of the logo. Positioned so the icon
@@ -228,6 +284,55 @@
       border-color: var(--primary);
       color: var(--primary);
     }
+    /* Avatar inherits the unread notification dot now that the bell + agents
+       buttons live inside the avatar menu. */
+    .topbar-profile.has-dot::after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--sec-red, #ef4444);
+      border: 2px solid var(--surface);
+    }
+    .topbar-profile.has-dot.is-read::after { display: none; }
+    /* Appearance — crossword popover trigger, docked left of the profile avatar. */
+    .topbar-appearance-btn {
+      position: absolute;
+      right: calc(1.5rem + 34px + 16px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 11;
+      padding: 0;
+      flex-shrink: 0;
+      transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+    .topbar-appearance-btn:hover {
+      transform: translateY(-50%) scale(1.04);
+      border-color: var(--text-subtle);
+      color: var(--text);
+    }
+    .topbar-appearance-btn.is-open,
+    .topbar-appearance-btn.is-open:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .topbar-appearance-btn .material-symbols-outlined {
+      font-size: 20px !important;
+      line-height: 1 !important;
+    }
     .topbar-logo {
       position: absolute;
       /* Wordmark left edge aligns with the "Agents" title and the per-agent
@@ -279,11 +384,12 @@
       .topbar-logo svg.tl-full { display: none  !important; }
       .topbar-logo svg.tl-bug  { display: block !important; }
       .topbar-tagline { display: none !important; }
-      #topbar-row { padding: 0 calc(1.5rem + 34px + 12px) 0 calc(62px + 54px + 16px); }
+      #topbar-row { padding: 0 calc(1.5rem + 34px + 16px + 34px + 12px) 0 calc(62px + 54px + 16px); }
     }
     @media (max-width: 767px) {
       .topbar-profile { right: 1rem; }
-      #topbar-row { padding: 0 calc(1rem + 34px + 10px) 0 calc(62px + 54px + 12px); }
+      .topbar-appearance-btn { right: calc(1rem + 34px + 12px); }
+      #topbar-row { padding: 0 calc(1rem + 34px + 16px + 34px + 10px) 0 calc(62px + 54px + 12px); }
     }
     #modules-row {
       flex: 1 1 0%;
@@ -626,6 +732,79 @@
       color: var(--text-muted);
       font-size: var(--fs-ui);
     }
+    /* Footer — layout + profile rows match .menu-nav-item (icon disc left, label right). */
+    .menu-footer {
+      flex-shrink: 0;
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 10px 8px;
+    }
+    html.dark .menu-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+    .menu-footer-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .menu-footer-layout,
+    .menu-footer-profile {
+      width: 100%;
+    }
+    .menu-footer .menu-nav-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 8px 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .menu-footer .menu-nav-icon .material-symbols-outlined {
+      color: var(--primary);
+    }
+    .menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+    .menu-footer .menu-nav-item:hover .menu-footer-avatar {
+      color: var(--primary);
+    }
+    html.dark .menu-footer .menu-nav-icon .material-symbols-outlined,
+    html.dark .menu-footer .menu-nav-icon.menu-footer-avatar {
+      color: var(--primary-bright);
+    }
+    html.dark .menu-footer .menu-nav-item:hover .menu-nav-icon .material-symbols-outlined,
+    html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
+      color: var(--primary-bright);
+    }
+    .menu-footer-profile .menu-nav-icon.menu-footer-avatar {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--primary);
+    }
+    .menu-footer-profile .menu-nav-icon { position: relative; }
+    .menu-footer-profile.has-dot .menu-nav-icon::after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--sec-red, #ef4444);
+      border: 2px solid var(--surface);
+    }
+    .menu-footer-profile.has-dot.is-read .menu-nav-icon::after { display: none; }
+    #menu-panel.mp-rail .menu-footer {
+      padding: 10px 8px;
+    }
+    #menu-panel.mp-rail .menu-footer .menu-nav-item {
+      justify-content: center;
+      gap: 0;
+      padding: 8px 0;
+    }
+    #menu-panel.mp-rail .menu-footer .menu-nav-label {
+      display: none !important;
+    }
     .menu-panel-placeholder {
       display: flex;
       flex-direction: column;
@@ -639,6 +818,78 @@
     .menu-panel-placeholder .material-icons {
       font-size: 28px !important;
       color: var(--text-subtle);
+    }
+
+    /* Brand strip — mirrors the shared agent/portfolio shell (agent-page.css)
+       so the left navigation panel is identical across every page. Replaces the
+       old "Navigation / WISE Platform" header: the panel now leads with the WISE
+       wordmark, exactly like the dashboard/agent/portfolio menus. The collapse
+       toggle stays in the top bar because this panel is display:none when closed
+       (a toggle docked inside it would become unreachable). */
+    .menu-brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      min-height: var(--panel-header-h);
+      padding: 0 10px 0 18px;
+      box-sizing: border-box;
+      background: transparent;
+    }
+    .menu-brand-logo {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      color: var(--text);
+    }
+    .menu-brand-logo a {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      width: fit-content;
+      max-width: 100%;
+      color: inherit;
+      text-decoration: none;
+    }
+    .menu-brand-logo svg.tl-full { display: block; width: 138px; height: auto; }
+    .menu-brand-logo svg.tl-bug { display: none; }
+    .menu-brand-logo .topbar-tagline {
+      font-size: 7px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1;
+      margin-top: 3px;
+      white-space: nowrap;
+      text-align: right;
+      align-self: flex-end;
+    }
+    .menu-brand-logo .topbar-tagline .tagline-tm {
+      font-size: 0.65em;
+      letter-spacing: 0;
+      vertical-align: super;
+      margin-left: 1px;
+    }
+
+    /* The WISE wordmark + collapse toggle now live in the nav panel's brand
+       strip (inserted by the shared mountMenuBrand), exactly like the
+       agent/portfolio shell. The top-bar copy of the logo is permanently hidden;
+       the panel is always mounted and collapses to an icon rail rather than
+       closing, so the brand is always visible. */
+    #topbar-row > .topbar-logo { display: none !important; }
+    .menu-brand-bar .topbar-menu-toggle {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      flex-shrink: 0;
+      margin-left: auto;
+      min-height: 36px !important;
+      width: 36px !important;
+      z-index: 1;
     }
 
     /* ===== Menu module navigation (Overview / WISE Portfolio / WISE Studio) ===== */
@@ -670,7 +921,7 @@
       padding: 8px 10px;
       min-height: 42px;
       box-sizing: border-box;
-      border-radius: 10px;
+      border-radius: var(--radius-pill);
       color: var(--text);
       text-decoration: none;
       cursor: pointer;
@@ -683,11 +934,9 @@
       letter-spacing: 0.01em;
       transition: background-color 0.18s ease, color 0.18s ease;
     }
-    .menu-nav-item:hover {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    .menu-nav-item.is-active {
+    .menu-nav-item:hover,
+    .menu-nav-item.is-active,
+    .menu-nav-item.is-open {
       background: var(--primary-soft);
       color: var(--primary);
     }
@@ -712,6 +961,12 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .menu-nav-label .tagline-tm {
+      font-size: 0.65em;
+      letter-spacing: 0;
+      vertical-align: super;
+      margin-left: 1px;
     }
     .menu-nav-chevron {
       display: inline-flex;
@@ -749,6 +1004,7 @@
     }
     .menu-nav-group[data-open="true"] > .menu-nav-toggle {
       color: var(--primary);
+      background: var(--primary-soft);
     }
     .menu-nav-children {
       display: grid;
@@ -798,14 +1054,15 @@
       align-items: center;
       gap: 10px;
       padding: 6px 10px;
-      border-radius: 8px;
+      border-radius: var(--radius-pill);
       color: var(--text-muted);
       text-decoration: none;
       font-size: var(--fs-ui);
       font-weight: 500;
       transition: background-color 0.18s ease, color 0.18s ease;
     }
-    .menu-nav-subitem:hover {
+    .menu-nav-subitem:hover,
+    .menu-nav-subitem.is-active {
       background: var(--primary-soft);
       color: var(--primary);
     }
@@ -822,7 +1079,8 @@
       font-size: 16px !important;
       color: inherit;
     }
-    .menu-nav-subitem:hover .menu-nav-subicon { color: var(--primary); }
+    .menu-nav-subitem:hover .menu-nav-subicon,
+    .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary); }
     .menu-nav-count {
       margin-left: auto;
       font-size: 0.6875rem;
@@ -848,7 +1106,8 @@
     /* Dark mode — invert nav labels/icons on gradient panel chrome. */
     html.dark .menu-nav-item { color: var(--text); }
     html.dark .menu-nav-item:hover,
-    html.dark .menu-nav-item.is-active {
+    html.dark .menu-nav-item.is-active,
+    html.dark .menu-nav-item.is-open {
       color: var(--text);
       background: rgba(255, 255, 255, 0.06);
     }
@@ -917,13 +1176,21 @@
     }
     #menu-panel.mp-rail.mp-open { width: 66px; min-width: 66px; }
     #menu-panel.mp-rail .menu-inner { width: 66px; }
-    #menu-panel.mp-rail .menu-panel-header {
-      padding: 12px 0;
+    /* Collapsed rail: stack the owl bug + toggle in the brand strip, hide the
+       wordmark/tagline — mirrors the shared shell's collapsed nav. */
+    #menu-panel.mp-rail .menu-brand-bar {
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
+      padding: 8px 0;
+      gap: 6px;
     }
-    #menu-panel.mp-rail .menu-panel-icon,
-    #menu-panel.mp-rail .menu-panel-titles { display: none; }
-    #menu-panel.mp-rail .menu-rail-toggle { margin-left: 0; }
+    #menu-panel.mp-rail .menu-brand-logo { width: 100%; align-items: center; justify-content: center; }
+    #menu-panel.mp-rail .menu-brand-logo a { align-items: center; }
+    #menu-panel.mp-rail .menu-brand-logo svg.tl-full,
+    #menu-panel.mp-rail .menu-brand-logo .topbar-tagline { display: none !important; }
+    #menu-panel.mp-rail .menu-brand-logo svg.tl-bug { display: block; width: 30px; height: auto; margin: 0 auto; }
+    #menu-panel.mp-rail .menu-brand-bar .topbar-menu-toggle { margin: 0 auto; }
     #menu-panel.mp-rail .menu-panel-body { padding: 10px 8px; }
     #menu-panel.mp-rail .menu-nav-label,
     #menu-panel.mp-rail .menu-nav-chevron-btn,
@@ -2066,17 +2333,88 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 9px 14px;
-      font-size: 13px;
+      margin: 0 6px;
+      padding: 8px 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--fs-ui);
       color: var(--text);
       cursor: pointer;
-      transition: background-color .15s ease;
+      background: none;
+      border: 0;
+      width: calc(100% - 12px);
+      text-align: left;
+      font-family: inherit;
+      transition: background-color .15s ease, color .15s ease;
     }
-    .wise-popover-item:hover { background: var(--surface-2); }
+    .wise-popover-item:hover,
+    .wise-popover-item.is-active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    html.dark .wise-popover-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+    }
+    html.dark .wise-popover-item.is-active {
+      background: rgba(2, 94, 211, 0.22);
+      color: var(--primary-bright);
+    }
     .wise-popover-item.danger { color: #f87171; }
-    .wise-popover-item .material-icons { font-size: 17px; color: var(--text-muted); }
+    .wise-popover-item .material-icons,
+    .wise-popover-item .material-symbols-outlined { font-size: 17px; color: var(--text-muted); }
+    .wise-popover-item:hover .material-icons,
+    .wise-popover-item:hover .material-symbols-outlined,
+    .wise-popover-item.is-active .material-icons,
+    .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary); }
+    html.dark .wise-popover-item.is-active .material-icons,
+    html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-bright); }
     .wise-popover-item.danger .material-icons { color: #f87171; }
     .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
+    /* Notifications / Agents quick-actions docked at the top of the avatar
+       menu, split by a thin vertical rule. */
+    .wise-popover-actions { display: flex; align-items: stretch; gap: 4px; padding: 8px; }
+    .wise-pop-action {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .wise-pop-action:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    html.dark .wise-pop-action:hover {
+      background: rgba(2, 94, 211, 0.18);
+      color: var(--primary-bright);
+    }
+    .wise-pop-action .material-icons { font-size: 20px; color: var(--text-muted); }
+    .wise-pop-action:hover .material-icons { color: var(--primary); }
+    html.dark .wise-pop-action:hover .material-icons { color: var(--primary-bright); }
+    .wise-pop-action.has-dot { position: relative; }
+    .wise-pop-action.has-dot::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      margin-left: 4px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sec-red, #ef4444);
+    }
+    .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
     /* ===== end user-menu popover ===== */
 
     .topbar-menu-item {
@@ -3871,14 +4209,6 @@
     .amm-title { font-weight: 700 !important; }
     .amm-member-name { font-weight: 500 !important; }
 
-    /* =====================================================================
-       ACCESSIBILITY — text-size setting must ONLY scale the chat messages
-       area (not the topbar, input rail, side panels, or welcome screen).
-       The JS now applies zoom to #chat-messages directly; reset any stale
-       zoom that may have been applied to the shell.
-       ===================================================================== */
-    #chat-shell { zoom: 1 !important; }
-
     /* ================================================================
        LAYOUT TOGGLE + MODULE FLIP — top-bar controls
        ================================================================ */
@@ -3999,11 +4329,138 @@
       color: var(--primary);
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
+    .panel-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      opacity: 0.75;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .panel-close-btn .material-icons {
+      font-size: 18px !important;
+      line-height: 1 !important;
+    }
+    .panel-close-btn:hover {
+      opacity: 1;
+      color: var(--text);
+      background: color-mix(in srgb, currentColor 12%, transparent);
+    }
+    /* Stacked panel controls — vertical list of icon+label rows, matching the
+       menu-nav pattern (icon left, caption right). Used on Notifications and
+       Agent Settings headers where the full control set needs to stay readable. */
+    .panel-controls--stacked {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1px;
+      min-width: 76px;
+    }
+    .panel-controls--stacked .panel-flip {
+      display: block;
+      width: 100%;
+    }
+    .panel-ctrl-btn {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 24px;
+      padding: 2px 4px 2px 2px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      text-align: left;
+      white-space: nowrap;
+      opacity: 0.85;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .panel-ctrl-icon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 6px;
+    }
+    .panel-ctrl-icon .material-icons,
+    .panel-ctrl-icon .material-symbols-outlined {
+      font-size: 16px !important;
+      line-height: 1 !important;
+      transition: transform 0.22s ease;
+    }
+    .panel-ctrl-label {
+      flex: 1;
+      min-width: 0;
+      line-height: 1.2;
+    }
+    .panel-controls--stacked .panel-flip-btn,
+    .panel-controls--stacked .panel-width-toggle-btn,
+    .panel-controls--stacked .panel-close-btn {
+      width: 100%;
+      height: auto;
+      min-height: 24px;
+      justify-content: flex-start;
+      padding: 2px 4px 2px 2px;
+      opacity: 0.85;
+    }
+    .panel-controls--stacked .panel-flip-btn .material-icons,
+    .panel-controls--stacked .panel-flip-btn .material-symbols-outlined,
+    .panel-controls--stacked .panel-width-toggle-btn .material-symbols-outlined,
+    .panel-controls--stacked .panel-close-btn .material-icons {
+      font-size: 16px !important;
+    }
+    .panel-controls--stacked .panel-ctrl-btn:hover,
+    .panel-controls--stacked .panel-flip-btn:hover,
+    .panel-controls--stacked .panel-width-toggle-btn:hover,
+    .panel-controls--stacked .panel-close-btn:hover {
+      opacity: 1;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .panel-controls--stacked .panel-width-toggle-btn.is-on {
+      opacity: 1;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .panel-flip[data-side="right"] .panel-ctrl-icon .material-icons,
+    .panel-flip[data-side="right"] .panel-ctrl-icon .material-symbols-outlined,
+    .panel-flip[data-side="right"] .panel-flip-btn .material-icons,
+    .panel-flip[data-side="right"] .panel-flip-btn .material-symbols-outlined {
+      transform: rotate(180deg);
+    }
+    .notif-panel-header:has(.panel-controls--stacked),
+    #settings-screen .ss-header:has(.panel-controls--stacked) {
+      height: auto;
+      min-height: var(--panel-header-h);
+      align-items: center;
+    }
+    .notif-panel-header:has(.panel-controls--stacked) .panel-controls--stacked,
+    #settings-screen .ss-header:has(.panel-controls--stacked) .panel-controls--stacked {
+      align-self: stretch;
+      padding: 2px 0;
+    }
     /* On narrow stacked layouts the header controls still belong floated right;
        reset any flex-1 absorbing them accidentally. */
     .side-panel-header .panel-controls,
     .nfp-panel-header  .panel-controls,
-    .notif-panel-header .panel-controls {
+    .notif-panel-header .panel-controls,
+    #settings-screen .ss-header .panel-controls {
       margin-left: auto;
     }
 
@@ -4022,6 +4479,8 @@
     #vault-panel.panel-wide .vault-inner { width: 536px; }
     #notif-panel.panel-wide.notif-open { width: 600px; }
     #notif-panel.panel-wide .notif-inner { width: 600px; }
+    #settings-screen.panel-wide.ss-open { width: 680px; }
+    #settings-screen.panel-wide .ss-inner { width: 680px; }
     #nfp-panel.panel-wide.nfp-open { width: 592px; }
     #nfp-panel.panel-wide .nfp-inner { width: 592px; }
 
@@ -4119,9 +4578,9 @@
     }
     #left-icon-rail .lir-rail-actions #topbar-menu-wrap { height: auto; min-height: 46px; }
 
-    /* Layout toggle group */
+    /* Layout toggle group — scoped to top-bar rail only so footer clones stay row layout. */
     .lir-layout-group { display: flex; align-items: center; gap: 2px; }
-    .lir-layout-btn {
+    #left-icon-rail .lir-layout-btn {
       width: 36px !important;
       height: auto !important;
       min-height: 46px !important;
@@ -4132,7 +4591,7 @@
       padding: 5px 0 4px !important;
       border-radius: 8px !important;
     }
-    .lir-layout-btn.lir-layout-active {
+    #left-icon-rail .lir-layout-btn.lir-layout-active {
       background: transparent;
       color: var(--primary);
       box-shadow: none;
@@ -4470,10 +4929,48 @@
   </button>
 
   <div id="lir-tooltip" aria-hidden="true"></div>
-  <div id="chat-shell-wrap">
-    <div id="topbar-row">
-      <button type="button" id="topbar-menu-toggle" class="lir-btn topbar-menu-toggle" data-tip="Menu" title="Menu" aria-label="Toggle menu panel" onclick="toggleMenuPanel()">
-        <span class="material-icons">menu_open</span>
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Navigation panel — a full-height left column in the shell grid (the
+         "menu" grid area), exactly like the agent/portfolio shell. The brand
+         strip (WISE wordmark + collapse toggle) is inserted by the module script
+         below via the shared mountMenuBrand helper. -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <script type="module">
+      import { mountAgentMenu } from '../js/agent-menu.js';
+      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from '../js/topbar.js';
+      import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+      Object.assign(window, {
+        isMenuFooterAnchor,
+        positionPopoverInMenuPanel,
+        positionPopoverForTopbar,
+        setTextSize,
+        setChatFontSize: setTextSize,
+        getStoredFontSize,
+      });
+      const navEl = document.getElementById('agent-menu-nav');
+      if (navEl) {
+        mountAgentMenu(navEl, null, {
+          fromAgentPage: true,
+          activeProductId: 'wisecode-ai',
+        });
+      }
+      /* Use the exact same shell helper as the agent/portfolio pages: it leads
+         the nav panel with the shared WISE brand strip and docks the collapse
+         toggle beside the logo. The toggle collapses the panel to an icon rail
+         (see toggleMenuPanel) rather than hiding it, so the brand + toggle stay
+         visible — identical look and behaviour to every other page. */
+      mountMenuBrand({ logoHref: 'portfolio-agent.html' });
+      applyStoredTextSize();
+    </script>
+    <div id="topbar-row" hidden aria-hidden="true">
+      <button type="button" id="topbar-menu-toggle" class="lir-btn topbar-menu-toggle" data-tip="Menu" title="Collapse menu to icons" aria-label="Collapse menu to icons" onclick="toggleMenuPanel()">
+        <span class="material-icons">chevron_left</span>
         <span class="lir-label">Menu</span>
       </button>
       <div class="topbar-logo">
@@ -4509,13 +5006,6 @@
       <!-- Panel buttons: click the icon to toggle panel on/off.
            The thin bars on the LEFT and RIGHT of the icon show which side the panel is on
            (bright = active side). Click either bar to flip the panel to the other side. -->
-      <button type="button" class="lir-btn lir-panel-btn lir-history lir-active" id="lir-history-btn" data-tip="History &amp; Projects" onclick="revealHistoryPanel()" title="History &amp; Projects" aria-label="Toggle History panel">
-        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('history')" title="On left — tap to move right"></span>
-        <span class="material-icons">history</span>
-        <span class="lir-dot"></span>
-        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('history')" title="On left — tap to move right"></span>
-        <span class="lir-label">History</span>
-      </button>
       <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="revealPanel('scout')" title="WISE Foods" aria-label="Toggle WISE Foods panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="material-icons">search</span>
@@ -4563,78 +5053,13 @@
         <span class="lir-label">Vault</span>
       </button>
       <div class="lir-divider" style="display:none"></div>
-      <button type="button" class="lir-btn lir-panel-btn flip-right lir-nfp" id="lir-nfp-btn" data-tip="NFP+" onclick="revealNfpPanel()" title="NFP+ — Nutrition Fact Panel" aria-label="Toggle NFP+ panel">
-        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('nfp')" title="On right — tap to move left"></span>
-        <span class="material-icons">receipt_long</span>
-        <span class="lir-dot" style="background:var(--primary);display:none"></span>
-        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('nfp')" title="On right — tap to move left"></span>
-        <span class="lir-label">NFP+</span>
-      </button>
-      <!-- Spacer pushes layout toggles + menu to the right -->
-      <div style="flex:1"></div>
-      <div class="lir-rail-trailing">
-      <!-- Layout view toggles -->
-      <div class="lir-layout-group">
-        <button type="button" class="lir-btn lir-layout-btn lir-layout-active" id="lir-layout-col" data-tip="Column view" onclick="setModuleLayout('col')" title="Column view" aria-label="Switch to column layout">
-          <span class="material-icons">view_column</span>
-          <span class="lir-label">Cols</span>
-        </button>
-        <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-grid" data-tip="Grid view" onclick="setModuleLayout('grid')" title="Grid view" aria-label="Switch to grid layout">
-          <span class="material-icons">grid_view</span>
-          <span class="lir-label">Grid</span>
-        </button>
-        <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-split" data-tip="Split view — Scout docked at the bottom" onclick="setModuleLayout('split')" title="Split view — Scout docked at the bottom" aria-label="Switch to split layout">
-          <span class="material-symbols-outlined">splitscreen_bottom</span>
-          <span class="lir-label">Split</span>
-        </button>
-        <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-stack" data-tip="Stacked view — modules stacked in one long scroll" onclick="setModuleLayout('stack')" title="Stacked view — modules stacked in one long scroll" aria-label="Switch to stacked layout">
-          <span class="material-symbols-outlined">horizontal_split</span>
-          <span class="lir-label">Stack</span>
-        </button>
-      </div>
-      <div class="lir-divider" aria-hidden="true"></div>
-      <div class="lir-rail-actions">
-      <!-- Notifications — mirrors the dashboard's notification bell -->
-      <button type="button" class="lir-btn lir-notif has-dot" id="lir-notif-btn" data-tip="Notifications" onclick="revealNotifications(event)" title="Notifications" aria-label="Notifications">
-        <span class="material-icons">notifications</span>
-        <span class="lir-label">Alerts</span>
-      </button>
-      <!-- Agent Settings — its own module (panel) with left/right flip pips -->
-      <button type="button" class="lir-btn lir-panel-btn lir-settings" id="lir-settings-btn" data-tip="Agent Settings" onclick="revealSettingsPanel()" title="Agent Settings" aria-label="Toggle Agent Settings panel">
-        <span class="material-icons">tune</span>
-        <span class="lir-dot" style="background:var(--primary);display:none"></span>
-        <span class="lir-label">Agents</span>
-      </button>
-      </div>
-      </div>
     </div>
-      <div class="topbar-profile" id="topbar-profile" title="Maya Chen · Product Intelligence Lead" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">MC</div>
+      <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false">
+        <span class="material-symbols-outlined">crossword</span>
+      </button>
+      <div class="topbar-profile has-dot" id="topbar-profile" title="Maya Chen · Product Intelligence Lead" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">MC</div>
     </div><!-- /topbar-row -->
     <div id="modules-row">
-    <!-- Menu / Navigation module — placeholder card.
-         Direct child of #modules-row so position:sticky pins it to the LEFT
-         edge of the modules row scroll viewport. ALWAYS visible, ALWAYS far left.
-         No other panel can push it because it is OUTSIDE #panels-row and has
-         order: -9999. -->
-    <div id="menu-panel" class="mp-open">
-      <div class="menu-inner">
-        <div class="menu-panel-header">
-          <div class="menu-panel-icon"><span class="material-icons">hub</span></div>
-          <div class="menu-panel-titles">
-            <div class="menu-panel-title">Navigation</div>
-            <div class="menu-panel-sub">WISE Platform</div>
-          </div>
-        </div>
-        <div class="menu-panel-body">
-          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
-        </div>
-      </div>
-    </div>
-    <script type="module">
-      import { mountAgentMenu } from '../js/agent-menu.js';
-      const navEl = document.getElementById('agent-menu-nav');
-      if (navEl) mountAgentMenu(navEl, null, { fromAgentPage: true });
-    </script>
       <div id="panels-row">
     <!-- History -->
     <div id="history-panel" class="open">
@@ -5055,6 +5480,22 @@
                     <h2 class="ss-header-title">Agent Settings</h2>
                     <p class="ss-header-subtitle">Manage AI agents</p>
                 </div>
+                <div class="panel-controls panel-controls--stacked">
+                  <div class="panel-flip" data-panel="settings" role="group" aria-label="Dock Agent Settings panel">
+                    <button type="button" class="panel-ctrl-btn panel-flip-btn" onclick="flipPanel('settings')" title="Move to the other side of chat" aria-label="Move Agent Settings to the other side of chat">
+                      <span class="panel-ctrl-icon"><span class="material-symbols-outlined">side_navigation</span></span>
+                      <span class="panel-ctrl-label">Dock</span>
+                    </button>
+                  </div>
+                  <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="settings" onclick="togglePanelWidth('settings')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Agent Settings module width">
+                    <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
+                    <span class="panel-ctrl-label">Width</span>
+                  </button>
+                  <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeSettings()" title="Close" aria-label="Close Agent Settings">
+                    <span class="panel-ctrl-icon"><span class="material-icons">close</span></span>
+                    <span class="panel-ctrl-label">Close</span>
+                  </button>
+                </div>
             </div>
 
             <!-- Body -->
@@ -5371,7 +5812,6 @@
             <span class="material-icons">send</span>
           </button>
         </div>
-        <p class="sc-disclaimer"><span class="material-icons">shield</span>Scout can make mistakes — review important details before you publish.</p>
       </div>
     </div>
 
@@ -5387,11 +5827,21 @@
               <div class="text-xs font-bold text-oyster-100">NOTIFICATIONS</div>
               <p class="text-xs text-oyster-600 mt-0.5">3 unread</p>
             </div>
-            <div class="panel-controls">
+            <div class="panel-controls panel-controls--stacked">
               <div class="panel-flip" data-panel="notif" role="group" aria-label="Dock Notifications panel">
-                <button type="button" class="panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+                <button type="button" class="panel-ctrl-btn panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat">
+                  <span class="panel-ctrl-icon"><span class="material-symbols-outlined">side_navigation</span></span>
+                  <span class="panel-ctrl-label">Dock</span>
+                </button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width">
+                <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
+                <span class="panel-ctrl-label">Width</span>
+              </button>
+              <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeNotifications()" title="Close" aria-label="Close Notifications">
+                <span class="panel-ctrl-icon"><span class="material-icons">close</span></span>
+                <span class="panel-ctrl-label">Close</span>
+              </button>
             </div>
           </div>
           <div class="notif-scroll-body side-panel-body">
@@ -5845,35 +6295,6 @@
       closeScoutMenu();
     }
 
-    const FZ_SCALE = { sm: 0.82, md: 1, lg: 1.18, xl: 1.36 };
-    const FZ_LINE = { sm: 1.45, md: 1.6, lg: 1.65, xl: 1.7 };
-    function setChatFontSize(size) {
-      if (!FZ_SCALE[size]) return;
-      // Scale the entire chat card — chat-topbar, welcome screen, messages,
-      // and the input rail all live inside #chat-shell — so a click on
-      // S/M/L/XL is always visibly reflected on screen even before the user
-      // has sent a single message. The global app chrome (left icon rail,
-      // top bar, side panels) keeps its authored size on purpose so the
-      // accessibility control doesn't push fixed-width icons off the page.
-      const shell = document.getElementById('chat-shell');
-      const messages = document.getElementById('chat-messages');
-      if (shell) {
-        shell.style.zoom = String(FZ_SCALE[size]);
-        shell.style.setProperty('--chat-line-height', String(FZ_LINE[size]));
-      }
-      // Clear any per-element zoom from earlier versions of this function so
-      // we never double-scale.
-      if (messages) {
-        messages.style.zoom = '';
-        messages.style.removeProperty('--chat-line-height');
-      }
-      document.querySelectorAll('.fz-btn[data-fz]').forEach((b) => {
-        const s = b.dataset.fz;
-        if (s in FZ_SCALE) b.classList.toggle('fz-active', s === size);
-      });
-      try { localStorage.setItem('chat-font-size', size); } catch (_) {}
-    }
-
     function applyChatTheme(theme) {
       const isDark = theme === 'dark';
       document.documentElement.classList.toggle('dark', isDark);
@@ -5921,19 +6342,13 @@
     function toggleMenuPanel(force) {
       const panel = document.getElementById('menu-panel');
       if (!panel) return;
-      const open = force !== undefined ? !!force : !panel.classList.contains('mp-open');
-      /* Re-pin to the leftmost DOM slot in #modules-row every time we open.
-         CSS `order: -9999` already wins visually, but this also locks DOM order
-         so the placeholder is the literal first child even if other code has
-         rearranged siblings via appendChild (flip / settings relocate / etc.). */
-      if (open) {
-        const modulesRow = document.getElementById('modules-row');
-        if (modulesRow && modulesRow.firstElementChild !== panel) {
-          modulesRow.insertBefore(panel, modulesRow.firstElementChild);
-        }
-      }
-      panel.classList.toggle('mp-open', open);
-      syncLirBtn('topbar-menu-toggle', open);
+      /* Mirror the agent/portfolio shell: the nav panel stays mounted and the
+         toggle collapses it to an icon rail (.mp-rail) rather than hiding it, so
+         the brand strip + toggle never disappear. `force` true = expanded. */
+      const expanded = force !== undefined ? !!force : panel.classList.contains('mp-rail');
+      panel.classList.add('mp-open');
+      panel.classList.toggle('mp-rail', !expanded);
+      syncLirBtn('topbar-menu-toggle', expanded);
     }
 
     function toggleHistoryPanel(options) {
@@ -6154,6 +6569,7 @@
     /* Back-compat shims — kept so existing callers (chip, agents-panel-btn) still work. */
     function openSettings(/* fromMenu (ignored) */) { toggleSettingsPanel(true); }
     function closeSettings() { toggleSettingsPanel(false); }
+    function closeNotifications() { toggleNotificationsPanel(false); }
 
     function syncPanelsRowRight(panelsRight) {
       const row = panelsRight || document.getElementById('panels-row-right');
@@ -6645,14 +7061,6 @@
       applySplitWrap(mode === 'split');
       row.classList.toggle('modules-grid', mode === 'grid');
       row.classList.toggle('modules-stack', mode === 'stack');
-      const setBtn = (id, active) => {
-        const btn = document.getElementById(id);
-        btn?.classList.toggle('lir-layout-active', active);
-      };
-      setBtn('lir-layout-col', mode === 'col');
-      setBtn('lir-layout-grid', mode === 'grid');
-      setBtn('lir-layout-split', mode === 'split');
-      setBtn('lir-layout-stack', mode === 'stack');
       try { localStorage.setItem('wise-module-layout', mode); } catch (_) {}
     }
 
@@ -6796,14 +7204,15 @@
     (function() {
       const WIDTH_STORAGE_KEY = 'wise-panel-wide-v1';
       const PANEL_IDS = {
-        history: 'history-panel',
-        upf:     'upf-panel',
-        tier:    'tier-panel',
-        shield:  'shield-panel',
-        lens:    'lens-panel',
-        vault:   'vault-panel',
-        notif:   'notif-panel',
-        nfp:     'nfp-panel',
+        history:  'history-panel',
+        upf:      'upf-panel',
+        tier:     'tier-panel',
+        shield:   'shield-panel',
+        lens:     'lens-panel',
+        vault:    'vault-panel',
+        notif:    'notif-panel',
+        settings: 'settings-screen',
+        nfp:      'nfp-panel',
       };
 
       function loadWide() {
@@ -6841,18 +7250,53 @@
     /* Scout chat width toggle — mirrors the .panel-width-toggle-btn on the
        side modules. Scout is the flexible centre column, so "wide" flags the
        shell (#chat-shell.panel-wide) and reflects the pressed state. */
+    /* Scout's size is shared across the whole app via the `wise-scout-dock`
+       localStorage key (see js/scout-dock.js). Persisting it here means the
+       width you set on this page carries to the Scout dock on the portfolio
+       and agent pages — and back — so Scout is always the same size. */
+    function persistScoutWide(wide) {
+      try {
+        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
+        raw.wide = !!wide;
+        localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
+      } catch (_) {}
+    }
+    function applyScoutWide(wide) {
+      const shell = document.getElementById('chat-shell');
+      const btn = document.getElementById('scout-width-btn');
+      if (!shell) return;
+      shell.classList.toggle('panel-wide', wide);
+      if (btn) {
+        btn.classList.toggle('is-on', wide);
+        btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
+        btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+      }
+    }
     window.toggleScoutWidth = function(btn) {
       const shell = document.getElementById('chat-shell');
       if (!shell || !btn) return;
       const wide = !shell.classList.contains('panel-wide');
-      shell.classList.toggle('panel-wide', wide);
-      btn.classList.toggle('is-on', wide);
-      btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
-      btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+      applyScoutWide(wide);
+      persistScoutWide(wide);
     };
+    /* Restore the shared Scout size on load, and keep it in sync if another
+       page/tab changes it. */
+    (function initScoutWidth() {
+      try {
+        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
+        applyScoutWide(!!raw.wide);
+      } catch (_) {}
+    })();
+    window.addEventListener('storage', function(e) {
+      if (e.key !== 'wise-scout-dock') return;
+      try {
+        const raw = JSON.parse(e.newValue || '{}') || {};
+        applyScoutWide(!!raw.wide);
+      } catch (_) {}
+    });
 
     /* Boot — sync rail icons and per-agent module visibility from initial state. */
-    syncLirBtn('topbar-menu-toggle', document.getElementById('menu-panel')?.classList.contains('mp-open'));
+    syncLirBtn('topbar-menu-toggle', !document.getElementById('menu-panel')?.classList.contains('mp-rail'));
     syncLirBtn('lir-history-btn',  document.getElementById('history-panel')?.classList.contains('open'));
     syncLirBtn('lir-upf-btn',      document.getElementById('upf-panel')?.classList.contains('up-open'));
     syncLirBtn('lir-scout-btn',    document.getElementById('scout-panel')?.classList.contains('sp-open'));
@@ -6874,18 +7318,10 @@
 
     syncPanelsRowRight();
 
-    /* Pin the Module card placeholder (menu-panel) to the leftmost DOM slot
-       inside #modules-row, defensively. CSS `order: -9999` already guarantees
-       visual leftmost in flex/grid, but keeping it first in DOM means it also
-       wins in any layout that ignores `order` (e.g. carousel scroll order). */
-    (function pinMenuPanelLeftmost() {
-      const modulesRow = document.getElementById('modules-row');
-      const menuPanel = document.getElementById('menu-panel');
-      if (!modulesRow || !menuPanel) return;
-      if (modulesRow.firstElementChild !== menuPanel) {
-        modulesRow.insertBefore(menuPanel, modulesRow.firstElementChild);
-      }
-    })();
+    /* The nav panel is now a full-height column in the shell grid (a direct
+       child of #chat-shell-wrap, NOT inside #modules-row) — exactly like the
+       agent/portfolio shell. It must stay out of the modules row, so the old
+       "pin into #modules-row" boot step has been removed. */
 
     /* Menu module nav: chevron toggles (sync inert/aria-hidden with agent-menu.js). */
     (function initMenuNavToggles() {
@@ -6916,11 +7352,7 @@
       });
     })();
 
-    /* ===== Profile-avatar popover (mirrors dashboard) =====
-       Uses event delegation so the text-size buttons and theme toggle always
-       fire, and so those two controls leave the popover OPEN while the user
-       iterates (clicking S/M/L/XL or flipping theme should not dismiss it).
-       Every other row (My profile, Sign out, …) closes the popover on click. */
+    /* ===== Profile-avatar popover (mirrors dashboard) ===== */
     (function initProfilePopover() {
       let activePopover = null;
       let activeAnchor  = null;
@@ -6928,6 +7360,7 @@
       function closePopover() {
         if (!activePopover) return;
         activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
         activePopover.classList.remove('open');
         const p = activePopover;
         setTimeout(() => p.remove(), 210);
@@ -6936,16 +7369,44 @@
       }
 
       function renderAvatarBody(pop) {
-        let fz = 'md';
-        try { fz = localStorage.getItem('chat-font-size') || 'md'; } catch (_) {}
-        if (!(fz in FZ_SCALE)) fz = 'md';
-        const isDark = document.documentElement.classList.contains('dark');
+        const notifUnread = !document.getElementById('topbar-profile')?.classList.contains('is-read');
         pop.innerHTML = `
           <div class="wise-popover-header">Maya Chen</div>
+          <div class="wise-popover-actions">
+            <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
+              <span class="material-icons">notifications</span>
+              <span>Alerts</span>
+            </button>
+            <span class="wise-pop-vline" aria-hidden="true"></span>
+            <button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings">
+              <span class="material-icons">tune</span>
+              <span>Agents</span>
+            </button>
+          </div>
+          <div class="wise-popover-divider"></div>
           <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
           <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
           <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
           <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
+          <div class="wise-popover-divider"></div>
+          <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
+        `;
+      }
+
+      function renderAppearanceBody(pop) {
+        const fz = window.getStoredFontSize?.() || 'md';
+        const isDark = document.documentElement.classList.contains('dark');
+        const cur = currentLayout();
+        pop.innerHTML = `
+          <div class="wise-popover-header">Appearance</div>
+          ${LAYOUTS.map((l) => `
+            <div class="wise-popover-item${l.mode === cur ? ' is-active' : ''}" data-layout="${l.mode}">
+              <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
+            </div>`).join('')}
+          <div class="wise-popover-divider"></div>
+          <div class="wise-popover-item" data-pivot="1">
+            <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
+          </div>
           <div class="wise-popover-divider"></div>
           <div class="fz-row">
             <span class="fz-row-label">Text size</span>
@@ -6956,13 +7417,17 @@
               <button type="button" class="fz-btn${fz==='xl'?' fz-active':''}" data-fz="xl">XL</button>
             </div>
           </div>
+          <div class="wise-popover-divider"></div>
           <div class="wise-popover-item" data-pop-action="theme">
             <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
             <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
           </div>
-          <div class="wise-popover-divider"></div>
-          <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
         `;
+      }
+
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
       }
 
       function openAvatarPopover(anchor) {
@@ -6972,17 +7437,70 @@
         pop.className = 'wise-popover';
         document.body.appendChild(pop);
         renderAvatarBody(pop);
-        const rect = anchor.getBoundingClientRect();
-        const pw   = pop.offsetWidth || 240;
-        const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
-        pop.style.left = left + 'px';
-        pop.style.top  = (rect.bottom + 8) + 'px';
+        positionWisePopover(pop, anchor);
         requestAnimationFrame(() => pop.classList.add('open'));
         activePopover = pop;
         activeAnchor  = anchor;
         anchor.classList.add('is-open');
 
         pop.addEventListener('click', (ev) => {
+          const notifItem = ev.target.closest('[data-pop-action="notifications"]');
+          if (notifItem && pop.contains(notifItem)) {
+            ev.stopPropagation();
+            document.getElementById('topbar-profile')?.classList.add('is-read');
+            closePopover();
+            revealNotifications(ev);
+            return;
+          }
+          const agentsItem = ev.target.closest('[data-pop-action="agents"]');
+          if (agentsItem && pop.contains(agentsItem)) {
+            ev.stopPropagation();
+            closePopover();
+            revealSettingsPanel();
+            return;
+          }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) {
+            ev.stopPropagation();
+            return;
+          }
+          closePopover();
+        });
+      }
+
+      /* Appearance popover — module layout, text size, and theme (crossword icon). */
+      const LAYOUTS = [
+        { mode: 'col',   sym: false, icon: 'view_column',        label: 'Column' },
+        { mode: 'grid',  sym: false, icon: 'grid_view',          label: 'Grid' },
+        { mode: 'split', sym: true,  icon: 'splitscreen_bottom', label: 'Split' },
+        { mode: 'stack', sym: true,  icon: 'horizontal_split',   label: 'Stacked' },
+      ];
+
+      function currentLayout() {
+        try { return localStorage.getItem('wise-module-layout') || 'col'; } catch (_) { return 'col'; }
+      }
+
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop;
+        activeAnchor  = anchor;
+        anchor.classList.add('is-open');
+        anchor.setAttribute('aria-expanded', 'true');
+
+        pop.addEventListener('click', (ev) => {
+          const item = ev.target.closest('[data-layout]');
+          if (item && pop.contains(item)) {
+            ev.stopPropagation();
+            if (typeof setModuleLayout === 'function') setModuleLayout(item.dataset.layout);
+            renderAppearanceBody(pop);
+            return;
+          }
           const fzBtn = ev.target.closest('.fz-btn[data-fz]');
           if (fzBtn && pop.contains(fzBtn)) {
             ev.stopPropagation();
@@ -6993,7 +7511,7 @@
           if (themeItem && pop.contains(themeItem)) {
             ev.stopPropagation();
             toggleChatTheme();
-            renderAvatarBody(pop);
+            renderAppearanceBody(pop);
             return;
           }
           if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) {
@@ -7015,8 +7533,25 @@
         });
       }
 
+      function wireAppearanceTrigger(btn) {
+        if (!btn || btn.dataset.appearanceBound) return;
+        btn.dataset.appearanceBound = '1';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openAppearancePopover(btn);
+        });
+      }
+      wireAppearanceTrigger(document.getElementById('topbar-appearance-btn'));
+
       document.addEventListener('click', (e) => {
-        if (activePopover && !activePopover.contains(e.target)) closePopover();
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+
+      document.addEventListener('wise:menu-footer-profile', (e) => {
+        openAvatarPopover(e.detail.anchor);
+      });
+      document.addEventListener('wise:menu-footer-layout', (e) => {
+        openAppearancePopover(e.detail.anchor);
       });
     })();
     /* ===== end profile popover ===== */
@@ -7034,13 +7569,6 @@
       }
       applyChatTheme(theme);
     })();
-    try {
-      const saved = localStorage.getItem('chat-font-size');
-      if (saved && FZ_SCALE[saved]) setChatFontSize(saved);
-      else setChatFontSize('md');
-    } catch (_) {
-      setChatFontSize('md');
-    }
   </script>
 </body>
 </html>
