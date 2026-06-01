@@ -29,6 +29,7 @@ import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-doc
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
+import { mountNotificationsPanel } from './notifications-panel.js';
 
 /* ------------------------------------------------------------------ */
 /* Utilities                                                           */
@@ -177,14 +178,41 @@ function moduleHeaderHTML(sectionId) {
       <div class="agent-main-sub">WISEcode Portfolio · ${esc(sec.sub)}</div>
     </div>
     <div class="panel-controls">
-      <div class="panel-flip" data-side="right" role="group" aria-label="Move module to the other side of Scout">
-        <button type="button" class="panel-flip-btn" data-flip="${esc(sectionId)}" title="Move to the other side of Scout" aria-label="Move ${esc(sec.label)} to the other side of Scout">
+      ${moduleMenuHTML({
+        label: sec.label,
+        flipAttr: `data-flip="${esc(sectionId)}"`,
+        wideAttr: `data-wide="${esc(sectionId)}"`,
+        offAttr: `data-off="${esc(sectionId)}"`,
+      })}
+    </div>`;
+}
+
+/* A single horizontal-dots (more_horiz) overflow menu that gathers every
+   module-header control — move side, width toggle, and an Off / On switch
+   that turns the module off — into one dropdown. Built generically so the
+   section modules and the History module can each pass their own data-attrs
+   (the existing delegated handlers key off those attributes). */
+function moduleMenuHTML({ label, flipAttr, wideAttr, offAttr }) {
+  return `
+    <div class="pf-module-menu" data-module-menu>
+      <button type="button" class="pf-module-menu-btn" aria-haspopup="true" aria-expanded="false" title="Module options" aria-label="${esc(label)} options">
+        <span class="material-symbols-outlined">more_horiz</span>
+      </button>
+      <div class="pf-module-menu-pop" role="menu" hidden>
+        <button type="button" class="pf-module-menu-item pf-menu-flip" role="menuitem" ${flipAttr}>
           <span class="material-symbols-outlined">side_navigation</span>
+          <span>Move to other side</span>
+        </button>
+        <button type="button" class="pf-module-menu-item pf-menu-wide" role="menuitem" ${wideAttr}>
+          <span class="material-symbols-outlined">transition_slide</span>
+          <span class="pf-menu-wide-label">Double width</span>
+        </button>
+        <div class="pf-module-menu-sep" role="separator"></div>
+        <button type="button" class="pf-module-menu-item pf-module-menu-item--off" role="menuitem" ${offAttr}>
+          <span class="material-symbols-outlined">toggle_off</span>
+          <span>Off / On</span>
         </button>
       </div>
-      <button type="button" class="panel-width-toggle-btn" data-wide="${esc(sectionId)}" aria-pressed="false" title="Normal width — tap to double" aria-label="Double ${esc(sec.label)} module width">
-        <span class="material-symbols-outlined">transition_slide</span>
-      </button>
     </div>`;
 }
 
@@ -1342,7 +1370,7 @@ function askAgentAboutProduct(idx) {
     document.getElementById('pf-chat-panel')?.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
     scout.ask(q);
   } else {
-    toast('Ask Scout in the chat dock.', 'chat');
+    toast('Ask WISEscout™ in the chat dock.', 'chat');
   }
 }
 
@@ -1641,15 +1669,18 @@ function applyWide(sectionId) {
   if (!el) return;
   const wide = !!moduleWide[sectionId];
   el.classList.toggle('panel-wide', wide);
-  el.querySelectorAll('.panel-width-toggle-btn').forEach((btn) => {
+  el.querySelectorAll('.pf-menu-wide').forEach((btn) => {
     btn.classList.toggle('is-on', wide);
     btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
     btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+    const lbl = btn.querySelector('.pf-menu-wide-label');
+    if (lbl) lbl.textContent = wide ? 'Normal width' : 'Double width';
   });
 }
 
 function flipModule(sectionId) {
   if (!PORTFOLIO_SECTION_IDS.includes(sectionId)) return;
+  closeAllModuleMenus();
   moduleSide[sectionId] = sideOf(sectionId) === 'right' ? 'left' : 'right';
   persistSides();
   applySide(sectionId);
@@ -1658,6 +1689,7 @@ function flipModule(sectionId) {
 
 function toggleModuleWidth(sectionId) {
   if (!PORTFOLIO_SECTION_IDS.includes(sectionId)) return;
+  closeAllModuleMenus();
   moduleWide[sectionId] = !moduleWide[sectionId];
   persistWide();
   applyWide(sectionId);
@@ -1736,6 +1768,7 @@ function openModule(sectionId, { scroll = true } = {}) {
 }
 
 function closeModule(sectionId) {
+  closeAllModuleMenus();
   openModules.delete(sectionId);
   persistOpenModules();
   syncModules();
@@ -1744,6 +1777,52 @@ function closeModule(sectionId) {
 function toggleModule(sectionId) {
   if (openModules.has(sectionId)) closeModule(sectionId);
   else openModule(sectionId);
+}
+
+/* ------------------------------------------------------------------ */
+/* Module-header overflow menu (the more_horiz dropdown)              */
+/* ------------------------------------------------------------------ */
+
+function closeAllModuleMenus() {
+  document.querySelectorAll('.pf-module-menu.is-open').forEach((menu) => {
+    menu.classList.remove('is-open');
+    menu.querySelector('.pf-module-menu-btn')?.setAttribute('aria-expanded', 'false');
+    menu.querySelector('.pf-module-menu-pop')?.setAttribute('hidden', '');
+  });
+}
+
+function openModuleMenu(menu) {
+  if (!menu) return;
+  menu.classList.add('is-open');
+  menu.querySelector('.pf-module-menu-btn')?.setAttribute('aria-expanded', 'true');
+  menu.querySelector('.pf-module-menu-pop')?.removeAttribute('hidden');
+}
+
+/* One document-level controller drives every module's dropdown: toggling its
+   own button, and closing on any outside click or Escape. The flip/width/off
+   actions themselves call closeAllModuleMenus() so the menu always tidies up
+   after a selection, regardless of which delegated handler ran. */
+let moduleMenusWired = false;
+function initModuleMenus() {
+  if (moduleMenusWired) return;
+  moduleMenusWired = true;
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pf-module-menu-btn');
+    if (btn) {
+      e.preventDefault();
+      const menu = btn.closest('.pf-module-menu');
+      const wasOpen = menu?.classList.contains('is-open');
+      closeAllModuleMenus();
+      if (!wasOpen) openModuleMenu(menu);
+      return;
+    }
+    if (!e.target.closest('.pf-module-menu-pop')) closeAllModuleMenus();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAllModuleMenus();
+  });
 }
 
 /* Backwards-compatible alias used by intent chips + in-module data-go links. */
@@ -1914,9 +1993,9 @@ function setupChat() {
   const panel = document.getElementById('pf-chat-panel');
   if (!panel) return;
   scout = mountScoutDock(panel, {
-    title: 'Scout',
+    title: 'WISEscout™',
     agentCount: 1,
-    heading: 'What can Scout help with?',
+    heading: 'What can WISEscout™ help with?',
     sub: 'Your Portfolio agent — the Truth Layer for data, trust & identity',
     intents: PORTFOLIO_INTENTS,
     reply: portfolioReply,
@@ -1930,7 +2009,7 @@ function setupChat() {
     ],
     disclaimer: '',
     sourceLabel: 'Grounded in your portfolio',
-    statusLabel: 'Scout is checking your portfolio',
+    statusLabel: 'WISEscout™ is checking your portfolio',
     /* Intent chips that map to a surface also drive the module navigation,
        tying the shared chat back into the Portfolio. */
     /* 'choose_agents' is handled inside the shared chat (it opens the in-chat
@@ -2006,17 +2085,12 @@ function historyModuleHTML() {
           <div class="pf-history-hsub">Chats &amp; Projects</div>
         </div>
         <div class="panel-controls">
-          <div class="panel-flip" data-side="left" role="group" aria-label="Move History to the other side of Scout">
-            <button type="button" class="panel-flip-btn" data-history-flip title="Move to the other side of Scout" aria-label="Move History to the other side of Scout">
-              <span class="material-symbols-outlined">side_navigation</span>
-            </button>
-          </div>
-          <button type="button" class="panel-width-toggle-btn" data-history-wide aria-pressed="false" title="Normal width — tap to double" aria-label="Double History module width">
-            <span class="material-symbols-outlined">transition_slide</span>
-          </button>
-          <button type="button" class="pf-history-close-btn" data-history-close title="Close" aria-label="Close History & Projects">
-            <span class="material-symbols-outlined">close</span>
-          </button>
+          ${moduleMenuHTML({
+            label: 'History',
+            flipAttr: 'data-history-flip',
+            wideAttr: 'data-history-wide',
+            offAttr: 'data-history-close',
+          })}
         </div>
       </header>
       <div class="pf-history-tabs" role="tablist">
@@ -2091,6 +2165,7 @@ function openHistoryModule() {
 }
 
 function closeHistoryModule() {
+  closeAllModuleMenus();
   document.getElementById('pf-mod-history')?.classList.remove('is-open');
 }
 
@@ -2116,14 +2191,17 @@ function applyHistoryWide() {
   const el = document.getElementById('pf-mod-history');
   if (!el) return;
   el.classList.toggle('panel-wide', historyWide);
-  el.querySelectorAll('.panel-width-toggle-btn').forEach((btn) => {
+  el.querySelectorAll('.pf-menu-wide').forEach((btn) => {
     btn.classList.toggle('is-on', historyWide);
     btn.setAttribute('aria-pressed', historyWide ? 'true' : 'false');
     btn.title = historyWide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+    const lbl = btn.querySelector('.pf-menu-wide-label');
+    if (lbl) lbl.textContent = historyWide ? 'Normal width' : 'Double width';
   });
 }
 
 function flipHistoryModule() {
+  closeAllModuleMenus();
   historySide = historySide === 'right' ? 'left' : 'right';
   try { localStorage.setItem(HISTORY_SIDE_KEY, historySide); } catch (_) {}
   applyHistorySide();
@@ -2132,6 +2210,7 @@ function flipHistoryModule() {
 }
 
 function toggleHistoryWidth() {
+  closeAllModuleMenus();
   historyWide = !historyWide;
   try { localStorage.setItem(HISTORY_WIDE_KEY, historyWide ? '1' : '0'); } catch (_) {}
   applyHistoryWide();
@@ -2150,29 +2229,34 @@ const NOTIFICATIONS = [
   { title: 'V3 Shake shield renews in 15 days', sub: '3h ago · Lifecycle Watchdog', icon: 'event_repeat', tone: 'blue', go: 'verified' },
 ];
 
-function renderAlertsPanel() {
-  const items = NOTIFICATIONS.map((n, i) => `
-    <button type="button" class="notif-row" data-notif="${i}">
-      <span class="notif-row-icon notif-ic-${esc(n.tone)}"><span class="material-icons">${esc(n.icon)}</span></span>
-      <div class="notif-row-body">
-        <div class="notif-row-title">${esc(n.title)}</div>
-        <div class="notif-row-sub">${esc(n.sub)}</div>
-      </div>
-    </button>`).join('');
-  return `
-    <div class="alerts-inner">
-      <header class="alerts-panel-header">
-        <div class="alerts-panel-icon"><span class="material-icons">notifications</span></div>
-        <div class="alerts-panel-titles">
-          <div class="alerts-panel-title">Alerts</div>
-          <div class="alerts-panel-sub">${NOTIFICATIONS.length} new from your Agent</div>
-        </div>
-      </header>
-      <div class="alerts-panel-body">${items}</div>
-      <div class="alerts-panel-footer">
-        <button type="button" class="notif-view-all" data-action="mark-all-read"><span class="material-icons">done_all</span>Mark all as read</button>
-      </div>
-    </div>`;
+let alertsController = null;
+
+function mountAlertsPanel(notifBtn) {
+  const row = document.getElementById('modules-row');
+  alertsController = mountNotificationsPanel({
+    host: row,
+    panelId: 'alerts-panel',
+    openClass: 'alerts-open',
+    items: NOTIFICATIONS,
+    renderOptions: {
+      subtitle: `${NOTIFICATIONS.length} new from your Agent`,
+    },
+    onMarkAllRead(api) {
+      notifBtn?.classList.add('is-read');
+      api.close();
+      notifBtn?.classList.remove('lir-active');
+    },
+    onItem({ item, row: itemRow, close }) {
+      itemRow.classList.add('is-read');
+      if (item?.go) {
+        openModule(item.go);
+        toast(`Opened ${getPortfolioSection(item.go)?.label || item.go}`, item.icon || 'open_in_new');
+      }
+      close();
+      notifBtn?.classList.remove('lir-active');
+    },
+  });
+  return alertsController;
 }
 
 function renderMorePopover() {
@@ -2189,24 +2273,16 @@ function renderMorePopover() {
 /* Reveal the Alerts side panel (built + wired in setupTrailingRail). Now
    triggered from the avatar menu instead of a standalone top-bar bell. */
 function openAlertsPanel() {
-  const panel = document.getElementById('alerts-panel');
-  if (!panel) return;
-  panel.classList.add('alerts-open');
-  requestAnimationFrame(() => panel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' }));
+  if (!alertsController) mountAlertsPanel();
+  alertsController?.open();
 }
 
 function setupTrailingRail() {
   const notifBtn = document.getElementById('topbar-notif-btn');
   const moreBtn = document.getElementById('topbar-more-btn');
-  const row = document.getElementById('modules-row');
 
-  let alertsPanel = document.getElementById('alerts-panel');
-  if (!alertsPanel && row) {
-    alertsPanel = document.createElement('aside');
-    alertsPanel.id = 'alerts-panel';
-    alertsPanel.innerHTML = renderAlertsPanel();
-    row.appendChild(alertsPanel);
-  }
+  const alerts = mountAlertsPanel(notifBtn);
+  const alertsPanel = alerts?.panel;
 
   let morePop = document.getElementById('topbar-more-popover');
   const wrap = moreBtn?.closest('.topbar-menu-wrap');
@@ -2223,14 +2299,13 @@ function setupTrailingRail() {
      never closes it on click (close via "mark all read" or opening an alert).
      This makes a single click transport you there whether it was on or off. */
   function toggleAlerts() {
-    if (!alertsPanel) return;
-    alertsPanel.classList.add('alerts-open');
+    if (!alerts) return;
+    alerts.open();
     if (notifBtn) {
       notifBtn.setAttribute('aria-expanded', 'true');
       notifBtn.classList.add('lir-active');
       notifBtn.classList.add('is-read');
     }
-    requestAnimationFrame(() => alertsPanel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' }));
   }
   function closeMore() {
     if (!morePop) return;
@@ -2246,27 +2321,6 @@ function setupTrailingRail() {
 
   notifBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleAlerts(); });
   moreBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleMore(); });
-
-  alertsPanel?.addEventListener('click', (e) => {
-    const action = e.target.closest('[data-action]');
-    if (action && action.dataset.action === 'mark-all-read') {
-      notifBtn?.classList.add('is-read');
-      alertsPanel.classList.remove('alerts-open');
-      notifBtn?.classList.remove('lir-active');
-      return;
-    }
-    const row = e.target.closest('.notif-row[data-notif]');
-    if (row) {
-      const n = NOTIFICATIONS[Number(row.dataset.notif)];
-      row.classList.add('is-read');
-      if (n?.go) {
-        openModule(n.go);
-        toast(`Opened ${getPortfolioSection(n.go)?.label || n.go}`, n.icon || 'open_in_new');
-      }
-      alertsPanel.classList.remove('alerts-open');
-      notifBtn?.classList.remove('lir-active');
-    }
-  });
 
   morePop?.addEventListener('click', (e) => {
     const action = e.target.closest('[data-action]');
@@ -2517,16 +2571,19 @@ function bootstrap() {
   buildModuleRail();
   buildModules();
   buildHistoryModule();
+  initModuleMenus();
 
   /* Delegated clicks for the whole modules row: side switcher, in-view section
      navigation, acknowledgements, and product deep-dive. (Open/close lives in
      the top-bar rail.) */
   const row = document.getElementById('modules-row');
   row?.addEventListener('click', (e) => {
-    const flip = e.target.closest('.panel-flip-btn');
+    const flip = e.target.closest('[data-flip]');
     if (flip) { e.preventDefault(); flipModule(flip.dataset.flip || flip.closest('.pf-module')?.dataset.section); return; }
-    const wide = e.target.closest('.panel-width-toggle-btn');
+    const wide = e.target.closest('[data-wide]');
     if (wide) { e.preventDefault(); toggleModuleWidth(wide.dataset.wide || wide.closest('.pf-module')?.dataset.section); return; }
+    const off = e.target.closest('[data-off]');
+    if (off) { e.preventDefault(); closeModule(off.dataset.off || off.closest('.pf-module')?.dataset.section); return; }
 
     /* Progress-driven action flows (open a bottom sheet). "ask-agent" is a
        special case that hands the question to the Scout dock instead. */

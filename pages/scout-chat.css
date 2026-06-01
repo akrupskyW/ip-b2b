@@ -21,20 +21,46 @@
   order: 99;
 }
 /* Stay pinned during horizontal scroll, like the #menu-panel rail, so Scout
-   never scrolls off-screen — it sticks to whichever edge it would otherwise
-   scroll past. The position lives on the higher-specificity .scout-dock-open
-   selector because the dock element is also a .sc-card (position: relative),
-   which would otherwise win on source order and cancel the stickiness. */
-.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; position: sticky; left: 0; right: 0; z-index: 40; }
-/* When the sticky menu rail is open, pin Scout just to the RIGHT of it
-   (260px rail + 8px row gap) so the two sit side-by-side as frozen columns
-   instead of Scout disappearing behind the higher-z menu. */
-#menu-panel.mp-open ~ .scout-dock.scout-dock-open { left: 268px; }
+   never scrolls off-screen — it sticks to the edge it's docked to. A sticky
+   element only pins when it has a SINGLE inline inset; setting both left:0 and
+   right:0 makes the constraint rect span the whole scrollport, so a narrower
+   box never reaches a stick threshold and just scrolls away. So the default
+   (right) dock pins right, and the left-flipped variant below pins left.
+   The position lives on the higher-specificity .scout-dock-open selector
+   because the dock element is also a .sc-card (position: relative), which
+   would otherwise win on source order and cancel the stickiness. */
+.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
 @media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; } }
 /* Side flip — the dock defaults to the far-right of the modules row (order
-   99). Flipping it left pins it just after the menu rail as the first module.
-   Persisted via js/scout-dock.js so the side carries across page switches. */
-.scout-dock.scout-dock-open.scout-dock-left { order: -1; }
+   99), pinned to the right edge. Flipping it left re-orders it to the front
+   and pins it to the LEFT edge instead. Persisted via js/scout-dock.js so the
+   side carries across page switches. */
+.scout-dock.scout-dock-open.scout-dock-left { order: -1; left: 0; right: auto; }
+/* When the sticky menu rail is open, pin the LEFT-docked Scout just to the
+   RIGHT of it (260px rail + 8px row gap) so the two sit side-by-side as frozen
+   columns instead of Scout disappearing behind the higher-z menu. */
+#menu-panel.mp-open ~ .scout-dock.scout-dock-open.scout-dock-left { left: 268px; }
+/* Center mode = the DEFAULT "floating in the middle" state. Unlike left/right
+   (which lock to one edge with a SINGLE inset), center keeps BOTH insets
+   (left:0 + right:0). With a fixed-width dock (see portfolio.css) that two-inset
+   sticky clamp means the dock starts at its natural mid-row spot and, as the row
+   scrolls, gets stuck to the left or the right edge instead of ever sliding
+   off-screen — the other modules just scroll past it. (This only works because
+   the dock is a fixed width now; the old flex-grown full-width box could never
+   satisfy both insets and so drifted away — that's why earlier it "scrolled
+   off".) */
+.scout-dock.scout-dock-open.scout-dock-center {
+  position: sticky;
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+/* Keep the centered dock clear of the sticky menu rail when it's open, exactly
+   like the left dock — pin its left clamp just to the right of the rail. */
+#menu-panel.mp-open ~ .scout-dock.scout-dock-open.scout-dock-center {
+  left: 268px;
+  right: 0;
+}
 .scout-dock .sc-card {
   transform-origin: right center;
   animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;

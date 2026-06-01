@@ -16,6 +16,7 @@ import {
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
+import { mountNotificationsPanel } from './notifications-panel.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 
 function escHtml(s) {
@@ -363,7 +364,7 @@ function setupScoutDock() {
   const dock = document.createElement('aside');
   dock.id = 'scout-dock-panel';
   dock.className = 'scout-dock scout-dock-open';
-  dock.setAttribute('aria-label', 'Scout chat');
+  dock.setAttribute('aria-label', 'WISEscout™ chat');
   row.appendChild(dock);
   mountScoutDock(dock, {
     sub: 'Your AI assistant across every WISE agent',
@@ -425,49 +426,43 @@ function escHtmlSafe(s) {
     .replace(/>/g, '&gt;');
 }
 
-function renderAlertsBody() {
-  const items = NOTIFICATIONS.map((n, i) => `
-    <button type="button" class="notif-row" data-notif="${i}">
-      <span class="notif-row-icon notif-ic-${escHtmlSafe(n.tone)}"><span class="material-icons">${escHtmlSafe(n.icon)}</span></span>
-      <div class="notif-row-body">
-        <div class="notif-row-title">${escHtmlSafe(n.title)}</div>
-        <div class="notif-row-sub">${escHtmlSafe(n.sub)}</div>
-      </div>
-    </button>`).join('');
-  return `${items}`;
-}
+let alertsController = null;
 
-function renderAlertsPanel() {
-  return `
-    <div class="alerts-inner">
-      <header class="alerts-panel-header">
-        <div class="alerts-panel-icon"><span class="material-icons">notifications</span></div>
-        <div class="alerts-panel-titles">
-          <div class="alerts-panel-title">Alerts</div>
-          <div class="alerts-panel-sub">${NOTIFICATIONS.length} new across your agents</div>
-        </div>
-      </header>
-      <div class="alerts-panel-body">
-        ${renderAlertsBody()}
-      </div>
-      <div class="alerts-panel-footer">
-        <button type="button" class="notif-view-all" data-action="mark-all-read">
-          <span class="material-icons">done_all</span>
-          Mark all as read
-        </button>
-      </div>
-    </div>`;
+function mountAlertsPanel(notifBtn) {
+  const row = document.getElementById('modules-row');
+  alertsController = mountNotificationsPanel({
+    host: row,
+    panelId: 'alerts-panel',
+    openClass: 'alerts-open',
+    items: NOTIFICATIONS,
+    renderOptions: {
+      subtitle: `${NOTIFICATIONS.length} new across your agents`,
+    },
+    onMarkAllRead(api) {
+      notifBtn?.classList.add('is-read');
+      closeSidePanel(api.panel, 'alerts-open', notifBtn);
+    },
+    onItem({ item, row: itemRow, panel }) {
+      itemRow.classList.add('is-read');
+      closeSidePanel(panel, 'alerts-open', notifBtn);
+      const body = openAgSheet({ eyebrow: 'Alert', title: item.title, icon: item.icon });
+      body.innerHTML = `
+        <p class="ag-sheet-lead">${escHtmlSafe(item.sub)}</p>
+        <p class="ag-sheet-lead">Open the WISEowl chat to act on this alert with the relevant agent.</p>
+        <div class="ag-sheet-actions">
+          <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
+          <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Dismiss</button>
+        </div>`;
+    },
+  });
+  return alertsController;
 }
 
 /* Reveal the Alerts side module (mounted + wired in setupTrailingRail). Now
    triggered from the avatar menu instead of a standalone top-bar bell. */
 function openAlertsPanel() {
-  const panel = ensureSidePanel('alerts-panel', renderAlertsPanel);
-  if (!panel) return;
-  panel.classList.add('alerts-open');
-  requestAnimationFrame(() => {
-    panel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
-  });
+  if (!alertsController) mountAlertsPanel();
+  alertsController?.open();
 }
 
 function isDarkMode() {
@@ -513,18 +508,6 @@ function renderMorePopover() {
     </button>`;
 }
 
-function ensureSidePanel(id, render) {
-  let el = document.getElementById(id);
-  if (el) return el;
-  const row = document.getElementById('modules-row');
-  if (!row) return null;
-  el = document.createElement('aside');
-  el.id = id;
-  el.innerHTML = render();
-  row.appendChild(el);
-  return el;
-}
-
 function closeSidePanel(panelEl, openClass, btnEl) {
   if (!panelEl) return;
   panelEl.classList.remove(openClass);
@@ -554,7 +537,8 @@ function setupTrailingRail() {
 
   /* Alerts is a side module; mount it once so it participates in the
      same layout pipeline as the menu and the agent main panel. */
-  const alertsPanel = ensureSidePanel('alerts-panel', renderAlertsPanel);
+  const alerts = mountAlertsPanel(notifBtn);
+  const alertsPanel = alerts?.panel;
 
   /* More is a small popover anchored to the three-dot button — same
      pattern as the avatar / user menu. */
@@ -565,16 +549,13 @@ function setupTrailingRail() {
      never closes it on click (close via "mark all read" or opening an alert).
      This makes a single click transport you there whether it was on or off. */
   function toggleAlerts() {
-    if (!alertsPanel) return;
-    alertsPanel.classList.add('alerts-open');
+    if (!alerts) return;
+    alerts.open();
     if (notifBtn) {
       notifBtn.setAttribute('aria-expanded', 'true');
       notifBtn.classList.add('lir-active');
       notifBtn.classList.add('is-read');
     }
-    requestAnimationFrame(() => {
-      alertsPanel.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
-    });
   }
 
   function closeMorePopover() {
@@ -601,31 +582,6 @@ function setupTrailingRail() {
   }
   if (moreBtn) {
     moreBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMorePopover(); });
-  }
-
-  if (alertsPanel) {
-    alertsPanel.addEventListener('click', (e) => {
-      const action = e.target.closest('[data-action]');
-      if (action && action.dataset.action === 'mark-all-read') {
-        notifBtn?.classList.add('is-read');
-        closeSidePanel(alertsPanel, 'alerts-open', notifBtn);
-        return;
-      }
-      const row = e.target.closest('.notif-row[data-notif]');
-      if (row) {
-        const n = NOTIFICATIONS[Number(row.dataset.notif)];
-        row.classList.add('is-read');
-        closeSidePanel(alertsPanel, 'alerts-open', notifBtn);
-        const body = openAgSheet({ eyebrow: 'Alert', title: n.title, icon: n.icon });
-        body.innerHTML = `
-          <p class="ag-sheet-lead">${escHtmlSafe(n.sub)}</p>
-          <p class="ag-sheet-lead">Open the WISEowl chat to act on this alert with the relevant agent.</p>
-          <div class="ag-sheet-actions">
-            <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
-            <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Dismiss</button>
-          </div>`;
-      }
-    });
   }
 
   if (morePop) {

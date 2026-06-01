@@ -12,10 +12,13 @@
  *     • wide → the doubled-width column (also bridged to ai-chat.html's
  *              #chat-shell so "Scout is wide" carries everywhere).
  *     • side → where the Doc chat sits, the Appearance control's three modes:
- *              'left'/'right' pin the dock to that edge of the modules row;
- *              'center' un-pins it (the chat returns to its natural, centered
- *              position — which on the side-dock pages means the rail isn't
- *              shown, and on ai-chat is simply the centre column it already is).
+ *              'left'/'right' LOCK the dock to that edge of the modules row
+ *              (single-inset sticky, so it's frozen flush to that edge);
+ *              'center' is the DEFAULT "floating in the middle" mode — the chat
+ *              keeps its normal width and sits at its natural mid-row spot, but
+ *              stays sticky-clamped to BOTH edges so that, as the row scrolls,
+ *              it gets stuck to the left or the right edge and never slides
+ *              off-screen. All three modes keep Scout always visible.
  *
  *   import { mountScoutDock } from './scout-dock.js';
  *   mountScoutDock(document.getElementById('scout-dock-panel'), { ... });
@@ -64,9 +67,14 @@ export function writeScoutDockState(patch) {
 export function applyScoutDockState(dock, state = readScoutDockState()) {
   if (!dock) return;
 
-  dock.classList.toggle('scout-dock-open', state.side !== 'center');
+  /* The dock is always shown now; the three modes only change where it sits.
+     'left'/'right' lock it flush to an edge; 'center' floats it mid-row but
+     keeps it sticky-clamped to both edges so it never scrolls off-screen —
+     see the `scout-dock-center` CSS. */
+  dock.classList.add('scout-dock-open');
   dock.classList.toggle('panel-wide', state.wide);
   dock.classList.toggle('scout-dock-left', state.side === 'left');
+  dock.classList.toggle('scout-dock-center', state.side === 'center');
 
   const widthBtn = dock.querySelector('.panel-width-toggle-btn');
   if (widthBtn) {

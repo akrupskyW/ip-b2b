@@ -499,9 +499,14 @@ html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--prima
    Scout fills the remaining space and Alerts always docks to its right. */
 .pf-module {
   display: none;
-  flex: 0 0 auto;
-  width: 340px;
-  max-width: 90vw;
+  /* Open modules grow to share the available row width, so toggling them on/off
+     always resizes the visible modules to fill the screen that's there. The
+     min-width keeps each one readable; once there are too many to fit, the row
+     falls back to its horizontal scroll. */
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 340px;
+  max-width: none;
   min-height: 0;
   height: 100%;
   max-height: 100%;
@@ -510,7 +515,7 @@ html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--prima
   align-self: stretch;
 }
 .pf-module.is-open { display: flex; }
-@media (max-width: 767px) { .pf-module { width: 86vw; } }
+@media (max-width: 767px) { .pf-module { flex: 0 0 86vw; min-width: 0; } }
 
 .pf-module-inner {
   flex: 1 1 0%;
@@ -622,8 +627,90 @@ html.dark .pf-module-scroll { background: transparent; }
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 14%, transparent);
 }
-.pf-module.panel-wide { width: 680px; }
-@media (max-width: 767px) { .pf-module.panel-wide { width: 86vw; } }
+/* ===== Module-header overflow menu =====
+   One horizontal-dots (more_horiz) trigger that gathers every module control —
+   move side, width toggle, and the Off / On switch — into a single dropdown. */
+.pf-module-menu { position: relative; display: inline-flex; flex-shrink: 0; }
+.pf-module-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  opacity: 0.75;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pf-module-menu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.pf-module-menu-btn:hover,
+.pf-module-menu.is-open .pf-module-menu-btn {
+  opacity: 1;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.pf-module-menu-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 214px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1), 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+.pf-module-menu-pop[hidden] { display: none; }
+.pf-module-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.pf-module-menu-item .material-symbols-outlined {
+  font-size: 18px !important;
+  line-height: 1 !important;
+  color: var(--text-muted);
+  transition: color 0.13s ease, transform 0.22s ease;
+}
+.pf-module-menu-item:hover {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+.pf-module-menu-item:hover .material-symbols-outlined { color: var(--primary); }
+.pf-module-menu-item.is-on { color: var(--primary); }
+.pf-module-menu-item.is-on .material-symbols-outlined { color: var(--primary); }
+.pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
+.pf-module-menu-item--off:hover {
+  background: color-mix(in srgb, #e5484d 14%, transparent);
+  color: #e5484d;
+}
+.pf-module-menu-item--off:hover .material-symbols-outlined { color: #e5484d; }
+
+/* Double width — take twice a normal module's share of the row when sharing
+   with siblings, and stay comfortably wider than a normal module on its own. */
+.pf-module.panel-wide { flex-grow: 2; min-width: min(560px, 90vw); }
+@media (max-width: 767px) { .pf-module.panel-wide { flex: 0 0 86vw; min-width: 0; } }
 .pf-module-scroll {
   flex: 1 1 0%;
   overflow-y: auto;
@@ -654,18 +741,47 @@ html.dark .pf-module-scroll { background: transparent; }
 
 /* ===== Module row ordering =====
    menu (sticky, -9999) → section modules (10–16) → Scout (99) → Alerts (200).
-   Scout grows to fill the gap; Alerts always opens to the right of Scout. */
+   The section modules grow to fill the row; Scout keeps its fixed docked size
+   and Alerts always opens to the right of Scout. */
 #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
-  flex-grow: 2;
-  min-width: min(760px, 92vw);
+  flex: 0 0 680px;
+  width: 680px;
+  min-width: 680px;
 }
+/* Scout stays at its normal docked size in every position (left/right/center)
+   so the section modules — not Scout — are what grow to fill the screen. */
 #pf-chat-panel.scout-dock.scout-dock-open {
-  flex: 1 1 0%;
-  width: auto;
-  min-width: 360px;
+  flex: 0 0 380px;
+  width: 380px;
+  min-width: 380px;
 }
 @media (max-width: 1100px) {
-  #pf-chat-panel.scout-dock.scout-dock-open { min-width: 320px; }
+  #pf-chat-panel.scout-dock.scout-dock-open {
+    flex-basis: 330px;
+    width: 330px;
+    min-width: 330px;
+  }
+}
+/* Center (un-pinned): the chat keeps its normal default width instead of
+   growing to fill the rail gap or being squeezed to nothing by the other
+   modules. flex-shrink: 0 stops it collapsing; it simply flows + scrolls with
+   the row (the width toggle still doubles it to 680px). */
+#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center {
+  flex: 0 0 380px;
+  width: 380px;
+  min-width: 380px;
+}
+#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center.panel-wide {
+  flex: 0 0 680px;
+  width: 680px;
+  min-width: 680px;
+}
+@media (max-width: 1100px) {
+  #pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center {
+    flex-basis: 330px;
+    width: 330px;
+    min-width: 330px;
+  }
 }
 #alerts-panel { order: 200; }
 

@@ -739,11 +739,9 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 /* Text-size accessibility — scale readable module bodies via --wise-text-scale.
    Chrome (top bar, menu nav, module headers) stays at authored size.
 
-   Scout note: the header (.chat-topbar) must NOT scale, or it stops matching the
-   other module headers (all locked to --panel-header-h = 60px) and the two Scout
-   surfaces diverge — the inline ai-chat shell rendered its header at 60×scale
-   (e.g. 70.8px at 'lg', 49.2px at 'sm') while the shared dock stayed 60px. So we
-   zoom only the body + composer of each Scout surface, never its header:
+   Header note: module headers must NOT scale, or they stop matching the shared
+   --panel-header-h contract. That bit Scout before; notifications follow the
+   same rule now. We zoom only readable bodies/composers, never the chrome:
      - ai-chat inline shell: every #chat-shell child EXCEPT .chat-topbar
      - shared dock card:      .sc-body + .chat-input-rail (the old
                               `.scout-dock .sc-card` rule never matched because the
@@ -755,7 +753,8 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .side-panel-body,
 .alerts-panel-body,
 #settings-screen .ss-inner,
-#notif-panel .notif-inner,
+#notif-panel .notif-scroll-body,
+#notif-panel .notif-footer,
 #verification-sidebar .vs-inner,
 #chat-shell > div:not(.chat-topbar),
 .scout-dock .sc-body,

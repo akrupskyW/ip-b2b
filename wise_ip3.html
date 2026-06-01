@@ -47,21 +47,21 @@
       font-family: "DM Sans", system-ui, -apple-system, sans-serif;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 48px 24px;
+      padding: 56px 24px 72px;
     }
 
     a { color: inherit; text-decoration: none; }
 
     .home {
       width: 100%;
-      max-width: 920px;
+      max-width: 1080px;
     }
 
     .home__header {
       text-align: center;
-      margin-bottom: 44px;
+      margin-bottom: 40px;
     }
 
     .home__eyebrow {
@@ -91,18 +91,45 @@
       font-size: 16px;
       color: var(--text-muted);
       margin: 0 auto;
-      max-width: 520px;
+      max-width: 560px;
       line-height: 1.5;
+    }
+
+    /* Sections */
+    .section { margin-top: 40px; }
+    .section__head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section__title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue-300);
+      margin: 0;
+    }
+    .section__desc {
+      font-size: 13px;
+      color: var(--text-subtle);
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
+    .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-    @media (max-width: 640px) {
-      .grid { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .grid, .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .grid, .grid--2 { grid-template-columns: 1fr; }
       .home__title { font-size: 30px; }
     }
 
@@ -110,8 +137,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 26px;
+      gap: 12px;
+      padding: 22px;
       border: 1px solid var(--border);
       border-radius: 18px;
       background: linear-gradient(155deg, var(--surface) 0%, var(--surface-2) 100%);
@@ -138,27 +165,48 @@
 
     .card:hover::after { opacity: 1; }
 
+    .card__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
     .card__icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       display: grid;
       place-items: center;
       border-radius: 12px;
       background: var(--blue-soft);
       border: 1px solid var(--border-strong);
       color: var(--blue-300);
+      flex-shrink: 0;
     }
 
-    .card__icon .material-icons { font-size: 24px; }
+    .card__icon .material-icons { font-size: 22px; }
+
+    .card__tag {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      padding: 3px 9px;
+      border-radius: 9999px;
+      white-space: nowrap;
+    }
 
     .card__title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 600;
       margin: 0;
     }
 
     .card__desc {
-      font-size: 13.5px;
+      font-size: 13px;
       line-height: 1.5;
       color: var(--text-muted);
       margin: 0;
@@ -166,6 +214,7 @@
 
     .card__cta {
       margin-top: auto;
+      padding-top: 4px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -180,6 +229,25 @@
     }
 
     .card:hover .card__cta .material-icons { transform: translateX(4px); }
+
+    /* Featured (larger) card spanning two columns */
+    .card--featured { grid-column: span 2; }
+    @media (max-width: 600px) {
+      .card--featured { grid-column: span 1; }
+    }
+
+    /* Locked / coming-soon card */
+    .card--locked {
+      cursor: default;
+      opacity: 0.72;
+    }
+    .card--locked:hover {
+      transform: none;
+      border-color: var(--border);
+      box-shadow: var(--shadow-card);
+    }
+    .card--locked:hover::after { opacity: 0; }
+    .card--locked .card__cta { color: var(--text-subtle); }
   </style>
 </head>
 <body>
@@ -190,38 +258,154 @@
         WISE · IP3
       </span>
       <h1 class="home__title">WISE Workspace</h1>
-      <p class="home__subtitle">Jump into the WISE prototypes. Pick a destination below to get started.</p>
+      <p class="home__subtitle">Every WISE prototype in one place — the enterprise platform, the WISEcode AI agents, and the supporting decks and reviews.</p>
     </header>
 
-    <div class="grid">
-      <a class="card" href="pages/app-vision-deck.html">
-        <span class="card__icon"><span class="material-icons">slideshow</span></span>
-        <h2 class="card__title">Product Vision Deck</h2>
-        <p class="card__desc">The WISEcode AI product vision presentation — strategy, narrative, and roadmap slides.</p>
-        <span class="card__cta">Open deck <span class="material-icons">arrow_forward</span></span>
-      </a>
+    <!-- ============ PLATFORM ============ -->
+    <section class="section">
+      <div class="section__head">
+        <h2 class="section__title">Platform</h2>
+        <span class="section__desc">The core WISE shells and product surfaces</span>
+      </div>
+      <div class="grid">
+        <a class="card card--featured" href="index.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">space_dashboard</span></span>
+            <span class="card__tag">Full App</span>
+          </div>
+          <h3 class="card__title">WISE Enterprise</h3>
+          <p class="card__desc">The full intelligence platform shell — top nav, workspace rails, portfolio modules, command palette, and the built-in AI assistant drawer.</p>
+          <span class="card__cta">Open platform <span class="material-icons">arrow_forward</span></span>
+        </a>
 
-      <a class="card" href="pages/portfolio-agent.html">
-        <span class="card__icon"><span class="material-icons">dashboard</span></span>
-        <h2 class="card__title">Portfolio Agent</h2>
-        <p class="card__desc">Explore the portfolio agent workspace and its connected modules.</p>
-        <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
-      </a>
+        <a class="card" href="pages/portfolio.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">inventory_2</span></span>
+          </div>
+          <h3 class="card__title">WISEcode Portfolio</h3>
+          <p class="card__desc">The Truth Layer — Command Deck, Ledger, Intake, Verified Pipeline, Identity Portal, Recipe Lab, and Asset Vault.</p>
+          <span class="card__cta">Open portfolio <span class="material-icons">arrow_forward</span></span>
+        </a>
 
-      <a class="card" href="pages/ai-chat.html">
-        <span class="card__icon"><span class="material-icons">forum</span></span>
-        <h2 class="card__title">Scout AI Chat</h2>
-        <p class="card__desc">Chat with Scout, the AI verification assistant, for guidance and answers.</p>
-        <span class="card__cta">Open chat <span class="material-icons">arrow_forward</span></span>
-      </a>
+        <a class="card" href="pages/ai-chat.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">forum</span></span>
+          </div>
+          <h3 class="card__title">WISEscout™ AI Chat</h3>
+          <p class="card__desc">The WISEcode AI hub — chat with WISEscout™, the verification assistant, with shared agent panels and menu navigation.</p>
+          <span class="card__cta">Open chat <span class="material-icons">arrow_forward</span></span>
+        </a>
 
-      <a class="card" href="pages/accessibility-review.html">
-        <span class="card__icon"><span class="material-icons">accessibility_new</span></span>
-        <h2 class="card__title">Accessibility Review</h2>
-        <p class="card__desc">The WISE design system accessibility review against WCAG 2.1 standards.</p>
-        <span class="card__cta">Open review <span class="material-icons">arrow_forward</span></span>
-      </a>
-    </div>
+        <div class="card card--locked" aria-disabled="true">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">design_services</span></span>
+            <span class="card__tag">Coming soon</span>
+          </div>
+          <h3 class="card__title">WISEcode Studio</h3>
+          <p class="card__desc">The proprietary logic and code authoring studio. Locked in the current build.</p>
+          <span class="card__cta">Locked <span class="material-icons">lock</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AI AGENTS ============ -->
+    <section class="section">
+      <div class="section__head">
+        <h2 class="section__title">WISEcode AI Agents</h2>
+        <span class="section__desc">Specialized agent workspaces under WISEcode AI</span>
+      </div>
+      <div class="grid">
+        <a class="card" href="pages/portfolio-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">business_center</span></span>
+          </div>
+          <h3 class="card__title">Portfolio Agent</h3>
+          <p class="card__desc">Manages the brand's truth. Orchestrates data, identity, eligibility, verification, and recipes.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/code-studio-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">terminal</span></span>
+          </div>
+          <h3 class="card__title">Code Studio Agent</h3>
+          <p class="card__desc">Orchestrates the logic layer for proprietary code authoring and publishing.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/analytics-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">analytics</span></span>
+          </div>
+          <h3 class="card__title">Analytics Agent</h3>
+          <p class="card__desc">Conversational analytics across your portfolio and the public registry.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/audit-reformulation-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">fact_check</span></span>
+          </div>
+          <h3 class="card__title">Audit &amp; Reformulation Agent</h3>
+          <p class="card__desc">What's Next optimization, impact simulation, and formulation alternatives.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/marketing-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">campaign</span></span>
+          </div>
+          <h3 class="card__title">Marketing Agent</h3>
+          <p class="card__desc">Brand-ready deliverable generation for retail, social, and presentation.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/trends-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">trending_up</span></span>
+          </div>
+          <h3 class="card__title">Trends Agent</h3>
+          <p class="card__desc">Hot Topic Intelligence, category signals, and contextual market shifts.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/brand-engagement-agent.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">handshake</span></span>
+          </div>
+          <h3 class="card__title">Brand Engagement Agent</h3>
+          <p class="card__desc">Calls for Innovation, partner matching, intros, and deal flow.</p>
+          <span class="card__cta">Open agent <span class="material-icons">arrow_forward</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ DECKS & REVIEWS ============ -->
+    <section class="section">
+      <div class="section__head">
+        <h2 class="section__title">Decks &amp; Reviews</h2>
+        <span class="section__desc">Narrative and design-system references</span>
+      </div>
+      <div class="grid grid--2">
+        <a class="card" href="pages/app-vision-deck.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">slideshow</span></span>
+          </div>
+          <h3 class="card__title">Product Vision Deck</h3>
+          <p class="card__desc">The WISEcode AI product vision presentation — strategy, narrative, and roadmap slides.</p>
+          <span class="card__cta">Open deck <span class="material-icons">arrow_forward</span></span>
+        </a>
+
+        <a class="card" href="pages/accessibility-review.html">
+          <div class="card__top">
+            <span class="card__icon"><span class="material-icons">accessibility_new</span></span>
+          </div>
+          <h3 class="card__title">Accessibility Review</h3>
+          <p class="card__desc">The WISE design system accessibility review against WCAG 2.1 standards.</p>
+          <span class="card__cta">Open review <span class="material-icons">arrow_forward</span></span>
+        </a>
+      </div>
+    </section>
   </main>
 </body>
 </html>

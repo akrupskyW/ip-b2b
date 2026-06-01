@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scout — AI Verification Assistant</title>
+  <title>WISEscout™ — AI Verification Assistant</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
@@ -970,7 +970,7 @@
     .notif-item-icon .material-icons { font-size: 16px !important; }
     .notif-item-icon.notif-ic-red    { color: var(--sec-red, #D94C4C); }
     .notif-item-icon.notif-ic-amber  { color: var(--ter-amber, #FFB347); }
-    .notif-item-icon.notif-ic-violet { color: var(--ter-violet, #E879F9); }
+    .notif-item-icon.notif-ic-blue   { color: var(--primary); }
     .notif-item-body { flex: 1; min-width: 0; }
     .notif-item-title { font-size: var(--fs-ui); font-weight: 600; color: #E0DBE7; line-height: 1.35; }
     .notif-item-sub { font-size: var(--fs-ui); color: #827C90; margin-top: 2px; }
@@ -3894,6 +3894,95 @@
       color: var(--text);
       background: color-mix(in srgb, currentColor 12%, transparent);
     }
+    /* ===== Consolidated module-header overflow menu =====
+       One horizontal-dots (more_horiz) trigger that gathers every per-module
+       control — move side, width toggle, and an Off / On switch — into a single
+       dropdown. Built by consolidatePanelControls() so every module header on
+       the page reads the same (Scout excepted). */
+    .panel-controls.pf-menuized { flex-direction: row; min-width: 0; gap: 0; }
+    .pf-module-menu { position: relative; display: inline-flex; flex-shrink: 0; }
+    .pf-module-menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      opacity: 0.75;
+      cursor: pointer;
+      padding: 0;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .pf-module-menu-btn .material-symbols-outlined,
+    .pf-module-menu-btn .material-icons { font-size: 18px !important; line-height: 1 !important; }
+    .pf-module-menu-btn:hover,
+    .pf-module-menu.is-open .pf-module-menu-btn {
+      opacity: 1;
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+    }
+    .pf-module-menu-pop {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 80;
+      min-width: 214px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-1), 0 12px 32px rgba(0, 0, 0, 0.18);
+    }
+    .pf-module-menu-pop[hidden] { display: none; }
+    .pf-module-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      height: auto;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.2;
+      text-align: left;
+      cursor: pointer;
+      opacity: 1;
+      transition: background 0.13s ease, color 0.13s ease;
+    }
+    .pf-module-menu-item .material-symbols-outlined,
+    .pf-module-menu-item .material-icons {
+      font-size: 18px !important;
+      line-height: 1 !important;
+      color: var(--text-muted);
+      transition: color 0.13s ease;
+    }
+    .pf-module-menu-item:hover {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      color: var(--primary);
+    }
+    .pf-module-menu-item:hover .material-symbols-outlined,
+    .pf-module-menu-item:hover .material-icons { color: var(--primary); }
+    .pf-module-menu-item.is-on { color: var(--primary); }
+    .pf-module-menu-item.is-on .material-symbols-outlined,
+    .pf-module-menu-item.is-on .material-icons { color: var(--primary); }
+    .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
+    .pf-module-menu-item--off:hover {
+      background: color-mix(in srgb, #e5484d 14%, transparent);
+      color: #e5484d;
+    }
+    .pf-module-menu-item--off:hover .material-symbols-outlined,
+    .pf-module-menu-item--off:hover .material-icons { color: #e5484d; }
     /* Stacked panel controls — vertical list of icon+label rows, matching the
        menu-nav pattern (icon left, caption right). Used on Notifications and
        Agent Settings headers where the full control set needs to stay readable. */
@@ -3986,9 +4075,24 @@
     }
     .notif-panel-header:has(.panel-controls--stacked),
     #settings-screen .ss-header:has(.panel-controls--stacked) {
-      height: auto;
+      height: var(--panel-header-h);
       min-height: var(--panel-header-h);
       align-items: center;
+    }
+    /* Canonical, state-independent height lock for the Notifications and Agent
+       Settings headers. These two were the only module headers carrying a
+       special-cased `height: auto` (originally for tall stacked controls).
+       Now that consolidatePanelControls() collapses every header's controls
+       into a single more_horiz menu, they must read at the exact same
+       --panel-header-h rhythm as History / Scout / PULSE / TIER / etc. The
+       #id + !important guarantees the lock survives every runtime state
+       (stacked, menuized, or mid-consolidation) so the strip can never render
+       short again. */
+    #notif-panel .notif-panel-header,
+    #settings-screen .ss-header {
+      height: var(--panel-header-h) !important;
+      min-height: var(--panel-header-h) !important;
+      box-sizing: border-box;
     }
     .notif-panel-header:has(.panel-controls--stacked) .panel-controls--stacked,
     #settings-screen .ss-header:has(.panel-controls--stacked) .panel-controls--stacked {
@@ -4485,6 +4589,7 @@
       import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
       import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+      import { mountNotificationsPanel } from '../js/notifications-panel.js';
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -4511,6 +4616,60 @@
           activeProductId: 'wisecode-ai',
         });
       }
+      mountNotificationsPanel({
+        host: document.getElementById('panels-row-right'),
+        panelId: 'notif-panel',
+        openClass: 'notif-open',
+        items: [
+          { title: '6 new high-risk SKUs flagged', sub: 'Beverage portfolio · 12m ago', icon: 'priority_high', tone: 'red', id: 'n1' },
+          { title: 'Verification cycle closes Friday', sub: '38 items pending · 1h ago', icon: 'hourglass_top', tone: 'amber', id: 'n2' },
+          { title: "WISE generated this week's brief", sub: 'Executive summary ready · 3h ago', icon: 'auto_awesome', tone: 'blue', id: 'n3' },
+        ],
+        renderOptions: {
+          title: 'NOTIFICATIONS',
+          subtitle: '3 unread',
+          innerClass: 'notif-inner',
+          headerClass: 'notif-panel-header side-panel-header',
+          iconClass: 'panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0',
+          titleClass: 'text-xs font-bold text-oyster-100',
+          subtitleClass: 'text-xs text-oyster-600 mt-0.5',
+          bodyClass: 'notif-scroll-body side-panel-body',
+          footerClass: 'notif-footer',
+          footerLabel: 'View all notifications',
+          footerIcon: 'inbox',
+          itemClass: 'notif-item',
+          itemIconClass: 'notif-item-icon',
+          itemBodyClass: 'notif-item-body',
+          itemTitleClass: 'notif-item-title',
+          itemSubClass: 'notif-item-sub',
+          controlsHtml: `
+            <div class="panel-controls panel-controls--stacked">
+              <div class="panel-flip" data-panel="notif" role="group" aria-label="Dock Notifications panel">
+                <button type="button" class="panel-ctrl-btn panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat">
+                  <span class="panel-ctrl-icon"><span class="material-symbols-outlined">side_navigation</span></span>
+                  <span class="panel-ctrl-label">Dock</span>
+                </button>
+              </div>
+              <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width">
+                <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
+                <span class="panel-ctrl-label">Width</span>
+              </button>
+              <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeNotifications()" title="Close" aria-label="Close Notifications">
+                <span class="panel-ctrl-icon"><span class="material-icons">close</span></span>
+                <span class="panel-ctrl-label">Close</span>
+              </button>
+            </div>`,
+        },
+        onMarkAllRead(api) {
+          window.handleNotifClick?.('n-all');
+          if (typeof window.toggleNotificationsPanel === 'function') window.toggleNotificationsPanel(false);
+          else api.close();
+        },
+        onItem({ item }) {
+          window.handleNotifClick?.(item?.id || 'n-all');
+          if (typeof window.toggleNotificationsPanel === 'function') window.toggleNotificationsPanel(false);
+        },
+      });
       applyStoredTextSize();
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
@@ -4667,7 +4826,7 @@
               <span class="material-icons text-[15px] text-amber-400">search</span>
             </div>
             <div>
-              <div class="text-xs font-bold text-oyster-100">Scout</div>
+              <div class="text-xs font-bold text-oyster-100">WISEscout™</div>
               <p class="text-xs text-oyster-600">WISE Foods</p>
             </div>
           </div>
@@ -4913,7 +5072,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex flex-col min-w-0">
-            <span class="topbar-title">Scout</span>
+            <span class="topbar-title">WISEscout™</span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;margin-top:2px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -4956,7 +5115,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Scout module width"><span class="material-symbols-outlined">transition_slide</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double WISEscout™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
         </div>
       </div>
 
@@ -4980,7 +5139,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can Scout help with?</h1>
+            <h1 class="ws-heading">What can WISEscout™ help with?</h1>
             <p class="ws-sub">Your AI Verification assistant — NON-UPF &amp; beyond</p>
             <!-- Quick action chips -->
             <div class="ws-chips">
@@ -5009,7 +5168,7 @@
             <p class="ws-hint">or type a message below</p>
             <!-- Trust badges — mirror scout-chat.js so the welcome reads the same
                  wherever Scout appears. -->
-            <div class="ws-trust" role="list" aria-label="How Scout handles your data">
+            <div class="ws-trust" role="list" aria-label="How WISEscout™ handles your data">
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">verified_user</span>Grounded in your WISE data</span>
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">lock</span>Private &amp; encrypted</span>
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">history</span>Every action is logged</span>
@@ -5054,7 +5213,7 @@
                     </div>
                     <div>
                         <p class="ss-info-title">How agents work together</p>
-                        <p class="ss-info-desc">Scout orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Scout is always required.</p>
+                        <p class="ss-info-desc">WISEscout™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEscout™ is always required.</p>
                     </div>
                 </div>
 
@@ -5068,11 +5227,11 @@
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
-                            Scout
+                            WISEscout™
                             <span class="ss-version-badge">v3.2</span>
                         </div>
                         <p class="ss-agent-tagline">Verification Orchestrator</p>
-                        <p class="ss-agent-desc">The core Scout agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
+                        <p class="ss-agent-desc">The core WISEscout™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
                         <div>
                             <span class="ss-capability-tag">Verification</span>
                             <span class="ss-capability-tag">Routing</span>
@@ -5255,7 +5414,7 @@
                     <div class="ss-pref-row">
                         <div>
                             <p class="ss-pref-title">Response style</p>
-                            <p class="ss-pref-desc">How detailed Scout's responses should be</p>
+                            <p class="ss-pref-desc">How detailed WISEscout™'s responses should be</p>
                         </div>
                         <select class="font-semibold">
                             <option>Concise</option>
@@ -5295,7 +5454,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
-                            <span>Scout <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
+                            <span>WISEscout™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
                         </div>
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
@@ -5361,66 +5520,12 @@
       </div>
     </div>
 
-    <!-- Right panels container — panels flipped right via flipPanel() land here -->
+    <!-- Right panels container — panels flipped right via flipPanel() land here.
+         #notif-panel is an empty shell: its contents are rendered by the shared
+         mountNotificationsPanel() module (js/notifications-panel.js) so the
+         Notifications module is identical to every other page. -->
     <div id="panels-row-right">
-      <div id="notif-panel" aria-label="Notifications">
-        <div class="notif-inner">
-          <div class="notif-panel-header side-panel-header">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#3E0F10] flex items-center justify-center shrink-0 ring-1 ring-red-400/25">
-              <span class="material-icons text-[15px] text-red-400">notifications</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-oyster-100">NOTIFICATIONS</div>
-              <p class="text-xs text-oyster-600 mt-0.5">3 unread</p>
-            </div>
-            <div class="panel-controls panel-controls--stacked">
-              <div class="panel-flip" data-panel="notif" role="group" aria-label="Dock Notifications panel">
-                <button type="button" class="panel-ctrl-btn panel-flip-btn" onclick="flipPanel('notif')" title="Move to the other side of chat" aria-label="Move Notifications to the other side of chat">
-                  <span class="panel-ctrl-icon"><span class="material-symbols-outlined">side_navigation</span></span>
-                  <span class="panel-ctrl-label">Dock</span>
-                </button>
-              </div>
-              <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width">
-                <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
-                <span class="panel-ctrl-label">Width</span>
-              </button>
-              <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeNotifications()" title="Close" aria-label="Close Notifications">
-                <span class="panel-ctrl-icon"><span class="material-icons">close</span></span>
-                <span class="panel-ctrl-label">Close</span>
-              </button>
-            </div>
-          </div>
-          <div class="notif-scroll-body side-panel-body">
-            <button type="button" class="notif-item" onclick="handleNotifClick('n1')">
-              <div class="notif-item-icon notif-ic-red"><span class="material-icons">priority_high</span></div>
-              <div class="notif-item-body">
-                <div class="notif-item-title">6 new high-risk SKUs flagged</div>
-                <div class="notif-item-sub">Beverage portfolio · 12m ago</div>
-              </div>
-            </button>
-            <button type="button" class="notif-item" onclick="handleNotifClick('n2')">
-              <div class="notif-item-icon notif-ic-amber"><span class="material-icons">hourglass_top</span></div>
-              <div class="notif-item-body">
-                <div class="notif-item-title">Verification cycle closes Friday</div>
-                <div class="notif-item-sub">38 items pending · 1h ago</div>
-              </div>
-            </button>
-            <button type="button" class="notif-item" onclick="handleNotifClick('n3')">
-              <div class="notif-item-icon notif-ic-violet"><span class="material-icons">auto_awesome</span></div>
-              <div class="notif-item-body">
-                <div class="notif-item-title">WISE generated this week's brief</div>
-                <div class="notif-item-sub">Executive summary ready · 3h ago</div>
-              </div>
-            </button>
-          </div>
-          <div class="notif-footer">
-            <button type="button" class="notif-view-all" onclick="handleNotifClick('n-all')">
-              <span class="material-icons">inbox</span>
-              View all notifications
-            </button>
-          </div>
-        </div>
-      </div>
+      <div id="notif-panel" aria-label="Notifications"></div>
     </div>
 
     <!-- ── NFP+ — Nutrition Fact Panel Plus ──────────────────────────────── -->
@@ -5714,7 +5819,7 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'Scout',      color: '#025ED3', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'WISEscout™', color: '#025ED3', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
       scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
       shield: { name: 'SHIELD',     color: '#025ED3', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
@@ -6275,7 +6380,7 @@
        time-stamped, every Scout reply is grounded in a cited source, and the
        typing indicator says what Scout is actually doing. */
     const SCOUT_SOURCE_LABEL = 'Grounded in WISE data';
-    const SCOUT_STATUS_LABEL = 'Scout is checking the registry';
+    const SCOUT_STATUS_LABEL = 'WISEscout™ is checking the registry';
 
     function scoutNowLabel() {
       try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
@@ -6283,7 +6388,7 @@
     }
     function scoutMetaRow(withSource) {
       const src = withSource && SCOUT_SOURCE_LABEL
-        ? `<span class="sc-trust-chip" title="Scout cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
+        ? `<span class="sc-trust-chip" title="WISEscout™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
         : '';
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${scoutNowLabel()}</span></div>`;
     }
@@ -6307,7 +6412,7 @@
       const withSource = opts.source !== false;
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line-scout"><span class="text-xs sc-who-scout">Scout · </span><span class="text-oyster-300" style="line-height:1.55;">${html}</span>${scoutMetaRow(withSource)}</div>`
+        `<div class="mb-3 sc-line-scout"><span class="text-xs sc-who-scout">WISEscout™ · </span><span class="text-oyster-300" style="line-height:1.55;">${html}</span>${scoutMetaRow(withSource)}</div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -6317,7 +6422,7 @@
       if (!box) return null;
       const el = document.createElement('div');
       el.className = 'mb-3 sc-line-scout sc-line-typing';
-      el.innerHTML = `<span class="text-xs sc-who-scout">Scout · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${SCOUT_STATUS_LABEL}…</span></span>`;
+      el.innerHTML = `<span class="text-xs sc-who-scout">WISEscout™ · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${SCOUT_STATUS_LABEL}…</span></span>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -6350,7 +6455,7 @@
         return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
       if (/(agent|choose)/.test(q))
         return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout layout and controls.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEscout™ layout and controls.';
     }
 
     function scoutRespond(text, intent) {
@@ -6412,7 +6517,7 @@
     }
 
     function exportConversation() {
-      const blob = new Blob(['Scout export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['WISEscout™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseowl-chat.txt';
@@ -6420,7 +6525,7 @@
     }
     function shareConversation() {
       const url = window.location.href;
-      if (navigator.share) navigator.share({ title: 'Scout', url });
+      if (navigator.share) navigator.share({ title: 'WISEscout™', url });
       else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Link copied'));
       else alert(url);
     }
@@ -7174,6 +7279,154 @@
         theme = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
       }
       applyChatTheme(theme);
+    })();
+  </script>
+
+  <!-- Consolidates every module header's flip / width / close icons into a
+       single horizontal-dots (more_horiz) dropdown, plus an Off / On switch.
+       Scout is intentionally left untouched. The original control buttons are
+       kept (hidden) in the DOM so the existing per-panel state-sync keeps
+       working; the menu rows simply delegate clicks to them. -->
+  <script>
+    (function consolidatePanelControlsInit() {
+      /* For modules without their own close button, "Off / On" turns the panel
+         off via its existing global toggle (force = false). */
+      const OFF_FN = {
+        upf:    () => window.toggleUpfPanel    && window.toggleUpfPanel(false),
+        tier:   () => window.toggleTierPanel   && window.toggleTierPanel(false),
+        shield: () => window.toggleShieldPanel && window.toggleShieldPanel(false),
+        lens:   () => window.toggleLensPanel   && window.toggleLensPanel(false),
+        vault:  () => window.toggleVaultPanel  && window.toggleVaultPanel(false),
+        nfp:    () => window.toggleNfpPanel    && window.toggleNfpPanel(false),
+      };
+
+      function closeAllModuleMenus() {
+        document.querySelectorAll('.pf-module-menu.is-open').forEach((m) => {
+          m.classList.remove('is-open');
+          m.querySelector('.pf-module-menu-btn')?.setAttribute('aria-expanded', 'false');
+          m.querySelector('.pf-module-menu-pop')?.setAttribute('hidden', '');
+        });
+      }
+
+      function makeItem({ icon, label, danger, extraClass, onClick }) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pf-module-menu-item'
+          + (danger ? ' pf-module-menu-item--off' : '')
+          + (extraClass ? ' ' + extraClass : '');
+        b.setAttribute('role', 'menuitem');
+        b.innerHTML = `<span class="material-symbols-outlined">${icon}</span><span class="pf-mi-label">${label}</span>`;
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          try { onClick(); } catch (_) {}
+          closeAllModuleMenus();
+        });
+        return b;
+      }
+
+      function consolidate(controls) {
+        if (controls.dataset.menuized) return;
+        if (controls.querySelector('[data-panel="scout"]')) return; // never Scout
+
+        const flipBtn  = controls.querySelector('.panel-flip-btn');
+        const widthBtn = controls.querySelector('.panel-width-toggle-btn');
+        const closeBtn = controls.querySelector('.panel-close-btn');
+        if (!flipBtn && !widthBtn && !closeBtn) return;
+
+        const key = (widthBtn && widthBtn.dataset.panel)
+          || (flipBtn && flipBtn.closest('.panel-flip') && flipBtn.closest('.panel-flip').dataset.panel)
+          || '';
+
+        controls.dataset.menuized = '1';
+        controls.classList.add('pf-menuized');
+        controls.classList.remove('panel-controls--stacked');
+
+        /* Keep the originals in the DOM (hidden) so syncPanelWidthUI /
+           syncPanelFlipUI keep updating them; we delegate clicks to them. */
+        Array.from(controls.children).forEach((c) => { c.style.display = 'none'; });
+
+        const menu = document.createElement('div');
+        menu.className = 'pf-module-menu';
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'pf-module-menu-btn';
+        trigger.setAttribute('aria-haspopup', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.title = 'Module options';
+        trigger.setAttribute('aria-label', 'Module options');
+        trigger.innerHTML = '<span class="material-symbols-outlined">more_horiz</span>';
+        const pop = document.createElement('div');
+        pop.className = 'pf-module-menu-pop';
+        pop.setAttribute('role', 'menu');
+        pop.hidden = true;
+        menu.appendChild(trigger);
+        menu.appendChild(pop);
+
+        if (flipBtn) {
+          pop.appendChild(makeItem({
+            icon: 'side_navigation', label: 'Move to other side',
+            onClick: () => flipBtn.click(),
+          }));
+        }
+
+        let widthItem = null;
+        if (widthBtn) {
+          widthItem = makeItem({
+            icon: 'transition_slide', label: 'Double width', extraClass: 'pf-menu-wide',
+            onClick: () => { widthBtn.click(); syncWidthItem(); },
+          });
+          pop.appendChild(widthItem);
+        }
+
+        const sep = document.createElement('div');
+        sep.className = 'pf-module-menu-sep';
+        pop.appendChild(sep);
+
+        const offClick = closeBtn ? () => closeBtn.click() : (OFF_FN[key] || (() => {}));
+        pop.appendChild(makeItem({
+          icon: 'toggle_off', label: 'Off / On', danger: true, onClick: offClick,
+        }));
+
+        function syncWidthItem() {
+          if (!widthItem || !widthBtn) return;
+          const wide = widthBtn.classList.contains('is-on');
+          widthItem.classList.toggle('is-on', wide);
+          const lbl = widthItem.querySelector('.pf-mi-label');
+          if (lbl) lbl.textContent = wide ? 'Normal width' : 'Double width';
+        }
+        menu._syncWidthItem = syncWidthItem;
+
+        controls.appendChild(menu);
+        syncWidthItem();
+      }
+
+      function run() {
+        document.querySelectorAll('.panel-controls').forEach(consolidate);
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pf-module-menu-btn');
+        if (btn) {
+          e.preventDefault();
+          const menu = btn.closest('.pf-module-menu');
+          const wasOpen = menu && menu.classList.contains('is-open');
+          closeAllModuleMenus();
+          if (!wasOpen && menu) {
+            menu.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            menu.querySelector('.pf-module-menu-pop')?.removeAttribute('hidden');
+            if (menu._syncWidthItem) menu._syncWidthItem();
+          }
+          return;
+        }
+        if (!e.target.closest('.pf-module-menu-pop')) closeAllModuleMenus();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModuleMenus(); });
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+      else run();
+      /* Settings is relocated into #panels-row after boot; re-run once more. */
+      setTimeout(run, 0);
     })();
   </script>
 </body>
