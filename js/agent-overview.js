@@ -765,19 +765,19 @@ function refreshAppearancePopover() {
   renderAppearanceBody(activeAppearancePopover);
 }
 
-/* Scout dock off / left / right segmented control — mirrors the portfolio
-   popover so Scout's sticky side stays uniform across every agent page. */
+/* Dock Chat left / center / right segmented control — mirrors the portfolio
+   popover so the Doc chat's sticky side stays uniform across every agent page. */
 function renderScoutDockRow() {
   const mode = scoutDockMode();
   const btn = (m, icon, label) =>
     `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
   return `
     <div class="fz-row">
-      <span class="fz-row-label">Scout chat</span>
-      <div class="fz-btns scout-seg" role="group" aria-label="Scout chat dock side">
-        ${btn('left', 'align_justify_flex_start', 'Dock Scout left')}
-        ${btn('off', 'align_justify_center', 'Hide Scout')}
-        ${btn('right', 'align_justify_flex_end', 'Dock Scout right')}
+      <span class="fz-row-label">Dock Chat</span>
+      <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
+        ${btn('left', 'align_justify_flex_start', 'Dock chat left')}
+        ${btn('center', 'align_justify_center', 'Center chat')}
+        ${btn('right', 'align_justify_flex_end', 'Dock chat right')}
       </div>
     </div>`;
 }

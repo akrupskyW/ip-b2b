@@ -175,7 +175,11 @@
       min-height: 0;
       z-index: 5;
     }
-    .menu-brand-integrated > #menu-panel .menu-inner { height: 100%; min-height: 100%; }
+    /* Full-height only for the VERTICAL nav column. In pivot the bar must be
+       content-height (handed back to agent-page.css `height: auto`), otherwise
+       this inline rule — same specificity as the shared pivot rule but later in
+       the cascade — stretches the bar taller than the portfolio/agent pages. */
+    .menu-brand-integrated > #menu-panel:not(.mp-pivot) .menu-inner { height: 100%; min-height: 100%; }
     /* Stacked / Grid module layouts turn #modules-row into a scroller. If the
        page root ever picks up a stray horizontal scroll (e.g. a scrollIntoView
        on a freshly opened module, or content overflow), the fixed-width nav
@@ -737,18 +741,25 @@
        header height and center the owl, so the collapsed logo lines up exactly
        with the neighbouring panel-header icons. The brand markup + styling
        itself still come from the shared agent-page.css. */
-    #chat-shell-wrap #menu-panel .menu-brand-bar {
+    /* These chat-shell nudges only make sense in the VERTICAL panel / collapsed
+       rail, where the brand strip must line up with the 60px panel headers next
+       to it. When the nav is PIVOTED into the horizontal top bar there are no
+       such neighbours, so they must NOT apply — otherwise this page diverges
+       from the shared pivot bar (taller strip + owl shoved 7px down). The
+       `:not(.mp-pivot)` guards hand pivot mode back to agent-page.css so the bar
+       is byte-for-byte identical to portfolio/agent pages. */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar {
       min-height: var(--panel-header-h);
       margin-bottom: 0;
     }
-    #chat-shell-wrap #menu-panel.mp-rail .menu-brand-bar {
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar {
       height: var(--panel-header-h);
       min-height: var(--panel-header-h);
       max-height: var(--panel-header-h);
       margin-bottom: 0;
     }
-    #chat-shell-wrap #menu-panel.mp-rail .menu-brand-logo,
-    #chat-shell-wrap #menu-panel.mp-rail .menu-brand-logo a {
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a {
       height: 100%;
       display: flex;
       align-items: center;
@@ -756,7 +767,7 @@
     }
     /* The owl bug glyph is top-heavy in its box, so it reads a few px high of
        the neighbouring panel-header icons; nudge it onto their centre line. */
-    #chat-shell-wrap #menu-panel.mp-rail .menu-brand-logo svg.tl-bug {
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
       transform: translateY(7px);
     }
 
@@ -4611,6 +4622,7 @@
               <button type="button" class="panel-flip-btn" onclick="flipPanel('history')" title="Move to the other side of chat" aria-label="Move History to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
             <button type="button" class="panel-width-toggle-btn" data-panel="history" onclick="togglePanelWidth('history')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double History module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-close-btn hp-header-close-btn" onclick="toggleHistoryPanel()" title="Close" aria-label="Close History"><span class="material-icons">close</span></button>
           </div>
         </div>
         <div class="history-tabs-row">
@@ -6807,23 +6819,27 @@
       } catch (_) {}
     }
 
-    /* Scout's sticky dock side (off / left / right) is shared via the same
-       `wise-scout-dock` key. On this page Scout IS the centre column, so there
-       is no dock to reposition here — we just persist the choice so it takes
-       effect on the portfolio and agent pages where Scout rides as a side
-       module. See setScoutDockPosition() in js/scout-dock.js. */
+    /* The Doc chat's position (left / center / right) is shared via the same
+       `wise-scout-dock` key. On THIS page the chat IS the centre column, so it
+       is already centered — the 'center' button is the active, do-nothing
+       default here, while 'left'/'right' just persist the choice so it takes
+       effect on the portfolio and agent pages where the chat rides as a side
+       rail. See setScoutDockPosition() in js/scout-dock.js. */
     function scoutDockMode() {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        if (raw.visible === false) return 'off';
-        return raw.side === 'left' ? 'left' : 'right';
-      } catch (_) { return 'right'; }
+        if (raw.visible === false || raw.side === 'center') return 'center';
+        if (raw.side === 'left') return 'left';
+        if (raw.side === 'right') return 'right';
+        /* Nothing chosen yet: the chat is shown centered on this page. */
+        return 'center';
+      } catch (_) { return 'center'; }
     }
     function setScoutDockPosition(mode) {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        if (mode === 'off') { raw.visible = false; }
-        else { raw.visible = true; raw.side = mode === 'left' ? 'left' : 'right'; }
+        raw.side = mode === 'left' || mode === 'center' ? mode : 'right';
+        delete raw.visible;
         localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
       } catch (_) {}
     }
@@ -6976,11 +6992,11 @@
           <div class="wise-popover-divider"></div>
           ${(() => { const m = scoutDockMode(); const b = (mode, icon, label) => `<button type="button" class="fz-btn${m === mode ? ' fz-active' : ''}" data-scout-dock="${mode}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`; return `
           <div class="fz-row">
-            <span class="fz-row-label">Scout chat</span>
-            <div class="fz-btns scout-seg" role="group" aria-label="Scout chat dock side">
-              ${b('left', 'align_justify_flex_start', 'Dock Scout left')}
-              ${b('off', 'align_justify_center', 'Hide Scout')}
-              ${b('right', 'align_justify_flex_end', 'Dock Scout right')}
+            <span class="fz-row-label">Dock Chat</span>
+            <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
+              ${b('left', 'align_justify_flex_start', 'Dock chat left')}
+              ${b('center', 'align_justify_center', 'Center chat')}
+              ${b('right', 'align_justify_flex_end', 'Dock chat right')}
             </div>
           </div>`; })()}
           <div class="wise-popover-divider"></div>

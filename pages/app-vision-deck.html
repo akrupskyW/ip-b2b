@@ -1331,6 +1331,10 @@
         event.preventDefault();
         goToSlide(activeIndex + 1);
       }
+      if (event.key === 'ArrowUp' || event.key === 'Up') {
+        event.preventDefault();
+        goToSlide(0);
+      }
     }, { capture: true });
 
     renderDots();

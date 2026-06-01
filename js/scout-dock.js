@@ -8,13 +8,14 @@
  * you just left — uniform across the whole app.
  *
  * Persisted state (key `wise-scout-dock`):
- *   { wide: boolean, side: 'left' | 'right', visible: boolean }
- *     • wide    → the doubled-width column (also bridged to ai-chat.html's
- *                 #chat-shell so "Scout is wide" carries everywhere).
- *     • side    → which side of the modules row the dock pins to.
- *     • visible → whether the sticky dock is shown at all. Together with
- *                 `side` this gives the Appearance control its three modes:
- *                 off (visible:false), left and right (visible:true + side).
+ *   { wide: boolean, side: 'left' | 'center' | 'right' }
+ *     • wide → the doubled-width column (also bridged to ai-chat.html's
+ *              #chat-shell so "Scout is wide" carries everywhere).
+ *     • side → where the Doc chat sits, the Appearance control's three modes:
+ *              'left'/'right' pin the dock to that edge of the modules row;
+ *              'center' un-pins it (the chat returns to its natural, centered
+ *              position — which on the side-dock pages means the rail isn't
+ *              shown, and on ai-chat is simply the centre column it already is).
  *
  *   import { mountScoutDock } from './scout-dock.js';
  *   mountScoutDock(document.getElementById('scout-dock-panel'), { ... });
@@ -30,19 +31,25 @@ export function readScoutDockState() {
     const raw = JSON.parse(localStorage.getItem(SCOUT_DOCK_KEY) || '{}') || {};
     return {
       wide: !!raw.wide,
-      side: raw.side === 'left' ? 'left' : 'right',
-      visible: raw.visible !== false,
+      side: normalizeSide(raw),
     };
   } catch (_) {
-    return { wide: false, side: 'right', visible: true };
+    return { wide: false, side: 'right' };
   }
 }
 
-/* The Appearance control speaks in three modes; the dock stores them as the
-   pair (visible, side). Translate between the two here so callers never have
-   to special-case the off state. */
+/* Normalise stored side into 'left' | 'center' | 'right'. `visible:false` is the
+   legacy spelling of the old "off" mode, which is now simply 'center'. The
+   default is 'right' so the Doc chat keeps showing on the right rail unless the
+   user moves it. */
+function normalizeSide(raw) {
+  if (raw.visible === false || raw.side === 'center') return 'center';
+  return raw.side === 'left' ? 'left' : 'right';
+}
+
+/* The Appearance control and the stored state share the same vocabulary now. */
 export function scoutDockMode(state = readScoutDockState()) {
-  return state.visible === false ? 'off' : state.side;
+  return state.side;
 }
 
 /* Persist a partial patch over the current state and return the result. */
@@ -57,7 +64,7 @@ export function writeScoutDockState(patch) {
 export function applyScoutDockState(dock, state = readScoutDockState()) {
   if (!dock) return;
 
-  dock.classList.toggle('scout-dock-open', state.visible !== false);
+  dock.classList.toggle('scout-dock-open', state.side !== 'center');
   dock.classList.toggle('panel-wide', state.wide);
   dock.classList.toggle('scout-dock-left', state.side === 'left');
 
@@ -72,16 +79,15 @@ export function applyScoutDockState(dock, state = readScoutDockState()) {
 }
 
 /**
- * Set Scout's dock position from one of the three Appearance modes and apply
+ * Set the Doc chat's position from one of the three Appearance modes and apply
  * it everywhere on the page at once. Persisted via `wise-scout-dock`, so the
- * choice carries across navigations and syncs to other tabs.
- * @param {'off'|'left'|'right'} mode
+ * choice carries across navigations and syncs to other tabs. Picking the
+ * position the chat is already in is a harmless no-op.
+ * @param {'left'|'center'|'right'} mode
  */
 export function setScoutDockPosition(mode) {
-  const patch = mode === 'off'
-    ? { visible: false }
-    : { visible: true, side: mode === 'left' ? 'left' : 'right' };
-  const state = writeScoutDockState(patch);
+  const side = mode === 'left' || mode === 'center' ? mode : 'right';
+  const state = writeScoutDockState({ side });
   document.querySelectorAll('.scout-dock').forEach((dock) => applyScoutDockState(dock, state));
   return state;
 }

@@ -669,6 +669,169 @@ html.dark .pf-module-scroll { background: transparent; }
 }
 #alerts-panel { order: 200; }
 
+/* ===== History & Projects module =====
+   Opened from the Scout dock's "History & Projects" menu item. Rides the
+   shared .pf-module chrome but its inner content is a 1:1 port of the
+   ai-chat.html #history-panel: compact circular-icon header, centered
+   History/Projects tabs, a pinned "New conversation" pill, and a scrolling
+   list of grouped history items with semantic badges. */
+.pf-history-hicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  color: var(--text);
+}
+html.dark .pf-history-hicon {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.pf-history-hicon .material-icons { font-size: 15px; line-height: 1; }
+.pf-history-htitles { flex: 1 1 auto; min-width: 0; }
+.pf-history-htitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.pf-history-hsub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 1px;
+  line-height: 1.2;
+}
+.pf-history-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  opacity: 0.75;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pf-history-close-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.pf-history-close-btn:hover {
+  opacity: 1;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+/* Tabs row — centered like ai-chat, pinned above the scrolling list. */
+.pf-history-tabs {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+html.dark .pf-history-tabs { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pf-history-tab {
+  flex: 0 0 auto;
+  padding: 10px 14px 9px;
+  margin-bottom: -1px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.pf-history-tab.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+/* "New conversation" pill — pinned beneath the tabs (matches ai-chat). */
+.pf-history-newwrap { padding: 8px 12px 4px; flex-shrink: 0; }
+.pf-history-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--primary);
+  color: #fff;
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.pf-history-new .material-icons { font-size: 18px; }
+.pf-history-new:hover { filter: brightness(1.06); }
+/* List — tighter padding than the generic .pf-module-scroll so the rows read
+   like ai-chat's side-panel body. */
+.pf-history-scroll { padding: 8px 12px 16px; }
+.pf-history-pane { display: flex; flex-direction: column; gap: 2px; }
+.pf-history-pane.hidden { display: none; }
+.pf-history-group {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle, var(--text-muted));
+  padding: 8px 8px 4px;
+}
+.pf-history-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-pill, 999px);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.pf-history-item:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+html.dark .pf-history-item:hover { background: #413A4D; }
+.pf-history-item-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.pf-history-item-title {
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html.dark .pf-history-item-title { color: #E0DBE7; }
+.pf-history-item-meta { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 2px; }
+html.dark .pf-history-item-meta { color: #827C90; }
+.pf-history-chevron { font-size: 18px; color: var(--text-muted); flex-shrink: 0; }
+.pf-history-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* Badge palette — identical hues to ai-chat.html's .hb-* tokens. */
+.pf-history-badge.hb-progress { background: var(--ter-amber-10, rgba(245, 158, 11, 0.14)); color: var(--ter-amber, #f59e0b); }
+.pf-history-badge.hb-awaiting { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+.pf-history-badge.hb-complete { background: var(--sec-green-10, rgba(34, 197, 94, 0.14)); color: var(--sec-green, #22c55e); }
+html.dark .pf-history-badge.hb-progress { background: #3D2200; color: #FFB347; }
+html.dark .pf-history-badge.hb-awaiting { background: var(--primary-soft, rgba(2, 94, 211, 0.18)); color: var(--primary); }
+html.dark .pf-history-badge.hb-complete { background: #003326; color: #4EE0B7; }
+
 /* ===== Column-view scroll polish =====
    In column view the nav rail is a frozen first column (position: sticky).
    Previously, as you scrolled the row horizontally, modules slid messily

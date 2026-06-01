@@ -1844,12 +1844,10 @@ function setModuleLayout(mode) {
   applySplitWrap(mode === 'split');
   row.classList.toggle('modules-grid', mode === 'grid');
   row.classList.toggle('modules-stack', mode === 'stack');
-  /* Stack mode un-pins the menu rail into a full-width row at the top of the
-     scroll, which would shove all the content down. Collapse the navigation
-     module so the stack opens straight onto the modules. */
-  if (mode === 'stack') {
-    document.getElementById('menu-panel')?.classList.remove('mp-open');
-  }
+  /* The nav (#menu-panel) lives in its own shell grid cell (grid-area: menu),
+     NOT inside #modules-row, so the modules-stack rules never touch it. Leave
+     its open/pivoted/rail state alone — stripping mp-open here would collapse
+     the menu grid column and make the navigation disappear in stacked view. */
   if (activeAppearancePopover) renderAppearanceBody(activeAppearancePopover);
   try { localStorage.setItem(LAYOUT_KEY, mode); } catch (_) {}
 }
@@ -1942,7 +1940,203 @@ function setupChat() {
       if (def && def.go) { navigateTo(def.go); }
       return false; /* let Scout also reply */
     },
+    /* "History & Projects" in the Scout dock's more-menu opens the History
+       module in the row, the same way the other portfolio modules turn on. */
+    onHistory: openHistoryModule,
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* History & Projects module                                          */
+/*   Opened from the Scout dock's "History & Projects" menu item. It is a    */
+/*   standalone .pf-module (not a Portfolio section) so it inherits the       */
+/*   section-module chrome, grid/split layout, and scroll behaviour without   */
+/*   appearing in the top-bar rail or the left menu.                          */
+/* ------------------------------------------------------------------ */
+
+const HISTORY_ITEMS = [
+  { group: 'Today', title: 'WISE Verified — Sample Co.', meta: 'Placeholder row · UI shell', badge: 'In Progress', tone: 'progress' },
+  { group: 'Today', title: 'Membership upgrade', meta: '2:10 PM · 4 messages', badge: 'Done', tone: 'complete' },
+  { group: 'Earlier this week', title: 'Non-UPF Shield batch review', meta: 'Tue · 9 messages', badge: 'Awaiting you', tone: 'awaiting' },
+  { group: 'Earlier this week', title: 'Identity Portal — retailer search', meta: 'Mon · 6 messages', badge: 'Done', tone: 'complete' },
+];
+
+const HISTORY_PROJECTS = [
+  { title: 'Q3 Verification Push', meta: '12 products · 4 in progress' },
+  { title: 'Brand Verified rollout', meta: '8 products · ready to submit' },
+  { title: 'Reformulation — V3 Shake', meta: '3 simulations saved' },
+];
+
+function historyItemsHTML() {
+  let lastGroup = '';
+  return HISTORY_ITEMS.map((it) => {
+    const head = it.group !== lastGroup
+      ? `<div class="pf-history-group">${esc(it.group)}</div>`
+      : '';
+    lastGroup = it.group;
+    return `${head}
+      <button type="button" class="pf-history-item">
+        <div class="pf-history-item-row">
+          <span class="pf-history-item-title">${esc(it.title)}</span>
+          <span class="pf-history-badge hb-${esc(it.tone)}">${esc(it.badge)}</span>
+        </div>
+        <div class="pf-history-item-meta">${esc(it.meta)}</div>
+      </button>`;
+  }).join('');
+}
+
+function historyProjectsHTML() {
+  return HISTORY_PROJECTS.map((p) => `
+    <button type="button" class="pf-history-item">
+      <div class="pf-history-item-row">
+        <span class="pf-history-item-title">${esc(p.title)}</span>
+        <span class="material-icons pf-history-chevron">chevron_right</span>
+      </div>
+      <div class="pf-history-item-meta">${esc(p.meta)}</div>
+    </button>`).join('');
+}
+
+function historyModuleHTML() {
+  return `
+    <div class="pf-module-inner">
+      <header class="pf-module-header pf-history-header">
+        <span class="pf-history-hicon"><span class="material-icons">history</span></span>
+        <div class="pf-history-htitles">
+          <div class="pf-history-htitle">HISTORY</div>
+          <div class="pf-history-hsub">Chats &amp; Projects</div>
+        </div>
+        <div class="panel-controls">
+          <div class="panel-flip" data-side="left" role="group" aria-label="Move History to the other side of Scout">
+            <button type="button" class="panel-flip-btn" data-history-flip title="Move to the other side of Scout" aria-label="Move History to the other side of Scout">
+              <span class="material-symbols-outlined">side_navigation</span>
+            </button>
+          </div>
+          <button type="button" class="panel-width-toggle-btn" data-history-wide aria-pressed="false" title="Normal width — tap to double" aria-label="Double History module width">
+            <span class="material-symbols-outlined">transition_slide</span>
+          </button>
+          <button type="button" class="pf-history-close-btn" data-history-close title="Close" aria-label="Close History & Projects">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </header>
+      <div class="pf-history-tabs" role="tablist">
+        <button type="button" class="pf-history-tab is-active" role="tab" aria-selected="true" data-history-tab="history">History</button>
+        <button type="button" class="pf-history-tab" role="tab" aria-selected="false" data-history-tab="projects">Projects</button>
+      </div>
+      <div class="pf-history-newwrap">
+        <button type="button" class="pf-history-new" data-history-new>
+          <span class="material-icons">add</span>New conversation
+        </button>
+      </div>
+      <div class="pf-module-scroll pf-history-scroll" id="pf-view-history">
+        <div class="pf-history-pane" data-history-pane="history">${historyItemsHTML()}</div>
+        <div class="pf-history-pane hidden" data-history-pane="projects">${historyProjectsHTML()}</div>
+      </div>
+    </div>`;
+}
+
+function buildHistoryModule() {
+  const row = document.getElementById('modules-row');
+  const chat = document.getElementById('pf-chat-panel');
+  if (!row || !chat || document.getElementById('pf-mod-history')) return;
+
+  const el = document.createElement('section');
+  el.id = 'pf-mod-history';
+  el.className = 'pf-module';
+  el.setAttribute('aria-label', 'History & Projects');
+  el.innerHTML = historyModuleHTML();
+  row.insertBefore(el, chat);
+  applyHistorySide();
+  applyHistoryWide();
+
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('[data-history-close]')) { closeHistoryModule(); return; }
+    /* Flip + width mirror the section-module controls, but the History module
+       isn't a Portfolio section, so it carries its own self-contained state.
+       stopPropagation keeps the delegated #modules-row handler from also
+       firing flipModule()/toggleModuleWidth() with an unknown id. */
+    if (e.target.closest('[data-history-flip]')) { e.stopPropagation(); flipHistoryModule(); return; }
+    if (e.target.closest('[data-history-wide]')) { e.stopPropagation(); toggleHistoryWidth(); return; }
+    const tab = e.target.closest('[data-history-tab]');
+    if (tab) { switchHistoryTab(tab.dataset.historyTab); return; }
+    if (e.target.closest('[data-history-new]')) {
+      closeHistoryModule();
+      scout?.reset?.();
+      const chatEl = document.getElementById('pf-chat-panel');
+      if (chatEl) requestAnimationFrame(() => chatEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }));
+    }
+  });
+}
+
+function switchHistoryTab(tab) {
+  const el = document.getElementById('pf-mod-history');
+  if (!el) return;
+  el.querySelectorAll('[data-history-tab]').forEach((btn) => {
+    const on = btn.dataset.historyTab === tab;
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  el.querySelectorAll('[data-history-pane]').forEach((pane) => {
+    pane.classList.toggle('hidden', pane.dataset.historyPane !== tab);
+  });
+}
+
+function openHistoryModule() {
+  const el = document.getElementById('pf-mod-history');
+  if (!el) return;
+  el.classList.add('is-open');
+  requestAnimationFrame(() =>
+    el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+  );
+}
+
+function closeHistoryModule() {
+  document.getElementById('pf-mod-history')?.classList.remove('is-open');
+}
+
+/* Self-contained dock-side + width state for the History module. It lives
+   outside PORTFOLIO_SECTION_IDS, so it can't ride flipModule()/toggleModuleWidth();
+   these mirror that behaviour (flex order + .panel-wide) and persist on their
+   own keys. Order 90 keeps it left of Scout (99); 150 tucks it right of Scout
+   but left of Alerts (200). */
+const HISTORY_SIDE_KEY = 'pf-history-side';
+const HISTORY_WIDE_KEY = 'pf-history-wide';
+let historySide = (() => { try { return localStorage.getItem(HISTORY_SIDE_KEY) === 'right' ? 'right' : 'left'; } catch (_) { return 'left'; } })();
+let historyWide = (() => { try { return localStorage.getItem(HISTORY_WIDE_KEY) === '1'; } catch (_) { return false; } })();
+
+function applyHistorySide() {
+  const el = document.getElementById('pf-mod-history');
+  if (!el) return;
+  const right = historySide === 'right';
+  el.style.order = right ? '150' : '90';
+  el.querySelectorAll('.panel-flip').forEach((f) => f.setAttribute('data-side', right ? 'right' : 'left'));
+}
+
+function applyHistoryWide() {
+  const el = document.getElementById('pf-mod-history');
+  if (!el) return;
+  el.classList.toggle('panel-wide', historyWide);
+  el.querySelectorAll('.panel-width-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('is-on', historyWide);
+    btn.setAttribute('aria-pressed', historyWide ? 'true' : 'false');
+    btn.title = historyWide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+  });
+}
+
+function flipHistoryModule() {
+  historySide = historySide === 'right' ? 'left' : 'right';
+  try { localStorage.setItem(HISTORY_SIDE_KEY, historySide); } catch (_) {}
+  applyHistorySide();
+  const el = document.getElementById('pf-mod-history');
+  if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }));
+}
+
+function toggleHistoryWidth() {
+  historyWide = !historyWide;
+  try { localStorage.setItem(HISTORY_WIDE_KEY, historyWide ? '1' : '0'); } catch (_) {}
+  applyHistoryWide();
+  const el = document.getElementById('pf-mod-history');
+  if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -2145,11 +2339,11 @@ function renderScoutDockRow() {
     `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
   return `
     <div class="fz-row">
-      <span class="fz-row-label">Scout chat</span>
-      <div class="fz-btns scout-seg" role="group" aria-label="Scout chat dock side">
-        ${btn('left', 'align_justify_flex_start', 'Dock Scout left')}
-        ${btn('off', 'align_justify_center', 'Hide Scout')}
-        ${btn('right', 'align_justify_flex_end', 'Dock Scout right')}
+      <span class="fz-row-label">Dock Chat</span>
+      <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
+        ${btn('left', 'align_justify_flex_start', 'Dock chat left')}
+        ${btn('center', 'align_justify_center', 'Center chat')}
+        ${btn('right', 'align_justify_flex_end', 'Dock chat right')}
       </div>
     </div>`;
 }
@@ -2322,6 +2516,7 @@ function bootstrap() {
   loadWide();
   buildModuleRail();
   buildModules();
+  buildHistoryModule();
 
   /* Delegated clicks for the whole modules row: side switcher, in-view section
      navigation, acknowledgements, and product deep-dive. (Open/close lives in
