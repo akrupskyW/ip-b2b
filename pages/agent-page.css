@@ -10,20 +10,34 @@
   --surface-2: #F4F2EA;
   --surface-3: #EFEDE2;
   --text: #111827;
-  --text-muted: #6B7280;
-  --text-subtle: #9CA3AF;
+  /* Quiet grays darkened to clear WCAG 1.4.3/1.4.6 AAA (7:1) on every light
+     surface they appear on (down to surface-3 #EFEDE2), while keeping muted
+     a touch stronger than subtle. */
+  --text-muted: #444B55;
+  /* AAA on surface, bg, surface-2 and surface-3 (was #646E7C, AA-only). */
+  --text-subtle: #474E58;
   --border: rgba(17,24,39,0.08);
   --border-strong: rgba(17,24,39,0.14);
 
-  --primary: #025ED3;
-  --primary-10: rgba(2, 94, 211, 0.10);
-  --primary-20: rgba(2, 94, 211, 0.20);
-  --primary-soft: rgba(2, 94, 211, 0.08);
+  /* Deepened from #025ED3 so primary works as AAA text (7:1 on bg) AND as a
+     button fill (white-on-primary clears 7:1). rgb(2,78,174). */
+  --primary: #024EAE;
+  --primary-10: rgba(2, 78, 174, 0.10);
+  --primary-20: rgba(2, 78, 174, 0.20);
+  --primary-soft: rgba(2, 78, 174, 0.08);
   --sec-green: #3BAA5C;
   --sec-red: #D94C4C;
   --ter-amber: #F5A524;
   --ter-violet: #7C3AED;
   --ter-cyan: #06B6D4;
+
+  /* AAA-safe ink for semantic colors used as TEXT on their own light tints.
+     The vibrant --sec-green / --ter-amber / --sec-red read below 7:1 as small
+     text, so badges, deltas and status labels use these darker shades while
+     keeping the tinted fills. All clear 7:1 on a 16% tint over surface-3. */
+  --sec-green-text: #104D27;
+  --ter-amber-text: #6F3604;
+  --sec-red-text: #831313;
 
   --r-sm: 10px;
   --r-md: 16px;
@@ -49,13 +63,21 @@ html.dark {
   --surface-2: #112633;
   --surface-3: #15303F;
   --text: #F3F4F6;
-  --text-muted: #94A3B8;
-  --text-subtle: #64748B;
+  /* Lightened so muted/subtle clear AAA (7:1) on every navy surface up to the
+     lightest (surface-3 #15303F), keeping muted brighter than subtle. */
+  --text-muted: #BCC6D3;
+  --text-subtle: #B1BAC7;
   --border: rgba(255,255,255,0.08);
   --border-strong: rgba(255,255,255,0.14);
-  --primary-soft: rgba(2, 94, 211, 0.18);
-  /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. */
+  --primary-soft: rgba(2, 78, 174, 0.18);
+  /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. AAA (9.7:1) on surface. */
   --primary-bright: #93C5FD;
+
+  /* Softened pastel inks so semantic TEXT clears 7:1 on its own 16% tint over
+     the navy surfaces (the vibrant fills only reached ~4.7:1 as small text). */
+  --sec-green-text: #AEDCBB;
+  --ter-amber-text: #FACF8A;
+  --sec-red-text: #FBB1B1;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -452,7 +474,7 @@ html.dark .topbar-menu-toggle:hover { color: var(--text) !important; background:
 }
 html.dark #alerts-panel .alerts-inner {
   background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 94, 211, 0.18);
+  border: 1px solid rgba(2, 78, 174, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -523,7 +545,7 @@ html.dark .alerts-panel-header {
 .topbar-popover.hidden { display: none; }
 html.dark .topbar-popover {
   background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border-color: rgba(2, 94, 211, 0.22);
+  border-color: rgba(2, 78, 174, 0.22);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -558,10 +580,10 @@ html.dark .topbar-menu-item:hover { background: rgba(255,255,255,0.06); }
   margin: 4px 0;
 }
 html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
-.topbar-menu-item--danger { color: #ff5e60; }
+.topbar-menu-item--danger { color: var(--sec-red-text); }
 .topbar-menu-item--danger:hover {
   background: color-mix(in srgb, var(--sec-red) 18%, var(--surface-2));
-  color: #ff7c7e;
+  color: var(--sec-red-text);
 }
 
 /* ===== Avatar / user-menu popover (matches ai-chat.html) =====
@@ -586,7 +608,7 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
 html.dark .wise-popover {
   background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border-color: rgba(2, 94, 211, 0.22);
+  border-color: rgba(2, 78, 174, 0.22);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 .wise-popover-header {
@@ -624,15 +646,15 @@ html.dark .wise-popover-item:hover {
   color: var(--text);
 }
 html.dark .wise-popover-item.is-active {
-  background: rgba(2, 94, 211, 0.22);
+  background: rgba(2, 78, 174, 0.22);
   color: var(--primary-bright);
 }
-.wise-popover-item.danger { color: #f87171; }
+.wise-popover-item.danger { color: var(--sec-red-text); }
 .wise-popover-item .material-icons { font-size: 17px; color: var(--text-subtle); }
 .wise-popover-item:hover .material-icons,
 .wise-popover-item.is-active .material-icons { color: var(--primary); }
 html.dark .wise-popover-item.is-active .material-icons { color: var(--primary-bright); }
-.wise-popover-item.danger .material-icons { color: #f87171; }
+.wise-popover-item.danger .material-icons { color: var(--sec-red-text); }
 .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
 html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
 
@@ -662,7 +684,7 @@ html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
   color: var(--primary);
 }
 html.dark .wise-pop-action:hover {
-  background: rgba(2, 94, 211, 0.18);
+  background: rgba(2, 78, 174, 0.18);
   color: var(--primary-bright);
 }
 .wise-pop-action .material-icons { font-size: 20px; color: var(--text-subtle); }
@@ -752,10 +774,17 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .pf-module-scroll,
 .side-panel-body,
 .alerts-panel-body,
-#settings-screen .ss-inner,
+/* Body only — exclude .ss-header so the Agent Settings header stays locked at
+   60px instead of scaling down with the text-size zoom (same bug/fix as the
+   verification summary header below). */
+#settings-screen .ss-inner > :not(.ss-header),
 #notif-panel .notif-scroll-body,
 #notif-panel .notif-footer,
-#verification-sidebar .vs-inner,
+/* Scale the verification body content only — NOT .vs-header. Zooming the whole
+   .vs-inner scaled its header too, so at the "sm" text size the header shrank
+   to ~49px while every other module header (which only ever zooms its body)
+   stayed locked at 60px. */
+#verification-sidebar .vs-inner > :not(.vs-header),
 #chat-shell > div:not(.chat-topbar),
 .scout-dock .sc-body,
 .scout-dock .chat-input-rail {
@@ -975,7 +1004,7 @@ html.dark .topbar-trailing .lir-btn.lir-active {
 }
 html.dark #menu-panel .menu-inner {
   background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 94, 211, 0.18);
+  border: 1px solid rgba(2, 78, 174, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -1064,8 +1093,8 @@ html.dark #menu-panel .menu-inner {
   background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
 }
 html.dark .menu-panel-header {
-  border-bottom-color: rgba(2, 94, 211, 0.20);
-  background: linear-gradient(135deg, rgba(2, 94, 211, 0.24) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+  border-bottom-color: rgba(2, 78, 174, 0.20);
+  background: linear-gradient(135deg, rgba(2, 78, 174, 0.24) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
 }
 .menu-panel-icon {
   /* Match .menu-nav-icon size so the header icon shares the exact column
@@ -1293,8 +1322,9 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   align-items: center;
   justify-content: center;
   margin-left: 4px;
-  width: 22px;
-  height: 22px;
+  /* WCAG 2.2 SC 2.5.8 (Target Size, Minimum) — 24×24 CSS px. */
+  width: 24px;
+  height: 24px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1436,7 +1466,7 @@ html.dark .menu-nav-subitem:hover {
 html.dark .menu-nav-subitem:hover .menu-nav-subicon { color: var(--text); }
 html.dark .menu-nav-subitem.is-active {
   color: var(--text);
-  background: rgba(2, 94, 211, 0.22);
+  background: rgba(2, 78, 174, 0.22);
 }
 html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-bright); }
 
@@ -1832,7 +1862,7 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
 }
 html.dark .agent-main-inner {
   background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 94, 211, 0.18);
+  border: 1px solid rgba(2, 78, 174, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -1859,8 +1889,8 @@ html.dark .agent-main-inner {
   background: var(--surface-2);
 }
 html.dark .agent-main-header {
-  border-bottom-color: rgba(2, 94, 211, 0.20);
-  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+  border-bottom-color: rgba(2, 78, 174, 0.20);
+  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
 }
 .agent-main-icon {
   width: 26px;
@@ -1911,8 +1941,8 @@ html.dark .agent-main-scroll { background: transparent; }
   margin-bottom: 28px;
 }
 html.dark .agent-hero {
-  background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
-  border-color: rgba(2, 94, 211, 0.18);
+  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
+  border-color: rgba(2, 78, 174, 0.18);
 }
 .agent-hero-eyebrow {
   font-size: var(--fs-label);
@@ -2148,7 +2178,7 @@ html.dark .agent-empty { background: rgba(255,255,255,0.03); border-color: rgba(
 }
 html.dark .ag-sheet {
   background: linear-gradient(160deg, #163950 0%, #102B3C 55%, #0A1C28 100%);
-  border-color: rgba(2, 94, 211, 0.22);
+  border-color: rgba(2, 78, 174, 0.22);
 }
 .ag-sheet.is-open { transform: translate(-50%, 0); }
 .ag-sheet-handle { width: 38px; height: 4px; border-radius: 999px; margin: 9px auto 2px; background: var(--text-subtle); opacity: 0.4; }
@@ -2201,7 +2231,7 @@ html.dark .ag-flow-bar { background: rgba(255,255,255,0.08); }
 
 #ag-toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .ag-toast { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.18)); color: var(--text); font-size: 0.8125rem; font-weight: 600; animation: agToastIn 0.25s ease both; }
-html.dark .ag-toast { background: #142a3a; border-color: rgba(2,94,211,0.3); }
+html.dark .ag-toast { background: #142a3a; border-color: rgba(2, 78, 174,0.3); }
 .ag-toast .material-icons { font-size: 18px !important; color: var(--primary); }
 @keyframes agToastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 

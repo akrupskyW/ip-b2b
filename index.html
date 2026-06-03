@@ -24,7 +24,7 @@
             sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
           },
           colors: {
-            primary: '#025ED3',
+            primary: '#024EAE',
             'sec-green': '#3BAA5C',
             'sec-red': '#D94C4C',
             'ter-amber': '#F5A524',
@@ -51,15 +51,17 @@
       --surface-2: #F4F2EA;
       --surface-3: #EFEDE2;
       --text: #111827;
-      --text-muted: #6B7280;
-      --text-subtle: #9CA3AF;
+      /* Quiet grays darkened to clear WCAG 1.4.6 AAA (7:1) on every light surface. */
+      --text-muted: #444B55;
+      /* AAA (7:1) on surface, bg, surface-2 and surface-3. */
+      --text-subtle: #474E58;
       --border: rgba(17,24,39,0.08);
       --border-strong: rgba(17,24,39,0.14);
 
-      --primary: #025ED3;
-      --primary-10: rgba(2, 94, 211, 0.10);
-      --primary-20: rgba(2, 94, 211, 0.20);
-      --primary-soft: rgba(2, 94, 211, 0.08);
+      --primary: #024EAE;
+      --primary-10: rgba(2, 78, 174, 0.10);
+      --primary-20: rgba(2, 78, 174, 0.20);
+      --primary-soft: rgba(2, 78, 174, 0.08);
       --sec-green: #3BAA5C;
       --sec-green-10: rgba(59, 170, 92, 0.12);
       --sec-red: #D94C4C;
@@ -70,6 +72,12 @@
       --ter-violet-10: rgba(124, 58, 237, 0.12);
       --ter-cyan: #06B6D4;
       --ter-cyan-10: rgba(6, 182, 212, 0.12);
+
+      /* AAA-safe ink for semantic colors used as TEXT on their light tints (7:1). */
+      --sec-green-text: #104D27;
+      --ter-amber-text: #6F3604;
+      --sec-red-text: #831313;
+      --ter-cyan-text: #094E61;
 
       --r-sm: 10px;
       --r-md: 16px;
@@ -94,12 +102,19 @@
       --surface-2: #112633;
       --surface-3: #15303F;
       --text: #F3F4F6;
-      --text-muted: #94A3B8;
-      --text-subtle: #64748B;
+      /* Lightened to clear AAA (7:1) on every navy surface up to surface-3. */
+      --text-muted: #BCC6D3;
+      --text-subtle: #B1BAC7;
       --border: rgba(255,255,255,0.08);
       --border-strong: rgba(255,255,255,0.14);
 
-      --primary-soft: rgba(2, 94, 211, 0.18);
+      --primary-soft: rgba(2, 78, 174, 0.18);
+
+      /* Softened pastel inks so semantic TEXT clears 7:1 on its 16% tint over navy. */
+      --sec-green-text: #AEDCBB;
+      --ter-amber-text: #FACF8A;
+      --sec-red-text: #FBB1B1;
+      --ter-cyan-text: #8CDDEB;
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
       --shadow-3: 0 8px 24px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5);
@@ -577,8 +592,8 @@
       padding: 2px 6px;
       border-radius: 6px;
     }
-    .rail-delta.up { color: var(--sec-green); background: var(--sec-green-10); }
-    .rail-delta.down { color: var(--sec-red); background: var(--sec-red-10); }
+    .rail-delta.up { color: var(--sec-green-text); background: var(--sec-green-10); }
+    .rail-delta.down { color: var(--sec-red-text); background: var(--sec-red-10); }
     .rail-spark { height: 32px; opacity: .9; }
     .rail-status {
       position: absolute;
@@ -589,10 +604,10 @@
       border-radius: 999px;
       letter-spacing: .02em;
     }
-    .status-ok { color: var(--sec-green); background: var(--sec-green-10); }
-    .status-warn { color: var(--ter-amber); background: var(--ter-amber-10); }
-    .status-risk { color: var(--sec-red); background: var(--sec-red-10); }
-    .status-info { color: var(--ter-cyan); background: var(--ter-cyan-10); }
+    .status-ok { color: var(--sec-green-text); background: var(--sec-green-10); }
+    .status-warn { color: var(--ter-amber-text); background: var(--ter-amber-10); }
+    .status-risk { color: var(--sec-red-text); background: var(--sec-red-10); }
+    .status-info { color: var(--ter-cyan-text); background: var(--ter-cyan-10); }
     .status-ai { color: var(--ter-violet); background: var(--ter-violet-10); }
 
     /* ============ WORKSPACE ============ */
@@ -1490,9 +1505,9 @@
       transition: background-color .15s ease;
     }
     .popover-item:hover { background: var(--surface-2); }
-    .popover-item.danger { color: var(--sec-red); }
+    .popover-item.danger { color: var(--sec-red-text); }
     .popover-item .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
-    .popover-item.danger .material-symbols-rounded { color: var(--sec-red); }
+    .popover-item.danger .material-symbols-rounded { color: var(--sec-red-text); }
     .popover-item-body { flex: 1; min-width: 0; }
     .popover-item-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .popover-divider { height: 1px; background: var(--border); margin: 4px 0; }

@@ -17,11 +17,12 @@
       --surface-3: #15303f;
       --surface-blue: #163950;
       --text: #f3f8ff;
-      --text-muted: #9fc3e8;
-      --text-subtle: #6d94bd;
+      /* AAA (7:1) on every navy surface. */
+      --text-muted: #A8C9EA;
+      --text-subtle: #A6BFD9;
       --border: rgba(255,255,255,0.08);
       --border-strong: rgba(147,197,253,0.22);
-      --primary: #025ed3;
+      --primary: #024EAE;
       --blue-50: #eff6ff;
       --blue-100: #dbeafe;
       --blue-200: #bfdbfe;
@@ -32,7 +33,7 @@
       --blue-700: #1d4ed8;
       --blue-800: #1e40af;
       --blue-900: #1e3a8a;
-      --blue-soft: rgba(2, 94, 211, 0.18);
+      --blue-soft: rgba(2, 78, 174, 0.18);
       --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
       --panel-header-h: 60px;
       --radius-pill: 9999px;
@@ -48,11 +49,12 @@
       --surface-3: #dceeff;
       --surface-blue: #eaf3ff;
       --text: #0b1f33;
-      --text-muted: #486885;
-      --text-subtle: #6d89a3;
+      /* AAA (7:1) on every light surface. */
+      --text-muted: #385067;
+      --text-subtle: #40505F;
       --border: rgba(17,24,39,0.08);
-      --border-strong: rgba(2,94,211,0.20);
-      --blue-soft: rgba(2, 94, 211, 0.10);
+      --border-strong: rgba(2, 78, 174,0.20);
+      --blue-soft: rgba(2, 78, 174, 0.10);
       --shadow-card: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
     }
 
@@ -117,7 +119,7 @@
     body[data-theme="dark"] .module,
     body[data-theme="dark"] .stage {
       background: linear-gradient(155deg, #163950 0%, #102b3c 60%, #0a1c28 100%);
-      border-color: rgba(2, 94, 211, 0.18);
+      border-color: rgba(2, 78, 174, 0.18);
     }
 
     .module {
@@ -137,8 +139,8 @@
     }
 
     body[data-theme="dark"] .module-header {
-      border-bottom-color: rgba(2,94,211,0.20);
-      background: linear-gradient(135deg, rgba(2,94,211,0.20) 0%, rgba(96,165,250,0.08) 60%, transparent 100%);
+      border-bottom-color: rgba(2, 78, 174,0.20);
+      background: linear-gradient(135deg, rgba(2, 78, 174,0.20) 0%, rgba(96,165,250,0.08) 60%, transparent 100%);
     }
 
     .module-icon,
@@ -318,6 +320,7 @@
       position: relative;
       min-height: 0;
       overflow: hidden;
+      overscroll-behavior: contain;
     }
 
     .slide {
@@ -327,9 +330,13 @@
       grid-template-rows: auto auto;
       align-content: start;
       gap: 18px;
-      padding: 18px;
+      padding: 18px 18px 48px;
       overflow-y: auto;
       overflow-x: hidden;
+      overscroll-behavior-y: contain;
+      scroll-behavior: smooth;
+      scrollbar-gutter: stable;
+      -webkit-overflow-scrolling: touch;
       opacity: 0;
       transform: translateX(28px) scale(0.985);
       transition: opacity 0.32s ease, transform 0.42s cubic-bezier(.2,.8,.2,1);
@@ -565,8 +572,8 @@
     }
 
     body[data-theme="dark"] .scout-demo-topbar {
-      border-bottom-color: rgba(2,94,211,0.20);
-      background: linear-gradient(135deg, rgba(2,94,211,0.20) 0%, rgba(96,165,250,0.08) 60%, transparent 100%);
+      border-bottom-color: rgba(2, 78, 174,0.20);
+      background: linear-gradient(135deg, rgba(2, 78, 174,0.20) 0%, rgba(96,165,250,0.08) 60%, transparent 100%);
     }
 
     .scout-bug {
@@ -953,6 +960,39 @@
       white-space: nowrap;
     }
 
+    .deck-mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 62%, transparent);
+    }
+
+    .deck-mode-toggle button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      padding: 0 10px;
+      text-transform: uppercase;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .deck-mode-toggle button.is-active {
+      background: color-mix(in srgb, var(--primary) 22%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+      color: var(--text);
+    }
+
     .kbd {
       display: inline-flex;
       align-items: center;
@@ -965,6 +1005,81 @@
       background: color-mix(in srgb, var(--surface) 60%, transparent);
       color: var(--text-muted);
       padding: 0 6px;
+    }
+
+    .closing-slide .slide-hero {
+      align-items: center;
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    .closing-slide .eyebrow {
+      align-self: center;
+    }
+
+    .closing-slide .lead {
+      margin: 0 auto;
+    }
+
+    .closing-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      margin-top: 6px;
+    }
+
+    .recap-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      max-width: 780px;
+    }
+
+    .closing-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .restart-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      height: 54px;
+      padding: 0 28px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+      background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 68%, #ffffff));
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .restart-button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+    }
+
+    .restart-button .material-icons {
+      font-size: 20px;
+    }
+
+    body[data-deck="utility"] .restart-button {
+      color: #1a1405;
+      border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+    }
+
+    .closing-hint {
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-weight: 600;
     }
 
     @media (max-width: 1180px) {
@@ -998,7 +1113,7 @@
       }
 
       .slide {
-        padding: 14px;
+        padding: 14px 14px 42px;
       }
 
       .slides {
@@ -1007,6 +1122,483 @@
 
       .shortcut {
         display: none;
+      }
+
+      .deck-mode-toggle {
+        order: -1;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ---- Utility Belt alternate deck ---- */
+    body[data-deck="utility"] {
+      --bg: #070707;
+      --surface: #11100c;
+      --surface-2: #19160d;
+      --surface-3: #241d0b;
+      --surface-blue: #1c1709;
+      --text: #fff8d8;
+      --text-muted: #efd88f;
+      --text-subtle: #c0a257;
+      --border: rgba(255, 218, 102, 0.2);
+      --border-strong: rgba(255, 218, 102, 0.42);
+      --primary: #f5c84b;
+      --blue-200: #fff1a6;
+      --blue-300: #ffd84d;
+      --blue-400: #e6ad18;
+      --blue-700: #9a6c00;
+      --blue-soft: rgba(245, 200, 75, 0.16);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(255, 216, 77, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(255, 248, 216, 0.1), transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(245, 200, 75, 0.18), transparent 34%),
+        #070707;
+    }
+
+    body[data-deck="utility"] .stage {
+      background:
+        linear-gradient(135deg, rgba(255, 216, 77, 0.12), transparent 32%),
+        radial-gradient(circle at 50% 54%, rgba(245, 200, 75, 0.16), transparent 38%),
+        linear-gradient(155deg, #15120a 0%, #090909 72%, #000 100%);
+      border-color: rgba(255, 216, 77, 0.34);
+      box-shadow: 0 0 0 1px rgba(255, 216, 77, 0.12), 0 28px 90px rgba(0, 0, 0, 0.7);
+    }
+
+    .utility-slide {
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .utility-slide .eyebrow {
+      color: #ffd84d;
+    }
+
+    .utility-slide h1,
+    .utility-slide h2 {
+      color: #fff8d8;
+      text-shadow: 0 12px 40px rgba(245, 200, 75, 0.18);
+    }
+
+    .utility-slide .lead {
+      color: #efd88f;
+    }
+
+    .utility-canvas {
+      position: relative;
+      min-height: 520px;
+      border: 1px solid rgba(255, 216, 77, 0.24);
+      border-radius: 28px;
+      overflow: hidden;
+      perspective: 1100px;
+      transform: rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+      transform-style: preserve-3d;
+      background:
+        linear-gradient(rgba(255, 216, 77, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 216, 77, 0.055) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, rgba(255, 216, 77, 0.2), transparent 22%),
+        linear-gradient(145deg, rgba(18, 18, 18, 0.9), rgba(0, 0, 0, 0.96));
+      background-size: 42px 42px, 42px 42px, auto, auto;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.76);
+      transition: transform 0.18s ease, box-shadow 0.2s ease;
+      will-change: transform;
+    }
+
+    .utility-canvas:hover {
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.76), 0 28px 90px rgba(245, 200, 75, 0.12);
+    }
+
+    .utility-canvas::before,
+    .utility-canvas::after {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border: 1px solid rgba(255, 216, 77, 0.18);
+      border-radius: 999px;
+      animation: orbitPulse 8s linear infinite;
+      pointer-events: none;
+    }
+
+    .utility-canvas::after {
+      inset: 23%;
+      animation-duration: 11s;
+      animation-direction: reverse;
+    }
+
+    .utility-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: grid;
+      place-items: center;
+      width: clamp(170px, 22vw, 260px);
+      height: clamp(170px, 22vw, 260px);
+      border: 1px solid rgba(255, 216, 77, 0.42);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 36%, rgba(255, 248, 216, 0.24), transparent 32%),
+        linear-gradient(145deg, rgba(245, 200, 75, 0.28), rgba(0, 0, 0, 0.82));
+      box-shadow: 0 0 70px rgba(245, 200, 75, 0.24), inset 0 0 34px rgba(0, 0, 0, 0.8);
+      text-align: center;
+      transform: translate(-50%, -50%) translateZ(90px);
+      transform-style: preserve-3d;
+      z-index: 2;
+    }
+
+    .utility-core strong {
+      color: #fff8d8;
+      font-size: clamp(22px, 3vw, 38px);
+      font-weight: 1000;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+    }
+
+    .utility-core span {
+      color: #ffd84d;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .belt-lane {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      top: 50%;
+      height: 86px;
+      border: 1px solid rgba(255, 216, 77, 0.3);
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.15), rgba(255, 216, 77, 0.15), rgba(0, 0, 0, 0.15)),
+        rgba(16, 13, 7, 0.84);
+      box-shadow: inset 0 10px 28px rgba(255, 216, 77, 0.08), inset 0 -18px 30px rgba(0, 0, 0, 0.64);
+      transform: translateY(-50%) rotateX(58deg) translateZ(-28px);
+      transform-style: preserve-3d;
+    }
+
+    .tool-pod {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: clamp(92px, 10vw, 132px);
+      min-height: 88px;
+      border: 1px solid rgba(255, 216, 77, 0.34);
+      border-radius: 20px;
+      background:
+        linear-gradient(145deg, rgba(255, 216, 77, 0.17), rgba(0, 0, 0, 0.82)),
+        #111;
+      box-shadow: 0 16px 46px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      color: #fff8d8;
+      cursor: pointer;
+      padding: 12px;
+      text-align: center;
+      transform: translate(-50%, -50%) translateZ(var(--pod-z, 52px)) rotateX(var(--pod-rx, 0deg)) rotateY(var(--pod-ry, 0deg));
+      transform-style: preserve-3d;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, filter 0.22s ease;
+      z-index: 3;
+    }
+
+    .tool-pod:hover,
+    .tool-pod:focus-visible,
+    .tool-pod.is-armed {
+      --pod-z: 132px;
+      border-color: rgba(255, 241, 166, 0.74);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.58), 0 0 42px rgba(255, 216, 77, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      filter: brightness(1.14);
+      outline: none;
+    }
+
+    .tool-pod .material-icons {
+      color: #ffd84d;
+      font-size: 26px;
+      margin-bottom: 6px;
+    }
+
+    .tool-pod strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 1000;
+      line-height: 1.05;
+    }
+
+    .tool-pod span {
+      display: block;
+      color: #d7be76;
+      font-size: 10px;
+      line-height: 1.2;
+      margin-top: 5px;
+    }
+
+    .pod-1 { left: 13%; top: 50%; }
+    .pod-2 { left: 25%; top: 34%; }
+    .pod-3 { left: 37%; top: 66%; }
+    .pod-4 { left: 63%; top: 34%; }
+    .pod-5 { left: 75%; top: 66%; }
+    .pod-6 { left: 87%; top: 50%; }
+
+    .utility-line {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--w, 200px);
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255, 216, 77, 0), rgba(255, 216, 77, 0.55), rgba(255, 216, 77, 0));
+      transform: rotate(var(--r, 0deg)) translateZ(18px);
+      transform-origin: left center;
+      z-index: 1;
+    }
+
+    .utility-board {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 12px;
+      min-height: 520px;
+    }
+
+    .utility-card {
+      position: relative;
+      border: 1px solid rgba(255, 216, 77, 0.25);
+      border-radius: 22px;
+      background:
+        linear-gradient(145deg, rgba(255, 216, 77, 0.11), transparent 44%),
+        rgba(12, 12, 11, 0.86);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      padding: 18px;
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .utility-card:hover,
+    .utility-slab:hover,
+    .fade-step:hover,
+    .zoom-node:hover {
+      border-color: rgba(255, 216, 77, 0.48);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34), 0 0 36px rgba(255, 216, 77, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      transform: translateY(-4px) translateZ(28px);
+    }
+
+    .utility-card h3 {
+      margin: 0 0 10px;
+      color: #fff8d8;
+      font-size: clamp(26px, 3vw, 44px);
+      font-weight: 1000;
+      letter-spacing: -0.035em;
+      line-height: 0.98;
+    }
+
+    .utility-card p,
+    .utility-card li {
+      color: #efd88f;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .utility-card ul {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0 0;
+      padding-left: 18px;
+    }
+
+    .utility-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .utility-slab {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      border: 1px solid rgba(255, 216, 77, 0.22);
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.42);
+      padding: 13px;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .utility-slab .material-icons {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255, 216, 77, 0.14);
+      color: #ffd84d;
+      font-size: 18px;
+    }
+
+    .utility-slab strong {
+      display: block;
+      color: #fff8d8;
+      font-size: 15px;
+      font-weight: 1000;
+      margin-bottom: 3px;
+    }
+
+    .utility-slab span {
+      color: #d7be76;
+      font-size: 12px;
+      line-height: 1.38;
+    }
+
+    .utility-fade-track {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .fade-step {
+      position: relative;
+      min-height: 170px;
+      border: 1px solid rgba(255, 216, 77, 0.24);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(255, 216, 77, var(--glow, 0.18)), rgba(0, 0, 0, 0.82)),
+        #10100d;
+      opacity: var(--fade-opacity, 1);
+      padding: 16px;
+      overflow: hidden;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+    }
+
+    .fade-step::after {
+      content: "";
+      position: absolute;
+      inset: auto 14px 14px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffd84d, rgba(255, 216, 77, 0.1));
+      opacity: var(--fade-opacity, 1);
+    }
+
+    .fade-step strong {
+      display: block;
+      color: #fff8d8;
+      font-size: clamp(20px, 2vw, 28px);
+      font-weight: 1000;
+      letter-spacing: -0.02em;
+      line-height: 1.02;
+      margin-bottom: 9px;
+    }
+
+    .fade-step span {
+      display: block;
+      color: #efd88f;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .zoom-map {
+      position: relative;
+      min-height: 520px;
+      border: 1px solid rgba(255, 216, 77, 0.24);
+      border-radius: 28px;
+      overflow: hidden;
+      perspective: 1000px;
+      transform: rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 216, 77, 0.12), transparent 26%),
+        repeating-linear-gradient(135deg, rgba(255, 216, 77, 0.05) 0 1px, transparent 1px 18px),
+        #070707;
+    }
+
+    .zoom-node {
+      position: absolute;
+      border: 1px solid rgba(255, 216, 77, 0.32);
+      border-radius: 20px;
+      background: rgba(15, 13, 8, 0.9);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.42);
+      padding: 14px;
+      transform: translateZ(var(--node-z, 34px));
+      transform-style: preserve-3d;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .zoom-node strong {
+      display: block;
+      color: #fff8d8;
+      font-size: 18px;
+      font-weight: 1000;
+      margin-bottom: 6px;
+    }
+
+    .zoom-node span {
+      color: #efd88f;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .zoom-node.big {
+      left: 50%;
+      top: 50%;
+      width: min(42vw, 440px);
+      min-height: 170px;
+      transform: translate(-50%, -50%) translateZ(88px);
+      z-index: 3;
+    }
+
+    .zoom-node.big:hover {
+      transform: translate(-50%, calc(-50% - 4px)) translateZ(126px);
+    }
+
+    .zoom-node.n1 { left: 7%; top: 10%; width: 230px; }
+    .zoom-node.n2 { right: 7%; top: 12%; width: 250px; }
+    .zoom-node.n3 { left: 9%; bottom: 10%; width: 260px; }
+    .zoom-node.n4 { right: 8%; bottom: 10%; width: 250px; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      body[data-deck="utility"] .utility-canvas {
+        animation: canvasDrift 13s ease-in-out infinite alternate;
+      }
+
+      body[data-deck="utility"] .utility-core {
+        animation: coreFloat 4.5s ease-in-out infinite;
+      }
+
+      body[data-deck="utility"] .utility-canvas .tool-pod:not(:hover):not(:focus-visible):not(.is-armed) {
+        animation: podGlow 5.5s ease-in-out infinite;
+      }
+    }
+
+    @keyframes orbitPulse {
+      from { transform: rotate(0deg) scale(1); opacity: 0.65; }
+      50% { opacity: 1; }
+      to { transform: rotate(360deg) scale(1.04); opacity: 0.65; }
+    }
+
+    @keyframes canvasDrift {
+      from { background-position: 0 0, 0 0, center, center; }
+      to { background-position: 46px 24px, -28px 36px, center, center; }
+    }
+
+    @keyframes coreFloat {
+      0%, 100% { transform: translate(-50%, -50%) translateZ(90px) scale(1); }
+      50% { transform: translate(-50%, calc(-50% - 8px)) translateZ(118px) scale(1.03); }
+    }
+
+    @keyframes podGlow {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.12); }
+    }
+
+    @media (max-width: 1180px) {
+      .utility-board {
+        grid-template-columns: 1fr;
+      }
+
+      .utility-fade-track {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-pod {
+        width: 102px;
       }
     }
 
@@ -1148,45 +1740,37 @@
           <div class="slide-hero">
             <div class="eyebrow"><span class="material-icons">view_sidebar</span>WISEbeltX™</div>
             <h1>A chat-forward interface with modular tools always within reach.</h1>
-            <p class="lead">This deck is about the interface model: WISEscout™ stays primary wherever the user is, and the WISEbeltX™ lets them connect, arrange, tune, and reuse modules without learning a new UI for every task.</p>
+            <p class="lead">This deck is about the interface model: Whootie™ is the anchor stone wherever the user is, and the WISEbeltX™ can come apart into connected tools that arrange, tune, and reuse around that AI center.</p>
           </div>
           <div class="slide-body">
             <div class="grid four">
-              <div class="card"><div class="card-kicker">Anchor</div><h3>Chat is always forward</h3><p>The user can ask, command, clarify, and route work from the same conversational layer.</p></div>
+              <div class="card"><div class="card-kicker">Anchor stone</div><h3>Whootie™ holds the belt together</h3><p>The user can ask, command, clarify, and route work from the same conversational layer while tools come apart around it.</p></div>
               <div class="card"><div class="card-kicker">WISEbeltX™</div><h3>Modules can adapt</h3><p>Every panel, drawer, sheet, dock, and detail view can be resized, repositioned, collapsed, or expanded to fit the user's workflow.</p></div>
               <div class="card"><div class="card-kicker">Consistency</div><h3>One way to customize</h3><p>Open, tune, save, and restore works the same across the entire interface.</p></div>
               <div class="card"><div class="card-kicker">Scale</div><h3>Many personas, one shell</h3><p>Different users get different workspaces through configuration, not separate UI systems.</p></div>
             </div>
-          </div>
-        </article>
-
-        <article class="slide" data-subtitle="Core UI thesis" data-emoji="🧠 🪄 🧩 ✨ 🛠️">
-          <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">auto_awesome</span>Core UI Thesis</div>
-            <h2>The app should feel like WISEscout™ plus a modular WISEbeltX™.</h2>
-            <p class="lead">The UI is not a set of disconnected pages. It is one persistent AI conversation surrounded by modular surfaces that can be opened, resized, collapsed, pivoted, filtered, and remembered.</p>
-          </div>
-          <div class="slide-body">
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">auto_awesome</span>Core UI thesis</div>
             <div class="grid three">
-              <div class="card"><div class="card-kicker">Center of gravity</div><h3>WISEscout™ carries intent</h3><p>The conversation knows what the user is trying to do, where they are, and which module should come forward next.</p></div>
-              <div class="card"><div class="card-kicker">Modular WISEbeltX™</div><h3>Surfaces orbit the chat</h3><p>Navigation, data views, alerts, settings, details, and progress flows are supporting tools, not competing destinations.</p></div>
+              <div class="card"><div class="card-kicker">Anchor stone</div><h3>Whootie™ carries intent</h3><p>The conversation knows the mission, holds the context, and keeps the belt from becoming scattered pieces.</p></div>
+              <div class="card"><div class="card-kicker">Modular WISEbeltX™</div><h3>Surfaces come apart from the belt</h3><p>Navigation, data views, alerts, settings, details, and progress flows detach as supporting tools, then reconnect through Whootie™.</p></div>
               <div class="card"><div class="card-kicker">Continuity</div><h3>State follows the user</h3><p>The app should remember layout, module width, dock side, text size, theme, active agents, and saved workspaces.</p></div>
             </div>
           </div>
         </article>
 
-        <article class="slide" data-subtitle="WISEscout™ connection layer" data-emoji="🔗 💬 🛰️ 🤝 ✨">
+        <article class="slide" data-subtitle="Whootie™ connection layer" data-emoji="🔗 💬 🛰️ 🤝 ✨">
           <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">chat</span>WISEscout™ Connection Layer</div>
-            <h2>WISEscout™ is how every module becomes reachable from anywhere.</h2>
-            <p class="lead">The chat surface should not be a side feature. It is the connective tissue: users talk, choose an intent, and WISEscout™ attaches the right tool without forcing them to navigate away.</p>
+            <div class="eyebrow"><span class="material-icons">chat</span>Whootie™ Connection Layer</div>
+            <h2>Whootie™ is the anchor stone that makes every module reachable from anywhere.</h2>
+            <p class="lead">The chat surface should not be a side feature. It is the connective tissue: users talk, choose an intent, and Whootie™ lets the belt come apart into the right tool without forcing them to navigate away.</p>
           </div>
-          <div class="slide-body chat-layout">
-            <div class="scout-demo-card">
+          <div class="slide-body">
+            <div class="chat-layout">
+              <div class="scout-demo-card">
               <div class="scout-demo-topbar">
                 <div class="scout-bug">W</div>
                 <div>
-                  <div class="scout-topbar-title">WISEscout™</div>
+                  <div class="scout-topbar-title">Whootie™</div>
                   <div class="scout-topbar-sub">AI workspace assistant</div>
                 </div>
                 <div class="agents-pill"><span class="material-icons">smart_toy</span>Agents running</div>
@@ -1203,7 +1787,7 @@
                   <div class="scout-line-meta"><span>12:07 PM</span></div>
                 </div>
                 <div class="scout-line">
-                  <span class="scout-line-who scout-who-ai">WISEscout™ - </span>I opened your saved layout, pinned the detail module, and kept the action sheet ready. You can resize, collapse, or pivot any panel from the same controls.
+                  <span class="scout-line-who scout-who-ai">Whootie™ - </span>I opened your saved layout, pinned the detail module, and kept the action sheet ready. You can resize, collapse, or pivot any panel from the same controls.
                   <div class="scout-line-meta">
                     <span>12:07 PM</span>
                     <span class="scout-trust-chip"><span class="material-icons">verified_user</span>Context loaded</span>
@@ -1217,13 +1801,13 @@
               </div>
               <div class="scout-input-rail">
                 <div class="scout-input-row">
-                  <div class="scout-input">Ask WISEscout™ to open, tune, save, or connect a module...</div>
+                  <div class="scout-input">Ask Whootie™ to open, tune, save, or connect a module...</div>
                   <div class="scout-send"><span class="material-icons">send</span></div>
                 </div>
-                <div class="scout-disclaimer"><span class="material-icons">shield</span>WISEscout™ keeps the user in control of what opens, changes, and persists.</div>
+                <div class="scout-disclaimer"><span class="material-icons">shield</span>Whootie™ keeps the user in control of what opens, changes, and persists.</div>
               </div>
             </div>
-            <div class="action-card">
+              <div class="action-card">
               <div class="mini-module-header"><div class="module-icon"><span class="material-icons">bolt</span></div><div><div class="module-title">Routed Actions</div><div class="module-sub">Chat connects to every tool-belt surface</div></div></div>
               <div class="action-list">
                 <div class="action-row"><span class="material-icons">add_circle</span><div><strong>Start a Flow</strong><span>Open a guided sequence without leaving the current workspace.</span></div><span class="chip">Flow</span></div>
@@ -1235,6 +1819,13 @@
                 <div class="action-row"><span class="material-icons">bookmark</span><div><strong>Save View</strong><span>Store a persona-specific layout with context and active modules.</span></div><span class="chip">Persist</span></div>
                 <div class="action-row"><span class="material-icons">history</span><div><strong>Restore View</strong><span>Bring back the exact workspace setup from chat.</span></div><span class="chip">Recall</span></div>
               </div>
+              </div>
+            </div>
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">sync_alt</span>The workflow shift</div>
+            <div class="grid three">
+              <div class="card"><div class="card-kicker">Old SaaS</div><h3>One page, one task</h3><p>Open a screen, complete a step, leave, repeat. Context is scattered across destinations.</p></div>
+              <div class="card"><div class="card-kicker">WISEbeltX™</div><h3>Many tools, one mission</h3><p>Multiple modules stay alive while Whootie™ keeps the user oriented and moves context between them.</p></div>
+              <div class="card"><div class="card-kicker">AI-native</div><h3>The system works with you</h3><p>The user and AI can act at the same time: ask, inspect, tune, route, save, and continue without breaking flow.</p></div>
             </div>
           </div>
         </article>
@@ -1242,31 +1833,22 @@
         <article class="slide" data-subtitle="WISEbeltX™ anatomy" data-emoji="🗂️ 🪟 🧱 📐 🔧">
           <div class="slide-hero">
             <div class="eyebrow"><span class="material-icons">view_quilt</span>WISEbeltX™ Anatomy</div>
-            <h2>The WISEbeltX™ is a repeatable set of surfaces, not a one-off layout.</h2>
-            <p class="lead">Any module can appear in the form that best fits the moment: a rail, a dock, a drawer, a sheet, a card, a popover, or the main canvas.</p>
+            <h2>The WISEbeltX™ comes apart into tools because Whootie™ keeps it anchored.</h2>
+            <p class="lead">This slide combines the core anatomy, customization grammar, and module rules: tools can appear in the form that fits the moment, but every surface uses the same open, tune, save, restore, and ask-Whootie™ pattern.</p>
           </div>
           <div class="slide-body">
             <div class="grid four">
               <div class="card"><div class="card-kicker">Rail</div><h3>Fast access</h3><p>Compact navigation and shortcuts stay available without taking over the workspace.</p></div>
-              <div class="card"><div class="card-kicker">Dock</div><h3>Persistent assistant</h3><p>WISEscout™ can stay open while modules move around it, keeping intent visible.</p></div>
+              <div class="card"><div class="card-kicker">Dock</div><h3>Persistent assistant</h3><p>Whootie™ can stay open while modules move around it, keeping intent visible.</p></div>
               <div class="card"><div class="card-kicker">Drawer</div><h3>Context inspection</h3><p>Details slide in beside the current view so the user can inspect without losing place.</p></div>
               <div class="card"><div class="card-kicker">Sheet</div><h3>Guided action</h3><p>Flows come forward as focused progress surfaces with clear completion and next steps.</p></div>
             </div>
-          </div>
-        </article>
-
-        <article class="slide" data-subtitle="One customization grammar" data-emoji="🎛️ 🎨 ⚙️ ✏️ 🎚️">
-          <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">tune</span>One Customization Grammar</div>
-            <h2>Customize any part of the UI the same way.</h2>
-            <p class="lead">The magic is that users only learn the interaction model once. Every module follows the same open, tune, save, and restore pattern, including appearance changes for the right user and context.</p>
-          </div>
-          <div class="slide-body">
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">tune</span>One customization grammar</div>
             <div class="grid four">
               <div class="card"><div class="card-kicker">1. Open</div><h3>Bring a tool forward</h3><p>Use chat, a rail, a command, or a button to attach the module to the workspace.</p></div>
               <div class="card"><div class="card-kicker">2. Tune</div><h3>Shape the view</h3><p>Resize, collapse, pivot, stack, filter, sort, change density, and switch visual mode.</p></div>
               <div class="card"><div class="card-kicker">3. Save</div><h3>Make it personal</h3><p>Persist panel arrangement, active agents, filters, context, and preferred reading scale.</p></div>
-              <div class="card"><div class="card-kicker">4. Restore</div><h3>Ask WISEscout™ for it</h3><p>Return to the exact setup later through chat, saved views, or workspace memory.</p></div>
+              <div class="card"><div class="card-kicker">4. Restore</div><h3>Ask Whootie™ for it</h3><p>Return to the exact setup later through chat, saved views, or workspace memory.</p></div>
             </div>
             <div class="section-label" style="margin-top:18px;"><span class="material-icons">palette</span>Appearance can adapt without changing the UI model</div>
             <div class="grid four">
@@ -1276,25 +1858,16 @@
               <div class="card"><div class="card-kicker">Navigation</div><h3>Rail or pivot</h3><p>The menu can collapse to icons or pivot into a horizontal bar while preserving the same labels, tooltips, and active states.</p></div>
             </div>
             <div class="grid four" style="margin-top:10px;">
-              <div class="card"><div class="card-kicker">WISEscout™ dock</div><h3>Side and width</h3><p>WISEscout™ can sit left or right, normal or wide, so chat remains forward without stealing the workspace.</p></div>
+              <div class="card"><div class="card-kicker">Whootie™ dock</div><h3>Side and width</h3><p>Whootie™ can sit left or right, normal or wide, so chat remains forward without stealing the workspace.</p></div>
               <div class="card"><div class="card-kicker">Panel chrome</div><h3>Open, close, resize</h3><p>Drawers, sheets, alerts, settings, and detail modules use the same close, expand, scroll, and action language.</p></div>
               <div class="card"><div class="card-kicker">Role density</div><h3>Founder to executive</h3><p>Focused owner views, team operating views, and executive briefing views are all presets of the same shell.</p></div>
-              <div class="card"><div class="card-kicker">Persistence</div><h3>Saved as a view</h3><p>The UI remembers theme, layout, rail mode, WISEscout™ position, text size, filters, and active agents as one reusable setup.</p></div>
+              <div class="card"><div class="card-kicker">Persistence</div><h3>Saved as a view</h3><p>The UI remembers theme, layout, rail mode, Whootie™ position, text size, filters, and active agents as one reusable setup.</p></div>
             </div>
-          </div>
-        </article>
-
-        <article class="slide" data-subtitle="Modularity principles" data-emoji="🧩 🔲 🔁 🎯 ✨">
-          <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">widgets</span>Modularity Principles</div>
-            <h2>Every module should feel like it belongs to the same system.</h2>
-            <p class="lead">The visual language should make modules predictable: same header rhythm, same controls, same density options, same motion, same connection back to WISEscout™.</p>
-          </div>
-          <div class="slide-body">
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">widgets</span>Modularity principles</div>
             <div class="grid four">
               <div class="card"><div class="card-kicker">Header</div><h3>One module identity</h3><p>Icon, title, subtitle, and actions are always located in the same place.</p></div>
               <div class="card"><div class="card-kicker">Body</div><h3>Scrollable work area</h3><p>Cards, rows, charts, lists, and details follow shared spacing and hierarchy.</p></div>
-              <div class="card"><div class="card-kicker">Controls</div><h3>Same affordances</h3><p>The user always knows where to resize, collapse, filter, save, or ask WISEscout™.</p></div>
+              <div class="card"><div class="card-kicker">Controls</div><h3>Same affordances</h3><p>The user always knows where to resize, collapse, filter, save, or ask Whootie™.</p></div>
               <div class="card"><div class="card-kicker">Motion</div><h3>Consistent entrance</h3><p>Panels, sheets, drawers, and docks should animate with the same calm behavior.</p></div>
             </div>
           </div>
@@ -1308,16 +1881,16 @@
           </div>
           <div class="slide-body">
             <div class="grid four">
-              <div class="card"><div class="card-kicker">Phase 1</div><h3>Ship the shell</h3><p>Start with the standard module header, scroll body, actions, empty states, and WISEscout™ connection.</p></div>
+              <div class="card"><div class="card-kicker">Phase 1</div><h3>Ship the shell</h3><p>Start with the standard module header, scroll body, actions, empty states, and Whootie™ connection.</p></div>
               <div class="card"><div class="card-kicker">Phase 2</div><h3>Add the core workflow</h3><p>Layer in the minimum useful cards, rows, filters, sheets, or drawers needed for that tool.</p></div>
-              <div class="card"><div class="card-kicker">Phase 3</div><h3>Connect relationships</h3><p>Link the module to adjacent modules through WISEscout™, routed actions, saved views, and shared context.</p></div>
+              <div class="card"><div class="card-kicker">Phase 3</div><h3>Connect relationships</h3><p>Link the module to adjacent modules through Whootie™, routed actions, saved views, and shared context.</p></div>
               <div class="card"><div class="card-kicker">Phase 4</div><h3>Deepen capability</h3><p>Add richer states, automations, AI assistance, analytics, permissions, and role presets without changing the UI grammar.</p></div>
             </div>
             <div class="section-label" style="margin-top:18px;"><span class="material-icons">extension</span>Components become reusable release blocks</div>
             <div class="grid four">
               <div class="card"><div class="card-kicker">Format</div><h3>Same visual kit</h3><p>New features inherit the same spacing, typography, headers, buttons, chips, cards, and motion.</p></div>
-              <div class="card"><div class="card-kicker">Behavior</div><h3>Same interaction kit</h3><p>Open, tune, save, restore, ask WISEscout™, inspect details, and run a flow work consistently.</p></div>
-              <div class="card"><div class="card-kicker">Relationship</div><h3>Modules know each other</h3><p>A new MVP can link to existing rails, docks, sheets, drawers, saved views, and WISEscout™ intents immediately.</p></div>
+              <div class="card"><div class="card-kicker">Behavior</div><h3>Same interaction kit</h3><p>Open, tune, save, restore, ask Whootie™, inspect details, and run a flow work consistently.</p></div>
+              <div class="card"><div class="card-kicker">Relationship</div><h3>Modules know each other</h3><p>A new MVP can link to existing rails, docks, sheets, drawers, saved views, and Whootie™ intents immediately.</p></div>
               <div class="card"><div class="card-kicker">Release</div><h3>Fast but coherent</h3><p>Teams can ship small surfaces quickly because the UI scaffolding and connection model are already solved.</p></div>
             </div>
           </div>
@@ -1326,31 +1899,22 @@
         <article class="slide" data-subtitle="B2B CPG persona scalability" data-emoji="🏷️ 🏭 👔 📦 ✨">
           <div class="slide-hero">
             <div class="eyebrow"><span class="material-icons">groups</span>Persona Scalability</div>
-            <h2>Small and enterprise CPG teams should configure the same UI, not get separate products.</h2>
-            <p class="lead">WISE is a B2B CPG interface. WISEbeltX™ lets a founder-led brand and a senior enterprise leader use the same modular shell with different module mix, density, context, permissions, and saved views.</p>
+            <h2>Two B2B CPG users. The same WISEbeltX™. Two different workspaces.</h2>
+            <p class="lead">WISE is a B2B CPG interface. The UI should flex for the owner of a growing CPG brand and the senior executive inside an enterprise CPG company without splitting into separate products.</p>
           </div>
           <div class="slide-body">
             <div class="grid four">
-              <div class="card"><div class="card-kicker">Small CPG owner</div><h3>Founder workspace</h3><p>Simple briefing cards, focused action modules, product readiness, packaging checks, and WISEscout™ guidance for a leader wearing every hat.</p></div>
+              <div class="card"><div class="card-kicker">Small CPG owner</div><h3>Founder workspace</h3><p>Simple briefing cards, focused action modules, product readiness, packaging checks, and Whootie™ guidance for a leader wearing every hat.</p></div>
               <div class="card"><div class="card-kicker">Enterprise CPG executive</div><h3>Portfolio command center</h3><p>Executive summaries, risk rollups, team handoffs, saved board views, and portfolio-level signals without burying the leader in operating detail.</p></div>
               <div class="card"><div class="card-kicker">Shared system</div><h3>Same modules, different depth</h3><p>The same product, claims, compliance, sourcing, and portfolio tools can appear as quick decisions or deep operating surfaces.</p></div>
               <div class="card"><div class="card-kicker">Governance</div><h3>Controls scale up</h3><p>Small brands need speed and clarity. Enterprise brands add roles, approvals, permissions, audit trails, and workspace defaults in the same grammar.</p></div>
             </div>
-          </div>
-        </article>
-
-        <article class="slide" data-subtitle="Two CPG personas, one shell" data-emoji="🏷️ 🏭 👥 📦 ✨">
-          <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">badge</span>Personas In Practice</div>
-            <h2>Two B2B CPG users. The same WISEbeltX™. Two different workspaces.</h2>
-            <p class="lead">The UI should flex for the owner of a growing CPG brand and the senior executive inside an enterprise CPG company without splitting into separate products.</p>
-          </div>
-          <div class="slide-body">
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">badge</span>Personas in practice</div>
             <div class="grid two">
               <div class="card">
                 <div class="card-kicker">Small Business CPG</div>
                 <h3>Avery, founder and owner</h3>
-                <p>Runs a small packaged food brand and needs fast clarity across product readiness, ingredient decisions, claims, packaging, and launch tradeoffs. WISEscout™ keeps the workflow conversational while the WISEbeltX™ brings forward only the modules needed right now.</p>
+                <p>Runs a small packaged food brand and needs fast clarity across product readiness, ingredient decisions, claims, packaging, and launch tradeoffs. Whootie™ keeps the workflow conversational while the WISEbeltX™ brings forward only the modules needed right now.</p>
                 <div class="chip-row">
                   <span class="chip">Founder briefing</span>
                   <span class="chip">Product readiness</span>
@@ -1377,35 +1941,26 @@
         <article class="slide" data-subtitle="Chat-forward everywhere" data-emoji="💬 🗨️ 🧵 📍 ✨">
           <div class="slide-hero">
             <div class="eyebrow"><span class="material-icons">forum</span>Chat-Forward Everywhere</div>
-            <h2>WISEscout™ should be present regardless of where the user is.</h2>
-            <p class="lead">Whether the user is in a dashboard, a table, a detail drawer, a progress sheet, or a saved workspace, WISEscout™ remains the fastest way to connect the next module.</p>
+            <h2>Whootie™ should be present regardless of where the user is.</h2>
+            <p class="lead">Whether the user is in a dashboard, a table, a detail drawer, a progress sheet, or a saved workspace, Whootie™ remains the fastest way to connect the next module.</p>
           </div>
           <div class="slide-body">
             <div class="grid three">
               <div class="card"><div class="card-kicker">Ask from anywhere</div><h3>No dead ends</h3><p>Every surface should allow the user to ask what it means, what to do next, or which tool to open.</p></div>
               <div class="card"><div class="card-kicker">Route without leaving</div><h3>Attach, do not detour</h3><p>The right module comes to the workspace instead of forcing a full context switch.</p></div>
-              <div class="card"><div class="card-kicker">Keep context alive</div><h3>The thread remembers</h3><p>WISEscout™ carries the current module, filters, selected item, and saved view into the next action.</p></div>
+              <div class="card"><div class="card-kicker">Keep context alive</div><h3>The thread remembers</h3><p>Whootie™ carries the current module, filters, selected item, and saved view into the next action.</p></div>
             </div>
             <div class="section-label" style="margin-top:18px;"><span class="material-icons">sync_alt</span>Same grammar, every workspace</div>
             <div class="grid three" style="margin-top:10px;">
-              <div class="card"><div class="card-kicker">Product workspace</div><h3>Context stays attached</h3><p>Product records, ingredient panels, packaging checks, claims review, and source drawers can sit beside the same WISEscout™ thread.</p></div>
+              <div class="card"><div class="card-kicker">Product workspace</div><h3>Context stays attached</h3><p>Product records, ingredient panels, packaging checks, claims review, and source drawers can sit beside the same Whootie™ thread.</p></div>
               <div class="card"><div class="card-kicker">Portfolio workspace</div><h3>Rollups stay connected</h3><p>Owners, executives, and their teams can move from product details to portfolio tables, launch plans, risk rollups, and team handoffs.</p></div>
               <div class="card"><div class="card-kicker">Focus</div><h3>Complexity only when needed</h3><p>Small CPG owners can keep a calm briefing view while enterprise teams expand into deeper surfaces using the same module grammar.</p></div>
             </div>
-          </div>
-        </article>
-
-        <article class="slide" data-subtitle="Persistence and memory" data-emoji="🔖 💾 🧠 🗃️ ⭐">
-          <div class="slide-hero">
-            <div class="eyebrow"><span class="material-icons">bookmark</span>Persistence</div>
-            <h2>The UI should remember how each person likes to work.</h2>
-            <p class="lead">WISEbeltX™ becomes powerful when customization persists: not as hidden preferences, but as visible, reusable workspaces that WISEscout™ can reopen.</p>
-          </div>
-          <div class="slide-body">
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">bookmark</span>Persistence and memory</div>
             <div class="grid four">
               <div class="card"><div class="card-kicker">Layout</div><h3>Panel state</h3><p>Width, side, collapse state, pivot mode, and stacked/split/grid preferences.</p></div>
               <div class="card"><div class="card-kicker">Readability</div><h3>Display state</h3><p>Theme, type size, density, and the amount of detail shown by default.</p></div>
-              <div class="card"><div class="card-kicker">Capability</div><h3>Agent state</h3><p>Which agents are active, how WISEscout™ behaves, and what context is pinned.</p></div>
+              <div class="card"><div class="card-kicker">Capability</div><h3>Agent state</h3><p>Which agents are active, how Whootie™ behaves, and what context is pinned.</p></div>
               <div class="card"><div class="card-kicker">Recall</div><h3>Saved views</h3><p>Named workspaces that can be reopened from navigation or plain language.</p></div>
             </div>
           </div>
@@ -1429,7 +1984,30 @@
               <div class="card"><div class="card-kicker">Salesforce</div><h3>Records with side panels</h3><p>Account, opportunity, task, note, activity, and automation surfaces cluster around one business object.</p></div>
               <div class="card"><div class="card-kicker">Zendesk</div><h3>Tickets with tools</h3><p>Support teams work from a single ticket while macros, customer data, apps, tags, and knowledge modules attach.</p></div>
               <div class="card"><div class="card-kicker">Slack</div><h3>Conversation as the shell</h3><p>Channels and threads become the anchor while apps, canvases, huddles, workflows, files, and search add capability.</p></div>
-              <div class="card"><div class="card-kicker">WISEbeltX™</div><h3>CPG modules around Scout</h3><p>WISEscout™ stays primary while product, claims, portfolio, readiness, source, agent, and saved-view modules turn on around it.</p></div>
+              <div class="card"><div class="card-kicker">WISEbeltX™</div><h3>CPG modules around Scout</h3><p>Whootie™ stays primary while product, claims, portfolio, readiness, source, agent, and saved-view modules turn on around it.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-subtitle="Testing types: TTT / CTR / TTC" data-emoji="📊 🧪 ⏱️ 🎯 ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">monitoring</span>Testing Types: TTT / CTR / TTC</div>
+            <h2>Measure whether people understand the WISEbeltX™ without over-explaining it.</h2>
+            <p class="lead">The prototype should be tested by how quickly users connect modules, tune the workspace, turn tools on or off, and repeat the pattern across different B2B CPG workflows.</p>
+          </div>
+          <div class="slide-body">
+            <div class="grid four">
+              <div class="card metric-card"><span class="metric-value">TTC</span><h3>Time to connect</h3><p>How long it takes a user to get from Whootie™ intent to the correct module or workspace.</p></div>
+              <div class="card metric-card"><span class="metric-value">TTT</span><h3>Time to tune</h3><p>How long it takes to resize, collapse, pin, filter, change density, or adjust the module view.</p></div>
+              <div class="card metric-card"><span class="metric-value">CTR</span><h3>Command-through rate</h3><p>How often users successfully complete an action from chat, a toggle, a chip, or a module control.</p></div>
+              <div class="card metric-card"><span class="metric-value">TTO</span><h3>Time to open</h3><p>How quickly users discover and open the next relevant tool from the WISEbeltX™.</p></div>
+            </div>
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">fact_check</span>What the test should prove</div>
+            <div class="grid four">
+              <div class="card metric-card"><span class="metric-value">RCL</span><h3>Recall success</h3><p>Whether saved views reopen with the right layout, modules, filters, agents, and context.</p></div>
+              <div class="card metric-card"><span class="metric-value">LRN</span><h3>Learn-once transfer</h3><p>Whether users understand one module's controls and can apply that same pattern elsewhere.</p></div>
+              <div class="card metric-card"><span class="metric-value">TOG</span><h3>Toggle clarity</h3><p>Whether users know what can be turned on, turned off, hidden, expanded, or restored.</p></div>
+              <div class="card metric-card"><span class="metric-value">NXT</span><h3>Next-action clarity</h3><p>Whether users know what to do next after Whootie™ opens or recommends a module.</p></div>
             </div>
           </div>
         </article>
@@ -1438,7 +2016,7 @@
           <div class="slide-hero">
             <div class="eyebrow"><span class="material-icons">visibility</span>Today's Demo Frame</div>
             <h2>Today is about how the WISEbeltX™ experience works, not final polish.</h2>
-            <p class="lead">The goal is to show the interaction model: how WISEscout™, modules, panels, toggles, and saved views connect into one configurable B2B CPG workspace.</p>
+            <p class="lead">The goal is to show the interaction model: how Whootie™, modules, panels, toggles, and saved views connect into one configurable B2B CPG workspace.</p>
           </div>
           <div class="slide-body">
             <div class="grid two">
@@ -1455,7 +2033,7 @@
               <div class="card">
                 <div class="card-kicker">Showing today</div>
                 <h3>Judge the system by how it connects.</h3>
-                <p>We are showing how modules work together, what can be turned on or off, and how the WISEbeltX™ UX functions around WISEscout™.</p>
+                <p>We are showing how modules work together, what can be turned on or off, and how the WISEbeltX™ UX functions around Whootie™.</p>
                 <div class="chip-row">
                   <span class="chip">Module relationships</span>
                   <span class="chip">On/off controls</span>
@@ -1469,6 +2047,237 @@
               <div class="card"><div class="card-kicker">Toggle</div><h3>Turn tools on or off</h3><p>Enable modules, agents, filters, panels, detail views, and saved workspace pieces as needed.</p></div>
               <div class="card"><div class="card-kicker">Tune</div><h3>Shape the workspace</h3><p>Resize, collapse, pin, sort, filter, change density, switch theme, and adjust reading scale.</p></div>
               <div class="card"><div class="card-kicker">Remember</div><h3>Save and restore</h3><p>Persist the setup so a small CPG owner or enterprise executive can reopen the same working view.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide closing-slide" data-subtitle="Thank you" data-emoji="🙏 ✨ 🧰 💬 🔁">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">favorite</span>Thank You</div>
+            <h1>Thank you. That's the WISEbeltX™ vision.</h1>
+            <p class="lead">Whootie™ stays the hero and anchor stone, the WISEbeltX™ stays within reach, and every module can come apart, connect, adapt, tune, and remember around the mission.</p>
+          </div>
+          <div class="slide-body closing-body">
+            <div class="recap-chips">
+              <span class="chip">Chat-forward by default</span>
+              <span class="chip">Modular WISEbeltX™</span>
+              <span class="chip">One way to customize</span>
+              <span class="chip">Many personas, one shell</span>
+              <span class="chip">State follows the user</span>
+            </div>
+            <div class="closing-actions">
+              <button class="restart-button" type="button" data-restart><span class="material-icons">replay</span>Review from the top</button>
+              <span class="closing-hint">Loops back to slide 01 — or use <span class="kbd">←</span> <span class="kbd">→</span> to revisit anything.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 Utility belt overview" data-emoji="🦇 🦇 🛠️ ⚡ 🧰 ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">dark_mode</span>🦇 Utility Belt Version</div>
+            <h1>🦇 Whootie™ is the hero and anchor stone. WISEbeltX™ is the utility belt.</h1>
+            <p class="lead">The metaphor is simple: Batman is powerful because the hero and the belt work together. Whootie™ is the AI-forward control center that lets the belt come apart into agents, skills, rules, modules, and saved views without losing the mission.</p>
+          </div>
+          <div class="slide-body">
+            <div class="utility-canvas">
+              <div class="belt-lane"></div>
+              <div class="utility-line" style="--w: 34%; --r: 180deg;"></div>
+              <div class="utility-line" style="--w: 34%; --r: 0deg;"></div>
+              <div class="utility-line" style="--w: 28%; --r: 145deg;"></div>
+              <div class="utility-line" style="--w: 28%; --r: 35deg;"></div>
+              <div class="utility-line" style="--w: 28%; --r: 215deg;"></div>
+              <div class="utility-line" style="--w: 28%; --r: 325deg;"></div>
+              <div class="utility-core">
+                <div>
+                  <strong>Whootie™</strong>
+                  <span>AI anchor stone</span>
+                </div>
+              </div>
+              <div class="tool-pod pod-1"><span class="material-icons">psychology</span><strong>Agents</strong><span>specialized helpers</span></div>
+              <div class="tool-pod pod-2"><span class="material-icons">bolt</span><strong>Skills</strong><span>repeatable actions</span></div>
+              <div class="tool-pod pod-3"><span class="material-icons">rule</span><strong>Rules</strong><span>guardrails and defaults</span></div>
+              <div class="tool-pod pod-4"><span class="material-icons">widgets</span><strong>Modules</strong><span>surfaces to open</span></div>
+              <div class="tool-pod pod-5"><span class="material-icons">bookmark</span><strong>Views</strong><span>saved setups</span></div>
+              <div class="tool-pod pod-6"><span class="material-icons">tune</span><strong>Controls</strong><span>resize, hide, tune</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 Hero plus tools" data-emoji="🦇 🦇 💬 🧠 🧰 ⚡">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">auto_awesome</span>🦇 Hero Plus Tools</div>
+            <h2>🦇 The AI is the hero, but the tools make the hero effective.</h2>
+            <p class="lead">A chat-only interface can explain. A WISEbeltX™ interface can explain, open the right surface, apply the right rule, run the right skill, and remember the workspace while keeping Whootie™ in control.</p>
+          </div>
+          <div class="slide-body utility-board">
+            <div class="utility-card">
+              <h3>🦇 Batman without the belt is still Batman, but less capable.</h3>
+              <p>Whootie™ can reason, answer, route, and clarify. The WISEbeltX™ turns that intelligence into working power by giving the AI visible tools it can place in the user's path.</p>
+              <ul>
+                <li>Agents become specialized utility tools.</li>
+                <li>Skills become repeatable moves.</li>
+                <li>Rules become the operating code.</li>
+                <li>Modules become the surfaces where work happens.</li>
+              </ul>
+            </div>
+            <div class="utility-stack">
+              <div class="utility-slab"><span class="material-icons">chat</span><div><strong>Whootie™ stays central</strong><span>The user does not hunt through the product. They ask, choose, confirm, and continue from the same AI layer.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">open_in_full</span><div><strong>Tools open around the mission</strong><span>Panels, drawers, sheets, cards, detail views, and saved workspaces appear only when useful.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">sync_alt</span><div><strong>Every tool connects back</strong><span>A module can hand context to another module, return to chat, or become part of a saved view.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">shield</span><div><strong>Rules keep the system trustworthy</strong><span>Permissions, defaults, workflows, and B2B CPG guardrails make the tools usable at company scale.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 AI-forward transition" data-emoji="🦇 🦇 🤖 🧰 📉 ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">trending_up</span>🦇 AI-Forward Transition</div>
+            <h2>🦇 Some users will still reach for the belt manually. That is okay.</h2>
+            <p class="lead">The product direction is AI-forward: Batman is in control, Whootie™ is in control. But early users may still prefer clicking tools, toggles, panels, and modules directly. We support that behavior while gradually making the AI path feel faster, safer, and more natural.</p>
+          </div>
+          <div class="slide-body">
+            <div class="utility-fade-track">
+              <div class="fade-step" style="--fade-opacity: 1; --glow: 0.22;"><strong>🦇 1. Manual utility belt</strong><span>Users open modules, flip toggles, resize panels, and choose agents themselves because that feels familiar and controllable.</span></div>
+              <div class="fade-step" style="--fade-opacity: 0.82; --glow: 0.18;"><strong>🦇 2. Assisted utility belt</strong><span>Whootie™ recommends the right tool, explains why, and lets the user confirm before anything changes.</span></div>
+              <div class="fade-step" style="--fade-opacity: 0.64; --glow: 0.14;"><strong>🦇 3. AI-led utility belt</strong><span>Whootie™ starts opening, arranging, and restoring the right tools by default, while manual controls remain available.</span></div>
+              <div class="fade-step" style="--fade-opacity: 0.46; --glow: 0.1;"><strong>🦇 4. Manual fades back</strong><span>The belt does not disappear. It becomes the backup layer as users trust the AI-forward path to handle more of the work.</span></div>
+            </div>
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">psychology</span>The behavioral goal</div>
+            <div class="grid three">
+              <div class="utility-slab"><span class="material-icons">touch_app</span><div><strong>Keep direct control</strong><span>People who love tools can still use the belt directly while learning the system.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">smart_toy</span><div><strong>Make AI feel easier</strong><span>Whootie™ should become the shortest path to opening, tuning, and saving the right setup.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">visibility_off</span><div><strong>Fade manual friction</strong><span>Over time, fewer users need to hunt for controls because the AI summons the right tools first.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 All tools active" data-emoji="🦇 🦇 🧰 💬 ⚡ 🔁">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">hub</span>🦇 All Tools Active</div>
+            <h2>🦇 Batman can talk to the belt while using every tool on the belt.</h2>
+            <p class="lead">Whootie™ is the primary interface, but it does not lock the user into a chat-only mode. The user can work in modules, compare panels, inspect sources, tune settings, and keep the AI conversation running at the same time.</p>
+          </div>
+          <div class="slide-body utility-board">
+            <div class="utility-card">
+              <h3>🦇 This is not SaaS. This is AI-native.</h3>
+              <p>Normal SaaS is destination-based: click a page, do one thing, leave that page, open another. WISEbeltX™ is mission-based: keep the AI at the center while many tools stay active around the same job.</p>
+              <ul>
+                <li>Chat can route while modules stay open.</li>
+                <li>Modules can update while chat keeps context.</li>
+                <li>Agents can assist while the user edits, reviews, or compares.</li>
+                <li>Saved views can restore the whole active setup, not just one screen.</li>
+              </ul>
+            </div>
+            <div class="utility-stack">
+              <div class="utility-slab"><span class="material-icons">chat</span><div><strong>Whootie™ coordinates</strong><span>The AI understands the current mission and carries context across every active tool.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">view_quilt</span><div><strong>Modules keep running</strong><span>Product, claims, sources, portfolio, settings, and handoff surfaces can remain open together.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">bolt</span><div><strong>User and AI act together</strong><span>The user can click, edit, inspect, and tune while the AI recommends, explains, routes, and saves.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">rocket_launch</span><div><strong>The capability compounds</strong><span>Each tool becomes more powerful because it is connected to the chat, the agents, and the rest of the belt.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 Fly-around map" data-emoji="🦇 🗺️ 🧭 🔍 🛠️ ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">travel_explore</span>🦇 Overview To Deep Dive</div>
+            <h2>🦇 Start with the whole belt, then zoom into the tool that matters.</h2>
+            <p class="lead">This version should feel like a huge animated canvas: first the audience sees the complete system, then we fly into one tool, one rule, one module, or one saved workspace to show how it actually functions.</p>
+          </div>
+          <div class="slide-body">
+            <div class="zoom-map">
+              <div class="zoom-node big"><strong>Whootie™ mission control</strong><span>The center point: ask, route, explain, recommend, open, close, restore, and continue.</span></div>
+              <div class="zoom-node n1"><strong>Left-side tools</strong><span>Navigation, active agents, saved views, workspace memory, and module launcher.</span></div>
+              <div class="zoom-node n2"><strong>Right-side tools</strong><span>Details, sources, settings, actions, checklists, and decision support.</span></div>
+              <div class="zoom-node n3"><strong>Deep-dive module</strong><span>Product readiness, claims check, portfolio rollup, sourcing, reformulation, or team handoff.</span></div>
+              <div class="zoom-node n4"><strong>Return to overview</strong><span>The user can collapse, save, restore, or ask Whootie™ what to do next.</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 Agents, skills, rules" data-emoji="🦇 🤖 ⚡ 📜 🧰 ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">construction</span>🦇 What's In The Belt</div>
+            <h2>🦇 The belt is not decoration. It comes apart because Whootie™ holds it together.</h2>
+            <p class="lead">For a small CPG owner or enterprise executive, the value is not a prettier screen. It is the ability for Whootie™ to anchor the context, turn capability on, apply it, and put it away without losing the mission.</p>
+          </div>
+          <div class="slide-body">
+            <div class="grid four">
+              <div class="utility-card"><h3>Agents</h3><p>Specialized AI helpers for claims, ingredients, portfolio risk, product readiness, sourcing, and executive briefing.</p></div>
+              <div class="utility-card"><h3>Skills</h3><p>Repeatable moves like compare, summarize, inspect, route, generate, verify, save, restore, and hand off.</p></div>
+              <div class="utility-card"><h3>Rules</h3><p>Company defaults, persona preferences, B2B permissions, workflow constraints, and formatting guardrails.</p></div>
+              <div class="utility-card"><h3>Modules</h3><p>The visible surfaces: panels, drawers, sheets, cards, docks, tables, source drawers, settings, and saved views.</p></div>
+            </div>
+            <div class="section-label" style="margin-top:18px;"><span class="material-icons">bolt</span>The power move</div>
+            <div class="grid three">
+              <div class="utility-slab"><span class="material-icons">toggle_on</span><div><strong>Turn on what matters</strong><span>Enable the right agents, modules, filters, and views for the job.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">open_with</span><div><strong>Move and shape the workspace</strong><span>Resize, collapse, pin, expand, reposition, and tune tools around the mission.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">save</span><div><strong>Save the utility loadout</strong><span>Persist the exact setup so the user can return to it later through Whootie™.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 The takeaway" data-emoji="🦇 🦇 🧰 🚀 ✅ ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">flag</span>🦇 Utility Belt Takeaway</div>
+            <h2>🦇 WISEbeltX™ makes Whootie™ feel powerful because every answer can become an action.</h2>
+            <p class="lead">The audience should walk away with one picture in their head: the AI is Batman at the center, in control of the mission, and the WISEbeltX™ is the set of tools that makes the AI useful across the whole B2B CPG workspace.</p>
+          </div>
+          <div class="slide-body utility-board">
+            <div class="utility-card">
+              <h3>🦇 What people should understand</h3>
+              <p>We are not just designing a chat window. We are designing an AI-forward workbench where tools come to the user, adapt to the moment, and remain consistent across every workflow.</p>
+            </div>
+            <div class="utility-stack">
+              <div class="utility-slab"><span class="material-icons">center_focus_strong</span><div><strong>Center</strong><span>Whootie™ is always the place to ask, route, explain, and continue.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">view_sidebar</span><div><strong>Sides</strong><span>The left and right utility surfaces hold tools that can appear, disappear, resize, and move.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">hub</span><div><strong>System</strong><span>Agents, skills, rules, modules, and saved views work together instead of acting like separate products.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide utility-slide" data-deck="utility" data-subtitle="🦇 Next mission plan" data-emoji="🦇 🦇 🦇 🧰 🚀 ✨">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">rocket_launch</span>🦇 Next Mission Plan</div>
+            <h2>🦇 Now we turn the Bat-Signal into the product plan.</h2>
+            <p class="lead">The next step is to prove the WISEbeltX™ experience in motion: Whootie™ at the center, the belt on the left and right, and every tool ready to appear, disappear, resize, connect, and save around the mission.</p>
+          </div>
+          <div class="slide-body utility-board">
+            <div class="utility-card">
+              <h3>🦇 The closing idea</h3>
+              <p>Batman does not win because he has a menu of tools. He wins because the right tool appears at the right moment while he stays focused on the mission. That is the bar for Whootie™ and WISEbeltX™.</p>
+              <ul>
+                <li>Whootie™ stays in control as the anchor stone.</li>
+                <li>The utility belt stays available.</li>
+                <li>Manual control remains possible while AI-led work becomes the default.</li>
+                <li>The system gets stronger when modules work together at the same time.</li>
+              </ul>
+            </div>
+            <div class="utility-stack">
+              <div class="utility-slab"><span class="material-icons">looks_one</span><div><strong>🦇 Prototype the belt behavior</strong><span>Show left/right tools turning on, resizing, collapsing, moving, and staying connected to Whootie™.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">looks_two</span><div><strong>🦇 Define the first loadout</strong><span>Choose the first agents, skills, rules, modules, and saved views for small CPG owners and enterprise executives.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">looks_3</span><div><strong>🦇 Test the mission flow</strong><span>Measure whether users can work across chat and modules at the same time without losing context.</span></div></div>
+              <div class="utility-slab"><span class="material-icons">looks_4</span><div><strong>🦇 Ship the AI-forward path</strong><span>Make Whootie™ the fastest way to summon tools, while the manual belt fades into a trusted backup layer.</span></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide closing-slide utility-slide" data-deck="utility" data-subtitle="🦇 Thank you" data-emoji="🦇 🦇 🙏 🧰 🚀 🔁">
+          <div class="slide-hero">
+            <div class="eyebrow"><span class="material-icons">favorite</span>🦇 Thank You</div>
+            <h1>🦇 Thank you. Whootie™ is Batman. WISEbeltX™ is the belt.</h1>
+            <p class="lead">The AI stays in control as the anchor stone, the utility belt stays ready on every side, and the right tool can break out of the belt at the exact moment the mission needs it.</p>
+          </div>
+          <div class="slide-body closing-body">
+            <div class="recap-chips">
+              <span class="chip">Whootie™ stays central</span>
+              <span class="chip">Tools come to the user</span>
+              <span class="chip">Manual fades, AI leads</span>
+              <span class="chip">Every answer becomes an action</span>
+              <span class="chip">Saved loadouts restore</span>
+            </div>
+            <div class="closing-actions">
+              <button class="restart-button" type="button" data-restart><span class="material-icons">replay</span>Review from the top</button>
+              <span class="closing-hint">Loops back to slide 01 — or use <span class="kbd">←</span> <span class="kbd">→</span> to revisit anything.</span>
             </div>
           </div>
         </article>
@@ -1486,6 +2295,10 @@
             <span id="totalSlides">00</span>
           </div>
         </div>
+        <div class="deck-mode-toggle" aria-label="Deck version">
+          <button class="is-active" type="button" data-deck-choice="classic">Classic</button>
+          <button type="button" data-deck-choice="utility">Utility Belt</button>
+        </div>
         <div class="shortcut"><span class="kbd">Left</span><span class="kbd">Right</span> to move</div>
         <button class="nav-button" id="nextButton" type="button" aria-label="Next slide"><span class="material-icons">arrow_forward</span></button>
       </footer>
@@ -1493,7 +2306,7 @@
   </div>
 
   <script>
-    const slides = Array.from(document.querySelectorAll('.slide'));
+    const allSlides = Array.from(document.querySelectorAll('.slide'));
     const dotsRoot = document.getElementById('dots');
     const currentSlide = document.getElementById('currentSlide');
     const totalSlides = document.getElementById('totalSlides');
@@ -1501,7 +2314,10 @@
     const prevButton = document.getElementById('prevButton');
     const nextButton = document.getElementById('nextButton');
     const emojiStage = document.getElementById('emojiStage');
+    const deckButtons = Array.from(document.querySelectorAll('[data-deck-choice]'));
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let activeDeck = 'classic';
+    let slides = getDeckSlides(activeDeck);
     let activeIndex = 0;
 
     function pad(n) {
@@ -1510,6 +2326,13 @@
 
     function getEmojis(slide) {
       return (slide.dataset.emoji || '✨').trim().split(/\s+/).filter(Boolean);
+    }
+
+    function getDeckSlides(deck) {
+      return allSlides.filter((slide) => {
+        const slideDeck = slide.dataset.deck || 'classic';
+        return slideDeck === deck;
+      });
     }
 
     function sparkleHeadline(slide) {
@@ -1568,11 +2391,11 @@
       dotsRoot.innerHTML = slides.map((_, index) => (
         `<button class="dot" type="button" data-slide-dot="${index}" aria-label="Go to slide ${index + 1}"></button>`
       )).join('');
-      dotsRoot.addEventListener('click', (event) => {
+      dotsRoot.onclick = (event) => {
         const button = event.target.closest('[data-slide-dot]');
         if (!button) return;
         goToSlide(Number(button.dataset.slideDot));
-      });
+      };
     }
 
     function goToSlide(nextIndex) {
@@ -1596,6 +2419,26 @@
       celebrate(activeIndex);
     }
 
+    function switchDeck(deck) {
+      if (deck === activeDeck) return;
+      activeDeck = deck;
+      activeIndex = 0;
+      document.body.dataset.deck = deck;
+      allSlides.forEach((slide) => {
+        slide.classList.remove('is-active', 'is-exiting-left', 'is-entering-left');
+      });
+      slides = getDeckSlides(activeDeck);
+      if (slides[0]) slides[0].classList.add('is-active');
+      deckButtons.forEach((button) => {
+        const isActive = button.dataset.deckChoice === activeDeck;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      renderDots();
+      updateChrome();
+      celebrate(activeIndex);
+    }
+
     function updateChrome() {
       currentSlide.textContent = pad(activeIndex + 1);
       totalSlides.textContent = pad(slides.length);
@@ -1608,8 +2451,54 @@
       });
     }
 
+    function setupUtilityInteractions() {
+      document.querySelectorAll('.utility-canvas, .zoom-map').forEach((surface) => {
+        surface.addEventListener('pointermove', (event) => {
+          if (reduceMotion.matches) return;
+          const rect = surface.getBoundingClientRect();
+          const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+          const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+          surface.style.setProperty('--tilt-x', `${x * 7}deg`);
+          surface.style.setProperty('--tilt-y', `${y * -5}deg`);
+        });
+
+        surface.addEventListener('pointerleave', () => {
+          surface.style.setProperty('--tilt-x', '0deg');
+          surface.style.setProperty('--tilt-y', '0deg');
+        });
+      });
+
+      document.querySelectorAll('.tool-pod').forEach((pod) => {
+        pod.setAttribute('tabindex', '0');
+        pod.setAttribute('role', 'button');
+        pod.setAttribute('aria-pressed', 'false');
+        pod.addEventListener('click', () => {
+          document.querySelectorAll('.tool-pod.is-armed').forEach((activePod) => {
+            if (activePod !== pod) {
+              activePod.classList.remove('is-armed');
+              activePod.setAttribute('aria-pressed', 'false');
+            }
+          });
+          const isArmed = pod.classList.toggle('is-armed');
+          pod.setAttribute('aria-pressed', isArmed ? 'true' : 'false');
+        });
+        pod.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          pod.click();
+        });
+      });
+    }
+
     prevButton.addEventListener('click', () => goToSlide(activeIndex - 1));
     nextButton.addEventListener('click', () => goToSlide(activeIndex + 1));
+    deckButtons.forEach((button) => {
+      button.setAttribute('aria-pressed', button.classList.contains('is-active') ? 'true' : 'false');
+      button.addEventListener('click', () => switchDeck(button.dataset.deckChoice));
+    });
+    document.querySelectorAll('[data-restart]').forEach((button) => {
+      button.addEventListener('click', () => goToSlide(0));
+    });
 
     window.addEventListener('keydown', (event) => {
       const target = event.target;
@@ -1639,6 +2528,12 @@
     }, { capture: true });
 
     renderDots();
+    setupUtilityInteractions();
+    document.body.dataset.deck = activeDeck;
+    allSlides.forEach((slide) => {
+      const slideDeck = slide.dataset.deck || 'classic';
+      slide.classList.toggle('is-active', slideDeck === activeDeck && slide === slides[0]);
+    });
     updateChrome();
     celebrate(activeIndex);
   </script>

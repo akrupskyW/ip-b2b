@@ -171,7 +171,7 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
     function buildSparkline(canvas, kind, color){
       const ctx = canvas.getContext('2d');
       const map = {
-        primary: colorVar('--primary') || '#025ED3',
+        primary: colorVar('--primary') || '#024EAE',
         amber: colorVar('--ter-amber'),
         red: colorVar('--sec-red'),
         cyan: colorVar('--ter-cyan'),

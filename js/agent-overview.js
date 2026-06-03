@@ -364,7 +364,7 @@ function setupScoutDock() {
   const dock = document.createElement('aside');
   dock.id = 'scout-dock-panel';
   dock.className = 'scout-dock scout-dock-open';
-  dock.setAttribute('aria-label', 'WISEscout™ chat');
+  dock.setAttribute('aria-label', 'Whootie™ chat');
   row.appendChild(dock);
   mountScoutDock(dock, {
     sub: 'Your AI assistant across every WISE agent',

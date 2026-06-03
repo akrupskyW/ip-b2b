@@ -643,7 +643,7 @@ function viewAnalytics() {
 
 /* Resolve a CSS custom property (e.g. '--primary') to its computed value so
    charts follow the active light/dark theme. */
-function pfColor(name, fallback = '#025ED3') {
+function pfColor(name, fallback = '#024EAE') {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
@@ -665,7 +665,7 @@ function pfTooltip() {
   return {
     backgroundColor: pfColor('--surface', '#0D1B24'),
     titleColor: pfColor('--text', '#fff'),
-    bodyColor: pfColor('--text-muted', '#94A3B8'),
+    bodyColor: pfColor('--text-muted', '#BCC6D3'),
     borderColor: pfGrid(),
     borderWidth: 1,
     padding: 10,
@@ -675,7 +675,7 @@ function pfTooltip() {
 }
 
 function pfChartBase() {
-  const text = pfColor('--text-muted', '#94A3B8');
+  const text = pfColor('--text-muted', '#BCC6D3');
   const grid = pfGrid();
   return {
     responsive: true,
@@ -695,7 +695,7 @@ function pfChartBase() {
 
 /* Stacked / grouped bar options (theme-aware axes). */
 function pfBarOpts(stacked = false) {
-  const text = pfColor('--text-muted', '#94A3B8');
+  const text = pfColor('--text-muted', '#BCC6D3');
   const grid = pfGrid();
   return {
     ...pfChartBase(),
@@ -708,7 +708,7 @@ function pfBarOpts(stacked = false) {
 
 /* Horizontal bar options. */
 function pfHBarOpts() {
-  const text = pfColor('--text-muted', '#94A3B8');
+  const text = pfColor('--text-muted', '#BCC6D3');
   const grid = pfGrid();
   return {
     ...pfChartBase(),
@@ -724,12 +724,12 @@ function pfHBarOpts() {
 function pfDoughnutOpts() {
   return {
     responsive: true, maintainAspectRatio: false, cutout: '64%',
-    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, boxWidth: 8, color: pfColor('--text-muted', '#94A3B8'), font: { size: 11.5 } } }, tooltip: pfTooltip() },
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, boxWidth: 8, color: pfColor('--text-muted', '#BCC6D3'), font: { size: 11.5 } } }, tooltip: pfTooltip() },
   };
 }
 
 function pfRadarOpts() {
-  const text = pfColor('--text-muted', '#94A3B8');
+  const text = pfColor('--text-muted', '#BCC6D3');
   const grid = pfGrid();
   return {
     responsive: true, maintainAspectRatio: false,
@@ -763,7 +763,7 @@ function makeAnalyticsSpark(id, kind, colorName) {
   const el = document.getElementById(`pf-${id}`);
   if (!el || !globalThis.Chart) return;
   const ctx = el.getContext('2d');
-  const c = pfColor(colorName, '#025ED3');
+  const c = pfColor(colorName, '#024EAE');
   const data = kind === 'up' ? [10, 14, 11, 18, 16, 22, 21, 28, 30]
     : kind === 'down' ? [28, 22, 24, 20, 18, 14, 16, 12, 8]
     : [16, 19, 14, 21, 17, 23, 19, 24, 22];
@@ -780,7 +780,7 @@ function makeAnalyticsSpark(id, kind, colorName) {
 function makeAnalyticsCharts() {
   if (!globalThis.Chart) return;
 
-  const primary = pfColor('--primary', '#025ED3');
+  const primary = pfColor('--primary', '#024EAE');
   const green = pfColor('--sec-green', '#3BAA5C');
   const amber = pfColor('--ter-amber', '#F5A524');
   const violet = pfColor('--ter-violet', '#7C3AED');
@@ -1370,7 +1370,7 @@ function askAgentAboutProduct(idx) {
     document.getElementById('pf-chat-panel')?.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
     scout.ask(q);
   } else {
-    toast('Ask WISEscout™ in the chat dock.', 'chat');
+    toast('Ask Whootie™ in the chat dock.', 'chat');
   }
 }
 
@@ -1993,9 +1993,9 @@ function setupChat() {
   const panel = document.getElementById('pf-chat-panel');
   if (!panel) return;
   scout = mountScoutDock(panel, {
-    title: 'WISEscout™',
+    title: 'Whootie™',
     agentCount: 1,
-    heading: 'What can WISEscout™ help with?',
+    heading: 'What can Whootie™ help with?',
     sub: 'Your Portfolio agent — the Truth Layer for data, trust & identity',
     intents: PORTFOLIO_INTENTS,
     reply: portfolioReply,
@@ -2009,7 +2009,7 @@ function setupChat() {
     ],
     disclaimer: '',
     sourceLabel: 'Grounded in your portfolio',
-    statusLabel: 'WISEscout™ is checking your portfolio',
+    statusLabel: 'Whootie™ is checking your portfolio',
     /* Intent chips that map to a surface also drive the module navigation,
        tying the shared chat back into the Portfolio. */
     /* 'choose_agents' is handled inside the shared chat (it opens the in-chat

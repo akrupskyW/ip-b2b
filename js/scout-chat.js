@@ -50,10 +50,10 @@ const DEFAULT_INTENT_REPLIES = {
    (Scout) can't be switched off. */
 const DEFAULT_AGENTS = [
   {
-    id: 'wise', name: 'WISEscout™', version: 'v3.2', group: 'core',
+    id: 'wise', name: 'Whootie™', version: 'v3.2', group: 'core',
     icon: 'verified', color: 'var(--primary)', bg: '',
     tagline: 'Verification Orchestrator',
-    desc: 'The core WISEscout™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.',
+    desc: 'The core Whootie™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.',
     tags: ['Verification', 'Routing', 'Payments', 'Onboarding'],
     required: true, on: true,
   },
@@ -136,7 +136,7 @@ const DEFAULT_TRUST = [
 
 /* Standing reminder under the input that Scout is an assistant, not the
    source of record — the single most important piece of AI trust microcopy. */
-const DEFAULT_DISCLAIMER = 'WISEscout™ can make mistakes — review important details before you publish.';
+const DEFAULT_DISCLAIMER = 'Whootie™ can make mistakes — review important details before you publish.';
 
 function defaultReply(text, intent) {
   /* An intent-id match always wins so a clicked chip continues its own flow. */
@@ -152,7 +152,7 @@ function defaultReply(text, intent) {
     return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
   if (/(agent|choose)/.test(q))
     return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-  return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEscout™ layout and controls.';
+  return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Whootie™ layout and controls.';
 }
 
 /* Build the in-chat "Agent Settings" overlay from an agent roster. Mirrors the
@@ -195,7 +195,7 @@ function buildAgentsPanelHtml(agents, id) {
         <div class="ss-info-icon"><span class="material-icons">info</span></div>
         <div>
           <p class="ss-info-title">How agents work together</p>
-          <p class="ss-info-desc">WISEscout™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEscout™ is always required.</p>
+          <p class="ss-info-desc">Whootie™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Whootie™ is always required.</p>
         </div>
       </div>
       <p class="ss-section-title">Core Agents</p>
@@ -236,17 +236,21 @@ let _seq = 0;
 export function mountScoutChat(rootEl, opts = {}) {
   if (!rootEl) return null;
   const id = `sc${++_seq}`;
-  const title = opts.title || 'WISEscout™';
+  const title = opts.title || 'Whootie™';
   /* Agent roster powering the in-chat settings panel + the "N agents running"
      pill. Clone so a caller's array isn't mutated as toggles flip. */
   const agents = (Array.isArray(opts.agents) ? opts.agents : DEFAULT_AGENTS).map((a) => ({ ...a }));
   const onCount = () => agents.filter((a) => a.on).length;
   const agentCount = opts.agentCount != null ? opts.agentCount : onCount();
-  const heading = opts.heading || 'What can WISEscout™ help with?';
+  const heading = opts.heading || 'What can Whootie™ help with?';
   const sub = opts.sub || 'Your AI Verification assistant — NON-UPF & beyond';
   const hint = opts.hint || 'or type a message below';
   const intents = opts.intents || DEFAULT_INTENTS;
   const placeholder = opts.placeholder || 'Type a message…';
+  /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). When
+     the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
+  const userInitials = opts.userInitials || 'MC';
+  const userAvatar = opts.userAvatar || esc(userInitials);
   /* Optional per-intent reply map for this surface; an intent-id hit here means
      a clicked chip always continues with an on-feature answer. */
   const intentReplies = opts.intentReplies && typeof opts.intentReplies === 'object' ? opts.intentReplies : null;
@@ -269,7 +273,7 @@ export function mountScoutChat(rootEl, opts = {}) {
   ).join('');
 
   const trustHtml = (Array.isArray(trust) && trust.length)
-    ? `<div class="ws-trust" role="list" aria-label="How WISEscout™ handles your data">${trust.map((t) =>
+    ? `<div class="ws-trust" role="list" aria-label="How Whootie™ handles your data">${trust.map((t) =>
         `<span class="sc-trust-badge" role="listitem"><span class="material-icons">${esc(t.icon || 'verified_user')}</span>${esc(t.label)}</span>`
       ).join('')}</div>`
     : '';
@@ -303,7 +307,7 @@ export function mountScoutChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Normal width — tap to double" aria-label="Double WISEscout™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Whootie™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
       </div>
     </div>
 
@@ -380,7 +384,7 @@ export function mountScoutChat(rootEl, opts = {}) {
   function addUser(text) {
     if (!messages) return;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you"><span class="sc-line-who sc-who-you">You · </span>${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`);
+      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span><div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown();
   }
   /* @param {string} html  Scout's reply markup.
@@ -390,17 +394,17 @@ export function mountScoutChat(rootEl, opts = {}) {
     if (!messages) return;
     const src = meta.source !== undefined ? meta.source : sourceLabel;
     const footer = `<div class="sc-line-meta">${
-      src ? `<span class="sc-trust-chip" title="WISEscout™ cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
+      src ? `<span class="sc-trust-chip" title="Whootie™ cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
     }<span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-scout"><span class="sc-line-who sc-who-scout">${esc(title)} · </span>${html}${footer}</div>`);
+      `<div class="sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     scrollDown();
   }
   function showTyping() {
     if (!messages) return null;
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-scout sc-line-typing';
-    el.innerHTML = `<span class="sc-line-who sc-who-scout">${esc(title)} · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${esc(statusLabel)}…</span></span>`;
+    el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${esc(statusLabel)}…</span></span></div>`;
     messages.appendChild(el);
     scrollDown();
     return el;
@@ -557,12 +561,12 @@ export function mountScoutChat(rootEl, opts = {}) {
     if (action === 'add-member') {
       closeMore();
       if (typeof opts.onAddMember === 'function') opts.onAddMember();
-      else addScout('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this WISEscout™ conversation.');
+      else addScout('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this Whootie™ conversation.');
     }
     else if (action === 'history') {
       closeMore();
       if (typeof opts.onHistory === 'function') opts.onHistory();
-      else addScout('History &amp; Projects lets you jump back into past WISEscout™ conversations. It’s coming to this workspace soon.');
+      else addScout('History &amp; Projects lets you jump back into past Whootie™ conversations. It’s coming to this workspace soon.');
     }
     else if (action === 'new') { reset(); closeMore(); }
     else if (action === 'agents') {
@@ -573,7 +577,7 @@ export function mountScoutChat(rootEl, opts = {}) {
       closeAgents();
     } else if (action === 'export') {
       closeMore();
-      const blob = new Blob(['WISEscout™ export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['Whootie™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'scout-chat.txt';

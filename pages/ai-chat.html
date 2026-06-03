@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISEscout™ — AI Verification Assistant</title>
+  <title>Whootie™ — AI Verification Assistant</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
@@ -21,7 +21,7 @@
         extend: {
           fontFamily: { sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'] },
           colors: {
-            oyster: { 100: '#FBF9FF', 300: '#E0DBE7', 400: '#B7B2C4', 500: '#827C90', 600: '#5D566A', 700: '#413A4D', 800: '#2C2439' },
+            oyster: { 100: '#FBF9FF', 300: '#E0DBE7', 400: '#B7B2C4', 500: '#BBB6C6', 600: '#B6B1C1', 700: '#413A4D', 800: '#2C2439' },
           },
         },
       },
@@ -35,15 +35,17 @@
       --surface-2: #F4F2EA;
       --surface-3: #EFEDE2;
       --text: #111827;
-      --text-muted: #6B7280;
-      --text-subtle: #9CA3AF;
+      /* Quiet grays darkened to clear WCAG 1.4.6 AAA (7:1) on every light surface. */
+      --text-muted: #444B55;
+      /* AAA (7:1) on surface, bg, surface-2 and surface-3. */
+      --text-subtle: #474E58;
       --border: rgba(17,24,39,0.08);
       --border-strong: rgba(17,24,39,0.14);
 
-      --primary: #025ED3;
-      --primary-10: rgba(2, 94, 211, 0.10);
-      --primary-20: rgba(2, 94, 211, 0.20);
-      --primary-soft: rgba(2, 94, 211, 0.08);
+      --primary: #024EAE;
+      --primary-10: rgba(2, 78, 174, 0.10);
+      --primary-20: rgba(2, 78, 174, 0.20);
+      --primary-soft: rgba(2, 78, 174, 0.08);
       --sec-green: #3BAA5C;
       --sec-green-10: rgba(59, 170, 92, 0.12);
       --sec-red: #D94C4C;
@@ -54,6 +56,12 @@
       --ter-violet-10: rgba(124, 58, 237, 0.12);
       --ter-cyan: #06B6D4;
       --ter-cyan-10: rgba(6, 182, 212, 0.12);
+
+      /* AAA-safe ink for semantic colors used as TEXT on their light tints (7:1). */
+      --sec-green-text: #104D27;
+      --ter-amber-text: #6F3604;
+      --sec-red-text: #831313;
+      --ter-cyan-text: #094E61;
 
       --r-sm: 10px;
       --r-md: 16px;
@@ -77,6 +85,8 @@
       --fs-ui: 0.75rem;
       --fs-welcome-title: 1.0625rem;
       --fs-label: 0.6875rem;
+      /* Conversation copy reads a step larger than the 12px UI chrome. */
+      --fs-chat: 0.9375rem;
       --wise-text-scale: 1;
       --chat-line-height: 1.6;
     }
@@ -87,13 +97,20 @@
       --surface-2: #112633;
       --surface-3: #15303F;
       --text: #F3F4F6;
-      --text-muted: #94A3B8;
-      --text-subtle: #64748B;
+      /* Lightened to clear AAA (7:1) on every navy surface up to surface-3. */
+      --text-muted: #BCC6D3;
+      --text-subtle: #B1BAC7;
       --border: rgba(255,255,255,0.08);
       --border-strong: rgba(255,255,255,0.14);
 
-      --primary-soft: rgba(2, 94, 211, 0.18);
+      --primary-soft: rgba(2, 78, 174, 0.18);
       --primary-bright: #93C5FD;
+
+      /* Softened pastel inks so semantic TEXT clears 7:1 on its 16% tint over navy. */
+      --sec-green-text: #AEDCBB;
+      --ter-amber-text: #FACF8A;
+      --sec-red-text: #FBB1B1;
+      --ter-cyan-text: #8CDDEB;
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
       --shadow-3: 0 8px 24px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5);
@@ -550,7 +567,8 @@
     }
     /* Scout header title — MUST be pixel-identical to the canonical Scout module
        on every other page (scout-chat.css `.sc-topbar-titles .topbar-title`):
-       1rem / weight 700 / line-height 1.2. Two ai-chat-only rules fight this and
+       var(--fs-ui) / weight 700 / line-height 1.2 to match the other module
+       header titles. Two ai-chat-only rules fight this and
        both need beating with HIGHER specificity + !important:
          1. `#chat-shell-wrap .text-base { font-size: var(--fs-ui) !important }`
             (the utility normaliser) was shrinking it to 12px.
@@ -561,7 +579,7 @@
     #chat-shell-wrap .chat-topbar .topbar-title {
       color: var(--text);
       font-weight: 700 !important;
-      font-size: 1rem !important;
+      font-size: var(--fs-ui) !important;
       line-height: 1.2;
     }
     .chat-topbar .topbar-muted {
@@ -575,7 +593,9 @@
     .chat-messages-area {
       flex: 1 1 0%;
       overflow-y: auto;
-      padding: 2rem 2.5rem;
+      /* Horizontal padding (24px) matches the topbar's px-6 so the message
+         avatars line up directly under the header owl. */
+      padding: 2rem 1.5rem;
       background: var(--bg);
       color: var(--text-muted);
       font-size: var(--fs-ui);
@@ -584,7 +604,7 @@
     }
     @media (min-width: 768px) {
       .chat-messages-area {
-        padding: 2.5rem 2.5rem;
+        padding: 2.5rem 1.5rem;
       }
     }
 
@@ -720,7 +740,7 @@
     #menu-panel.mp-open .menu-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     html.dark #menu-panel .menu-inner {
       background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-      border: 1px solid rgba(2, 94, 211, 0.18);
+      border: 1px solid rgba(2, 78, 174, 0.18);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     /* ------------------------------------------------------------------ *
@@ -797,6 +817,189 @@
     #history-panel.open .panel-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     #history-panel.hp-from-topbar-menu .hp-header-close-btn { visibility: hidden; pointer-events: none; }
 
+    /* ── Account utility modules (My Profile / Preferences / API keys / Help / Docs)
+       These are plain side modules that behave EXACTLY like the History panel:
+       they live in #panels-row / #panels-row-right, toggle on a `.open` class,
+       flip left↔right, and expand to double width. One shared `.util-panel`
+       class drives all five so each opens from the avatar menu the same way the
+       History / Scout / VAULT modules open from the rail. */
+    #profile-panel,
+    #prefs-panel,
+    #apikeys-panel,
+    #help-panel,
+    #docs-panel {
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      transform: none !important;
+      animation: none !important;
+    }
+    .util-panel {
+      display: none;
+      flex-shrink: 0;
+      flex-direction: column;
+      position: relative;
+    }
+    .util-panel.open { display: flex; width: 280px; }
+    .util-panel .panel-inner {
+      width: 280px;
+      min-height: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 16px;
+      background: linear-gradient(155deg, #342640 0%, #2c2439 60%, #261d34 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      transform-origin: left center;
+      font-size: var(--fs-ui);
+    }
+    .util-panel.open .panel-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    html:not(.dark) .util-panel .panel-inner {
+      background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+    }
+    /* Double-width (matches #history-panel.panel-wide). */
+    .util-panel.panel-wide.open { width: 560px; }
+    .util-panel.panel-wide .panel-inner { width: 560px; }
+
+    /* Small content helpers shared by the account modules. */
+    .um-section-label {
+      font-size: var(--fs-ui);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      padding: 0 4px 6px;
+    }
+    .um-card {
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    html:not(.dark) .um-card {
+      background: var(--surface-2);
+      border-color: var(--border);
+    }
+    .um-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 4px;
+    }
+    .um-row + .um-row { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+    html:not(.dark) .um-row + .um-row { border-top-color: var(--border); }
+    .um-row-ic {
+      width: 30px; height: 30px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    .um-row-ic .material-icons { font-size: 17px; }
+    .um-row-main { flex: 1; min-width: 0; }
+    .um-row-title { font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
+    .um-row-sub { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 1px; }
+    .um-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 9px 12px; border-radius: var(--radius-pill);
+      font-size: var(--fs-ui); font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .um-btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
+    .um-btn.um-btn-primary {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    .um-btn.um-btn-primary:hover { filter: brightness(1.06); }
+    .um-btn .material-icons { font-size: 16px; }
+    .um-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: var(--radius-pill);
+      font-size: var(--fs-ui); font-weight: 600;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    .um-chip.um-chip-muted { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    html:not(.dark) .um-chip.um-chip-muted { background: var(--surface-3); }
+    .um-key {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: var(--fs-ui);
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .um-toggle {
+      position: relative; width: 36px; height: 20px; border-radius: 999px;
+      background: var(--border-strong); border: none; cursor: pointer; flex-shrink: 0;
+      transition: background 0.18s;
+    }
+    .um-toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; border-radius: 50%; background: #fff;
+      transition: transform 0.18s;
+    }
+    .um-toggle.is-on { background: var(--primary); }
+    .um-toggle.is-on::after { transform: translateX(16px); }
+    .um-link {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 12px; cursor: pointer; color: var(--text);
+      transition: background 0.15s;
+    }
+    .um-link:hover { background: rgba(255,255,255,0.05); }
+    html:not(.dark) .um-link:hover { background: var(--surface-3); }
+    .um-link .material-icons { font-size: 18px; color: var(--primary); }
+    .um-link-arrow { margin-left: auto; color: var(--text-subtle); font-size: 18px !important; }
+
+    /* Grid layout — account modules become rectangular cards like every other module. */
+    #modules-row.modules-grid .util-panel:not(.open) { display: none !important; }
+    #modules-row.modules-grid .util-panel.open {
+      display: flex !important;
+      flex-direction: column;
+      width: auto !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      height: auto !important;
+      min-height: 0;
+      margin: 0 !important;
+      flex: none !important;
+      align-self: stretch;
+      overflow: hidden;
+    }
+    /* Stack layout — full-width stacked rows. */
+    #modules-row.modules-stack .util-panel:not(.open) { display: none !important; }
+    #modules-row.modules-stack .util-panel.open {
+      display: flex !important;
+      flex-direction: column;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      height: auto !important;
+      min-height: 440px;
+      margin: 0 !important;
+      flex: none !important;
+      align-self: stretch;
+      overflow: hidden;
+    }
+    /* Mobile / tablet — single full-width stacked card. */
+    @media (max-width: 1023px) {
+      .util-panel:not(.open) { display: none !important; }
+      .util-panel.open {
+        display: flex !important;
+        flex-direction: column;
+        position: relative !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 280px;
+        max-height: 60dvh !important;
+        margin: 0 !important;
+        flex: 0 0 auto !important;
+        align-self: stretch;
+        order: 0 !important;
+      }
+      .util-panel .panel-inner { width: 100% !important; min-height: 0; }
+    }
+
     .history-tabs-row {
       display: flex;
       flex-direction: row;
@@ -811,7 +1014,7 @@
       padding: 10px 14px 9px;
       font-size: var(--fs-ui);
       font-weight: 500;
-      color: #5D566A;
+      color: #B6B1C1;
       background: transparent !important;
       border: none !important;
       border-bottom: 2px solid transparent !important;
@@ -836,7 +1039,7 @@
     }
     .history-item:hover { background: #413A4D; }
     .history-item-title { font-size: var(--fs-ui); font-weight: 500; color: #E0DBE7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-item-meta { font-size: var(--fs-ui); color: #827C90; margin-top: 2px; }
+    .history-item-meta { font-size: var(--fs-ui); color: #BBB6C6; margin-top: 2px; }
     .history-badge {
       display: inline-flex;
       align-items: center;
@@ -973,7 +1176,7 @@
     .notif-item-icon.notif-ic-blue   { color: var(--primary); }
     .notif-item-body { flex: 1; min-width: 0; }
     .notif-item-title { font-size: var(--fs-ui); font-weight: 600; color: #E0DBE7; line-height: 1.35; }
-    .notif-item-sub { font-size: var(--fs-ui); color: #827C90; margin-top: 2px; }
+    .notif-item-sub { font-size: var(--fs-ui); color: #BBB6C6; margin-top: 2px; }
     .notif-footer {
       flex-shrink: 0;
       padding: 10px 12px 12px;
@@ -996,7 +1199,7 @@
       transition: background 0.15s, color 0.15s;
     }
     .notif-view-all:hover { background: rgba(255, 255, 255, 0.09); color: #fbf9ff; }
-    .notif-view-all .material-icons { font-size: 16px !important; color: #827c90; }
+    .notif-view-all .material-icons { font-size: 16px !important; color: #BBB6C6; }
 
     /* "More" — three-dot menu popover (anchored to the button). */
     .topbar-popover {
@@ -1016,7 +1219,7 @@
     .topbar-popover.hidden { display: none; }
     html.dark .topbar-popover {
       background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-      border-color: rgba(2, 94, 211, 0.22);
+      border-color: rgba(2, 78, 174, 0.22);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     }
 
@@ -1144,7 +1347,7 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       background: var(--ter-amber-10);
-      color: var(--ter-amber);
+      color: var(--ter-amber-text);
       border: 1px solid color-mix(in srgb, var(--ter-amber) 35%, transparent);
     }
     .ss-capability-tag {
@@ -1205,7 +1408,7 @@
       border-radius: 50%;
       border: none;
       background: transparent;
-      color: #5d566a;
+      color: #B6B1C1;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -1331,7 +1534,7 @@
       color: #fbf9ff;
     }
     .lir-pop-item .material-icons {
-      color: #827c90;
+      color: #BBB6C6;
       flex-shrink: 0;
     }
     .lir-pop-item:hover .material-icons { color: #c5bfcf; }
@@ -1459,10 +1662,13 @@
     }
 
     /* LIR active button colors for the new agents */
-    .lir-btn.lir-active.lir-tier    { color: #4EE0B7; background: transparent; }
+    /* Light-mode active icons sit on the white rail, so these are darkened
+       module-brand shades that clear the 3:1 (SC 1.4.11) icon minimum. The
+       bright dark-mode variants are set under html.dark below. */
+    .lir-btn.lir-active.lir-tier    { color: #2E846C; background: transparent; }
     .lir-btn.lir-active.lir-shield  { color: var(--primary); background: transparent; }
-    .lir-btn.lir-active.lir-lens    { color: #5B9BD5; background: transparent; }
-    .lir-btn.lir-active.lir-vault   { color: #D4A853; background: transparent; }
+    .lir-btn.lir-active.lir-lens    { color: #487AA8; background: transparent; }
+    .lir-btn.lir-active.lir-vault   { color: #907238; background: transparent; }
 
     /* Hide a LIR icon when its agent is toggled OFF in Agent Settings. */
     .lir-btn.lir-hidden { display: none !important; }
@@ -1586,7 +1792,7 @@
     .nfp-pill-red   { background: rgba(220,38,38,0.78);  color: #fff; }
     .nfp-pill-mint  { background: rgba(0,177,165,0.84);  color: #fff; }
     .nfp-pill-green { background: rgba(5,150,105,0.78);  color: #fff; }
-    .nfp-pill-primary{ background: rgba(2, 94, 211, 0.92); color: #fff; }
+    .nfp-pill-primary{ background: rgba(2, 78, 174, 0.92); color: #fff; }
     /* Hero bottom info */
     .nfp-hero-info {
       position: absolute;
@@ -1662,7 +1868,7 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #9ca3af;
+      color: #555960;
       margin-bottom: 4px;
     }
     .nfp-barcode-num {
@@ -1686,7 +1892,7 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #9ca3af;
+      color: #555960;
     }
     .nfp-fi-badge {
       font-size: 0.58rem;
@@ -1724,7 +1930,7 @@
     .nfp-fi-thumb-label {
       font-size: 0.58rem;
       font-weight: 600;
-      color: #6b7280;
+      color: #535964;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
@@ -1767,7 +1973,7 @@
     .nfp-ingred-text { font-size: 0.68rem; line-height: 1.55; color: #111827; }
     .nfp-ingred-label { font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
     .nfp-allergen-wrap { padding: 8px 12px 10px; border-bottom: 1px solid #e5e7eb; }
-    .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
     .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; }
     .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #F4F2F9; color: #2C2439; border: 1px solid #E0DBE7; }
     .nfp-allergen-emoji { font-size: 0.95rem; line-height: 1; }
@@ -1893,7 +2099,7 @@
       color: var(--text);
     }
     html.dark .wise-popover-item.is-active {
-      background: rgba(2, 94, 211, 0.22);
+      background: rgba(2, 78, 174, 0.22);
       color: var(--primary-bright);
     }
     .wise-popover-item.danger { color: #f87171; }
@@ -1933,7 +2139,7 @@
       color: var(--primary);
     }
     html.dark .wise-pop-action:hover {
-      background: rgba(2, 94, 211, 0.18);
+      background: rgba(2, 78, 174, 0.18);
       color: var(--primary-bright);
     }
     .wise-pop-action .material-icons { font-size: 20px; color: var(--text-muted); }
@@ -2218,10 +2424,10 @@
     /* Override remaining inline tints inside the settings module so they obey the theme tokens. */
     #settings-screen [style*="color:#FBF9FF"],
     #settings-screen [style*="color:#fbf9ff"] { color: var(--text) !important; }
-    #settings-screen [style*="color:#827C90"],
-    #settings-screen [style*="color:#827c90"],
-    #settings-screen [style*="color:#5D566A"],
-    #settings-screen [style*="color:#5d566a"],
+    #settings-screen [style*="color:#BBB6C6"],
+    #settings-screen [style*="color:#BBB6C6"],
+    #settings-screen [style*="color:#B6B1C1"],
+    #settings-screen [style*="color:#B6B1C1"],
     #settings-screen [style*="color:#413A4D"],
     #settings-screen [style*="color:#413a4d"] { color: var(--text-muted) !important; }
     #settings-screen [style*="color:#E0DBE7"],
@@ -2249,8 +2455,8 @@
     }
     /* Dark: top bar matches card surface (no lighter strip). */
     html.dark .chat-topbar {
-      background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%), var(--surface);
-      border-bottom-color: rgba(2, 94, 211, 0.20);
+      background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%), var(--surface);
+      border-bottom-color: rgba(2, 78, 174, 0.20);
     }
 
     /* Light: side rails + verification use index tokens (no dark “oyster” chrome on cream). */
@@ -2317,7 +2523,7 @@
     html:not(.dark) .upf-risk-badge {
       border-color: color-mix(in srgb, var(--sec-red) 40%, var(--border-strong)) !important;
       background: var(--sec-red-10) !important;
-      color: var(--sec-red) !important;
+      color: var(--sec-red-text) !important;
     }
     html:not(.dark) .upf-score-bar-track {
       background: var(--surface-2);
@@ -2370,8 +2576,8 @@
       margin-left: -36px;
       margin-top: -36px;
       border-radius: 50%;
-      border: 1px solid rgba(2, 94, 211, 0.55);
-      box-shadow: 0 0 18px rgba(2, 94, 211, 0.35), 0 0 36px rgba(2, 94, 211, 0.2);
+      border: 1px solid rgba(2, 78, 174, 0.55);
+      box-shadow: 0 0 18px rgba(2, 78, 174, 0.35), 0 0 36px rgba(2, 78, 174, 0.2);
       pointer-events: none;
       animation: wsRingBloom 5s cubic-bezier(0.2, 0.85, 0.25, 1) infinite;
     }
@@ -2393,17 +2599,17 @@
       align-items: center;
       justify-content: center;
       padding: 14px;
-      box-shadow: 0 0 28px rgba(2, 94, 211, 0.55), 0 0 52px rgba(2, 94, 211, 0.22);
+      box-shadow: 0 0 28px rgba(2, 78, 174, 0.55), 0 0 52px rgba(2, 78, 174, 0.22);
       animation: wsLogoBreath 6.5s ease-in-out infinite;
     }
     @keyframes wsLogoBreath {
       0%,
       100% {
-        box-shadow: 0 0 24px rgba(2, 94, 211, 0.45), 0 0 48px rgba(2, 94, 211, 0.18);
+        box-shadow: 0 0 24px rgba(2, 78, 174, 0.45), 0 0 48px rgba(2, 78, 174, 0.18);
         transform: scale(1);
       }
       50% {
-        box-shadow: 0 0 36px rgba(2, 94, 211, 0.55), 0 0 72px rgba(2, 94, 211, 0.28);
+        box-shadow: 0 0 36px rgba(2, 78, 174, 0.55), 0 0 72px rgba(2, 78, 174, 0.28);
         transform: scale(1.04);
       }
     }
@@ -2462,7 +2668,22 @@
     .sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
     html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #93C5FD); }
 
-    .sc-who-scout { color: var(--primary); font-weight: 700; letter-spacing: 0.02em; }
+    /* Message lines: profile-avatar column + larger, high-contrast body copy
+       (the timestamp / grounding meta row stays small). Mirrors scout-chat.css.
+       Scout's avatar is the WISE-owl bug; "You" is the member's initials,
+       matching the top-bar .topbar-profile chip. */
+    /* gap (12px) + avatar (30px) match the header icon→title spacing so the
+       avatar lines up under the topbar owl and body text under "Whootie™". */
+    .sc-line { display: flex; align-items: flex-start; gap: 12px; }
+    .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
+    .sc-avatar {
+      flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px;
+      border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
+    }
+    .sc-avatar svg { width: 18px; height: auto; }
+    .sc-avatar-scout { background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(2, 78, 174, 0.4); }
+    .sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
     .sc-line-scout strong { color: var(--primary); font-weight: 700; }
 
     .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
@@ -2574,6 +2795,7 @@
       align-items: center;
       gap: 8px;
       padding: 12px;
+      flex-shrink: 0;
       border-bottom: 1px solid var(--border);
       background: color-mix(in srgb, var(--surface-2) 65%, transparent);
     }
@@ -3228,7 +3450,7 @@
       background: none;
       border: 1px solid #3a3050;
       cursor: pointer;
-      color: #5d566a;
+      color: #B6B1C1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3238,7 +3460,7 @@
     .amm-close-btn:hover {
       background: #2c2439;
       color: #e0dbe7;
-      border-color: #5d566a;
+      border-color: #B6B1C1;
     }
     .amm-search-wrap { padding: 14px 16px 10px; }
     .amm-search-inner {
@@ -3250,7 +3472,7 @@
       position: absolute;
       left: 11px;
       font-size: 1.125rem !important;
-      color: #5d566a;
+      color: #B6B1C1;
       pointer-events: none;
       user-select: none;
     }
@@ -3270,13 +3492,13 @@
       border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
       background: var(--primary-soft);
     }
-    .amm-search::placeholder { color: #413a4d; }
+    .amm-search::placeholder { color: var(--text-subtle); }
     .amm-section-label {
       font-size: var(--fs-ui);
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #413a4d;
+      color: var(--text-subtle);
       padding: 0 16px 6px;
     }
     .amm-list {
@@ -3323,7 +3545,7 @@
     .amm-member-info { flex: 1; min-width: 0; }
     .amm-empty-msg {
       text-align: center;
-      color: #5d566a;
+      color: #B6B1C1;
       padding: 20px 0;
       font-size: var(--fs-ui);
     }
@@ -3341,7 +3563,7 @@
     }
     .amm-member-role {
       font-size: var(--fs-ui);
-      color: #5d566a;
+      color: #B6B1C1;
       margin-top: 1px;
     }
     .amm-add-btn {
@@ -3377,7 +3599,7 @@
       justify-content: space-between;
       gap: 10px;
     }
-    .amm-footer-hint { font-size: var(--fs-ui); color: #413a4d; }
+    .amm-footer-hint { font-size: var(--fs-ui); color: var(--text-subtle); }
     .amm-invite-btn {
       display: inline-flex;
       align-items: center;
@@ -3411,6 +3633,111 @@
     html:not(.dark) .amm-subtitle { color: var(--text-muted) !important; }
     html:not(.dark) .amm-member-name { color: var(--text) !important; }
 
+    /* ── Sign out confirmation modal (mirrors the add-member modal shell) ── */
+    #signout-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    #signout-modal.so-open { opacity: 1; pointer-events: auto; }
+    .so-dialog {
+      width: min(400px, calc(100vw - 32px));
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transform: translateY(16px) scale(0.96);
+      transition: transform 0.22s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.18s;
+      opacity: 0;
+      font-size: var(--fs-ui);
+    }
+    #signout-modal.so-open .so-dialog { transform: translateY(0) scale(1); opacity: 1; }
+    .so-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 20px 16px;
+      background: linear-gradient(135deg, rgba(242, 109, 91, 0.12) 0%, transparent 100%);
+    }
+    .so-header-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-pill);
+      background: rgba(242, 109, 91, 0.12);
+      border: 1px solid rgba(242, 109, 91, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .so-header-text { flex: 1; min-width: 0; }
+    .so-title { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+    .so-subtitle { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 4px; line-height: 1.45; }
+    .so-account {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 20px 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+    .so-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--fs-ui); font-weight: 700; flex-shrink: 0;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    .so-account-info { min-width: 0; }
+    .so-account-name { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
+    .so-account-mail { font-size: var(--fs-ui); color: var(--text-muted); }
+    .so-footer {
+      display: flex;
+      gap: 10px;
+      padding: 16px 20px 20px;
+    }
+    .so-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: var(--radius-pill);
+      font-size: var(--fs-ui);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.14s, border-color 0.14s, filter 0.14s, color 0.14s;
+    }
+    .so-btn-cancel {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .so-btn-cancel:hover { background: var(--surface-3); border-color: var(--border-strong); }
+    .so-btn-confirm {
+      background: #F26D5B;
+      border: 1px solid #F26D5B;
+      color: #fff;
+    }
+    .so-btn-confirm:hover { filter: brightness(1.06); }
+    html:not(.dark) .so-dialog {
+      background: var(--surface) !important;
+      border-color: var(--border-strong) !important;
+      box-shadow: var(--shadow-card) !important;
+    }
+
     /* =====================================================================
        UNIFIED DESIGN TOKENS — one palette across left rail, side panels,
        chat card, and verification summary in BOTH light and dark modes.
@@ -3425,7 +3752,7 @@
     }
     html.dark #left-icon-rail {
       background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
-      border-color: rgba(2, 94, 211, 0.18) !important;
+      border-color: rgba(2, 78, 174, 0.18) !important;
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
     }
     .lir-btn { color: var(--text-muted); }
@@ -3505,7 +3832,7 @@
     html.dark #vault-panel .vault-inner,
     html.dark #notif-panel .notif-inner {
       background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
-      border-color: rgba(2, 94, 211, 0.18) !important;
+      border-color: rgba(2, 78, 174, 0.18) !important;
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
     }
 
@@ -3528,8 +3855,8 @@
     html.dark .shield-panel-header,
     html.dark .lens-panel-header,
     html.dark .vault-panel-header {
-      background: linear-gradient(135deg, rgba(2, 94, 211, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%) !important;
-      border-bottom-color: rgba(2, 94, 211, 0.20) !important;
+      background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%) !important;
+      border-bottom-color: rgba(2, 78, 174, 0.20) !important;
     }
     .side-panel-header .text-oyster-100,
     .side-panel-header .font-bold.text-oyster-100 {
@@ -3612,10 +3939,10 @@
     .history-item-title { color: var(--text); font-weight: 500; }
     .history-item-meta { color: var(--text-muted); }
     /* History badges — keep semantic colors but quieter. */
-    .hb-progress { background: var(--ter-amber-10); color: var(--ter-amber); }
+    .hb-progress { background: var(--ter-amber-10); color: var(--ter-amber-text); }
     .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
-    .hb-complete { background: var(--sec-green-10); color: var(--sec-green); }
-    .hb-flagged  { background: var(--sec-red-10);   color: var(--sec-red);   }
+    .hb-complete { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .hb-flagged  { background: var(--sec-red-10);   color: var(--sec-red-text);   }
 
     /* Panel body + search pill. */
     .side-panel-body { color: var(--text-muted) !important; }
@@ -4826,7 +5153,7 @@
               <span class="material-icons text-[15px] text-amber-400">search</span>
             </div>
             <div>
-              <div class="text-xs font-bold text-oyster-100">WISEscout™</div>
+              <div class="text-xs font-bold text-oyster-100">Whootie™</div>
               <p class="text-xs text-oyster-600">WISE Foods</p>
             </div>
           </div>
@@ -5071,9 +5398,9 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/>
             </svg>
           </div>
-          <div class="sc-topbar-titles flex flex-col min-w-0">
-            <span class="topbar-title">WISEscout™</span>
-            <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;margin-top:2px;font-size:0.65rem;">
+          <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
+            <span class="topbar-title">Whootie™</span>
+            <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
               <span style="font-size:0.65rem;">agents running</span>
@@ -5115,7 +5442,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double WISEscout™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Whootie™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
         </div>
       </div>
 
@@ -5139,7 +5466,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can WISEscout™ help with?</h1>
+            <h1 class="ws-heading">What can Whootie™ help with?</h1>
             <p class="ws-sub">Your AI Verification assistant — NON-UPF &amp; beyond</p>
             <!-- Quick action chips -->
             <div class="ws-chips">
@@ -5168,7 +5495,7 @@
             <p class="ws-hint">or type a message below</p>
             <!-- Trust badges — mirror scout-chat.js so the welcome reads the same
                  wherever Scout appears. -->
-            <div class="ws-trust" role="list" aria-label="How WISEscout™ handles your data">
+            <div class="ws-trust" role="list" aria-label="How Whootie™ handles your data">
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">verified_user</span>Grounded in your WISE data</span>
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">lock</span>Private &amp; encrypted</span>
                 <span class="sc-trust-badge" role="listitem"><span class="material-icons">history</span>Every action is logged</span>
@@ -5213,7 +5540,7 @@
                     </div>
                     <div>
                         <p class="ss-info-title">How agents work together</p>
-                        <p class="ss-info-desc">WISEscout™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEscout™ is always required.</p>
+                        <p class="ss-info-desc">Whootie™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Whootie™ is always required.</p>
                     </div>
                 </div>
 
@@ -5227,11 +5554,11 @@
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
-                            WISEscout™
+                            Whootie™
                             <span class="ss-version-badge">v3.2</span>
                         </div>
                         <p class="ss-agent-tagline">Verification Orchestrator</p>
-                        <p class="ss-agent-desc">The core WISEscout™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
+                        <p class="ss-agent-desc">The core Whootie™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
                         <div>
                             <span class="ss-capability-tag">Verification</span>
                             <span class="ss-capability-tag">Routing</span>
@@ -5414,7 +5741,7 @@
                     <div class="ss-pref-row">
                         <div>
                             <p class="ss-pref-title">Response style</p>
-                            <p class="ss-pref-desc">How detailed WISEscout™'s responses should be</p>
+                            <p class="ss-pref-desc">How detailed Whootie™'s responses should be</p>
                         </div>
                         <select class="font-semibold">
                             <option>Concise</option>
@@ -5454,7 +5781,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
-                            <span>WISEscout™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
+                            <span>Whootie™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
                         </div>
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
@@ -5526,6 +5853,227 @@
          Notifications module is identical to every other page. -->
     <div id="panels-row-right">
       <div id="notif-panel" aria-label="Notifications"></div>
+
+      <!-- ── My Profile ─────────────────────────────────────────────── -->
+      <div id="profile-panel" class="util-panel" aria-label="My profile">
+        <div class="panel-inner">
+          <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]">person</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-oyster-100">MY PROFILE</div>
+              <p class="text-xs text-oyster-600 mt-0.5">Account &amp; identity</p>
+            </div>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="profile" role="group" aria-label="Dock My Profile panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('profile')" title="Move to the other side of chat" aria-label="Move My Profile to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="profile" onclick="togglePanelWidth('profile')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double My Profile module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('profile-panel')" title="Close" aria-label="Close My Profile"><span class="material-icons">close</span></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
+            <div class="um-card flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style="background:var(--primary-soft);color:var(--primary)">MC</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-oyster-100">Maya Chen</div>
+                <div class="text-xs text-oyster-600">Product Intelligence Lead</div>
+                <div class="mt-1"><span class="um-chip"><span class="material-icons" style="font-size:13px">verified</span>WISE Foods</span></div>
+              </div>
+            </div>
+            <button type="button" class="um-btn um-btn-primary"><span class="material-icons">edit</span>Edit profile</button>
+            <div>
+              <div class="um-section-label">Details</div>
+              <div class="um-card" style="padding:4px 10px">
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">mail</span></span><div class="um-row-main"><div class="um-row-title">maya.chen@wisefoods.com</div><div class="um-row-sub">Work email</div></div></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">call</span></span><div class="um-row-main"><div class="um-row-title">+1 (415) 555-0142</div><div class="um-row-sub">Phone</div></div></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">schedule</span></span><div class="um-row-main"><div class="um-row-title">Pacific Time (UTC−7)</div><div class="um-row-sub">Timezone</div></div></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">apartment</span></span><div class="um-row-main"><div class="um-row-title">Intelligence · Seat 1 of 12</div><div class="um-row-sub">Organization</div></div></div>
+              </div>
+            </div>
+            <div>
+              <div class="um-section-label">Recent activity</div>
+              <div class="um-card text-xs text-oyster-500 space-y-2">
+                <div class="flex items-center justify-between"><span class="text-oyster-200">Verified 5 SKUs · Sample Co.</span><span>2m ago</span></div>
+                <div class="flex items-center justify-between"><span class="text-oyster-200">Exported Q2 brief</span><span>1h ago</span></div>
+                <div class="flex items-center justify-between"><span class="text-oyster-200">Updated notification rules</span><span>Yesterday</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Preferences ────────────────────────────────────────────── -->
+      <div id="prefs-panel" class="util-panel" aria-label="Preferences">
+        <div class="panel-inner">
+          <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]">tune</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-oyster-100">PREFERENCES</div>
+              <p class="text-xs text-oyster-600 mt-0.5">Personalize your workspace</p>
+            </div>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="prefs" role="group" aria-label="Dock Preferences panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('prefs')" title="Move to the other side of chat" aria-label="Move Preferences to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="prefs" onclick="togglePanelWidth('prefs')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Preferences module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('prefs-panel')" title="Close" aria-label="Close Preferences"><span class="material-icons">close</span></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
+            <div>
+              <div class="um-section-label">Appearance</div>
+              <div class="um-card" style="padding:4px 10px">
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons js-theme-icon">dark_mode</span></span><div class="um-row-main"><div class="um-row-title">Theme</div><div class="um-row-sub js-theme-label">Switch to Dark mode</div></div><button type="button" class="um-btn" style="width:auto;padding:6px 12px" onclick="toggleChatTheme()">Toggle</button></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">view_column</span></span><div class="um-row-main"><div class="um-row-title">Default layout</div><div class="um-row-sub">Column · Grid · Split · Stack</div></div><span class="um-chip um-chip-muted">Column</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="um-section-label">Notifications</div>
+              <div class="um-card" style="padding:4px 10px">
+                <div class="um-row"><div class="um-row-main"><div class="um-row-title">Verification alerts</div><div class="um-row-sub">When a product becomes eligible</div></div><button type="button" class="um-toggle is-on" role="switch" aria-checked="true" onclick="toggleUmSwitch(this)"></button></div>
+                <div class="um-row"><div class="um-row-main"><div class="um-row-title">Weekly digest</div><div class="um-row-sub">Monday morning summary</div></div><button type="button" class="um-toggle is-on" role="switch" aria-checked="true" onclick="toggleUmSwitch(this)"></button></div>
+                <div class="um-row"><div class="um-row-main"><div class="um-row-title">Agent activity</div><div class="um-row-sub">When an agent acts on your behalf</div></div><button type="button" class="um-toggle" role="switch" aria-checked="false" onclick="toggleUmSwitch(this)"></button></div>
+              </div>
+            </div>
+            <div>
+              <div class="um-section-label">Defaults</div>
+              <div class="um-card" style="padding:4px 10px">
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">language</span></span><div class="um-row-main"><div class="um-row-title">Language</div></div><span class="um-chip um-chip-muted">English (US)</span></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">density_medium</span></span><div class="um-row-main"><div class="um-row-title">Density</div></div><span class="um-chip um-chip-muted">Comfortable</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── API keys ───────────────────────────────────────────────── -->
+      <div id="apikeys-panel" class="util-panel" aria-label="API keys">
+        <div class="panel-inner">
+          <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]">key</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-oyster-100">API KEYS</div>
+              <p class="text-xs text-oyster-600 mt-0.5">Programmatic access</p>
+            </div>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="apikeys" role="group" aria-label="Dock API keys panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('apikeys')" title="Move to the other side of chat" aria-label="Move API keys to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="apikeys" onclick="togglePanelWidth('apikeys')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double API keys module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('apikeys-panel')" title="Close" aria-label="Close API keys"><span class="material-icons">close</span></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
+            <button type="button" class="um-btn um-btn-primary"><span class="material-icons">add</span>Create new key</button>
+            <div class="um-section-label">Active keys</div>
+            <div class="um-card space-y-2">
+              <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Production</span><span class="um-chip"><span class="material-icons" style="font-size:13px">check_circle</span>Active</span></div>
+              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_live_sk_••••••••••8f2a</span><button type="button" class="um-btn" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_live_sk_8f2a')" title="Copy key"><span class="material-icons">content_copy</span></button></div>
+              <div class="text-xs text-oyster-600">Created Mar 4, 2026 · Last used 2h ago</div>
+            </div>
+            <div class="um-card space-y-2">
+              <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Sandbox</span><span class="um-chip um-chip-muted">Test</span></div>
+              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_test_sk_••••••••••1c90</span><button type="button" class="um-btn" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_test_sk_1c90')" title="Copy key"><span class="material-icons">content_copy</span></button></div>
+              <div class="text-xs text-oyster-600">Created Jan 18, 2026 · Last used 5d ago</div>
+            </div>
+            <div class="um-card text-xs text-oyster-500">
+              <div class="flex items-center gap-2 text-oyster-200 font-semibold"><span class="material-icons" style="font-size:15px;color:var(--primary)">info</span>Usage this month</div>
+              <p class="mt-1">48,210 / 100,000 requests</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Help ───────────────────────────────────────────────────── -->
+      <div id="help-panel" class="util-panel" aria-label="Help">
+        <div class="panel-inner">
+          <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]">help</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-oyster-100">HELP</div>
+              <p class="text-xs text-oyster-600 mt-0.5">Support &amp; answers</p>
+            </div>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="help" role="group" aria-label="Dock Help panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('help')" title="Move to the other side of chat" aria-label="Move Help to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="help" onclick="togglePanelWidth('help')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Help module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('help-panel')" title="Close" aria-label="Close Help"><span class="material-icons">close</span></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
+            <div class="panel-search-pill" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid var(--border)">
+              <span class="material-icons text-oyster-600 text-[15px]">search</span>
+              <input type="text" placeholder="Search help…" class="flex-1 bg-transparent border-0 outline-none text-sm text-oyster-300 placeholder:text-oyster-700" />
+            </div>
+            <div>
+              <div class="um-section-label">Quick links</div>
+              <div class="um-card" style="padding:4px">
+                <div class="um-link"><span class="material-icons">rocket_launch</span><div><div class="um-row-title">Getting started</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+                <div class="um-link"><span class="material-icons">keyboard</span><div><div class="um-row-title">Keyboard shortcuts</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+                <div class="um-link"><span class="material-icons">smart_toy</span><div><div class="um-row-title">Working with agents</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+                <div class="um-link"><span class="material-icons">verified</span><div><div class="um-row-title">Verification basics</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="um-section-label">Still stuck?</div>
+              <button type="button" class="um-btn um-btn-primary"><span class="material-icons">chat_bubble</span>Contact support</button>
+              <p class="text-xs text-oyster-600 mt-2 px-1">Typical response under 2 hours, Mon–Fri.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Docs ───────────────────────────────────────────────────── -->
+      <div id="docs-panel" class="util-panel" aria-label="Docs">
+        <div class="panel-inner">
+          <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+              <span class="material-icons text-[15px]">menu_book</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-oyster-100">DOCS</div>
+              <p class="text-xs text-oyster-600 mt-0.5">Guides &amp; reference</p>
+            </div>
+            <div class="panel-controls">
+              <div class="panel-flip" data-panel="docs" role="group" aria-label="Dock Docs panel">
+                <button type="button" class="panel-flip-btn" onclick="flipPanel('docs')" title="Move to the other side of chat" aria-label="Move Docs to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-panel="docs" onclick="togglePanelWidth('docs')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Docs module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('docs-panel')" title="Close" aria-label="Close Docs"><span class="material-icons">close</span></button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
+            <div>
+              <div class="um-section-label">Reference</div>
+              <div class="um-card" style="padding:4px">
+                <div class="um-link"><span class="material-icons">api</span><div><div class="um-row-title">API reference</div><div class="um-row-sub">Endpoints, auth, examples</div></div><span class="material-icons um-link-arrow">open_in_new</span></div>
+                <div class="um-link"><span class="material-icons">webhook</span><div><div class="um-row-title">Webhooks</div><div class="um-row-sub">Events &amp; payloads</div></div><span class="material-icons um-link-arrow">open_in_new</span></div>
+                <div class="um-link"><span class="material-icons">integration_instructions</span><div><div class="um-row-title">SDKs</div><div class="um-row-sub">JavaScript &amp; Python</div></div><span class="material-icons um-link-arrow">open_in_new</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="um-section-label">Guides</div>
+              <div class="um-card" style="padding:4px">
+                <div class="um-link"><span class="material-icons">school</span><div><div class="um-row-title">Verification workflow</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+                <div class="um-link"><span class="material-icons">science</span><div><div class="um-row-title">UPF scoring explained</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+                <div class="um-link"><span class="material-icons">shield</span><div><div class="um-row-title">Badges &amp; compliance</div></div><span class="material-icons um-link-arrow">chevron_right</span></div>
+              </div>
+            </div>
+            <div class="um-card text-xs text-oyster-500 flex items-center justify-between">
+              <span class="text-oyster-200 font-semibold">Platform docs</span><span class="um-chip um-chip-muted">v3.2</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── NFP+ — Nutrition Fact Panel Plus ──────────────────────────────── -->
@@ -5817,12 +6365,41 @@
       </div>
   </div>
 
+  <!-- ── Sign out confirmation modal ───────────────────────────────────── -->
+  <div id="signout-modal" role="dialog" aria-modal="true" aria-labelledby="so-title-id" onclick="handleSignOutBackdrop(event)">
+      <div class="so-dialog">
+          <div class="so-header">
+              <div class="so-header-icon">
+                  <span class="material-icons" style="font-size:22px;color:#F26D5B">logout</span>
+              </div>
+              <div class="so-header-text">
+                  <div class="so-title" id="so-title-id">Sign out of WISE?</div>
+                  <div class="so-subtitle">You’ll need to sign back in to access your workspace, agents, and saved views.</div>
+              </div>
+          </div>
+          <div class="so-account">
+              <div class="so-avatar">MC</div>
+              <div class="so-account-info">
+                  <div class="so-account-name">Maya Chen</div>
+                  <div class="so-account-mail">maya.chen@wisefoods.com</div>
+              </div>
+          </div>
+          <div class="so-footer">
+              <button type="button" class="so-btn so-btn-cancel" onclick="closeSignOutModal()">Cancel</button>
+              <button type="button" class="so-btn so-btn-confirm" onclick="confirmSignOut()">
+                  <span class="material-icons" style="font-size:15px">logout</span>
+                  Sign out
+              </button>
+          </div>
+      </div>
+  </div>
+
   <script>
     const AGENTS = {
-      wise:   { name: 'WISEscout™', color: '#025ED3', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'Whootie™', color: '#024EAE', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
       scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
-      shield: { name: 'SHIELD',     color: '#025ED3', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
+      shield: { name: 'SHIELD',     color: '#024EAE', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
       lens:   { name: 'LENS',       color: '#5B9BD5', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, SKU-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
       vault:  { name: 'VAULT',      color: '#D4A853', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
       pulse:  { name: 'PULSE',      color: '#E879F9', icon: 'biotech',      required: false, on: false, announce: { on: 'PULSE activated — the UPF Analyzer panel is open. Score ingredients, visualize processing tiers, inspect additive risks side-by-side.', off: 'PULSE paused — UPF Analyzer panel closed.' } },
@@ -6101,6 +6678,39 @@
       if (panel && !panel.classList.contains('open')) toggleHistoryPanel();
       scrollPanelIntoView('history-panel');
     }
+
+    /* Account utility modules (My Profile / Preferences / API keys / Help / Docs)
+       — plain side modules toggled on `.open`, mirroring toggleHistoryPanel(). */
+    function toggleUtilPanel(panelId, force) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const open = force !== undefined ? !!force : !panel.classList.contains('open');
+      panel.classList.toggle('open', open);
+      syncPanelsRowRight();
+      return open;
+    }
+    /* A menu item always takes you to its module: open it if closed, then
+       scroll it into view (same contract as revealPanel for agent modules). */
+    function revealUtilPanel(panelId) {
+      toggleUtilPanel(panelId, true);
+      scrollPanelIntoView(panelId);
+    }
+    /* Small interactions used inside the account modules. */
+    function toggleUmSwitch(btn) {
+      if (!btn) return;
+      const on = !btn.classList.contains('is-on');
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+    function copyApiKey(btn, value) {
+      try { navigator.clipboard?.writeText(value); } catch (_) {}
+      if (!btn) return;
+      const ic = btn.querySelector('.material-icons');
+      if (!ic) return;
+      const prev = ic.textContent;
+      ic.textContent = 'check';
+      setTimeout(() => { ic.textContent = prev; }, 1400);
+    }
     function revealNfpPanel() {
       toggleNfpPanel(true);
       scrollPanelIntoView('nfp-panel');
@@ -6149,10 +6759,10 @@
       box.insertAdjacentHTML(
         'beforeend',
         `<div class="mb-3">
-           <div class="text-xs mb-0.5" style="color:${agent.color};font-weight:700;letter-spacing:0.02em;">
+           <div class="mb-0.5" style="color:${agent.color};font-weight:700;font-size:0.6875rem;letter-spacing:0.02em;">
              <span class="material-icons" style="font-size:12px;vertical-align:-2px;margin-right:4px;">${agent.icon}</span>${agent.name}
            </div>
-           <div class="text-xs text-oyster-300" style="line-height:1.55;">${html}</div>
+           <div class="sc-line-body">${html}</div>
          </div>`
       );
       box.scrollTop = box.scrollHeight;
@@ -6337,6 +6947,25 @@
       if (e.target === document.getElementById('add-member-modal')) closeAddMemberModal();
     }
 
+    /* Sign out — double-verify in a modal before clearing the session. */
+    function openSignOutModal() {
+      const modal = document.getElementById('signout-modal');
+      if (!modal) return;
+      modal.classList.add('so-open');
+      setTimeout(() => modal.querySelector('.so-btn-cancel')?.focus(), 120);
+    }
+    function closeSignOutModal() {
+      document.getElementById('signout-modal')?.classList.remove('so-open');
+    }
+    function handleSignOutBackdrop(e) {
+      if (e.target === document.getElementById('signout-modal')) closeSignOutModal();
+    }
+    function confirmSignOut() {
+      closeSignOutModal();
+      /* Demo session end — return to the WISE home / sign-in screen. */
+      window.location.href = '../index.html';
+    }
+
     function addTeamMember(memberId) {
       const member = TEAM_MEMBERS.find((m) => m.id === memberId);
       if (!member || member.added) return;
@@ -6380,7 +7009,14 @@
        time-stamped, every Scout reply is grounded in a cited source, and the
        typing indicator says what Scout is actually doing. */
     const SCOUT_SOURCE_LABEL = 'Grounded in WISE data';
-    const SCOUT_STATUS_LABEL = 'WISEscout™ is checking the registry';
+    const SCOUT_STATUS_LABEL = 'Whootie™ is checking the registry';
+
+    /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
+       avatar in place of the "You" / "Whootie™" name labels. Inherits
+       currentColor so the avatar circle's color drives the mark. */
+    /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). */
+    const SCOUT_USER_AVATAR = 'MC';
+    const SCOUT_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
 
     function scoutNowLabel() {
       try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
@@ -6388,7 +7024,7 @@
     }
     function scoutMetaRow(withSource) {
       const src = withSource && SCOUT_SOURCE_LABEL
-        ? `<span class="sc-trust-chip" title="WISEscout™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
+        ? `<span class="sc-trust-chip" title="Whootie™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
         : '';
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${scoutNowLabel()}</span></div>`;
     }
@@ -6399,7 +7035,7 @@
       const safe = String(text).replace(/</g, '&lt;');
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 text-oyster-300 sc-line-you"><span class="text-oyster-500 text-xs">You · </span>${safe}${scoutMetaRow(false)}</div>`
+        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${SCOUT_USER_AVATAR}</span><div class="sc-line-body">${safe}${scoutMetaRow(false)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -6412,7 +7048,7 @@
       const withSource = opts.source !== false;
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line-scout"><span class="text-xs sc-who-scout">WISEscout™ · </span><span class="text-oyster-300" style="line-height:1.55;">${html}</span>${scoutMetaRow(withSource)}</div>`
+        `<div class="mb-3 sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="Whootie™">${SCOUT_OWL_BUG}</span><div class="sc-line-body">${html}${scoutMetaRow(withSource)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -6421,8 +7057,8 @@
       const box = document.getElementById('chat-messages');
       if (!box) return null;
       const el = document.createElement('div');
-      el.className = 'mb-3 sc-line-scout sc-line-typing';
-      el.innerHTML = `<span class="text-xs sc-who-scout">WISEscout™ · </span><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${SCOUT_STATUS_LABEL}…</span></span>`;
+      el.className = 'mb-3 sc-line sc-line-scout sc-line-typing';
+      el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="Whootie™">${SCOUT_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${SCOUT_STATUS_LABEL}…</span></span></div>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -6455,7 +7091,7 @@
         return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
       if (/(agent|choose)/.test(q))
         return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEscout™ layout and controls.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Whootie™ layout and controls.';
     }
 
     function scoutRespond(text, intent) {
@@ -6517,7 +7153,7 @@
     }
 
     function exportConversation() {
-      const blob = new Blob(['WISEscout™ export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['Whootie™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseowl-chat.txt';
@@ -6525,7 +7161,7 @@
     }
     function shareConversation() {
       const url = window.location.href;
-      if (navigator.share) navigator.share({ title: 'WISEscout™', url });
+      if (navigator.share) navigator.share({ title: 'Whootie™', url });
       else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Link copied'));
       else alert(url);
     }
@@ -6580,7 +7216,17 @@
           return;
         }
         closeAllMoreMenus();
+        if (document.getElementById('signout-modal')?.classList.contains('so-open')) {
+          closeSignOutModal();
+          return;
+        }
         closeAddMemberModal();
+        const openUtilPanel = ['profile-panel','prefs-panel','apikeys-panel','help-panel','docs-panel']
+          .find((id) => document.getElementById(id)?.classList.contains('open'));
+        if (openUtilPanel) {
+          toggleUtilPanel(openUtilPanel, false);
+          return;
+        }
         if (document.getElementById('notif-panel')?.classList.contains('notif-open')) {
           toggleNotificationsPanel(false);
           return;
@@ -6760,6 +7406,11 @@
         settings: { id: 'settings-screen',btnId: 'lir-settings-btn', defaultRight: true  },
         nfp:      { id: 'nfp-panel',      btnId: 'lir-nfp-btn',      defaultRight: true  },
         notif:    { id: 'notif-panel',    btnId: 'lir-notif-btn',    defaultRight: true  },
+        profile:  { id: 'profile-panel',  btnId: '',                 defaultRight: true  },
+        prefs:    { id: 'prefs-panel',    btnId: '',                 defaultRight: true  },
+        apikeys:  { id: 'apikeys-panel',  btnId: '',                 defaultRight: true  },
+        help:     { id: 'help-panel',     btnId: '',                 defaultRight: true  },
+        docs:     { id: 'docs-panel',     btnId: '',                 defaultRight: true  },
       };
       const STORAGE_KEY = 'wise-panel-sides-v2';
 
@@ -6875,6 +7526,11 @@
         notif:    'notif-panel',
         settings: 'settings-screen',
         nfp:      'nfp-panel',
+        profile:  'profile-panel',
+        prefs:    'prefs-panel',
+        apikeys:  'apikeys-panel',
+        help:     'help-panel',
+        docs:     'docs-panel',
       };
 
       function loadWide() {
@@ -7074,7 +7730,8 @@
           <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
           <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
           <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
-          <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
+          <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
+          <div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>
           <div class="wise-popover-divider"></div>
           <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
         `;
@@ -7155,6 +7812,31 @@
             closePopover();
             revealSettingsPanel();
             return;
+          }
+          /* My profile / Preferences / API keys / Help / Docs each open their
+             own module, exactly like the History / agent modules do. */
+          const UTIL_PANELS = {
+            profile: 'profile-panel',
+            prefs:   'prefs-panel',
+            apikeys: 'apikeys-panel',
+            help:    'help-panel',
+            docs:    'docs-panel',
+          };
+          const utilItem = ev.target.closest('[data-pop-action]');
+          if (utilItem && pop.contains(utilItem)) {
+            const action = utilItem.dataset.popAction;
+            if (UTIL_PANELS[action]) {
+              ev.stopPropagation();
+              closePopover();
+              revealUtilPanel(UTIL_PANELS[action]);
+              return;
+            }
+            if (action === 'signout') {
+              ev.stopPropagation();
+              closePopover();
+              openSignOutModal();
+              return;
+            }
           }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) {
             ev.stopPropagation();
