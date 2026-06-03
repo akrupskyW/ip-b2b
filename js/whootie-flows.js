@@ -316,7 +316,7 @@ const FLOWS = {
             scoreBlock('Before', '82', '/100', 82, 'linear-gradient(90deg,var(--primary),#60a5fa)') +
             `<div style="height:8px"></div>` +
             scoreBlock('After fixing the granola', '86', '/100', 86, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)') +
-            `<span class="wf-badge"><span class="material-icons">eco</span>+4 portfolio pts</span>');
+            `<span class="wf-badge"><span class="material-icons">eco</span>+4 portfolio pts</span>`);
         },
         end: {
           title: 'Portfolio reviewed',

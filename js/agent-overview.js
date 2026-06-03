@@ -16,6 +16,7 @@ import {
 import { initLirTooltip } from './lir-tooltip.js';
 import { initWhootieTooltips } from './whootie-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from './topbar.js';
+import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
@@ -759,6 +760,9 @@ function renderAppearanceBody(pop) {
     <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
       <span class="material-symbols-outlined">compress</span>Minimal UI
     </div>
+    <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
+      <span class="material-icons">music_note</span>Jam strip
+    </div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
       <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
@@ -801,6 +805,13 @@ function openAppearancePopover(anchor) {
     if (minimalItem && pop.contains(minimalItem)) {
       ev.stopPropagation();
       applyMinimalUi(!isMinimalUiOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const jamItem = ev.target.closest('[data-jam]');
+    if (jamItem && pop.contains(jamItem)) {
+      ev.stopPropagation();
+      applyJamStrip(!isJamStripOn());
       renderAppearanceBody(pop);
       return;
     }

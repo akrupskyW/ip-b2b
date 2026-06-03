@@ -5660,6 +5660,7 @@
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { initWhootieTooltips } from '../js/whootie-tooltip.js';
+      import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -5671,6 +5672,8 @@
         isMenuPivoted,
         applyMinimalUi,
         isMinimalUiOn,
+        isJamStripOn,
+        applyJamStrip,
       });
       restoreMinimalUi();
       /* Use the exact same shell helper as the agent/portfolio pages: it leads
@@ -10493,6 +10496,9 @@
           <div class="wise-popover-item${window.isMinimalUiOn?.() ? ' is-active' : ''}" data-minimal="1">
             <span class="material-symbols-outlined">compress</span>Minimal UI
           </div>
+          <div class="wise-popover-item${window.isJamStripOn?.() ? ' is-active' : ''}" data-jam="1">
+            <span class="material-icons">music_note</span>Jam strip
+          </div>
           <div class="wise-popover-divider"></div>
           ${(() => { const m = scoutDockMode(); const b = (mode, icon, label) => `<button type="button" class="fz-btn${m === mode ? ' fz-active' : ''}" data-scout-dock="${mode}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`; return `
           <div class="fz-row">
@@ -10633,6 +10639,13 @@
           if (minimalItem && pop.contains(minimalItem)) {
             ev.stopPropagation();
             window.applyMinimalUi?.(!window.isMinimalUiOn?.());
+            renderAppearanceBody(pop);
+            return;
+          }
+          const jamItem = ev.target.closest('[data-jam]');
+          if (jamItem && pop.contains(jamItem)) {
+            ev.stopPropagation();
+            window.applyJamStrip?.(!window.isJamStripOn?.());
             renderAppearanceBody(pop);
             return;
           }

@@ -16,6 +16,10 @@
  *   .topbar-profile, #pf-module-rail, .lir-layout-btn …
  */
 
+/* Musical "pump up the jam" strip for the Minimal-UI top bar. Side-effect
+   import so it auto-mounts on every page that loads the shared top bar. */
+import './jam-strip.js';
+
 /* WISE wordmark (full) + bug (mobile). Shared by every page so the SVG
    lives in exactly one place. */
 export const TOPBAR_LOGO_HTML = `

@@ -30,6 +30,7 @@ import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size
 import { initLirTooltip } from './lir-tooltip.js';
 import { initWhootieTooltips } from './whootie-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
+import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
 /* ------------------------------------------------------------------ */
@@ -2417,6 +2418,9 @@ function renderAppearanceBody(pop) {
     <div class="wise-popover-item${isMenuPivoted() ? ' is-active' : ''}" data-pivot="1">
       <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
     </div>
+    <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
+      <span class="material-icons">music_note</span>Jam strip
+    </div>
     <div class="wise-popover-divider"></div>
     ${renderScoutDockRow()}
     <div class="wise-popover-divider"></div>
@@ -2508,6 +2512,13 @@ function openAppearance(anchor) {
     if (pivotItem) {
       ev.stopPropagation();
       toggleMenuPivot();
+      renderAppearanceBody(pop);
+      return;
+    }
+    const jamItem = ev.target.closest('[data-jam]');
+    if (jamItem) {
+      ev.stopPropagation();
+      applyJamStrip(!isJamStripOn());
       renderAppearanceBody(pop);
       return;
     }
