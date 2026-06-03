@@ -62,6 +62,17 @@ export function writeScoutDockState(patch) {
   return next;
 }
 
+/* Is the Whootie dock the only visible module left in its row? The menu rail
+   (nav chrome) doesn't count, and neither does any display:none module such as
+   a closed Alerts panel — only real, on-screen sibling modules do. */
+function isWhootieSolo(dock) {
+  const row = dock.closest('#modules-row');
+  if (!row) return false;
+  return !Array.from(row.children).some(
+    (el) => el !== dock && el.id !== 'menu-panel' && el.offsetWidth > 0,
+  );
+}
+
 /* Reflect the current (or supplied) state onto a dock element: its width
    class, its side class/flex-order, and the topbar control buttons. */
 export function applyScoutDockState(dock, state = readScoutDockState()) {
@@ -73,8 +84,17 @@ export function applyScoutDockState(dock, state = readScoutDockState()) {
      see the `scout-dock-center` CSS. */
   dock.classList.add('scout-dock-open');
   dock.classList.toggle('panel-wide', state.wide);
-  dock.classList.toggle('scout-dock-left', state.side === 'left');
-  dock.classList.toggle('scout-dock-center', state.side === 'center');
+
+  /* Width is locked to the single↔double range in CSS. The extra layout rule:
+     when Whootie is the ONLY module left in the row it can't be docked flush to
+     an edge against empty space — it stays capped at (at most) double width and
+     is centre-docked, overriding the stored left/right side until another
+     module returns. */
+  const solo = isWhootieSolo(dock);
+  const side = solo ? 'center' : state.side;
+  dock.classList.toggle('scout-dock-solo', solo);
+  dock.classList.toggle('scout-dock-left', side === 'left');
+  dock.classList.toggle('scout-dock-center', side === 'center');
 
   const widthBtn = dock.querySelector('.panel-width-toggle-btn');
   if (widthBtn) {
@@ -127,9 +147,38 @@ export function mountScoutDock(dock, opts = {}) {
   /* Restore the persisted place + size, then keep this dock in sync if the
      state changes in another tab/page. */
   applyScoutDockState(dock);
+  observeRowForSolo(dock);
   window.addEventListener('storage', (e) => {
     if (e.key === SCOUT_DOCK_KEY) applyScoutDockState(dock);
   });
 
   return scout;
+}
+
+/* Re-evaluate the solo rule whenever the set of visible modules in the row
+   changes — a module mounting/unmounting (childList) or a sibling toggling its
+   own visibility class, e.g. the Alerts panel going display:none↔flex
+   (attributes). Mutations originating inside the dock itself (chat activity,
+   our own class writes) are ignored so this never loops. */
+function observeRowForSolo(dock) {
+  const row = dock.closest('#modules-row');
+  if (!row || row.__scoutSoloObserver) return;
+  let queued = false;
+  const obs = new MutationObserver((records) => {
+    const relevant = records.some((m) => {
+      if (m.type === 'childList') return true;
+      /* Attribute change on a real sibling module, not the dock or its guts. */
+      return m.target !== dock && !dock.contains(m.target) && m.target.parentElement === row;
+    });
+    if (!relevant || queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; applyScoutDockState(dock); });
+  });
+  obs.observe(row, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'hidden'],
+  });
+  row.__scoutSoloObserver = obs;
 }

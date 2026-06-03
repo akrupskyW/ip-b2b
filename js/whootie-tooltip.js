@@ -2,25 +2,25 @@
  * Whootie™ acronym tooltip — shows what each letter stands for on hover/focus,
  * matching the floating tooltip pattern used by the nav rail (#lir-tooltip).
  *
- *   W — Wisdom
- *   H — Hub for
- *   O — Optimized
- *   O — Objective
- *   T — Trust &
- *   I — Intelligence
- *   E — Exchange
+ *   W — WISE
+ *   H — Health &
+ *   O — Outcome
+ *   O — Optimization
+ *   T — through Transparent
+ *   I — Ingredients &
+ *   E — Evidence
  */
 
 export const WHOOTIE_NAME = 'Whootie™';
 
 export const WHOOTIE_ACRONYM = [
-  ['W', 'Wisdom'],
-  ['H', 'Hub for'],
-  ['O', 'Optimized'],
-  ['O', 'Objective'],
-  ['T', 'Trust &'],
-  ['I', 'Intelligence'],
-  ['E', 'Exchange'],
+  ['W', 'WISE'],
+  ['H', 'Health &'],
+  ['O', 'Outcome'],
+  ['O', 'Optimization'],
+  ['T', 'through Transparent'],
+  ['I', 'Ingredients &'],
+  ['E', 'Evidence'],
 ];
 
 const WHOOTIE_RE = /Whootie™/g;
@@ -54,7 +54,7 @@ const STANDALONE_STYLES = `
   opacity: 0;
   transform: translateX(-50%) translateY(-4px);
   transition: opacity 0.12s ease, transform 0.12s ease;
-  max-width: 220px;
+  max-width: 260px;
 }
 #whootie-tip.whootie-tip-visible {
   opacity: 1;

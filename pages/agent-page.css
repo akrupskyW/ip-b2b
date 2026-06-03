@@ -410,7 +410,7 @@ body {
   opacity: 0;
   transform: translateX(-50%) translateY(-4px);
   transition: opacity 0.12s ease, transform 0.12s ease;
-  max-width: 220px;
+  max-width: 260px;
 }
 #whootie-tip.whootie-tip-visible {
   opacity: 1;
@@ -1278,6 +1278,31 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 #menu-panel.mp-rail .menu-footer .menu-nav-label {
   display: none !important;
+}
+
+/* ===== MINIMAL UI =====
+   Toggled from inside the Appearance (crossword) popover. Strips the
+   navigation down to its anchors: the logo (brand strip), the
+   crossword/Appearance control, and the avatar. We HIDE the nav list + collapse
+   toggle with `visibility` (not `display:none`) so their boxes keep occupying
+   space — this matters in the horizontal/pivot bar, where the nav body is the
+   `flex:1` spacer that pins the footer (crossword + avatar) to the far right.
+   Removing it from layout would slide everything left; hiding it leaves every
+   anchor in its exact original position in both vertical and horizontal modes.
+
+   The descendant `* { visibility: hidden }` is required because in pivot mode
+   the secondary items (.menu-nav-children-inner) re-assert `visibility: visible`,
+   which would otherwise leak through the hidden body. Forcing every descendant
+   hidden turns off BOTH primary and secondary nav items in every layout. */
+#menu-panel.minimal-ui .menu-panel-body,
+#menu-panel.minimal-ui .menu-panel-body * { visibility: hidden !important; }
+#menu-panel.minimal-ui .menu-brand-bar .topbar-menu-toggle { visibility: hidden !important; }
+/* Drop the module's card container (gradient, border, shadow) in minimal view —
+   the logo / crossword / avatar float free with no surrounding panel. */
+#menu-panel.minimal-ui .menu-inner {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 /* ===== MENU NAVIGATION ===== */

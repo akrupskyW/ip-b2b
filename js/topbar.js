@@ -238,6 +238,31 @@ export function positionPopoverForTopbar(pop, anchor) {
   pop.style.top = (rect.bottom + 8) + 'px';
 }
 
+/* Minimal UI — collapse the navigation to just the logo, the crossword
+   (Appearance), and the avatar. Everything else (the nav list and the
+   collapse toggle) is hidden via the `minimal-ui` class on #menu-panel. The
+   toggle itself lives inside the Appearance (crossword) popover; the choice is
+   persisted so it survives reloads and page changes. */
+const MINIMAL_UI_KEY = 'wise-minimal-ui';
+
+/** True when minimal UI was last left on. */
+export function isMinimalUiOn() {
+  try { return localStorage.getItem(MINIMAL_UI_KEY) === '1'; } catch { return false; }
+}
+
+/** Reflect minimal-UI state onto the navigation panel and persist it. The
+    Appearance popover reads isMinimalUiOn() to render its own toggle state. */
+export function applyMinimalUi(on) {
+  const panel = document.getElementById('menu-panel');
+  if (panel) panel.classList.toggle('minimal-ui', !!on);
+  try { localStorage.setItem(MINIMAL_UI_KEY, on ? '1' : '0'); } catch {}
+}
+
+/** Restore the persisted minimal-UI state onto the panel (no popover needed). */
+export function restoreMinimalUi() {
+  applyMinimalUi(isMinimalUiOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -283,6 +308,7 @@ export function wireMenuFooter() {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
+    restoreMinimalUi();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

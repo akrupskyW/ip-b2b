@@ -29,8 +29,12 @@
    The position lives on the higher-specificity .scout-dock-open selector
    because the dock element is also a .sc-card (position: relative), which
    would otherwise win on source order and cancel the stickiness. */
-.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
-@media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; } }
+.scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; max-width: 680px; position: sticky; right: 0; left: auto; z-index: 40; }
+@media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; max-width: 560px; } }
+/* Whootie width is LOCKED to a single↔double range: the header width icon flips
+   between exactly the single (380/330px) and double (680/560px) sizes, and the
+   module may never grow wider than double (max-width above) nor shrink below
+   single (min-width above) in any flex context it lands in. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). */
 .scout-dock.scout-dock-open.panel-wide {
@@ -44,6 +48,15 @@
     width: 560px;
     min-width: 560px;
   }
+}
+/* Solo state — when Whootie is the ONLY module left in the row it must not
+   stretch to fill the empty space. It stays capped at (at most) double width
+   (above) and is centre-docked, overriding any left/right preference. Auto
+   margins centre the lone flex item; js/scout-dock.js also forces the
+   scout-dock-center class so it stays sticky-clamped. */
+.scout-dock.scout-dock-open.scout-dock-solo {
+  margin-left: auto;
+  margin-right: auto;
 }
 /* Side flip — the dock defaults to the far-right of the modules row (order
    99), pinned to the right edge. Flipping it left re-orders it to the front

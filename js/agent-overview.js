@@ -15,7 +15,7 @@ import {
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initWhootieTooltips } from './whootie-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from './topbar.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
@@ -756,6 +756,10 @@ function renderAppearanceBody(pop) {
       </div>
     </div>
     <div class="wise-popover-divider"></div>
+    <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
+      <span class="material-symbols-outlined">compress</span>Minimal UI
+    </div>
+    <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
       <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
       <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
@@ -791,6 +795,13 @@ function openAppearancePopover(anchor) {
     if (fzBtn && pop.contains(fzBtn)) {
       ev.stopPropagation();
       setTextSize(fzBtn.dataset.fz);
+      return;
+    }
+    const minimalItem = ev.target.closest('[data-minimal]');
+    if (minimalItem && pop.contains(minimalItem)) {
+      ev.stopPropagation();
+      applyMinimalUi(!isMinimalUiOn());
+      renderAppearanceBody(pop);
       return;
     }
     const themeItem = ev.target.closest('[data-pop-action="theme"]');

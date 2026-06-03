@@ -1053,6 +1053,17 @@
     .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
     .hb-complete { background: #003326; color: #4EE0B7; }
     .hb-flagged { background: #3E0F10; color: #FF7C7E; }
+    .hb-view { background: #1a2a4a; color: #7eb8ff; }
+    .history-item.is-active-view {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      outline: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+    .history-view-pin {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.03em;
+      color: var(--text-subtle); margin-top: 4px;
+    }
+    .history-view-pin .material-icons { font-size: 13px; opacity: 0.85; }
 
     /* Scout + UPF */
     #scout-panel,
@@ -1854,6 +1865,104 @@
     .sc-reply-chips .chip .material-icons { font-size: 15px !important; }
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
+    /* ── Inline data & charts (Explore Data intent) ─────────────────────
+       Unlike the Reformulation / Verification flows that build a side
+       module, the "Explore my data" intent renders every answer — stats,
+       bars, donuts, trends — INLINE inside the chat reply, so the chart is
+       part of the conversation and the user keeps building on it in place. */
+    .sc-viz {
+      margin: 10px 0 2px;
+      padding: 14px 14px 13px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow-1);
+      animation: wfSectionIn 0.32s ease both;
+    }
+    html.dark .sc-viz { background: var(--surface-2); }
+    .sc-viz + .sc-viz { margin-top: 10px; }
+    .sc-viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .sc-viz-ic {
+      width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary-10); color: var(--primary);
+    }
+    html.dark .sc-viz-ic { color: var(--primary-bright); }
+    .sc-viz-ic .material-icons { font-size: 16px !important; }
+    .sc-viz-titles { min-width: 0; flex: 1 1 auto; }
+    .sc-viz-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); line-height: 1.25; }
+    .sc-viz-sub { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); margin-top: 1px; }
+    .sc-viz-pill {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;
+      padding: 3px 8px; border-radius: 999px;
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.01em;
+    }
+    .sc-viz-pill .material-icons { font-size: 12px !important; }
+    .sc-viz-pill--up   { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .sc-viz-pill--warn { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .sc-viz-pill--down { background: var(--sec-red-10);   color: var(--sec-red-text); }
+
+    /* Stat tiles */
+    .sc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .sc-stat { padding: 9px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+    html.dark .sc-stat { background: var(--surface-3); }
+    .sc-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .sc-stat-num small { font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle); }
+    .sc-stat-label { font-size: 0.625rem; font-weight: 600; color: var(--text-subtle); margin-top: 3px; line-height: 1.25; }
+
+    /* Horizontal bar list */
+    .sc-hbars { display: flex; flex-direction: column; gap: 9px; }
+    .sc-hbar-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .sc-hbar-label { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); }
+    .sc-hbar-val { font-size: 0.6875rem; font-weight: 800; color: var(--text); flex-shrink: 0; }
+    .sc-hbar-track { height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+    html.dark .sc-hbar-track { background: rgba(255,255,255,0.07); }
+    .sc-hbar-fill { height: 100%; border-radius: 999px; width: 0; background: var(--primary); animation: scBarGrow 0.7s cubic-bezier(0.34,1.2,0.64,1) forwards; }
+
+    /* Vertical column trend */
+    .sc-cols { display: flex; align-items: flex-end; gap: 7px; height: 92px; padding-top: 6px; }
+    .sc-col { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; height: 100%; }
+    .sc-col-bar { width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, var(--primary), color-mix(in srgb, var(--primary) 55%, var(--ter-cyan))); height: 0; animation: scColGrow 0.7s cubic-bezier(0.34,1.2,0.64,1) forwards; }
+    .sc-col.is-peak .sc-col-bar { background: linear-gradient(180deg, var(--sec-green), var(--ter-cyan)); }
+    .sc-col-val { font-size: 0.625rem; font-weight: 800; color: var(--text); }
+    .sc-col-label { font-size: 0.5625rem; font-weight: 600; color: var(--text-subtle); letter-spacing: 0.01em; }
+
+    /* Donut + legend */
+    .sc-donut-wrap { display: flex; align-items: center; gap: 16px; }
+    .sc-donut { position: relative; width: 92px; height: 92px; flex-shrink: 0; border-radius: 50%; animation: scFadeIn 0.5s ease both; }
+    .sc-donut-hole {
+      position: absolute; inset: 24%; border-radius: 50%; background: var(--surface);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    html.dark .sc-donut-hole { background: var(--surface-2); }
+    .sc-donut-hole-num { font-size: 0.9375rem; font-weight: 800; color: var(--text); line-height: 1; }
+    .sc-donut-hole-lbl { font-size: 0.5rem; font-weight: 700; color: var(--text-subtle); letter-spacing: 0.04em; }
+    .sc-legend { display: flex; flex-direction: column; gap: 7px; flex: 1 1 auto; min-width: 0; }
+    .sc-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); }
+    .sc-legend-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+    .sc-legend-val { margin-left: auto; font-weight: 800; color: var(--text); }
+
+    .sc-viz-foot {
+      display: flex; align-items: center; gap: 5px; margin-top: 11px; padding-top: 10px;
+      border-top: 1px dashed var(--border-strong);
+      font-size: 0.625rem; font-weight: 600; color: var(--text-subtle);
+    }
+    .sc-viz-foot .material-icons { font-size: 13px !important; color: var(--sec-green); }
+
+    /* Tiny uppercase lead for "build on this" follow-up chip rows. */
+    .sc-reply-lead {
+      align-self: center; margin-right: 2px;
+      font-size: 0.625rem; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+
+    @keyframes scBarGrow { from { width: 0; } }
+    @keyframes scColGrow { from { height: 0; } }
+    @keyframes scFadeIn { from { opacity: 0; transform: scale(0.92); } }
+    @media (prefers-reduced-motion: reduce) {
+      .sc-hbar-fill, .sc-col-bar, .sc-donut, .sc-viz { animation: none !important; }
+    }
+
     /* ── WISE Verification workflow module ──────────────────────────────
        A richer, "live" sibling to the Reformulation Plan: Whootie™ runs an
        end-to-end verification (Profile → Audit → Select → Analyze → Attest →
@@ -1982,12 +2091,6 @@
     }
     #launch-packaging-panel.lr-open .lr-inner {
       animation-delay: 0.08s;
-    }
-    .lr-shift-pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 2px 9px 2px 7px; border-radius: 999px;
-      font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
-      background: var(--ter-amber-10, rgba(255, 179, 71, 0.12)); color: var(--ter-amber);
     }
 
     .vf-body { display: flex; flex-direction: column; gap: 10px; }
@@ -3031,11 +3134,12 @@
       .ws-logo { animation: none; transform: none; }
     }
     .ws-heading {
-      font-size: var(--fs-welcome-title);
+      font-size: clamp(1.875rem, 1rem + 2.2vw, 2.75rem);
       font-weight: 800;
+      line-height: 1.12;
       color: var(--text);
       text-align: center;
-      margin: 1.25rem 0 0.5rem;
+      margin: 1.25rem 0 0.75rem;
     }
     .ws-sub {
       font-size: var(--fs-ui);
@@ -3045,15 +3149,73 @@
     }
 
     /* Portfolio score cards — actionable, more detailed than an intent chip.
-       Max three rectangular cards sitting above the quick-action chips. */
-    .ws-scorecards {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+       Three show at a time; the rest live off-screen and are reached with the
+       scroll-right control. A prioritisation filter sits in the section bar. */
+    .ws-scorecards-section {
       width: 100%;
       max-width: 864px;
       margin: 0 auto 1.5rem;
     }
+    .ws-scorecards-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .ws-scorecards-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    /* Prioritisation filter — pinned to the far right of the section bar. */
+    .ws-sc-filter { position: relative; }
+    #chat-shell-wrap .ws-sc-filter-btn,
+    .ws-sc-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px 5px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill, 999px) !important;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ws-sc-filter-btn:hover {
+      background: var(--surface-3);
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+    }
+    .ws-sc-filter-btn .material-icons { font-size: 16px !important; color: var(--text-muted); }
+    .ws-sc-filter-btn .ws-sc-filter-caret { margin-left: -2px; }
+    .ws-sc-filter-pop { left: auto; right: 0; min-width: 200px; }
+    .ws-sc-filter-pop .topbar-menu-item.is-active {
+      color: var(--primary);
+      background: var(--primary-soft, color-mix(in srgb, var(--primary) 10%, transparent));
+    }
+    .ws-sc-filter-pop .topbar-menu-item.is-active .topbar-menu-icon { color: var(--primary); }
+
+    /* Scroller — horizontal rail of cards with snap + hidden scrollbar. */
+    .ws-scorecards-wrap { position: relative; }
+    .ws-scorecards {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      /* Vertical room so the card hover-lift + shadow aren't clipped by the
+         scroller (overflow-x:auto forces overflow-y to auto). */
+      padding: 6px 2px 14px;
+    }
+    .ws-scorecards::-webkit-scrollbar { height: 0; width: 0; display: none; }
     /* NB: #chat-shell-wrap button forces a pill radius via !important, so the
        card radius must also use !important to win and stay a real card. */
     #chat-shell-wrap .ws-scorecard,
@@ -3063,6 +3225,10 @@
       align-items: stretch;
       gap: 6px;
       text-align: left;
+      /* Three cards visible inside the 864px rail (3 × 264 + 2 × 12 gap = 816). */
+      flex: 0 0 264px;
+      min-width: 264px;
+      scroll-snap-align: start;
       padding: 14px 16px;
       aspect-ratio: 16 / 9;
       background: var(--surface-2);
@@ -3072,6 +3238,54 @@
       transition: background 0.15s ease, border-color 0.15s ease,
                   box-shadow 0.15s ease, transform 0.15s ease;
     }
+    /* Scroll-right / left affordance — floating circular control over the rail. */
+    #chat-shell-wrap .ws-sc-scroll,
+    .ws-sc-scroll {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px !important;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+      transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+    }
+    .ws-sc-scroll:hover { background: var(--surface-3); transform: translateY(-50%) scale(1.06); }
+    .ws-sc-scroll .material-icons { font-size: 22px !important; }
+    .ws-sc-scroll--next { right: -10px; }
+    .ws-sc-scroll--prev { left: -10px; }
+    .ws-sc-scroll[hidden] { display: none; }
+    /* Soft edge fades cue that the rail keeps going. */
+    .ws-scorecards-wrap::before,
+    .ws-scorecards-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .ws-scorecards-wrap::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg) 0%, transparent 100%);
+    }
+    .ws-scorecards-wrap::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
+    }
+    .ws-scorecards-wrap.has-prev::before { opacity: 1; }
+    .ws-scorecards-wrap.has-next::after { opacity: 1; }
     .ws-scorecard:hover {
       background: var(--surface-3);
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong));
@@ -3158,13 +3372,15 @@
     }
     .ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
 
-    /* Stack the cards on narrow panels / phones so they stay readable. */
+    /* Narrow panels / phones: cards shrink a touch but keep scrolling sideways
+       (still ~1.5 visible, so the scroll-right affordance still reads). */
     @media (max-width: 700px) {
-      .ws-scorecards {
-        grid-template-columns: 1fr;
-        max-width: 340px;
+      .ws-scorecard {
+        flex-basis: 78%;
+        min-width: 78%;
+        padding: 12px 14px;
+        aspect-ratio: auto;
       }
-      .ws-scorecard { padding: 12px 14px; aspect-ratio: auto; }
       .ws-sc-metric { font-size: 1.375rem; }
     }
 
@@ -5440,7 +5656,7 @@
     </div>
     <script type="module">
       import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
-      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from '../js/topbar.js';
+      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { initWhootieTooltips } from '../js/whootie-tooltip.js';
@@ -5453,7 +5669,10 @@
         getStoredFontSize,
         toggleMenuPivot,
         isMenuPivoted,
+        applyMinimalUi,
+        isMinimalUiOn,
       });
+      restoreMinimalUi();
       /* Use the exact same shell helper as the agent/portfolio pages: it leads
          the nav panel with the shared WISE brand strip and docks the collapse
          toggle beside the logo. The toggle collapses the panel to an icon rail
@@ -5633,7 +5852,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">HISTORY</div>
-            <p class="text-xs text-oyster-600 mt-0.5">Chats &amp; Projects</p>
+            <p class="text-xs text-oyster-600 mt-0.5">Chats, Projects &amp; Views</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="history" role="group" aria-label="Dock History panel">
@@ -5646,6 +5865,7 @@
         <div class="history-tabs-row">
           <button type="button" class="history-tab-btn active" id="tab-history" onclick="switchHistoryTab('history')">History</button>
           <button type="button" class="history-tab-btn" id="tab-projects" onclick="switchHistoryTab('projects')">Projects</button>
+          <button type="button" class="history-tab-btn" id="tab-views" onclick="switchHistoryTab('views')">Views</button>
         </div>
         <div class="px-3 pt-2 pb-1 shrink-0">
           <button type="button" onclick="restartConversation()" class="btn-primary w-full flex items-center justify-center gap-2 px-3 py-2 text-white text-xs font-medium">
@@ -5655,23 +5875,34 @@
         </div>
         <div id="history-tab-content" class="flex-1 overflow-y-auto px-3 py-2 side-panel-body">
           <div class="text-xs font-semibold uppercase tracking-wider text-oyster-600 px-2 pb-1">Today</div>
-          <div class="history-item">
+          <div class="history-item" role="button" tabindex="0" onclick="restoreSavedView('data-portfolio-deepdive')" onkeydown="if(event.key==='Enter')restoreSavedView('data-portfolio-deepdive')">
             <div class="flex items-start justify-between gap-2">
-              <div class="history-item-title">WISE Verified — Sample Co.</div>
-              <span class="history-badge hb-progress">In Progress</span>
+              <div class="history-item-title">Portfolio data deep-dive</div>
+              <span class="history-badge hb-view">Inline</span>
             </div>
-            <div class="history-item-meta">Placeholder row · UI shell</div>
+            <div class="history-item-meta">10:24 AM · 8 messages · charts in chat</div>
           </div>
-          <div class="history-item">
+          <div class="text-xs font-semibold uppercase tracking-wider text-oyster-600 px-2 pb-1 pt-2">Yesterday</div>
+          <div class="history-item" role="button" tabindex="0" onclick="restoreSavedView('reformulation-granola')" onkeydown="if(event.key==='Enter')restoreSavedView('reformulation-granola')">
             <div class="flex items-start justify-between gap-2">
-              <div class="history-item-title">Membership upgrade</div>
-              <span class="history-badge hb-complete">Done</span>
+              <div class="history-item-title">Reformulation — Mixed Berry Granola</div>
+              <span class="history-badge hb-complete">Module</span>
             </div>
-            <div class="history-item-meta">2:10 PM · 4 messages</div>
+            <div class="history-item-meta">4:12 PM · 10 messages · Reformulation Plan</div>
+          </div>
+          <div class="history-item" role="button" tabindex="0" onclick="restoreSavedView('verification-nutrient-survival')" onkeydown="if(event.key==='Enter')restoreSavedView('verification-nutrient-survival')">
+            <div class="flex items-start justify-between gap-2">
+              <div class="history-item-title">Live Verification — Nutrient Survival</div>
+              <span class="history-badge hb-complete">Module</span>
+            </div>
+            <div class="history-item-meta">11:02 AM · 16 messages · WISE Verification</div>
           </div>
         </div>
         <div id="projects-tab-content" class="flex-1 overflow-y-auto px-3 py-2 hidden side-panel-body">
           <div class="text-xs text-oyster-500 px-2">Project list placeholder — content TBD.</div>
+        </div>
+        <div id="views-tab-content" class="flex-1 overflow-y-auto px-3 py-2 hidden side-panel-body">
+          <!-- Populated by renderViewsTab() -->
         </div>
       </div>
     </div>
@@ -5769,7 +6000,7 @@
             <button type="button" class="panel-width-toggle-btn" data-panel="tier" onclick="togglePanelWidth('tier')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double TIER module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
-        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
+        <div id="tier-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
           <div class="rounded-lg px-3 py-2" style="background:#4EE0B711;border-left:3px solid #4EE0B7;">
             <strong style="color:#4EE0B7">Whole</strong> — Unprocessed / minimally processed
           </div>
@@ -5807,7 +6038,7 @@
             <button type="button" class="panel-width-toggle-btn" data-panel="shield" onclick="togglePanelWidth('shield')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double SHIELD module width"><span class="material-symbols-outlined">transition_slide</span></button>
           </div>
         </div>
-        <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
+        <div id="shield-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
           <div class="rounded-lg p-3" style="background:rgba(164,170,255,0.06);border:1px solid rgba(164,170,255,0.18);">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-oyster-200">WISE Verified — Sample Co.</span>
@@ -5999,38 +6230,93 @@
             </div>
             <!-- Heading -->
             <h1 class="ws-heading">What can Whootie™ help with?</h1>
-            <!-- Portfolio score cards — richer, actionable signals above the intent chips -->
-            <div class="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
-                <button class="ws-scorecard" role="listitem" onclick="welcomeChipClick('registry_home','Show me my portfolio health','insights')">
-                    <div class="ws-sc-top">
-                        <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
-                        <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>+4 pts</span>
+            <!-- Portfolio score cards — richer, actionable signals above the intent chips.
+                 They scroll horizontally (there are always more than fit on screen), with a
+                 prioritisation filter pinned to the far right of the section bar and a
+                 scroll-right control that reveals the cards past the visible three. -->
+            <div class="ws-scorecards-section">
+                <div class="ws-scorecards-bar">
+                    <span class="ws-scorecards-label">Your portfolio at a glance</span>
+                    <div class="ws-sc-filter">
+                        <button type="button" class="ws-sc-filter-btn" id="ws-sc-filter-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="ws-sc-filter-pop" onclick="toggleScorecardFilter(event)">
+                            <span class="material-icons">tune</span>
+                            <span id="ws-sc-filter-label">Recommended</span>
+                            <span class="material-icons ws-sc-filter-caret">expand_more</span>
+                        </button>
+                        <div class="topbar-popover ws-sc-filter-pop hidden" id="ws-sc-filter-pop" role="menu" aria-label="Prioritise cards">
+                            <button type="button" class="topbar-menu-item is-active" role="menuitemradio" aria-checked="true" data-sort="recommended" onclick="sortScorecards('recommended','Recommended')"><span class="material-icons topbar-menu-icon">auto_awesome</span><span>Recommended</span></button>
+                            <button type="button" class="topbar-menu-item" role="menuitemradio" aria-checked="false" data-sort="urgent" onclick="sortScorecards('urgent','Most urgent')"><span class="material-icons topbar-menu-icon">priority_high</span><span>Most urgent</span></button>
+                            <button type="button" class="topbar-menu-item" role="menuitemradio" aria-checked="false" data-sort="impact" onclick="sortScorecards('impact','Highest impact')"><span class="material-icons topbar-menu-icon">trending_up</span><span>Highest impact</span></button>
+                            <button type="button" class="topbar-menu-item" role="menuitemradio" aria-checked="false" data-sort="recent" onclick="sortScorecards('recent','Recently changed')"><span class="material-icons topbar-menu-icon">schedule</span><span>Recently changed</span></button>
+                        </div>
                     </div>
-                    <div class="ws-sc-metric">82<span class="ws-sc-metric-unit">/100</span></div>
-                    <div class="ws-sc-title">Portfolio WISE Score</div>
-                    <div class="ws-sc-desc">11 of 14 products verified — health trending up this week.</div>
-                    <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
-                </button>
-                <button class="ws-scorecard" role="listitem" onclick="welcomeChipClick('resume_prompt','Which verifications are expiring soon?','schedule')">
-                    <div class="ws-sc-top">
-                        <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">pending_actions</span></span>
-                        <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">priority_high</span>Action</span>
+                </div>
+                <div class="ws-scorecards-wrap">
+                    <div class="ws-scorecards" id="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
+                        <button class="ws-scorecard" role="listitem" data-order="0" data-urgent="2" data-impact="5" data-recent="4" onclick="welcomeChipClick('registry_home','Show me my portfolio health','insights')">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>+4 pts</span>
+                            </div>
+                            <div class="ws-sc-metric">82<span class="ws-sc-metric-unit">/100</span></div>
+                            <div class="ws-sc-title">Portfolio WISE Score</div>
+                            <div class="ws-sc-desc">11 of 14 products verified — health trending up this week.</div>
+                            <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="1" data-urgent="5" data-impact="4" data-recent="5" onclick="welcomeChipClick('resume_prompt','Which verifications are expiring soon?','schedule')">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">pending_actions</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">priority_high</span>Action</span>
+                            </div>
+                            <div class="ws-sc-metric">2<span class="ws-sc-metric-unit"> expiring</span></div>
+                            <div class="ws-sc-title">Verifications Expiring</div>
+                            <div class="ws-sc-desc">Soonest lapses in 6 days — renew to keep NON-UPF status live.</div>
+                            <div class="ws-sc-action">Continue verification<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="2" data-urgent="4" data-impact="4" data-recent="3" onclick="welcomeChipClick('faq_intro','What additive flags are on my brand?','flag')">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--alert"><span class="material-icons">flag</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--alert"><span class="material-icons">science</span>Review</span>
+                            </div>
+                            <div class="ws-sc-metric">3<span class="ws-sc-metric-unit"> flags</span></div>
+                            <div class="ws-sc-title">Additive Flags Open</div>
+                            <div class="ws-sc-desc">3 ingredients across 2 products need an additive review.</div>
+                            <div class="ws-sc-action">Investigate flags<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="2" data-impact="5" data-recent="2" onclick="startReformulationWorkflow()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">science</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">lightbulb</span>Opportunity</span>
+                            </div>
+                            <div class="ws-sc-metric">5<span class="ws-sc-metric-unit"> SKUs</span></div>
+                            <div class="ws-sc-title">Reformulation Wins</div>
+                            <div class="ws-sc-desc">5 products could clear a UPF marker with a single ingredient swap.</div>
+                            <div class="ws-sc-action">Plan reformulation<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="4" data-urgent="3" data-impact="3" data-recent="3" onclick="startLaunchReadinessFlow()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">rocket_launch</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">checklist</span>4 left</span>
+                            </div>
+                            <div class="ws-sc-metric">78<span class="ws-sc-metric-unit">% ready</span></div>
+                            <div class="ws-sc-title">Launch Readiness</div>
+                            <div class="ws-sc-desc">Spring line is 78% launch-ready — 4 checklist items remain.</div>
+                            <div class="ws-sc-action">Prep launch<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="5" data-urgent="1" data-impact="3" data-recent="4" onclick="startDataExploration()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">query_stats</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Live</span>
+                            </div>
+                            <div class="ws-sc-metric">6<span class="ws-sc-metric-unit"> trends</span></div>
+                            <div class="ws-sc-title">Data &amp; Trends</div>
+                            <div class="ws-sc-desc">Explore additive, score and category trends across your catalog.</div>
+                            <div class="ws-sc-action">Explore data<span class="material-icons">arrow_outward</span></div>
+                        </button>
                     </div>
-                    <div class="ws-sc-metric">2<span class="ws-sc-metric-unit"> expiring</span></div>
-                    <div class="ws-sc-title">Verifications Expiring</div>
-                    <div class="ws-sc-desc">Soonest lapses in 6 days — renew to keep NON-UPF status live.</div>
-                    <div class="ws-sc-action">Continue verification<span class="material-icons">arrow_outward</span></div>
-                </button>
-                <button class="ws-scorecard" role="listitem" onclick="welcomeChipClick('faq_intro','What additive flags are on my brand?','flag')">
-                    <div class="ws-sc-top">
-                        <span class="ws-sc-icon ws-sc-icon--alert"><span class="material-icons">flag</span></span>
-                        <span class="ws-sc-pill ws-sc-pill--alert"><span class="material-icons">science</span>Review</span>
-                    </div>
-                    <div class="ws-sc-metric">3<span class="ws-sc-metric-unit"> flags</span></div>
-                    <div class="ws-sc-title">Additive Flags Open</div>
-                    <div class="ws-sc-desc">3 ingredients across 2 products need an additive review.</div>
-                    <div class="ws-sc-action">Investigate flags<span class="material-icons">arrow_outward</span></div>
-                </button>
+                    <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-sc-prev" aria-label="Scroll to previous cards" onclick="scrollScorecards(-1)" hidden><span class="material-icons">chevron_left</span></button>
+                    <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ws-sc-next" aria-label="Scroll to see more cards" onclick="scrollScorecards(1)"><span class="material-icons">chevron_right</span></button>
+                </div>
             </div>
             <!-- Quick action chips -->
             <div class="ws-chips">
@@ -6063,6 +6349,9 @@
                 </button>
                 <button class="chip ws-intent-chip" onclick="startLaunchReadinessFlow()">
                     <span class="material-icons" style="font-size:16px">rocket_launch</span>Prep Launch Readiness
+                </button>
+                <button class="chip ws-intent-chip" onclick="startDataExploration()">
+                    <span class="material-icons" style="font-size:16px">query_stats</span>Explore My Data &amp; Charts
                 </button>
             </div>
             <!-- Trust badges — mirror scout-chat.js so the welcome reads the same
@@ -6694,7 +6983,7 @@
                 <span class="material-icons text-[15px]" style="color:var(--ter-amber)">inventory</span>
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-xs font-bold text-oyster-100 flex items-center gap-2">Packaging Checks <span class="lr-shift-pill" id="lr-shift-pill" hidden><span class="material-icons" style="font-size:12px">swap_vert</span>STACKED</span></div>
+                <div class="text-xs font-bold text-oyster-100">Packaging Checks</div>
                 <p class="text-xs text-oyster-600 mt-0.5" id="lr-packaging-subtitle">Opens when label copy needs reconciliation</p>
               </div>
               <div class="panel-controls">
@@ -7337,21 +7626,351 @@
     }
 
     function switchHistoryTab(tab) {
-      const h = document.getElementById('history-tab-content');
-      const p = document.getElementById('projects-tab-content');
-      const bH = document.getElementById('tab-history');
-      const bP = document.getElementById('tab-projects');
-      if (tab === 'history') {
-        h.classList.remove('hidden');
-        p.classList.add('hidden');
-        bH.classList.add('active');
-        bP.classList.remove('active');
+      const panes = {
+        history: 'history-tab-content',
+        projects: 'projects-tab-content',
+        views: 'views-tab-content',
+      };
+      const btns = {
+        history: 'tab-history',
+        projects: 'tab-projects',
+        views: 'tab-views',
+      };
+      Object.keys(panes).forEach((key) => {
+        document.getElementById(panes[key])?.classList.toggle('hidden', key !== tab);
+        document.getElementById(btns[key])?.classList.toggle('active', key === tab);
+      });
+      if (tab === 'views') renderViewsTab();
+    }
+
+    /* ── Saved Views — restore chat + every open module exactly as left ── */
+    let activeSavedViewId = null;
+    const SAVED_VIEWS = [];
+
+    const TIER_PANEL_DEFAULT_HTML = document.getElementById('tier-panel-body')?.innerHTML || '';
+    const SHIELD_PANEL_DEFAULT_HTML = document.getElementById('shield-panel-body')?.innerHTML || '';
+
+    function captureCurrentView() {
+      const agents = {};
+      Object.keys(AGENTS).forEach((id) => { agents[id] = !!AGENTS[id].on; });
+      return {
+        chatHtml: document.getElementById('chat-messages')?.innerHTML || '',
+        welcomeHidden: !!document.getElementById('welcome-screen')?.classList.contains('ws-hidden'),
+        lrClaimsBody: document.getElementById('lr-claims-body')?.innerHTML || '',
+        lrPackagingBody: document.getElementById('lr-packaging-body')?.innerHTML || '',
+        lrClaimsOpen: !!document.getElementById('launch-claims-panel')?.classList.contains('lr-open'),
+        lrPackagingOpen: !!document.getElementById('launch-packaging-panel')?.classList.contains('lr-open'),
+        lrClaimsSteps,
+        lrPackagingSteps,
+        lrClaimsSubtitle: document.getElementById('lr-claims-subtitle')?.textContent || '',
+        lrPackagingSubtitle: document.getElementById('lr-packaging-subtitle')?.textContent || '',
+        agents,
+        panels: {
+          history: document.getElementById('history-panel')?.classList.contains('open'),
+          scout: document.getElementById('scout-panel')?.classList.contains('sp-open'),
+          upf: document.getElementById('upf-panel')?.classList.contains('up-open'),
+          tier: document.getElementById('tier-panel')?.classList.contains('tp-open'),
+          shield: document.getElementById('shield-panel')?.classList.contains('sd-open'),
+          lens: document.getElementById('lens-panel')?.classList.contains('ln-open'),
+          vault: document.getElementById('vault-panel')?.classList.contains('vt-open'),
+          nfp: document.getElementById('nfp-panel')?.classList.contains('nfp-open'),
+          notif: document.getElementById('notif-panel')?.classList.contains('notif-open'),
+          settings: document.getElementById('settings-screen')?.classList.contains('ss-open'),
+        },
+        tierBodyHtml: document.getElementById('tier-panel-body')?.innerHTML || '',
+        shieldBodyHtml: document.getElementById('shield-panel-body')?.innerHTML || '',
+        /* Floating right-side workflow modules (Reformulation / Verification). */
+        wfOpen: !!document.getElementById('workflow-panel')?.classList.contains('wf-open'),
+        wfBody: document.getElementById('wf-body')?.innerHTML || '',
+        wfSubtitle: document.getElementById('wf-subtitle')?.textContent || '',
+        wfStepIndex,
+        vfOpen: !!document.getElementById('verify-flow-panel')?.classList.contains('vf-open'),
+        vfWide: !!document.getElementById('verify-flow-panel')?.classList.contains('panel-wide'),
+        vfBody: document.getElementById('vf-body')?.innerHTML || '',
+        vfStepperHtml: document.getElementById('vf-stepper')?.innerHTML || '',
+        vfSubtitle: document.getElementById('vf-subtitle')?.textContent || '',
+        vfStageIndex,
+        vfComplete: vfStageIndex >= VF_STAGES.length,
+      };
+    }
+
+    function restoreViewSnapshot(snap) {
+      if (!snap) return;
+
+      /* Floating Reformulation Plan module — re-open and refill, or close. */
+      if (snap.wfOpen) {
+        const wfBodyEl = document.getElementById('wf-body');
+        if (wfBodyEl && snap.wfBody) wfBodyEl.innerHTML = snap.wfBody;
+        const wfSub = document.getElementById('wf-subtitle');
+        if (wfSub && snap.wfSubtitle) wfSub.textContent = snap.wfSubtitle;
+        wfStarted = true;
+        wfStepIndex = snap.wfStepIndex || 0;
+        wfUpdateProgress();
+        document.getElementById('workflow-panel')?.classList.add('wf-open');
       } else {
-        p.classList.remove('hidden');
-        h.classList.add('hidden');
-        bP.classList.add('active');
-        bH.classList.remove('active');
+        closeReformulationWorkflow();
       }
+
+      /* Floating WISE Verification module — re-open and refill, or close. */
+      if (snap.vfOpen) {
+        const vfBodyEl = document.getElementById('vf-body');
+        if (vfBodyEl && snap.vfBody) vfBodyEl.innerHTML = snap.vfBody;
+        const vfStepperEl = document.getElementById('vf-stepper');
+        if (vfStepperEl && snap.vfStepperHtml) vfStepperEl.innerHTML = snap.vfStepperHtml;
+        const vfSub = document.getElementById('vf-subtitle');
+        if (vfSub && snap.vfSubtitle) vfSub.textContent = snap.vfSubtitle;
+        vfStarted = true;
+        vfStageIndex = snap.vfStageIndex || 0;
+        vfUpdateProgress();
+        const vfPanel = document.getElementById('verify-flow-panel');
+        vfPanel?.classList.add('vf-open');
+        vfPanel?.classList.toggle('panel-wide', !!snap.vfWide);
+        if (snap.vfComplete) {
+          const live = document.querySelector('#verify-flow-panel .vf-live');
+          if (live) {
+            live.style.background = 'var(--sec-green-10)';
+            live.innerHTML = '<span class="material-icons" style="font-size:12px">check_circle</span>DONE';
+          }
+        }
+      } else {
+        closeVerificationWorkflow();
+      }
+
+      const ws = document.getElementById('welcome-screen');
+      if (snap.welcomeHidden) {
+        ws?.classList.add('ws-hidden');
+        if (ws) ws.style.display = 'none';
+      } else {
+        showWelcomeScreen();
+      }
+
+      const chat = document.getElementById('chat-messages');
+      if (chat) chat.innerHTML = snap.chatHtml || '';
+
+      lrStarted = true;
+      lrStepIndex = snap.lrClaimsSteps + snap.lrPackagingSteps;
+      lrClaimsSteps = snap.lrClaimsSteps || 0;
+      lrPackagingSteps = snap.lrPackagingSteps || 0;
+
+      const claimsPanel = document.getElementById('launch-claims-panel');
+      const pkgPanel = document.getElementById('launch-packaging-panel');
+      claimsPanel?.classList.toggle('lr-open', !!snap.lrClaimsOpen);
+      pkgPanel?.classList.toggle('lr-open', !!snap.lrPackagingOpen);
+
+      const claimsBody = document.getElementById('lr-claims-body');
+      const pkgBody = document.getElementById('lr-packaging-body');
+      if (claimsBody && snap.lrClaimsBody) claimsBody.innerHTML = snap.lrClaimsBody;
+      if (pkgBody && snap.lrPackagingBody) pkgBody.innerHTML = snap.lrPackagingBody;
+
+      const claimsSub = document.getElementById('lr-claims-subtitle');
+      const pkgSub = document.getElementById('lr-packaging-subtitle');
+      if (claimsSub && snap.lrClaimsSubtitle) claimsSub.textContent = snap.lrClaimsSubtitle;
+      if (pkgSub && snap.lrPackagingSubtitle) pkgSub.textContent = snap.lrPackagingSubtitle;
+
+      lrUpdateClaimsProgress();
+      lrUpdatePackagingProgress();
+      syncIntentStackColumn();
+      syncPanelsRowRight();
+
+      Object.keys(AGENTS).forEach((id) => {
+        const want = !!snap.agents?.[id];
+        if (AGENTS[id].on !== want) toggleAgent(id, want);
+      });
+
+      const p = snap.panels || {};
+      /* The History module is where saved views are launched from, so it must
+         PERSIST across a restore — never toggle it shut. (toggleHistoryPanel
+         takes an options object, not a boolean, so the old `toggleHistoryPanel(
+         !!p.history)` actually flipped it closed.) Keep it open. */
+      const historyPanel = document.getElementById('history-panel');
+      if (historyPanel && !historyPanel.classList.contains('open')) toggleHistoryPanel();
+      syncLirBtn('lir-history-btn', true);
+      togglePanel('scout', !!p.scout);
+      togglePanel('pulse', !!p.upf);
+      togglePanel('nova', !!p.tier);
+      togglePanel('shield', !!p.shield);
+      togglePanel('lens', !!p.lens);
+      togglePanel('vault', !!p.vault);
+      toggleNfpPanel(!!p.nfp);
+      toggleNotificationsPanel(!!p.notif);
+      toggleSettingsPanel(!!p.settings);
+
+      const tierBody = document.getElementById('tier-panel-body');
+      const shieldBody = document.getElementById('shield-panel-body');
+      if (tierBody && snap.tierBodyHtml) tierBody.innerHTML = snap.tierBodyHtml;
+      if (shieldBody && snap.shieldBodyHtml) shieldBody.innerHTML = snap.shieldBodyHtml;
+
+      syncPanelsRowRight();
+      if (snap.lrClaimsOpen || snap.lrPackagingOpen) scrollPanelIntoView('intent-stack-column');
+      chat && (chat.scrollTop = chat.scrollHeight);
+    }
+
+    function persistLaunchReadinessView() {
+      const snap = captureCurrentView();
+      const entry = {
+        id: 'launch-readiness-chipotle',
+        title: 'Launch Readiness — Chipotle Empanadas',
+        meta: 'Claims + Packaging · SHIELD · TIER · NFP+',
+        section: 'Today',
+        modules: '7 modules',
+        snapshot: snap,
+      };
+      const idx = SAVED_VIEWS.findIndex((v) => v.id === entry.id);
+      if (idx >= 0) SAVED_VIEWS[idx] = entry;
+      else SAVED_VIEWS.unshift(entry);
+      renderViewsTab();
+    }
+
+    function restoreSavedView(viewId) {
+      const view = SAVED_VIEWS.find((v) => v.id === viewId);
+      if (!view?.snapshot) return;
+      activeSavedViewId = viewId;
+      restoreViewSnapshot(view.snapshot);
+      switchHistoryTab('views');
+      renderViewsTab();
+      const typing = showScoutTyping('Restoring your saved view…');
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
+      }, 500);
+    }
+
+    function renderViewsTab() {
+      const el = document.getElementById('views-tab-content');
+      if (!el) return;
+      if (!SAVED_VIEWS.length) {
+        el.innerHTML =
+          '<div class="text-xs text-oyster-500 px-2 py-4 leading-relaxed">' +
+          'Saved views appear here when you finish a workflow. Each view captures the chat, open modules, and panel layout so you can jump back instantly.</div>';
+        return;
+      }
+      const sections = {};
+      SAVED_VIEWS.forEach((v) => {
+        const sec = v.section || 'Saved';
+        if (!sections[sec]) sections[sec] = [];
+        sections[sec].push(v);
+      });
+      el.innerHTML = Object.keys(sections).map((sec) => {
+        const items = sections[sec].map((v) =>
+          `<div class="history-item${activeSavedViewId === v.id ? ' is-active-view' : ''}" role="button" tabindex="0" onclick="restoreSavedView('${v.id}')" onkeydown="if(event.key==='Enter')restoreSavedView('${v.id}')">` +
+          `<div class="flex items-start justify-between gap-2">` +
+          `<div class="history-item-title">${v.title}</div>` +
+          `<span class="history-badge hb-view">View</span></div>` +
+          `<div class="history-item-meta">${v.meta}</div>` +
+          `<div class="history-view-pin"><span class="material-icons">layers</span>${v.modules || 'Modules saved'}</div></div>`
+        ).join('');
+        return `<div class="text-xs font-semibold uppercase tracking-wider text-oyster-600 px-2 pb-1 pt-1">${sec}</div>${items}`;
+      }).join('');
+    }
+
+    /* ── Pre-seed a few restorable conversations ────────────────────────
+       So the History "Views" tab (and the History list) aren't empty on
+       first load, seed a couple of believable saved conversations that span
+       BOTH styles: one answered fully INLINE (data & charts in the chat) and
+       two that drive FLOATING right-side modules (Reformulation, Verification).
+       Each snapshot is produced by running the real builders + captureCurrentView(),
+       so restoring them rebuilds the exact transcript and module layout. */
+    function seedSavedViews() {
+      if (SAVED_VIEWS.length) return;
+      const chat = document.getElementById('chat-messages');
+      const ws = document.getElementById('welcome-screen');
+      if (!chat) return;
+      const hideWS = () => { ws?.classList.add('ws-hidden'); if (ws) ws.style.display = 'none'; };
+      const resetModules = () => {
+        closeReformulationWorkflow();
+        closeVerificationWorkflow();
+        wfResetModule();
+        vfResetModule();
+      };
+
+      /* ── View 1 · INLINE data & charts (no side modules) ── */
+      resetModules();
+      chat.innerHTML = '';
+      hideWS();
+      addScoutMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation.', { source: false });
+      ['scoreTrend', 'flags', 'projectFix'].forEach((id) => {
+        const n = DATA_NODES[id];
+        if (!n) return;
+        addUserMessage(n.user);
+        addScoutMessage(n.reply + (n.viz ? n.viz() : ''));
+      });
+      SAVED_VIEWS.push({
+        id: 'data-portfolio-deepdive',
+        title: 'Portfolio data deep-dive',
+        meta: 'Today · 10:24 AM · charts answered in chat',
+        section: 'Today',
+        modules: 'Inline — no side modules',
+        snapshot: captureCurrentView(),
+      });
+
+      /* ── View 2 · FLOATING Reformulation Plan module ── */
+      resetModules();
+      chat.innerHTML = '';
+      hideWS();
+      wfBuildProduct(); wfBuildAdditives(); wfBuildSwaps(); wfBuildProjection();
+      wfStepIndex = WF_STEPS.length;
+      wfUpdateProgress();
+      const wfSub = document.getElementById('wf-subtitle');
+      if (wfSub) wfSub.textContent = 'Plan ready · 4 of 4 steps';
+      document.getElementById('workflow-panel')?.classList.add('wf-open');
+      addScoutMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — we’ll fill it in one step at a time.', { source: false });
+      WF_STEPS.forEach((s) => { addUserMessage(s.user); addScoutMessage(s.reply); });
+      addScoutMessage('Your reformulation plan is ready — I exported it as a shareable brief, projected <strong>88/100</strong> after the swaps.', { source: false });
+      SAVED_VIEWS.push({
+        id: 'reformulation-granola',
+        title: 'Reformulation — Mixed Berry Granola',
+        meta: 'Yesterday · 4:12 PM · floating module',
+        section: 'Yesterday',
+        modules: '1 module — Reformulation Plan',
+        snapshot: captureCurrentView(),
+      });
+
+      /* ── View 3 · FLOATING WISE Verification module (double-width) ── */
+      resetModules();
+      chat.innerHTML = '';
+      hideWS();
+      VF_STAGES.forEach((s, i) => { try { s.build(); } catch (_) {} vfMarkStepDone(i); });
+      vfStageIndex = VF_STAGES.length;
+      vfUpdateProgress();
+      /* Settle the live count-up tiles to their target values for the snapshot. */
+      document.querySelectorAll('#vf-body [data-count]').forEach((el) => {
+        const t = parseFloat(el.getAttribute('data-count'));
+        const dec = el.getAttribute('data-decimals') ? parseInt(el.getAttribute('data-decimals'), 10) : 0;
+        const pre = el.getAttribute('data-prefix') || '';
+        if (!isNaN(t)) el.textContent = pre + t.toFixed(dec);
+      });
+      const vfSub = document.getElementById('vf-subtitle');
+      if (vfSub) vfSub.textContent = 'Verification complete · 7 SKUs verified';
+      const vfPanel = document.getElementById('verify-flow-panel');
+      vfPanel?.classList.add('vf-open');
+      vfPanel?.classList.add('panel-wide');
+      const live = document.querySelector('#verify-flow-panel .vf-live');
+      if (live) {
+        live.style.background = 'var(--sec-green-10)';
+        live.innerHTML = '<span class="material-icons" style="font-size:12px">check_circle</span>DONE';
+      }
+      addScoutMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
+      VF_STAGES.forEach((s) => { addUserMessage(s.user); addScoutMessage(s.reply); });
+      SAVED_VIEWS.push({
+        id: 'verification-nutrient-survival',
+        title: 'Live Verification — Nutrient Survival',
+        meta: 'Yesterday · 11:02 AM · floating module',
+        section: 'Yesterday',
+        modules: '1 module — WISE Verification',
+        snapshot: captureCurrentView(),
+      });
+
+      /* ── Reset back to a clean, untouched welcome state ── */
+      resetModules();
+      chat.innerHTML = '';
+      wfStarted = false;
+      vfStarted = false;
+      wfStepIndex = 0;
+      vfStageIndex = 0;
+      ws?.classList.remove('ws-hidden');
+      if (ws) ws.style.display = '';
+      if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
+      renderViewsTab();
     }
 
     /* Panel-only toggle — opens/closes an agent's module WITHOUT changing the
@@ -7870,6 +8489,364 @@
         /* Continue the conversation on the chip's own intent, not its label. */
         scoutRespond(label, nextStage);
       });
+    }
+
+    /* ── Welcome score cards: horizontal scroll + prioritisation filter ──── */
+    function toggleScorecardFilter(e) {
+      if (e) e.stopPropagation();
+      const pop = document.getElementById('ws-sc-filter-pop');
+      const btn = document.getElementById('ws-sc-filter-btn');
+      if (!pop) return;
+      const willOpen = pop.classList.contains('hidden');
+      pop.classList.toggle('hidden', !willOpen);
+      if (btn) btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+
+    function sortScorecards(mode, label) {
+      const rail = document.getElementById('ws-scorecards');
+      if (rail) {
+        const num = (c, k) => parseFloat(c.dataset[k] || '0');
+        Array.from(rail.children)
+          .sort((a, b) => (mode === 'recommended'
+            ? num(a, 'order') - num(b, 'order')
+            : num(b, mode) - num(a, mode)))
+          .forEach((c) => rail.appendChild(c));
+        rail.scrollTo({ left: 0, behavior: 'smooth' });
+      }
+      const lbl = document.getElementById('ws-sc-filter-label');
+      if (lbl && label) lbl.textContent = label;
+      document.querySelectorAll('#ws-sc-filter-pop .topbar-menu-item').forEach((it) => {
+        const on = it.dataset.sort === mode;
+        it.classList.toggle('is-active', on);
+        it.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      const pop = document.getElementById('ws-sc-filter-pop');
+      const btn = document.getElementById('ws-sc-filter-btn');
+      if (pop) pop.classList.add('hidden');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      requestAnimationFrame(updateScorecardArrows);
+    }
+
+    function scrollScorecards(dir) {
+      const rail = document.getElementById('ws-scorecards');
+      if (!rail) return;
+      const amount = Math.max(rail.clientWidth * 0.8, 264);
+      rail.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    }
+
+    function updateScorecardArrows() {
+      const rail = document.getElementById('ws-scorecards');
+      const wrap = rail ? rail.closest('.ws-scorecards-wrap') : null;
+      const prev = document.getElementById('ws-sc-prev');
+      const next = document.getElementById('ws-sc-next');
+      if (!rail) return;
+      const maxScroll = rail.scrollWidth - rail.clientWidth - 1;
+      const hasPrev = rail.scrollLeft > 1;
+      const hasNext = rail.scrollLeft < maxScroll && rail.scrollWidth > rail.clientWidth + 1;
+      if (prev) prev.hidden = !hasPrev;
+      if (next) next.hidden = !hasNext;
+      if (wrap) {
+        wrap.classList.toggle('has-prev', hasPrev);
+        wrap.classList.toggle('has-next', hasNext);
+      }
+    }
+
+    function initScorecardScroller() {
+      const rail = document.getElementById('ws-scorecards');
+      if (!rail || rail.dataset.scrollBound) return;
+      rail.dataset.scrollBound = '1';
+      rail.addEventListener('scroll', updateScorecardArrows, { passive: true });
+      window.addEventListener('resize', updateScorecardArrows);
+      document.addEventListener('click', (e) => {
+        const pop = document.getElementById('ws-sc-filter-pop');
+        if (pop && !pop.classList.contains('hidden') && !e.target.closest('.ws-sc-filter')) {
+          pop.classList.add('hidden');
+          document.getElementById('ws-sc-filter-btn')?.setAttribute('aria-expanded', 'false');
+        }
+      });
+      requestAnimationFrame(updateScorecardArrows);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initScorecardScroller);
+    } else {
+      initScorecardScroller();
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       EXPLORE MY DATA & CHARTS  (fully inline)
+       Unlike the Reformulation / Verification flows, this intent never opens
+       a side module. Every answer — stats, bars, donuts, trends — renders
+       INLINE inside Whootie's chat reply, and each result offers "build on
+       this" chips so the user keeps a single, growing conversation about
+       their portfolio data. Each node = one query the user can run.
+       ════════════════════════════════════════════════════════════════════ */
+
+    /* ── Inline chart primitives (return HTML strings) ─────────────────── */
+    function vizCard(icon, title, sub, pill, body, foot) {
+      return '<div class="sc-viz">' +
+        '<div class="sc-viz-head">' +
+          `<span class="sc-viz-ic"><span class="material-icons">${icon}</span></span>` +
+          `<div class="sc-viz-titles"><div class="sc-viz-title">${title}</div>` +
+            (sub ? `<div class="sc-viz-sub">${sub}</div>` : '') + '</div>' +
+          (pill || '') +
+        '</div>' + body +
+        (foot ? `<div class="sc-viz-foot"><span class="material-icons">${foot.icon || 'verified'}</span>${foot.text}</div>` : '') +
+      '</div>';
+    }
+    /* Vertical column trend. rows: [{label, val, peak?}] */
+    function vizColumns(rows, max) {
+      const m = max || Math.max.apply(null, rows.map(r => r.val));
+      return '<div class="sc-cols">' + rows.map(r => {
+        const h = Math.round((r.val / m) * 64) + 8;
+        return `<div class="sc-col${r.peak ? ' is-peak' : ''}">` +
+          `<span class="sc-col-val">${r.val}</span>` +
+          `<span class="sc-col-bar" style="height:${h}px"></span>` +
+          `<span class="sc-col-label">${r.label}</span></div>`;
+      }).join('') + '</div>';
+    }
+    /* Horizontal bars. rows: [{label, val, display?, color?}] */
+    function vizBars(rows, max) {
+      const m = max || Math.max.apply(null, rows.map(r => r.val));
+      return '<div class="sc-hbars">' + rows.map(r => {
+        const pct = Math.max(5, Math.round((r.val / m) * 100));
+        const color = r.color ? `;background:${r.color}` : '';
+        const val = (r.display != null) ? r.display : r.val;
+        return '<div><div class="sc-hbar-top">' +
+          `<span class="sc-hbar-label">${r.label}</span>` +
+          `<span class="sc-hbar-val">${val}</span></div>` +
+          `<div class="sc-hbar-track"><div class="sc-hbar-fill" style="width:${pct}%${color}"></div></div></div>`;
+      }).join('') + '</div>';
+    }
+    /* Stat tiles. tiles: [{num, unit?, label}] */
+    function vizStats(tiles) {
+      return '<div class="sc-stats">' + tiles.map(t =>
+        '<div class="sc-stat">' +
+          `<div class="sc-stat-num">${t.num}${t.unit ? `<small>${t.unit}</small>` : ''}</div>` +
+          `<div class="sc-stat-label">${t.label}</div></div>`).join('') + '</div>';
+    }
+    /* Donut + legend. segs: [{label, val, color}] */
+    function vizDonut(segs, centerNum, centerLabel) {
+      const total = segs.reduce((s, x) => s + x.val, 0) || 1;
+      let acc = 0;
+      const stops = segs.map(s => {
+        const start = (acc / total) * 360; acc += s.val; const end = (acc / total) * 360;
+        return `${s.color} ${start}deg ${end}deg`;
+      }).join(', ');
+      const legend = segs.map(s =>
+        `<div class="sc-legend-item"><span class="sc-legend-dot" style="background:${s.color}"></span>${s.label}<span class="sc-legend-val">${s.val}</span></div>`).join('');
+      return '<div class="sc-donut-wrap">' +
+        `<div class="sc-donut" style="background:conic-gradient(${stops})">` +
+          `<div class="sc-donut-hole"><span class="sc-donut-hole-num">${centerNum}</span><span class="sc-donut-hole-lbl">${centerLabel}</span></div></div>` +
+        `<div class="sc-legend">${legend}</div></div>`;
+    }
+
+    /* ── Query graph. Each node renders its chart inline, then points at the
+       follow-ups that naturally build on it. ──────────────────────────── */
+    const DATA_NODES = {
+      scoreTrend: {
+        chip: { icon: 'query_stats', label: 'WISE Score trend' },
+        user: 'Show me my WISE Score trend.',
+        status: 'Charting your WISE Score history',
+        reply: 'Your portfolio WISE Score climbed to <strong>82/100</strong> — up <strong>+4 pts</strong> over the last six weeks, your best run yet. Two newly verified SKUs drove most of the lift.',
+        viz: () => vizCard('query_stats', 'Portfolio WISE Score', 'Last 6 weeks',
+          '<span class="sc-viz-pill sc-viz-pill--up"><span class="material-icons">trending_up</span>+4 pts</span>',
+          vizColumns([
+            { label: 'W1', val: 71 }, { label: 'W2', val: 74 }, { label: 'W3', val: 76 },
+            { label: 'W4', val: 78 }, { label: 'W5', val: 78 }, { label: 'Now', val: 82, peak: true },
+          ], 100),
+          { icon: 'verified', text: '11 of 14 products verified · grounded in WISE registry' }),
+        follow: ['scoreByProduct', 'upfMix', 'flags'],
+      },
+      scoreByProduct: {
+        chip: { icon: 'leaderboard', label: 'Break down by product' },
+        user: 'Break the score down by product.',
+        status: 'Ranking products by WISE Score',
+        reply: 'Here are your top and bottom performers. <strong>3 SKUs</strong> sit below the NON-UPF line — fixing those would lift the portfolio average the most.',
+        viz: () => vizCard('leaderboard', 'WISE Score by product', 'Top & bottom performers', null,
+          vizBars([
+            { label: 'NS Almonds', val: 96, color: 'var(--sec-green)' },
+            { label: 'NS Quinoa', val: 90, color: 'var(--sec-green)' },
+            { label: 'NS Oats', val: 84, color: 'var(--sec-green)' },
+            { label: 'Mixed Berry Granola', val: 54, color: 'var(--ter-amber)' },
+            { label: 'NS Energy Drink', val: 38, color: 'var(--sec-red)' },
+            { label: 'NS Bread', val: 31, color: 'var(--sec-red)' },
+          ], 100),
+          { icon: 'flag', text: '3 SKUs below the NON-UPF line (70)' }),
+        follow: ['flags', 'projectFix', 'statusMix'],
+      },
+      upfMix: {
+        chip: { icon: 'bar_chart', label: 'UPF level breakdown' },
+        user: 'How is my portfolio spread across UPF levels?',
+        status: 'Classifying SKUs by NOVA / UPF level',
+        reply: 'Across <strong>14 products</strong>, most cluster at the clean end — but <strong>4 SKUs</strong> land in Ultra / Super-Ultra and are pulling the average down.',
+        viz: () => vizCard('bar_chart', 'UPF level breakdown', '14 products by NOVA / UPF level', null,
+          vizBars([
+            { label: 'Minimal', val: 3, display: '3 SKUs', color: 'var(--sec-green)' },
+            { label: 'Light', val: 4, display: '4 SKUs', color: 'var(--ter-cyan)' },
+            { label: 'Moderate', val: 3, display: '3 SKUs', color: 'var(--ter-amber)' },
+            { label: 'Ultra', val: 2, display: '2 SKUs', color: '#FB7185' },
+            { label: 'Super-Ultra', val: 2, display: '2 SKUs', color: 'var(--sec-red)' },
+          ], 4),
+          { icon: 'eco', text: '10 of 14 sit at Moderate or cleaner' }),
+        follow: ['scoreByProduct', 'projectFix', 'flags'],
+      },
+      flags: {
+        chip: { icon: 'flag', label: 'Additive flags by product' },
+        user: 'Which products have additive flags?',
+        status: 'Scanning ingredient lists for flagged additives',
+        reply: '<strong>3 flags</strong> across <strong>2 products</strong>. Mixed Berry Granola carries the most — HFCS, soybean oil, and a proprietary natural flavor are the markers to clear first.',
+        viz: () => vizCard('flag', 'Additive flags by product', '3 flags · 2 products',
+          '<span class="sc-viz-pill sc-viz-pill--warn"><span class="material-icons">science</span>Review</span>',
+          vizBars([
+            { label: 'Mixed Berry Granola', val: 2, display: '2 flags', color: 'var(--sec-red)' },
+            { label: 'NS Energy Drink', val: 1, display: '1 flag', color: 'var(--ter-amber)' },
+          ], 2),
+          { icon: 'lightbulb', text: 'HFCS · soybean oil · proprietary natural flavor' }),
+        follow: ['suggestSwaps', 'projectFix', 'statusMix'],
+      },
+      statusMix: {
+        chip: { icon: 'donut_small', label: 'Verification status mix' },
+        user: 'Show my verification status mix.',
+        status: 'Tallying verification statuses',
+        reply: '<strong>11 of 14</strong> products are verified. <strong>2</strong> are pre-qualified and ready to push through Confirm → Attest → Activate, and <strong>2</strong> verifications expire within six days.',
+        viz: () => vizCard('donut_small', 'Verification status mix', '14 products', null,
+          vizDonut([
+            { label: 'Verified', val: 11, color: 'var(--sec-green)' },
+            { label: 'Pre-qualified', val: 2, color: 'var(--ter-amber)' },
+            { label: 'Not qualified', val: 1, color: 'var(--sec-red)' },
+          ], '79%', 'VERIFIED'),
+          { icon: 'schedule', text: '2 verifications expire within 6 days' }),
+        follow: ['expiring', 'scoreByProduct', 'upfMix'],
+      },
+      expiring: {
+        chip: { icon: 'schedule', label: 'Which expire soon?' },
+        user: 'Which verifications expire soon?',
+        status: 'Checking expiry dates',
+        reply: 'Two verifications lapse within the week. Renewing them keeps their NON-UPF status live and protects your portfolio score.',
+        viz: () => vizCard('schedule', 'Verifications expiring', 'Renew to keep NON-UPF status live',
+          '<span class="sc-viz-pill sc-viz-pill--down"><span class="material-icons">priority_high</span>Action</span>',
+          vizStats([
+            { num: '6', unit: ' days', label: 'NS Almonds lapses' },
+            { num: '11', unit: ' days', label: 'NS Quinoa lapses' },
+            { num: '2', label: 'Need renewal' },
+          ]),
+          { icon: 'autorenew', text: 'One-click renewal keeps both badges active' }),
+        follow: ['statusMix', 'projectFix'],
+      },
+      projectFix: {
+        chip: { icon: 'trending_up', label: 'Project if I fix the flags' },
+        user: 'What happens to my score if I fix the flags?',
+        status: 'Projecting reformulated scores',
+        reply: 'Clearing the flagged additives on those <strong>2 products</strong> projects a portfolio WISE Score of <strong>88/100</strong> — a <strong>+6</strong> lift that moves all but one SKU above the NON-UPF line.',
+        viz: () => vizCard('trending_up', 'Projected score after fixes', 'If you clear the flagged additives',
+          '<span class="sc-viz-pill sc-viz-pill--up"><span class="material-icons">arrow_upward</span>+6 pts</span>',
+          vizBars([
+            { label: 'Today', val: 82, display: '82/100', color: 'var(--ter-amber)' },
+            { label: 'After reformulation', val: 88, display: '88/100', color: 'var(--sec-green)' },
+          ], 100),
+          { icon: 'eco', text: 'Moves all but one SKU above the NON-UPF line' }),
+        follow: ['suggestSwaps', 'scoreTrend', 'statusMix'],
+      },
+      suggestSwaps: {
+        chip: { icon: 'swap_horiz', label: 'Suggest clean-label swaps' },
+        user: 'Suggest clean-label swaps for the flags.',
+        status: 'Matching whole-food swaps',
+        reply: 'Here are swaps that remove every flagged additive while keeping taste and texture intact.',
+        viz: () => vizCard('swap_horiz', 'Clean-label swaps', 'Removes every flagged additive', null,
+          '<div class="wf-swap"><span class="wf-swap-from">High-Fructose Corn Syrup</span><span class="material-icons wf-swap-arrow">east</span><span class="wf-swap-to">Date Paste</span></div>' +
+          '<div class="wf-swap"><span class="wf-swap-from">Soybean Oil</span><span class="material-icons wf-swap-arrow">east</span><span class="wf-swap-to">Cold-Pressed Sunflower Oil</span></div>' +
+          '<div class="wf-swap"><span class="wf-swap-from">Natural Flavor (proprietary)</span><span class="material-icons wf-swap-arrow">east</span><span class="wf-swap-to">Freeze-Dried Berry Powder</span></div>',
+          { icon: 'auto_fix_high', text: 'Roll these into a full Reformulation Plan anytime' }),
+        follow: ['projectFix', 'statusMix'],
+      },
+    };
+
+    const DATA_STARTERS = ['scoreTrend', 'upfMix', 'statusMix', 'flags'];
+    let dataVisited = new Set();
+    let dataStarted = false;
+
+    function startDataExploration() {
+      clearIntentSummary();   /* fully inline — make sure no side module is open */
+      hideWelcomeScreen(() => {
+        dataVisited = new Set();
+        dataStarted = true;
+        addUserMessage('Explore My Data & Charts');
+        const typing = showScoutTyping('Whootie™ is pulling your portfolio data');
+        setTimeout(() => {
+          typing?.remove();
+          addScoutMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
+          dataOfferChips(DATA_STARTERS);
+        }, 600);
+      });
+    }
+
+    /* Starter chips (no lead label — the intro line already asks). */
+    function dataOfferChips(ids) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const list = ids.filter(id => DATA_NODES[id]);
+      if (!list.length) return;
+      const row = document.createElement('div');
+      row.className = 'sc-reply-chips';
+      row.innerHTML = list.map(dataChipHtml).join('');
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    /* "Build on this" follow-up chips after an answer. */
+    function dataOfferFollow(ids) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const list = ids.filter(id => DATA_NODES[id]);
+      if (!list.length) { dataOfferRestart(); return; }
+      const row = document.createElement('div');
+      row.className = 'sc-reply-chips';
+      row.innerHTML = '<span class="sc-reply-lead">Build on this</span>' + list.map(dataChipHtml).join('');
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function dataChipHtml(id) {
+      const n = DATA_NODES[id];
+      return `<button type="button" class="chip" onclick="dataRunNode('${id}', this)">` +
+        `<span class="material-icons">${n.chip.icon}</span>${n.chip.label}</button>`;
+    }
+
+    function dataOfferRestart() {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const row = document.createElement('div');
+      row.className = 'sc-reply-chips';
+      row.innerHTML = '<button type="button" class="chip" onclick="dataReexplore(this)">' +
+        '<span class="material-icons">refresh</span>Explore something else</button>';
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function dataReexplore(btn) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      dataVisited = new Set();
+      dataOfferChips(DATA_STARTERS);
+    }
+
+    /* Run a query: post the user line, render the inline chart, then offer the
+       next things to build on (deduped against what's already been asked). */
+    function dataRunNode(id, btn) {
+      const node = DATA_NODES[id];
+      if (!node) return;
+      btn?.closest('.sc-reply-chips')?.remove();
+      addUserMessage(node.user);
+      const typing = showScoutTyping(node.status);
+      setTimeout(() => {
+        typing?.remove();
+        const viz = node.viz ? node.viz() : '';
+        addScoutMessage(node.reply + viz);
+        dataVisited.add(id);
+        let follow = (node.follow || []).filter(f => !dataVisited.has(f));
+        if (!follow.length) follow = DATA_STARTERS.filter(f => !dataVisited.has(f));
+        if (follow.length) dataOfferFollow(follow);
+        else dataOfferRestart();
+      }, 680);
     }
 
     /* ════════════════════════════════════════════════════════════════════
@@ -8492,7 +9469,7 @@
         module: 'claims',
         chip: { icon: 'inventory_2', label: 'Choose the launch SKU' },
         user: 'Prep launch readiness for Chipotle Chicken Empanadas (UPC 85362 00627 9).',
-        reply: 'Locked in <strong>Chipotle Chicken Empanadas</strong> — launch window is <strong>Q3 2026</strong>. I\'ve opened a <strong>Claims Review</strong> board on the right. Let\'s inventory the marketing claims going on-pack first.',
+        reply: 'Locked in <strong>Chipotle Chicken Empanadas</strong> for a <strong>Q3 2026</strong> retail launch. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll inventory every on-pack claim, then pull in other modules from the top bar as the review widens.',
         build: lrBuildSku,
       },
       {
@@ -8500,8 +9477,8 @@
         module: 'claims',
         chip: { icon: 'campaign', label: 'Review marketing claims' },
         user: 'Review the marketing claims for this launch.',
-        status: 'Scanning approved claim language…',
-        reply: 'Found <strong>4 on-pack claims</strong> — two are clean, but <strong>“No Preservatives”</strong> and <strong>“All-Natural”</strong> need closer scrutiny against the master spec. That second one may force us into packaging checks.',
+        status: 'Scanning approved claim language against the master brief…',
+        reply: 'Catalogued <strong>6 on-pack claims</strong>. Four are clean — <em>High Protein</em>, <em>No Artificial Colors</em>, <em>Made with Real Chicken</em>, and <em>Hand-Crafted</em>. Two need scrutiny: <strong>“No Preservatives”</strong> and <strong>“All-Natural”</strong> — both may conflict with the formulation spec.',
         build: lrBuildClaims,
       },
       {
@@ -8511,26 +9488,47 @@
         chip: { icon: 'warning', label: 'Investigate packaging mismatch' },
         user: 'The front label says “No Preservatives” but the spec sheet lists sodium benzoate.',
         status: 'Cross-referencing label art against master spec…',
-        reply: 'Confirmed — <strong>sodium benzoate</strong> is in the formulation spec but missing from the revised front-panel copy. I\'m opening a <strong>Packaging Checks</strong> module <em>stacked under</em> Claims Review so we can reconcile label, spec, and claims in one view.',
+        reply: 'Confirmed — <strong>sodium benzoate</strong> is in the formulation spec but absent from the revised front-panel copy. Opening <strong>Packaging Checks</strong> beneath Claims Review so we can reconcile label, spec, and claims without crowding the row.',
         build: lrBuildPackagingShift,
       },
       {
         id: 'crosscheck',
         module: 'packaging',
-        chip: { icon: 'compare', label: 'Cross-check label vs. claims' },
-        user: 'Cross-check the label art against the claims list.',
-        status: 'Diffing label panels against approved claims…',
-        reply: 'Three conflicts flagged — preservative language, “All-Natural” qualifier, and a serving-size footnote that doesn\'t match the NFP+. Ready to lock the fixes?',
+        openNav: ['nfp'],
+        chip: { icon: 'compare', label: 'Cross-check label vs. NFP+' },
+        user: 'Cross-check the label art against NFP+ and the claims list.',
+        status: 'Diffing label panels against NFP+ and approved claims…',
+        reply: 'Three conflicts flagged — preservative language, an over-broad <em>All-Natural</em> qualifier, and a serving-size footnote that doesn\'t match the <strong>NFP+</strong> panel I just opened. Compare the footnote on the art against the panel on the right.',
         build: lrBuildCrosscheck,
       },
       {
         id: 'resolve',
         module: 'packaging',
-        chip: { icon: 'check_circle', label: 'Resolve and sign off' },
-        user: 'Resolve the conflicts and sign off for launch.',
-        status: 'Applying approved copy and refreshing launch checklist…',
-        reply: 'All conflicts resolved — preservative claim removed, “All-Natural” narrowed to ingredient list scope, and the footnote matches NFP+. <strong>Launch readiness is green</strong> for Chipotle Chicken Empanadas.',
+        chip: { icon: 'check_circle', label: 'Resolve packaging conflicts' },
+        user: 'Resolve the packaging conflicts and sync the footnote to NFP+.',
+        status: 'Applying approved copy and refreshing the launch checklist…',
+        reply: 'Packaging conflicts cleared — preservative claim removed, <em>All-Natural</em> narrowed to ingredient-list scope, and the footnote now matches NFP+. Next I\'ll run <strong>SHIELD</strong> for badge compliance on the revised claims.',
         build: lrBuildResolve,
+      },
+      {
+        id: 'shield',
+        module: 'shield',
+        openNav: ['shield'],
+        chip: { icon: 'shield', label: 'Run SHIELD compliance check' },
+        user: 'Run a SHIELD compliance check on the revised launch claims.',
+        status: 'Auditing badge eligibility against revised claim set…',
+        reply: 'SHIELD is live — <strong>4 of 4</strong> remaining claims pass badge rules. <em>High Protein</em> needs a ≥10g qualifier (you\'re at 11g ✓). No prohibited superlatives remain. TIER next to confirm the processing tier before we sign off.',
+        build: lrBuildShieldLaunch,
+      },
+      {
+        id: 'tier',
+        module: 'tier',
+        openNav: ['nova'],
+        chip: { icon: 'auto_awesome', label: 'Confirm TIER classification' },
+        user: 'Confirm the TIER processing classification for launch.',
+        status: 'Scoring ingredients against the four-tier UPF framework…',
+        reply: 'TIER classifies this SKU as <strong>Processed (Tier 3)</strong> — not ultra-processed, but the launch brief should avoid “minimally processed” language. With claims, packaging, SHIELD, and TIER aligned, <strong>launch readiness is green</strong>. I\'ll save this as a view you can restore anytime from History → Views.',
+        build: lrBuildTierLaunch,
       },
     ];
 
@@ -8546,8 +9544,16 @@
       if (!col) return;
       col.classList.toggle('is-active', !!(claimsOpen || pkgOpen));
       col.classList.toggle('is-stacked', !!(claimsOpen && pkgOpen));
-      const pill = document.getElementById('lr-shift-pill');
-      if (pill) pill.hidden = !(claimsOpen && pkgOpen);
+    }
+
+    function lrOpenNavPanels(keys) {
+      (keys || []).forEach((key) => {
+        if (key === 'nfp') revealNfpPanel();
+        else if (key === 'shield') { toggleAgent('shield', true); revealPanel('shield'); }
+        else if (key === 'nova') { toggleAgent('nova', true); revealPanel('nova'); }
+        else if (key === 'pulse') revealPanel('pulse');
+        else if (key === 'scout') revealPanel('scout');
+      });
     }
 
     function startLaunchReadinessFlow() {
@@ -8558,7 +9564,7 @@
         const typing = showScoutTyping('Setting up launch boards…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened a <strong>Claims Review</strong> board on the right — we\'ll fill it in step by step. If packaging or label copy diverges from the claims, I\'ll stack a second module beneath it instead of crowding the row.', { source: false });
+          addScoutMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
           lrOfferStep(0);
         }, 600);
       });
@@ -8585,6 +9591,7 @@
       document.getElementById('lr-chips-' + step.id)?.remove();
       addUserMessage(step.user);
       if (step.intentShift) lrOpenPackagingPanel();
+      if (step.openNav) lrOpenNavPanels(step.openNav);
       const typing = showScoutTyping(step.status || 'Working…');
       setTimeout(() => {
         typing?.remove();
@@ -8602,15 +9609,18 @@
 
     function lrComplete() {
       const sub = document.getElementById('lr-packaging-subtitle');
-      if (sub) sub.textContent = 'Launch ready · conflicts resolved';
+      if (sub) sub.textContent = 'Packaging cleared · footnote synced';
       const claimsSub = document.getElementById('lr-claims-subtitle');
-      if (claimsSub) claimsSub.textContent = 'Claims approved · launch prep';
+      if (claimsSub) claimsSub.textContent = 'Claims approved · 4 of 4 pass SHIELD';
+      persistLaunchReadinessView();
+      activeSavedViewId = 'launch-readiness-chipotle';
       const box = document.getElementById('chat-messages');
       if (!box) return;
       const row = document.createElement('div');
       row.className = 'sc-reply-chips';
       row.innerHTML =
         `<button type="button" class="chip" onclick="lrFinalAction('brief', this)"><span class="material-icons">download</span>Export launch brief</button>` +
+        `<button type="button" class="chip" onclick="lrFinalAction('view', this)"><span class="material-icons">bookmark</span>Open saved view</button>` +
         `<button type="button" class="chip" onclick="lrFinalAction('verify', this)"><span class="material-icons">verified</span>Start verification</button>`;
       box.appendChild(row);
       box.scrollTop = box.scrollHeight;
@@ -8623,8 +9633,18 @@
         const typing = showScoutTyping('Compiling launch brief…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, and the packaging sign-off are bundled for legal review.', { source: false });
+          addScoutMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
         }, 600);
+      } else if (kind === 'view') {
+        addUserMessage('Open the saved view');
+        switchHistoryTab('views');
+        renderViewsTab();
+        scrollPanelIntoView('history-panel');
+        const typing = showScoutTyping('Opening saved view…');
+        setTimeout(() => {
+          typing?.remove();
+          addScoutMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
+        }, 500);
       } else {
         addUserMessage('Start verification for the launch SKU');
         const typing = showScoutTyping('Handing off to verification…');
@@ -8660,11 +9680,34 @@
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
     }
 
+    function lrClearNavInjections() {
+      document.querySelectorAll('.lr-nav-inject').forEach((el) => el.remove());
+    }
+
+    function lrResetNavPanels() {
+      lrClearNavInjections();
+      const tierBody = document.getElementById('tier-panel-body');
+      const shieldBody = document.getElementById('shield-panel-body');
+      if (tierBody && TIER_PANEL_DEFAULT_HTML) tierBody.innerHTML = TIER_PANEL_DEFAULT_HTML;
+      if (shieldBody && SHIELD_PANEL_DEFAULT_HTML) shieldBody.innerHTML = SHIELD_PANEL_DEFAULT_HTML;
+    }
+
+    function lrTeardown() {
+      closeLaunchReadinessFlow();
+      lrResetNavPanels();
+      toggleNfpPanel(false);
+      if (lrStarted) {
+        if (AGENTS.shield?.on) toggleAgent('shield', false);
+        if (AGENTS.nova?.on) toggleAgent('nova', false);
+      }
+    }
+
     function lrResetModules() {
       lrStepIndex = 0;
       lrClaimsSteps = 0;
       lrPackagingSteps = 0;
       lrStarted = true;
+      lrResetNavPanels();
       const claimsBody = document.getElementById('lr-claims-body');
       if (claimsBody) {
         claimsBody.innerHTML =
@@ -8731,42 +9774,77 @@
     function lrBuildSku() {
       lrAddSection('lr-claims-body', 'lr-claims-empty', 1, 'Launch SKU',
         '<div class="wf-product-name">Chipotle Chicken Empanadas</div>' +
-        '<div class="wf-product-meta">Nuchas · UPC 85362 00627 9</div>' +
-        '<div style="margin-top:8px;"><span class="wf-tag wf-tag--amber" style="margin-left:0;">Q3 2026 launch</span></div>');
+        '<div class="wf-product-meta">Nuchas · UPC 85362 00627 9 · Club &amp; C-store</div>' +
+        '<div class="wf-score-row" style="margin-top:10px;"><span class="wf-score-label">Launch window</span><span class="wf-score-num" style="font-size:0.8125rem;">Q3<small> 2026</small></span></div>' +
+        '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
+        '<span class="wf-tag wf-tag--amber" style="margin-left:0;">Retail launch</span>' +
+        '<span class="wf-tag wf-tag--green">Registry synced</span></div>');
     }
 
     function lrBuildClaims() {
       lrAddSection('lr-claims-body', 'lr-claims-empty', 2, 'Marketing Claims',
-        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> High Protein <span class="wf-tag wf-tag--green">Approved</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> High Protein (11g) <span class="wf-tag wf-tag--green">Approved</span></div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> No Artificial Colors <span class="wf-tag wf-tag--green">Approved</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> Made with Real Chicken <span class="wf-tag wf-tag--green">Approved</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> Hand-Crafted <span class="wf-tag wf-tag--green">Approved</span></div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-red)"></span> No Preservatives <span class="wf-tag wf-tag--red">Review</span></div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--ter-amber)"></span> All-Natural <span class="wf-tag wf-tag--amber">Review</span></div>');
     }
 
     function lrBuildPackagingShift() {
-      lrAddSection('lr-packaging-body', 'lr-packaging-empty', 1, 'Intent Shift · Packaging',
-        '<div class="wf-row"><span class="material-icons" style="font-size:15px;color:var(--ter-amber)">warning</span> Label says <strong>No Preservatives</strong></div>' +
-        '<div class="wf-row"><span class="material-icons" style="font-size:15px;color:var(--sec-red)">science</span> Spec lists <strong>sodium benzoate</strong></div>' +
-        '<p style="font-size:var(--fs-label);color:var(--text-muted);margin-top:8px;line-height:1.45;">Stacked under Claims Review — reconcile before launch sign-off.</p>');
+      lrAddSection('lr-packaging-body', 'lr-packaging-empty', 1, 'Spec vs. Label Art',
+        '<div class="wf-row"><span class="material-icons" style="font-size:15px;color:var(--ter-amber)">warning</span> Front panel: <strong>No Preservatives</strong></div>' +
+        '<div class="wf-row"><span class="material-icons" style="font-size:15px;color:var(--sec-red)">science</span> Master spec: <strong>sodium benzoate</strong> (0.1%)</div>' +
+        '<div class="wf-row"><span class="material-icons" style="font-size:15px;color:var(--ter-amber)">image</span> Rev 4 art uploaded Mar 12 — not yet legal-approved</div>' +
+        '<p style="font-size:var(--fs-label);color:var(--text-muted);margin-top:8px;line-height:1.45;">Reconcile before print deadline · Apr 30.</p>');
       lrPackagingSteps = Math.max(lrPackagingSteps, 1);
       lrUpdatePackagingProgress();
     }
 
     function lrBuildCrosscheck() {
-      lrAddSection('lr-packaging-body', 'lr-packaging-empty', 2, 'Label vs. Claims',
+      lrAddSection('lr-packaging-body', 'lr-packaging-empty', 2, 'Label vs. NFP+ &amp; Claims',
         '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-red)"></span> Preservative claim on front panel <span class="wf-tag wf-tag--red">Conflict</span></div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--ter-amber)"></span> “All-Natural” scope too broad <span class="wf-tag wf-tag--amber">Conflict</span></div>' +
-        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-red)"></span> Serving footnote ≠ NFP+ <span class="wf-tag wf-tag--red">Conflict</span></div>');
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-red)"></span> Footnote: “1 empanada (150g)” vs NFP+ 142g <span class="wf-tag wf-tag--red">Conflict</span></div>' +
+        '<div class="wf-swap" style="margin-top:8px;"><span class="wf-swap-from">NFP+ panel</span><span class="material-icons wf-swap-arrow">compare</span><span class="wf-swap-to">Open on the right →</span></div>');
       lrPackagingSteps = Math.max(lrPackagingSteps, 2);
       lrUpdatePackagingProgress();
     }
 
     function lrBuildResolve() {
       lrAddSection('lr-packaging-body', 'lr-packaging-empty', 3, 'Resolution',
-        '<div class="wf-badge" style="margin-top:0;"><span class="material-icons">check_circle</span>Preservative claim removed from art</div>' +
-        '<div class="wf-badge"><span class="material-icons">check_circle</span>“All-Natural” scoped to ingredient list</div>' +
-        '<div class="wf-badge"><span class="material-icons">check_circle</span>Footnote synced to NFP+</div>' +
-        '<div style="margin-top:10px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Launch readiness · GREEN</span></div>');
+        '<div class="wf-badge" style="margin-top:0;"><span class="material-icons">check_circle</span>Preservative claim removed from Rev 5 art</div>' +
+        '<div class="wf-badge"><span class="material-icons">check_circle</span>“All-Natural” scoped to ingredient list only</div>' +
+        '<div class="wf-badge"><span class="material-icons">check_circle</span>Footnote synced — 1 empanada (142g)</div>' +
+        '<div style="margin-top:10px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Packaging · CLEAR</span></div>');
+    }
+
+    function lrInjectNavSection(bodyId, title, innerHtml) {
+      const body = document.getElementById(bodyId);
+      if (!body) return;
+      const sec = document.createElement('div');
+      sec.className = 'wf-section lr-nav-inject';
+      sec.innerHTML =
+        `<div class="wf-section-head"><span class="wf-section-num">→</span><span class="wf-section-title">${title}</span></div>${innerHtml}`;
+      body.appendChild(sec);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function lrBuildShieldLaunch() {
+      lrInjectNavSection('shield-panel-body', 'Launch Compliance · Chipotle Empanadas',
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> High Protein ≥10g <span class="wf-tag wf-tag--green">Pass</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> No Artificial Colors <span class="wf-tag wf-tag--green">Pass</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> Made with Real Chicken <span class="wf-tag wf-tag--green">Pass</span></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> Hand-Crafted <span class="wf-tag wf-tag--green">Pass</span></div>' +
+        '<div style="margin-top:8px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Badge eligible · 4/4 claims</span></div>');
+    }
+
+    function lrBuildTierLaunch() {
+      lrInjectNavSection('tier-panel-body', 'Launch Tier · Chipotle Empanadas',
+        '<div class="wf-row"><span class="wf-dot" style="background:#FFB347"></span> Classification: <strong>Processed (Tier 3)</strong></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> No ultra-processed markers in eligible set</div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:var(--ter-amber)"></span> Avoid “minimally processed” on-pack language</div>' +
+        '<div style="margin-top:8px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Launch readiness · GREEN</span></div>');
     }
 
     function toggleInputMore(e) {
@@ -8786,10 +9864,13 @@
       clearIntentSummary();
       closeReformulationWorkflow();
       closeVerificationWorkflow();
-      closeLaunchReadinessFlow();
+      lrTeardown();
       wfStarted = false;
       vfStarted = false;
       lrStarted = false;
+      dataStarted = false;
+      dataVisited = new Set();
+      activeSavedViewId = null;
       showWelcomeScreen();
     }
 
@@ -9409,6 +10490,9 @@
           <div class="wise-popover-item${window.isMenuPivoted?.() ? ' is-active' : ''}" data-pivot="1">
             <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
           </div>
+          <div class="wise-popover-item${window.isMinimalUiOn?.() ? ' is-active' : ''}" data-minimal="1">
+            <span class="material-symbols-outlined">compress</span>Minimal UI
+          </div>
           <div class="wise-popover-divider"></div>
           ${(() => { const m = scoutDockMode(); const b = (mode, icon, label) => `<button type="button" class="fz-btn${m === mode ? ' fz-active' : ''}" data-scout-dock="${mode}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`; return `
           <div class="fz-row">
@@ -9545,6 +10629,13 @@
             renderAppearanceBody(pop);
             return;
           }
+          const minimalItem = ev.target.closest('[data-minimal]');
+          if (minimalItem && pop.contains(minimalItem)) {
+            ev.stopPropagation();
+            window.applyMinimalUi?.(!window.isMinimalUiOn?.());
+            renderAppearanceBody(pop);
+            return;
+          }
           const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
           if (scoutBtn && pop.contains(scoutBtn)) {
             ev.stopPropagation();
@@ -9613,6 +10704,9 @@
     } catch (_) {}
     selectAgent('wise');
     updateAgentsCount();
+    /* Pre-fill History with a couple of restorable conversations (inline +
+       floating-module styles) so Views/History aren't empty on first load. */
+    try { seedSavedViews(); } catch (_) {}
     (function initChatTheme() {
       let theme = localStorage.getItem('wise-theme');
       if (theme !== 'light' && theme !== 'dark') {
