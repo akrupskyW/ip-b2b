@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whootie™ Flows · WISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Shared WISE design tokens + the exact Whootie chat shell. -->
+  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="scout-chat.css" />
+
+  <style>
+    /* ====================================================================
+       Whootie™ Flows — a standalone walkthrough of every welcome scorecard.
+       Each rectangle card opens a full conversational tree in the Whootie
+       chat. As the conversation advances, the relevant modules pop up in the
+       stage on the right. When a flow completes, a result module appears
+       summarising what was done, with options for what to do next.
+
+       The chat surface + tokens come from agent-page.css / scout-chat.css.
+       The module internals reuse the same wf-* vocabulary as ai-chat.html.
+    ==================================================================== */
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 36%),
+        radial-gradient(circle at 90% 6%, color-mix(in srgb, var(--ter-cyan, #06b6d4) 12%, transparent), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Page chrome ─────────────────────────────────────────────────── */
+    .pg-topbar {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 70%, transparent);
+      backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 60;
+    }
+    .pg-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .pg-brand-bug {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff;
+      box-shadow: 0 2px 10px rgba(2, 78, 174, 0.45);
+    }
+    .pg-brand-bug svg { width: 20px; height: auto; }
+    .pg-titles { min-width: 0; }
+    .pg-title { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+    .pg-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+    .pg-spacer { flex: 1; }
+    .pg-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      color: var(--text-muted); font-size: 0.7rem; font-weight: 600;
+    }
+    .pg-pill .material-icons { font-size: 14px !important; color: var(--primary); }
+    .pg-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      color: var(--text); font-size: 0.75rem; font-weight: 700; font-family: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .pg-btn:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+    .pg-btn .material-icons { font-size: 16px !important; }
+
+    /* ── Workspace: chat card + module stage in a scrollable row ──────── */
+    .flow-stage {
+      flex: 1 1 auto;
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+      padding: 18px 24px 28px;
+      overflow-x: auto;
+      min-height: 0;
+    }
+    .flow-stage::-webkit-scrollbar { height: 10px; }
+    .flow-stage::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
+
+    /* The Whootie chat card — fixed, anchor-stone width. */
+    #whootie-card {
+      flex: 0 0 460px;
+      width: 460px;
+      max-width: 460px;
+      height: calc(100vh - 64px - 46px);
+      align-self: flex-start;
+      position: sticky; left: 0; z-index: 10;
+    }
+    @media (max-width: 720px) {
+      #whootie-card { flex-basis: 88vw; width: 88vw; }
+    }
+
+    /* The welcome screen needs to scroll when it carries the scorecards. */
+    #welcome { justify-content: flex-start; overflow-y: auto; padding-top: 2.25rem; }
+    #welcome .ws-logo-wrap { margin-bottom: 1.1rem; }
+
+    .ws-scorecards-section { width: 100%; max-width: 100%; margin: 1.25rem auto 0.5rem; }
+    .ws-scorecards-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .ws-scorecards-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+    .ws-scorecards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+
+    #whootie-card .ws-scorecard,
+    .ws-scorecard {
+      display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+      text-align: left; min-width: 0;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px !important;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .ws-scorecard:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(2, 78, 174, 0.16); transform: translateY(-2px); }
+    .ws-scorecard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0; }
+    .ws-sc-icon .material-icons { font-size: 18px !important; }
+    .ws-sc-icon--brand { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+    .ws-sc-icon--warn  { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
+    .ws-sc-icon--alert { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+    .ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 0.625rem; font-weight: 700; white-space: nowrap; }
+    .ws-sc-pill .material-icons { font-size: 12px !important; }
+    .ws-sc-pill--up    { background: color-mix(in srgb, #16a34a 18%, transparent); color: #4ade80; }
+    .ws-sc-pill--warn  { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
+    .ws-sc-pill--alert { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+    .ws-sc-metric { font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--text); margin-top: 4px; letter-spacing: -0.02em; }
+    .ws-sc-metric-unit { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; }
+    .ws-sc-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+    .ws-sc-desc { font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); flex: 1 1 auto; }
+    .ws-sc-action { display: inline-flex; align-items: center; align-self: flex-start; gap: 4px; margin-top: 6px; font-size: 0.72rem; font-weight: 700; color: var(--primary); }
+    .ws-sc-action .material-icons { font-size: 15px !important; transition: transform 0.15s ease; }
+    .ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
+    @media (max-width: 720px) { .ws-scorecards { grid-template-columns: 1fr; } }
+
+    /* In-chat reply chips that drive each tree forward (from ai-chat.html). */
+    .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 16px 42px; animation: wfSectionIn 0.3s ease both; }
+    .sc-reply-chips .chip { font-weight: 500; }
+    .sc-reply-chips .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .sc-reply-chips .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
+    .sc-reply-chips .chip .material-icons { font-size: 15px !important; }
+    @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
+
+    /* ── Pop-up modules in the stage (reuse the wf-* vocabulary) ──────── */
+    .flow-module {
+      flex: 0 0 320px;
+      width: 320px;
+      align-self: flex-start;
+      max-height: calc(100vh - 64px - 46px);
+      display: flex; flex-direction: column; overflow: hidden;
+      border-radius: 16px;
+      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
+      border: 1px solid rgba(2, 78, 174, 0.22);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      animation: panelPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .flow-module.is-wide { flex-basis: 420px; width: 420px; }
+    @keyframes panelPopIn { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .flow-module, .wf-section { animation: none !important; } }
+
+    .flow-mod-head {
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      padding: 14px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      background: linear-gradient(135deg, rgba(2, 78, 174, 0.22) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+    }
+    .flow-mod-icon { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--primary) 22%, transparent); color: #93c5fd; }
+    .flow-mod-icon .material-icons { font-size: 18px !important; }
+    .flow-mod-titles { flex: 1; min-width: 0; }
+    .flow-mod-title { font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .flow-mod-sub { font-size: 0.66rem; color: var(--text-muted); margin-top: 1px; }
+    .flow-mod-close { width: 28px; height: 28px; border-radius: 8px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s; }
+    .flow-mod-close:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+    .flow-mod-close .material-icons { font-size: 18px !important; }
+
+    .flow-mod-scroll { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px; }
+    .flow-mod-scroll::-webkit-scrollbar { width: 8px; }
+    .flow-mod-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+
+    .wf-progress-wrap { padding: 0 0 12px; }
+    .wf-progress-head { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.02em; color: var(--text-muted); margin-bottom: 6px; }
+    .wf-progress-pct { color: #93c5fd; }
+    .wf-progress-track { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.10); }
+    .wf-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), #22d3ee); transition: width 0.5s cubic-bezier(0.34, 1.4, 0.64, 1); width: 0; }
+
+    .wf-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 40px 14px; color: var(--text-subtle); }
+    .wf-empty .material-icons { font-size: 30px; color: var(--primary); opacity: 0.8; }
+    .wf-empty-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text-muted); }
+    .wf-empty-sub { font-size: var(--fs-label); line-height: 1.5; max-width: 220px; }
+
+    .wf-body { display: flex; flex-direction: column; gap: 10px; }
+    .wf-section { border-radius: 12px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.08); padding: 12px; animation: wfSectionIn 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+    @keyframes wfSectionIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .wf-section-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+    .wf-section-num { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; background: var(--primary); }
+    .wf-section-num.is-check { background: var(--sec-green, #16a34a); }
+    .wf-section-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
+    .wf-product-name { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+    .wf-product-meta { font-size: var(--fs-label); color: var(--text-muted); margin-top: 1px; }
+    .wf-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-label); color: var(--text-muted); padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+    .wf-row:first-of-type { border-top: 0; }
+    .wf-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .wf-tag { margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .wf-tag--red { background: rgba(239,68,68,0.16); color: #FCA5A5; }
+    .wf-tag--green { background: rgba(22,163,74,0.18); color: #6EE7A8; }
+    .wf-tag--amber { background: rgba(245,158,11,0.18); color: #FCD34D; }
+    .wf-tag--blue { background: rgba(2,78,174,0.24); color: #93c5fd; }
+    .wf-swap { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.07); font-size: var(--fs-label); }
+    .wf-swap:first-of-type { border-top: 0; }
+    .wf-swap-from { color: var(--text-subtle); text-decoration: line-through; }
+    .wf-swap-arrow { color: #93c5fd; font-size: 14px !important; vertical-align: middle; }
+    .wf-swap-to { color: var(--text); font-weight: 700; }
+    .wf-score-row { display: flex; align-items: baseline; justify-content: space-between; margin: 2px 0 5px; }
+    .wf-score-label { font-size: var(--fs-label); color: var(--text-muted); }
+    .wf-score-num { font-size: 0.95rem; font-weight: 800; color: var(--text); }
+    .wf-score-num small { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); }
+    .wf-score-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.10); overflow: hidden; }
+    .wf-score-fill { height: 100%; border-radius: 999px; width: 0; transition: width 0.7s cubic-bezier(0.34, 1.4, 0.64, 1); }
+    .wf-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 10px; border-radius: 999px; font-size: var(--fs-label); font-weight: 700; background: rgba(22,163,74,0.18); color: #6EE7A8; }
+    .wf-badge .material-icons { font-size: 14px !important; }
+    .wf-note { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.5; margin-top: 6px; }
+
+    /* Vertical stepper for verification-style modules. */
+    .wf-step { display: flex; align-items: center; gap: 9px; padding: 7px 0; font-size: var(--fs-label); color: var(--text-muted); }
+    .wf-step-dot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); color: var(--text-subtle); }
+    .wf-step-dot .material-icons { font-size: 14px !important; }
+    .wf-step.is-done .wf-step-dot { background: var(--sec-green, #16a34a); color: #fff; }
+    .wf-step.is-active .wf-step-dot { background: var(--primary); color: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 24%, transparent); }
+    .wf-step.is-done .wf-step-label { color: var(--text); }
+
+    /* Inline mini bar chart for the Data & Trends module. */
+    .fm-bars { display: flex; align-items: flex-end; gap: 8px; height: 92px; padding-top: 8px; }
+    .fm-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .fm-bar-fill { width: 100%; max-width: 26px; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, #60a5fa, var(--primary)); }
+    .fm-bar.is-peak .fm-bar-fill { background: linear-gradient(180deg, #6EE7A8, #16a34a); }
+    .fm-bar-val { font-size: 0.6rem; font-weight: 700; color: var(--text); }
+    .fm-bar-label { font-size: 0.58rem; color: var(--text-subtle); }
+
+    /* ── The end-of-flow result module ──────────────────────────────── */
+    .flow-result {
+      flex: 0 0 360px;
+      width: 360px;
+      align-self: flex-start;
+      max-height: calc(100vh - 64px - 46px);
+      display: flex; flex-direction: column; overflow: hidden;
+      border-radius: 18px;
+      background: linear-gradient(160deg, #0f3b2e 0%, #102B3C 55%, #0A1C28 100%);
+      border: 1px solid rgba(22, 163, 74, 0.3);
+      box-shadow: 0 10px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      animation: panelPopIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .fr-head { padding: 18px 16px 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .fr-check { width: 50px; height: 50px; border-radius: 16px; margin: 0 auto 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--sec-green, #16a34a) 24%, transparent); color: #6EE7A8; }
+    .fr-check .material-icons { font-size: 28px !important; }
+    .fr-title { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+    .fr-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
+    .fr-scroll { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 14px 16px; }
+    .fr-scroll::-webkit-scrollbar { width: 8px; }
+    .fr-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+    .fr-block-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 8px; }
+    .fr-recap { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+    .fr-recap li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: var(--text); line-height: 1.4; }
+    .fr-recap .material-icons { font-size: 16px !important; color: #6EE7A8; flex-shrink: 0; margin-top: 1px; }
+    .fr-outcome { border-radius: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); padding: 14px; margin-bottom: 16px; }
+    .fr-outcome-metric { font-size: 1.7rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
+    .fr-outcome-metric small { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .fr-outcome-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 5px; line-height: 1.45; }
+    .fr-options { display: flex; flex-direction: column; gap: 8px; }
+    .fr-opt {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 11px 13px; border-radius: 12px; cursor: pointer; text-align: left;
+      border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04);
+      color: var(--text); font-size: 0.8rem; font-weight: 600; font-family: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+    .fr-opt:hover { background: rgba(255,255,255,0.08); border-color: rgba(147,197,253,0.4); transform: translateY(-1px); }
+    .fr-opt .material-icons { font-size: 18px !important; color: #93c5fd; flex-shrink: 0; }
+    .fr-opt-arrow { margin-left: auto; color: var(--text-subtle); }
+    .fr-opt-arrow .material-icons { font-size: 16px !important; color: var(--text-subtle); }
+    .fr-opt--primary { background: var(--primary); border-color: var(--primary); }
+    .fr-opt--primary:hover { background: color-mix(in srgb, var(--primary) 86%, black); }
+    .fr-opt--primary .material-icons, .fr-opt--primary .fr-opt-arrow .material-icons { color: #fff; }
+
+    /* Lightweight toast for terminal actions (export, share, etc.). */
+    .flow-toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+      background: var(--surface); color: var(--text); border: 1px solid var(--border-strong);
+      border-radius: 12px; padding: 12px 18px; font-size: 0.8rem; font-weight: 600;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5); z-index: 200; opacity: 0;
+      display: inline-flex; align-items: center; gap: 9px;
+      transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none;
+    }
+    .flow-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .flow-toast .material-icons { font-size: 18px !important; color: #6EE7A8; }
+  </style>
+</head>
+<body>
+  <header class="pg-topbar">
+    <div class="pg-brand">
+      <span class="pg-brand-bug" id="brand-bug" aria-hidden="true"></span>
+      <div class="pg-titles">
+        <div class="pg-title">Whootie™ Flows</div>
+        <div class="pg-sub">Every welcome card, end to end</div>
+      </div>
+    </div>
+    <div class="pg-spacer"></div>
+    <span class="pg-pill"><span class="material-icons">account_tree</span>Conversational trees</span>
+    <button type="button" class="pg-btn" id="restart-btn"><span class="material-icons">refresh</span>Restart</button>
+  </header>
+
+  <main class="flow-stage" id="flow-stage">
+    <!-- The Whootie chat card (reuses the shared .sc-card shell). -->
+    <section class="sc-card" id="whootie-card">
+      <div class="chat-topbar">
+        <div class="sc-topbar-lead">
+          <div class="sc-bug" id="topbar-bug"></div>
+          <div class="sc-topbar-titles">
+            <span class="topbar-title">Whootie™</span>
+            <button type="button" class="topbar-agents-btn" title="Agents running">
+              <span class="material-icons">smart_toy</span>
+              <span class="agents-count-pill">3</span>
+              <span>agents running</span>
+            </button>
+          </div>
+        </div>
+        <div class="sc-topbar-controls">
+          <button type="button" class="panel-more-btn" id="reset-chat" title="Start over">
+            <span class="material-icons">restart_alt</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sc-body">
+        <div class="chat-messages-area" id="chat-messages" aria-live="polite" aria-atomic="false"></div>
+
+        <div class="sc-welcome" id="welcome">
+          <div class="ws-logo-wrap">
+            <span class="ws-pulse-ring" aria-hidden="true"></span>
+            <span class="ws-pulse-ring" aria-hidden="true"></span>
+            <span class="ws-pulse-ring" aria-hidden="true"></span>
+            <div class="ws-logo" id="welcome-logo"></div>
+          </div>
+          <h1 class="ws-heading">What can Whootie™ help with?</h1>
+          <p class="ws-sub">Pick a card to walk a full flow — modules open as we go.</p>
+
+          <div class="ws-scorecards-section">
+            <div class="ws-scorecards-bar">
+              <span class="ws-scorecards-label">Your portfolio at a glance</span>
+            </div>
+            <div class="ws-scorecards" id="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
+              <button class="ws-scorecard" role="listitem" data-flow="portfolio">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>+4 pts</span>
+                </div>
+                <div class="ws-sc-metric">82<span class="ws-sc-metric-unit">/100</span></div>
+                <div class="ws-sc-title">Portfolio WISE Score</div>
+                <div class="ws-sc-desc">11 of 14 products verified — health trending up this week.</div>
+                <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard" role="listitem" data-flow="expiring">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">pending_actions</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">priority_high</span>Action</span>
+                </div>
+                <div class="ws-sc-metric">2<span class="ws-sc-metric-unit"> expiring</span></div>
+                <div class="ws-sc-title">Verifications Expiring</div>
+                <div class="ws-sc-desc">Soonest lapses in 6 days — renew to keep NON-UPF status live.</div>
+                <div class="ws-sc-action">Continue verification<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard" role="listitem" data-flow="flags">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--alert"><span class="material-icons">flag</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--alert"><span class="material-icons">science</span>Review</span>
+                </div>
+                <div class="ws-sc-metric">3<span class="ws-sc-metric-unit"> flags</span></div>
+                <div class="ws-sc-title">Additive Flags Open</div>
+                <div class="ws-sc-desc">3 ingredients across 2 products need an additive review.</div>
+                <div class="ws-sc-action">Investigate flags<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard" role="listitem" data-flow="reformulation">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">science</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">lightbulb</span>Opportunity</span>
+                </div>
+                <div class="ws-sc-metric">5<span class="ws-sc-metric-unit"> SKUs</span></div>
+                <div class="ws-sc-title">Reformulation Wins</div>
+                <div class="ws-sc-desc">5 products could clear a UPF marker with a single ingredient swap.</div>
+                <div class="ws-sc-action">Plan reformulation<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard" role="listitem" data-flow="launch">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">rocket_launch</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">checklist</span>4 left</span>
+                </div>
+                <div class="ws-sc-metric">78<span class="ws-sc-metric-unit">% ready</span></div>
+                <div class="ws-sc-title">Launch Readiness</div>
+                <div class="ws-sc-desc">Spring line is 78% launch-ready — 4 checklist items remain.</div>
+                <div class="ws-sc-action">Prep launch<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard" role="listitem" data-flow="data">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">query_stats</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Live</span>
+                </div>
+                <div class="ws-sc-metric">6<span class="ws-sc-metric-unit"> trends</span></div>
+                <div class="ws-sc-title">Data &amp; Trends</div>
+                <div class="ws-sc-desc">Explore additive, score and category trends across your catalog.</div>
+                <div class="ws-sc-action">Explore data<span class="material-icons">arrow_outward</span></div>
+              </button>
+            </div>
+          </div>
+          <p class="ws-hint">or type below — e.g. “reformulation”, “renew”, “launch”</p>
+        </div>
+      </div>
+
+      <div class="chat-input-rail">
+        <div class="sc-input-row">
+          <div class="fl-input-wrap">
+            <input type="text" class="fl-input" id="chat-input" placeholder="Ask Whootie™ to start a flow…" autocomplete="off" />
+          </div>
+          <button type="button" class="sc-send" id="chat-send" title="Send"><span class="material-icons">send</span></button>
+        </div>
+        <p class="sc-disclaimer"><span class="material-icons">shield</span>Whootie™ keeps you in control of what opens, changes, and persists.</p>
+      </div>
+    </section>
+    <!-- Pop-up modules + the result module are injected here as the flow runs. -->
+  </main>
+
+  <div class="flow-toast" id="flow-toast" role="status"><span class="material-icons">check_circle</span><span id="flow-toast-text"></span></div>
+
+  <script type="module" src="../js/whootie-flows.js"></script>
+</body>
+</html>

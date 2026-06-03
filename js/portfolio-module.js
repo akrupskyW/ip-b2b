@@ -2554,7 +2554,7 @@ function bootstrap() {
   /* Build the shared top bar (menu toggle, WISE logo, profile + trailing
      Alerts/More). The portfolio variant also renders the section-module
      rail + layout switcher; #pf-module-rail is populated by buildModuleRail. */
-  mountTopbar({ variant: 'portfolio', logoHref: 'portfolio.html' });
+  mountTopbar({ variant: 'portfolio', logoHref: 'ai-chat.html' });
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) {

@@ -304,7 +304,7 @@ export function bootstrapAgentPage() {
 
   /* Build the shared top bar (menu toggle, WISE logo, Alerts/More, profile).
      The agent variant has no center rail — just the trailing actions. */
-  mountTopbar({ variant: 'agent', logoHref: 'portfolio-agent.html' });
+  mountTopbar({ variant: 'agent', logoHref: 'ai-chat.html' });
   /* Logo lives in the nav panel brand strip (mountTopbar → mountMenuBrand). */
 
   const headerEl = document.getElementById('agent-main-header');

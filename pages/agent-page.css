@@ -1304,6 +1304,15 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   border: 0 !important;
   box-shadow: none !important;
 }
+/* In the pivot (horizontal) bar the "container" look is also carried by the
+   internal segment dividers — the brand strip's right border and the footer's
+   left border. Minimal UI must drop those too so the owl + crossword + avatar
+   float free with no chrome. Toggling minimal off restores them (and the
+   container) to the default pivot bar. */
+#menu-panel.minimal-ui.mp-pivot .menu-brand-bar,
+#menu-panel.minimal-ui.mp-pivot .menu-footer {
+  border: 0 !important;
+}
 
 /* ===== MENU NAVIGATION ===== */
 .menu-nav {

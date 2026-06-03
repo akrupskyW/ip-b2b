@@ -90,7 +90,7 @@ const AGENT_TRAILING_HTML = `
  */
 export function mountTopbar({
   variant = 'agent',
-  logoHref = 'portfolio-agent.html',
+  logoHref = 'ai-chat.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
 } = {}) {
   const row = document.getElementById('topbar-row');
@@ -128,7 +128,7 @@ export function syncMenuTogglePlacement() {
  * rail (.mp-rail). When collapsed only the owl bug mark shows.
  */
 export function mountMenuBrand({
-  logoHref = 'portfolio-agent.html',
+  logoHref = 'ai-chat.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
 } = {}) {
   const shell = document.getElementById('agent-shell-wrap') || document.getElementById('chat-shell-wrap');
