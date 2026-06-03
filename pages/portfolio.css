@@ -1009,6 +1009,14 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   height: auto !important;
   max-height: 100% !important;
 }
+#modules-row.modules-grid > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+  grid-column: span 2;
+}
+@media (max-width: 720px) {
+  #modules-row.modules-grid > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+    grid-column: span 1;
+  }
+}
 
 /* ===== Split layout =====
    The toggle's third mode. setModuleLayout() wraps every non-Scout child in
@@ -1060,6 +1068,10 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
+}
+#modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+  flex: 0 0 70vh !important;
+  height: 70vh !important;
 }
 @media (max-width: 720px) {
   #modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open {

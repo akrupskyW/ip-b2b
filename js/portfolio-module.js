@@ -28,6 +28,7 @@ import {
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
+import { initWhootieTooltips } from './whootie-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
@@ -2659,6 +2660,7 @@ function bootstrap() {
   setupAvatar();
   setupAppearancePopover();
   initLirTooltip();
+  initWhootieTooltips();
   syncModules();
   openFromHash();
   /* If Analytics was restored open from a previous session, build its charts

@@ -14,6 +14,7 @@ import {
   mountAgentMenu,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
+import { initWhootieTooltips } from './whootie-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
@@ -850,4 +851,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAvatarPopover();
   applyStoredTextSize();
   initLirTooltip();
+  initWhootieTooltips();
 });

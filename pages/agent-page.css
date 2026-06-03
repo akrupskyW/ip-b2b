@@ -376,6 +376,66 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* Whootie™ acronym tooltip — multi-line expansion on hover/focus (see whootie-tooltip.js). */
+.whootie-mark {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
+  text-underline-offset: 2px;
+}
+.whootie-mark--bound { text-decoration: none; }
+.sc-topbar-titles .topbar-title[data-whootie-tip] {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.whootie-mark:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+#whootie-tip {
+  position: fixed;
+  z-index: 10001;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: inherit;
+  opacity: 0;
+  transform: translateX(-50%) translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  max-width: 220px;
+}
+#whootie-tip.whootie-tip-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.whootie-tip-title {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.02em;
+}
+.whootie-tip-line {
+  display: block;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.whootie-tip-letter {
+  display: inline-block;
+  width: 1.1em;
+  font-weight: 700;
+  color: var(--text);
+}
 .lir-btn:hover { background: rgba(0,0,0,0.04); color: var(--text); }
 html.dark .lir-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 .lir-btn .material-icons,

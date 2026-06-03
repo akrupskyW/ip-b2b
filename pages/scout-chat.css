@@ -31,6 +31,20 @@
    would otherwise win on source order and cancel the stickiness. */
 .scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
 @media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; } }
+/* Double-width — the dock element is itself the .sc-card, so panel-wide must
+   beat the fixed 380px width above (same pattern as portfolio.css). */
+.scout-dock.scout-dock-open.panel-wide {
+  flex: 0 0 680px;
+  width: 680px;
+  min-width: 680px;
+}
+@media (max-width: 1100px) {
+  .scout-dock.scout-dock-open.panel-wide {
+    flex: 0 0 560px;
+    width: 560px;
+    min-width: 560px;
+  }
+}
 /* Side flip — the dock defaults to the far-right of the modules row (order
    99), pinned to the right edge. Flipping it left re-orders it to the front
    and pins it to the LEFT edge instead. Persisted via js/scout-dock.js so the
@@ -118,6 +132,7 @@ html.dark .chat-topbar {
 
 .sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
+.sc-topbar-titles .topbar-title[data-whootie-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
 html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 
 .topbar-agents-btn {
@@ -168,10 +183,8 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-width-toggle-btn:hover,
 .panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 
-/* Wide state — the Scout card normally grows to fill its row, so "double width"
-   means it claims more of the row and refuses to shrink (the neighbouring
-   modules compress / the row scrolls). Most visible when other modules are
-   open alongside Scout. */
+/* Wide state — legacy hook when panel-wide is applied to an inner card; the
+   dock itself now carries panel-wide (see .scout-dock.scout-dock-open.panel-wide). */
 .sc-card.panel-wide {
   flex-grow: 2;
   min-width: min(760px, 92vw);
