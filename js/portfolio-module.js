@@ -29,7 +29,7 @@ import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-doc
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initWhootieTooltips } from './whootie-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
@@ -2418,6 +2418,9 @@ function renderAppearanceBody(pop) {
     <div class="wise-popover-item${isMenuPivoted() ? ' is-active' : ''}" data-pivot="1">
       <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
     </div>
+    <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
+      <span class="material-symbols-outlined">compress</span>Minimal UI
+    </div>
     <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
       <span class="material-icons">music_note</span>Jam strip
     </div>
@@ -2512,6 +2515,13 @@ function openAppearance(anchor) {
     if (pivotItem) {
       ev.stopPropagation();
       toggleMenuPivot();
+      renderAppearanceBody(pop);
+      return;
+    }
+    const minimalItem = ev.target.closest('[data-minimal]');
+    if (minimalItem) {
+      ev.stopPropagation();
+      applyMinimalUi(!isMinimalUiOn());
       renderAppearanceBody(pop);
       return;
     }
