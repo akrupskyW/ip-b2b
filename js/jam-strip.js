@@ -41,6 +41,16 @@ function noteFreq(name) {
 /* Each note is [name|null, beats]. Rests use a null name. */
 
 const SONGS = {
+  pump: {
+    label: 'Pump Up the Jam',
+    bpm: 125,
+    type: 'sawtooth',
+    notes: [
+      ['C5', 0.5], ['Eb5', 0.5], ['F5', 0.5], ['G5', 0.5], ['Ab5', 0.5], ['G5', 0.5], ['F5', 0.5], ['Eb5', 0.5],
+      ['C5', 0.5], ['C5', 0.25], ['C5', 0.25], ['Eb5', 0.5], ['F5', 0.5], ['G5', 0.5], ['Eb5', 0.5],
+      ['C5', 1.0], [null, 0.5],
+    ],
+  },
   axelf: {
     label: 'Axel F',
     bpm: 118,
@@ -84,7 +94,7 @@ const SONGS = {
   },
 };
 
-const SONG_ORDER = ['axelf', 'ode', 'nacht', 'toccata'];
+const SONG_ORDER = ['pump', 'axelf', 'ode', 'nacht', 'toccata'];
 
 const HYPE_LINES = [
   'PUMP UP THE JAM',
