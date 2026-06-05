@@ -12,8 +12,9 @@
  * licensing needed) so the riffs ship as a few lines of note data:
  *   - "Axel F"        the Axel Foley / Beverly Hills Cop theme
  *   - "Ode to Joy"    Beethoven
- *   - "Nachtmusik"    Mozart · Eine kleine Nachtmusik
- *   - "Toccata"       Bach · Toccata in D minor
+ *   - "Thriller"      Michael Jackson · the synth-bass hook
+ *   - "Another One"   Queen · Another One Bites the Dust bassline
+ *   - "Tetris"        Korobeiniki · the Tetris Type-A theme
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
  * only shows when the panel is BOTH pivoted (horizontal top bar) and in
@@ -74,27 +75,38 @@ const SONGS = {
       [null, 0.5],
     ],
   },
-  nacht: {
-    label: 'Nachtmusik',
-    bpm: 132,
-    type: 'square',
-    notes: [
-      ['G4', 0.5], ['D4', 0.5], ['G4', 0.5], ['D4', 0.5], ['G4', 0.25], ['D4', 0.25], ['G4', 0.5], [null, 0.5],
-      ['D5', 0.5], ['A4', 0.5], ['D5', 0.5], ['A4', 0.5], ['D5', 0.25], ['A4', 0.25], ['D5', 0.5], [null, 0.5],
-    ],
-  },
-  toccata: {
-    label: 'Toccata',
-    bpm: 100,
+  thriller: {
+    label: 'Thriller',
+    bpm: 118,
     type: 'sawtooth',
     notes: [
-      ['A4', 0.25], ['G4', 0.25], ['A4', 1.0], [null, 0.25],
-      ['G4', 0.125], ['F4', 0.125], ['E4', 0.125], ['D4', 0.125], ['C#4', 0.25], ['D4', 1.0], [null, 0.5],
+      ['C#4', 0.5], ['C#4', 0.25], ['C#4', 0.25], ['E4', 0.5], ['C#4', 0.5], ['B3', 0.5], ['C#4', 0.5], [null, 0.5],
+      ['C#4', 0.5], ['C#4', 0.25], ['C#4', 0.25], ['E4', 0.5], ['G#4', 0.5], ['E4', 0.5], ['C#4', 0.5], [null, 0.5],
+    ],
+  },
+  queen: {
+    label: 'Another One',
+    bpm: 110,
+    type: 'sawtooth',
+    notes: [
+      ['E4', 0.5], ['E4', 0.25], ['E4', 0.25], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['A4', 0.5], [null, 0.5],
+      ['E4', 0.5], ['E4', 0.25], ['E4', 0.25], ['E4', 0.5], ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], [null, 0.5],
+    ],
+  },
+  tetris: {
+    label: 'Tetris',
+    bpm: 144,
+    type: 'square',
+    notes: [
+      ['E5', 1.0], ['B4', 0.5], ['C5', 0.5], ['D5', 1.0], ['C5', 0.5], ['B4', 0.5],
+      ['A4', 1.0], ['A4', 0.5], ['C5', 0.5], ['E5', 1.0], ['D5', 0.5], ['C5', 0.5],
+      ['B4', 1.5], ['C5', 0.5], ['D5', 1.0], ['E5', 1.0],
+      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0], [null, 0.5],
     ],
   },
 };
 
-const SONG_ORDER = ['pump', 'axelf', 'ode', 'nacht', 'toccata'];
+const SONG_ORDER = ['pump', 'axelf', 'ode', 'thriller', 'queen', 'tetris'];
 
 const HYPE_LINES = [
   'PUMP UP THE JAM',
