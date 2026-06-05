@@ -445,7 +445,7 @@
       align-items: stretch;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 0 8px var(--modules-bottom-pad);
+      padding: 0 16px var(--modules-bottom-pad);
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -460,7 +460,7 @@
       align-self: stretch;
     }
     @media (min-width: 1280px) {
-      #modules-row { padding-left: 8px; padding-right: 8px; }
+      #modules-row { padding-left: 16px; padding-right: 16px; }
     }
     /* Thin, subtle horizontal scrollbar so the carousel doesn't clip panel content. */
     #modules-row::-webkit-scrollbar {
@@ -598,9 +598,9 @@
     .chat-messages-area {
       flex: 1 1 0%;
       overflow-y: auto;
-      /* Horizontal padding (24px) matches the topbar's px-6 so the message
+      /* Horizontal padding (48px) matches the topbar's px-12 so the message
          avatars line up directly under the header owl. */
-      padding: 2rem 1.5rem;
+      padding: 2rem 3rem;
       background: var(--bg);
       color: var(--text-muted);
       font-size: var(--fs-ui);
@@ -609,7 +609,7 @@
     }
     @media (min-width: 768px) {
       .chat-messages-area {
-        padding: 2.5rem 1.5rem;
+        padding: 2.5rem 3rem;
       }
     }
 
@@ -4281,18 +4281,18 @@
 
       /* ── Chat-shell internals — comfy padding on small screens ──── */
       #chat-shell .chat-topbar {
-        padding: 10px 14px !important;
+        padding: 10px 28px !important;
         min-height: 56px;
       }
       .chat-messages-area {
-        padding: 1rem 1.25rem;
+        padding: 1rem 2.5rem;
       }
       #welcome-screen {
-        padding: 1.25rem 1rem;
+        padding: 1.25rem 2rem;
         top: 60px;
       }
       .chat-input-rail {
-        padding: 10px 12px !important;
+        padding: 10px 24px !important;
       }
     }
 
@@ -4308,7 +4308,7 @@
         min-width: 36px !important;
       }
       /* Tighten the chat topbar so the agent name + agents pill fit. */
-      #chat-shell .chat-topbar { padding: 8px 12px !important; }
+      #chat-shell .chat-topbar { padding: 8px 24px !important; }
     }
 
     /* Light theme: left stack panels use index surface tokens (not mixed cream + purple card) */
@@ -5032,12 +5032,12 @@
        send button cleanly aligned and sized to match.
        ===================================================================== */
     .chat-input-rail {
-      padding: 12px 20px !important;
+      padding: 12px 40px !important;
       background: var(--surface) !important;
       border-top: 1px solid var(--border) !important;
     }
     @media (min-width: 768px) {
-      .chat-input-rail { padding: 12px 28px !important; }
+      .chat-input-rail { padding: 12px 56px !important; }
     }
     .chat-input-rail > .flex {
       align-items: center !important;
@@ -5438,6 +5438,47 @@
     .notif-panel-header .panel-controls,
     #settings-screen .ss-header .panel-controls {
       margin-left: auto;
+    }
+
+    /* ===== HEADER FLOAT overrides (Appearance → "Header") =====
+       The shared rules live in agent-page.css, but a few headers here are
+       height-locked with id-level `!important` selectors (#notif-panel,
+       #settings-screen, #verification-sidebar). Those out-rank a plain
+       `html.header-float .class` rule, so re-state the collapse at matching
+       (id-level) specificity to make sure EVERY pane drops its header. */
+    html.header-float #notif-panel .notif-panel-header,
+    html.header-float #settings-screen .ss-header,
+    html.header-float #verification-sidebar .vs-header {
+      height: 0 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      border-bottom: 0 !important;
+      background: transparent !important;
+      position: relative;
+      overflow: visible;
+      z-index: 5;
+    }
+    html.header-float #notif-panel .notif-panel-header > *:not(.panel-controls),
+    html.header-float #settings-screen .ss-header > *:not(.panel-controls) {
+      display: none !important;
+    }
+    html.header-float #notif-panel .notif-panel-header .panel-controls,
+    html.header-float #settings-screen .ss-header .panel-controls {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      margin: 0 !important;
+      z-index: 6;
+    }
+    html.header-float #verification-sidebar .vs-header > *:not(button) {
+      display: none !important;
+    }
+    html.header-float #verification-sidebar .vs-header > button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      margin: 0 !important;
+      z-index: 6;
     }
 
     /* Panel width expand — doubles the module column when .panel-wide is set */
@@ -5929,6 +5970,29 @@
     #modules-row.modules-grid #verification-sidebar.vs-hidden {
       display: none !important;
     }
+
+    /* ── Doubled module gutters ──────────────────────────────────────────────
+       Every side-panel module (History, Scout, UPF, Tier, Shield, Lens, Vault,
+       Notifications, Profile, Preferences, Workflow, Verify Flow, etc.) draws its
+       left/right content padding from a Tailwind px-3 / p-3 utility (12px) on the
+       shared .side-panel-body, and a `padding: 12px` on the header family. This
+       block doubles ONLY the horizontal padding to 24px so the gutter change is
+       applied uniformly across all modules. !important beats the Tailwind
+       utilities and the per-header shorthand; vertical padding is untouched. */
+    .side-panel-body {
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+    .side-panel-header,
+    .scout-panel-header,
+    .upf-panel-header,
+    .tier-panel-header,
+    .shield-panel-header,
+    .lens-panel-header,
+    .vault-panel-header {
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
   </style>
 </head>
 <body class="ai-chat-page">
@@ -5951,7 +6015,7 @@
     </div>
     <script type="module">
       import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
-      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from '../js/topbar.js';
+      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { initScoutTooltips } from '../js/scout-tooltip.js';
@@ -5967,10 +6031,13 @@
         isMenuPivoted,
         applyMinimalUi,
         isMinimalUiOn,
+        applyHeaderFloat,
+        isHeaderFloatOn,
         isJamStripOn,
         applyJamStrip,
       });
       restoreMinimalUi();
+      restoreHeaderFloat();
       /* Use the exact same shell helper as the agent/portfolio pages: it leads
          the nav panel with the shared WISE brand strip and docks the collapse
          toggle beside the logo. The toggle collapses the panel to an icon rail
@@ -6448,7 +6515,7 @@
 
     <!-- Chat card -->
     <div id="chat-shell">
-      <div class="chat-topbar flex items-center shrink-0 relative z-50 px-6 py-3">
+      <div class="chat-topbar flex items-center shrink-0 relative z-50 px-12 py-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
             <svg viewBox="0 0 193 100" style="width:18px;height:10px;" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -11169,6 +11236,9 @@
           <div class="wise-popover-item${window.isMinimalUiOn?.() ? ' is-active' : ''}" data-minimal="1">
             <span class="material-symbols-outlined">compress</span>Minimal UI
           </div>
+          <div class="wise-popover-item${window.isHeaderFloatOn?.() ? ' is-active' : ''}" data-headerfloat="1">
+            <span class="material-symbols-outlined">${window.isHeaderFloatOn?.() ? 'top_panel_close' : 'top_panel_open'}</span>Header
+          </div>
           <div class="wise-popover-item${window.isJamStripOn?.() ? ' is-active' : ''}" data-jam="1">
             <span class="material-icons">music_note</span>Jam strip
           </div>
@@ -11312,6 +11382,13 @@
           if (minimalItem && pop.contains(minimalItem)) {
             ev.stopPropagation();
             window.applyMinimalUi?.(!window.isMinimalUiOn?.());
+            renderAppearanceBody(pop);
+            return;
+          }
+          const headerFloatItem = ev.target.closest('[data-headerfloat]');
+          if (headerFloatItem && pop.contains(headerFloatItem)) {
+            ev.stopPropagation();
+            window.applyHeaderFloat?.(!window.isHeaderFloatOn?.());
             renderAppearanceBody(pop);
             return;
           }

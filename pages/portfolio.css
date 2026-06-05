@@ -717,14 +717,14 @@ html.dark .pf-module-scroll { background: transparent; }
 .pf-module-scroll {
   flex: 1 1 0%;
   overflow-y: auto;
-  padding: 24px 28px 28px;
+  padding: 24px 56px 28px;
   /* Establish an inline-size container so the content inside each module can
      respond to the MODULE's own width (340px / 680px / grid cell), not the
      viewport. Drives the @container queries below. */
   container-type: inline-size;
   container-name: pfmod;
 }
-@media (max-width: 767px) { .pf-module-scroll { padding: 18px 16px 22px; } }
+@media (max-width: 767px) { .pf-module-scroll { padding: 18px 32px 22px; } }
 
 /* ===== Module-width responsiveness =====
    The auto-fit grids (.pf-pulse-bar, .pf-gauge-grid, .pf-mission-grid,

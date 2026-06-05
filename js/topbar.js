@@ -270,6 +270,32 @@ export function restoreMinimalUi() {
   applyMinimalUi(isMinimalUiOn());
 }
 
+/* Header float — drop every module/panel header strip entirely (no space kept)
+   and pin its right-floated icons/actions (.panel-controls) absolutely over the
+   top-right of the module content. Driven by a `header-float` class on <html> so
+   it reaches every module on every page; persisted so it survives navigation. */
+const HEADER_FLOAT_KEY = 'wise-header-float';
+
+/** True when header-float (headerless modules) was last left on. */
+export function isHeaderFloatOn() {
+  try { return localStorage.getItem(HEADER_FLOAT_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the header-float class on <html> and persist it. Each Appearance
+    popover reads isHeaderFloatOn() to render its own toggle state. */
+export function applyHeaderFloat(on) {
+  document.documentElement.classList.toggle('header-float', !!on);
+  try { localStorage.setItem(HEADER_FLOAT_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:header-float', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted header-float state onto the document (no popover needed). */
+export function restoreHeaderFloat() {
+  applyHeaderFloat(isHeaderFloatOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -316,6 +342,7 @@ export function wireMenuFooter() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     restoreMinimalUi();
+    restoreHeaderFloat();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

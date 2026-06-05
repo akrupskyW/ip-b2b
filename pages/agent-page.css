@@ -937,7 +937,7 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 8px var(--modules-bottom-pad);
+  padding: 0 16px var(--modules-bottom-pad);
   gap: 8px;
   scrollbar-gutter: stable;
 }
@@ -1324,8 +1324,8 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 
 /* ===== JAM STRIP =====
    In the Minimal-UI top bar the long center stretch (where the nav icons
-   used to live) sits empty. The jam strip drops a fun, musical ticker +
-   equalizer + branded play controls into that gap. It's injected once into
+   used to live) sits empty. The jam strip drops a fun, musical equalizer +
+   branded play controls into that gap. It's injected once into
    .menu-inner by js/jam-strip.js but only ever shown when the panel is BOTH
    pivoted (horizontal bar) AND minimal — otherwise it stays out of the way. */
 .jam-strip { display: none; }
@@ -1378,17 +1378,23 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   50% { box-shadow: 0 0 0 8px rgba(2, 78, 174, 0.04), 0 2px 14px rgba(124, 58, 237, 0.5); }
 }
 
-/* Equalizer — staggered bouncing bars. Idle = a calm shimmer, playing = a
-   lively bounce. */
+/* Equalizer — staggered bouncing bars. Stretches across the whole middle of
+   the strip (where the hype ticker used to be). Idle = a calm shimmer,
+   playing = a lively bounce. */
 .jam-eq {
-  flex: 0 0 auto;
+  flex: 1 1 0%;
+  min-width: 0;
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
   gap: 3px;
   height: 24px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 .jam-eq span {
-  width: 3px;
+  flex: 1 1 0%;
+  min-width: 2px;
   height: 30%;
   border-radius: 2px;
   background: linear-gradient(to top, var(--primary), var(--blue-300, #93c5fd));
@@ -1411,45 +1417,6 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   40% { transform: scaleY(0.5); }
   60% { transform: scaleY(0.95); }
   80% { transform: scaleY(0.4); }
-}
-
-/* Scrolling hype ticker — fills the flexible middle, masked at both edges. */
-.jam-marquee {
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-}
-.jam-marquee-track {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  white-space: nowrap;
-  will-change: transform;
-  animation: jamMarquee 26s linear infinite;
-}
-.jam-strip.is-playing .jam-marquee-track { animation-duration: 13s; }
-.jam-hype {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  background: linear-gradient(90deg, var(--primary), var(--ter-violet), var(--primary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.jam-dot {
-  font-size: 14px !important;
-  color: var(--primary);
-  opacity: 0.7;
-}
-
-@keyframes jamMarquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
 }
 
 /* Branded track chips. */
@@ -1485,18 +1452,9 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 .jam-song:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-/* Reclaim space on tight bars: the ticker yields first, then the equalizer. */
-@media (max-width: 1080px) {
-  #menu-panel.minimal-ui.mp-pivot .jam-eq { display: none; }
-}
-@media (max-width: 880px) {
-  #menu-panel.minimal-ui.mp-pivot .jam-marquee { display: none; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .jam-eq span,
-  .jam-play,
-  .jam-marquee-track { animation: none !important; }
+  .jam-play { animation: none !important; }
 }
 
 /* ===== MENU NAVIGATION ===== */
@@ -2251,13 +2209,91 @@ html.dark .agent-main-header {
 .agent-main-scroll {
   flex: 1 1 0%;
   overflow-y: auto;
-  padding: 28px 32px 48px;
+  padding: 28px 64px 48px;
   background: var(--bg);
 }
 html.dark .agent-main-scroll { background: transparent; }
 @media (max-width: 767px) {
-  .agent-main-scroll { padding: 20px 16px 36px; }
+  .agent-main-scroll { padding: 20px 32px 36px; }
   .agent-main-header { padding: 12px; }
+}
+
+/* ===== HEADER FLOAT (headerless modules) =====
+   Switched on from the Appearance (crossword) popover. Every module/panel
+   header strip is collapsed to zero height — the title/icon block is dropped
+   and the header reclaims NO vertical space, so the content slides up to the
+   top of the card. The right-floated controls (.panel-controls) are kept and
+   pinned absolutely over the top-right corner, landing on top of the content.
+   Loaded on every page (agent-page.css is shared), so it reaches the portfolio
+   modules, the agent overview module, and the ai-chat side panels alike. */
+html.header-float .pf-module-header,
+html.header-float .pf-history-header,
+html.header-float .agent-main-header,
+html.header-float .side-panel-header,
+html.header-float .nfp-panel-header,
+html.header-float .ss-header,
+html.header-float .alerts-panel-header,
+html.header-float .notif-panel-header,
+html.header-float .vs-header,
+html.header-float .chat-topbar {
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  background: transparent !important;
+  position: relative;
+  overflow: visible;
+  z-index: 5;
+}
+/* Drop the title block (icon + titles) but keep the floated controls. */
+html.header-float .pf-module-header > *:not(.panel-controls),
+html.header-float .pf-history-header > *:not(.panel-controls),
+html.header-float .agent-main-header > *:not(.panel-controls),
+html.header-float .side-panel-header > *:not(.panel-controls),
+html.header-float .nfp-panel-header > *:not(.panel-controls),
+html.header-float .ss-header > *:not(.panel-controls),
+html.header-float .alerts-panel-header > *:not(.panel-controls),
+html.header-float .notif-panel-header > *:not(.panel-controls) {
+  display: none !important;
+}
+/* Pin the kept controls over the top-right of the (now header-less) module. */
+html.header-float .pf-module-header .panel-controls,
+html.header-float .pf-history-header .panel-controls,
+html.header-float .agent-main-header .panel-controls,
+html.header-float .side-panel-header .panel-controls,
+html.header-float .nfp-panel-header .panel-controls,
+html.header-float .ss-header .panel-controls,
+html.header-float .alerts-panel-header .panel-controls,
+html.header-float .notif-panel-header .panel-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  z-index: 6;
+}
+/* Headers whose actions are bare buttons (no .panel-controls wrapper) —
+   the Scout module (.chat-topbar) and the verification summary (.vs-header).
+   Their control cluster / buttons are the trailing element(s), so drop the
+   title block and float whatever interactive controls remain. */
+html.header-float .chat-topbar > *:not(:last-child) {
+  display: none !important;
+}
+html.header-float .chat-topbar > *:last-child {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  z-index: 6;
+}
+html.header-float .vs-header > *:not(button) {
+  display: none !important;
+}
+html.header-float .vs-header > button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  z-index: 6;
 }
 
 .agent-hero {

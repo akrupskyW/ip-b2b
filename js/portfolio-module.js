@@ -29,7 +29,7 @@ import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-doc
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
@@ -2503,6 +2503,9 @@ function renderAppearanceBody(pop) {
     <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
       <span class="material-symbols-outlined">compress</span>Minimal UI
     </div>
+    <div class="wise-popover-item${isHeaderFloatOn() ? ' is-active' : ''}" data-headerfloat="1">
+      <span class="material-symbols-outlined">${isHeaderFloatOn() ? 'top_panel_close' : 'top_panel_open'}</span>Header
+    </div>
     <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
       <span class="material-icons">music_note</span>Jam strip
     </div>
@@ -2604,6 +2607,13 @@ function openAppearance(anchor) {
     if (minimalItem) {
       ev.stopPropagation();
       applyMinimalUi(!isMinimalUiOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const headerFloatItem = ev.target.closest('[data-headerfloat]');
+    if (headerFloatItem) {
+      ev.stopPropagation();
+      applyHeaderFloat(!isHeaderFloatOn());
       renderAppearanceBody(pop);
       return;
     }

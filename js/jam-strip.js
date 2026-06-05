@@ -4,16 +4,15 @@
 /*
  * When the navigation is collapsed to the Minimal-UI top bar, the long
  * stretch where the nav icons used to live sits empty. This module fills
- * that gap with a fun, musical "pump up the jam" strip: an animated
- * equalizer, a scrolling hype ticker, and a row of branded tracks you can
- * play right in the bar.
+ * that gap with a fun, musical "pump up the jam" strip: a wide animated
+ * equalizer and a row of branded tracks you can play right in the bar.
  *
  * The tunes are synthesized live with the Web Audio API (no audio files /
  * licensing needed) so the riffs ship as a few lines of note data:
  *   - "Axel F"        the Axel Foley / Beverly Hills Cop theme
  *   - "Ode to Joy"    Beethoven
- *   - "Thriller"      Michael Jackson · the synth-bass hook
- *   - "Another One"   Queen · Another One Bites the Dust bassline
+ *   - "Sonic"         Sonic the Hedgehog · Green Hill Zone melody
+ *   - "Mario"         Super Mario Bros · the overworld theme
  *   - "Tetris"        Korobeiniki · the Tetris Type-A theme
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
@@ -75,22 +74,33 @@ const SONGS = {
       [null, 0.5],
     ],
   },
-  thriller: {
-    label: 'Thriller',
-    bpm: 118,
-    type: 'sawtooth',
+  sonic: {
+    label: 'Sonic',
+    bpm: 160,
+    type: 'square',
     notes: [
-      ['C#4', 0.5], ['C#4', 0.25], ['C#4', 0.25], ['E4', 0.5], ['C#4', 0.5], ['B3', 0.5], ['C#4', 0.5], [null, 0.5],
-      ['C#4', 0.5], ['C#4', 0.25], ['C#4', 0.25], ['E4', 0.5], ['G#4', 0.5], ['E4', 0.5], ['C#4', 0.5], [null, 0.5],
+      // Green Hill Zone — main theme (Masato Nakamura), key of C.
+      ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 0.5], ['B4', 0.5], ['G4', 1.0],
+      ['G4', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 0.5], ['B4', 0.5], ['G4', 0.5],
+      ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 1.5], [null, 0.5],
+      ['B4', 0.5], ['G4', 1.0], ['A4', 0.5], ['A4', 0.5], ['F4', 0.5], ['A4', 1.0],
+      ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 2.5],
+      ['A4', 1.0], ['B4', 1.0], ['B4', 1.0], ['G4', 1.0],
+      ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['C5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 1.0], [null, 0.5],
     ],
   },
-  queen: {
-    label: 'Another One',
-    bpm: 110,
-    type: 'sawtooth',
+  mario: {
+    label: 'Mario',
+    bpm: 180,
+    type: 'square',
     notes: [
-      ['E4', 0.5], ['E4', 0.25], ['E4', 0.25], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['A4', 0.5], [null, 0.5],
-      ['E4', 0.5], ['E4', 0.25], ['E4', 0.25], ['E4', 0.5], ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], [null, 0.5],
+      // Super Mario Bros. — overworld theme (Koji Kondo), key of C.
+      ['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5], [null, 0.5], ['C5', 0.5], ['E5', 0.5], [null, 0.5],
+      ['G5', 0.5], [null, 1.5], ['G4', 0.5], [null, 1.5],
+      ['C5', 0.5], [null, 1.0], ['G4', 0.5], [null, 1.0], ['E4', 0.5], [null, 1.0],
+      ['A4', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['Bb4', 0.5], ['A4', 0.5], [null, 0.5],
+      ['G4', 0.5], ['E5', 0.5], ['G5', 0.5], ['A5', 0.5], [null, 0.5], ['F5', 0.5], ['G5', 0.5], [null, 0.5],
+      ['E5', 0.5], [null, 0.5], ['C5', 0.5], ['D5', 0.5], ['B4', 0.5], [null, 1.0],
     ],
   },
   tetris: {
@@ -106,16 +116,7 @@ const SONGS = {
   },
 };
 
-const SONG_ORDER = ['pump', 'axelf', 'ode', 'thriller', 'queen', 'tetris'];
-
-const HYPE_LINES = [
-  'PUMP UP THE JAM',
-  'Crank the WISE beat',
-  'Turn it up to eleven',
-  'Let the rhythm move you',
-  'Feel the intelligence groove',
-  'Press play and vibe',
-];
+const SONG_ORDER = ['pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris'];
 
 /* ---- Tiny synth ----------------------------------------------------- */
 
@@ -244,7 +245,7 @@ function toggle(songId) {
 
 /* ---- DOM ------------------------------------------------------------ */
 
-const EQ_BARS = 16;
+const EQ_BARS = 48;
 
 function buildStrip() {
   const strip = document.createElement('div');
@@ -253,9 +254,6 @@ function buildStrip() {
   strip.setAttribute('aria-label', 'WISE jam bar — play a tune');
 
   const eqBars = Array.from({ length: EQ_BARS }, () => '<span></span>').join('');
-  const ticker = HYPE_LINES
-    .map((line) => `<span class="jam-hype">${line}</span><span class="jam-dot material-icons">music_note</span>`)
-    .join('');
 
   const songChips = SONG_ORDER
     .map((id) => `<button type="button" class="jam-song" data-song="${id}">${SONGS[id].label}</button>`)
@@ -266,9 +264,6 @@ function buildStrip() {
       <span class="material-icons jam-play-icon">play_arrow</span>
     </button>
     <div class="jam-eq" aria-hidden="true">${eqBars}</div>
-    <div class="jam-marquee" aria-hidden="true">
-      <div class="jam-marquee-track">${ticker}${ticker}</div>
-    </div>
     <div class="jam-songs" role="group" aria-label="Pick a track">${songChips}</div>`;
 
   wireStrip(strip);
