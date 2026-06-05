@@ -359,6 +359,80 @@ footer {
   font-size: 0.8125rem; color: var(--text-subtle); line-height: 1.6;
 }
 
+/* ===== Per-page audit ===== */
+.page-audit-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.auto-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+  border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700;
+  letter-spacing: 0.02em; background: var(--pass-bg); color: var(--pass);
+  border: 1px solid color-mix(in srgb, var(--pass) 28%, transparent);
+}
+.auto-pill .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--pass);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--pass) 60%, transparent);
+  animation: livePulse 2.4s ease-out infinite;
+}
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pass) 55%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.page-checked { font-size: 0.75rem; color: var(--text-subtle); }
+.page-checked code { font-family: 'Courier New', monospace; }
+
+.page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.page-card {
+  padding: 16px 16px 14px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+html.dark .page-card { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.page-card.is-updated { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); box-shadow: 0 0 0 3px var(--primary-soft); }
+.page-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.page-grade {
+  width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px;
+  display: grid; place-items: center; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;
+}
+.page-grade.g-a { background: var(--pass-bg); color: var(--pass); }
+.page-grade.g-b { background: var(--primary-soft); color: var(--primary); }
+html.dark .page-grade.g-b { color: var(--primary-bright); }
+.page-grade.g-c { background: var(--warn-bg); color: var(--warn); }
+.page-grade.g-d, .page-grade.g-f { background: var(--fail-bg); color: var(--fail); }
+.page-card-meta { min-width: 0; flex: 1; }
+.page-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
+.page-path { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
+.page-score-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.page-pct { font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.page-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+html.dark .page-bar { background: rgba(255,255,255,0.08); }
+.page-bar > span { display: block; height: 100%; border-radius: 999px; }
+.page-bar.g-a > span { background: var(--pass); }
+.page-bar.g-b > span { background: var(--primary); }
+html.dark .page-bar.g-b > span { background: var(--primary-bright); }
+.page-bar.g-c > span { background: var(--warn); }
+.page-bar.g-d > span, .page-bar.g-f > span { background: var(--fail); }
+.page-updated-tag {
+  display: inline-flex; align-items: center; gap: 4px; margin-left: auto;
+  font-size: 0.625rem; font-weight: 700; color: var(--primary);
+}
+html.dark .page-updated-tag { color: var(--primary-bright); }
+.page-updated-tag .material-icons { font-size: 13px; }
+
+.page-checks { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 5px; }
+.page-checks li {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;
+}
+.page-checks .material-icons { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.page-checks li.ok .material-icons { color: var(--pass); }
+.page-checks li.warn .material-icons { color: var(--warn); }
+.page-checks li.fail .material-icons { color: var(--fail); }
+.page-check-detail { color: var(--text-subtle); }
+.page-card-err { font-size: 0.75rem; color: var(--warn); margin-top: 10px; line-height: 1.45; }
+
 /* Visually-hidden helper used for the skip link target context */
 .skip-link {
   position: absolute; left: 12px; top: -48px; z-index: 100;
@@ -395,12 +469,15 @@ footer {
     <div class="hero-eyebrow">WCAG 2.1 AAA / 2.2 conformance audit</div>
     <h1>Is the WISE palette, type &amp; spacing accessible?</h1>
     <p>
-      This page audits every design token shipped in <code>pages/agent-page.css</code> against the
-      <strong>Web Content Accessibility Guidelines</strong> — now targeting <strong>Level AAA</strong>
-      (SC 1.4.6 Contrast Enhanced: 7:1 for normal text, 4.5:1 for large). Color-contrast ratios are
-      recomputed live in your browser (using the WCAG relative-luminance formula), so the verdicts
-      below can never drift from the actual hex values. Toggle the theme to re-run the entire audit
-      against the dark palette.
+      This page does two things, live in your browser. First, it <strong>fetches and grades every
+      shipping HTML page</strong> against a battery of automated WCAG checks, listing each page with a
+      letter grade (see <a href="#pages">Page grades</a>) — and it keeps re-checking so the grades stay
+      current as pages change. Second, it audits every design token shipped in
+      <code>pages/agent-page.css</code> against the <strong>Web Content Accessibility Guidelines</strong>
+      — targeting <strong>Level AAA</strong> (SC 1.4.6 Contrast Enhanced: 7:1 for normal text, 4.5:1
+      for large). Color-contrast ratios are recomputed using the WCAG relative-luminance formula, so the
+      verdicts can never drift from the actual hex values. Toggle the theme to re-run the audit against
+      the dark palette.
     </p>
     <div class="hero-meta">
       <span class="hero-pill"><span class="material-icons">contrast</span>SC 1.4.6 Contrast (Enhanced)</span>
@@ -410,6 +487,7 @@ footer {
     </div>
     <nav class="toc" aria-label="Sections">
       <a href="#summary"><span class="material-icons">summarize</span>Summary</a>
+      <a href="#pages"><span class="material-icons">grade</span>Page grades</a>
       <a href="#palette"><span class="material-icons">palette</span>Palette</a>
       <a href="#contrast"><span class="material-icons">contrast</span>Text contrast</a>
       <a href="#nontext"><span class="material-icons">category</span>Non-text contrast</a>
@@ -431,6 +509,24 @@ footer {
     <div class="reeval-status is-busy" id="reevalStatus" role="status" aria-live="polite">
       <span class="material-icons">hourglass_top</span> Reading tokens from source…
     </div>
+  </section>
+
+  <!-- ===== Per-page audit ===== -->
+  <section id="pages">
+    <div class="section-head">
+      <div class="section-kicker">Live page audit</div>
+      <h2><span class="material-icons">grade</span>HTML pages reviewed &amp; graded</h2>
+      <p>Every shipping HTML page is fetched live and run through a set of automated WCAG checks
+      (document language, page title, zoomable viewport, image alt text, accessible names on
+      controls, labelled form fields, heading structure and landmarks). Each page gets a letter
+      grade. This re-runs on load, on demand, when you return to the tab, and on a timer — so a
+      page is re-graded shortly after it changes.</p>
+    </div>
+    <div class="page-audit-bar">
+      <span class="auto-pill"><span class="dot"></span>Auto-reviewing</span>
+      <span class="page-checked" id="pagesChecked">Reviewing pages…</span>
+    </div>
+    <div class="page-grid" id="pageGrid"><!-- injected --></div>
   </section>
 
   <!-- ===== Palette ===== -->
@@ -547,10 +643,12 @@ footer {
 
   <footer>
     Generated audit of the WISE design tokens (<code>pages/agent-page.css</code>, <code>pages/portfolio.css</code>,
-    <code>pages/scout-chat.css</code>). Contrast ratios use the WCAG 2.1 relative-luminance algorithm and are
-    recomputed on every theme switch. Translucent tokens (<code>rgba</code> borders, soft tints) are alpha-composited
-    over their resolved background before measuring. This is an automated review and complements, but does not
-    replace, testing with assistive technology and real users.
+    <code>pages/scout-chat.css</code>) plus a live, per-page WCAG review of every shipping HTML page in the project.
+    Pages are fetched with <code>cache: no-store</code> on load, on demand, on tab focus and on a polling timer, then
+    parsed and graded in the browser — so grades re-evaluate shortly after any page is updated. Contrast ratios use the
+    WCAG 2.1 relative-luminance algorithm; translucent tokens (<code>rgba</code> borders, soft tints) are
+    alpha-composited over their resolved background before measuring. This is an automated review and complements, but
+    does not replace, testing with assistive technology and real users.
   </footer>
 </main>
 
@@ -789,7 +887,18 @@ function renderScorecard() {
   const aaaPct = Math.round((aaaNormalPass/total)*100);
   const aaClass = aaPct >= 100 ? 'is-pass' : (aaPct >= 90 ? 'is-warn' : 'is-fail');
   const aaaClass = aaaPct >= 100 ? 'is-pass' : (aaaPct >= 85 ? 'is-warn' : 'is-fail');
-  sc.innerHTML = `
+  let pagesCard = '';
+  if (pageStats) {
+    const a = pageStats.avg;
+    const pClass = a >= 90 ? 'is-pass' : (a >= 75 ? 'is-warn' : 'is-fail');
+    pagesCard = `
+    <div class="score ${pClass}">
+      <div class="score-num">${pageStats.graded}</div>
+      <div class="score-label">Pages graded</div>
+      <div class="score-meta">Avg ${a}% · ${letterFor(a).g} · live</div>
+    </div>`;
+  }
+  sc.innerHTML = pagesCard + `
     <div class="score ${aaaClass}">
       <div class="score-num">${aaaNormalPass}/${total}</div>
       <div class="score-label">AAA text pairs</div>
@@ -804,11 +913,6 @@ function renderScorecard() {
       <div class="score-num">2</div>
       <div class="score-label">Themes audited</div>
       <div class="score-meta">Light &amp; dark</div>
-    </div>
-    <div class="score is-pass">
-      <div class="score-num">0</div>
-      <div class="score-label">Open action items</div>
-      <div class="score-meta">AAA reached · see findings</div>
     </div>`;
 }
 
@@ -891,6 +995,291 @@ function renderFindings() {
 }
 
 /* =====================================================================
+   PER-PAGE WCAG AUDIT
+   Fetches every shipping HTML page live, parses it, runs a battery of
+   automated accessibility heuristics and assigns a letter grade. Re-runs
+   on load, on demand, on tab focus and on a poll timer so the grades
+   re-evaluate shortly after any page is edited. Paths are relative to
+   this file (pages/accessibility-review.html): same-dir pages resolve
+   directly, root pages via '../'.
+===================================================================== */
+const PAGES = [
+  { title: 'IP3 Home',                 path: '../index.html' },
+  { title: 'IP3 Home (legacy)',        path: '../wise_ip3.html' },
+  { title: 'AI Chat',                  path: 'ai-chat.html' },
+  { title: 'Portfolio',                path: 'portfolio.html' },
+  { title: 'Scout Flows',              path: 'scout-flows.html' },
+  { title: 'App Vision Deck',          path: 'app-vision-deck.html' },
+  { title: 'Analytics Agent',          path: 'analytics-agent.html' },
+  { title: 'Marketing Agent',          path: 'marketing-agent.html' },
+  { title: 'Trends Agent',             path: 'trends-agent.html' },
+  { title: 'Portfolio Agent',          path: 'portfolio-agent.html' },
+  { title: 'Brand Engagement Agent',   path: 'brand-engagement-agent.html' },
+  { title: 'Code Studio Agent',        path: 'code-studio-agent.html' },
+  { title: 'Audit Reformulation Agent',path: 'audit-reformulation-agent.html' },
+  { title: 'Accessibility Review (this page)', path: 'accessibility-review.html' },
+];
+
+// Per-page running state: last content signature + last grade.
+const pageState = {};
+
+// Accessible-name helper: text content with icon-font ligatures stripped
+// (Material Icons/Symbols render their textContent as a glyph, so it is
+// NOT a real accessible name and must not count as one).
+function accessibleName(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.material-icons, [class*="material-symbols"]').forEach(n => n.remove());
+  const text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  if (text) return true;
+  const attr = a => (el.getAttribute(a) || '').trim();
+  if (attr('aria-label') || attr('aria-labelledby') || attr('title')) return true;
+  const img = el.querySelector('img[alt]');
+  if (img && (img.getAttribute('alt') || '').trim()) return true;
+  if (el.tagName === 'INPUT' && (el.value || '').trim()) return true;
+  return false;
+}
+function isHidden(el) {
+  return el.getAttribute('aria-hidden') === 'true' ||
+         el.closest('[aria-hidden="true"]') !== null;
+}
+function fieldHasLabel(el, doc) {
+  const attr = a => (el.getAttribute(a) || '').trim();
+  if (attr('aria-label') || attr('aria-labelledby') || attr('title')) return true;
+  if (el.closest('label')) return true;
+  const id = el.getAttribute('id');
+  if (id && doc.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]')) return true;
+  return false;
+}
+
+// Score → letter grade.
+function letterFor(pct) {
+  if (pct >= 97) return { g: 'A+', cls: 'g-a' };
+  if (pct >= 93) return { g: 'A',  cls: 'g-a' };
+  if (pct >= 90) return { g: 'A-', cls: 'g-a' };
+  if (pct >= 85) return { g: 'B+', cls: 'g-b' };
+  if (pct >= 80) return { g: 'B',  cls: 'g-b' };
+  if (pct >= 75) return { g: 'C+', cls: 'g-c' };
+  if (pct >= 70) return { g: 'C',  cls: 'g-c' };
+  if (pct >= 60) return { g: 'D',  cls: 'g-d' };
+  return { g: 'F', cls: 'g-f' };
+}
+
+// Run every check against a parsed document. Returns { pct, checks[] }.
+function auditDoc(doc) {
+  const checks = [];
+  const add = (label, sc, weight, score, detail) =>
+    checks.push({ label, sc, weight, score, detail });
+
+  const htmlEl = doc.documentElement;
+
+  // SC 3.1.1 — Language of page
+  const lang = (htmlEl.getAttribute('lang') || '').trim();
+  add('Document language', '3.1.1', 2, lang ? 1 : 0, lang ? 'lang="' + lang + '"' : 'missing lang attribute');
+
+  // SC 2.4.2 — Page title
+  const titleEl = doc.querySelector('title');
+  const title = titleEl ? titleEl.textContent.trim() : '';
+  add('Page title', '2.4.2', 2, title ? 1 : 0, title ? '“' + title + '”' : 'missing <title>');
+
+  // Charset declared
+  const hasCharset = !!doc.querySelector('meta[charset], meta[http-equiv="Content-Type" i]');
+  add('Character encoding', '—', 0.5, hasCharset ? 1 : 0, hasCharset ? 'declared' : 'no meta charset');
+
+  // SC 1.4.4 — Zoomable viewport
+  const vp = doc.querySelector('meta[name="viewport" i]');
+  let vpScore = 0, vpDetail = 'no viewport meta';
+  if (vp) {
+    const c = (vp.getAttribute('content') || '').toLowerCase();
+    const blocksUser = /user-scalable\s*=\s*(no|0)/.test(c);
+    const maxScale = (c.match(/maximum-scale\s*=\s*([0-9.]+)/) || [])[1];
+    const capped = maxScale !== undefined && parseFloat(maxScale) < 2;
+    if (blocksUser || capped) { vpScore = 0; vpDetail = 'zoom restricted (' + c + ')'; }
+    else { vpScore = 1; vpDetail = 'present, zoom allowed'; }
+  }
+  add('Zoomable viewport', '1.4.4', 1.5, vpScore, vpDetail);
+
+  // SC 1.1.1 — Images have alt text
+  const imgs = [...doc.querySelectorAll('img')];
+  if (imgs.length === 0) {
+    add('Image alt text', '1.1.1', 1.5, 1, 'no <img> elements');
+  } else {
+    const missing = imgs.filter(i => !i.hasAttribute('alt')).length;
+    add('Image alt text', '1.1.1', 1.5, (imgs.length - missing) / imgs.length,
+      missing ? missing + ' of ' + imgs.length + ' <img> missing alt' : 'all ' + imgs.length + ' images have alt');
+  }
+
+  // SC 4.1.2 — Controls have an accessible name
+  const controls = [...doc.querySelectorAll('button, a[href], [role="button"], input[type="button" i], input[type="submit" i]')]
+    .filter(el => !isHidden(el));
+  if (controls.length === 0) {
+    add('Named controls', '4.1.2', 2, 1, 'no interactive controls');
+  } else {
+    const unnamed = controls.filter(el => !accessibleName(el)).length;
+    add('Named controls', '4.1.2', 2, (controls.length - unnamed) / controls.length,
+      unnamed ? unnamed + ' of ' + controls.length + ' buttons/links have no accessible name' : 'all ' + controls.length + ' controls named');
+  }
+
+  // SC 1.3.1 / 4.1.2 — Form fields are labelled
+  const fields = [...doc.querySelectorAll('input, select, textarea')].filter(el => {
+    const t = (el.getAttribute('type') || '').toLowerCase();
+    return !['hidden', 'button', 'submit', 'reset', 'image'].includes(t) && !isHidden(el);
+  });
+  if (fields.length === 0) {
+    add('Labelled form fields', '1.3.1', 1.5, 1, 'no form fields');
+  } else {
+    const unlabelled = fields.filter(el => !fieldHasLabel(el, doc)).length;
+    add('Labelled form fields', '1.3.1', 1.5, (fields.length - unlabelled) / fields.length,
+      unlabelled ? unlabelled + ' of ' + fields.length + ' fields unlabelled' : 'all ' + fields.length + ' fields labelled');
+  }
+
+  // SC 1.3.1 / 2.4.6 — Heading structure
+  const headings = [...doc.querySelectorAll('h1,h2,h3,h4,h5,h6')];
+  const h1s = headings.filter(h => h.tagName === 'H1').length;
+  let hScore = 1, hDetail = h1s + ' h1 · ' + headings.length + ' headings';
+  if (headings.length === 0) { hScore = 0; hDetail = 'no headings'; }
+  else if (h1s === 0) { hScore = 0.5; hDetail = 'no <h1> (' + headings.length + ' headings)'; }
+  else if (h1s > 1) { hScore = 0.75; hDetail = h1s + ' <h1> elements (prefer one)'; }
+  else {
+    let skipped = false, prev = 0;
+    for (const h of headings) {
+      const lvl = +h.tagName[1];
+      if (prev && lvl > prev + 1) skipped = true;
+      prev = lvl;
+    }
+    if (skipped) { hScore = 0.75; hDetail = 'one h1, but a heading level is skipped'; }
+    else hDetail = 'one h1, ordered levels (' + headings.length + ' headings)';
+  }
+  add('Heading structure', '2.4.6', 1, hScore, hDetail);
+
+  // SC 1.3.1 / 2.4.1 — Landmarks & skip link
+  const hasMain = !!doc.querySelector('main, [role="main"]');
+  const hasSkip = [...doc.querySelectorAll('a[href^="#"]')]
+    .some(a => /skip/i.test(a.textContent) || /skip/i.test(a.className));
+  const lScore = (hasMain ? 0.6 : 0) + (hasSkip ? 0.4 : 0);
+  add('Landmarks & skip link', '2.4.1', 1, lScore,
+    (hasMain ? 'main landmark' : 'no main landmark') + ' · ' + (hasSkip ? 'skip link' : 'no skip link'));
+
+  const totalW = checks.reduce((s, c) => s + c.weight, 0);
+  const gained = checks.reduce((s, c) => s + c.weight * c.score, 0);
+  const pct = Math.round((gained / totalW) * 100);
+  return { pct, checks };
+}
+
+function checkVerdict(c) {
+  if (c.score >= 0.999) return 'ok';
+  if (c.score >= 0.6) return 'warn';
+  return 'fail';
+}
+const VERDICT_ICON = { ok: 'check_circle', warn: 'error', fail: 'cancel' };
+
+function renderPageCard(page, result) {
+  const { pct, checks } = result;
+  const { g, cls } = letterFor(pct);
+  const updated = pageState[page.path] && pageState[page.path].justUpdated;
+  const items = checks.map(c => {
+    const v = checkVerdict(c);
+    return '<li class="' + v + '"><span class="material-icons">' + VERDICT_ICON[v] + '</span>' +
+      '<span><strong>' + c.label + '</strong>' +
+      (c.sc !== '—' ? ' <span class="page-check-detail">· SC ' + c.sc + '</span>' : '') +
+      '<br><span class="page-check-detail">' + c.detail + '</span></span></li>';
+  }).join('');
+  return '<div class="page-card' + (updated ? ' is-updated' : '') + '">' +
+    '<div class="page-card-top">' +
+      '<div class="page-grade ' + cls + '">' + g + '</div>' +
+      '<div class="page-card-meta">' +
+        '<div class="page-name">' + page.title + '</div>' +
+        '<div class="page-path">' + page.path.replace('../', '') + '</div>' +
+        '<div class="page-score-line">' +
+          '<span class="page-pct">' + pct + '%</span>' +
+          '<span class="page-bar ' + cls + '"><span style="width:' + pct + '%"></span></span>' +
+        '</div>' +
+      '</div>' +
+      (updated ? '<span class="page-updated-tag"><span class="material-icons">bolt</span>Updated</span>' : '') +
+    '</div>' +
+    '<ul class="page-checks">' + items + '</ul>' +
+  '</div>';
+}
+
+function renderPageError(page, msg) {
+  return '<div class="page-card">' +
+    '<div class="page-card-top">' +
+      '<div class="page-grade g-d">—</div>' +
+      '<div class="page-card-meta">' +
+        '<div class="page-name">' + page.title + '</div>' +
+        '<div class="page-path">' + page.path.replace('../', '') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="page-card-err">Couldn\u2019t fetch: ' + msg + '</div>' +
+  '</div>';
+}
+
+let pageStats = null;
+let pageAuditRunning = false;
+async function auditAllPages(opts) {
+  opts = opts || {};
+  if (pageAuditRunning) return;
+  pageAuditRunning = true;
+  const grid = document.getElementById('pageGrid');
+  const checkedEl = document.getElementById('pagesChecked');
+  if (!opts.silent && !grid.children.length) {
+    checkedEl.textContent = 'Reviewing ' + PAGES.length + ' pages…';
+  }
+
+  const parser = new DOMParser();
+  const cards = [];
+  let graded = 0, sum = 0, changedCount = 0, errored = 0;
+
+  for (const page of PAGES) {
+    try {
+      const res = await fetch(page.path + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const html = await res.text();
+      // Cheap content signature for change detection.
+      let sig = 0;
+      for (let i = 0; i < html.length; i++) { sig = (sig * 31 + html.charCodeAt(i)) | 0; }
+      sig = html.length + ':' + sig;
+
+      const prev = pageState[page.path];
+      const changed = prev && prev.sig && prev.sig !== sig;
+      const result = auditDoc(parser.parseFromString(html, 'text/html'));
+      if (changed) changedCount++;
+      pageState[page.path] = { sig, pct: result.pct, justUpdated: changed };
+      cards.push(renderPageCard(page, result));
+      graded++; sum += result.pct;
+    } catch (err) {
+      errored++;
+      cards.push(renderPageError(page, err.message));
+      pageState[page.path] = pageState[page.path] || {};
+    }
+  }
+
+  grid.innerHTML = cards.join('');
+  const avg = graded ? Math.round(sum / graded) : 0;
+  pageStats = { graded, total: PAGES.length, avg, errored };
+  renderScorecard();
+
+  const now = new Date().toLocaleTimeString();
+  if (errored === PAGES.length) {
+    checkedEl.innerHTML = '<span style="color:var(--warn);">Couldn\u2019t fetch pages — serve the folder over http (e.g. <code>python3 -m http.server</code>) to enable the live page audit.</span>';
+  } else {
+    checkedEl.innerHTML = graded + ' of ' + PAGES.length + ' pages graded · avg ' + avg + '% · last checked ' + now +
+      (changedCount ? ' · <strong>' + changedCount + ' page' + (changedCount > 1 ? 's' : '') + ' changed</strong>' : '') +
+      (errored ? ' · ' + errored + ' unreachable' : '');
+  }
+
+  // Clear the "updated" flash after a few seconds.
+  if (changedCount) {
+    setTimeout(() => {
+      for (const k in pageState) if (pageState[k]) pageState[k].justUpdated = false;
+      const g2 = document.getElementById('pageGrid');
+      g2.querySelectorAll('.page-card.is-updated').forEach(c => c.classList.remove('is-updated'));
+      g2.querySelectorAll('.page-updated-tag').forEach(c => c.remove());
+    }, 6000);
+  }
+  pageAuditRunning = false;
+}
+
+/* =====================================================================
    Theme toggle + boot
 ===================================================================== */
 function rerenderLive() {
@@ -917,6 +1306,8 @@ renderTargets();
 renderFindings();
 // Live (theme-dependent) renders now + on every toggle.
 rerenderLive();
+// Live per-page WCAG audit — fetch + grade every shipping HTML page now.
+auditAllPages();
 
 /* =====================================================================
    Re-evaluate against the real source tokens.
@@ -989,9 +1380,36 @@ async function reevaluate() {
     btn.classList.remove('is-loading');
   }
 }
-document.getElementById('reevalBtn').addEventListener('click', reevaluate);
+document.getElementById('reevalBtn').addEventListener('click', () => {
+  reevaluate();
+  auditAllPages();
+});
 // Auto-sync on load so the page opens already evaluated against source.
 reevaluate();
+
+/* =====================================================================
+   Keep the page audit fresh: re-grade whenever the tab regains focus
+   and on a steady poll, so grades re-evaluate shortly after any page is
+   edited (fetches use cache: no-store + cache-buster). Polling pauses
+   while the tab is hidden to avoid pointless background work.
+===================================================================== */
+const PAGE_POLL_MS = 20000;
+let pagePoll = null;
+function startPagePoll() {
+  if (pagePoll) return;
+  pagePoll = setInterval(() => {
+    if (!document.hidden) auditAllPages({ silent: true });
+  }, PAGE_POLL_MS);
+}
+function stopPagePoll() {
+  if (pagePoll) { clearInterval(pagePoll); pagePoll = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { stopPagePoll(); }
+  else { auditAllPages({ silent: true }); startPagePoll(); }
+});
+window.addEventListener('focus', () => auditAllPages({ silent: true }));
+startPagePoll();
 </script>
 </body>
 </html>

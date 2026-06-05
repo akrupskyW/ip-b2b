@@ -260,6 +260,9 @@ export function applyMinimalUi(on) {
   const panel = document.getElementById('menu-panel');
   if (panel) panel.classList.toggle('minimal-ui', !!on);
   try { localStorage.setItem(MINIMAL_UI_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:minimal-ui', { detail: { on: !!on } }));
+  } catch {}
 }
 
 /** Restore the persisted minimal-UI state onto the panel (no popover needed). */

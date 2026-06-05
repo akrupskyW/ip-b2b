@@ -711,6 +711,9 @@ html.dark .pf-module-scroll { background: transparent; }
    with siblings, and stay comfortably wider than a normal module on its own. */
 .pf-module.panel-wide { flex-grow: 2; min-width: min(560px, 90vw); }
 @media (max-width: 767px) { .pf-module.panel-wide { flex: 0 0 86vw; min-width: 0; } }
+/* Triple width — third tier of the single → double → triple cycle. */
+.pf-module.panel-wide.panel-triple { flex-grow: 3; min-width: min(840px, 94vw); }
+@media (max-width: 767px) { .pf-module.panel-wide.panel-triple { flex: 0 0 92vw; min-width: 0; } }
 .pf-module-scroll {
   flex: 1 1 0%;
   overflow-y: auto;
@@ -775,6 +778,13 @@ html.dark .pf-module-scroll { background: transparent; }
   flex: 0 0 680px;
   width: 680px;
   min-width: 680px;
+}
+/* Scout triple width (third tier). */
+#pf-chat-panel.scout-dock.scout-dock-open.panel-wide.panel-triple,
+#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center.panel-wide.panel-triple {
+  flex: 0 0 980px;
+  width: 980px;
+  min-width: 980px;
 }
 @media (max-width: 1100px) {
   #pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center {

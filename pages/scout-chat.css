@@ -31,10 +31,10 @@
    would otherwise win on source order and cancel the stickiness. */
 .scout-dock.scout-dock-open { display: flex; width: 380px; min-width: 380px; max-width: 680px; position: sticky; right: 0; left: auto; z-index: 40; }
 @media (max-width: 1100px) { .scout-dock.scout-dock-open { width: 330px; min-width: 330px; max-width: 560px; } }
-/* Whootie width is LOCKED to a single↔double range: the header width icon flips
-   between exactly the single (380/330px) and double (680/560px) sizes, and the
-   module may never grow wider than double (max-width above) nor shrink below
-   single (min-width above) in any flex context it lands in. */
+/* Scout width cycles through three tiers: single (380/330px), double
+   (680/560px), and triple (980/800px). The header width icon reflects the tier;
+   the base max-width above is overridden per-tier so triple can grow past
+   double, while min-width keeps it from shrinking below single. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). */
 .scout-dock.scout-dock-open.panel-wide {
@@ -49,7 +49,22 @@
     min-width: 560px;
   }
 }
-/* Solo state — when Whootie is the ONLY module left in the row it must not
+/* Triple-width (third tier) — lifts the double cap so Scout can grow further. */
+.scout-dock.scout-dock-open.panel-wide.panel-triple {
+  flex: 0 0 980px;
+  width: 980px;
+  min-width: 980px;
+  max-width: 980px;
+}
+@media (max-width: 1100px) {
+  .scout-dock.scout-dock-open.panel-wide.panel-triple {
+    flex: 0 0 800px;
+    width: 800px;
+    min-width: 800px;
+    max-width: 800px;
+  }
+}
+/* Solo state — when Scout is the ONLY module left in the row it must not
    stretch to fill the empty space. It stays capped at (at most) double width
    (above) and is centre-docked, overriding any left/right preference. Auto
    margins centre the lone flex item; js/scout-dock.js also forces the
@@ -145,7 +160,7 @@ html.dark .chat-topbar {
 
 .sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
-.sc-topbar-titles .topbar-title[data-whootie-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
+.sc-topbar-titles .topbar-title[data-scout-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
 html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 
 .topbar-agents-btn {
@@ -219,7 +234,7 @@ html.dark .chat-messages-area { background: transparent; }
    readability; the meta row (timestamp + grounding) stays small below. */
 /* gap (12px) + avatar (30px) match the header's icon→title spacing so the
    avatar column lines up under the topbar owl and the body text lines up under
-   the "Whootie™" title. */
+   the "Scout™" title. */
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
   margin-bottom: 1.1rem; color: var(--text);
@@ -230,7 +245,7 @@ html.dark .chat-messages-area { background: transparent; }
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
 }
-/* Per-line profile avatars in place of the old "You" / "Whootie™" labels.
+/* Per-line profile avatars in place of the old "You" / "Scout™" labels.
    Scout = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */
 .sc-avatar {
@@ -297,7 +312,114 @@ html.dark .sc-welcome { background: transparent; }
 .ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
+/* Intent chips, carousel variant — a single horizontal row with left/right
+   controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip
+   stays reachable inside the narrower dock. */
+.ws-chips-wrap { position: relative; width: 100%; max-width: 100%; margin: 0 0 2rem; }
+.ws-chips-wrap .ws-chips {
+  flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+  scroll-behavior: smooth; scroll-snap-type: x proximity;
+  scrollbar-width: none; -ms-overflow-style: none; margin-bottom: 0; padding: 4px 2px;
+}
+.ws-chips-wrap .ws-chips::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.ws-chips-wrap .ws-chips .chip { scroll-snap-align: start; }
+.ws-chips-wrap::before, .ws-chips-wrap::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
+}
+.ws-chips-wrap::before { left: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
+.ws-chips-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
+html.dark .ws-chips-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
+html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+.ws-chips-wrap.has-prev::before { opacity: 1; }
+.ws-chips-wrap.has-next::after { opacity: 1; }
 .ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
+
+/* ===== Welcome score cards (opt-in via mountScoutChat({ scorecards })) =====
+   The "Your portfolio at a glance" rail, ported into the shared dock: a
+   horizontal, snap-scrolling row of cards with floating scroll controls and
+   soft edge fades. Two variants (intro / scout) carry a sleeker tinted backdrop
+   so they read as orientation rather than data. */
+.sc-welcome--cards { justify-content: flex-start; overflow-y: auto; padding-top: 1.75rem; }
+.ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
+.ws-scorecards-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.ws-scorecards-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.ws-scorecards-wrap { position: relative; width: 100%; }
+.ws-scorecards {
+  display: flex; gap: 12px; width: 100%; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  scrollbar-width: none; -ms-overflow-style: none; padding: 6px 2px 14px;
+}
+.ws-scorecards::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.ws-scorecard {
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left;
+  flex: 0 0 244px; min-width: 244px; scroll-snap-align: start;
+  padding: 14px 16px; aspect-ratio: 16 / 9;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: 10px !important; cursor: pointer; font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.ws-scorecard:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(2, 78, 174, 0.12); transform: translateY(-2px); }
+.ws-scorecard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Bare chevrons sitting just off the rail edges — no chunky circle. The edge
+   fades below provide the backdrop that keeps the glyphs legible. */
+.ws-sc-scroll {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 36px; padding: 0; border-radius: 0 !important;
+  background: transparent; border: 0; box-shadow: none; color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+.ws-sc-scroll:hover { background: transparent; color: var(--text); transform: translateY(-50%) scale(1.15); }
+.ws-sc-scroll .material-icons { font-size: 22px !important; }
+.ws-sc-scroll--next { right: -16px; }
+.ws-sc-scroll--prev { left: -16px; }
+.ws-sc-scroll[hidden] { display: none; }
+.ws-scorecards-wrap::before, .ws-scorecards-wrap::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
+}
+.ws-scorecards-wrap::before { left: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
+.ws-scorecards-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
+html.dark .ws-scorecards-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
+html.dark .ws-scorecards-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+.ws-scorecards-wrap.has-prev::before { opacity: 1; }
+.ws-scorecards-wrap.has-next::after { opacity: 1; }
+.ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* Bare glyphs — no chip behind them — sized up a touch for presence. */
+.ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ws-sc-icon .material-icons { font-size: 24px !important; }
+/* Metric cards: neutral (foreground) icon — intro/Scout keep the brand accent. */
+.ws-sc-icon--brand,
+.ws-sc-icon--warn,
+.ws-sc-icon--alert { color: var(--text); }
+.ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
+.ws-sc-pill .material-icons { font-size: 12px !important; }
+/* Metric-card pills: neutral grey "shades of black" (intro/Scout keep accent). */
+.ws-sc-pill--up,
+.ws-sc-pill--warn,
+.ws-sc-pill--alert { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
+.ws-sc-metric { font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--text); margin-top: 4px; letter-spacing: -0.02em; }
+.ws-sc-metric-unit { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; }
+.ws-sc-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.ws-sc-desc { font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); flex: 1 1 auto; }
+.ws-sc-action { display: inline-flex; align-items: center; align-self: flex-end; gap: 4px; margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--primary); }
+.ws-sc-action .material-icons { font-size: 15px !important; transition: transform 0.15s ease; }
+.ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
+/* Intro / orientation variants — same surface as the metric cards, set apart
+   only by an accent stroke + a matching accent headline. */
+.ws-scorecard--intro,
+.ws-scorecard--scout { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+.ws-scorecard--intro:hover,
+.ws-scorecard--scout:hover { border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent); }
+.ws-sc-icon--intro,
+.ws-sc-icon--scout { color: var(--primary); }
+.ws-sc-pill--intro,
+.ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+html.dark .ws-sc-icon--intro,
+html.dark .ws-sc-icon--scout { color: var(--primary-bright, #93C5FD); }
+.ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); margin-top: 6px; }
+.ws-scorecard--intro .ws-sc-intro-title,
+.ws-scorecard--scout .ws-sc-intro-title { color: var(--primary); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
@@ -307,7 +429,10 @@ html.dark .sc-welcome { background: transparent; }
 }
 .chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 .chip .material-icons { font-size: 16px !important; }
-.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
+/* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
+   navigation icons (#left-icon-rail .lir-btn = 20px). */
+.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
+.ws-intent-chip .material-icons { font-size: 20px !important; }
 .ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: faint-white chip fills get our royal-blue border so they don't
    read as white-bordered pills on the navy chrome. */
@@ -332,7 +457,7 @@ html.dark .chat-input-rail { background: var(--surface); border-top-color: var(-
 html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; padding: 8px 0; color: var(--text); font-family: inherit; }
-.fl-input::placeholder { color: var(--text-subtle); }
+.fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
 .fl-icon-btn {
   width: 32px; height: 32px; border-radius: 9999px; color: var(--text-muted); cursor: pointer;
   border: none; background: none; display: flex; align-items: center; justify-content: center;

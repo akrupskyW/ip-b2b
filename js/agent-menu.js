@@ -1,3 +1,5 @@
+import { applyMinimalUi } from './topbar.js';
+
 /**
  * Single source of truth for the agent hierarchy and product navigation.
  *
@@ -578,19 +580,67 @@ function setupMenuRail(navEl) {
     if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
   };
 
+  /* The menu button sits to the right of the logo and reflects the nav state:
+       • Minimal UI ON (vertical column OR pivoted top bar) → a RIGHT chevron
+         ("Show navigation") that reveals the full nav, i.e. turns Minimal UI
+         off. This is the single, consistent way out of Minimal UI on every page.
+       • Pivot bar, Minimal UI OFF → a LEFT chevron ("Hide navigation") that
+         collapses the bar back to minimal (turns Minimal UI on).
+       • Vertical column, Minimal UI OFF → the usual rail-collapse chevron. */
+  const refreshToggleSkin = () => {
+    const icon = btn.querySelector('.material-icons');
+    if (panel.classList.contains('minimal-ui')) {
+      const label = 'Show navigation';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      btn.setAttribute('aria-expanded', 'false');
+      if (icon) icon.textContent = 'chevron_right';
+    } else if (panel.classList.contains('mp-pivot')) {
+      const label = 'Hide navigation';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      btn.setAttribute('aria-expanded', 'true');
+      if (icon) icon.textContent = 'chevron_left';
+    } else {
+      btn.removeAttribute('aria-expanded');
+      apply(panel.classList.contains('mp-rail'));
+    }
+  };
+
   let railed = false;
   try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
   apply(railed);
+  refreshToggleSkin();
 
   if (!btn.dataset.railBound) {
     btn.dataset.railBound = '1';
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      /* Minimal UI on (vertical or pivot) → the button turns it OFF (reveals
+         the full nav). This is the arrow beside the logo the user clicks to
+         leave Minimal UI on every page. */
+      if (panel.classList.contains('minimal-ui')) {
+        applyMinimalUi(false);
+        return;
+      }
+      /* In the pivot bar (not minimal) the button collapses back to Minimal UI. */
+      if (panel.classList.contains('mp-pivot')) {
+        applyMinimalUi(true);
+        return;
+      }
       const next = !panel.classList.contains('mp-rail');
       apply(next);
       try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
     });
+  }
+
+  /* Keep the button's skin in sync when Minimal UI or pivot is toggled
+     elsewhere (the Appearance popover dispatches both events). */
+  if (!btn.dataset.minimalBound) {
+    btn.dataset.minimalBound = '1';
+    document.addEventListener('wise:minimal-ui', refreshToggleSkin);
+    document.addEventListener('wise:menu-pivot', refreshToggleSkin);
   }
 
   brand.appendChild(btn);
@@ -731,6 +781,9 @@ export function setMenuPivot(on) {
   }
 
   try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:menu-pivot', { detail: { on: !!on } }));
+  } catch (_) {}
 }
 
 export function toggleMenuPivot() {

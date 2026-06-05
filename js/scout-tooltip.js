@@ -1,44 +1,40 @@
 /**
- * Whootie™ acronym tooltip — shows what each letter stands for on hover/focus,
+ * Scout™ acronym tooltip — shows what each letter stands for on hover/focus,
  * matching the floating tooltip pattern used by the nav rail (#lir-tooltip).
  *
- *   W — WISE
- *   H — Health &
- *   O — Outcome
- *   O — Optimization
- *   T — through Transparent
- *   I — Ingredients &
- *   E — Evidence
+ *   S — Seeking
+ *   C — Clarity
+ *   O — through Open
+ *   U — Unbiased
+ *   T — Transparency
  */
 
-export const WHOOTIE_NAME = 'Whootie™';
+export const SCOUT_NAME = 'Scout™';
 
-export const WHOOTIE_ACRONYM = [
-  ['W', 'WISE'],
-  ['H', 'Health &'],
-  ['O', 'Outcome'],
-  ['O', 'Optimization'],
-  ['T', 'through Transparent'],
-  ['I', 'Ingredients &'],
-  ['E', 'Evidence'],
+export const SCOUT_ACRONYM = [
+  ['S', 'Seeking'],
+  ['C', 'Clarity'],
+  ['O', 'through Open'],
+  ['U', 'Unbiased'],
+  ['T', 'Transparency'],
 ];
 
-const WHOOTIE_RE = /Whootie™/g;
+const SCOUT_RE = /Scout™/g;
 /* Capturing group keeps the matched name in the split array (odd indices). */
-const WHOOTIE_SPLIT = /(Whootie™)/g;
+const SCOUT_SPLIT = /(Scout™)/g;
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TITLE', 'TEXTAREA', 'INPUT']);
 const SKIP_SELECTOR =
-  '.topbar-title, [data-whootie-tip], #whootie-tip, .whootie-mark';
+  '.topbar-title, [data-scout-tip], #scout-tip, .scout-mark';
 
 const STANDALONE_STYLES = `
-.whootie-mark {
+.scout-mark {
   cursor: help;
   text-decoration: underline dotted;
   text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
   text-underline-offset: 2px;
 }
-.whootie-mark--bound { text-decoration: none; }
-#whootie-tip {
+.scout-mark--bound { text-decoration: none; }
+#scout-tip {
   position: fixed;
   z-index: 10001;
   background: var(--surface, #0d1b24);
@@ -56,11 +52,11 @@ const STANDALONE_STYLES = `
   transition: opacity 0.12s ease, transform 0.12s ease;
   max-width: 260px;
 }
-#whootie-tip.whootie-tip-visible {
+#scout-tip.scout-tip-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
-.whootie-tip-title {
+.scout-tip-title {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -68,13 +64,13 @@ const STANDALONE_STYLES = `
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
   letter-spacing: 0.02em;
 }
-.whootie-tip-line {
+.scout-tip-line {
   display: block;
   line-height: 1.45;
   font-weight: 500;
   color: var(--text-muted, #A8C9EA);
 }
-.whootie-tip-letter {
+.scout-tip-letter {
   display: inline-block;
   width: 1.1em;
   font-weight: 700;
@@ -83,18 +79,18 @@ const STANDALONE_STYLES = `
 `;
 
 function acronymTipHtml() {
-  const lines = WHOOTIE_ACRONYM.map(
+  const lines = SCOUT_ACRONYM.map(
     ([letter, word]) =>
-      `<span class="whootie-tip-line"><span class="whootie-tip-letter">${letter}</span> ${word}</span>`,
+      `<span class="scout-tip-line"><span class="scout-tip-letter">${letter}</span> ${word}</span>`,
   ).join('');
-  return `<div class="whootie-tip-title">${WHOOTIE_NAME}</div>${lines}`;
+  return `<div class="scout-tip-title">${SCOUT_NAME}</div>${lines}`;
 }
 
 function ensureStyles() {
-  if (document.getElementById('whootie-tip-styles')) return;
+  if (document.getElementById('scout-tip-styles')) return;
   if (document.querySelector('link[href*="agent-page.css"]')) return;
   const style = document.createElement('style');
-  style.id = 'whootie-tip-styles';
+  style.id = 'scout-tip-styles';
   style.textContent = STANDALONE_STYLES;
   document.head.appendChild(style);
 }
@@ -109,28 +105,28 @@ function shouldSkipTextNode(node) {
   return false;
 }
 
-function bindWhootieTip(el) {
-  if (!el || el.dataset.whootieTipBound) return;
-  el.dataset.whootieTipBound = '1';
+function bindScoutTip(el) {
+  if (!el || el.dataset.scoutTipBound) return;
+  el.dataset.scoutTipBound = '1';
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
-  el.classList.add('whootie-mark', 'whootie-mark--bound');
+  el.classList.add('scout-mark', 'scout-mark--bound');
 }
 
-function bindWhootieTipTargets(root = document.body) {
-  root.querySelectorAll('[data-whootie-tip]').forEach(bindWhootieTip);
+function bindScoutTipTargets(root = document.body) {
+  root.querySelectorAll('[data-scout-tip]').forEach(bindScoutTip);
 }
 
-/** Wrap visible "Whootie™" text nodes under `root` with `.whootie-mark` spans. */
-export function decorateWhootie(root = document.body) {
+/** Wrap visible "Scout™" text nodes under `root` with `.scout-mark` spans. */
+export function decorateScout(root = document.body) {
   if (!root || typeof document.createTreeWalker !== 'function') return;
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!WHOOTIE_RE.test(node.textContent)) {
-        WHOOTIE_RE.lastIndex = 0;
+      if (!SCOUT_RE.test(node.textContent)) {
+        SCOUT_RE.lastIndex = 0;
         return NodeFilter.FILTER_REJECT;
       }
-      WHOOTIE_RE.lastIndex = 0;
+      SCOUT_RE.lastIndex = 0;
       if (shouldSkipTextNode(node)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
@@ -140,19 +136,19 @@ export function decorateWhootie(root = document.body) {
   while (walker.nextNode()) nodes.push(walker.currentNode);
 
   for (const node of nodes) {
-    const parts = node.textContent.split(WHOOTIE_SPLIT);
+    const parts = node.textContent.split(SCOUT_SPLIT);
     if (parts.length < 2) continue;
 
     const frag = document.createDocumentFragment();
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!part) continue;
-      if (part === WHOOTIE_NAME) {
+      if (part === SCOUT_NAME) {
         const span = document.createElement('span');
-        span.className = 'whootie-mark';
+        span.className = 'scout-mark';
         span.setAttribute('tabindex', '0');
         span.setAttribute('role', 'term');
-        span.textContent = WHOOTIE_NAME;
+        span.textContent = SCOUT_NAME;
         frag.appendChild(span);
       } else {
         frag.appendChild(document.createTextNode(part));
@@ -162,7 +158,7 @@ export function decorateWhootie(root = document.body) {
     node.parentNode.replaceChild(frag, node);
   }
 
-  bindWhootieTipTargets(root);
+  bindScoutTipTargets(root);
 }
 
 let tipEl = null;
@@ -171,10 +167,10 @@ let decorateTimer = null;
 
 function getTip() {
   if (tipEl) return tipEl;
-  tipEl = document.getElementById('whootie-tip');
+  tipEl = document.getElementById('scout-tip');
   if (!tipEl) {
     tipEl = document.createElement('div');
-    tipEl.id = 'whootie-tip';
+    tipEl.id = 'scout-tip';
     tipEl.setAttribute('role', 'tooltip');
     tipEl.setAttribute('aria-hidden', 'true');
     tipEl.innerHTML = acronymTipHtml();
@@ -190,44 +186,44 @@ function showTip(mark) {
   tip.style.top = `${Math.round(r.bottom + 8)}px`;
   tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
   tip.offsetWidth;
-  tip.classList.add('whootie-tip-visible');
+  tip.classList.add('scout-tip-visible');
   tip.setAttribute('aria-hidden', 'false');
 }
 
 function hideTip() {
   currentMark = null;
-  tipEl?.classList.remove('whootie-tip-visible');
+  tipEl?.classList.remove('scout-tip-visible');
   tipEl?.setAttribute('aria-hidden', 'true');
 }
 
 function scheduleDecorate(root) {
   clearTimeout(decorateTimer);
-  decorateTimer = setTimeout(() => decorateWhootie(root || document.body), 16);
+  decorateTimer = setTimeout(() => decorateScout(root || document.body), 16);
 }
 
 /** One-time init: styles, DOM decoration, hover/focus tooltips, dynamic updates. */
-export function initWhootieTooltips(root = document.body) {
+export function initScoutTooltips(root = document.body) {
   ensureStyles();
   getTip();
-  decorateWhootie(root);
+  decorateScout(root);
 
-  if (!window.__whootieTipReady) {
-    window.__whootieTipReady = true;
+  if (!window.__scoutTipReady) {
+    window.__scoutTipReady = true;
 
     document.addEventListener('mouseover', (e) => {
-      const mark = e.target.closest('.whootie-mark');
+      const mark = e.target.closest('.scout-mark');
       if (mark && mark !== currentMark) showTip(mark);
     });
     document.addEventListener('mouseout', (e) => {
-      const mark = e.target.closest('.whootie-mark');
+      const mark = e.target.closest('.scout-mark');
       if (mark && !mark.contains(e.relatedTarget)) hideTip();
     });
     document.addEventListener('focusin', (e) => {
-      const mark = e.target.closest('.whootie-mark');
+      const mark = e.target.closest('.scout-mark');
       if (mark) showTip(mark);
     });
     document.addEventListener('focusout', (e) => {
-      if (e.target.closest('.whootie-mark')) hideTip();
+      if (e.target.closest('.scout-mark')) hideTip();
     });
     window.addEventListener('scroll', hideTip, true);
     window.addEventListener('resize', hideTip);

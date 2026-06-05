@@ -14,7 +14,7 @@ import {
   mountAgentMenu,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { initWhootieTooltips } from './whootie-tooltip.js';
+import { initScoutTooltips } from './scout-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
@@ -366,7 +366,7 @@ function setupScoutDock() {
   const dock = document.createElement('aside');
   dock.id = 'scout-dock-panel';
   dock.className = 'scout-dock scout-dock-open';
-  dock.setAttribute('aria-label', 'Whootie™ chat');
+  dock.setAttribute('aria-label', 'Scout™ chat');
   row.appendChild(dock);
   mountScoutDock(dock, {
     sub: 'Your AI assistant across every WISE agent',
@@ -873,5 +873,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAvatarPopover();
   applyStoredTextSize();
   initLirTooltip();
-  initWhootieTooltips();
+  initScoutTooltips();
 });

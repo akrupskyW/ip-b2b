@@ -28,16 +28,26 @@ import { mountScoutChat } from './scout-chat.js';
 
 export const SCOUT_DOCK_KEY = 'wise-scout-dock';
 
+/* Width is a three-tier cycle stored under `wide`: 0 single, 1 double, 2 triple.
+   Legacy booleans map true → 1, false → 0. */
+const SCOUT_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+const SCOUT_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+function widthTierOf(v) {
+  if (v === true) return 1;
+  if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+  return 0;
+}
+
 /* Read the persisted dock state, normalised so callers never see garbage. */
 export function readScoutDockState() {
   try {
     const raw = JSON.parse(localStorage.getItem(SCOUT_DOCK_KEY) || '{}') || {};
     return {
-      wide: !!raw.wide,
+      wide: widthTierOf(raw.wide),
       side: normalizeSide(raw),
     };
   } catch (_) {
-    return { wide: false, side: 'right' };
+    return { wide: 0, side: 'right' };
   }
 }
 
@@ -62,10 +72,10 @@ export function writeScoutDockState(patch) {
   return next;
 }
 
-/* Is the Whootie dock the only visible module left in its row? The menu rail
+/* Is the Scout dock the only visible module left in its row? The menu rail
    (nav chrome) doesn't count, and neither does any display:none module such as
    a closed Alerts panel — only real, on-screen sibling modules do. */
-function isWhootieSolo(dock) {
+function isScoutSolo(dock) {
   const row = dock.closest('#modules-row');
   if (!row) return false;
   return !Array.from(row.children).some(
@@ -82,15 +92,17 @@ export function applyScoutDockState(dock, state = readScoutDockState()) {
      'left'/'right' lock it flush to an edge; 'center' floats it mid-row but
      keeps it sticky-clamped to both edges so it never scrolls off-screen —
      see the `scout-dock-center` CSS. */
+  const tier = widthTierOf(state.wide);
   dock.classList.add('scout-dock-open');
-  dock.classList.toggle('panel-wide', state.wide);
+  dock.classList.toggle('panel-wide', tier >= 1);
+  dock.classList.toggle('panel-triple', tier >= 2);
 
   /* Width is locked to the single↔double range in CSS. The extra layout rule:
-     when Whootie is the ONLY module left in the row it can't be docked flush to
+     when Scout is the ONLY module left in the row it can't be docked flush to
      an edge against empty space — it stays capped at (at most) double width and
      is centre-docked, overriding the stored left/right side until another
      module returns. */
-  const solo = isWhootieSolo(dock);
+  const solo = isScoutSolo(dock);
   const side = solo ? 'center' : state.side;
   dock.classList.toggle('scout-dock-solo', solo);
   dock.classList.toggle('scout-dock-left', side === 'left');
@@ -98,11 +110,11 @@ export function applyScoutDockState(dock, state = readScoutDockState()) {
 
   const widthBtn = dock.querySelector('.panel-width-toggle-btn');
   if (widthBtn) {
-    widthBtn.classList.toggle('is-on', state.wide);
-    widthBtn.setAttribute('aria-pressed', state.wide ? 'true' : 'false');
-    widthBtn.title = state.wide
-      ? 'Double width — tap for normal width'
-      : 'Normal width — tap to double';
+    widthBtn.classList.toggle('is-on', tier >= 1);
+    widthBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+    widthBtn.title = SCOUT_WIDTH_TITLES[tier];
+    const icon = widthBtn.querySelector('.material-symbols-outlined');
+    if (icon) icon.textContent = SCOUT_WIDTH_ICONS[tier];
   }
 }
 

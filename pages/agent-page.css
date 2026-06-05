@@ -377,24 +377,24 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Whootie™ acronym tooltip — multi-line expansion on hover/focus (see whootie-tooltip.js). */
-.whootie-mark {
+/* Scout™ acronym tooltip — multi-line expansion on hover/focus (see scout-tooltip.js). */
+.scout-mark {
   cursor: help;
   text-decoration: underline dotted;
   text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
   text-underline-offset: 2px;
 }
-.whootie-mark--bound { text-decoration: none; }
-.sc-topbar-titles .topbar-title[data-whootie-tip] {
+.scout-mark--bound { text-decoration: none; }
+.sc-topbar-titles .topbar-title[data-scout-tip] {
   flex-shrink: 0;
   white-space: nowrap;
 }
-.whootie-mark:focus-visible {
+.scout-mark:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 2px;
 }
-#whootie-tip {
+#scout-tip {
   position: fixed;
   z-index: 10001;
   background: var(--surface);
@@ -412,11 +412,11 @@ body {
   transition: opacity 0.12s ease, transform 0.12s ease;
   max-width: 260px;
 }
-#whootie-tip.whootie-tip-visible {
+#scout-tip.scout-tip-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
-.whootie-tip-title {
+.scout-tip-title {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -424,13 +424,13 @@ body {
   border-bottom: 1px solid var(--border);
   letter-spacing: 0.02em;
 }
-.whootie-tip-line {
+.scout-tip-line {
   display: block;
   line-height: 1.45;
   font-weight: 500;
   color: var(--text-muted);
 }
-.whootie-tip-letter {
+.scout-tip-letter {
   display: inline-block;
   width: 1.1em;
   font-weight: 700;
@@ -1296,7 +1296,15 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
    hidden turns off BOTH primary and secondary nav items in every layout. */
 #menu-panel.minimal-ui .menu-panel-body,
 #menu-panel.minimal-ui .menu-panel-body * { visibility: hidden !important; }
-#menu-panel.minimal-ui .menu-brand-bar .topbar-menu-toggle { visibility: hidden !important; }
+/* The menu button stays pinned to the right of the logo in Minimal UI — in
+   BOTH the vertical column and the pivoted (horizontal) top bar (the pivot
+   layout is handled by its own dedicated rule below). It re-skins to a right
+   chevron ("Show navigation") that reveals the full nav, i.e. turns Minimal UI
+   off — the one consistent way out of Minimal UI on every page. */
+#menu-panel.minimal-ui .menu-brand-bar .topbar-menu-toggle {
+  visibility: visible !important;
+  display: inline-flex !important;
+}
 /* Drop the module's card container (gradient, border, shadow) in minimal view —
    the logo / crossword / avatar float free with no surrounding panel. */
 #menu-panel.minimal-ui .menu-inner {
@@ -1984,7 +1992,28 @@ html.dark #menu-panel.mp-pivot .menu-brand-bar { border-right-color: rgba(255, 2
   width: 28px;
   height: auto;
 }
-#menu-panel.mp-pivot .menu-brand-bar .topbar-menu-toggle { display: none !important; }
+/* In the horizontal (pivot) bar the menu toggle stays pinned just to the RIGHT
+   of the logo and acts as the nav open/close control: a right chevron reveals
+   the full horizontal nav (turns Minimal UI off), a left chevron collapses it
+   back to minimal. It must sit inline beside the logo — overriding the .mp-rail
+   rule that otherwise floats it absolutely BELOW the logo (where it overlapped
+   the modules) and the minimal `visibility:hidden`. */
+#menu-panel.mp-pivot .menu-brand-bar .topbar-menu-toggle {
+  display: inline-flex !important;
+  visibility: visible !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  order: 2;
+  /* Center the chevron in the gap between the owl and the segment divider: a
+     small left margin off the owl, and a negative right margin that pulls the
+     divider in close (cancelling most of the brand strip's right padding) so
+     there's no dead white space between the chevron and the divider. */
+  margin-left: 6px !important;
+  margin-right: -16px !important;
+  align-self: center;
+}
+#menu-panel.mp-pivot .menu-brand-logo { order: 1; flex: 0 0 auto; }
 
 /* Body grows + scrolls horizontally; the nav becomes a row of icons. */
 .menu-brand-integrated #menu-panel.mp-pivot .menu-panel-body {
@@ -1997,6 +2026,36 @@ html.dark #menu-panel.mp-pivot .menu-brand-bar { border-right-color: rgba(255, 2
   overflow-y: hidden;
 }
 #menu-panel.mp-pivot .menu-panel-body::-webkit-scrollbar { height: 0; display: none; }
+
+/* ===== Minimal UI toggle — smooth nav ⇄ jam cross-animation =====
+   Toggling Minimal UI in the pivot bar swaps the row of nav icons for the jam
+   strip (and back). Whichever element is *appearing* glides + fades in with the
+   same soft settle as a module opening, so the change reads smoothly instead of
+   snapping. The nav icons cascade in (staggered) for the "icons appear" feel. */
+@keyframes navPivotIn {
+  0%   { opacity: 0; transform: translateY(7px) scale(0.94); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Nav icons revealed when Minimal UI turns OFF. */
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > * {
+  animation: navPivotIn 0.44s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(1) { animation-delay: 0.02s; }
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(2) { animation-delay: 0.06s; }
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(3) { animation-delay: 0.10s; }
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(4) { animation-delay: 0.14s; }
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(5) { animation-delay: 0.18s; }
+#menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *:nth-child(n+6) { animation-delay: 0.21s; }
+/* Jam strip / background revealed when Minimal UI turns ON. */
+#menu-panel.minimal-ui.mp-pivot .jam-strip {
+  animation: navPivotIn 0.44s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #menu-panel.mp-pivot:not(.minimal-ui) .menu-panel-body .menu-nav > *,
+  #menu-panel.minimal-ui.mp-pivot .jam-strip { animation: none !important; }
+}
+
 #menu-panel.mp-pivot .menu-nav {
   flex-direction: row;
   align-items: center;

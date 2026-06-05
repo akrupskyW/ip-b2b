@@ -28,7 +28,7 @@ import {
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { initWhootieTooltips } from './whootie-tooltip.js';
+import { initScoutTooltips } from './scout-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
@@ -125,6 +125,8 @@ const VAULT_ASSETS = [
 /* Suggested Scout intent chips for the Portfolio context (Truth Layer flows).
    Each maps to a section so the chat ties back into the module. */
 const PORTFOLIO_INTENTS = [
+  { intent: 'go-command-deck', label: 'Command Deck', icon: 'dashboard', go: 'command-deck' },
+  { intent: 'go-analytics', label: 'Open the Dashboard', icon: 'insert_chart', go: 'analytics' },
   { intent: 'go-verified', label: 'Get products verified', icon: 'verified', go: 'verified' },
   { intent: 'go-intake', label: 'Ingest new data', icon: 'cloud_upload', go: 'intake' },
   { intent: 'go-ledger', label: 'Open the Ledger', icon: 'table_rows', go: 'ledger' },
@@ -138,6 +140,8 @@ const PORTFOLIO_INTENTS = [
    with a reply that matches the module it opens — no generic Truth-Layer
    fallback for intents the label regex would otherwise miss (Ledger, Identity). */
 const PORTFOLIO_INTENT_REPLIES = {
+  'go-command-deck': 'Opening your Command Deck — brand-health gauges plus today’s intelligence briefing in one high-altitude view. Want me to walk the top missions?',
+  'go-analytics': 'Opening the Dashboard — charts for verification, trust coverage, portfolio composition, and competitive position over time. Which trend should I dig into?',
   'go-verified': 'I’ve pre-qualified <strong>5 UPCs</strong> for the Non-UPF Shield. Opening the Verified Pipeline — ready to run <strong>Confirm → Attest → Activate</strong>?',
   'go-intake': 'Opening Intake &amp; Growth. Drop a spec sheet, ERP export, URL, or label photo and I’ll parse it toward the <strong>Brand Verified</strong> Gold Standard.',
   'go-ledger': 'Opening your Portfolio Ledger — every product with its resolution, shield status, and visibility in one place. Want me to filter to what needs attention?',
@@ -145,6 +149,73 @@ const PORTFOLIO_INTENT_REPLIES = {
   'go-recipes': 'Opening the Recipe Lab. I can recompute NFP+™ live — trimming added sugar by 4g, for example, keeps a product Clean-Label eligible. Which recipe should we tune?',
   'go-identity': 'Opening your Identity Portal. Retailers are searching <strong>“Seed-Oil-Free”</strong> and <strong>“Sodium-Reduced”</strong> — you have 3 untagged matches I can fix to boost discovery.',
   'go-vault': 'Opening your Asset Vault — <strong>10 new “Back-to-School” tiles</strong> plus refreshed retail sheets are waiting in the Non-UPF folder. Want the latest badges?',
+  /* Openers for the two "at a glance" intro cards — orientation, not data. */
+  scorecard_tour: 'Quick tour: the rail up top is your portfolio at a glance — UPF status, state compliance, ingredient quality, and seed-oil exposure, each card one click from the detail. Want to start with where you lead, or where you need to act?',
+  scorecard_scout: 'Think of me as your portfolio analyst. Ask a question in plain English, kick off a verification, or model a reformulation — I draft the work, cite it back to your own data, and never publish without your go-ahead. What should we tackle first?',
+};
+
+/* "Your portfolio at a glance" score cards for the dock welcome. Card 1 is a
+   headline metric; cards 2–3 are sleeker intro cards (orientation + how Scout
+   helps); the rest are actionable signals. Each card routes a chat turn via its
+   {intent, ask} — intents with a `go` also drive module navigation (onIntent). */
+const PORTFOLIO_SCORECARDS = {
+  label: 'Your portfolio at a glance',
+  cards: [
+    {
+      icon: 'science', iconTone: 'brand',
+      pill: { tone: 'up', icon: 'priority_high', text: 'Do next' },
+      metric: '18', metricUnit: ' SKUs',
+      title: 'Reformulate CA targets',
+      desc: '18 SKUs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.',
+      action: 'Plan reformulation', intent: 'go-recipes', ask: 'Plan reformulation for my California targets',
+    },
+    {
+      variant: 'intro', icon: 'space_dashboard', iconTone: 'intro',
+      pill: { tone: 'intro', icon: 'auto_awesome', text: 'Start here' },
+      title: 'Your whole portfolio, decoded',
+      desc: 'UPF status, compliance, and ingredient health — every SKU, one view.',
+      action: 'Take the tour', intent: 'scorecard_tour', ask: 'Give me a quick tour of my portfolio',
+    },
+    {
+      variant: 'scout', icon: 'smart_toy', iconTone: 'scout',
+      pill: { tone: 'scout', icon: 'bolt', text: 'AI Scout' },
+      title: 'Let Scout do the heavy lifting',
+      desc: 'Ask, verify, or reformulate — Scout drafts it, you decide.',
+      action: 'Ask Scout anything', intent: 'scorecard_scout', ask: 'How can Scout help me work through my portfolio?',
+    },
+    {
+      icon: 'gavel', iconTone: 'brand',
+      pill: { tone: 'up', icon: 'verified', text: 'Verify' },
+      metric: '100', metricUnit: '% pass',
+      title: 'Publish your SB25 claim',
+      desc: 'All 192 SKUs clear Texas SB25 — get it verified and live on retail listings.',
+      action: 'Start verification', intent: 'go-ledger', ask: 'Verify and publish my Texas SB25 claim',
+    },
+    {
+      icon: 'verified_user', iconTone: 'brand',
+      pill: { tone: 'up', icon: 'shield', text: 'Attest' },
+      metric: '174', metricUnit: ' ready',
+      title: 'Activate Non-UPF Shields',
+      desc: '174 of 192 SKUs qualify as Not-Ultra-Processed — attest and switch the shields on.',
+      action: 'Run verification', intent: 'go-ledger', ask: 'Activate the Non-UPF Shield on my eligible SKUs',
+    },
+    {
+      icon: 'filter_alt', iconTone: 'brand',
+      pill: { tone: 'up', icon: 'rule', text: 'Review' },
+      metric: '18', metricUnit: ' SKUs',
+      title: 'Trim the UPF tail',
+      desc: '9.4% of SKUs are ultra or super-ultra processed — target the worst offenders next.',
+      action: 'Explore data', intent: 'go-ledger', ask: 'Show me my ultra-processed SKUs to fix next',
+    },
+    {
+      icon: 'campaign', iconTone: 'brand',
+      pill: { tone: 'up', icon: 'trending_up', text: 'Promote' },
+      metric: '12', metricUnit: '% seed oil',
+      title: 'Promote your clean wins',
+      desc: 'Cleanest seed-oil profile in the channel (12% vs peers 17–24%) — push the claim to buyers.',
+      action: 'Open data & trends', intent: 'go-analytics', ask: 'Help me promote my clean seed-oil profile to buyers',
+    },
+  ],
 };
 
 function portfolioReply(text, intent) {
@@ -206,8 +277,8 @@ function moduleMenuHTML({ label, flipAttr, wideAttr, offAttr }) {
           <span>Move to other side</span>
         </button>
         <button type="button" class="pf-module-menu-item pf-menu-wide" role="menuitem" ${wideAttr}>
-          <span class="material-symbols-outlined">transition_slide</span>
-          <span class="pf-menu-wide-label">Double width</span>
+          <span class="material-symbols-outlined">width_normal</span>
+          <span class="pf-menu-wide-label">Width</span>
         </button>
         <div class="pf-module-menu-sep" role="separator"></div>
         <button type="button" class="pf-module-menu-item pf-module-menu-item--off" role="menuitem" ${offAttr}>
@@ -1372,7 +1443,7 @@ function askAgentAboutProduct(idx) {
     document.getElementById('pf-chat-panel')?.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
     scout.ask(q);
   } else {
-    toast('Ask Whootie™ in the chat dock.', 'chat');
+    toast('Ask Scout™ in the chat dock.', 'chat');
   }
 }
 
@@ -1631,12 +1702,40 @@ function persistSides() {
   try { localStorage.setItem(SIDE_KEY, JSON.stringify(moduleSide)); } catch (_) {}
 }
 
+/* Width is a three-tier cycle: 0 = single, 1 = double, 2 = triple. The control
+   cycles 0 → 1 → 2 → 0; the icon reflects the tier and the label stays "Width".
+   Legacy boolean values map true → 1, false → 0. */
+const PF_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+const PF_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+function pfTierOf(v) {
+  if (v === true) return 1;
+  if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+  return 0;
+}
+/* Reflect a tier onto a module element + its width menu rows. */
+function applyWidthTier(el, tier) {
+  tier = pfTierOf(tier);
+  if (el) {
+    el.classList.toggle('panel-wide', tier >= 1);
+    el.classList.toggle('panel-triple', tier >= 2);
+    el.querySelectorAll('.pf-menu-wide').forEach((btn) => {
+      btn.classList.toggle('is-on', tier >= 1);
+      btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+      btn.title = PF_WIDTH_TITLES[tier];
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (icon) icon.textContent = PF_WIDTH_ICONS[tier];
+      const lbl = btn.querySelector('.pf-menu-wide-label');
+      if (lbl) lbl.textContent = 'Width';
+    });
+  }
+}
+
 function loadWide() {
   try {
     const raw = JSON.parse(localStorage.getItem(WIDE_KEY) || 'null');
     if (raw && typeof raw === 'object') {
       PORTFOLIO_SECTION_IDS.forEach((id) => {
-        if (typeof raw[id] === 'boolean') moduleWide[id] = raw[id];
+        if (raw[id] !== undefined) moduleWide[id] = pfTierOf(raw[id]);
       });
     }
   } catch (_) {}
@@ -1669,15 +1768,7 @@ function applySide(sectionId) {
 function applyWide(sectionId) {
   const el = moduleEl(sectionId);
   if (!el) return;
-  const wide = !!moduleWide[sectionId];
-  el.classList.toggle('panel-wide', wide);
-  el.querySelectorAll('.pf-menu-wide').forEach((btn) => {
-    btn.classList.toggle('is-on', wide);
-    btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
-    btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
-    const lbl = btn.querySelector('.pf-menu-wide-label');
-    if (lbl) lbl.textContent = wide ? 'Normal width' : 'Double width';
-  });
+  applyWidthTier(el, pfTierOf(moduleWide[sectionId]));
 }
 
 function flipModule(sectionId) {
@@ -1692,7 +1783,7 @@ function flipModule(sectionId) {
 function toggleModuleWidth(sectionId) {
   if (!PORTFOLIO_SECTION_IDS.includes(sectionId)) return;
   closeAllModuleMenus();
-  moduleWide[sectionId] = !moduleWide[sectionId];
+  moduleWide[sectionId] = (pfTierOf(moduleWide[sectionId]) + 1) % 3;
   persistWide();
   applyWide(sectionId);
   scrollToModule(sectionId);
@@ -1995,23 +2086,16 @@ function setupChat() {
   const panel = document.getElementById('pf-chat-panel');
   if (!panel) return;
   scout = mountScoutDock(panel, {
-    title: 'Whootie™',
+    title: 'Scout™',
     agentCount: 1,
-    heading: 'What can Whootie™ help with?',
+    heading: 'What can Scout™ help with?',
     sub: 'Your Portfolio agent — the Truth Layer for data, trust & identity',
+    scorecards: PORTFOLIO_SCORECARDS,
     intents: PORTFOLIO_INTENTS,
     reply: portfolioReply,
-    /* Trust + microcopy tuned to the Portfolio: reassure the user their data
-       stays theirs, that Scout only drafts (never auto-publishes), and that
-       every answer is traceable back to their own portfolio. */
-    trust: [
-      { icon: 'verified_user', label: 'Grounded in your portfolio' },
-      { icon: 'lock', label: 'Private & encrypted' },
-      { icon: 'history', label: 'Every change is logged' },
-    ],
     disclaimer: '',
     sourceLabel: 'Grounded in your portfolio',
-    statusLabel: 'Whootie™ is checking your portfolio',
+    statusLabel: 'Scout™ is checking your portfolio',
     /* Intent chips that map to a surface also drive the module navigation,
        tying the shared chat back into the Portfolio. */
     /* 'choose_agents' is handled inside the shared chat (it opens the in-chat
@@ -2179,7 +2263,12 @@ function closeHistoryModule() {
 const HISTORY_SIDE_KEY = 'pf-history-side';
 const HISTORY_WIDE_KEY = 'pf-history-wide';
 let historySide = (() => { try { return localStorage.getItem(HISTORY_SIDE_KEY) === 'right' ? 'right' : 'left'; } catch (_) { return 'left'; } })();
-let historyWide = (() => { try { return localStorage.getItem(HISTORY_WIDE_KEY) === '1'; } catch (_) { return false; } })();
+let historyWide = (() => {
+  try {
+    const v = localStorage.getItem(HISTORY_WIDE_KEY);
+    return v === '1' ? 1 : v === '2' ? 2 : 0;
+  } catch (_) { return 0; }
+})();
 
 function applyHistorySide() {
   const el = document.getElementById('pf-mod-history');
@@ -2192,14 +2281,7 @@ function applyHistorySide() {
 function applyHistoryWide() {
   const el = document.getElementById('pf-mod-history');
   if (!el) return;
-  el.classList.toggle('panel-wide', historyWide);
-  el.querySelectorAll('.pf-menu-wide').forEach((btn) => {
-    btn.classList.toggle('is-on', historyWide);
-    btn.setAttribute('aria-pressed', historyWide ? 'true' : 'false');
-    btn.title = historyWide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
-    const lbl = btn.querySelector('.pf-menu-wide-label');
-    if (lbl) lbl.textContent = historyWide ? 'Normal width' : 'Double width';
-  });
+  applyWidthTier(el, pfTierOf(historyWide));
 }
 
 function flipHistoryModule() {
@@ -2213,8 +2295,8 @@ function flipHistoryModule() {
 
 function toggleHistoryWidth() {
   closeAllModuleMenus();
-  historyWide = !historyWide;
-  try { localStorage.setItem(HISTORY_WIDE_KEY, historyWide ? '1' : '0'); } catch (_) {}
+  historyWide = (pfTierOf(historyWide) + 1) % 3;
+  try { localStorage.setItem(HISTORY_WIDE_KEY, String(historyWide)); } catch (_) {}
   applyHistoryWide();
   const el = document.getElementById('pf-mod-history');
   if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }));
@@ -2681,7 +2763,7 @@ function bootstrap() {
   setupAvatar();
   setupAppearancePopover();
   initLirTooltip();
-  initWhootieTooltips();
+  initScoutTooltips();
   syncModules();
   openFromHash();
   /* If Analytics was restored open from a previous session, build its charts

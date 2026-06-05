@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Whootie™ — AI Verification Assistant</title>
+  <title>Scout™ — AI Verification Assistant</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
@@ -539,6 +539,11 @@
       flex-grow: 2;
       min-width: min(760px, 92vw);
     }
+    /* Triple width — third tier of the single → double → triple cycle. */
+    #chat-shell.panel-wide.panel-triple {
+      flex-grow: 3;
+      min-width: min(1080px, 96vw);
+    }
 
     :root { --panel-header-h: 60px; }
     /* Every module header in the chat shell — chat-topbar, side panels,
@@ -880,19 +885,72 @@
     .bo-tagline {
       font-size: var(--fs-ui); font-style: italic; color: var(--text-muted); margin-top: 6px;
     }
+    /* Category tag sits to the right of the quote, divided by a thin bar. */
+    .bo-tagline-cat {
+      font-style: normal; color: var(--text-subtle);
+      margin-left: 8px; padding-left: 8px;
+      border-left: 1px solid var(--border-strong);
+    }
+    html:not(.dark) .bo-tagline-cat { border-left-color: var(--border); }
     .bo-meta { font-size: var(--fs-ui); color: var(--text-subtle); margin-top: 4px; }
-    /* Mini scorecards — reuse the chat's .ws-sc-* atoms (icon, pill, metric,
-       title, desc) so this snapshot reads identically to "Your portfolio at a
-       glance". .bo-sc mirrors .ws-scorecard's surface but flows in a grid. */
-    .bo-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .panel-wide .bo-card-grid { grid-template-columns: repeat(4, 1fr); }
+    /* Mini scorecards — reuse the chat's .ws-sc-* atoms (icon, metric, title,
+       desc) so this snapshot reads identically to "Your portfolio at a glance".
+       They live in a horizontal carousel rail (.bo-carousel) rather than a grid
+       so the snapshot stays compact regardless of panel width. */
+    .bo-carousel-wrap { position: relative; }
+    .bo-carousel {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      /* Wider side padding insets the cards so the floating chevrons have clear
+         space and don't sit on top of the first/last card. */
+      padding: 4px 46px 10px;
+      scroll-padding: 0 46px;
+    }
+    .bo-carousel::-webkit-scrollbar { height: 0; width: 0; display: none; }
+    /* Pull the chevrons in from the panel edges so they have padding on their
+       outer sides too (scoped to brand so the welcome rail is unaffected). */
+    .bo-carousel-wrap .ws-sc-scroll--prev { left: 4px; }
+    .bo-carousel-wrap .ws-sc-scroll--next { right: 4px; }
     .bo-sc {
       display: flex; flex-direction: column; gap: 6px;
+      /* Grow to share the rail when every card fits (carousel collapses into a
+         full-width row); hold 168px and scroll only when they overflow. */
+      flex: 1 0 168px;
+      min-width: 168px;
+      scroll-snap-align: start;
       padding: 14px 16px;
       background: var(--surface-2);
       border: 1px solid var(--border-strong);
       border-radius: 10px;
       transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    /* In the snapshot the icon is a plain glyph (no tinted square) tinted to
+       match the metric value below it, per the cleaner scorecard treatment. */
+    .bo-sc .ws-sc-icon { background: transparent !important; color: var(--text); width: auto; height: auto; }
+    .bo-sc .ws-sc-icon .material-icons { font-size: 20px !important; }
+    /* Edge fades + floating scroll controls cue that the rail keeps going. */
+    .bo-carousel-wrap::before,
+    .bo-carousel-wrap::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 24px;
+      pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
+    }
+    .bo-carousel-wrap::before { left: 0; background: linear-gradient(to right, var(--surface-1, var(--bg)) 0%, transparent 100%); }
+    .bo-carousel-wrap::after { right: 0; background: linear-gradient(to left, var(--surface-1, var(--bg)) 0%, transparent 100%); }
+    .bo-carousel-wrap.has-prev::before { opacity: 1; }
+    .bo-carousel-wrap.has-next::after { opacity: 1; }
+    /* Brand strip — the Simple Truth banner, full-bleed below the header. The
+       negative margins cancel the body's px-3/py-3 so it spans edge to edge. */
+    .bo-brand-strip {
+      height: 72px;
+      margin: -12px -12px 0;
+      background: #6FA82B url('../assets/simple-truth-banner.png') center / cover no-repeat;
+      border-bottom: 1px solid var(--border-strong);
     }
     .bo-bar-row + .bo-bar-row { margin-top: 11px; }
     .bo-bar-head {
@@ -901,12 +959,24 @@
     .bo-bar-name { font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
     .bo-bar-val { font-size: var(--fs-ui); font-weight: 800; color: var(--text); }
     .bo-bar-track {
-      height: 8px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.08);
+      height: 8px; border-radius: 999px; overflow: hidden;
+      /* Lightest shade of the brand blue so the empty portion reads as the
+         track behind the value fill. */
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
     }
-    html:not(.dark) .bo-bar-track { background: var(--surface-3); }
-    .bo-bar-fill { height: 100%; border-radius: 999px; }
+    .bo-bar-fill { height: 100%; border-radius: 999px; background: var(--primary); }
+    /* Health-bar status — color keyed to the value in 20% bands, assigned by
+       paintBoBars() from each fill's width. */
+    .bo-bar-fill.lvl-5 { background: #5FA511; } /* 80–100% · Simple Truth green */
+    .bo-bar-fill.lvl-4 { background: #4ADE80; } /* 60–<80% · lighter green */
+    .bo-bar-fill.lvl-3 { background: #EAB308; } /* 40–<60% · yellow */
+    .bo-bar-fill.lvl-2 { background: #F97316; } /* 20–<40% · orange */
+    .bo-bar-fill.lvl-1 { background: #EF4444; } /* 0–<20% · red */
     .bo-bar-note { font-size: var(--fs-label); color: var(--text-muted); margin-top: 4px; }
-    .bo-stack { display: flex; height: 12px; border-radius: 999px; overflow: hidden; }
+    /* Hairline divider used to fold two related read-outs into a single card. */
+    .bo-divider { height: 1px; background: var(--border-strong); margin: 14px 0; }
+    html:not(.dark) .bo-divider { background: var(--border); }
+    .bo-stack { display: flex; height: 8px; border-radius: 999px; overflow: hidden; }
     .bo-stack > span { display: block; height: 100%; }
     .bo-legend {
       display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 10px;
@@ -969,6 +1039,14 @@
     html:not(.dark) .um-card {
       background: var(--surface-2);
       border-color: var(--border);
+    }
+    /* Flat variant — no surface/border/padding so the read-out sits flush with
+       the rest of the snapshot body. */
+    .um-card--flat,
+    html:not(.dark) .um-card--flat {
+      background: transparent;
+      border-color: transparent;
+      padding: 0;
     }
     .um-row {
       display: flex;
@@ -1815,7 +1893,7 @@
     }
 
     /* ── Reformulation Plan workflow module ─────────────────────────────
-       A right-side module Whootie™ builds out step by step. Shares the
+       A right-side module Scout™ builds out step by step. Shares the
        neutral surface, radius, shadow, bounce and width-toggle behaviour of
        the History / account modules so it reads as a first-class module. */
     #workflow-panel {
@@ -1849,6 +1927,8 @@
     /* Double width — mirrors #history-panel.panel-wide. */
     #workflow-panel.panel-wide.wf-open { width: 600px; }
     #workflow-panel.panel-wide .wf-inner { width: 600px; }
+    #workflow-panel.panel-wide.panel-triple.wf-open { width: 900px; }
+    #workflow-panel.panel-wide.panel-triple .wf-inner { width: 900px; }
 
     /* Progress strip */
     .wf-progress-wrap { padding: 0 12px 12px; }
@@ -2051,7 +2131,7 @@
     }
 
     /* ── WISE Verification workflow module ──────────────────────────────
-       A richer, "live" sibling to the Reformulation Plan: Whootie™ runs an
+       A richer, "live" sibling to the Reformulation Plan: Scout™ runs an
        end-to-end verification (Profile → Audit → Select → Analyze → Attest →
        Pay → Verified Shield) and assembles the module stage by stage. Opens
        double-width by default. Shares the neutral module surface + controls. */
@@ -2064,6 +2144,7 @@
     }
     #verify-flow-panel.vf-open { display: flex; width: 300px; }
     #verify-flow-panel.panel-wide.vf-open { width: 600px; }
+    #verify-flow-panel.panel-wide.panel-triple.vf-open { width: 900px; }
     #verify-flow-panel .vf-inner {
       width: 300px;
       min-height: 100%;
@@ -2078,6 +2159,7 @@
       font-size: var(--fs-ui);
     }
     #verify-flow-panel.panel-wide .vf-inner { width: 600px; }
+    #verify-flow-panel.panel-wide.panel-triple .vf-inner { width: 900px; }
     #verify-flow-panel.vf-open .vf-inner { animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     @media (prefers-reduced-motion: reduce) { #verify-flow-panel.vf-open .vf-inner { animation: none !important; } }
     html:not(.dark) #verify-flow-panel .vf-inner {
@@ -2140,6 +2222,7 @@
     }
     #intent-stack-column.is-active { display: flex; }
     #intent-stack-column:has(.launch-panel.panel-wide) { width: 600px; }
+    #intent-stack-column:has(.launch-panel.panel-wide.panel-triple) { width: 900px; }
     #intent-stack-column.is-stacked > .launch-panel.lr-open {
       flex: 1 1 0;
       min-height: 0;
@@ -3210,6 +3293,50 @@
       max-width: 100%;
       flex: 0 0 auto;
     }
+    /* Intent chips, scrollable variant — a single horizontal line below the
+       score cards with left/right arrow controls (same pattern as the score-card
+       scroller). The wrap matches the score-card rail width so both line up. */
+    .ws-chips-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 864px;
+      margin: 0 auto 2rem;
+    }
+    .ws-chips-wrap .ws-chips {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      margin-bottom: 0;
+      padding: 4px 2px;
+    }
+    .ws-chips-wrap .ws-chips::-webkit-scrollbar { height: 0; width: 0; display: none; }
+    .ws-chips-wrap .ws-chips .chip { scroll-snap-align: start; }
+    /* Soft edge fades cue that the row keeps going. */
+    .ws-chips-wrap::before,
+    .ws-chips-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .ws-chips-wrap::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg) 0%, transparent 100%);
+    }
+    .ws-chips-wrap::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
+    }
+    .ws-chips-wrap.has-prev::before { opacity: 1; }
+    .ws-chips-wrap.has-next::after { opacity: 1; }
     .ws-hint {
       font-size: var(--fs-ui);
       color: var(--text-subtle);
@@ -3264,26 +3391,38 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 5px 8px 5px 10px;
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-pill, 999px) !important;
-      background: var(--surface-2);
+      padding: 4px 2px;
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important;
       color: var(--text);
       font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: color 0.15s ease;
     }
     .ws-sc-filter-btn:hover {
-      background: var(--surface-3);
-      border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+      background: transparent !important;
+      color: var(--primary);
     }
+    .ws-sc-filter-btn:hover .material-icons { color: var(--primary); }
     .ws-sc-filter-btn .material-icons { font-size: 16px !important; color: var(--text-muted); }
     .ws-sc-filter-btn .ws-sc-filter-caret { margin-left: -2px; }
     .ws-sc-filter-pop { left: auto; right: 0; min-width: 200px; }
+    /* Items read as plain text links — no button fill, no hover/active block. */
+    .ws-sc-filter-pop .topbar-menu-item {
+      background: transparent !important;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+    .ws-sc-filter-pop .topbar-menu-item:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    .ws-sc-filter-pop .topbar-menu-item:hover .topbar-menu-icon { color: var(--primary); }
     .ws-sc-filter-pop .topbar-menu-item.is-active {
       color: var(--primary);
-      background: var(--primary-soft, color-mix(in srgb, var(--primary) 10%, transparent));
+      font-weight: 600;
     }
     .ws-sc-filter-pop .topbar-menu-item.is-active .topbar-menu-icon { color: var(--primary); }
 
@@ -3325,7 +3464,8 @@
       transition: background 0.15s ease, border-color 0.15s ease,
                   box-shadow 0.15s ease, transform 0.15s ease;
     }
-    /* Scroll-right / left affordance — floating circular control over the rail. */
+    /* Scroll-right / left affordance — bare chevrons nudged just off the rail
+       edges (no chunky circle); the edge fades keep the glyphs legible. */
     #chat-shell-wrap .ws-sc-scroll,
     .ws-sc-scroll {
       position: absolute;
@@ -3335,20 +3475,21 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 999px !important;
-      background: var(--surface-2);
-      border: 1px solid var(--border-strong);
-      color: var(--text);
+      width: 22px;
+      height: 36px;
+      padding: 0;
+      border-radius: 0 !important;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      color: var(--text-muted);
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
-      transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+      transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
-    .ws-sc-scroll:hover { background: var(--surface-3); transform: translateY(-50%) scale(1.06); }
+    .ws-sc-scroll:hover { background: transparent; color: var(--text); transform: translateY(-50%) scale(1.15); }
     .ws-sc-scroll .material-icons { font-size: 22px !important; }
-    .ws-sc-scroll--next { right: -10px; }
-    .ws-sc-scroll--prev { left: -10px; }
+    .ws-sc-scroll--next { right: -16px; }
+    .ws-sc-scroll--prev { left: -16px; }
     .ws-sc-scroll[hidden] { display: none; }
     /* Soft edge fades cue that the rail keeps going. */
     .ws-scorecards-wrap::before,
@@ -3389,19 +3530,19 @@
       justify-content: space-between;
       gap: 8px;
     }
+    /* Bare glyphs — no chip behind them — sized up a touch for presence. */
     .ws-sc-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
-      border-radius: 7px;
       flex-shrink: 0;
     }
-    .ws-sc-icon .material-icons { font-size: 18px !important; }
-    .ws-sc-icon--brand { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-    .ws-sc-icon--warn  { background: var(--sec-amber-10, rgba(245, 158, 11, 0.14)); color: var(--sec-amber-text, #b45309); }
-    .ws-sc-icon--alert { background: var(--sec-red-10, rgba(239, 68, 68, 0.12)); color: var(--sec-red-text, #b91c1c); }
+    .ws-sc-icon .material-icons { font-size: 24px !important; }
+    /* Metric cards: neutral (foreground) icon — the intro/Scout cards keep the
+       brand accent below. */
+    .ws-sc-icon--brand,
+    .ws-sc-icon--warn,
+    .ws-sc-icon--alert { color: var(--text); }
     .ws-sc-pill {
       display: inline-flex;
       align-items: center;
@@ -3414,10 +3555,14 @@
       white-space: nowrap;
     }
     .ws-sc-pill .material-icons { font-size: 12px !important; }
-    .ws-sc-pill--up    { background: color-mix(in srgb, #16a34a 14%, transparent); color: #15803d; }
-    .ws-sc-pill--warn  { background: var(--sec-amber-10, rgba(245, 158, 11, 0.14)); color: var(--sec-amber-text, #b45309); }
-    .ws-sc-pill--alert { background: var(--sec-red-10, rgba(239, 68, 68, 0.12)); color: var(--sec-red-text, #b91c1c); }
-    html.dark .ws-sc-pill--up { color: #4ade80; }
+    /* Metric-card pills: neutral grey "shades of black" (intro/Scout pills keep
+       the brand accent below). */
+    .ws-sc-pill--up,
+    .ws-sc-pill--warn,
+    .ws-sc-pill--alert {
+      background: color-mix(in srgb, var(--text) 12%, transparent);
+      color: var(--text);
+    }
     .ws-sc-metric {
       font-size: 1.625rem;
       font-weight: 800;
@@ -3459,6 +3604,40 @@
     }
     .ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
 
+    /* ===== Intro / orientation cards =====
+       Same footprint, atoms AND background as the metric cards — set apart only
+       by an accent stroke (brand blue vs. a cooler cyan) and a matching accent
+       headline, so they read as "start here" while staying fully minimal. */
+    #chat-shell-wrap .ws-scorecard--intro,
+    #chat-shell-wrap .ws-scorecard--scout,
+    .ws-scorecard--intro,
+    .ws-scorecard--scout {
+      border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong));
+    }
+    .ws-scorecard--intro:hover,
+    .ws-scorecard--scout:hover {
+      border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
+      box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent);
+    }
+    .ws-sc-icon--intro,
+    .ws-sc-icon--scout { color: var(--primary); }
+    .ws-sc-pill--intro,
+    .ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+    html.dark .ws-sc-icon--intro,
+    html.dark .ws-sc-icon--scout { color: var(--primary-bright, #93C5FD); }
+    /* Intro cards lead with a headline instead of a metric — give it presence
+       and tint it to match the card's accent stroke. */
+    .ws-sc-intro-title {
+      font-size: 1.0625rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-top: 6px;
+    }
+    .ws-scorecard--intro .ws-sc-intro-title,
+    .ws-scorecard--scout .ws-sc-intro-title { color: var(--primary); }
+
     /* Narrow panels / phones: cards shrink a touch but keep scrolling sideways
        (still ~1.5 visible, so the scroll-right affordance still reads). */
     @media (max-width: 700px) {
@@ -3494,7 +3673,7 @@
        Scout's avatar is the WISE-owl bug; "You" is the member's initials,
        matching the top-bar .topbar-profile chip. */
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
-       avatar lines up under the topbar owl and body text under "Whootie™". */
+       avatar lines up under the topbar owl and body text under "Scout™". */
     .sc-line { display: flex; align-items: flex-start; gap: 12px; }
     .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
     .sc-avatar {
@@ -3573,7 +3752,12 @@
       border-color: var(--border-strong);
       color: var(--text-muted);
       font-weight: 500;
+      /* Tighter top/bottom padding; label size unchanged. */
+      padding-top: 4px;
+      padding-bottom: 4px;
     }
+    /* Match the top-bar navigation glyphs (#left-icon-rail .lir-btn = 20px). */
+    .ws-intent-chip .material-icons { font-size: 20px !important; }
     .ws-intent-chip:hover,
     .ws-intent-chip.chip-primary:hover {
       background: var(--surface-3);
@@ -4872,7 +5056,7 @@
       font-weight: 400;
       padding: 8px 0;
     }
-    .fl-input::placeholder { color: var(--text-subtle); }
+    .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
     .fl-icon-btn { width: 32px; height: 32px; }
     #send-btn {
       width: 40px !important;
@@ -5275,6 +5459,30 @@
     #settings-screen.panel-wide .ss-inner { width: 680px; }
     #nfp-panel.panel-wide.nfp-open { width: 592px; }
     #nfp-panel.panel-wide .nfp-inner { width: 592px; }
+
+    /* Panel TRIPLE width — third tier (single → double → triple). Each value is
+       1.5× the double width (= 3× the single width). The .panel-triple modifier
+       rides alongside .panel-wide, so it only overrides the final width. */
+    .util-panel.panel-wide.panel-triple.open { width: 840px; }
+    .util-panel.panel-wide.panel-triple .panel-inner { width: 840px; }
+    #history-panel.panel-wide.panel-triple.open { width: 840px; }
+    #history-panel.panel-wide.panel-triple .panel-inner { width: 840px; }
+    #upf-panel.panel-wide.panel-triple.up-open { width: 816px; }
+    #upf-panel.panel-wide.panel-triple .upf-inner { width: 816px; }
+    #tier-panel.panel-wide.panel-triple.tp-open,
+    #shield-panel.panel-wide.panel-triple.sd-open,
+    #lens-panel.panel-wide.panel-triple.ln-open,
+    #vault-panel.panel-wide.panel-triple.vt-open { width: 804px; }
+    #tier-panel.panel-wide.panel-triple .tier-inner,
+    #shield-panel.panel-wide.panel-triple .shield-inner,
+    #lens-panel.panel-wide.panel-triple .lens-inner,
+    #vault-panel.panel-wide.panel-triple .vault-inner { width: 804px; }
+    #notif-panel.panel-wide.panel-triple.notif-open { width: 900px; }
+    #notif-panel.panel-wide.panel-triple .notif-inner { width: 900px; }
+    #settings-screen.panel-wide.panel-triple.ss-open { width: 1020px; }
+    #settings-screen.panel-wide.panel-triple .ss-inner { width: 1020px; }
+    #nfp-panel.panel-wide.panel-triple.nfp-open { width: 888px; }
+    #nfp-panel.panel-wide.panel-triple .nfp-inner { width: 888px; }
 
     /* Small kebab/more button used inside a panel header (mirror of the
        global topbar more_vert). Always floats to the far right. */
@@ -5746,7 +5954,7 @@
       import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
-      import { initWhootieTooltips } from '../js/whootie-tooltip.js';
+      import { initScoutTooltips } from '../js/scout-tooltip.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       Object.assign(window, {
         isMenuFooterAnchor,
@@ -5813,8 +6021,8 @@
                   <span class="panel-ctrl-label">Dock</span>
                 </button>
               </div>
-              <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Notifications module width">
-                <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
+              <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="notif" onclick="togglePanelWidth('notif')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Notifications module width">
+                <span class="panel-ctrl-icon"><span class="material-symbols-outlined">width_normal</span></span>
                 <span class="panel-ctrl-label">Width</span>
               </button>
               <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeNotifications()" title="Close" aria-label="Close Notifications">
@@ -5835,9 +6043,9 @@
       });
       applyStoredTextSize();
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => initWhootieTooltips());
+        document.addEventListener('DOMContentLoaded', () => initScoutTooltips());
       } else {
-        initWhootieTooltips();
+        initScoutTooltips();
       }
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
@@ -5948,7 +6156,7 @@
             <div class="panel-flip" data-panel="history" role="group" aria-label="Dock History panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('history')" title="Move to the other side of chat" aria-label="Move History to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="history" onclick="togglePanelWidth('history')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double History module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="history" onclick="togglePanelWidth('history')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand History module width"><span class="material-symbols-outlined">width_normal</span></button>
             <button type="button" class="panel-close-btn hp-header-close-btn" onclick="toggleHistoryPanel()" title="Close" aria-label="Close History"><span class="material-icons">close</span></button>
           </div>
         </div>
@@ -6006,7 +6214,7 @@
               <span class="material-icons text-[15px] text-amber-400">search</span>
             </div>
             <div>
-              <div class="text-xs font-bold text-oyster-100">Whootie™</div>
+              <div class="text-xs font-bold text-oyster-100">Scout™</div>
               <p class="text-xs text-oyster-600">WISE Foods</p>
             </div>
           </div>
@@ -6038,7 +6246,7 @@
             <div class="panel-flip" data-panel="upf" role="group" aria-label="Dock PULSE panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('upf')" title="Move to the other side of chat" aria-label="Move PULSE to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="upf" onclick="togglePanelWidth('upf')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double PULSE module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="upf" onclick="togglePanelWidth('upf')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand PULSE module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
         <div class="side-panel-search-row px-3 py-2 border-b border-oyster-800">
@@ -6087,7 +6295,7 @@
             <div class="panel-flip" data-panel="tier" role="group" aria-label="Dock TIER panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('tier')" title="Move to the other side of chat" aria-label="Move TIER to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="tier" onclick="togglePanelWidth('tier')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double TIER module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="tier" onclick="togglePanelWidth('tier')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand TIER module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
         <div id="tier-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -6125,7 +6333,7 @@
             <div class="panel-flip" data-panel="shield" role="group" aria-label="Dock SHIELD panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('shield')" title="Move to the other side of chat" aria-label="Move SHIELD to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="shield" onclick="togglePanelWidth('shield')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double SHIELD module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="shield" onclick="togglePanelWidth('shield')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand SHIELD module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
         <div id="shield-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -6162,7 +6370,7 @@
             <div class="panel-flip" data-panel="lens" role="group" aria-label="Dock LENS panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('lens')" title="Move to the other side of chat" aria-label="Move LENS to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="lens" onclick="togglePanelWidth('lens')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double LENS module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="lens" onclick="togglePanelWidth('lens')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand LENS module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-3 text-xs text-oyster-500">
@@ -6206,7 +6414,7 @@
             <div class="panel-flip" data-panel="vault" role="group" aria-label="Dock VAULT panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('vault')" title="Move to the other side of chat" aria-label="Move VAULT to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="vault" onclick="togglePanelWidth('vault')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double VAULT module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="vault" onclick="togglePanelWidth('vault')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand VAULT module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
@@ -6252,7 +6460,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
-            <span class="topbar-title" data-whootie-tip tabindex="0">Whootie™</span>
+            <span class="topbar-title" data-scout-tip tabindex="0">Scout™</span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -6295,7 +6503,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Whootie™ module width"><span class="material-symbols-outlined">transition_slide</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Scout™ module width"><span class="material-symbols-outlined">width_normal</span></button>
         </div>
       </div>
 
@@ -6319,7 +6527,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can Whootie™ help with?</h1>
+            <h1 class="ws-heading">What can Scout™ help with?</h1>
             <!-- Portfolio score cards — richer, actionable signals above the intent chips.
                  They scroll horizontally (there are always more than fit on screen), with a
                  prioritisation filter pinned to the far right of the section bar and a
@@ -6343,73 +6551,84 @@
                 </div>
                 <div class="ws-scorecards-wrap">
                     <div class="ws-scorecards" id="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
-                        <button class="ws-scorecard" role="listitem" data-order="0" data-urgent="2" data-impact="5" data-recent="3" onclick="welcomeChipClick('registry_home','Show me my portfolio UPF health','insights')">
+                        <button class="ws-scorecard" role="listitem" data-order="0" data-urgent="5" data-impact="5" data-recent="5" onclick="startReformulationWorkflow()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Leads peers</span>
-                            </div>
-                            <div class="ws-sc-metric">91<span class="ws-sc-metric-unit">% non-UPF</span></div>
-                            <div class="ws-sc-title">WISEcode Non-UPF</div>
-                            <div class="ws-sc-desc">174 of 192 SKUs Not-Ultra-Processed — above the peer set.</div>
-                            <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
-                        </button>
-                        <button class="ws-scorecard" role="listitem" data-order="1" data-urgent="2" data-impact="5" data-recent="4" onclick="welcomeChipClick('faq_intro','How does my portfolio pass Texas SB25?','gavel')">
-                            <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">gavel</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">check_circle</span>Compliant</span>
-                            </div>
-                            <div class="ws-sc-metric">100<span class="ws-sc-metric-unit">% pass</span></div>
-                            <div class="ws-sc-title">Texas SB25 Compliance</div>
-                            <div class="ws-sc-desc">All 192 active SKUs clear the strictest state UPF standard.</div>
-                            <div class="ws-sc-action">Review compliance<span class="material-icons">arrow_outward</span></div>
-                        </button>
-                        <button class="ws-scorecard" role="listitem" data-order="2" data-urgent="5" data-impact="5" data-recent="5" onclick="startReformulationWorkflow()">
-                            <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">science</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">priority_high</span>Action</span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">science</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">priority_high</span>Do next</span>
                             </div>
                             <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> SKUs</span></div>
-                            <div class="ws-sc-title">CA Reformulation Targets</div>
-                            <div class="ws-sc-desc">18 SKUs sit outside California Assembly UPF — surgical swaps close the gap.</div>
+                            <div class="ws-sc-title">Reformulate CA targets</div>
+                            <div class="ws-sc-desc">18 SKUs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.</div>
                             <div class="ws-sc-action">Plan reformulation<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="2" data-impact="4" data-recent="2" onclick="startDataExploration()">
+                        <button class="ws-scorecard ws-scorecard--intro" role="listitem" data-order="1" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('registry_home','Give me a quick tour of my portfolio','explore')">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">eco</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Above peers</span>
+                                <span class="ws-sc-icon ws-sc-icon--intro"><span class="material-icons">space_dashboard</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--intro"><span class="material-icons">auto_awesome</span>Start here</span>
                             </div>
-                            <div class="ws-sc-metric">84<span class="ws-sc-metric-unit">% great</span></div>
-                            <div class="ws-sc-title">Ingredient Quality</div>
-                            <div class="ws-sc-desc">84% rated Looks Great vs named peers (78–80%) — buyer-grade defensibility.</div>
+                            <div class="ws-sc-intro-title">Your whole portfolio, decoded</div>
+                            <div class="ws-sc-desc">UPF status, compliance, and ingredient health — every SKU, one view.</div>
+                            <div class="ws-sc-action">Take the tour<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--scout" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can Scout help me work through my portfolio?','auto_awesome')">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--scout"><span class="material-icons">smart_toy</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--scout"><span class="material-icons">bolt</span>AI Scout</span>
+                            </div>
+                            <div class="ws-sc-intro-title">Let Scout do the heavy lifting</div>
+                            <div class="ws-sc-desc">Ask, verify, or reformulate — Scout drafts it, you decide.</div>
+                            <div class="ws-sc-action">Ask Scout anything<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="4" data-impact="5" data-recent="3" onclick="startVerificationWorkflow()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">gavel</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">verified</span>Verify</span>
+                            </div>
+                            <div class="ws-sc-metric">100<span class="ws-sc-metric-unit">% pass</span></div>
+                            <div class="ws-sc-title">Publish your SB25 claim</div>
+                            <div class="ws-sc-desc">All 192 SKUs clear Texas SB25 — get it verified and live on retail listings.</div>
+                            <div class="ws-sc-action">Start verification<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="4" data-urgent="4" data-impact="4" data-recent="3" onclick="startVerificationWorkflow()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">verified_user</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">shield</span>Attest</span>
+                            </div>
+                            <div class="ws-sc-metric">174<span class="ws-sc-metric-unit"> ready</span></div>
+                            <div class="ws-sc-title">Activate Non-UPF Shields</div>
+                            <div class="ws-sc-desc">174 of 192 SKUs qualify as Not-Ultra-Processed — attest and switch the shields on.</div>
+                            <div class="ws-sc-action">Run verification<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="5" data-urgent="3" data-impact="3" data-recent="2" onclick="startDataExploration()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">filter_alt</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">rule</span>Review</span>
+                            </div>
+                            <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> SKUs</span></div>
+                            <div class="ws-sc-title">Trim the UPF tail</div>
+                            <div class="ws-sc-desc">9.4% of SKUs are ultra or super-ultra processed — target the worst offenders next.</div>
                             <div class="ws-sc-action">Explore data<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="4" data-urgent="2" data-impact="4" data-recent="3" onclick="welcomeChipClick('registry_home','Show me heart health across my portfolio','favorite')">
+                        <button class="ws-scorecard" role="listitem" data-order="6" data-urgent="2" data-impact="4" data-recent="2" onclick="startDataExploration()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">favorite</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Excellent</span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">campaign</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Promote</span>
                             </div>
-                            <div class="ws-sc-metric">34<span class="ws-sc-metric-unit">% top-rated</span></div>
-                            <div class="ws-sc-title">Heart Health Advantage</div>
-                            <div class="ws-sc-desc">34% rated Excellent — top of the peer set (22–27%).</div>
-                            <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
-                        </button>
-                        <button class="ws-scorecard" role="listitem" data-order="5" data-urgent="3" data-impact="3" data-recent="2" onclick="welcomeChipClick('faq_intro','What is my seed-oil exposure?','flag')">
-                            <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">water_drop</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Lead</span>
-                            </div>
-                            <div class="ws-sc-metric">12<span class="ws-sc-metric-unit">% present</span></div>
-                            <div class="ws-sc-title">Seed-Oil Profile</div>
-                            <div class="ws-sc-desc">12% seed-oil presence — below both peers (17–24%).</div>
-                            <div class="ws-sc-action">Investigate exposure<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-metric">12<span class="ws-sc-metric-unit">% seed oil</span></div>
+                            <div class="ws-sc-title">Promote your clean wins</div>
+                            <div class="ws-sc-desc">Cleanest seed-oil profile in the channel (12% vs peers 17–24%) — push the claim to buyers.</div>
+                            <div class="ws-sc-action">Open data &amp; trends<span class="material-icons">arrow_outward</span></div>
                         </button>
                     </div>
                     <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-sc-prev" aria-label="Scroll to previous cards" onclick="scrollScorecards(-1)" hidden><span class="material-icons">chevron_left</span></button>
                     <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ws-sc-next" aria-label="Scroll to see more cards" onclick="scrollScorecards(1)"><span class="material-icons">chevron_right</span></button>
                 </div>
             </div>
-            <!-- Quick action chips -->
-            <div class="ws-chips">
+            <!-- Quick action chips — one horizontal line below the score cards,
+                 scrolled left/right with the arrow controls (mirrors the
+                 score-card scroller above). -->
+            <div class="ws-chips-wrap">
+            <div class="ws-chips" id="ws-chips" role="list" aria-label="Quick actions">
                 <button class="chip ws-intent-chip" onclick="welcomeChipClick('customer_profile','Start New Verification','add_circle')">
                     <span class="material-icons" style="font-size:16px">add_circle</span>Start New Verification
                 </button>
@@ -6444,13 +6663,8 @@
                     <span class="material-icons" style="font-size:16px">query_stats</span>Explore My Data &amp; Charts
                 </button>
             </div>
-            <!-- Trust badges — mirror scout-chat.js so the welcome reads the same
-                 wherever Scout appears. The "type a message" hint shares this row. -->
-            <div class="ws-trust" role="list" aria-label="How Whootie™ handles your data">
-                <span class="ws-hint">or type a message below</span>
-                <span class="sc-trust-badge" role="listitem"><span class="material-icons">verified_user</span>Grounded in your WISE data</span>
-                <span class="sc-trust-badge" role="listitem"><span class="material-icons">lock</span>Private &amp; encrypted</span>
-                <span class="sc-trust-badge" role="listitem"><span class="material-icons">history</span>Every action is logged</span>
+                <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-chips-prev" aria-label="Scroll to previous actions" onclick="scrollChips(-1)" hidden><span class="material-icons">chevron_left</span></button>
+                <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ws-chips-next" aria-label="Scroll to see more actions" onclick="scrollChips(1)"><span class="material-icons">chevron_right</span></button>
             </div>
         </div>
 
@@ -6471,8 +6685,8 @@
                       <span class="panel-ctrl-label">Dock</span>
                     </button>
                   </div>
-                  <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="settings" onclick="togglePanelWidth('settings')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Agent Settings module width">
-                    <span class="panel-ctrl-icon"><span class="material-symbols-outlined">transition_slide</span></span>
+                  <button type="button" class="panel-ctrl-btn panel-width-toggle-btn" data-panel="settings" onclick="togglePanelWidth('settings')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Agent Settings module width">
+                    <span class="panel-ctrl-icon"><span class="material-symbols-outlined">width_normal</span></span>
                     <span class="panel-ctrl-label">Width</span>
                   </button>
                   <button type="button" class="panel-ctrl-btn panel-close-btn" onclick="closeSettings()" title="Close" aria-label="Close Agent Settings">
@@ -6492,7 +6706,7 @@
                     </div>
                     <div>
                         <p class="ss-info-title">How agents work together</p>
-                        <p class="ss-info-desc">Whootie™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Whootie™ is always required.</p>
+                        <p class="ss-info-desc">Scout™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Scout™ is always required.</p>
                     </div>
                 </div>
 
@@ -6506,11 +6720,11 @@
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
-                            Whootie™
+                            Scout™
                             <span class="ss-version-badge">v3.2</span>
                         </div>
                         <p class="ss-agent-tagline">Verification Orchestrator</p>
-                        <p class="ss-agent-desc">The core Whootie™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
+                        <p class="ss-agent-desc">The core Scout™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.</p>
                         <div>
                             <span class="ss-capability-tag">Verification</span>
                             <span class="ss-capability-tag">Routing</span>
@@ -6693,7 +6907,7 @@
                     <div class="ss-pref-row">
                         <div>
                             <p class="ss-pref-title">Response style</p>
-                            <p class="ss-pref-desc">How detailed Whootie™'s responses should be</p>
+                            <p class="ss-pref-desc">How detailed Scout™'s responses should be</p>
                         </div>
                         <select class="font-semibold">
                             <option>Concise</option>
@@ -6733,7 +6947,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
-                            <span>Whootie™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
+                            <span>Scout™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
                         </div>
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
@@ -6771,7 +6985,7 @@
         <div class="flex gap-2 items-end">
           <div class="fl-input-wrap">
             <span id="fl-label" class="fl-label">Ask a question or choose an option above</span>
-            <input id="chat-input" type="text" placeholder="Type a message…" class="fl-input" autocomplete="off" />
+            <input id="chat-input" type="text" placeholder="Type a message... Grounded in your WISEcode data, private and encrypted, and every action is logged." class="fl-input" autocomplete="off" />
             <div class="fl-more-wrap" id="fl-more-wrap">
               <button type="button" class="fl-icon-btn fl-more-btn" id="fl-more-btn" title="More options" onclick="toggleInputMore(event)">
                 <span class="material-icons">more_horiz</span>
@@ -6809,106 +7023,125 @@
         <div class="panel-inner">
           <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
             <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-              <span class="material-icons text-[15px]" style="color:var(--sec-green)">eco</span>
+              <!-- Simple Truth Organic circular mark, shrunk to fit the icon slot. -->
+              <img src="../assets/simple-truth-mark.png" alt="Simple Truth Organic" class="w-full h-full object-contain" />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-oyster-100">BRAND OVERVIEW</div>
+              <div class="text-xs font-bold text-oyster-100">WISEcode® Food Intelligence Snapshot</div>
               <p class="text-xs text-oyster-600 mt-0.5">Simple Truth Organic</p>
             </div>
             <div class="panel-controls">
               <div class="panel-flip" data-panel="brand" role="group" aria-label="Dock Brand Overview panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('brand')" title="Move to the other side of chat" aria-label="Move Brand Overview to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="brand" onclick="togglePanelWidth('brand')" aria-pressed="false" title="Normal width — tap to double" aria-label="Toggle Brand Overview module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="brand" onclick="togglePanelWidth('brand')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Brand Overview module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('brand-panel')" title="Close" aria-label="Close Brand Overview"><span class="material-icons">close</span></button>
             </div>
           </div>
           <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-4">
 
+            <!-- Brand strip — Simple Truth banner -->
+            <div class="bo-brand-strip" role="img" aria-label="Simple Truth Organic"></div>
+
             <!-- Intro -->
             <div class="space-y-2">
-              <div class="bo-confidential"><span class="material-icons">verified</span>WISEcode® Food Intelligence Snapshot · May 2026</div>
               <p class="bo-hero">May be the <em>cleanest private label brand</em> in American grocery.</p>
-              <p class="bo-tagline">“Pure Goodness, Simply Delivered.”</p>
-              <p class="bo-meta">Organic Private Label · 192 scored SKUs · 2,700 Kroger shelves</p>
+              <p class="bo-tagline">“Pure Goodness, Simply Delivered.”<span class="bo-tagline-cat">Organic Private Label</span></p>
             </div>
 
-            <!-- Headline scorecards — same atoms as "Your portfolio at a glance" -->
-            <div class="bo-card-grid">
-              <div class="bo-sc">
-                <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">gavel</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">check_circle</span>Compliant</span>
+            <!-- Headline scorecards — same atoms as "Your portfolio at a glance",
+                 in a horizontal carousel so the snapshot stays compact. -->
+            <div class="bo-carousel-wrap">
+              <div class="bo-carousel" id="bo-carousel" role="list" aria-label="Brand headline metrics">
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">inventory_2</span></span>
+                  </div>
+                  <div class="ws-sc-metric">192<span class="ws-sc-metric-unit"> SKUs</span></div>
+                  <div class="ws-sc-title">Scored SKUs</div>
+                  <div class="ws-sc-desc">Active assortment graded by WISEcode.</div>
                 </div>
-                <div class="ws-sc-metric">100<span class="ws-sc-metric-unit">%</span></div>
-                <div class="ws-sc-title">Texas SB25</div>
-                <div class="ws-sc-desc">All 192 active SKUs pass the strictest state UPF standard.</div>
-              </div>
-              <div class="bo-sc">
-                <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Leads peers</span>
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">storefront</span></span>
+                  </div>
+                  <div class="ws-sc-metric">2,700<span class="ws-sc-metric-unit"> shelves</span></div>
+                  <div class="ws-sc-title">Kroger shelves</div>
+                  <div class="ws-sc-desc">On-shelf reach across Kroger banners.</div>
                 </div>
-                <div class="ws-sc-metric">91<span class="ws-sc-metric-unit">%</span></div>
-                <div class="ws-sc-title">WISEcode Non-UPF</div>
-                <div class="ws-sc-desc">174 of 192 SKUs Not-Ultra-Processed — above the peer set.</div>
-              </div>
-              <div class="bo-sc">
-                <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">favorite</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Excellent</span>
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">gavel</span></span>
+                  </div>
+                  <div class="ws-sc-metric">100<span class="ws-sc-metric-unit">%</span></div>
+                  <div class="ws-sc-title">Texas SB25</div>
+                  <div class="ws-sc-desc">All 192 active SKUs pass the strictest state UPF standard.</div>
                 </div>
-                <div class="ws-sc-metric">34<span class="ws-sc-metric-unit">%</span></div>
-                <div class="ws-sc-title">Heart Health</div>
-                <div class="ws-sc-desc">Rated Excellent — top of the peer set (22–27%).</div>
-              </div>
-              <div class="bo-sc">
-                <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">eco</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Above peers</span>
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">insights</span></span>
+                  </div>
+                  <div class="ws-sc-metric">91<span class="ws-sc-metric-unit">%</span></div>
+                  <div class="ws-sc-title">WISEcode Non-UPF</div>
+                  <div class="ws-sc-desc">174 of 192 SKUs Not-Ultra-Processed — above the peer set.</div>
                 </div>
-                <div class="ws-sc-metric">84<span class="ws-sc-metric-unit">%</span></div>
-                <div class="ws-sc-title">Ingredient Quality</div>
-                <div class="ws-sc-desc">Rated Looks Great vs named peers (78–80%).</div>
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">favorite</span></span>
+                  </div>
+                  <div class="ws-sc-metric">34<span class="ws-sc-metric-unit">%</span></div>
+                  <div class="ws-sc-title">Heart Health</div>
+                  <div class="ws-sc-desc">Rated Excellent — top of the peer set (22–27%).</div>
+                </div>
+                <div class="bo-sc" role="listitem">
+                  <div class="ws-sc-top">
+                    <span class="ws-sc-icon"><span class="material-icons">eco</span></span>
+                  </div>
+                  <div class="ws-sc-metric">84<span class="ws-sc-metric-unit">%</span></div>
+                  <div class="ws-sc-title">Ingredient Quality</div>
+                  <div class="ws-sc-desc">Rated Looks Great vs named peers (78–80%).</div>
+                </div>
               </div>
+              <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="bo-sc-prev" aria-label="Scroll to previous cards" onclick="scrollBoCarousel(-1)" hidden><span class="material-icons">chevron_left</span></button>
+              <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="bo-sc-next" aria-label="Scroll to see more cards" onclick="scrollBoCarousel(1)"><span class="material-icons">chevron_right</span></button>
             </div>
 
-            <!-- UPF standards -->
-            <div class="um-card">
-              <div class="um-section-label" style="padding-bottom:10px">Across every UPF standard</div>
+            <!-- UPF standards & processing level — folded into one card -->
+            <div class="um-card um-card--flat">
+              <div class="bo-hero" style="margin-bottom:10px">UPF standards</div>
               <div class="bo-bar-row">
                 <div class="bo-bar-head"><span class="bo-bar-name">WISEcode Not Ultra-Processed</span><span class="bo-bar-val">90.6%</span></div>
-                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:90.6%;background:var(--primary)"></div></div>
+                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:90.6%"></div></div>
                 <div class="bo-bar-note">The most rigorous UPF methodology in commercial use. Leads the peer set (85–90%).</div>
               </div>
               <div class="bo-bar-row">
                 <div class="bo-bar-head"><span class="bo-bar-name">Texas Senate UPF (SB25)</span><span class="bo-bar-val">100%</span></div>
-                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:100%;background:var(--sec-green)"></div></div>
+                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:100%"></div></div>
                 <div class="bo-bar-note">Most stringent state-level UPF standard codified. 100% across 192 SKUs is rare at this scale.</div>
               </div>
               <div class="bo-bar-row">
                 <div class="bo-bar-head"><span class="bo-bar-name">California Assembly UPF</span><span class="bo-bar-val">90.6%</span></div>
-                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:90.6%;background:var(--ter-violet)"></div></div>
+                <div class="bo-bar-track"><div class="bo-bar-fill" style="width:90.6%"></div></div>
                 <div class="bo-bar-note">Aligned with federal UPF policy direction. 18 SKUs remain actionable reformulation targets.</div>
               </div>
-            </div>
 
-            <!-- Processing mix -->
-            <div class="um-card">
-              <div class="um-section-label" style="padding-bottom:10px">Processing level · N = 192 scored SKUs</div>
+              <div class="bo-divider"></div>
+
+              <div class="bo-hero" style="margin-bottom:2px">Processing level</div>
+              <p class="bo-meta" style="margin-top:0;margin-bottom:10px">81% minimally or lightly processed</p>
               <div class="bo-stack">
-                <span style="width:68%;background:#4EE0B7" title="Minimally Processed 68%"></span>
-                <span style="width:13.3%;background:#A3E635" title="Lightly Processed 13.3%"></span>
-                <span style="width:9.4%;background:#FFB347" title="Moderately Processed 9.4%"></span>
-                <span style="width:6.3%;background:#FF7C7E" title="Ultra-Processed 6.3%"></span>
-                <span style="width:3.1%;background:#E879F9" title="Super Ultra-Processed 3.1%"></span>
+                <span style="width:68%;background:#024EAE" title="Minimally Processed 68%"></span>
+                <span style="width:13.3%;background:#3A72C2" title="Lightly Processed 13.3%"></span>
+                <span style="width:9.4%;background:#6E9AD6" title="Moderately Processed 9.4%"></span>
+                <span style="width:6.3%;background:#A3C0E7" title="Ultra-Processed 6.3%"></span>
+                <span style="width:3.1%;background:#D2E0F5" title="Super Ultra-Processed 3.1%"></span>
               </div>
               <div class="bo-legend">
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#4EE0B7"></span>Minimally · 68%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#A3E635"></span>Lightly · 13.3%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#FFB347"></span>Moderately · 9.4%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#FF7C7E"></span>Ultra · 6.3%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#E879F9"></span>Super-Ultra · 3.1%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#024EAE"></span>Minimally · 68%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#3A72C2"></span>Lightly · 13.3%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#6E9AD6"></span>Moderately · 9.4%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#A3C0E7"></span>Ultra · 6.3%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#D2E0F5"></span>Super-Ultra · 3.1%</div>
                 <div class="bo-legend-item"><span class="bo-legend-dot" style="background:var(--primary)"></span>Seed oils · 12% <span class="text-oyster-600">(peers 17–24%)</span></div>
               </div>
             </div>
@@ -6987,7 +7220,7 @@
               <div class="panel-flip" data-panel="profile" role="group" aria-label="Dock My Profile panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('profile')" title="Move to the other side of chat" aria-label="Move My Profile to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="profile" onclick="togglePanelWidth('profile')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double My Profile module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="profile" onclick="togglePanelWidth('profile')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand My Profile module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('profile-panel')" title="Close" aria-label="Close My Profile"><span class="material-icons">close</span></button>
             </div>
           </div>
@@ -7037,7 +7270,7 @@
               <div class="panel-flip" data-panel="prefs" role="group" aria-label="Dock Preferences panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('prefs')" title="Move to the other side of chat" aria-label="Move Preferences to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="prefs" onclick="togglePanelWidth('prefs')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Preferences module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="prefs" onclick="togglePanelWidth('prefs')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Preferences module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('prefs-panel')" title="Close" aria-label="Close Preferences"><span class="material-icons">close</span></button>
             </div>
           </div>
@@ -7083,7 +7316,7 @@
               <div class="panel-flip" data-panel="apikeys" role="group" aria-label="Dock API keys panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('apikeys')" title="Move to the other side of chat" aria-label="Move API keys to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="apikeys" onclick="togglePanelWidth('apikeys')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double API keys module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="apikeys" onclick="togglePanelWidth('apikeys')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand API keys module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('apikeys-panel')" title="Close" aria-label="Close API keys"><span class="material-icons">close</span></button>
             </div>
           </div>
@@ -7123,7 +7356,7 @@
               <div class="panel-flip" data-panel="help" role="group" aria-label="Dock Help panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('help')" title="Move to the other side of chat" aria-label="Move Help to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="help" onclick="togglePanelWidth('help')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Help module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="help" onclick="togglePanelWidth('help')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Help module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('help-panel')" title="Close" aria-label="Close Help"><span class="material-icons">close</span></button>
             </div>
           </div>
@@ -7165,7 +7398,7 @@
               <div class="panel-flip" data-panel="docs" role="group" aria-label="Dock Docs panel">
                 <button type="button" class="panel-flip-btn" onclick="flipPanel('docs')" title="Move to the other side of chat" aria-label="Move Docs to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
               </div>
-              <button type="button" class="panel-width-toggle-btn" data-panel="docs" onclick="togglePanelWidth('docs')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Docs module width"><span class="material-symbols-outlined">transition_slide</span></button>
+              <button type="button" class="panel-width-toggle-btn" data-panel="docs" onclick="togglePanelWidth('docs')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Docs module width"><span class="material-symbols-outlined">width_normal</span></button>
               <button type="button" class="panel-close-btn" onclick="toggleUtilPanel('docs-panel')" title="Close" aria-label="Close Docs"><span class="material-icons">close</span></button>
             </div>
           </div>
@@ -7211,7 +7444,7 @@
                 <div class="panel-flip" data-panel="intentstack" role="group" aria-label="Dock stacked launch modules">
                   <button type="button" class="panel-flip-btn" onclick="flipPanel('intentstack')" title="Move to the other side of chat" aria-label="Move launch modules to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
                 </div>
-                <button type="button" class="panel-width-toggle-btn" data-panel="launchclaims" onclick="togglePanelWidth('launchclaims')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Claims Review module width"><span class="material-symbols-outlined">transition_slide</span></button>
+                <button type="button" class="panel-width-toggle-btn" data-panel="launchclaims" onclick="togglePanelWidth('launchclaims')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Claims Review module width"><span class="material-symbols-outlined">width_normal</span></button>
                 <button type="button" class="panel-close-btn" onclick="closeLaunchReadinessFlow()" title="Close" aria-label="Close Claims Review"><span class="material-icons">close</span></button>
               </div>
             </div>
@@ -7226,7 +7459,7 @@
               <div class="wf-empty" id="lr-claims-empty">
                 <span class="material-icons">campaign</span>
                 <p class="wf-empty-title">No claims loaded</p>
-                <p class="wf-empty-sub">Answer Whootie™'s prompts in the chat and each claims section will appear here.</p>
+                <p class="wf-empty-sub">Answer Scout™'s prompts in the chat and each claims section will appear here.</p>
               </div>
             </div>
           </div>
@@ -7243,7 +7476,7 @@
                 <p class="text-xs text-oyster-600 mt-0.5" id="lr-packaging-subtitle">Opens when label copy needs reconciliation</p>
               </div>
               <div class="panel-controls">
-                <button type="button" class="panel-width-toggle-btn" data-panel="launchpackaging" onclick="togglePanelWidth('launchpackaging')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Packaging Checks module width"><span class="material-symbols-outlined">transition_slide</span></button>
+                <button type="button" class="panel-width-toggle-btn" data-panel="launchpackaging" onclick="togglePanelWidth('launchpackaging')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Packaging Checks module width"><span class="material-symbols-outlined">width_normal</span></button>
                 <button type="button" class="panel-close-btn" onclick="closeLaunchReadinessFlow()" title="Close" aria-label="Close Packaging Checks"><span class="material-icons">close</span></button>
               </div>
             </div>
@@ -7258,7 +7491,7 @@
               <div class="wf-empty" id="lr-packaging-empty">
                 <span class="material-icons">inventory_2</span>
                 <p class="wf-empty-title">Not opened yet</p>
-                <p class="wf-empty-sub">If Whootie™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
+                <p class="wf-empty-sub">If Scout™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
               </div>
             </div>
           </div>
@@ -7283,7 +7516,7 @@
             <div class="panel-flip" data-panel="nfp" role="group" aria-label="Dock NFP+ panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('nfp')" title="Move to the other side of chat" aria-label="Move NFP+ to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="nfp" onclick="togglePanelWidth('nfp')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double NFP+ module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="nfp" onclick="togglePanelWidth('nfp')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand NFP+ module width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
 
@@ -7513,7 +7746,7 @@
       </div>
     </aside>
 
-    <!-- Reformulation Plan — a workflow module that Whootie™ builds out, one
+    <!-- Reformulation Plan — a workflow module that Scout™ builds out, one
          conversational step at a time. Opens empty when the workflow starts
          (startReformulationWorkflow) and fills in as the user clicks through
          the in-chat intent chips. Mirrors the other right-side modules' shell:
@@ -7528,13 +7761,13 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Reformulation Plan</div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by Whootie™</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by Scout™</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="workflow" role="group" aria-label="Dock Reformulation Plan panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('workflow')" title="Move to the other side of chat" aria-label="Move Reformulation Plan to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="workflow" onclick="togglePanelWidth('workflow')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double Reformulation Plan module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="workflow" onclick="togglePanelWidth('workflow')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Reformulation Plan module width"><span class="material-symbols-outlined">width_normal</span></button>
             <button type="button" class="panel-close-btn" onclick="closeReformulationWorkflow()" title="Close" aria-label="Close Reformulation Plan"><span class="material-icons">close</span></button>
           </div>
         </div>
@@ -7552,13 +7785,13 @@
           <div class="wf-empty" id="wf-empty">
             <span class="material-icons">auto_fix_high</span>
             <p class="wf-empty-title">Your plan is empty</p>
-            <p class="wf-empty-sub">Answer Whootie™'s prompts in the chat and each step will appear here.</p>
+            <p class="wf-empty-sub">Answer Scout™'s prompts in the chat and each step will appear here.</p>
           </div>
         </div>
       </div>
     </aside>
 
-    <!-- WISE Verification — a live, in-the-moment workflow module. Whootie™
+    <!-- WISE Verification — a live, in-the-moment workflow module. Scout™
          runs an end-to-end verification and assembles this board stage by
          stage as the user clicks through the in-chat intent chips. Opens
          double-width by default. Mirrors the reference verification-flow
@@ -7571,13 +7804,13 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100 flex items-center gap-2">WISE Verification <span class="vf-live"><span class="vf-live-dot"></span>LIVE</span></div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">Whootie™ is running your verification</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">Scout™ is running your verification</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="verifyflow" role="group" aria-label="Dock WISE Verification panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('verifyflow')" title="Move to the other side of chat" aria-label="Move WISE Verification to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-panel="verifyflow" onclick="togglePanelWidth('verifyflow')" aria-pressed="false" title="Normal width — tap to double" aria-label="Double WISE Verification module width"><span class="material-symbols-outlined">transition_slide</span></button>
+            <button type="button" class="panel-width-toggle-btn" data-panel="verifyflow" onclick="togglePanelWidth('verifyflow')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand WISE Verification module width"><span class="material-symbols-outlined">width_normal</span></button>
             <button type="button" class="panel-close-btn" onclick="closeVerificationWorkflow()" title="Close" aria-label="Close WISE Verification"><span class="material-icons">close</span></button>
           </div>
         </div>
@@ -7598,7 +7831,7 @@
           <div class="vf-empty" id="vf-empty">
             <span class="material-icons">verified_user</span>
             <p class="vf-empty-title">Verification not started</p>
-            <p class="vf-empty-sub">Click through Whootie™'s prompts in the chat — each stage of the verification will assemble here in real time.</p>
+            <p class="vf-empty-sub">Click through Scout™'s prompts in the chat — each stage of the verification will assemble here in real time.</p>
           </div>
         </div>
       </div>
@@ -7677,7 +7910,7 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'Whootie™', color: '#024EAE', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'Scout™', color: '#024EAE', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
       scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
       shield: { name: 'SHIELD',     color: '#024EAE', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
@@ -8621,10 +8854,10 @@
        time-stamped, every Scout reply is grounded in a cited source, and the
        typing indicator says what Scout is actually doing. */
     const SCOUT_SOURCE_LABEL = 'Grounded in WISE data';
-    const SCOUT_STATUS_LABEL = 'Whootie™ is checking the registry';
+    const SCOUT_STATUS_LABEL = 'Scout™ is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
-       avatar in place of the "You" / "Whootie™" name labels. Inherits
+       avatar in place of the "You" / "Scout™" name labels. Inherits
        currentColor so the avatar circle's color drives the mark. */
     /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). */
     const SCOUT_USER_AVATAR = 'MC';
@@ -8636,7 +8869,7 @@
     }
     function scoutMetaRow(withSource) {
       const src = withSource && SCOUT_SOURCE_LABEL
-        ? `<span class="sc-trust-chip" title="Whootie™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
+        ? `<span class="sc-trust-chip" title="Scout™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
         : '';
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${scoutNowLabel()}</span></div>`;
     }
@@ -8660,7 +8893,7 @@
       const withSource = opts.source !== false;
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="Whootie™">${SCOUT_OWL_BUG}</span><div class="sc-line-body">${html}${scoutMetaRow(withSource)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout™">${SCOUT_OWL_BUG}</span><div class="sc-line-body">${html}${scoutMetaRow(withSource)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -8671,7 +8904,7 @@
       const label = statusLabel || SCOUT_STATUS_LABEL;
       const el = document.createElement('div');
       el.className = 'mb-3 sc-line sc-line-scout sc-line-typing';
-      el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="Whootie™">${SCOUT_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${label}…</span></span></div>`;
+      el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout™">${SCOUT_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${label}…</span></span></div>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -8704,7 +8937,7 @@
         return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
       if (/(agent|choose)/.test(q))
         return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Whootie™ layout and controls.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout™ layout and controls.';
     }
 
     function scoutRespond(text, intent) {
@@ -8822,17 +9055,119 @@
       });
       requestAnimationFrame(updateScorecardArrows);
     }
+
+    /* Intent-chip scroller — same mechanics as the score-card rail above, so the
+       quick-action chips sit in one horizontal line with left/right arrows. */
+    function scrollChips(dir) {
+      const rail = document.getElementById('ws-chips');
+      if (!rail) return;
+      const amount = Math.max(rail.clientWidth * 0.8, 200);
+      rail.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    }
+
+    function updateChipArrows() {
+      const rail = document.getElementById('ws-chips');
+      const wrap = rail ? rail.closest('.ws-chips-wrap') : null;
+      const prev = document.getElementById('ws-chips-prev');
+      const next = document.getElementById('ws-chips-next');
+      if (!rail) return;
+      const maxScroll = rail.scrollWidth - rail.clientWidth - 1;
+      const hasPrev = rail.scrollLeft > 1;
+      const hasNext = rail.scrollLeft < maxScroll && rail.scrollWidth > rail.clientWidth + 1;
+      if (prev) prev.hidden = !hasPrev;
+      if (next) next.hidden = !hasNext;
+      if (wrap) {
+        wrap.classList.toggle('has-prev', hasPrev);
+        wrap.classList.toggle('has-next', hasNext);
+      }
+    }
+
+    function initChipScroller() {
+      const rail = document.getElementById('ws-chips');
+      if (!rail || rail.dataset.scrollBound) return;
+      rail.dataset.scrollBound = '1';
+      rail.addEventListener('scroll', updateChipArrows, { passive: true });
+      window.addEventListener('resize', updateChipArrows);
+      requestAnimationFrame(updateChipArrows);
+    }
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initScorecardScroller);
+      document.addEventListener('DOMContentLoaded', initChipScroller);
+      document.addEventListener('DOMContentLoaded', initBoCarousel);
+      document.addEventListener('DOMContentLoaded', paintBoBars);
     } else {
       initScorecardScroller();
+      initChipScroller();
+      initBoCarousel();
+      paintBoBars();
+    }
+
+    /* ── Brand Overview headline carousel — same rail mechanics as the welcome
+       score cards, scoped to the #brand-panel snapshot. ─────────────────── */
+    function scrollBoCarousel(dir) {
+      const rail = document.getElementById('bo-carousel');
+      if (!rail) return;
+      const amount = Math.max(rail.clientWidth * 0.8, 176);
+      rail.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    }
+
+    function updateBoCarouselArrows() {
+      const rail = document.getElementById('bo-carousel');
+      const wrap = rail ? rail.closest('.bo-carousel-wrap') : null;
+      const prev = document.getElementById('bo-sc-prev');
+      const next = document.getElementById('bo-sc-next');
+      if (!rail) return;
+      const maxScroll = rail.scrollWidth - rail.clientWidth - 1;
+      const hasPrev = rail.scrollLeft > 1;
+      const hasNext = rail.scrollLeft < maxScroll && rail.scrollWidth > rail.clientWidth + 1;
+      if (prev) prev.hidden = !hasPrev;
+      if (next) next.hidden = !hasNext;
+      if (wrap) {
+        wrap.classList.toggle('has-prev', hasPrev);
+        wrap.classList.toggle('has-next', hasNext);
+      }
+    }
+
+    function initBoCarousel() {
+      const rail = document.getElementById('bo-carousel');
+      if (!rail || rail.dataset.scrollBound) return;
+      rail.dataset.scrollBound = '1';
+      rail.addEventListener('scroll', updateBoCarouselArrows, { passive: true });
+      window.addEventListener('resize', updateBoCarouselArrows);
+      /* Recompute on every rail size change — the panel width animates, so a
+         one-shot rAF runs before the rail reaches its final width and would
+         leave the arrows stale. The observer also collapses the carousel
+         (hides arrows) the moment all cards fit the widened module. */
+      if ('ResizeObserver' in window) {
+        new ResizeObserver(() => updateBoCarouselArrows()).observe(rail);
+      }
+      requestAnimationFrame(updateBoCarouselArrows);
+    }
+
+    /* Color each UPF health bar from its own value, in 20% bands:
+       80–100 dark green · 60–80 light green · 40–60 yellow · 20–40 orange ·
+       0–20 red. The fill takes the status color; the track behind it takes the
+       lightest shade of that same status. Keeps both a true function of %. */
+    function paintBoBars() {
+      const STATUS = { 5: '#5FA511', 4: '#4ADE80', 3: '#EAB308', 2: '#F97316', 1: '#EF4444' };
+      document.querySelectorAll('#brand-panel .bo-bar-fill').forEach((fill) => {
+        const pct = parseFloat(fill.style.width) || 0;
+        const lvl = pct >= 80 ? 5 : pct >= 60 ? 4 : pct >= 40 ? 3 : pct >= 20 ? 2 : 1;
+        fill.classList.remove('lvl-1', 'lvl-2', 'lvl-3', 'lvl-4', 'lvl-5');
+        fill.classList.add('lvl-' + lvl);
+        const track = fill.parentElement;
+        if (track && track.classList.contains('bo-bar-track')) {
+          track.style.background = `color-mix(in srgb, ${STATUS[lvl]} 16%, transparent)`;
+        }
+      });
     }
 
     /* ════════════════════════════════════════════════════════════════════
        EXPLORE MY DATA & CHARTS  (fully inline)
        Unlike the Reformulation / Verification flows, this intent never opens
        a side module. Every answer — stats, bars, donuts, trends — renders
-       INLINE inside Whootie's chat reply, and each result offers "build on
+       INLINE inside Scout's chat reply, and each result offers "build on
        this" chips so the user keeps a single, growing conversation about
        their portfolio data. Each node = one query the user can run.
        ════════════════════════════════════════════════════════════════════ */
@@ -9027,7 +9362,7 @@
         dataVisited = new Set();
         dataStarted = true;
         addUserMessage('Explore My Data & Charts');
-        const typing = showScoutTyping('Whootie™ is pulling your portfolio data');
+        const typing = showScoutTyping('Scout™ is pulling your portfolio data');
         setTimeout(() => {
           typing?.remove();
           addScoutMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
@@ -9108,16 +9443,16 @@
     /* ════════════════════════════════════════════════════════════════════
        REFORMULATION PLAN WORKFLOW
        A chip on the welcome screen kicks off a guided, multi-step workflow.
-       Whootie™ opens an (empty) Reformulation Plan module on the right, then
+       Scout™ opens an (empty) Reformulation Plan module on the right, then
        offers the next step as an in-chat intent chip. Each chip the user
-       clicks posts their choice, draws Whootie's reply, and BUILDS OUT one
+       clicks posts their choice, draws Scout's reply, and BUILDS OUT one
        more section of the module — so the artifact assembles itself as the
        conversation advances. The module reuses the shared module shell, so it
        looks and behaves like every other panel on the page.
        ════════════════════════════════════════════════════════════════════ */
 
     /* Ordered steps. Each step's `chip` is what the user clicks to trigger it;
-       `user` is the message that posts on their behalf; `reply` is Whootie's
+       `user` is the message that posts on their behalf; `reply` is Scout's
        answer; `build` paints the matching section into the module. */
     const WF_STEPS = [
       {
@@ -9265,11 +9600,11 @@
           '<div class="wf-empty" id="wf-empty">' +
           '<span class="material-icons">auto_fix_high</span>' +
           '<p class="wf-empty-title">Your plan is empty</p>' +
-          '<p class="wf-empty-sub">Answer Whootie™\'s prompts in the chat and each step will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer Scout™\'s prompts in the chat and each step will appear here.</p>' +
           '</div>';
       }
       const sub = document.getElementById('wf-subtitle');
-      if (sub) sub.textContent = 'Guided by Whootie™';
+      if (sub) sub.textContent = 'Guided by Scout™';
       wfUpdateProgress();
     }
 
@@ -9331,7 +9666,7 @@
 
     /* ════════════════════════════════════════════════════════════════════
        LIVE WISE VERIFICATION WORKFLOW
-       A deeper, "live and in-the-moment" workflow. Whootie™ runs an
+       A deeper, "live and in-the-moment" workflow. Scout™ runs an
        end-to-end verification for the Nutrient Survival portfolio and
        assembles a double-width module stage by stage as the user clicks
        through the in-chat intent chips — Profile → Portfolio Audit →
@@ -9530,11 +9865,11 @@
           '<div class="vf-empty" id="vf-empty">' +
           '<span class="material-icons">verified_user</span>' +
           '<p class="vf-empty-title">Verification not started</p>' +
-          '<p class="vf-empty-sub">Click through Whootie™\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
+          '<p class="vf-empty-sub">Click through Scout™\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
           '</div>';
       }
       const sub = document.getElementById('vf-subtitle');
-      if (sub) sub.textContent = 'Whootie™ is running your verification';
+      if (sub) sub.textContent = 'Scout™ is running your verification';
       vfRenderStepper();
       vfUpdateProgress();
     }
@@ -9970,7 +10305,7 @@
           '<div class="wf-empty" id="lr-claims-empty">' +
           '<span class="material-icons">campaign</span>' +
           '<p class="wf-empty-title">No claims loaded</p>' +
-          '<p class="wf-empty-sub">Answer Whootie™\'s prompts in the chat and each claims section will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer Scout™\'s prompts in the chat and each claims section will appear here.</p>' +
           '</div>';
       }
       const pkgBody = document.getElementById('lr-packaging-body');
@@ -9979,7 +10314,7 @@
           '<div class="wf-empty" id="lr-packaging-empty">' +
           '<span class="material-icons">inventory_2</span>' +
           '<p class="wf-empty-title">Not opened yet</p>' +
-          '<p class="wf-empty-sub">If Whootie™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
+          '<p class="wf-empty-sub">If Scout™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
           '</div>';
       }
       document.getElementById('launch-claims-panel')?.classList.remove('lr-open', 'panel-wide');
@@ -10131,7 +10466,7 @@
     }
 
     function exportConversation() {
-      const blob = new Blob(['Whootie™ export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['Scout™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseowl-chat.txt';
@@ -10139,7 +10474,7 @@
     }
     function shareConversation() {
       const url = window.location.href;
-      if (navigator.share) navigator.share({ title: 'Whootie™', url });
+      if (navigator.share) navigator.share({ title: 'Scout™', url });
       else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Link copied'));
       else alert(url);
     }
@@ -10528,37 +10863,74 @@
         try { localStorage.setItem(WIDTH_STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
       }
 
-      function syncPanelWidthUI(key, isWide) {
+      /* Width has three tiers: 0 = single, 1 = double, 2 = triple. The control
+         cycles 0 → 1 → 2 → 0. The icon reflects the tier; the label stays
+         "Width" in every state. Legacy boolean values (true/false) map to 1/0. */
+      const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+      const WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+
+      function tierOf(v) {
+        if (v === true) return 1;
+        if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+        return 0;
+      }
+
+      function syncPanelWidthUI(key, tier) {
+        tier = tierOf(tier);
         const panel = document.getElementById(PANEL_IDS[key]);
-        panel?.classList.toggle('panel-wide', !!isWide);
+        if (panel) {
+          panel.classList.toggle('panel-wide', tier >= 1);
+          panel.classList.toggle('panel-triple', tier >= 2);
+        }
         document.querySelectorAll(`.panel-width-toggle-btn[data-panel="${key}"]`).forEach((btn) => {
-          btn.classList.toggle('is-on', !!isWide);
-          btn.setAttribute('aria-pressed', isWide ? 'true' : 'false');
-          btn.title = isWide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+          btn.classList.toggle('is-on', tier >= 1);
+          btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+          btn.title = WIDTH_TITLES[tier];
+          const icon = btn.querySelector('.material-symbols-outlined');
+          if (icon) icon.textContent = WIDTH_ICONS[tier];
         });
+        /* Refresh the consolidated overflow-menu width row, if present. */
+        document.querySelectorAll('.pf-module-menu').forEach((m) => {
+          if (m._syncWidthItem && m.parentElement && m.parentElement.querySelector(`.panel-width-toggle-btn[data-panel="${key}"]`)) m._syncWidthItem();
+        });
+        if (key === 'brand' && typeof updateBoCarouselArrows === 'function') {
+          requestAnimationFrame(updateBoCarouselArrows);
+        }
+      }
+
+      /* Current tier read from the live DOM so the cycle stays correct even when
+         other flows toggle .panel-wide directly. */
+      function currentTier(key) {
+        const panel = document.getElementById(PANEL_IDS[key]);
+        if (!panel) return 0;
+        if (panel.classList.contains('panel-triple')) return 2;
+        if (panel.classList.contains('panel-wide')) return 1;
+        return 0;
       }
 
       window.togglePanelWidth = function(key) {
         if (!PANEL_IDS[key]) return;
+        const next = (currentTier(key) + 1) % 3;
         const saved = loadWide();
-        const next = !saved[key];
         saved[key] = next;
         saveWide(saved);
         syncPanelWidthUI(key, next);
       };
 
       /* Set a panel's width explicitly (used to open a module double-wide by
-         default). Persists + syncs the control and its consolidated menu item. */
+         default). Accepts a boolean (legacy) or a 0/1/2 tier. Persists + syncs
+         the control and its consolidated menu item. */
       window.setPanelWide = function(key, wide) {
         if (!PANEL_IDS[key]) return;
+        const tier = tierOf(wide);
         const saved = loadWide();
-        saved[key] = !!wide;
+        saved[key] = tier;
         saveWide(saved);
-        syncPanelWidthUI(key, !!wide);
+        syncPanelWidthUI(key, tier);
       };
 
       Object.keys(PANEL_IDS).forEach((key) => {
-        if (loadWide()[key]) syncPanelWidthUI(key, true);
+        syncPanelWidthUI(key, tierOf(loadWide()[key]));
       });
     })();
 
@@ -10595,10 +10967,19 @@
        localStorage key (see js/scout-dock.js). Persisting it here means the
        width you set on this page carries to the Scout dock on the portfolio
        and agent pages — and back — so Scout is always the same size. */
-    function persistScoutWide(wide) {
+    /* Scout width is also a three-tier cycle (0 single · 1 double · 2 triple),
+       persisted as a number under `wide`. Legacy booleans map true→1, false→0. */
+    const SCOUT_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+    const SCOUT_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+    function scoutTierOf(v) {
+      if (v === true) return 1;
+      if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+      return 0;
+    }
+    function persistScoutWide(tier) {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        raw.wide = !!wide;
+        raw.wide = scoutTierOf(tier);
         localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
       } catch (_) {}
     }
@@ -10627,37 +11008,48 @@
         localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
       } catch (_) {}
     }
-    function applyScoutWide(wide) {
+    function applyScoutWide(tier) {
+      tier = scoutTierOf(tier);
       const shell = document.getElementById('chat-shell');
       const btn = document.getElementById('scout-width-btn');
       if (!shell) return;
-      shell.classList.toggle('panel-wide', wide);
+      shell.classList.toggle('panel-wide', tier >= 1);
+      shell.classList.toggle('panel-triple', tier >= 2);
       if (btn) {
-        btn.classList.toggle('is-on', wide);
-        btn.setAttribute('aria-pressed', wide ? 'true' : 'false');
-        btn.title = wide ? 'Double width — tap for normal width' : 'Normal width — tap to double';
+        btn.classList.toggle('is-on', tier >= 1);
+        btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+        btn.title = SCOUT_WIDTH_TITLES[tier];
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = SCOUT_WIDTH_ICONS[tier];
       }
+    }
+    function scoutCurrentTier() {
+      const shell = document.getElementById('chat-shell');
+      if (!shell) return 0;
+      if (shell.classList.contains('panel-triple')) return 2;
+      if (shell.classList.contains('panel-wide')) return 1;
+      return 0;
     }
     window.toggleScoutWidth = function(btn) {
       const shell = document.getElementById('chat-shell');
-      if (!shell || !btn) return;
-      const wide = !shell.classList.contains('panel-wide');
-      applyScoutWide(wide);
-      persistScoutWide(wide);
+      if (!shell) return;
+      const next = (scoutCurrentTier() + 1) % 3;
+      applyScoutWide(next);
+      persistScoutWide(next);
     };
     /* Restore the shared Scout size on load, and keep it in sync if another
        page/tab changes it. */
     (function initScoutWidth() {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        applyScoutWide(!!raw.wide);
+        applyScoutWide(scoutTierOf(raw.wide));
       } catch (_) {}
     })();
     window.addEventListener('storage', function(e) {
       if (e.key !== 'wise-scout-dock') return;
       try {
         const raw = JSON.parse(e.newValue || '{}') || {};
-        applyScoutWide(!!raw.wide);
+        applyScoutWide(scoutTierOf(raw.wide));
       } catch (_) {}
     });
 
@@ -11100,7 +11492,7 @@
         let widthItem = null;
         if (widthBtn) {
           widthItem = makeItem({
-            icon: 'transition_slide', label: 'Double width', extraClass: 'pf-menu-wide',
+            icon: 'width_normal', label: 'Width', extraClass: 'pf-menu-wide',
             onClick: () => { widthBtn.click(); syncWidthItem(); },
           });
           pop.appendChild(widthItem);
@@ -11117,10 +11509,14 @@
 
         function syncWidthItem() {
           if (!widthItem || !widthBtn) return;
-          const wide = widthBtn.classList.contains('is-on');
-          widthItem.classList.toggle('is-on', wide);
+          /* Mirror the hidden width button's live tier: its icon already encodes
+             single / double / triple, and the label stays "Width" in every state. */
+          const srcIcon = widthBtn.querySelector('.material-symbols-outlined');
+          const dstIcon = widthItem.querySelector('.material-symbols-outlined');
+          if (srcIcon && dstIcon) dstIcon.textContent = srcIcon.textContent;
+          widthItem.classList.toggle('is-on', widthBtn.classList.contains('is-on'));
           const lbl = widthItem.querySelector('.pf-mi-label');
-          if (lbl) lbl.textContent = wide ? 'Normal width' : 'Double width';
+          if (lbl) lbl.textContent = 'Width';
         }
         menu._syncWidthItem = syncWidthItem;
 

@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Whootie™ Flows · WISE</title>
+  <title>Scout™ Flows · WISE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
-  <!-- Shared WISE design tokens + the exact Whootie chat shell. -->
+  <!-- Shared WISE design tokens + the exact Scout chat shell. -->
   <link rel="stylesheet" href="agent-page.css" />
   <link rel="stylesheet" href="scout-chat.css" />
 
   <style>
     /* ====================================================================
-       Whootie™ Flows — a standalone walkthrough of every welcome scorecard.
-       Each rectangle card opens a full conversational tree in the Whootie
+       Scout™ Flows — a standalone walkthrough of every welcome scorecard.
+       Each rectangle card opens a full conversational tree in the Scout
        chat. As the conversation advances, the relevant modules pop up in the
        stage on the right. When a flow completes, a result module appears
        summarising what was done, with options for what to do next.
@@ -92,8 +92,8 @@
     .flow-stage::-webkit-scrollbar { height: 10px; }
     .flow-stage::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
 
-    /* The Whootie chat card — fixed, anchor-stone width. */
-    #whootie-card {
+    /* The Scout chat card — fixed, anchor-stone width. */
+    #scout-card {
       flex: 0 0 460px;
       width: 460px;
       max-width: 460px;
@@ -102,7 +102,7 @@
       position: sticky; left: 0; z-index: 10;
     }
     @media (max-width: 720px) {
-      #whootie-card { flex-basis: 88vw; width: 88vw; }
+      #scout-card { flex-basis: 88vw; width: 88vw; }
     }
 
     /* The welcome screen needs to scroll when it carries the scorecards. */
@@ -114,7 +114,7 @@
     .ws-scorecards-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
     .ws-scorecards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
 
-    #whootie-card .ws-scorecard,
+    #scout-card .ws-scorecard,
     .ws-scorecard {
       display: flex; flex-direction: column; align-items: stretch; gap: 6px;
       text-align: left; min-width: 0;
@@ -128,16 +128,16 @@
     .ws-scorecard:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(2, 78, 174, 0.16); transform: translateY(-2px); }
     .ws-scorecard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0; }
-    .ws-sc-icon .material-icons { font-size: 18px !important; }
-    .ws-sc-icon--brand { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-    .ws-sc-icon--warn  { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
-    .ws-sc-icon--alert { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+    .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ws-sc-icon .material-icons { font-size: 24px !important; }
+    .ws-sc-icon--brand,
+    .ws-sc-icon--warn,
+    .ws-sc-icon--alert { color: var(--text); }
     .ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 0.625rem; font-weight: 700; white-space: nowrap; }
     .ws-sc-pill .material-icons { font-size: 12px !important; }
-    .ws-sc-pill--up    { background: color-mix(in srgb, #16a34a 18%, transparent); color: #4ade80; }
-    .ws-sc-pill--warn  { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
-    .ws-sc-pill--alert { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+    .ws-sc-pill--up,
+    .ws-sc-pill--warn,
+    .ws-sc-pill--alert { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
     .ws-sc-metric { font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--text); margin-top: 4px; letter-spacing: -0.02em; }
     .ws-sc-metric-unit { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; }
     .ws-sc-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
@@ -145,6 +145,19 @@
     .ws-sc-action { display: inline-flex; align-items: center; align-self: flex-start; gap: 4px; margin-top: 6px; font-size: 0.72rem; font-weight: 700; color: var(--primary); }
     .ws-sc-action .material-icons { font-size: 15px !important; transition: transform 0.15s ease; }
     .ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
+    /* Intro / Scout orientation variants — same surface, set apart by an accent
+       stroke + accent headline (mirrors scout-chat.css). */
+    .ws-scorecard--intro,
+    .ws-scorecard--scout { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+    .ws-scorecard--intro:hover,
+    .ws-scorecard--scout:hover { border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent); }
+    .ws-sc-icon--intro,
+    .ws-sc-icon--scout { color: var(--primary); }
+    .ws-sc-pill--intro,
+    .ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+    html.dark .ws-sc-icon--intro,
+    html.dark .ws-sc-icon--scout { color: var(--primary-bright, #93C5FD); }
+    .ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--primary); margin-top: 6px; }
     @media (max-width: 720px) { .ws-scorecards { grid-template-columns: 1fr; } }
 
     /* In-chat reply chips that drive each tree forward (from ai-chat.html). */
@@ -313,7 +326,7 @@
     <div class="pg-brand">
       <span class="pg-brand-bug" id="brand-bug" aria-hidden="true"></span>
       <div class="pg-titles">
-        <div class="pg-title">Whootie™ Flows</div>
+        <div class="pg-title">Scout™ Flows</div>
         <div class="pg-sub">Every welcome card, end to end</div>
       </div>
     </div>
@@ -323,13 +336,13 @@
   </header>
 
   <main class="flow-stage" id="flow-stage">
-    <!-- The Whootie chat card (reuses the shared .sc-card shell). -->
-    <section class="sc-card" id="whootie-card">
+    <!-- The Scout chat card (reuses the shared .sc-card shell). -->
+    <section class="sc-card" id="scout-card">
       <div class="chat-topbar">
         <div class="sc-topbar-lead">
           <div class="sc-bug" id="topbar-bug"></div>
           <div class="sc-topbar-titles">
-            <span class="topbar-title">Whootie™</span>
+            <span class="topbar-title">Scout™</span>
             <button type="button" class="topbar-agents-btn" title="Agents running">
               <span class="material-icons">smart_toy</span>
               <span class="agents-count-pill">3</span>
@@ -354,7 +367,7 @@
             <span class="ws-pulse-ring" aria-hidden="true"></span>
             <div class="ws-logo" id="welcome-logo"></div>
           </div>
-          <h1 class="ws-heading">What can Whootie™ help with?</h1>
+          <h1 class="ws-heading">What can Scout™ help with?</h1>
           <p class="ws-sub">Pick a card to walk a full flow — modules open as we go.</p>
 
           <div class="ws-scorecards-section">
@@ -362,35 +375,33 @@
               <span class="ws-scorecards-label">Your portfolio at a glance</span>
             </div>
             <div class="ws-scorecards" id="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
-              <button class="ws-scorecard" role="listitem" data-flow="portfolio">
-                <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>+4 pts</span>
-                </div>
-                <div class="ws-sc-metric">82<span class="ws-sc-metric-unit">/100</span></div>
-                <div class="ws-sc-title">Portfolio WISE Score</div>
-                <div class="ws-sc-desc">11 of 14 products verified — health trending up this week.</div>
-                <div class="ws-sc-action">Review portfolio<span class="material-icons">arrow_outward</span></div>
-              </button>
               <button class="ws-scorecard" role="listitem" data-flow="expiring">
                 <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">pending_actions</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">priority_high</span>Action</span>
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">pending_actions</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">priority_high</span>Do next</span>
                 </div>
                 <div class="ws-sc-metric">2<span class="ws-sc-metric-unit"> expiring</span></div>
-                <div class="ws-sc-title">Verifications Expiring</div>
+                <div class="ws-sc-title">Renew expiring verifications</div>
                 <div class="ws-sc-desc">Soonest lapses in 6 days — renew to keep NON-UPF status live.</div>
                 <div class="ws-sc-action">Continue verification<span class="material-icons">arrow_outward</span></div>
               </button>
-              <button class="ws-scorecard" role="listitem" data-flow="flags">
+              <button class="ws-scorecard ws-scorecard--intro" role="listitem" data-flow="portfolio">
                 <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--alert"><span class="material-icons">flag</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--alert"><span class="material-icons">science</span>Review</span>
+                  <span class="ws-sc-icon ws-sc-icon--intro"><span class="material-icons">space_dashboard</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--intro"><span class="material-icons">auto_awesome</span>Start here</span>
                 </div>
-                <div class="ws-sc-metric">3<span class="ws-sc-metric-unit"> flags</span></div>
-                <div class="ws-sc-title">Additive Flags Open</div>
-                <div class="ws-sc-desc">3 ingredients across 2 products need an additive review.</div>
-                <div class="ws-sc-action">Investigate flags<span class="material-icons">arrow_outward</span></div>
+                <div class="ws-sc-intro-title">Your whole portfolio, decoded</div>
+                <div class="ws-sc-desc">Scores, verifications, and ingredient health — every product, one view.</div>
+                <div class="ws-sc-action">Take the tour<span class="material-icons">arrow_outward</span></div>
+              </button>
+              <button class="ws-scorecard ws-scorecard--intro ws-scorecard--scout" role="listitem" data-flow="portfolio">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--scout"><span class="material-icons">smart_toy</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--scout"><span class="material-icons">bolt</span>AI Scout</span>
+                </div>
+                <div class="ws-sc-intro-title">Let Scout do the heavy lifting</div>
+                <div class="ws-sc-desc">Ask, verify, or reformulate — Scout drafts it, you decide.</div>
+                <div class="ws-sc-action">Ask Scout anything<span class="material-icons">arrow_outward</span></div>
               </button>
               <button class="ws-scorecard" role="listitem" data-flow="reformulation">
                 <div class="ws-sc-top">
@@ -398,17 +409,27 @@
                   <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">lightbulb</span>Opportunity</span>
                 </div>
                 <div class="ws-sc-metric">5<span class="ws-sc-metric-unit"> SKUs</span></div>
-                <div class="ws-sc-title">Reformulation Wins</div>
+                <div class="ws-sc-title">Plan reformulation wins</div>
                 <div class="ws-sc-desc">5 products could clear a UPF marker with a single ingredient swap.</div>
                 <div class="ws-sc-action">Plan reformulation<span class="material-icons">arrow_outward</span></div>
               </button>
+              <button class="ws-scorecard" role="listitem" data-flow="flags">
+                <div class="ws-sc-top">
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">flag</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">rule</span>Review</span>
+                </div>
+                <div class="ws-sc-metric">3<span class="ws-sc-metric-unit"> flags</span></div>
+                <div class="ws-sc-title">Clear additive flags</div>
+                <div class="ws-sc-desc">3 ingredients across 2 products need an additive review.</div>
+                <div class="ws-sc-action">Investigate flags<span class="material-icons">arrow_outward</span></div>
+              </button>
               <button class="ws-scorecard" role="listitem" data-flow="launch">
                 <div class="ws-sc-top">
-                  <span class="ws-sc-icon ws-sc-icon--warn"><span class="material-icons">rocket_launch</span></span>
-                  <span class="ws-sc-pill ws-sc-pill--warn"><span class="material-icons">checklist</span>4 left</span>
+                  <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">rocket_launch</span></span>
+                  <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">checklist</span>4 left</span>
                 </div>
                 <div class="ws-sc-metric">78<span class="ws-sc-metric-unit">% ready</span></div>
-                <div class="ws-sc-title">Launch Readiness</div>
+                <div class="ws-sc-title">Finish launch prep</div>
                 <div class="ws-sc-desc">Spring line is 78% launch-ready — 4 checklist items remain.</div>
                 <div class="ws-sc-action">Prep launch<span class="material-icons">arrow_outward</span></div>
               </button>
@@ -418,8 +439,8 @@
                   <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Live</span>
                 </div>
                 <div class="ws-sc-metric">6<span class="ws-sc-metric-unit"> trends</span></div>
-                <div class="ws-sc-title">Data &amp; Trends</div>
-                <div class="ws-sc-desc">Explore additive, score and category trends across your catalog.</div>
+                <div class="ws-sc-title">Explore data &amp; trends</div>
+                <div class="ws-sc-desc">Additive, score and category trends across your catalog.</div>
                 <div class="ws-sc-action">Explore data<span class="material-icons">arrow_outward</span></div>
               </button>
             </div>
@@ -431,11 +452,11 @@
       <div class="chat-input-rail">
         <div class="sc-input-row">
           <div class="fl-input-wrap">
-            <input type="text" class="fl-input" id="chat-input" placeholder="Ask Whootie™ to start a flow…" autocomplete="off" />
+            <input type="text" class="fl-input" id="chat-input" placeholder="Ask Scout™ to start a flow…" autocomplete="off" />
           </div>
           <button type="button" class="sc-send" id="chat-send" title="Send"><span class="material-icons">send</span></button>
         </div>
-        <p class="sc-disclaimer"><span class="material-icons">shield</span>Whootie™ keeps you in control of what opens, changes, and persists.</p>
+        <p class="sc-disclaimer"><span class="material-icons">shield</span>Scout™ keeps you in control of what opens, changes, and persists.</p>
       </div>
     </section>
     <!-- Pop-up modules + the result module are injected here as the flow runs. -->
@@ -443,6 +464,6 @@
 
   <div class="flow-toast" id="flow-toast" role="status"><span class="material-icons">check_circle</span><span id="flow-toast-text"></span></div>
 
-  <script type="module" src="../js/whootie-flows.js"></script>
+  <script type="module" src="../js/scout-flows.js"></script>
 </body>
 </html>
