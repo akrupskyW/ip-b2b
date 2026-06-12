@@ -22,7 +22,7 @@
  * so the existing per-shell listeners keep working unchanged.
  */
 
-import { isMinimalUiOn, isHeaderFloatOn, isFullBleedOn } from './topbar.js';
+import { isMinimalUiOn, isHeaderFloatOn, isFullBleedOn, isColorblindOn } from './topbar.js';
 import { isJamStripOn } from './jam-strip.js';
 import { getStoredFontSize } from './text-size.js';
 
@@ -103,6 +103,9 @@ export function buildAppearanceBody({
     </div>
     <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
       <span class="material-icons">music_note</span>Jam strip
+    </div>
+    <div class="wise-popover-item${isColorblindOn() ? ' is-active' : ''}" data-colorblind="1">
+      <span class="material-symbols-outlined">contrast</span>Colorblind mode
     </div>
     <div class="wise-popover-divider"></div>
     ${showScoutDock ? scoutDockSection(scoutDockMode) : ''}

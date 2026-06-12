@@ -7,6 +7,7 @@ import {
   applyMinimalUi, isMinimalUiOn, restoreMinimalUi,
   applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat,
   applyFullBleed, isFullBleedOn, restoreFullBleed,
+  applyColorblind, isColorblindOn, restoreColorblind,
   positionPopoverForTopbar,
 } from './topbar.js';
 import { applyJamStrip, isJamStripOn } from './jam-strip.js';
@@ -1747,6 +1748,8 @@ import { setTextSize } from './text-size.js';
         if (fullbleed && pop.contains(fullbleed)) { ev.stopPropagation(); applyFullBleed(!isFullBleedOn()); renderAppearancePop(pop); return; }
         const jam = ev.target.closest('[data-jam]');
         if (jam && pop.contains(jam)) { ev.stopPropagation(); applyJamStrip(!isJamStripOn()); renderAppearancePop(pop); return; }
+        const colorblind = ev.target.closest('[data-colorblind]');
+        if (colorblind && pop.contains(colorblind)) { ev.stopPropagation(); applyColorblind(!isColorblindOn()); renderAppearancePop(pop); return; }
         const theme = ev.target.closest('[data-pop-action="theme"]');
         if (theme && pop.contains(theme)) { ev.stopPropagation(); applyTheme(STATE.theme === 'light' ? 'dark' : 'light'); renderAppearancePop(pop); return; }
         if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
@@ -2087,7 +2090,7 @@ import { setTextSize } from './text-size.js';
       // Appearance menu (shared with every other shell) + restore persisted
       // app-wide appearance state so Full bleed / Header / Minimal UI / Jam carry
       // over from other pages.
-      restoreMinimalUi(); restoreHeaderFloat(); restoreFullBleed();
+      restoreMinimalUi(); restoreHeaderFloat(); restoreFullBleed(); restoreColorblind();
       $('#appearanceToggle')?.addEventListener('click', (e) => {
         e.stopPropagation();
         openAppearancePop(e.currentTarget);

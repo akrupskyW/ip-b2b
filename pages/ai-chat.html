@@ -6093,7 +6093,7 @@
     </div>
     <script type="module">
       import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
-      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed } from '../js/topbar.js';
+      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { initScoutTooltips } from '../js/scout-tooltip.js';
@@ -6114,12 +6114,15 @@
         isHeaderFloatOn,
         applyFullBleed,
         isFullBleedOn,
+        applyColorblind,
+        isColorblindOn,
         isJamStripOn,
         applyJamStrip,
       });
       restoreMinimalUi();
       restoreHeaderFloat();
       restoreFullBleed();
+      restoreColorblind();
       /* Use the exact same shell helper as the agent/portfolio pages: it leads
          the nav panel with the shared WISE brand strip and docks the collapse
          toggle beside the logo. The toggle collapses the panel to an icon rail
@@ -11604,6 +11607,13 @@
           if (jamItem && pop.contains(jamItem)) {
             ev.stopPropagation();
             window.applyJamStrip?.(!window.isJamStripOn?.());
+            renderAppearanceBody(pop);
+            return;
+          }
+          const colorblindItem = ev.target.closest('[data-colorblind]');
+          if (colorblindItem && pop.contains(colorblindItem)) {
+            ev.stopPropagation();
+            window.applyColorblind?.(!window.isColorblindOn?.());
             renderAppearanceBody(pop);
             return;
           }

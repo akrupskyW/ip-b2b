@@ -30,7 +30,7 @@ import { buildAppearanceBody } from './appearance-menu.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
@@ -2816,6 +2816,13 @@ function openAppearance(anchor) {
     if (jamItem) {
       ev.stopPropagation();
       applyJamStrip(!isJamStripOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const colorblindItem = ev.target.closest('[data-colorblind]');
+    if (colorblindItem) {
+      ev.stopPropagation();
+      applyColorblind(!isColorblindOn());
       renderAppearanceBody(pop);
       return;
     }

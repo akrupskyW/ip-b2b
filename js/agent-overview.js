@@ -17,7 +17,7 @@ import {
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { buildAppearanceBody } from './appearance-menu.js';
@@ -980,6 +980,13 @@ function openAppearancePopover(anchor) {
     if (jamItem && pop.contains(jamItem)) {
       ev.stopPropagation();
       applyJamStrip(!isJamStripOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const colorblindItem = ev.target.closest('[data-colorblind]');
+    if (colorblindItem && pop.contains(colorblindItem)) {
+      ev.stopPropagation();
+      applyColorblind(!isColorblindOn());
       renderAppearanceBody(pop);
       return;
     }

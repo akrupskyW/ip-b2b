@@ -260,7 +260,107 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
 .dash-claim > div:not(.dash-claim-divider) .dash-btn-row { margin-top: auto; padding-top: 18px; }
 /* Third column: the portfolio WISEscore, styled to match the score-band card
    (big number + rating badge + note) while sitting inline in the claim row. */
-.dash-claim-score { display: flex; flex-direction: column; align-items: flex-start; }
+.dash-claim-score { display: flex; flex-direction: column; align-items: flex-start; position: relative; }
+
+/* Celebratory WISEscore toast — pops up just over the WISEscore card when the
+   score is healthy (>=60). Small × dismisses it for the current view; it is
+   not persisted, so it returns on reload. */
+.dash-score-toast {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: calc(100% - 6px);
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary, #25507C) 0%, #336699 100%);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(37, 80, 124, 0.4), 0 4px 10px rgba(0, 0, 0, 0.16);
+  animation:
+    dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
+    dash-score-toast-float 3.6s ease-in-out 0.32s infinite;
+}
+.dash-score-toast::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 28px;
+  width: 14px;
+  height: 14px;
+  background: #336699;
+  transform: rotate(45deg);
+  border-radius: 0 0 3px 0;
+}
+.dash-score-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 1px; }
+.dash-score-toast-icon .material-icons { font-size: 20px; color: #fff; }
+.dash-score-toast-body { min-width: 0; }
+.dash-score-toast-title { font-size: 0.875rem; font-weight: 700; line-height: 1.25; padding-right: 18px; }
+.dash-score-toast-text {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
+}
+.dash-score-toast-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+.dash-score-toast-link .material-icons { font-size: 15px; }
+.dash-score-toast-link-arrow { transition: transform 0.15s ease; }
+.dash-score-toast-link { transition: color 0.15s ease; }
+.dash-score-toast-link:hover { text-decoration: none; color: rgba(255, 255, 255, 0.78); }
+.dash-score-toast-link:hover .dash-score-toast-link-arrow { transform: translate(2px, -2px); }
+
+.dash-score-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.dash-score-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
+.dash-score-toast-close .material-icons { font-size: 13px; }
+@keyframes dash-score-toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Gentle, slow bob with a soft shadow that breathes as it floats. */
+@keyframes dash-score-toast-float {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 14px 34px rgba(37, 80, 124, 0.4), 0 4px 10px rgba(0, 0, 0, 0.16);
+  }
+  50% {
+    transform: translateY(-11px);
+    box-shadow: 0 28px 52px rgba(37, 80, 124, 0.32), 0 12px 22px rgba(0, 0, 0, 0.13);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-score-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
 /* Match the 10px top offset on the discovered / claimed number rows so all
    three big scores share the same baseline. */
 .dash-claim-score .dash-score-num { margin-top: 10px; }
@@ -274,7 +374,7 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
   align-self: flex-end;
   margin-bottom: 10px;
 }
-.dash-claim-score .dash-score-cap strong { color: var(--text); }
+.dash-claim-score .dash-score-cap strong { color: var(--text); font-size: 1.0625rem; font-weight: 700; }
 /* Two-line WISEscore explainer; aligned to the same baseline as the
    left column's button row (margin-top:auto + matching top padding). */
 .dash-claim-score .dash-score-desc {
@@ -312,7 +412,7 @@ html.dark .dash-bignum { color: var(--text); }
    digit does, so give the percent column a little extra breathing room. */
 .dash-progress-pct { gap: 14px; }
 .dash-bignum-cap { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.35; }
-.dash-bignum-cap strong { color: var(--text); }
+.dash-bignum-cap strong { color: var(--text); font-size: 1.0625rem; font-weight: 700; }
 .dash-btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .dash-btn {
@@ -351,7 +451,7 @@ html.dark .dash-bignum { color: var(--text); }
 }
 html.dark .dash-text-link { color: var(--primary-bright); }
 .dash-text-link .material-icons { font-size: 16px; }
-.dash-text-link:hover { color: var(--primary-bright); text-decoration: underline; }
+.dash-text-link:hover { color: var(--primary-bright); text-decoration: none; }
 html.dark .dash-text-link:hover { color: #fff; }
 /* Align under a .dash-btn above: matches the button's border (1px) + padding
    (15px) and icon/text gap (7px) so the icon lines up with the button's icon. */
@@ -882,7 +982,7 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   gap: 5px;
   padding: 4px 12px;
   border-radius: var(--radius-pill);
-  font-size: 0.72rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   margin: 12px 0;
 }
@@ -958,7 +1058,7 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   align-self: flex-end;
   margin-bottom: 10px;
 }
-.dash-pillar-card-head .dash-score-cap strong { color: var(--text); }
+.dash-pillar-card-head .dash-score-cap strong { color: var(--text); font-size: 1.0625rem; font-weight: 700; }
 
 .dash-pillars-cta {
   display: flex;

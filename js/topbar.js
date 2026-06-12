@@ -322,6 +322,67 @@ export function restoreFullBleed() {
   applyFullBleed(isFullBleedOn());
 }
 
+/* Colorblind-friendly palette — remap the semantic status colors (success green,
+   danger red, warning amber) to a colorblind-safe set so red↔green coding stays
+   distinguishable for the most common forms of color-vision deficiency
+   (deutan/protan). Rather than re-declaring tokens in every page's :root block,
+   we inject ONE stylesheet (scoped to `html.colorblind` / `html.colorblind.dark`)
+   that overrides the shared design tokens — so every page that loads this module
+   picks up the same palette. Driven by a `colorblind` class on <html>; persisted
+   so it survives navigation. */
+const COLORBLIND_KEY = 'wise-colorblind';
+const COLORBLIND_STYLE_ID = 'wise-colorblind-style';
+
+/* Okabe–Ito colorblind-safe palette. Bluish-green vs vermillion is the
+   recommended "good/bad" pair (kept apart on the blue–orange axis that CVD
+   viewers can still see); orange fills the warning slot. The *-text shades are
+   darkened (light) / lightened (dark) so labels keep AAA contrast on their tints. */
+const COLORBLIND_CSS = `
+html.colorblind {
+  --sec-green: #009E73;
+  --sec-red: #D55E00;
+  --ter-amber: #E69F00;
+  --sec-green-text: #006B4F;
+  --sec-red-text: #8A3D00;
+  --ter-amber-text: #6B4A00;
+}
+html.colorblind.dark {
+  --sec-green-text: #6FD4B5;
+  --sec-red-text: #FFB07A;
+  --ter-amber-text: #FFD98A;
+}`;
+
+/** Inject the colorblind palette stylesheet once (idempotent). */
+function ensureColorblindStyle() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(COLORBLIND_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = COLORBLIND_STYLE_ID;
+  style.textContent = COLORBLIND_CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+/** True when the colorblind-friendly palette was last left on. */
+export function isColorblindOn() {
+  try { return localStorage.getItem(COLORBLIND_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the colorblind class on <html> and persist it. Each Appearance
+    popover reads isColorblindOn() to render its own toggle state. */
+export function applyColorblind(on) {
+  ensureColorblindStyle();
+  document.documentElement.classList.toggle('colorblind', !!on);
+  try { localStorage.setItem(COLORBLIND_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:colorblind', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted colorblind state onto the document (no popover needed). */
+export function restoreColorblind() {
+  applyColorblind(isColorblindOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -370,6 +431,7 @@ if (typeof document !== 'undefined') {
     restoreMinimalUi();
     restoreHeaderFloat();
     restoreFullBleed();
+    restoreColorblind();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

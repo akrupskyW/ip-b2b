@@ -621,6 +621,16 @@ function renderClaim(d) {
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-score">
+        ${ws >= 60 ? `
+        <div class="dash-score-toast" role="status">
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
+          <span class="dash-score-toast-icon"><span class="material-icons">celebration</span></span>
+          <div class="dash-score-toast-body">
+            <div class="dash-score-toast-title">You're doing great, ${esc(d.brand.name)}!</div>
+            <p class="dash-score-toast-text">A ${wsRating.toLowerCase()} WISEscore&#8482; of ${ws} puts your portfolio ahead of most brands. Keep the momentum going &mdash; verify your Non&#8209;UPF SKUs to earn the shield on retail listings.</p>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Verify your Non&#8209;UPF SKUs<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+          </div>
+        </div>` : ''}
         <div class="dash-score-num">
           ${countUpMarkup(ws, { className: 'n' })}<span class="d">/100</span>
           <span class="dash-score-cap"><strong>${wsRating} WISEscore&#8482;</strong><br>across ${d.claim.discovered} products</span>
@@ -652,7 +662,7 @@ function renderUpf(d) {
           <div class="dash-callout-title">${u.nonCount} products qualify for the NON-UPF Verification Shield</div>
           <div class="dash-callout-sub">Get them verified to display the badge on retail listings.</div>
         </div>
-        <button class="dash-callout-btn" type="button" data-dash-action="verify-upf">Start verification<span class="material-icons">arrow_outward</span></button>
+        <button class="dash-callout-btn" type="button" data-dash-action="verify-upf">Start Verification<span class="material-icons">arrow_outward</span></button>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="upf-report">
         <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} UPF Report</span>
@@ -682,7 +692,7 @@ function renderGras(d) {
           <div class="dash-callout-title">2 unsafe &amp; 9 unknown ingredients flagged</div>
           <div class="dash-callout-sub">Titanium Dioxide, Red 40 detected across 3 products.</div>
         </div>
-        <button class="dash-callout-btn" type="button" data-dash-action="review-flagged">Review flagged<span class="material-icons">arrow_outward</span></button>
+        <button class="dash-callout-btn" type="button" data-dash-action="review-flagged">Review Flagged<span class="material-icons">arrow_outward</span></button>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="gras-report">
         <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} GRAS Report</span>
@@ -843,6 +853,14 @@ export function renderDashboardHome(host) {
     closeMenus(null);
 
     const a = action.dataset.dashAction;
+
+    /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
+       reload, and only disappears for the current view when closed. */
+    if (a === 'dismiss-score-toast') {
+      action.closest('.dash-score-toast')?.remove();
+      return;
+    }
+
     /* Full report modal — from the card kebab and the in-card report links. */
     const rep = a.match(/^(upf|gras)-report$/);
     if (rep) {
@@ -883,6 +901,7 @@ export function renderDashboardHome(host) {
       'add-food': 'portfolio.html',
       'dispute-sku': 'portfolio.html',
       'claim-skus': 'portfolio.html',
+      'verify-upf': 'portfolio.html',
       'ask-ai': 'ai-chat.html',
     }[a];
     if (route) window.location.href = route;
