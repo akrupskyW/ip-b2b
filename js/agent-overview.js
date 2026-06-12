@@ -12,6 +12,8 @@ import {
   getAgent,
   getDirectChildren,
   mountAgentMenu,
+  toggleMenuPivot,
+  isMenuPivoted,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
@@ -909,6 +911,8 @@ function refreshAppearancePopover() {
 
 function renderAppearanceBody(pop) {
   pop.innerHTML = buildAppearanceBody({
+    showPivot: true,
+    isPivoted: isMenuPivoted(),
     isDark: isDarkMode(),
     scoutDockMode: scoutDockMode(),
   });
@@ -942,6 +946,13 @@ function openAppearancePopover(anchor) {
     if (fzBtn && pop.contains(fzBtn)) {
       ev.stopPropagation();
       setTextSize(fzBtn.dataset.fz);
+      return;
+    }
+    const pivotItem = ev.target.closest('[data-pivot]');
+    if (pivotItem && pop.contains(pivotItem)) {
+      ev.stopPropagation();
+      toggleMenuPivot();
+      renderAppearanceBody(pop);
       return;
     }
     const minimalItem = ev.target.closest('[data-minimal]');

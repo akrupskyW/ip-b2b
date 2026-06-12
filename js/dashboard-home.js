@@ -10,6 +10,17 @@
  * iterate on; it mirrors the reference design for "Date Better Snacks".
  */
 
+/* The WISE "bug" mark (mirrors js/topbar.js). Rendered large and faint behind
+   the insights CTA so it reads as embossed into the primary-blue banner. */
+const BUG_WATERMARK_SVG = `
+  <svg class="dash-cta-bug" viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="currentColor"/>
+    <path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="currentColor"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="currentColor"/>
+    <path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>
+  </svg>`;
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -24,10 +35,21 @@ function esc(s) {
 function countUpMarkup(value, { tag = 'span', className = '', style = '' } = {}) {
   const match = String(value).trim().match(/^(\d+)(.*)$/);
   const to = match ? match[1] : '0';
-  const suffix = match ? match[2] : '';
+  const rawSuffix = match ? match[2] : '';
+  /* A trailing percent sign is pulled out of the count-up element (whose
+     textContent the animation rewrites each frame) and rendered as a separate
+     near-superscript glyph so it survives the count-up and can be styled. */
+  const isPct = rawSuffix.trim() === '%';
+  const suffix = isPct ? '' : rawSuffix;
   const cls = className ? `dash-count-up ${className}` : 'dash-count-up';
   const styleAttr = style ? ` style="${style}"` : '';
-  return `<${tag} class="${cls}" data-count-to="${esc(to)}" data-count-suffix="${esc(suffix)}"${styleAttr}>0${esc(suffix)}</${tag}>`;
+  const el = `<${tag} class="${cls}" data-count-to="${esc(to)}" data-count-suffix="${esc(suffix)}"${styleAttr}>0${esc(suffix)}</${tag}>`;
+  /* Reserve exactly as many digit slots as the final value has, so the count-up
+     can't shove the trailing label — but a 1-digit percent ("6%") doesn't get a
+     2-digit gap that wouldn't match the non-percent columns in the same row. */
+  return isPct
+    ? `<span class="dash-pct-wrap" style="min-width:${to.length}ch">${el}<span class="dash-pct">%</span></span>`
+    : el;
 }
 
 /* Persisted brand banner (data URL or remote URL). Stored locally so an
@@ -136,7 +158,7 @@ const DATA = {
       name: 'Health Outcomes', tag: 'THRIVE', rating: 'Good', ratingTone: 'good',
       score: 72, ring: C.green,
       metrics: [
-        { name: 'Heart Healthy', value: 76 },
+        { name: 'Heart Health', value: 76 },
         { name: 'Diabetes Friendly', value: 69 },
         { name: 'Gut Health', value: 71 },
         { name: 'Muscle Health', value: 80 },
@@ -474,7 +496,7 @@ function openReportModal(card, d) {
   const stats = cfg.stats(d)
     .map((s) => `
       <div class="dash-report-stat">
-        <span class="dash-report-stat-val">${esc(s.value)}</span>
+        <span class="dash-report-stat-val">${esc(s.value).replace(/%$/, '<span class="dash-pct">%</span>')}</span>
         <span class="dash-report-stat-label">${esc(s.label)}</span>
       </div>`)
     .join('');
@@ -535,11 +557,11 @@ function renderHero(d) {
 
 /* Compact summary band beneath the hero: three top-line scores
    (WISEscore / Non-UPF / GRAS) presented as big-number stat cards. */
-function scoreCard({ num, denom, rating, ratingTone, note, icon }) {
+function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) {
   return `
     <article class="dash-card dash-score-card">
       <div class="dash-score-top">
-        <div class="dash-score-num"><span class="n">${esc(String(num))}</span><span class="d">${esc(denom)}</span></div>
+        <div class="dash-score-num"><span class="n">${esc(String(num))}${pct ? '<span class="dash-pct">%</span>' : ''}</span><span class="d">${esc(denom)}</span></div>
         ${icon ? `<span class="dash-score-icon"><span class="material-icons">${esc(icon)}</span></span>` : ''}
       </div>
       <span class="dash-badge dash-badge--${ratingTone}"><span class="material-icons" style="font-size:13px;">check_circle</span>${esc(rating)}</span>
@@ -556,11 +578,11 @@ function renderScoreBand(d) {
   return `
     <section class="dash-score-band">
       ${scoreCard({
-        num: `${d.upf.pct}%`, denom: 'Non-UPF', rating: ratingLabel(d.upf.pct), ratingTone: upfTone, icon: 'eco',
+        num: d.upf.pct, pct: true, denom: 'Non-UPF', rating: ratingLabel(d.upf.pct), ratingTone: upfTone, icon: 'eco',
         note: `<strong>${d.upf.nonCount} of ${d.upf.total}</strong> analyzed SKUs are Non&#8209;UPF · ${d.upf.nonCount} qualify for the verification shield.`,
       })}
       ${scoreCard({
-        num: `${d.gras.pct}%`, denom: 'GRAS', rating: ratingLabel(d.gras.pct), ratingTone: grasTone, icon: 'biotech',
+        num: d.gras.pct, pct: true, denom: 'GRAS', rating: ratingLabel(d.gras.pct), ratingTone: grasTone, icon: 'biotech',
         note: `<strong>${d.gras.grasCount} of ${d.gras.total}</strong> analyzed SKUs are GRAS across ${d.gras.uniqueIngredients} unique ingredients.`,
       })}
       ${scoreCard({
@@ -584,6 +606,7 @@ function renderClaim(d) {
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--primary" type="button" data-dash-action="review-portfolio"><span class="material-icons">inventory_2</span>Review your food portfolio</button>
         </div>
+        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-icons">add</span>Add food</button>
       </div>
       <div class="dash-claim-divider"></div>
       <div>
@@ -594,6 +617,7 @@ function renderClaim(d) {
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-skus"><span class="material-icons">verified_user</span>Claim your SKUs</button>
         </div>
+        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="dispute-sku"><span class="material-icons">gavel</span>Dispute SKU</button>
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-score">
@@ -602,6 +626,7 @@ function renderClaim(d) {
           <span class="dash-score-cap"><strong>${wsRating} WISEscore&#8482;</strong><br>across ${d.claim.discovered} products</span>
         </div>
         <p class="dash-score-desc">A 0&#8211;100 rating of overall food quality, combining<br>ingredient safety, processing level, and nutrient density.</p>
+        <button class="dash-text-link" type="button" data-dash-action="scroll-pillars"><span class="material-icons">arrow_downward</span>Understand the WISEscore&#8482;</button>
       </div>
     </section>`;
 }
@@ -611,7 +636,7 @@ function renderUpf(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <h3 class="dash-card-title">UPF status across ${u.total} analyzed SKUs</h3>
+        <h3 class="dash-card-title"><span class="dash-term" data-tip="Ultra-Processed Food" tabindex="0" role="term">UPF</span> status across ${u.total} analyzed SKUs</h3>
         ${cardMenu('upf', 'Brand UPF report')}
       </div>
       <div class="dash-donut-row">
@@ -630,8 +655,8 @@ function renderUpf(d) {
         <button class="dash-callout-btn" type="button" data-dash-action="verify-upf">Start verification<span class="material-icons">arrow_outward</span></button>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="upf-report">
-        <span class="dash-report-left"><span class="material-icons">description</span>View &amp; export the full Brand UPF Report</span>
-        <span class="material-icons">arrow_outward</span>
+        <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} UPF Report</span>
+        <span class="dash-report-right">View Report<span class="material-icons">arrow_outward</span></span>
       </button>
     </section>`;
 }
@@ -641,7 +666,7 @@ function renderGras(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <h3 class="dash-card-title">GRAS status across ${g.total} analyzed SKUs</h3>
+        <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed SKUs</h3>
         ${cardMenu('gras', 'Brand GRAS report')}
       </div>
       <div class="dash-donut-row">
@@ -660,8 +685,8 @@ function renderGras(d) {
         <button class="dash-callout-btn" type="button" data-dash-action="review-flagged">Review flagged<span class="material-icons">arrow_outward</span></button>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="gras-report">
-        <span class="dash-report-left"><span class="material-icons">description</span>View &amp; export the full Brand GRAS Report</span>
-        <span class="material-icons">arrow_outward</span>
+        <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} GRAS Report</span>
+        <span class="dash-report-right">View Report<span class="material-icons">arrow_outward</span></span>
       </button>
     </section>`;
 }
@@ -682,7 +707,7 @@ function renderWisescore(d) {
       (p) => `
       <div class="dash-pillar-row">
         <span class="dash-pillar-name"><span class="material-icons" style="color:${p.color}">${esc(p.icon)}</span>${esc(p.name)}</span>
-        <div class="dash-pillar-track"><div class="dash-pillar-fill" style="width:${p.score}%;background:${p.color}"></div></div>
+        <div class="dash-pillar-track" style="--bar-color:${p.color}"><div class="dash-pillar-fill" style="width:${p.score}%;background:${p.color}"></div></div>
         <span class="dash-pillar-score">${p.score}</span>
       </div>`
     )
@@ -717,7 +742,7 @@ function renderPillarCards(d) {
           <div class="dash-metric-item">
             <span class="dash-metric-name">${esc(m.name)}</span>
             ${countUpMarkup(m.value, { className: 'dash-metric-val', style: `color:${color}` })}
-            <div class="dash-metric-track"><div class="dash-metric-fill" style="width:${m.value}%;background:${color}"></div></div>
+            <div class="dash-metric-track" style="--bar-color:${color}"><div class="dash-metric-fill" style="width:${m.value}%;background:${color}"></div></div>
           </div>`;
       })
       .join('');
@@ -738,15 +763,24 @@ function renderPillarCards(d) {
     .join('');
   return `
     <section class="dash-pillars-section">
+      <div class="dash-section-head">
+        <h2 class="dash-section-title">The 3 pillars of the WISEscore&#8482;</h2>
+      </div>
+      <p class="dash-pillars-intro">We don't grade these pillars in isolation &mdash; nutrient quality, ingredient quality, and health outcomes are weighed against one another so a product can't earn a high score by acing one dimension while failing another. A clean ingredient list still loses ground if the nutrient profile is poor, and strong nutrition is discounted when processing or flagged additives put long-term health outcomes at risk. The result is a single score that reflects how a food actually performs across the things that matter, not just how it looks on one label.</p>
       <div class="dash-three-up dash-pillars">${columns}</div>
       <div class="dash-pillars-cta">
-        <div class="dash-pillars-cta-inner">
-          <button class="dash-btn dash-btn--ghost dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
-            <span class="material-icons">description</span>
-            <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
-            <span class="material-icons dash-pillars-cta-arrow">arrow_outward</span>
-          </button>
-          <p class="dash-pillars-cta-note">Every metric, distribution &amp; flagged SKU across all 3 pillars</p>
+        <div class="dash-cta-banner">
+          ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-cta-bug dash-cta-bug--right')}
+          ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-cta-bug dash-cta-bug--left')}
+          <div class="dash-cta-banner-scrim" aria-hidden="true"></div>
+          <div class="dash-pillars-cta-inner">
+            <h2 class="dash-pillars-cta-headline">Every metric, distribution &amp; flagged SKU across all 3 pillars</h2>
+            <button class="dash-btn dash-cta-banner-btn dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
+              <span class="material-icons">description</span>
+              <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
+              <span class="material-icons dash-pillars-cta-arrow">arrow_outward</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>`;
@@ -837,8 +871,17 @@ export function renderDashboardHome(host) {
       return;
     }
 
+    /* Smooth-scroll down to the WISEscore pillars section. */
+    if (a === 'scroll-pillars') {
+      const target = host.querySelector('.dash-pillars-section');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
     const route = {
       'review-portfolio': 'portfolio.html',
+      'add-food': 'portfolio.html',
+      'dispute-sku': 'portfolio.html',
       'claim-skus': 'portfolio.html',
       'ask-ai': 'ai-chat.html',
     }[a];
@@ -1036,7 +1079,7 @@ function setupDonutPopover(host) {
         <span class="dash-tip-dot" style="background:${color}"></span>
         <span class="dash-tip-name">${esc(label)}</span>
       </div>
-      <div class="dash-tip-stat"><strong>${esc(value)}</strong><span class="dash-tip-pct">${esc(pct)}%</span></div>`;
+      <div class="dash-tip-stat"><strong>${esc(value)}</strong><span class="dash-tip-pct">${esc(pct)}<span class="dash-pct">%</span></span></div>`;
     tip.classList.add('is-visible');
   };
 

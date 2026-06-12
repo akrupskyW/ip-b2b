@@ -194,6 +194,35 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   font-variant-numeric: tabular-nums;
 }
 .dash-score-num .d { font-size: 1.15rem; font-weight: 600; color: var(--text-subtle); }
+
+/* Percent signs read as a smaller, raised (almost-superscript) glyph next to
+   their value. `em`-based sizing + vertical-align keep the offset proportional
+   whether the number is a 5rem hero figure or a 0.72rem tooltip stat. */
+.dash-pct {
+  font-size: 0.38em;
+  font-weight: 700;
+  vertical-align: 1.05em;
+  margin-left: -0.04em;
+  letter-spacing: 0;
+}
+/* Wrapper keeps the count-up number + its percent glyph together as one
+   inline-block unit (the count-up rewrites only the number's textContent). In
+   these count-up cases the glyph is a SIBLING of the sized number element, so
+   `em` can't track it — give it an explicit ~0.38x size per context so the
+   inherited `vertical-align` raise stays proportional. */
+/* Match .dash-bignum's line-height:1 — otherwise the wrap inherits the 1.5
+   body line-height, and the extra half-leading pushes the % column's digits
+   lower than the discovered / score columns in the same baseline-aligned row. */
+.dash-pct-wrap { display: inline-block; line-height: 1; }
+/* Inside a percent wrap the glyph must hug the digit, so drop the 2-digit
+   reserve slot that .dash-bignum keeps for count-up stability... */
+.dash-pct-wrap .dash-bignum { min-width: 0; }
+/* ...then move that 2-digit reserve onto the wrap itself (scaled to the big
+   number's font) so the trailing label keeps the same spacing as the other
+   columns in the row, while the % stays glued to the digit. */
+.dash-progress-pct .dash-pct-wrap { min-width: 2ch; font-size: 5rem; }
+.dash-progress-pct .dash-pct { font-size: 1.9rem; }
+.dash-donut-center .dash-pct { font-size: 0.87rem; color: var(--ter-cyan); }
 .dash-score-icon {
   display: grid;
   place-items: center;
@@ -279,6 +308,9 @@ html.dark .dash-bignum { color: var(--text); }
   gap: 6px;
   margin: 10px 0 0;
 }
+/* The raised, smaller "%" glyph reads as tighter against the label than a full
+   digit does, so give the percent column a little extra breathing room. */
+.dash-progress-pct { gap: 14px; }
 .dash-bignum-cap { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.35; }
 .dash-bignum-cap strong { color: var(--text); }
 .dash-btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -301,6 +333,29 @@ html.dark .dash-bignum { color: var(--text); }
 .dash-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
 .dash-btn--ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
 .dash-btn--ghost:hover { background: var(--surface-2); }
+
+.dash-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+html.dark .dash-text-link { color: var(--primary-bright); }
+.dash-text-link .material-icons { font-size: 16px; }
+.dash-text-link:hover { color: var(--primary-bright); text-decoration: underline; }
+html.dark .dash-text-link:hover { color: #fff; }
+/* Align under a .dash-btn above: matches the button's border (1px) + padding
+   (15px) and icon/text gap (7px) so the icon lines up with the button's icon. */
+.dash-text-link--indent { padding-left: 16px; gap: 7px; }
 
 .dash-progress-pct .dash-bignum { font-size: 5rem; }
 .dash-bar {
@@ -358,6 +413,19 @@ html.dark .dash-bignum { color: var(--text); }
   font-size: 1.0625rem;
   font-weight: 700;
   color: var(--text);
+}
+/* Acronym terms (UPF / GRAS) — dotted underline + help cursor; the floating
+   definition tooltip is handled by lir-tooltip.js (same as the nav icons). */
+.dash-term {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+}
+.dash-term:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 .dash-headline {
   display: flex;
@@ -525,7 +593,7 @@ html.dark .dash-donut-center::before {
 .dash-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .dash-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
-.dash-donut-legends { display: flex; flex-direction: column; gap: 16px; width: 178px; }
+.dash-donut-legends { display: flex; flex-direction: column; gap: 16px; width: 212px; }
 /* The three-dot menu and report-link icons are glyphs centered inside padded
    controls, so they sit optically inset from the card edge. Match that inset
    on the legend values (and the report-link icon) so the right-hand column —
@@ -547,7 +615,7 @@ html.dark .dash-donut-center::before {
 }
 .dash-donut-legend-group .dash-legend-item {
   justify-content: space-between;
-  gap: 14px;
+  gap: 28px;
   font-size: 0.74rem;
 }
 /* Keep the values in their own fixed-width column, centered within it, so the
@@ -715,19 +783,29 @@ html.dark .dash-report-link { color: var(--text); }
 .dash-report-link .dash-report-left { display: inline-flex; align-items: center; gap: 8px; }
 .dash-report-link .material-icons { font-size: 16px; }
 .dash-report-link .dash-report-left .material-icons { width: 18px; display: inline-grid; place-items: center start; }
-.dash-report-link > .material-icons { color: var(--primary); }
-html.dark .dash-report-link > .material-icons { color: var(--primary-bright); }
+.dash-report-link .dash-report-right { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); white-space: nowrap; }
+html.dark .dash-report-link .dash-report-right { color: var(--primary-bright); }
 .dash-report-link { transition: color 0.15s ease; }
 .dash-report-link:hover { text-decoration: none; color: var(--text); }
-.dash-report-link:hover > .material-icons { color: var(--primary-bright); }
-html.dark .dash-report-link:hover > .material-icons { color: #fff; }
+.dash-report-link:hover .dash-report-right { color: var(--primary-bright); }
+html.dark .dash-report-link:hover .dash-report-right { color: #fff; }
 /* Responsive: drop the trailing button / arrow onto its own line, aligned
    under the text (offset past the 18px leading icon + 8px gap). */
 @media (max-width: 767px) {
   .dash-callout { flex-wrap: wrap; }
   .dash-callout-btn { flex-basis: 100%; margin-top: 8px; margin-left: 26px; }
   .dash-report-link { flex-wrap: wrap; justify-content: flex-start; }
-  .dash-report-link > .material-icons { margin-top: 8px; margin-left: 26px; }
+  .dash-report-link .dash-report-right { margin-top: 8px; margin-left: 26px; }
+}
+/* Same drop-to-next-line behavior keyed to the CARD width (not the viewport),
+   so it also triggers when a card is narrow inside the two-up row on wider
+   screens — e.g. once the card is tight enough that the action would crowd
+   the description. */
+@container donut-card (max-width: 520px) {
+  .dash-callout { flex-wrap: wrap; }
+  .dash-callout-btn { flex-basis: 100%; margin-top: 8px; margin-left: 26px; }
+  .dash-report-link { flex-wrap: wrap; justify-content: flex-start; }
+  .dash-report-link .dash-report-right { margin-top: 8px; margin-left: 26px; }
 }
 
 /* ---- Food intelligence section ---- */
@@ -832,7 +910,7 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
 .dash-pillar-track {
   height: 8px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text-subtle) 16%, transparent);
+  background: color-mix(in srgb, var(--bar-color, var(--text-subtle)) 15%, transparent);
   overflow: hidden;
 }
 .dash-pillar-fill { height: 100%; border-radius: var(--radius-pill); }
@@ -842,6 +920,20 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
 .dash-pillars-section {
   width: 100%;
   padding-top: 40px;
+}
+.dash-pillars-section .dash-section-head { margin-bottom: 14px; }
+.dash-pillars-intro {
+  max-width: 58%;
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+@media (max-width: 1024px) {
+  .dash-pillars-intro { max-width: 75%; }
+}
+@media (max-width: 767px) {
+  .dash-pillars-intro { max-width: 100%; }
 }
 .dash-three-up {
   display: grid;
@@ -873,7 +965,52 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: 32px 0 0;
+  padding: 64px 0 0;
+}
+/* Primary-blue banner that mirrors the hero shell: relative + overflow-hidden
+   so the embossed bug mark can bleed past the edges, with the button + note
+   layered on top. */
+.dash-cta-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 220px;
+  padding: 44px 32px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--primary) 78%, #1A2339);
+  box-shadow: 0 10px 30px rgba(26, 35, 57, 0.28);
+}
+/* The WISE bug, sunk into the blue: a darker fill plus a 1px light bottom edge
+   reads as engraved / debossed into the surface. Two gigantic marks bleed off
+   opposite edges at different angles. */
+.dash-cta-bug {
+  position: absolute;
+  z-index: -2;
+  top: 50%;
+  width: min(760px, 95%);
+  height: auto;
+  color: color-mix(in srgb, #0B1426 38%, var(--primary));
+  filter: drop-shadow(0 1.5px 0 rgba(255, 255, 255, 0.14));
+  pointer-events: none;
+}
+/* Right edge — roughly half the mark bleeds off, upright. */
+.dash-cta-bug--right {
+  right: 0;
+  transform: translate(48%, -50%);
+}
+/* Left edge — same size, tilted to a totally different angle. */
+.dash-cta-bug--left {
+  left: 0;
+  transform: translate(-48%, -50%) rotate(-28deg);
+}
+/* Kept in the markup as a no-op layer — the banner is a flat color, so no
+   gradient/shading overlay. */
+.dash-cta-banner-scrim {
+  display: none;
 }
 .dash-pillars-cta-inner {
   display: flex;
@@ -891,18 +1028,30 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   padding: 11px 16px 11px 18px;
   white-space: nowrap;
 }
+/* Button styled to sit on the blue: a light, frosted chip with WISE-blue text. */
+.dash-cta-banner-btn {
+  background: #fff;
+  color: var(--primary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.dash-cta-banner-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+.dash-cta-banner-btn .material-icons { color: var(--primary); }
 .dash-pillars-cta-arrow {
   margin-left: 2px;
   color: var(--primary);
 }
-html.dark .dash-pillars-cta-arrow { color: var(--primary-bright); }
-.dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: var(--primary-bright); }
-html.dark .dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: #fff; }
-.dash-pillars-cta-note {
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: var(--text-muted);
+.dash-cta-banner-btn .dash-pillars-cta-arrow,
+.dash-cta-banner-btn:hover .dash-pillars-cta-arrow { color: var(--primary); }
+.dash-pillars-cta-headline {
+  margin: 0 0 18px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #fff;
   text-align: center;
 }
 
@@ -936,7 +1085,7 @@ html.dark .dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: #fff; }
   grid-row: 2;
   height: 4px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text-subtle) 18%, transparent);
+  background: color-mix(in srgb, var(--bar-color, var(--text-subtle)) 15%, transparent);
   overflow: hidden;
 }
 .dash-metric-fill {
@@ -972,6 +1121,8 @@ html.dark .dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: #fff; }
   .dash-progress-pct .dash-bignum,
   .dash-claim-score .dash-score-num .n,
   .dash-pillar-card-head .dash-score-num .n { font-size: 3.4rem; }
+  .dash-progress-pct .dash-pct { font-size: 1.3rem; }
+  .dash-progress-pct .dash-pct-wrap { font-size: 3.4rem; }
 }
 /* ...and only stack once they genuinely can't fit (mobile-width column). */
 @container dash (max-width: 480px) {
@@ -1025,10 +1176,10 @@ html.dark .dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: #fff; }
   .dash-pillar-row { grid-template-columns: 120px 1fr 30px; }
 }
 
-/* Donut + legend side-by-side needs ~252px chart + 32px gap + 178px legend.
+/* Donut + legend side-by-side needs ~252px chart + 32px gap + 212px legend.
    When the card itself is narrower (common in the two-up row), stack the
    legend under the donut and keep comfortable horizontal inset. */
-@container donut-card (max-width: 479px) {
+@container donut-card (max-width: 520px) {
   .dash-donut-row {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -1040,9 +1191,12 @@ html.dark .dash-pillars-cta-btn:hover .dash-pillars-cta-arrow { color: #fff; }
     height: auto;
     aspect-ratio: 1;
   }
+  /* Size the legend to its content (not the full card) so the label/value
+     rows stay tight together instead of stretching edge-to-edge via
+     space-between. Values still align in a clean right-hand column. */
   .dash-donut-legends {
-    width: 100%;
-    max-width: 320px;
+    width: max-content;
+    max-width: 100%;
     padding-inline: 4px;
   }
 }

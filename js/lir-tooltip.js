@@ -17,7 +17,7 @@
    their name via `data-tip`, `aria-label`, or `title`. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
-  '.panel-close-btn, .panel-ctrl-btn, .scout-dock-flip';
+  '.panel-close-btn, .panel-ctrl-btn, .scout-dock-flip, .dash-term';
 
 function labelFor(btn) {
   const tip = btn.getAttribute('data-tip');
