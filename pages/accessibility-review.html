@@ -31,18 +31,18 @@
   --border: rgba(17,24,39,0.08);
   --border-strong: rgba(17,24,39,0.14);
 
-  --primary: #024EAE;
-  --primary-soft: rgba(2, 78, 174, 0.08);
-  --sec-green: #3BAA5C;
-  --sec-red: #D94C4C;
-  --ter-amber: #F5A524;
-  --ter-violet: #7C3AED;
-  --ter-cyan: #06B6D4;
+  --primary: #25507C;
+  --primary-soft: rgba(37, 80, 124, 0.08);
+  --sec-green: #32A966;
+  --sec-red: #DC3038;
+  --ter-amber: #FFC434;
+  --ter-violet: #25507C;
+  --ter-cyan: #25507C;
 
   /* AAA-safe ink for semantic colors used as TEXT on their own light tints (7:1). */
-  --sec-green-text: #104D27;
-  --ter-amber-text: #6F3604;
-  --sec-red-text: #831313;
+  --sec-green-text: #245E3B;
+  --ter-amber-text: #75360A;
+  --sec-red-text: #831F23;
 
   --r-sm: 10px;
   --r-md: 16px;
@@ -54,12 +54,12 @@
   --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
   --shadow-card: var(--shadow-2);
 
-  --pass: #15803D;
-  --pass-bg: rgba(21, 128, 61, 0.10);
-  --warn: #B45309;
-  --warn-bg: rgba(180, 83, 9, 0.10);
-  --fail: #B91C1C;
-  --fail-bg: rgba(185, 28, 28, 0.10);
+  --pass: #245E3B;
+  --pass-bg: rgba(36, 94, 59, 0.10);
+  --warn: #75360A;
+  --warn-bg: rgba(117, 54, 10, 0.10);
+  --fail: #831F23;
+  --fail-bg: rgba(131, 31, 35, 0.10);
 }
 html.dark {
   --bg: #05141C;
@@ -71,23 +71,23 @@ html.dark {
   --text-subtle: #B1BAC7;
   --border: rgba(255,255,255,0.08);
   --border-strong: rgba(255,255,255,0.14);
-  --primary-soft: rgba(2, 78, 174, 0.18);
-  --primary-bright: #93C5FD;
+  --primary-soft: rgba(37, 80, 124, 0.18);
+  --primary-bright: #8B9FAF;
 
   /* Softened pastel inks so semantic TEXT clears 7:1 on its 16% tint over navy. */
-  --sec-green-text: #AEDCBB;
-  --ter-amber-text: #FACF8A;
-  --sec-red-text: #FBB1B1;
+  --sec-green-text: #B6C9BE;
+  --ter-amber-text: #D7BE91;
+  --sec-red-text: #FFE1DC;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
 
-  --pass: #4ADE80;
-  --pass-bg: rgba(74, 222, 128, 0.12);
-  --warn: #FBBF24;
-  --warn-bg: rgba(251, 191, 36, 0.12);
-  --fail: #F87171;
-  --fail-bg: rgba(248, 113, 113, 0.12);
+  --pass: #6D947C;
+  --pass-bg: rgba(109, 148, 124, 0.12);
+  --warn: #FFC434;
+  --warn-bg: rgba(255, 196, 52, 0.12);
+  --fail: #DC3038;
+  --fail-bg: rgba(220, 48, 56, 0.12);
 }
 
 * { box-sizing: border-box; }
@@ -124,7 +124,7 @@ html.dark a { color: var(--primary-bright); }
   width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
   display: grid; place-items: center; color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--ter-cyan));
-  box-shadow: 0 4px 14px rgba(2, 78, 174,0.35);
+  box-shadow: 0 4px 14px rgba(37, 80, 124,0.35);
 }
 .topbar-logo .material-icons { font-size: 20px; }
 .topbar-titles { min-width: 0; }
@@ -180,8 +180,8 @@ html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(
   border: 1px solid var(--border);
 }
 html.dark .hero {
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
-  border-color: rgba(2, 78, 174, 0.18);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
+  border-color: rgba(37, 80, 124, 0.18);
 }
 @media (max-width: 640px) { .hero { padding: 26px 20px; margin-top: 22px; } }
 .hero-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); }
@@ -965,12 +965,12 @@ const FINDINGS = [
   {
     sev: 'pass', icon: 'check_circle',
     title: '2 · AAA — semantic ink on tints now 7:1',
-    body: 'Badge / delta / status text on its own 16% tint sat at ~5–6:1 (AA). The light inks are deepened — <code>--sec-green-text #104D27</code>, <code>--ter-amber-text #6F3604</code>, <code>--sec-red-text #831313</code>, <code>--ter-cyan-text #094E61</code> — and the dark inks softened to pastels — <code>#AEDCBB</code>, <code>#FACF8A</code>, <code>#FBB1B1</code>, <code>#8CDDEB</code> — so each clears 7:1 over its tint while the tinted fills are kept.'
+    body: 'Badge / delta / status text on its own 16% tint sat at ~5–6:1 (AA). The light inks are deepened — <code>--sec-green-text #245E3B</code>, <code>--ter-amber-text #75360A</code>, <code>--sec-red-text #831F23</code>, <code>--ter-cyan-text #1A2339</code> — and the dark inks softened to pastels — <code>#B6C9BE</code>, <code>#D7BE91</code>, <code>#FFE1DC</code>, <code>#C5CFD7</code> — so each clears 7:1 over its tint while the tinted fills are kept.'
   },
   {
     sev: 'pass', icon: 'check_circle',
     title: '3 · AAA — primary deepened for text AND buttons',
-    body: 'Primary was <code>#025ED3</code> (link text 5.9:1, white-on-primary 5.9:1 — AA only). It is now <code>#024EAE</code>, so primary link text clears 7:1 on <code>bg</code> and white-on-primary buttons clear 7:1 too. The dark-theme <code>--primary-bright #93C5FD</code> already runs ~9.7:1. The matching <code>rgba(2,78,174,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
+    body: 'Primary was <code>#25507C</code> (link text 5.9:1, white-on-primary 5.9:1 — AA only). It is now <code>#25507C</code>, so primary link text clears 7:1 on <code>bg</code> and white-on-primary buttons clear 7:1 too. The dark-theme <code>--primary-bright #8B9FAF</code> already runs ~9.7:1. The matching <code>rgba(37, 80, 124,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
   },
   {
     sev: 'pass', icon: 'check_circle',

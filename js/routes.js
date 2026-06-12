@@ -6,8 +6,8 @@ export const defaultRouteId = 'dashboard';
 
 /** Primary modules (top bar + sidebar “Workspaces”) */
 export const workspaceRoutes = [
-  { id: 'wiseowl', label: 'WISEowl', icon: 'chat' },
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'wiseowl', label: 'WISEowl', icon: 'chat' },
   { id: 'products', label: 'Products', icon: 'inventory_2', count: '1,248' },
   { id: 'ingredients', label: 'Ingredients', icon: 'science', count: '9,420' },
   { id: 'processing', label: 'Processing', icon: 'precision_manufacturing' },

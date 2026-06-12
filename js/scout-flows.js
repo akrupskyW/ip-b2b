@@ -242,7 +242,7 @@ const FLOWS = {
     introRun: (s) => {
       s.open('portfolio', { title: 'Portfolio Health', icon: 'insights', sub: '14 products · 11 verified' });
       s.section('portfolio', 1, 'Overall WISE Score',
-        scoreBlock('This week', '82', '/100', 82, 'linear-gradient(90deg,var(--primary),#22d3ee)') +
+        scoreBlock('This week', '82', '/100', 82, 'linear-gradient(90deg,var(--primary),#8B9FAF)') +
         `<span class="wf-badge"><span class="material-icons">trending_up</span>+4 pts vs last week</span>`);
       s.progress('portfolio', 1, 4);
     },
@@ -259,9 +259,9 @@ const FLOWS = {
         status: 'Listing verified SKUs…',
         run: (s) => {
           s.section('portfolio', 2, 'Verified · holding the score',
-            rowLine('var(--sec-green,#16a34a)', 'Organic Rolled Oats', '94', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Sprouted Almonds', '91', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Quinoa Blend', '88', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Organic Rolled Oats', '94', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Sprouted Almonds', '91', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Quinoa Blend', '88', 'wf-tag--green') +
             `<p class="wf-note">+ 8 more verified SKUs scoring 80–95.</p>`);
           s.progress('portfolio', 2, 4);
         },
@@ -272,9 +272,9 @@ const FLOWS = {
         status: 'Finding score detractors…',
         run: (s) => {
           s.section('portfolio', 2, 'Score detractors',
-            rowLine('var(--sec-red,#D94C4C)', 'Mixed Berry Granola', '54', 'wf-tag--red') +
-            rowLine('var(--ter-amber,#F5A524)', 'Trail Mix Clusters', '63', 'wf-tag--amber') +
-            rowLine('var(--ter-amber,#F5A524)', 'Choc-Chip Protein Bar', '67', 'wf-tag--amber'));
+            rowLine('var(--sec-red,#DC3038)', 'Mixed Berry Granola', '54', 'wf-tag--red') +
+            rowLine('var(--ter-amber,#FFC434)', 'Trail Mix Clusters', '63', 'wf-tag--amber') +
+            rowLine('var(--ter-amber,#FFC434)', 'Choc-Chip Protein Bar', '67', 'wf-tag--amber'));
           s.progress('portfolio', 2, 4);
         },
         choices: [
@@ -302,7 +302,7 @@ const FLOWS = {
           s.section('portfolio', 3, 'Recommended action',
             `<div class="wf-product-name">Reformulate: Mixed Berry Granola</div>` +
             `<div class="wf-product-meta">Sunrise Foods · SKU SF-8821</div>` +
-            scoreBlock('Projected SKU score', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)'));
+            scoreBlock('Projected SKU score', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)'));
           s.progress('portfolio', 4, 4);
           s.setSub('portfolio', 'Projected · 82 → 86');
         },
@@ -313,9 +313,9 @@ const FLOWS = {
         status: 'Wrapping up…',
         run: (s) => {
           s.section('portfolio', '✓', 'Projected portfolio score',
-            scoreBlock('Before', '82', '/100', 82, 'linear-gradient(90deg,var(--primary),#60a5fa)') +
+            scoreBlock('Before', '82', '/100', 82, 'linear-gradient(90deg,var(--primary),#8B9FAF)') +
             `<div style="height:8px"></div>` +
-            scoreBlock('After fixing the granola', '86', '/100', 86, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)') +
+            scoreBlock('After fixing the granola', '86', '/100', 86, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)') +
             `<span class="wf-badge"><span class="material-icons">eco</span>+4 portfolio pts</span>`);
         },
         end: {
@@ -348,8 +348,8 @@ const FLOWS = {
     introRun: (s) => {
       s.open('renewals', { title: 'Renewals', icon: 'pending_actions', sub: '2 expiring soon' });
       s.section('renewals', 1, 'Expiring soon',
-        rowLine('var(--sec-red,#D94C4C)', 'Sprouted Almonds', '6 days', 'wf-tag--red') +
-        rowLine('var(--ter-amber,#F5A524)', 'Quinoa Blend', '19 days', 'wf-tag--amber'));
+        rowLine('var(--sec-red,#DC3038)', 'Sprouted Almonds', '6 days', 'wf-tag--red') +
+        rowLine('var(--ter-amber,#FFC434)', 'Quinoa Blend', '19 days', 'wf-tag--amber'));
       s.progress('renewals', 1, 3);
     },
     start: 'n1',
@@ -367,7 +367,7 @@ const FLOWS = {
           s.section('renewals', 2, 'Sprouted Almonds · detail',
             `<div class="wf-product-name">Sprouted Almonds</div>` +
             `<div class="wf-product-meta">Nutrient Survival · SKU NS-204</div>` +
-            rowLine('var(--sec-green,#16a34a)', 'Recipe unchanged since issue', 'Clean', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Recipe unchanged since issue', 'Clean', 'wf-tag--green') +
             rowLine('var(--primary)', 'NFP+ on file', 'Ready', 'wf-tag--blue'));
         },
         choices: [
@@ -399,8 +399,8 @@ const FLOWS = {
             stepLine('Payment · $200', 'done') +
             stepLine('Shields re-issued', 'done'));
           s.section('renewals', '✓', 'Renewed',
-            rowLine('var(--sec-green,#16a34a)', 'Sprouted Almonds', '+12 mo', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Quinoa Blend', '+12 mo', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Sprouted Almonds', '+12 mo', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Quinoa Blend', '+12 mo', 'wf-tag--green') +
             `<span class="wf-badge"><span class="material-icons">verified</span>NON-UPF status extended</span>`);
           s.progress('renewals', 3, 3);
           s.setSub('renewals', '2 renewed · valid 12 mo');
@@ -435,9 +435,9 @@ const FLOWS = {
     introRun: (s) => {
       s.open('flags', { title: 'Additive Review', icon: 'flag', sub: '3 flags · 2 products' });
       s.section('flags', 1, 'Open flags',
-        rowLine('var(--sec-red,#D94C4C)', 'High-Fructose Corn Syrup', 'Granola', 'wf-tag--red') +
-        rowLine('var(--ter-amber,#F5A524)', 'Soybean Oil', 'Granola', 'wf-tag--amber') +
-        rowLine('var(--sec-red,#D94C4C)', 'Natural Flavor (opaque)', 'Trail Mix', 'wf-tag--red'));
+        rowLine('var(--sec-red,#DC3038)', 'High-Fructose Corn Syrup', 'Granola', 'wf-tag--red') +
+        rowLine('var(--ter-amber,#FFC434)', 'Soybean Oil', 'Granola', 'wf-tag--amber') +
+        rowLine('var(--sec-red,#DC3038)', 'Natural Flavor (opaque)', 'Trail Mix', 'wf-tag--red'));
       s.progress('flags', 1, 4);
     },
     start: 'n1',
@@ -453,8 +453,8 @@ const FLOWS = {
         status: 'Opening the flag…',
         run: (s) => {
           s.section('flags', 2, 'Flag detail · HFCS',
-            rowLine('var(--sec-red,#D94C4C)', 'UPF marker', 'Tier 4', 'wf-tag--red') +
-            rowLine('var(--ter-amber,#F5A524)', 'Found in', '1 product', 'wf-tag--amber') +
+            rowLine('var(--sec-red,#DC3038)', 'UPF marker', 'Tier 4', 'wf-tag--red') +
+            rowLine('var(--ter-amber,#FFC434)', 'Found in', '1 product', 'wf-tag--amber') +
             `<p class="wf-note">Blocks NON-UPF verification until resolved.</p>`);
           s.progress('flags', 2, 4);
         },
@@ -490,8 +490,8 @@ const FLOWS = {
         status: 'Applying swaps…',
         run: (s) => {
           s.section('flags', '✓', 'Resolved',
-            rowLine('var(--sec-green,#16a34a)', 'Granola', '2 cleared', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Trail Mix', '1 cleared', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Granola', '2 cleared', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Trail Mix', '1 cleared', 'wf-tag--green') +
             `<span class="wf-badge"><span class="material-icons">eco</span>Both products now UPF-clear</span>`);
           s.progress('flags', 4, 4);
           s.setSub('flags', '0 open · 3 resolved');
@@ -538,7 +538,7 @@ const FLOWS = {
           s.section('plan', 1, 'Target product',
             `<div class="wf-product-name">Organic Mixed Berry Granola</div>` +
             `<div class="wf-product-meta">Sunrise Foods · SKU SF-8821</div>` +
-            scoreBlock('Current WISE Score', '54', '/100', 54, 'linear-gradient(90deg,#E879F9,#FF7C7E)') +
+            scoreBlock('Current WISE Score', '54', '/100', 54, 'linear-gradient(90deg,#8B9FAF,#DC3038)') +
             `<div style="margin-top:8px"><span class="wf-tag wf-tag--red" style="margin-left:0">Ultra-Processed</span></div>`);
           s.progress('plan', 1, 4);
         },
@@ -549,9 +549,9 @@ const FLOWS = {
         status: 'Scanning ingredients…',
         run: (s) => {
           s.section('plan', 2, 'Flagged additives',
-            rowLine('var(--sec-red,#D94C4C)', 'High-Fructose Corn Syrup', 'Additive', 'wf-tag--red') +
-            rowLine('var(--ter-amber,#F5A524)', 'Soybean Oil', 'Refined Oil', 'wf-tag--amber') +
-            rowLine('var(--sec-red,#D94C4C)', 'Natural Flavor (proprietary)', 'Opaque', 'wf-tag--red'));
+            rowLine('var(--sec-red,#DC3038)', 'High-Fructose Corn Syrup', 'Additive', 'wf-tag--red') +
+            rowLine('var(--ter-amber,#FFC434)', 'Soybean Oil', 'Refined Oil', 'wf-tag--amber') +
+            rowLine('var(--sec-red,#DC3038)', 'Natural Flavor (proprietary)', 'Opaque', 'wf-tag--red'));
           s.progress('plan', 2, 4);
         },
         choices: [{ label: 'Suggest clean-label swaps', icon: 'eco', say: 'Suggest clean-label swaps', next: 'swaps', primary: true }],
@@ -573,9 +573,9 @@ const FLOWS = {
         status: 'Projecting the new score…',
         run: (s) => {
           s.section('plan', 4, 'Projected WISE Score',
-            scoreBlock('Before', '54', '/100', 54, 'linear-gradient(90deg,#E879F9,#FF7C7E)') +
+            scoreBlock('Before', '54', '/100', 54, 'linear-gradient(90deg,#8B9FAF,#DC3038)') +
             `<div style="height:8px"></div>` +
-            scoreBlock('After reformulation', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)') +
+            scoreBlock('After reformulation', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)') +
             `<span class="wf-badge"><span class="material-icons">eco</span>Clears NON-UPF · +34 pts</span>`);
           s.progress('plan', 4, 4);
           s.setSub('plan', 'Plan ready · 4 of 4 steps');
@@ -610,12 +610,12 @@ const FLOWS = {
     introRun: (s) => {
       s.open('launch', { title: 'Launch Checklist', icon: 'rocket_launch', sub: 'Spring line · 18 checks' });
       s.section('launch', 1, 'Readiness',
-        scoreBlock('Launch-ready', '78', '%', 78, 'linear-gradient(90deg,var(--ter-amber,#F5A524),#fbbf24)'));
+        scoreBlock('Launch-ready', '78', '%', 78, 'linear-gradient(90deg,var(--ter-amber,#FFC434),#FFC434)'));
       s.section('launch', 2, 'Open items',
-        rowLine('var(--ter-amber,#F5A524)', 'NFP+ images missing (1 SKU)', 'Assets', 'wf-tag--amber') +
-        rowLine('var(--sec-red,#D94C4C)', 'Claims copy unreviewed', 'Compliance', 'wf-tag--red') +
-        rowLine('var(--ter-amber,#F5A524)', 'Allergen statement draft', 'Label', 'wf-tag--amber') +
-        rowLine('var(--ter-amber,#F5A524)', 'Retailer onboarding form', 'Retail', 'wf-tag--amber'));
+        rowLine('var(--ter-amber,#FFC434)', 'NFP+ images missing (1 SKU)', 'Assets', 'wf-tag--amber') +
+        rowLine('var(--sec-red,#DC3038)', 'Claims copy unreviewed', 'Compliance', 'wf-tag--red') +
+        rowLine('var(--ter-amber,#FFC434)', 'Allergen statement draft', 'Label', 'wf-tag--amber') +
+        rowLine('var(--ter-amber,#FFC434)', 'Retailer onboarding form', 'Retail', 'wf-tag--amber'));
       s.progress('launch', 14, 18, '14 of 18 passing');
     },
     start: 'n1',
@@ -631,7 +631,7 @@ const FLOWS = {
         status: 'Reviewing each item…',
         run: (s) => {
           s.section('launch', 3, 'Item detail · Claims copy',
-            rowLine('var(--sec-red,#D94C4C)', 'Needs compliance sign-off', 'Blocker', 'wf-tag--red') +
+            rowLine('var(--sec-red,#DC3038)', 'Needs compliance sign-off', 'Blocker', 'wf-tag--red') +
             `<p class="wf-note">SHIELD agent can validate the claim against the verification record.</p>`);
         },
         choices: [{ label: 'Resolve all 4 items', icon: 'done_all', say: 'Resolve all 4 items', next: 'resolve', primary: true }],
@@ -641,10 +641,10 @@ const FLOWS = {
         status: 'Resolving open items…',
         run: (s) => {
           s.section('launch', '✓', 'Items resolved',
-            rowLine('var(--sec-green,#16a34a)', 'NFP+ images added', 'Done', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Claims copy approved', 'Done', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Allergen statement set', 'Done', 'wf-tag--green') +
-            rowLine('var(--sec-green,#16a34a)', 'Retailer form filed', 'Done', 'wf-tag--green'));
+            rowLine('var(--sec-green,#32A966)', 'NFP+ images added', 'Done', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Claims copy approved', 'Done', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Allergen statement set', 'Done', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Retailer form filed', 'Done', 'wf-tag--green'));
           s.progress('launch', 18, 18, '18 of 18 passing');
         },
         next: 'done',
@@ -654,7 +654,7 @@ const FLOWS = {
         status: 'Confirming readiness…',
         run: (s) => {
           s.section('launch', '✓', 'Launch readiness',
-            scoreBlock('Launch-ready', '100', '%', 100, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)') +
+            scoreBlock('Launch-ready', '100', '%', 100, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)') +
             `<span class="wf-badge"><span class="material-icons">rocket_launch</span>Cleared for launch</span>`);
           s.setSub('launch', '100% ready · 18 of 18');
         },
@@ -730,10 +730,10 @@ const FLOWS = {
         status: 'Calculating the mix…',
         run: (s) => {
           s.section('insights', 4, 'Verification mix',
-            rowLine('var(--sec-green,#16a34a)', 'Verified', '11', 'wf-tag--green') +
+            rowLine('var(--sec-green,#32A966)', 'Verified', '11', 'wf-tag--green') +
             rowLine('var(--primary)', 'Pre-qualified', '1', 'wf-tag--blue') +
-            rowLine('var(--ter-amber,#F5A524)', 'Not eligible', '2', 'wf-tag--amber') +
-            scoreBlock('Verified coverage', '79', '%', 79, 'linear-gradient(90deg,var(--sec-green,#16a34a),#22d3ee)'));
+            rowLine('var(--ter-amber,#FFC434)', 'Not eligible', '2', 'wf-tag--amber') +
+            scoreBlock('Verified coverage', '79', '%', 79, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)'));
         },
         choices: [{ label: 'Wrap up the exploration', icon: 'summarize', say: 'Wrap up the exploration', next: 'done', primary: true }],
       },

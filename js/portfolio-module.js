@@ -125,30 +125,22 @@ const VAULT_ASSETS = [
 /* Suggested Scout intent chips for the Portfolio context (Truth Layer flows).
    Each maps to a section so the chat ties back into the module. */
 const PORTFOLIO_INTENTS = [
-  { intent: 'go-command-deck', label: 'Command Deck', icon: 'dashboard', go: 'command-deck' },
-  { intent: 'go-analytics', label: 'Open the Dashboard', icon: 'insert_chart', go: 'analytics' },
-  { intent: 'go-verified', label: 'Get products verified', icon: 'verified', go: 'verified' },
-  { intent: 'go-intake', label: 'Ingest new data', icon: 'cloud_upload', go: 'intake' },
-  { intent: 'go-ledger', label: 'Open the Ledger', icon: 'table_rows', go: 'ledger' },
+  { intent: 'go-ledger', label: 'Open My Foods Portfolio', icon: 'inventory_2', go: 'ledger' },
+  { intent: 'go-discovered', label: 'Browse Discovered Foods', icon: 'travel_explore', go: 'discovered' },
+  { intent: 'go-reports', label: 'Open Portfolio Reports', icon: 'summarize', go: 'reports' },
   { intent: 'faq_intro', label: 'Summarize portfolio risk', icon: 'help_outline' },
-  { intent: 'go-recipes', label: 'Open the Recipe Lab', icon: 'restaurant_menu', go: 'recipes' },
-  { intent: 'go-identity', label: 'Manage my identity', icon: 'badge', go: 'identity' },
-  { intent: 'go-vault', label: 'Open the Asset Vault', icon: 'folder_special', go: 'vault' },
+  { intent: 'go-vault', label: 'Open Assets', icon: 'folder_special', go: 'vault' },
 ];
 
 /* Intent-keyed openers for the Portfolio chips. A clicked chip always continues
    with a reply that matches the module it opens — no generic Truth-Layer
    fallback for intents the label regex would otherwise miss (Ledger, Identity). */
 const PORTFOLIO_INTENT_REPLIES = {
-  'go-command-deck': 'Opening your Command Deck — brand-health gauges plus today’s intelligence briefing in one high-altitude view. Want me to walk the top missions?',
-  'go-analytics': 'Opening the Dashboard — charts for verification, trust coverage, portfolio composition, and competitive position over time. Which trend should I dig into?',
-  'go-verified': 'I’ve pre-qualified <strong>5 UPCs</strong> for the Non-UPF Shield. Opening the Verified Pipeline — ready to run <strong>Confirm → Attest → Activate</strong>?',
-  'go-intake': 'Opening Intake &amp; Growth. Drop a spec sheet, ERP export, URL, or label photo and I’ll parse it toward the <strong>Brand Verified</strong> Gold Standard.',
-  'go-ledger': 'Opening your Portfolio Ledger — every product with its resolution, shield status, and visibility in one place. Want me to filter to what needs attention?',
-  faq_intro: 'Here’s your portfolio risk at a glance: beverages carry the highest exposure with <strong>3 SKUs</strong> that need attention. Want me to open them in the Ledger?',
-  'go-recipes': 'Opening the Recipe Lab. I can recompute NFP+™ live — trimming added sugar by 4g, for example, keeps a product Clean-Label eligible. Which recipe should we tune?',
-  'go-identity': 'Opening your Identity Portal. Retailers are searching <strong>“Seed-Oil-Free”</strong> and <strong>“Sodium-Reduced”</strong> — you have 3 untagged matches I can fix to boost discovery.',
-  'go-vault': 'Opening your Asset Vault — <strong>10 new “Back-to-School” tiles</strong> plus refreshed retail sheets are waiting in the Non-UPF folder. Want the latest badges?',
+  'go-ledger': 'Opening My Foods Portfolio — every product with its resolution, shield status, and visibility in one place. Want me to filter to what needs attention?',
+  'go-discovered': 'Opening Discovered Foods — matches from across the public WISEcode registry. Want me to surface the ones closest to your portfolio?',
+  'go-reports': 'Opening Portfolio Reports — UPF, GRAS, and WISEcode insights at the brand and SKU level. Which report should I pull up first?',
+  faq_intro: 'Here’s your portfolio risk at a glance: beverages carry the highest exposure with <strong>3 SKUs</strong> that need attention. Want me to open them in My Foods Portfolio?',
+  'go-vault': 'Opening your Assets — <strong>10 new “Back-to-School” tiles</strong> plus refreshed retail sheets are waiting in the Non-UPF folder. Want the latest badges?',
   /* Openers for the two "at a glance" intro cards — orientation, not data. */
   scorecard_tour: 'Quick tour: the rail up top is your portfolio at a glance — UPF status, state compliance, ingredient quality, and seed-oil exposure, each card one click from the detail. Want to start with where you lead, or where you need to act?',
   scorecard_scout: 'Think of me as your portfolio analyst. Ask a question in plain English, kick off a verification, or model a reformulation — I draft the work, cite it back to your own data, and never publish without your go-ahead. What should we tackle first?',
@@ -167,7 +159,7 @@ const PORTFOLIO_SCORECARDS = {
       metric: '18', metricUnit: ' SKUs',
       title: 'Reformulate CA targets',
       desc: '18 SKUs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.',
-      action: 'Plan reformulation', intent: 'go-recipes', ask: 'Plan reformulation for my California targets',
+      action: 'Plan reformulation', intent: 'go-ledger', ask: 'Plan reformulation for my California targets',
     },
     {
       variant: 'intro', icon: 'space_dashboard', iconTone: 'intro',
@@ -213,7 +205,7 @@ const PORTFOLIO_SCORECARDS = {
       metric: '12', metricUnit: '% seed oil',
       title: 'Promote your clean wins',
       desc: 'Cleanest seed-oil profile in the channel (12% vs peers 17–24%) — push the claim to buyers.',
-      action: 'Open data & trends', intent: 'go-analytics', ask: 'Help me promote my clean seed-oil profile to buyers',
+      action: 'Open data & trends', intent: 'go-reports', ask: 'Help me promote my clean seed-oil profile to buyers',
     },
   ],
 };
@@ -591,7 +583,7 @@ function viewVault() {
         <div class="pf-vault-lock"><span class="material-icons">lock</span></div>
         <div class="pf-card-title" style="justify-content:center;">Unlock the Brand Growth Toolkit</div>
         <p class="pf-card-desc" style="max-width:520px;">You have 5 products eligible for Non-UPF verification. Once verified, you'll unlock 50+ high-res Shields, retail sheets, and social assets.</p>
-        <button class="pf-btn pf-btn--primary" data-go="verified"><span class="material-icons">verified</span>Start verification</button>
+        <button class="pf-btn pf-btn--primary" data-go="ledger"><span class="material-icons">verified</span>Start verification</button>
       </div>`;
   }
   const folders = ['All', 'Non-UPF', 'Seed-Oil Free', 'Clean Label'];
@@ -716,7 +708,7 @@ function viewAnalytics() {
 
 /* Resolve a CSS custom property (e.g. '--primary') to its computed value so
    charts follow the active light/dark theme. */
-function pfColor(name, fallback = '#024EAE') {
+function pfColor(name, fallback = '#25507C') {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
@@ -836,7 +828,7 @@ function makeAnalyticsSpark(id, kind, colorName) {
   const el = document.getElementById(`pf-${id}`);
   if (!el || !globalThis.Chart) return;
   const ctx = el.getContext('2d');
-  const c = pfColor(colorName, '#024EAE');
+  const c = pfColor(colorName, '#25507C');
   const data = kind === 'up' ? [10, 14, 11, 18, 16, 22, 21, 28, 30]
     : kind === 'down' ? [28, 22, 24, 20, 18, 14, 16, 12, 8]
     : [16, 19, 14, 21, 17, 23, 19, 24, 22];
@@ -853,12 +845,12 @@ function makeAnalyticsSpark(id, kind, colorName) {
 function makeAnalyticsCharts() {
   if (!globalThis.Chart) return;
 
-  const primary = pfColor('--primary', '#024EAE');
-  const green = pfColor('--sec-green', '#3BAA5C');
-  const amber = pfColor('--ter-amber', '#F5A524');
-  const violet = pfColor('--ter-violet', '#7C3AED');
-  const cyan = pfColor('--ter-cyan', '#06B6D4');
-  const red = pfColor('--sec-red', '#D94C4C');
+  const primary = pfColor('--primary', '#25507C');
+  const green = pfColor('--sec-green', '#32A966');
+  const amber = pfColor('--ter-amber', '#FFC434');
+  const violet = pfColor('--ter-violet', '#25507C');
+  const cyan = pfColor('--ter-cyan', '#25507C');
+  const red = pfColor('--sec-red', '#DC3038');
   const surface = pfColor('--surface', '#0D1B24');
 
   /* KPI sparklines. */
@@ -1109,15 +1101,40 @@ function rerenderAnalyticsCharts() {
   requestAnimationFrame(makeAnalyticsCharts);
 }
 
+/* A blank, ready-to-build-out page for sections that don't yet have bespoke
+   content (Discovered Foods, Portfolio Reports + its report children). Reads
+   its title/subtitle from the section registry so it themes itself. */
+function viewPlaceholder(sectionId) {
+  const sec = getPortfolioSection(sectionId);
+  const label = sec ? esc(sec.label) : 'Section';
+  const icon = sec ? esc(sec.icon) : 'description';
+  return `
+    ${heroFor(sectionId, sec ? sec.sub : '')}
+    <div class="pf-card pf-placeholder" style="text-align:center;padding:48px 24px;">
+      <span class="material-icons" style="font-size:40px;opacity:.45;">${icon}</span>
+      <div class="pf-card-title" style="justify-content:center;margin-top:12px;">${label}</div>
+      <p class="pf-card-desc" style="max-width:460px;margin:8px auto 0;">This page is ready to be built out — content coming soon.</p>
+    </div>`;
+}
+
 const VIEWS = {
+  /* Active Portfolio surfaces. */
+  ledger: viewLedger,
+  discovered: viewPlaceholder,
+  reports: viewPlaceholder,
+  'report-brand-upf': viewPlaceholder,
+  'report-brand-gras': viewPlaceholder,
+  'report-sku-upf': viewPlaceholder,
+  'report-sku-gras': viewPlaceholder,
+  'report-brand-insights': viewPlaceholder,
+  vault: viewVault,
+  /* Legacy views retained for reference / reuse (not currently in the nav). */
   'command-deck': viewCommandDeck,
   analytics: viewAnalytics,
-  ledger: viewLedger,
   intake: viewIntake,
   verified: viewVerified,
   identity: viewIdentity,
   recipes: viewRecipes,
-  vault: viewVault,
 };
 
 /* ------------------------------------------------------------------ */
@@ -1357,7 +1374,7 @@ const FLOWS = {
   'integrity-audit': { icon: 'rule', title: 'Brand Verified integrity audit',
     steps: ['Loading product data…', 'Checking 15 required nutrients…', 'Validating the ingredient parse…', 'Scoring data resolution…'],
     doneTitle: 'Audit passed', doneText: 'Data resolution is at the <strong>Gold Standard</strong> — 12 products are ready to publish as Brand Verified.',
-    cta: { label: 'Get them verified', go: 'verified' } },
+    cta: { label: 'Get them verified', go: 'ledger' } },
   'go-public': { icon: 'public', title: 'Publish to Discovery Feed',
     steps: ['Validating visibility rules…', 'Publishing to the global feed…'],
     doneTitle: 'Now public', doneText: 'This product is live on the Global Discovery Feed.', toast: 'Published to Discovery Feed.', toastIcon: 'public' },
@@ -1672,7 +1689,7 @@ let moduleSide = {};
 let moduleWide = {};
 
 function loadOpenModules() {
-  let ids = ['command-deck'];
+  let ids = ['ledger'];
   try {
     const raw = JSON.parse(localStorage.getItem(OPEN_KEY) || 'null');
     if (Array.isArray(raw)) {
@@ -1772,6 +1789,7 @@ function applyWide(sectionId) {
 }
 
 function flipModule(sectionId) {
+  if (inTabbedLayout()) { flipTabbed(); return; }
   if (!PORTFOLIO_SECTION_IDS.includes(sectionId)) return;
   closeAllModuleMenus();
   moduleSide[sectionId] = sideOf(sectionId) === 'right' ? 'left' : 'right';
@@ -1781,6 +1799,7 @@ function flipModule(sectionId) {
 }
 
 function toggleModuleWidth(sectionId) {
+  if (inTabbedLayout()) { cycleTabbedWidth(); return; }
   if (!PORTFOLIO_SECTION_IDS.includes(sectionId)) return;
   closeAllModuleMenus();
   moduleWide[sectionId] = (pfTierOf(moduleWide[sectionId]) + 1) % 3;
@@ -1815,7 +1834,7 @@ function buildModules() {
     el.innerHTML = `
       <div class="pf-module-inner">
         <header class="pf-module-header">${moduleHeaderHTML(sectionId)}</header>
-        <div class="pf-module-scroll" id="pf-view-${sectionId}">${(VIEWS[sectionId] || viewCommandDeck)()}</div>
+        <div class="pf-module-scroll" id="pf-view-${sectionId}">${(VIEWS[sectionId] || viewPlaceholder)(sectionId)}</div>
       </div>`;
     row.insertBefore(el, chat);
     applySide(sectionId);
@@ -1839,6 +1858,7 @@ function syncModules() {
       el.classList.toggle('is-active', open);
     });
   });
+  refreshTabsIfActive();
 }
 
 function scrollToModule(sectionId) {
@@ -1854,6 +1874,8 @@ function openModule(sectionId, { scroll = true } = {}) {
   openModules.add(sectionId);
   persistOpenModules();
   syncModules();
+  /* In tabbed layout a freshly-opened module becomes the front tab. */
+  if (document.getElementById('modules-tabbed')) setActiveTab(sectionId);
   const view = document.getElementById(`pf-view-${sectionId}`);
   if (view) view.scrollTop = 0;
   if (sectionId === 'analytics') initAnalyticsCharts();
@@ -1949,14 +1971,15 @@ function buildModuleRail() {
 
 /* Short labels for the compact top-bar rail buttons. */
 const RAIL_LABELS = {
-  analytics: 'Dashboard',
-  'command-deck': 'Deck',
-  ledger: 'Ledger',
-  intake: 'Intake',
-  verified: 'Verified',
-  identity: 'Identity',
-  recipes: 'Recipes',
-  vault: 'Vault',
+  ledger: 'My Foods',
+  discovered: 'Discovered',
+  reports: 'Reports',
+  'report-brand-upf': 'Brand UPF',
+  'report-brand-gras': 'Brand GRAS',
+  'report-sku-upf': 'SKU UPF',
+  'report-sku-gras': 'SKU GRAS',
+  'report-brand-insights': 'Insights',
+  vault: 'Assets',
 };
 
 /* ------------------------------------------------------------------ */
@@ -1969,13 +1992,14 @@ const APPEARANCE_LAYOUTS = [
   { mode: 'grid', sym: false, icon: 'grid_view', label: 'Grid' },
   { mode: 'split', sym: true, icon: 'splitscreen_bottom', label: 'Split' },
   { mode: 'stack', sym: true, icon: 'horizontal_split', label: 'Stacked' },
+  { mode: 'tab', sym: true, icon: 'tab', label: 'Tabbed' },
 ];
 
 function currentModuleLayout() {
   let mode = 'col';
   try {
     const saved = localStorage.getItem(LAYOUT_KEY);
-    if (saved === 'grid' || saved === 'split' || saved === 'stack') mode = saved;
+    if (saved === 'grid' || saved === 'split' || saved === 'stack' || saved === 'tab') mode = saved;
   } catch (_) {}
   return mode;
 }
@@ -2010,18 +2034,223 @@ function applySplitWrap(on) {
 }
 
 function setModuleLayout(mode) {
-  if (mode !== 'grid' && mode !== 'split' && mode !== 'stack') mode = 'col';
+  if (mode !== 'grid' && mode !== 'split' && mode !== 'stack' && mode !== 'tab') mode = 'col';
   const row = document.getElementById('modules-row');
   if (!row) return;
   applySplitWrap(mode === 'split');
+  applyTabWrap(mode === 'tab');
   row.classList.toggle('modules-grid', mode === 'grid');
   row.classList.toggle('modules-stack', mode === 'stack');
+  row.classList.toggle('modules-tab', mode === 'tab');
+  if (mode === 'tab') rebuildTabStrip();
   /* The nav (#menu-panel) lives in its own shell grid cell (grid-area: menu),
      NOT inside #modules-row, so the modules-stack rules never touch it. Leave
      its open/pivoted/rail state alone — stripping mp-open here would collapse
      the menu grid column and make the navigation disappear in stacked view. */
   if (activeAppearancePopover) renderAppearanceBody(activeAppearancePopover);
   try { localStorage.setItem(LAYOUT_KEY, mode); } catch (_) {}
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabbed layout — every OPEN module (except the always-docked Scout    */
+/* chat) is collapsed into a single container with a tab strip across   */
+/* the top; only the selected module's body is shown. Turning on a new  */
+/* module from the rail adds a tab and brings it to the front. Scout     */
+/* keeps its own docked slot beside the tabbed container.               */
+/* ------------------------------------------------------------------ */
+
+/* Short, human label + icon for a module's tab. Section modules read their
+   PORTFOLIO_SECTION definition; the standalone History module is special-cased
+   since it isn't a Portfolio section. */
+function tabMetaFor(el) {
+  const id = el.id.replace('pf-mod-', '');
+  if (id === 'history') return { id, label: 'History', icon: 'history', sym: false };
+  const sec = getPortfolioSection(id);
+  return {
+    id,
+    label: RAIL_LABELS[id] || (sec ? sec.label : id),
+    icon: sec ? sec.icon : 'widgets',
+    sym: !!(sec && iconClassFor(sec.icon).includes('symbols')),
+  };
+}
+
+/* Gather every non-Scout module into a #modules-tabbed wrapper (mirrors the
+   split layout's #modules-top wrapper) and restore them in place when off. The
+   tab strip itself is not a separate bar — it's injected into the active
+   module's own header (see rebuildTabStrip), so the tabs ARE the header bar. */
+function applyTabWrap(on) {
+  const row = document.getElementById('modules-row');
+  const scout = document.getElementById('pf-chat-panel');
+  if (!row) return;
+  const wrapped = !!document.getElementById('modules-tabbed');
+  if (on && !wrapped) {
+    const wrap = document.createElement('div');
+    wrap.id = 'modules-tabbed';
+    Array.from(row.querySelectorAll('.pf-module')).forEach((mod) => wrap.appendChild(mod));
+    if (scout) row.insertBefore(wrap, scout);
+    else row.appendChild(wrap);
+    applyTabbedLayout();
+  } else if (!on && wrapped) {
+    const wrap = document.getElementById('modules-tabbed');
+    Array.from(wrap.querySelectorAll('.pf-module')).forEach((mod) => {
+      mod.classList.remove('tab-active');
+      mod.querySelector('.pf-module-header')?.classList.remove('pf-tab-host');
+      mod.querySelector('.pf-module-header .pf-tabs')?.remove();
+      if (scout) row.insertBefore(mod, scout);
+      else row.appendChild(mod);
+    });
+    wrap.remove();
+    /* Re-assert each module's canonical flex order/side now that they're back
+       in the row (column/grid/etc. rely on it). */
+    PORTFOLIO_SECTION_IDS.forEach(applySide);
+    if (typeof applyHistorySide === 'function') applyHistorySide();
+  }
+}
+
+/* Render the tabs into the ACTIVE module's header bar (so there is one bar, not
+   a tab strip stacked above the module header). Every open module gets a tab;
+   the active module's own header hosts them, with its three-dot menu kept on the
+   right. Safe to call any time; a no-op when not in tabbed layout. */
+function rebuildTabStrip() {
+  const wrap = document.getElementById('modules-tabbed');
+  if (!wrap) return;
+
+  wrap.querySelectorAll('.pf-module:not(.is-open).tab-active').forEach((m) => m.classList.remove('tab-active'));
+  const openMods = Array.from(wrap.querySelectorAll('.pf-module.is-open'));
+  let active = openMods.find((m) => m.classList.contains('tab-active'));
+  if (!active && openMods.length) active = openMods[openMods.length - 1];
+  openMods.forEach((m) => m.classList.toggle('tab-active', m === active));
+
+  /* Drop tab hosting from every header that isn't the active one. */
+  wrap.querySelectorAll('.pf-module').forEach((m) => {
+    if (m === active) return;
+    const h = m.querySelector('.pf-module-header');
+    if (!h) return;
+    h.classList.remove('pf-tab-host');
+    h.querySelector('.pf-tabs')?.remove();
+  });
+
+  if (!active) return;
+  const header = active.querySelector('.pf-module-header');
+  if (!header) return;
+  header.classList.add('pf-tab-host');
+  let tabs = header.querySelector('.pf-tabs');
+  if (!tabs) {
+    tabs = document.createElement('div');
+    tabs.className = 'pf-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Open modules');
+    header.insertBefore(tabs, header.firstChild);
+  }
+  tabs.innerHTML = openMods.map((m) => {
+    const meta = tabMetaFor(m);
+    const isOn = m === active;
+    return `
+      <button type="button" class="pf-tab${isOn ? ' is-active' : ''}" role="tab"
+        aria-selected="${isOn ? 'true' : 'false'}" data-tab-section="${esc(meta.id)}" title="${esc(meta.label)}">
+        <span class="${meta.sym ? 'material-symbols-outlined' : 'material-icons'}">${esc(meta.icon)}</span>
+        <span class="pf-tab-label">${esc(meta.label)}</span>
+      </button>`;
+  }).join('');
+
+  /* Keep the container's side/width (and the active Width menu item) in sync. */
+  applyTabbedLayout();
+}
+
+/* Bring a module to the front of the tabbed container, moving the tab bar into
+   its header. */
+function setActiveTab(sectionId) {
+  const wrap = document.getElementById('modules-tabbed');
+  if (!wrap) return;
+  const target = document.getElementById(`pf-mod-${sectionId}`);
+  if (!target || !target.classList.contains('is-open')) return;
+  wrap.querySelectorAll('.pf-module.tab-active').forEach((m) => m.classList.remove('tab-active'));
+  target.classList.add('tab-active');
+  rebuildTabStrip();
+}
+
+/* Refresh the tab strip whenever modules open/close — only acts in tab mode. */
+function refreshTabsIfActive() {
+  if (document.getElementById('modules-tabbed')) rebuildTabStrip();
+}
+
+/* True when the tabbed layout is currently mounted. */
+function inTabbedLayout() { return !!document.getElementById('modules-tabbed'); }
+
+/* ----- Tabbed container side + width -----
+   In tab mode only one module shows at a time, so the per-module "Move to other
+   side" and "Width" controls in the three-dot act on the whole tabbed container
+   instead — flip drops it to the other side of Scout, width cycles the pane
+   single → double → triple while Scout fills the remainder. Persisted on their
+   own keys so the tabbed view remembers its shape. */
+const TABBED_SIDE_KEY = 'pf-tabbed-side';
+const TABBED_WIDE_KEY = 'pf-tabbed-wide';
+let tabbedSide = 'left';
+let tabbedWide = 0;
+
+/* Tab-pane width tiers: full (fills the row) → wide (1100px) → reading (820px),
+   centred. The pane caps its own width so Scout keeps its fixed dock untouched. */
+const TAB_WIDTH_ICONS = ['width_full', 'width_wide', 'width_normal'];
+const TAB_WIDTH_TITLES = [
+  'Width (full) — tap to narrow',
+  'Width (wide) — tap to narrow',
+  'Width (reading) — tap to reset',
+];
+
+function loadTabbedLayout() {
+  try { tabbedSide = localStorage.getItem(TABBED_SIDE_KEY) === 'right' ? 'right' : 'left'; } catch (_) {}
+  try {
+    const v = localStorage.getItem(TABBED_WIDE_KEY);
+    tabbedWide = v === '1' ? 1 : v === '2' ? 2 : 0;
+  } catch (_) {}
+}
+
+function applyTabbedLayout() {
+  const wrap = document.getElementById('modules-tabbed');
+  if (!wrap) return;
+  const right = tabbedSide === 'right';
+  /* Scout sits at order 99, Alerts at 200 — so 10 = left of Scout, 150 = right
+     of Scout but left of Alerts. */
+  wrap.style.order = right ? '150' : '10';
+  wrap.classList.toggle('tabbed-right', right);
+  const tier = pfTierOf(tabbedWide);
+  wrap.classList.toggle('tabbed-wide', tier === 1);
+  wrap.classList.toggle('tabbed-narrow', tier === 2);
+  /* Reflect the current width tier on the active module's Width menu item. */
+  wrap.querySelectorAll('.pf-tab-host .pf-menu-wide').forEach((btn) => {
+    btn.classList.toggle('is-on', tier >= 1);
+    btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+    btn.title = TAB_WIDTH_TITLES[tier];
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon) icon.textContent = TAB_WIDTH_ICONS[tier];
+  });
+}
+
+function flipTabbed() {
+  closeAllModuleMenus();
+  tabbedSide = tabbedSide === 'right' ? 'left' : 'right';
+  try { localStorage.setItem(TABBED_SIDE_KEY, tabbedSide); } catch (_) {}
+  applyTabbedLayout();
+}
+
+function cycleTabbedWidth() {
+  closeAllModuleMenus();
+  tabbedWide = (pfTierOf(tabbedWide) + 1) % 3;
+  try { localStorage.setItem(TABBED_WIDE_KEY, String(tabbedWide)); } catch (_) {}
+  applyTabbedLayout();
+}
+
+/* One delegated listener drives tab selection across rebuilds. */
+let tabStripWired = false;
+function initTabStrip() {
+  if (tabStripWired) return;
+  tabStripWired = true;
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.pf-tab[data-tab-section]');
+    if (tab && document.getElementById('modules-tabbed')?.contains(tab)) {
+      setActiveTab(tab.dataset.tabSection);
+    }
+  });
 }
 
 function setupAppearancePopover() {
@@ -2245,6 +2474,7 @@ function openHistoryModule() {
   const el = document.getElementById('pf-mod-history');
   if (!el) return;
   el.classList.add('is-open');
+  if (document.getElementById('modules-tabbed')) { refreshTabsIfActive(); setActiveTab('history'); }
   requestAnimationFrame(() =>
     el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
   );
@@ -2253,6 +2483,7 @@ function openHistoryModule() {
 function closeHistoryModule() {
   closeAllModuleMenus();
   document.getElementById('pf-mod-history')?.classList.remove('is-open');
+  refreshTabsIfActive();
 }
 
 /* Self-contained dock-side + width state for the History module. It lives
@@ -2285,6 +2516,7 @@ function applyHistoryWide() {
 }
 
 function flipHistoryModule() {
+  if (inTabbedLayout()) { flipTabbed(); return; }
   closeAllModuleMenus();
   historySide = historySide === 'right' ? 'left' : 'right';
   try { localStorage.setItem(HISTORY_SIDE_KEY, historySide); } catch (_) {}
@@ -2294,6 +2526,7 @@ function flipHistoryModule() {
 }
 
 function toggleHistoryWidth() {
+  if (inTabbedLayout()) { cycleTabbedWidth(); return; }
   closeAllModuleMenus();
   historyWide = (pfTierOf(historyWide) + 1) % 3;
   try { localStorage.setItem(HISTORY_WIDE_KEY, String(historyWide)); } catch (_) {}
@@ -2307,10 +2540,10 @@ function toggleHistoryWidth() {
 /* ------------------------------------------------------------------ */
 
 const NOTIFICATIONS = [
-  { title: '5 products eligible for Non-UPF Shield', sub: '2m ago · Verification', icon: 'verified', tone: 'green', go: 'verified' },
-  { title: '12 products ready for Brand Verified', sub: '14m ago · Intake & Growth', icon: 'rule', tone: 'amber', go: 'intake' },
-  { title: 'Retailers searching “Sodium-Reduced”', sub: '1h ago · Identity Portal', icon: 'insights', tone: 'cyan', go: 'identity' },
-  { title: 'V3 Shake shield renews in 15 days', sub: '3h ago · Lifecycle Watchdog', icon: 'event_repeat', tone: 'blue', go: 'verified' },
+  { title: '5 products eligible for Non-UPF Shield', sub: '2m ago · Verification', icon: 'verified', tone: 'green', go: 'ledger' },
+  { title: '12 products ready for Brand Verified', sub: '14m ago · My Foods Portfolio', icon: 'rule', tone: 'amber', go: 'ledger' },
+  { title: 'Retailers searching “Sodium-Reduced”', sub: '1h ago · Discovered Foods', icon: 'insights', tone: 'cyan', go: 'discovered' },
+  { title: 'V3 Shake shield renews in 15 days', sub: '3h ago · Lifecycle Watchdog', icon: 'event_repeat', tone: 'blue', go: 'ledger' },
 ];
 
 let alertsController = null;
@@ -2686,6 +2919,8 @@ function bootstrap() {
   buildModules();
   buildHistoryModule();
   initModuleMenus();
+  initTabStrip();
+  loadTabbedLayout();
 
   /* Delegated clicks for the whole modules row: side switcher, in-view section
      navigation, acknowledgements, and product deep-dive. (Open/close lives in

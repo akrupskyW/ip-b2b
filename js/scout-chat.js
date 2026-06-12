@@ -61,7 +61,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'nova', name: 'TIER', version: 'v2.1', group: 'core',
-    icon: 'auto_awesome', color: '#4EE0B7', bg: '#002A22',
+    icon: 'auto_awesome', color: '#6D947C', bg: '#1B2D22',
     tagline: 'UPF Classification Engine',
     desc: 'Scores every ingredient and product against UPF, WFPB, and clean-label frameworks. Identifies ultra-processed markers, additives, and clean-label alternatives in real time.',
     tags: ['UPF Scoring', 'Ingredients', 'Processing Tier', 'Clean Label'],
@@ -69,7 +69,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'scout', name: 'WISE Foods', version: 'v1.8', group: 'core',
-    icon: 'search', color: '#FFB347', bg: '#2A1A00',
+    icon: 'search', color: '#FFC434', bg: '#4D1007',
     tagline: 'WISE Foods Agent',
     desc: 'Queries the WISE Foods registry to match SKUs, look up nutritional metadata, cross-reference product databases, and handle bulk import validation.',
     tags: ['SKU Lookup', 'Registry', 'Bulk Import', 'Matching'],
@@ -85,7 +85,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'lens', name: 'LENS', version: 'v2.0', group: 'specialist',
-    icon: 'analytics', color: '#5B9BD5', bg: '#001A2E',
+    icon: 'analytics', color: '#687896', bg: '#1A2339',
     tagline: 'Analytics & Insights Agent',
     desc: 'Deep-dives into verification trends, brand-level SKU analytics, ingredient risk scoring, and generates scheduled insight reports for brands and retail partners.',
     tags: ['Trend Reports', 'SKU Analytics', 'Risk Scoring', 'Dashboards'],
@@ -93,7 +93,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'vault', name: 'VAULT', version: 'v1.2', group: 'specialist',
-    icon: 'lock', color: '#D4A853', bg: '#261A0A',
+    icon: 'lock', color: '#D7BE91', bg: '#1B2D22',
     tagline: 'Documents & Attestation Agent',
     desc: 'Handles product attestation documents, manages secure e-signing workflows, maintains immutable audit trails, and archives verification certificates.',
     tags: ['Attestation', 'E-Signing', 'Audit Trail', 'Archives'],
@@ -101,7 +101,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'pulse', name: 'PULSE', version: 'v1.4', group: 'specialist',
-    icon: 'biotech', color: '#E879F9', bg: '#1A0026',
+    icon: 'biotech', color: '#8B9FAF', bg: '#1A2339',
     tagline: 'Deep UPF Analysis Panel',
     desc: 'Activates a dedicated analysis panel with real-time ingredient scoring, processing-tier visualization, additive risk flags, and clean-label alternatives — all in sync with your conversation.',
     tags: ['Ingredient Scoring', 'Processing Tier', 'Additive Flags', 'Live Panel'],
@@ -130,7 +130,7 @@ function nowLabel() {
 
 /* Standing reminder under the input that Scout is an assistant, not the
    source of record — the single most important piece of AI trust microcopy. */
-const DEFAULT_DISCLAIMER = 'Scout™ can make mistakes — review important details before you publish.';
+const DEFAULT_DISCLAIMER = '';
 
 function defaultReply(text, intent) {
   /* An intent-id match always wins so a clicked chip continues its own flow. */

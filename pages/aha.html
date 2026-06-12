@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISE · Portfolio — The Truth Layer</title>
+  <title>WISE · Dashboard</title>
   <script src="../js/text-size-fouc.js"></script>
   <script>
     /* FOUC guard — apply the persisted theme before first paint so the page
@@ -27,9 +27,9 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
   <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="portfolio.css?v=noheader-scout3" />
+  <link rel="stylesheet" href="dashboard.css?v=noheader-scout3" />
 </head>
-<body data-product-id="wisecode-portfolio">
+<body data-product-id="dashboard">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
@@ -38,22 +38,20 @@
         </div>
       </div>
     </div>
-    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar).
-         The 'portfolio' variant adds the section-module rail + layout switcher;
-         #pf-module-rail is populated by portfolio-module.js. -->
+    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
     <div id="topbar-row" hidden aria-hidden="true"></div>
 
     <div id="modules-row">
-      <!-- Section modules are injected here by portfolio-module.js, between the
-           sticky menu rail and the persistent Scout chat. -->
-
-      <aside id="pf-chat-panel" class="scout-dock scout-dock-open" aria-label="Scout™ chat"></aside>
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+        </div>
+      </main>
     </div>
   </div>
 
-  <!-- Chart.js powers the Analytics section's charts and graphs. -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="../js/portfolio-module.js?v=history-controls"></script>
+  <script type="module" src="../js/agent-overview.js"></script>
   <script src="/livereload.js?snipver=1"></script>
 </body>
 </html>

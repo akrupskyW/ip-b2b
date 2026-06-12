@@ -197,85 +197,119 @@ export const TOP_LEVEL_AGENT_IDS = [
  *   tagline— one-liner shown on the section's hero
  */
 export const PORTFOLIO_SECTIONS = {
-  'command-deck': {
-    id: 'command-deck',
-    label: 'Command Deck',
-    icon: 'cadence',
-    sub: 'The Nexus · Pulse',
-    tagline:
-      'Your high-altitude entry point. Brand-health gauges and the AI Portfolio Agent’s intelligence briefing.',
-  },
-  analytics: {
-    id: 'analytics',
-    label: 'Dashboard',
-    icon: 'insert_chart',
-    sub: 'Visual intelligence · Charts & graphs',
-    tagline:
-      'The visual intelligence layer — charts and graphs that track verification, trust coverage, portfolio composition, and competitive position over time.',
-  },
   ledger: {
     id: 'ledger',
-    label: 'The Ledger',
-    icon: 'receipt',
-    sub: 'Zoom In · Full portfolio',
+    label: 'My Foods Portfolio',
+    icon: 'inventory_2',
+    sub: 'Your portfolio · Full list',
     tagline:
-      'The high-fidelity list view. Filter, sort, and bulk-manage every product in your portfolio.',
+      'The high-fidelity list view of every food you own. Filter, sort, and bulk-manage your entire portfolio.',
   },
-  intake: {
-    id: 'intake',
-    label: 'Intake & Growth',
-    icon: 'cloud_upload',
-    sub: 'Pathway 1 · Managing the Truth',
+  discovered: {
+    id: 'discovered',
+    label: 'Discovered Foods',
+    icon: 'travel_explore',
+    sub: 'Public registry · Discovery',
     tagline:
-      'AI-first ingestion, the Brand Verified gold standard, market governance, Smart Sets, and Discovery Tags.',
+      'Foods discovered across the public WISEcode registry — explore, compare, and pull matches into your portfolio.',
   },
-  verified: {
-    id: 'verified',
-    label: 'Verified Pipeline',
-    icon: 'verified',
-    sub: 'Pathway 2 · Managing the Trust',
+  reports: {
+    id: 'reports',
+    label: 'Portfolio Reports',
+    icon: 'summarize',
+    sub: 'Reports & exports',
     tagline:
-      'Pre-qualification, the 1-2-3 Get Verified flow, and the lifecycle watchdog for renewals.',
+      'Standardized portfolio reports across UPF, GRAS, and WISEcode insights — at the brand and SKU level.',
+    children: [
+      'report-brand-upf',
+      'report-brand-gras',
+      'report-sku-upf',
+      'report-sku-gras',
+      'report-brand-insights',
+    ],
   },
-  identity: {
-    id: 'identity',
-    label: 'Identity Portal',
-    icon: 'badge',
-    sub: 'Pathway 3 · Managing the Presence',
-    tagline:
-      'B2B/B2C synthesis, identity assets, certifications, and ecosystem connectivity.',
+  'report-brand-upf': {
+    id: 'report-brand-upf',
+    label: 'Brand UPF Report',
+    icon: 'description',
+    parent: 'reports',
+    sub: 'Report · Brand level',
+    tagline: 'Ultra-processed food exposure across your brand.',
   },
-  recipes: {
-    id: 'recipes',
-    label: 'Recipe Lab',
-    icon: 'restaurant_menu',
-    sub: 'Composed formulations',
-    tagline:
-      'Build composed recipes in real-time with live NFP+™ calculation.',
+  'report-brand-gras': {
+    id: 'report-brand-gras',
+    label: 'Brand GRAS Report',
+    icon: 'description',
+    parent: 'reports',
+    sub: 'Report · Brand level',
+    tagline: 'Generally Recognized As Safe (GRAS) status across your brand.',
+  },
+  'report-sku-upf': {
+    id: 'report-sku-upf',
+    label: 'SKU UPF Report',
+    icon: 'description',
+    parent: 'reports',
+    sub: 'Report · SKU level',
+    tagline: 'Ultra-processed food exposure at the individual SKU level.',
+  },
+  'report-sku-gras': {
+    id: 'report-sku-gras',
+    label: 'SKU GRAS Report',
+    icon: 'description',
+    parent: 'reports',
+    sub: 'Report · SKU level',
+    tagline: 'Generally Recognized As Safe (GRAS) status at the SKU level.',
+  },
+  'report-brand-insights': {
+    id: 'report-brand-insights',
+    label: 'Brand WISEcode Insights Report',
+    icon: 'insights',
+    parent: 'reports',
+    sub: 'Report · Brand level',
+    tagline: 'WISEcode intelligence and signals across your brand.',
   },
   vault: {
     id: 'vault',
-    label: 'Asset Vault',
+    label: 'Assets',
     icon: 'folder_special',
-    sub: 'Premium wing · Trust assets',
+    sub: 'Trust assets',
     tagline:
       'Your living library of Verified Shields, retail sheets, and social assets — organized by standard.',
   },
 };
 
+/** Every navigable Portfolio surface, in display order — drives module +
+ *  rail building in portfolio-module.js. Report children are full modules
+ *  that nest under "Portfolio Reports" in the menu. */
 export const PORTFOLIO_SECTION_IDS = [
-  'analytics',
-  'command-deck',
   'ledger',
-  'intake',
-  'verified',
-  'identity',
-  'recipes',
+  'discovered',
+  'reports',
+  'report-brand-upf',
+  'report-brand-gras',
+  'report-sku-upf',
+  'report-sku-gras',
+  'report-brand-insights',
+  'vault',
+];
+
+/** Top-level Portfolio sections shown directly in the menu (reports expands
+ *  to reveal its children). */
+export const PORTFOLIO_TOP_SECTION_IDS = [
+  'ledger',
+  'discovered',
+  'reports',
   'vault',
 ];
 
 /** Platform products shown above the agent tree. */
 export const NAV_PRODUCTS = {
+  dashboard: {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: 'dashboard',
+    slug: 'aha.html',
+  },
   'wisecode-ai': {
     id: 'wisecode-ai',
     label: 'WISEcode AI',
@@ -293,7 +327,7 @@ export const NAV_PRODUCTS = {
     label: 'WISEcode Portfolio',
     icon: 'inventory_2',
     slug: 'portfolio.html',
-    sections: PORTFOLIO_SECTION_IDS,
+    sections: PORTFOLIO_TOP_SECTION_IDS,
   },
 };
 
@@ -302,9 +336,10 @@ export function getPortfolioSection(id) {
 }
 
 export const TOP_LEVEL_PRODUCT_IDS = [
-  'wisecode-ai',
-  'wisecode-studio',
+  'dashboard',
   'wisecode-portfolio',
+  'wisecode-studio',
+  'wisecode-ai',
 ];
 
 /** href for an agent — top-level agents resolve to a real page; child agents
@@ -453,16 +488,44 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
       </div>`;
   };
 
-  const renderSection = (product, sectionId) => {
+  const renderSection = (product, sectionId, depth = 1) => {
     const sec = PORTFOLIO_SECTIONS[sectionId];
     if (!sec) return '';
     const href = `${prefix}${product.slug}#${sectionId}`;
     const isActive = sectionId === activeSection ? ' is-active' : '';
+    const indent = (depth - 1) * 14;
+    const indentStyle = indent > 0 ? ` style="padding-left:${10 + indent}px;"` : '';
+    const hasChildren = Array.isArray(sec.children) && sec.children.length > 0;
+
+    if (!hasChildren) {
+      return `
+        <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-section-id="${escAttr(sectionId)}" data-depth="${depth}"${indentStyle}>
+          <span class="menu-nav-subicon"><span class="${iconClassFor(sec.icon)}">${escAttr(sec.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(sec.label)}</span>
+        </a>`;
+    }
+
+    /* Sections with children (e.g. Portfolio Reports) render as their own
+       expandable sub-group — the row links to / toggles the section module,
+       while the chevron reveals the child report views beneath it. */
+    const isOpen = sectionId === activeSection || sec.children.includes(activeSection);
+    const childrenHtml = sec.children.map((cid) => renderSection(product, cid, depth + 1)).join('');
+    const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
     return `
-      <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-section-id="${escAttr(sectionId)}" data-depth="1">
-        <span class="menu-nav-subicon"><span class="${iconClassFor(sec.icon)}">${escAttr(sec.icon)}</span></span>
-        <span class="menu-nav-label">${escAttr(sec.label)}</span>
-      </a>`;
+      <div class="menu-nav-group menu-nav-subgroup" data-tier="section" data-group="${escAttr(sectionId)}" data-open="${isOpen ? 'true' : 'false'}">
+        <a class="menu-nav-subitem menu-nav-toggle${isActive}" href="${escAttr(href)}" data-section-id="${escAttr(sectionId)}" data-depth="${depth}" data-toggle-group="${escAttr(sectionId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(sectionId)}"${indentStyle}>
+          <span class="menu-nav-subicon"><span class="${iconClassFor(sec.icon)}">${escAttr(sec.icon)}</span></span>
+          <span class="menu-nav-label">${escAttr(sec.label)}</span>
+          <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(sectionId)}" aria-label="Toggle ${escAttr(sec.label)} reports">
+            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+          </button>
+        </a>
+        <div class="menu-nav-children" id="menu-nav-${escAttr(sectionId)}" role="region" aria-label="${escAttr(sec.label)}"${collapsedAttrs}>
+          <div class="menu-nav-children-inner">
+            ${childrenHtml}
+          </div>
+        </div>
+      </div>`;
   };
 
   const renderProduct = (productId) => {

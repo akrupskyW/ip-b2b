@@ -171,7 +171,7 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
     function buildSparkline(canvas, kind, color){
       const ctx = canvas.getContext('2d');
       const map = {
-        primary: colorVar('--primary') || '#024EAE',
+        primary: colorVar('--primary') || '#25507C',
         amber: colorVar('--ter-amber'),
         red: colorVar('--sec-red'),
         cyan: colorVar('--ter-cyan'),
@@ -612,7 +612,7 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
           window.location.assign(new URL('pages/ai-chat.html', window.location.href).href);
         },
       },
-      dashboard:   { title:'Portfolio Overview',    sub:'1,248 SKUs across 6 categories · last refresh 2 minutes ago', render: renderDashboardModule },
+      dashboard:   { title:'Dashboard',             sub:'', render: renderBlankDashboardModule },
       products:    { title:'Product Intelligence',  sub:'1,248 active products · 6 categories · 54 brands', render: renderProductsModule },
       ingredients: { title:'Ingredient Intelligence', sub:'9,420 ingredients tracked · 214 flagged this cycle', render: renderIngredientsModule },
       processing:  { title:'Processing Analysis',   sub:'Severity, additive load, and processing markers', render: renderProcessingModule },
@@ -627,6 +627,10 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
     function routeIsValid(id){ return !!(id && MODULES[id]); }
 
     // ========== DASHBOARD MODULE ==========
+    function renderBlankDashboardModule(){
+      $('#moduleContent').innerHTML = '';
+    }
+
     function renderDashboardModule(){
       $('#moduleContent').innerHTML = `
         <div class="kpi-grid">
@@ -1811,11 +1815,11 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
               <span class="material-symbols-rounded ms-fill" style="font-size:16px;color:var(--primary);">check_circle</span>
             </div>
             <div class="popover-item" data-pop-action="ws-northgate">
-              <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;background:linear-gradient(135deg,var(--ter-amber),#c47100);">NG</div>
+              <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;background:linear-gradient(135deg,var(--ter-amber),#A16908);">NG</div>
               <div class="popover-item-body"><div>Northgate</div><div class="popover-item-sub">Enterprise · v4.0</div></div>
             </div>
             <div class="popover-item" data-pop-action="ws-bright">
-              <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;background:linear-gradient(135deg,var(--ter-cyan),#035e6b);">BC</div>
+              <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;background:linear-gradient(135deg,var(--ter-cyan),#1A2339);">BC</div>
               <div class="popover-item-body"><div>Bright Co.</div><div class="popover-item-sub">Trial</div></div>
             </div>
             <div class="popover-divider"></div>

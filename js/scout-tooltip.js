@@ -68,7 +68,7 @@ const STANDALONE_STYLES = `
   display: block;
   line-height: 1.45;
   font-weight: 500;
-  color: var(--text-muted, #A8C9EA);
+  color: var(--text-muted, #C5CFD7);
 }
 .scout-tip-letter {
   display: inline-block;

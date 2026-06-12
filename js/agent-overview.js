@@ -20,6 +20,7 @@ import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
+import { renderDashboardHome, editBrandBanner } from './dashboard-home.js';
 
 function escHtml(s) {
   return String(s)
@@ -293,10 +294,56 @@ function renderMain(agent) {
     ${cards}`;
 }
 
+/* A blank shell page (menu + top bar + Scout dock, empty main) used for
+   product destinations that don't yet have bespoke content — e.g. the
+   top-level Dashboard. Driven by `<body data-product-id="…">` (no agent id). */
+function bootstrapBlankPage(productId) {
+  mountTopbar({ variant: 'agent', logoHref: 'ai-chat.html' });
+
+  const isDashboard = productId === 'dashboard';
+  const headerEl = document.getElementById('agent-main-header');
+  if (headerEl) {
+    headerEl.innerHTML = isDashboard
+      ? `<span class="agent-main-icon"><span class="material-icons">dashboard</span></span>
+         <div class="agent-main-titles">
+           <div class="agent-main-title">Dashboard</div>
+           <div class="agent-main-sub">Brand Intelligence</div>
+         </div>`
+      : '';
+  }
+  const mainEl = document.getElementById('agent-main-scroll');
+  if (mainEl) {
+    mainEl.innerHTML = '';
+    /* The top-level Dashboard renders the Brand Intelligence overview; other
+       blank product shells stay empty. */
+    if (isDashboard) renderDashboardHome(mainEl);
+  }
+
+  const navEl = document.getElementById('agent-menu-nav');
+  if (navEl) {
+    mountAgentMenu(navEl, null, {
+      fromAgentPage: true,
+      activeProductId: productId || null,
+    });
+  }
+
+  setupTrailingRail();
+  /* Give the dashboard's main panel the same header cluster (⋯ menu + width
+     toggle) every other pane has, so the functions survive header-float. */
+  if (isDashboard) setupMainPanelControls();
+  setupScoutDock();
+}
+
 export function bootstrapAgentPage() {
   const agentId = document.body.dataset.agentId;
   const agent = getAgent(agentId);
   if (!agent) {
+    /* No agent id → treat as a blank shell page (keeps the menu + top bar so
+       navigation still works) instead of erroring out. */
+    if (document.body.dataset.productId) {
+      bootstrapBlankPage(document.body.dataset.productId);
+      return;
+    }
     console.error(`[agent-overview] unknown agent id: ${agentId}`);
     return;
   }
@@ -342,6 +389,8 @@ export function bootstrapAgentPage() {
   if (navEl) mountAgentMenu(navEl, agent.id, { fromAgentPage: true });
 
   setupTrailingRail();
+  /* Same header cluster (⋯ menu + width toggle) as every other pane. */
+  setupMainPanelControls();
   setupScoutDock();
 
   if (location.hash) {
@@ -480,7 +529,17 @@ function setDarkMode(on) {
 }
 
 function renderMorePopover() {
+  const isDashboard = document.body.dataset.productId === 'dashboard';
+  const bannerItem = isDashboard
+    ? `
+    <button type="button" class="topbar-menu-item" data-action="update-banner">
+      <span class="material-icons topbar-menu-icon">image</span>
+      <span>Update brand banner</span>
+    </button>
+    <div class="topbar-menu-divider"></div>`
+    : '';
   return `
+    ${bannerItem}
     <button type="button" class="topbar-menu-item" data-action="back-workspace">
       <span class="material-icons topbar-menu-icon">arrow_back</span>
       <span>Back to workspace</span>
@@ -531,6 +590,151 @@ function ensureMorePopover(moreBtn) {
   pop.setAttribute('aria-labelledby', moreBtn.id || 'topbar-more-btn');
   wrap.appendChild(pop);
   return pop;
+}
+
+/* The page-level header actions, shared by the (legacy) top-bar More popover
+   and the main-panel header menu so every entry point behaves identically. */
+function runMoreAction(action) {
+  switch (action) {
+    case 'update-banner':
+      editBrandBanner();
+      break;
+    case 'back-workspace':
+      window.location.href = '../index.html';
+      break;
+    case 'open-chat':
+      window.location.href = 'ai-chat.html';
+      break;
+    case 'add-member':
+      openAddMemberSheet();
+      break;
+    case 'export':
+      exportOverview(getAgent(document.body.dataset.agentId)?.label || 'WISEcode');
+      break;
+    case 'share':
+      shareOverview();
+      break;
+    case 'close':
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = '../index.html';
+      break;
+  }
+}
+
+/* ====================================================================
+   Main-panel header controls.
+     Every pane/module on the app carries the same header cluster — a
+     more-options (⋯) menu + a width/resize toggle. The central agent /
+     dashboard panel was the only one missing it, so its header (and the
+     pinned controls kept in headerless "header-float" mode) had no
+     functions. This mirrors the Scout dock / portfolio module clusters
+     so the main panel reads + behaves like every other pane.
+==================================================================== */
+
+const MAIN_WIDTH_KEY = 'wise-main-width';
+/* Mirror the portfolio tab-pane width control (#modules-tabbed): the panel
+   shares the row with the fixed Scout dock, so it defaults to FILLING the
+   available space and the toggle NARROWS it to centred reading widths. This
+   keeps the toggle visibly functional at any panel width (unlike a high cap
+   that a Scout-constrained panel can never reach). */
+const MAIN_WIDTH_ICONS = ['width_full', 'width_wide', 'width_normal'];
+const MAIN_WIDTH_TITLES = [
+  'Width (full) — tap to narrow',
+  'Width (wide) — tap to narrow',
+  'Width (reading) — tap to reset',
+];
+
+function readMainWidth() {
+  try {
+    const n = parseInt(localStorage.getItem(MAIN_WIDTH_KEY), 10);
+    return Number.isFinite(n) ? Math.max(0, Math.min(2, n)) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/* Reflect the width tier onto the module container itself (drives the WHOLE
+   module's width in CSS — header, border + body, not just the inner content)
+   and the toggle button's icon/state. */
+function applyMainWidth(tier) {
+  /* tier 0 = full (fills the row, no cap) · 1 = wide (1180) · 2 = reading (820).
+     Apply to #agent-main — the outer flex slot/card — so the entire module
+     resizes. The inner content fills whatever width the module ends up at. */
+  const main = document.getElementById('agent-main');
+  if (main) {
+    main.classList.toggle('main-w-wide', tier === 1);
+    main.classList.toggle('main-w-narrow', tier === 2);
+  }
+  const btn = document.getElementById('agent-main-width-btn');
+  if (btn) {
+    btn.classList.toggle('is-on', tier >= 1);
+    btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+    btn.title = MAIN_WIDTH_TITLES[tier];
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon) icon.textContent = MAIN_WIDTH_ICONS[tier];
+  }
+}
+
+function cycleMainWidth() {
+  const next = (readMainWidth() + 1) % 3;
+  try { localStorage.setItem(MAIN_WIDTH_KEY, String(next)); } catch {}
+  applyMainWidth(next);
+}
+
+/* Markup for the main-panel control cluster — same classes (so the same
+   shared styles apply) as the Scout dock's `.sc-topbar-controls`. */
+function mainPanelControlsHTML() {
+  return `
+    <div class="panel-controls">
+      <div class="panel-more-wrap">
+        <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-icons">more_horiz</span></button>
+        <div class="topbar-popover hidden" id="agent-main-more-pop" role="menu">${renderMorePopover()}</div>
+      </div>
+      <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[0])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[0]}</span></button>
+    </div>`;
+}
+
+/* Append the control cluster to the main-panel header and wire it up. Safe to
+   call once after the header markup is in place. */
+function setupMainPanelControls() {
+  const headerEl = document.getElementById('agent-main-header');
+  if (!headerEl || headerEl.querySelector('.panel-controls')) return;
+  headerEl.insertAdjacentHTML('beforeend', mainPanelControlsHTML());
+
+  applyMainWidth(readMainWidth());
+
+  const widthBtn = headerEl.querySelector('#agent-main-width-btn');
+  if (widthBtn) widthBtn.addEventListener('click', (e) => { e.stopPropagation(); cycleMainWidth(); });
+
+  const moreWrap = headerEl.querySelector('.panel-more-wrap');
+  const moreBtn = headerEl.querySelector('#agent-main-more-btn');
+  const morePop = headerEl.querySelector('#agent-main-more-pop');
+  if (moreBtn && morePop) {
+    const closePop = () => {
+      morePop.classList.add('hidden');
+      moreBtn.classList.remove('is-open');
+      moreBtn.setAttribute('aria-expanded', 'false');
+    };
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const opening = morePop.classList.contains('hidden');
+      morePop.classList.toggle('hidden', !opening);
+      moreBtn.classList.toggle('is-open', opening);
+      moreBtn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+    morePop.addEventListener('click', (e) => {
+      const action = e.target.closest('[data-action]');
+      if (!action) return;
+      closePop();
+      runMoreAction(action.dataset.action);
+    });
+    document.addEventListener('click', (e) => {
+      if (morePop.classList.contains('hidden')) return;
+      if (moreWrap && moreWrap.contains(e.target)) return;
+      closePop();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
+  }
 }
 
 function setupTrailingRail() {
@@ -590,29 +794,8 @@ function setupTrailingRail() {
     morePop.addEventListener('click', (e) => {
       const action = e.target.closest('[data-action]');
       if (!action) return;
-      const a = action.dataset.action;
       closeMorePopover();
-      switch (a) {
-        case 'back-workspace':
-          window.location.href = '../index.html';
-          break;
-        case 'open-chat':
-          window.location.href = 'ai-chat.html';
-          break;
-        case 'add-member':
-          openAddMemberSheet();
-          break;
-        case 'export':
-          exportOverview(getAgent(document.body.dataset.agentId)?.label || 'WISEcode');
-          break;
-        case 'share':
-          shareOverview();
-          break;
-        case 'close':
-          if (window.history.length > 1) window.history.back();
-          else window.location.href = '../index.html';
-          break;
-      }
+      runMoreAction(action.dataset.action);
     });
   }
 

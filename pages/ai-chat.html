@@ -21,7 +21,7 @@
         extend: {
           fontFamily: { sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'] },
           colors: {
-            oyster: { 100: '#FBF9FF', 300: '#E0DBE7', 400: '#B7B2C4', 500: '#BBB6C6', 600: '#B6B1C1', 700: '#413A4D', 800: '#2C2439' },
+            oyster: { 100: '#E2EEF7', 300: '#C5CFD7', 400: '#C5CFD7', 500: '#C5CFD7', 600: '#C5CFD7', 700: '#1A2339', 800: '#1A2339' },
           },
         },
       },
@@ -42,26 +42,26 @@
       --border: rgba(17,24,39,0.08);
       --border-strong: rgba(17,24,39,0.14);
 
-      --primary: #024EAE;
-      --primary-10: rgba(2, 78, 174, 0.10);
-      --primary-20: rgba(2, 78, 174, 0.20);
-      --primary-soft: rgba(2, 78, 174, 0.08);
-      --sec-green: #3BAA5C;
-      --sec-green-10: rgba(59, 170, 92, 0.12);
-      --sec-red: #D94C4C;
-      --sec-red-10: rgba(217, 76, 76, 0.12);
-      --ter-amber: #F5A524;
-      --ter-amber-10: rgba(245, 165, 36, 0.14);
-      --ter-violet: #7C3AED;
-      --ter-violet-10: rgba(124, 58, 237, 0.12);
-      --ter-cyan: #06B6D4;
-      --ter-cyan-10: rgba(6, 182, 212, 0.12);
+      --primary: #25507C;
+      --primary-10: rgba(37, 80, 124, 0.10);
+      --primary-20: rgba(37, 80, 124, 0.20);
+      --primary-soft: rgba(37, 80, 124, 0.08);
+      --sec-green: #32A966;
+      --sec-green-10: rgba(50, 169, 102, 0.12);
+      --sec-red: #DC3038;
+      --sec-red-10: rgba(220, 48, 56, 0.12);
+      --ter-amber: #FFC434;
+      --ter-amber-10: rgba(255, 196, 52, 0.14);
+      --ter-violet: #25507C;
+      --ter-violet-10: rgba(37, 80, 124, 0.12);
+      --ter-cyan: #25507C;
+      --ter-cyan-10: rgba(37, 80, 124, 0.12);
 
       /* AAA-safe ink for semantic colors used as TEXT on their light tints (7:1). */
-      --sec-green-text: #104D27;
-      --ter-amber-text: #6F3604;
-      --sec-red-text: #831313;
-      --ter-cyan-text: #094E61;
+      --sec-green-text: #245E3B;
+      --ter-amber-text: #75360A;
+      --sec-red-text: #831F23;
+      --ter-cyan-text: #1A2339;
 
       --r-sm: 10px;
       --r-md: 16px;
@@ -103,14 +103,14 @@
       --border: rgba(255,255,255,0.08);
       --border-strong: rgba(255,255,255,0.14);
 
-      --primary-soft: rgba(2, 78, 174, 0.18);
-      --primary-bright: #93C5FD;
+      --primary-soft: rgba(37, 80, 124, 0.18);
+      --primary-bright: #8B9FAF;
 
       /* Softened pastel inks so semantic TEXT clears 7:1 on its 16% tint over navy. */
-      --sec-green-text: #AEDCBB;
-      --ter-amber-text: #FACF8A;
-      --sec-red-text: #FBB1B1;
-      --ter-cyan-text: #8CDDEB;
+      --sec-green-text: #B6C9BE;
+      --ter-amber-text: #D7BE91;
+      --sec-red-text: #FFE1DC;
+      --ter-cyan-text: #C5CFD7;
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
       --shadow-3: 0 8px 24px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5);
@@ -339,7 +339,7 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: var(--sec-red, #ef4444);
+      background: var(--sec-red, #DC3038);
       border: 2px solid var(--surface);
     }
     .topbar-profile.has-dot.is-read::after { display: none; }
@@ -744,8 +744,8 @@
     }
     #menu-panel.mp-open .menu-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     html.dark #menu-panel .menu-inner {
-      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-      border: 1px solid rgba(2, 78, 174, 0.18);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      border: 1px solid rgba(37, 80, 124, 0.18);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     /* ------------------------------------------------------------------ *
@@ -814,7 +814,7 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #342640 0%, #2c2439 60%, #261d34 100%);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: left center;
       font-size: var(--fs-ui);
@@ -854,7 +854,7 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #342640 0%, #2c2439 60%, #261d34 100%);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: left center;
       font-size: var(--fs-ui);
@@ -949,7 +949,7 @@
     .bo-brand-strip {
       height: 72px;
       margin: -12px -12px 0;
-      background: #6FA82B url('../assets/simple-truth-banner.png') center / cover no-repeat;
+      background: #6D947C url('../assets/simple-truth-banner.png') center / cover no-repeat;
       border-bottom: 1px solid var(--border-strong);
     }
     .bo-bar-row + .bo-bar-row { margin-top: 11px; }
@@ -967,11 +967,11 @@
     .bo-bar-fill { height: 100%; border-radius: 999px; background: var(--primary); }
     /* Health-bar status — color keyed to the value in 20% bands, assigned by
        paintBoBars() from each fill's width. */
-    .bo-bar-fill.lvl-5 { background: #5FA511; } /* 80–100% · Simple Truth green */
-    .bo-bar-fill.lvl-4 { background: #4ADE80; } /* 60–<80% · lighter green */
-    .bo-bar-fill.lvl-3 { background: #EAB308; } /* 40–<60% · yellow */
-    .bo-bar-fill.lvl-2 { background: #F97316; } /* 20–<40% · orange */
-    .bo-bar-fill.lvl-1 { background: #EF4444; } /* 0–<20% · red */
+    .bo-bar-fill.lvl-5 { background: #6D947C; } /* 80–100% · Simple Truth green */
+    .bo-bar-fill.lvl-4 { background: #6D947C; } /* 60–<80% · lighter green */
+    .bo-bar-fill.lvl-3 { background: #FFC434; } /* 40–<60% · yellow */
+    .bo-bar-fill.lvl-2 { background: #D27326; } /* 20–<40% · orange */
+    .bo-bar-fill.lvl-1 { background: #DC3038; } /* 0–<20% · red */
     .bo-bar-note { font-size: var(--fs-label); color: var(--text-muted); margin-top: 4px; }
     /* Hairline divider used to fold two related read-outs into a single card. */
     .bo-divider { height: 1px; background: var(--border-strong); margin: 14px 0; }
@@ -1179,7 +1179,7 @@
       padding: 10px 14px 9px;
       font-size: var(--fs-ui);
       font-weight: 500;
-      color: #B6B1C1;
+      color: #C5CFD7;
       background: transparent !important;
       border: none !important;
       border-bottom: 2px solid transparent !important;
@@ -1202,9 +1202,9 @@
       cursor: pointer;
       transition: background 0.15s ease;
     }
-    .history-item:hover { background: #413A4D; }
-    .history-item-title { font-size: var(--fs-ui); font-weight: 500; color: #E0DBE7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-item-meta { font-size: var(--fs-ui); color: #BBB6C6; margin-top: 2px; }
+    .history-item:hover { background: #1A2339; }
+    .history-item-title { font-size: var(--fs-ui); font-weight: 500; color: #C5CFD7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item-meta { font-size: var(--fs-ui); color: #C5CFD7; margin-top: 2px; }
     .history-badge {
       display: inline-flex;
       align-items: center;
@@ -1214,11 +1214,11 @@
       font-weight: 600;
       flex-shrink: 0;
     }
-    .hb-progress { background: #3D2200; color: #FFB347; }
+    .hb-progress { background: #4D1007; color: #FFC434; }
     .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
-    .hb-complete { background: #003326; color: #4EE0B7; }
-    .hb-flagged { background: #3E0F10; color: #FF7C7E; }
-    .hb-view { background: #1a2a4a; color: #7eb8ff; }
+    .hb-complete { background: #1B2D22; color: #6D947C; }
+    .hb-flagged { background: #4D1007; color: #DC3038; }
+    .hb-view { background: #1A2339; color: #C5CFD7; }
     .history-item.is-active-view {
       background: color-mix(in srgb, var(--primary) 12%, transparent);
       outline: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
@@ -1254,8 +1254,8 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #151120 0%, #0f0c18 60%, #12100a 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 179, 71, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #12100a 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 196, 52, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: left center;
       font-size: var(--fs-ui);
     }
@@ -1267,8 +1267,8 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #170f28 0%, #130d1f 60%, #12081c 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(232, 121, 249, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(139, 159, 175, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: left center;
       font-size: var(--fs-ui);
     }
@@ -1296,8 +1296,8 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #2a1520 0%, #1e1218 60%, #1a1020 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(217, 76, 76, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(220, 48, 56, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: right center;
       font-size: var(--fs-ui);
     }
@@ -1309,12 +1309,12 @@
       align-items: center;
       gap: 8px;
       padding: 12px;
-      border-bottom: 1px solid rgba(217, 76, 76, 0.12);
+      border-bottom: 1px solid rgba(220, 48, 56, 0.12);
       flex-shrink: 0;
       height: var(--panel-header-h);
       min-height: var(--panel-header-h);
       box-sizing: border-box;
-      background: linear-gradient(135deg, rgba(42, 16, 24, 0.9) 0%, rgba(22, 14, 28, 0.95) 100%);
+      background: linear-gradient(135deg, rgba(26, 35, 57, 0.9) 0%, rgba(22, 14, 28, 0.95) 100%);
     }
     .notif-scroll-body {
       flex: 1;
@@ -1347,12 +1347,12 @@
       background: rgba(255, 255, 255, 0.06);
     }
     .notif-item-icon .material-icons { font-size: 16px !important; }
-    .notif-item-icon.notif-ic-red    { color: var(--sec-red, #D94C4C); }
-    .notif-item-icon.notif-ic-amber  { color: var(--ter-amber, #FFB347); }
+    .notif-item-icon.notif-ic-red    { color: var(--sec-red, #DC3038); }
+    .notif-item-icon.notif-ic-amber  { color: var(--ter-amber, #FFC434); }
     .notif-item-icon.notif-ic-blue   { color: var(--primary); }
     .notif-item-body { flex: 1; min-width: 0; }
-    .notif-item-title { font-size: var(--fs-ui); font-weight: 600; color: #E0DBE7; line-height: 1.35; }
-    .notif-item-sub { font-size: var(--fs-ui); color: #BBB6C6; margin-top: 2px; }
+    .notif-item-title { font-size: var(--fs-ui); font-weight: 600; color: #C5CFD7; line-height: 1.35; }
+    .notif-item-sub { font-size: var(--fs-ui); color: #C5CFD7; margin-top: 2px; }
     .notif-footer {
       flex-shrink: 0;
       padding: 10px 12px 12px;
@@ -1367,15 +1367,15 @@
       padding: 8px 12px;
       font-size: var(--fs-ui);
       font-weight: 600;
-      color: #c5bfcf;
+      color: #C5CFD7;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
       cursor: pointer;
       font-family: inherit;
       transition: background 0.15s, color 0.15s;
     }
-    .notif-view-all:hover { background: rgba(255, 255, 255, 0.09); color: #fbf9ff; }
-    .notif-view-all .material-icons { font-size: 16px !important; color: #BBB6C6; }
+    .notif-view-all:hover { background: rgba(255, 255, 255, 0.09); color: #E2EEF7; }
+    .notif-view-all .material-icons { font-size: 16px !important; color: #C5CFD7; }
 
     /* "More" — three-dot menu popover (anchored to the button). */
     .topbar-popover {
@@ -1394,8 +1394,8 @@
     }
     .topbar-popover.hidden { display: none; }
     html.dark .topbar-popover {
-      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-      border-color: rgba(2, 78, 174, 0.22);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      border-color: rgba(37, 80, 124, 0.22);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     }
 
@@ -1410,12 +1410,12 @@
       align-items: center;
       gap: 8px;
       padding: 12px;
-      border-bottom: 1px solid rgba(255, 179, 71, 0.1);
+      border-bottom: 1px solid rgba(255, 196, 52, 0.1);
       flex-shrink: 0;
-      background: linear-gradient(135deg, rgba(42, 26, 0, 0.85) 0%, rgba(15, 12, 24, 0.95) 100%);
+      background: linear-gradient(135deg, rgba(77, 16, 7, 0.85) 0%, rgba(15, 12, 24, 0.95) 100%);
     }
     .upf-panel-header {
-      border-bottom-color: rgba(232, 121, 249, 0.1);
+      border-bottom-color: rgba(139, 159, 175, 0.1);
       background: linear-gradient(135deg, rgba(26, 0, 38, 0.85) 0%, rgba(19, 13, 31, 0.95) 100%);
     }
     .panel-search-pill {
@@ -1424,13 +1424,13 @@
       gap: 8px;
       padding: 7px 12px;
       border-radius: var(--radius-pill);
-      background: #2C2439;
-      border: 1px solid #413A4D;
+      background: #1A2339;
+      border: 1px solid #1A2339;
     }
     .panel-search-pill:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent); }
     .upf-product-card {
-      background: #1E1430;
-      border: 1px solid #2C2439;
+      background: #1A2339;
+      border: 1px solid #1A2339;
       border-radius: var(--r-sm);
       padding: 12px;
       margin-bottom: 10px;
@@ -1451,8 +1451,8 @@
       border: 1px solid color-mix(in srgb, var(--sec-red) 40%, transparent);
       align-self: flex-start;
     }
-    .upf-product-name { font-size: var(--fs-ui); font-weight: 700; color: #FBF9FF; }
-    .upf-score-bar-track { width: 100%; height: 5px; background: #2C2439; border-radius: 999px; overflow: hidden; }
+    .upf-product-name { font-size: var(--fs-ui); font-weight: 700; color: #E2EEF7; }
+    .upf-score-bar-track { width: 100%; height: 5px; background: #1A2339; border-radius: 999px; overflow: hidden; }
     .upf-score-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
     .upf-section-label {
       font-size: var(--fs-ui);
@@ -1584,7 +1584,7 @@
       border-radius: 50%;
       border: none;
       background: transparent;
-      color: #B6B1C1;
+      color: #C5CFD7;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -1596,8 +1596,8 @@
       user-select: none;
     }
     .lir-btn:hover {
-      background: #2c2245;
-      color: #c5bfcf;
+      background: #1A2339;
+      color: #C5CFD7;
     }
     .lir-btn.lir-active {
       background: transparent;
@@ -1608,11 +1608,11 @@
       background: transparent;
     }
     .lir-btn.lir-active.lir-scout {
-      color: #ffb347;
+      color: #FFC434;
       background: transparent;
     }
     .lir-btn.lir-active.lir-upf {
-      color: #e879f9;
+      color: #8B9FAF;
       background: transparent;
     }
     .lir-btn.lir-active.lir-settings {
@@ -1620,7 +1620,7 @@
       background: transparent;
     }
     .lir-btn.lir-active.lir-notif {
-      color: #ff8a8a;
+      color: #FFE1DC;
       background: transparent;
     }
     /* Notifications — red unread dot pinned to the top-right of the icon button
@@ -1634,7 +1634,7 @@
       width: 8px;
       height: 8px;
       border-radius: 999px;
-      background: var(--sec-red, #D94C4C);
+      background: var(--sec-red, #DC3038);
       box-shadow: 0 0 0 2px var(--surface, #ffffff);
       pointer-events: none;
     }
@@ -1665,7 +1665,7 @@
     .lir-divider {
       height: 20px;
       width: 1px;
-      background: #2c2439;
+      background: #1A2339;
       border-radius: 1px;
       margin: 0 4px;
       flex-shrink: 0;
@@ -1674,8 +1674,8 @@
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      background: #2c2439;
-      border: 1px solid #413a4d;
+      background: #1A2339;
+      border: 1px solid #1A2339;
       border-radius: var(--radius-pill);
       padding: 6px;
       min-width: 190px;
@@ -1694,7 +1694,7 @@
       padding: 7px 12px;
       font-size: var(--fs-ui);
       font-weight: 500;
-      color: #c5bfcf;
+      color: #C5CFD7;
       cursor: pointer;
       background: transparent;
       border: none;
@@ -1706,17 +1706,17 @@
       border-radius: var(--radius-pill);
     }
     .lir-pop-item:hover {
-      background: #3a2f54;
-      color: #fbf9ff;
+      background: #1A2339;
+      color: #E2EEF7;
     }
     .lir-pop-item .material-icons {
-      color: #BBB6C6;
+      color: #C5CFD7;
       flex-shrink: 0;
     }
-    .lir-pop-item:hover .material-icons { color: #c5bfcf; }
+    .lir-pop-item:hover .material-icons { color: #C5CFD7; }
     .lir-pop-divider {
       height: 1px;
-      background: #413a4d;
+      background: #1A2339;
       margin: 3px 0;
     }
 
@@ -1771,20 +1771,20 @@
       font-size: var(--fs-ui);
     }
     #tier-panel .tier-inner {
-      background: linear-gradient(155deg, #0a1f1a 0%, #08171a 60%, #061614 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(78, 224, 183, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1B2D22 0%, #1A2339 60%, #1B2D22 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(109, 148, 124, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
     }
     #shield-panel .shield-inner {
-      background: linear-gradient(155deg, #161028 0%, #110b22 60%, #0e0a20 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(164, 170, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(104, 120, 150, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
     }
     #lens-panel .lens-inner {
-      background: linear-gradient(155deg, #0a1729 0%, #081223 60%, #061626 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(91, 155, 213, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(104, 120, 150, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
     }
     #vault-panel .vault-inner {
-      background: linear-gradient(155deg, #1a1308 0%, #150f06 60%, #181206 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(212, 168, 83, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      background: linear-gradient(155deg, #1B2D22 0%, #1B2D22 60%, #1B2D22 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(215, 190, 145, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.09);
     }
     #tier-panel.tp-open .tier-inner,
     #shield-panel.sd-open .shield-inner,
@@ -1821,30 +1821,30 @@
       box-sizing: border-box;
     }
     .tier-panel-header {
-      background: linear-gradient(135deg, rgba(0, 42, 34, 0.85) 0%, rgba(8, 20, 17, 0.95) 100%);
-      border-bottom: 1px solid rgba(78, 224, 183, 0.12);
+      background: linear-gradient(135deg, rgba(27, 45, 34, 0.85) 0%, rgba(8, 20, 17, 0.95) 100%);
+      border-bottom: 1px solid rgba(109, 148, 124, 0.12);
     }
     .shield-panel-header {
-      background: linear-gradient(135deg, rgba(26, 10, 46, 0.85) 0%, rgba(17, 11, 34, 0.95) 100%);
-      border-bottom: 1px solid rgba(164, 170, 255, 0.12);
+      background: linear-gradient(135deg, rgba(26, 35, 57, 0.85) 0%, rgba(17, 11, 34, 0.95) 100%);
+      border-bottom: 1px solid rgba(104, 120, 150, 0.12);
     }
     .lens-panel-header {
-      background: linear-gradient(135deg, rgba(0, 26, 46, 0.85) 0%, rgba(8, 18, 35, 0.95) 100%);
-      border-bottom: 1px solid rgba(91, 155, 213, 0.12);
+      background: linear-gradient(135deg, rgba(26, 35, 57, 0.85) 0%, rgba(8, 18, 35, 0.95) 100%);
+      border-bottom: 1px solid rgba(104, 120, 150, 0.12);
     }
     .vault-panel-header {
       background: linear-gradient(135deg, rgba(38, 26, 10, 0.85) 0%, rgba(21, 15, 6, 0.95) 100%);
-      border-bottom: 1px solid rgba(212, 168, 83, 0.12);
+      border-bottom: 1px solid rgba(215, 190, 145, 0.12);
     }
 
     /* LIR active button colors for the new agents */
     /* Light-mode active icons sit on the white rail, so these are darkened
        module-brand shades that clear the 3:1 (SC 1.4.11) icon minimum. The
        bright dark-mode variants are set under html.dark below. */
-    .lir-btn.lir-active.lir-tier    { color: #2E846C; background: transparent; }
+    .lir-btn.lir-active.lir-tier    { color: #6D947C; background: transparent; }
     .lir-btn.lir-active.lir-shield  { color: var(--primary); background: transparent; }
-    .lir-btn.lir-active.lir-lens    { color: #487AA8; background: transparent; }
-    .lir-btn.lir-active.lir-vault   { color: #907238; background: transparent; }
+    .lir-btn.lir-active.lir-lens    { color: #687896; background: transparent; }
+    .lir-btn.lir-active.lir-vault   { color: #C28E34; background: transparent; }
 
     /* Hide a LIR icon when its agent is toggled OFF in Agent Settings. */
     .lir-btn.lir-hidden { display: none !important; }
@@ -1912,7 +1912,7 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #342640 0%, #2c2439 60%, #261d34 100%);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: right center;
       font-size: var(--fs-ui);
@@ -1997,9 +1997,9 @@
     .wf-tag--red { background: var(--sec-red-10); color: var(--sec-red-text); }
     .wf-tag--green { background: var(--sec-green-10); color: var(--sec-green-text); }
     .wf-tag--amber { background: var(--ter-amber-10); color: var(--ter-amber-text); }
-    html.dark .wf-tag--red { color: #FCA5A5; }
-    html.dark .wf-tag--green { color: #6EE7A8; }
-    html.dark .wf-tag--amber { color: #FCD34D; }
+    html.dark .wf-tag--red { color: #FFE1DC; }
+    html.dark .wf-tag--green { color: #B6C9BE; }
+    html.dark .wf-tag--amber { color: #FFC434; }
     /* Swap row: from → to */
     .wf-swap { padding: 7px 0; border-top: 1px solid var(--border); font-size: var(--fs-label); }
     .wf-swap:first-of-type { border-top: 0; }
@@ -2018,7 +2018,7 @@
       padding: 5px 10px; border-radius: 999px; font-size: var(--fs-label); font-weight: 700;
       background: var(--sec-green-10); color: var(--sec-green-text);
     }
-    html.dark .wf-badge { color: #6EE7A8; }
+    html.dark .wf-badge { color: #B6C9BE; }
     .wf-badge .material-icons { font-size: 14px !important; }
 
     /* In-chat intent chips that drive the workflow forward. Match the welcome
@@ -2153,8 +2153,8 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #122033 0%, #0d1b27 60%, #0a1722 100%);
-      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(2, 78, 174, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: linear-gradient(155deg, #1A2339 0%, #0d1b27 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(37, 80, 124, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       transform-origin: right center;
       font-size: var(--fs-ui);
     }
@@ -2175,7 +2175,7 @@
       font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
       background: var(--sec-red-10); color: var(--sec-red-text);
     }
-    html.dark .vf-live { color: #FCA5A5; }
+    html.dark .vf-live { color: #FFE1DC; }
     .vf-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sec-red); animation: vfPulse 1.4s ease-in-out infinite; }
     @keyframes vfPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.75); } }
     @media (prefers-reduced-motion: reduce) { .vf-live-dot { animation: none; } }
@@ -2247,7 +2247,7 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 16px;
-      background: linear-gradient(155deg, #2a2438 0%, #231d30 60%, #1e1828 100%);
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.09);
       transform-origin: right center;
       font-size: var(--fs-ui);
@@ -2290,7 +2290,7 @@
     .vf-sec-icon .material-icons { font-size: 14px !important; }
     .vf-sec-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
     .vf-sec-tag { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--sec-green-10); color: var(--sec-green-text); }
-    html.dark .vf-sec-tag { color: #6EE7A8; }
+    html.dark .vf-sec-tag { color: #B6C9BE; }
 
     /* Profile rows */
     .vf-kv { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; font-size: var(--fs-label); }
@@ -2305,9 +2305,9 @@
     .vf-stat { border-radius: 10px; padding: 9px 10px; background: var(--surface-2); border: 1px solid var(--border); }
     .vf-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .vf-stat-label { font-size: 9px; font-weight: 600; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
-    .vf-stat--green .vf-stat-num { color: var(--sec-green-text); } html.dark .vf-stat--green .vf-stat-num { color: #6EE7A8; }
+    .vf-stat--green .vf-stat-num { color: var(--sec-green-text); } html.dark .vf-stat--green .vf-stat-num { color: #B6C9BE; }
     .vf-stat--blue .vf-stat-num { color: var(--primary); }
-    .vf-stat--red .vf-stat-num { color: var(--sec-red-text); } html.dark .vf-stat--red .vf-stat-num { color: #FCA5A5; }
+    .vf-stat--red .vf-stat-num { color: var(--sec-red-text); } html.dark .vf-stat--red .vf-stat-num { color: #FFE1DC; }
 
     /* Distribution bars */
     .vf-bar-row { display: grid; grid-template-columns: 88px 1fr 30px; align-items: center; gap: 8px; padding: 4px 0; font-size: var(--fs-label); }
@@ -2323,10 +2323,10 @@
     .vf-prod-name { font-size: var(--fs-label); font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .vf-prod-meta { font-size: 10px; color: var(--text-subtle); }
     .vf-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
-    .vf-pill--green { background: var(--sec-green-10); color: var(--sec-green-text); } html.dark .vf-pill--green { color: #6EE7A8; }
+    .vf-pill--green { background: var(--sec-green-10); color: var(--sec-green-text); } html.dark .vf-pill--green { color: #B6C9BE; }
     .vf-pill--blue { background: var(--primary-10); color: var(--primary); }
-    .vf-pill--red { background: var(--sec-red-10); color: var(--sec-red-text); } html.dark .vf-pill--red { color: #FCA5A5; }
-    .vf-pill--amber { background: var(--ter-amber-10); color: var(--ter-amber-text); } html.dark .vf-pill--amber { color: #FCD34D; }
+    .vf-pill--red { background: var(--sec-red-10); color: var(--sec-red-text); } html.dark .vf-pill--red { color: #FFE1DC; }
+    .vf-pill--amber { background: var(--ter-amber-10); color: var(--ter-amber-text); } html.dark .vf-pill--amber { color: #FFC434; }
 
     /* Attestation checklist */
     .vf-att-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: var(--fs-label); color: var(--text-muted); border-top: 1px solid var(--border); }
@@ -2403,7 +2403,7 @@
       position: relative;
       overflow: hidden;
       height: 156px;
-      background: #1a1a2e;
+      background: #1A2339;
     }
     .nfp-hero img {
       width: 100%;
@@ -2455,10 +2455,10 @@
       justify-content: center;
     }
     .nfp-pill svg { height: 14px; width: auto; flex-shrink: 0; }
-    .nfp-pill-red   { background: rgba(220,38,38,0.78);  color: #fff; }
-    .nfp-pill-mint  { background: rgba(0,177,165,0.84);  color: #fff; }
-    .nfp-pill-green { background: rgba(5,150,105,0.78);  color: #fff; }
-    .nfp-pill-primary{ background: rgba(2, 78, 174, 0.92); color: #fff; }
+    .nfp-pill-red   { background: rgba(220, 48, 56,0.78);  color: #fff; }
+    .nfp-pill-mint  { background: rgba(109, 148, 124,0.84);  color: #fff; }
+    .nfp-pill-green { background: rgba(50, 169, 102,0.78);  color: #fff; }
+    .nfp-pill-primary{ background: rgba(37, 80, 124, 0.92); color: #fff; }
     /* Hero bottom info */
     .nfp-hero-info {
       position: absolute;
@@ -2603,7 +2603,7 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .nfp-fi-thumb.active .nfp-fi-thumb-label { color: #4f46e5; }
+    .nfp-fi-thumb.active .nfp-fi-thumb-label { color: #25507C; }
 
     /* Scrollable body — white background */
     .nfp-scroll-body {
@@ -2625,7 +2625,7 @@
     .nfp-nf-cal-text { font-size: 1.2rem; font-weight: 900; line-height: 1; }
     .nfp-nf-cal-num { font-size: 2.1rem; font-weight: 900; line-height: 1; }
     .nfp-nf-dv-hdr { text-align: right; font-size: 0.68rem; font-weight: 700; padding: 2px 10px 1px; border-bottom: 1px solid #000; }
-    .nfp-nf-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px; border-bottom: 1px solid #ccc; font-size: 0.7rem; min-height: 20px; }
+    .nfp-nf-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px; border-bottom: 1px solid #C5CFD7; font-size: 0.7rem; min-height: 20px; }
     .nfp-nf-row .nfp-nf-main { flex: 1; display: flex; align-items: center; }
     .nfp-nf-row .nfp-nf-dv { flex-shrink: 0; text-align: right; font-weight: 700; padding-left: 4px; }
     .nfp-nf-ind1 { padding-left: 18px !important; }
@@ -2641,7 +2641,7 @@
     .nfp-allergen-wrap { padding: 8px 12px 10px; border-bottom: 1px solid #e5e7eb; }
     .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
     .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #F4F2F9; color: #2C2439; border: 1px solid #E0DBE7; }
+    .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #E2EEF7; color: #1A2339; border: 1px solid #C5CFD7; }
     .nfp-allergen-emoji { font-size: 0.95rem; line-height: 1; }
     .nfp-contains { padding: 6px 12px 8px; font-size: 0.66rem; color: #374151; }
 
@@ -2765,10 +2765,10 @@
       color: var(--text);
     }
     html.dark .wise-popover-item.is-active {
-      background: rgba(2, 78, 174, 0.22);
+      background: rgba(37, 80, 124, 0.22);
       color: var(--primary-bright);
     }
-    .wise-popover-item.danger { color: #f87171; }
+    .wise-popover-item.danger { color: #DC3038; }
     .wise-popover-item .material-icons,
     .wise-popover-item .material-symbols-outlined { font-size: 17px; color: var(--text-muted); }
     .wise-popover-item:hover .material-icons,
@@ -2777,7 +2777,7 @@
     .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary); }
     html.dark .wise-popover-item.is-active .material-icons,
     html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-bright); }
-    .wise-popover-item.danger .material-icons { color: #f87171; }
+    .wise-popover-item.danger .material-icons { color: #DC3038; }
     .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
     /* Notifications / Agents quick-actions docked at the top of the avatar
        menu, split by a thin vertical rule. */
@@ -2805,7 +2805,7 @@
       color: var(--primary);
     }
     html.dark .wise-pop-action:hover {
-      background: rgba(2, 78, 174, 0.18);
+      background: rgba(37, 80, 124, 0.18);
       color: var(--primary-bright);
     }
     .wise-pop-action .material-icons { font-size: 20px; color: var(--text-muted); }
@@ -2821,7 +2821,7 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--sec-red, #ef4444);
+      background: var(--sec-red, #DC3038);
     }
     .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
     /* ===== end user-menu popover ===== */
@@ -2847,11 +2847,11 @@
       color: var(--text);
     }
     .topbar-menu-item--danger {
-      color: #ff5e60;
+      color: #DC3038;
     }
     .topbar-menu-item--danger:hover {
-      background: color-mix(in srgb, #d94c4c 18%, var(--surface-2));
-      color: #ff7c7e;
+      background: color-mix(in srgb, #DC3038 18%, var(--surface-2));
+      color: #DC3038;
     }
     .topbar-menu-icon {
       color: var(--text-subtle) !important;
@@ -2959,8 +2959,8 @@
     /* Inner panel header/body styling overrides for the narrower panel layout. */
     #settings-screen .ss-header {
       padding: 12px;
-      background: linear-gradient(to bottom right, rgba(42,26,64,0.8), rgba(26,16,44,0.9));
-      border-bottom: 1px solid rgba(99,102,241,0.15);
+      background: linear-gradient(to bottom right, rgba(26, 35, 57,0.8), rgba(26, 35, 57,0.9));
+      border-bottom: 1px solid rgba(37, 80, 124,0.15);
     }
     #settings-screen .ss-body { padding: 16px; background: var(--surface); }
     /* When the user opens the panel via the (legacy) chip / "agents-panel-btn",
@@ -3088,16 +3088,16 @@
     }
 
     /* Override remaining inline tints inside the settings module so they obey the theme tokens. */
-    #settings-screen [style*="color:#FBF9FF"],
-    #settings-screen [style*="color:#fbf9ff"] { color: var(--text) !important; }
-    #settings-screen [style*="color:#BBB6C6"],
-    #settings-screen [style*="color:#BBB6C6"],
-    #settings-screen [style*="color:#B6B1C1"],
-    #settings-screen [style*="color:#B6B1C1"],
-    #settings-screen [style*="color:#413A4D"],
-    #settings-screen [style*="color:#413a4d"] { color: var(--text-muted) !important; }
-    #settings-screen [style*="color:#E0DBE7"],
-    #settings-screen [style*="color:#e0dbe7"] { color: var(--text) !important; }
+    #settings-screen [style*="color:#E2EEF7"],
+    #settings-screen [style*="color:#E2EEF7"] { color: var(--text) !important; }
+    #settings-screen [style*="color:#C5CFD7"],
+    #settings-screen [style*="color:#C5CFD7"],
+    #settings-screen [style*="color:#C5CFD7"],
+    #settings-screen [style*="color:#C5CFD7"],
+    #settings-screen [style*="color:#1A2339"],
+    #settings-screen [style*="color:#1A2339"] { color: var(--text-muted) !important; }
+    #settings-screen [style*="color:#C5CFD7"],
+    #settings-screen [style*="color:#C5CFD7"] { color: var(--text) !important; }
     #settings-screen .ss-pref-card[style],
     #settings-screen .ss-version-card[style],
     #settings-screen .ss-info-card[style] { background: var(--surface-2) !important; border-color: var(--border) !important; }
@@ -3121,8 +3121,8 @@
     }
     /* Dark: top bar matches card surface (no lighter strip). */
     html.dark .chat-topbar {
-      background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%), var(--surface);
-      border-bottom-color: rgba(2, 78, 174, 0.20);
+      background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%), var(--surface);
+      border-bottom-color: rgba(37, 80, 124, 0.20);
     }
 
     /* Light: side rails + verification use index tokens (no dark “oyster” chrome on cream). */
@@ -3242,8 +3242,8 @@
       margin-left: -36px;
       margin-top: -36px;
       border-radius: 50%;
-      border: 1px solid rgba(2, 78, 174, 0.55);
-      box-shadow: 0 0 18px rgba(2, 78, 174, 0.35), 0 0 36px rgba(2, 78, 174, 0.2);
+      border: 1px solid rgba(37, 80, 124, 0.55);
+      box-shadow: 0 0 18px rgba(37, 80, 124, 0.35), 0 0 36px rgba(37, 80, 124, 0.2);
       pointer-events: none;
       animation: wsRingBloom 5s cubic-bezier(0.2, 0.85, 0.25, 1) infinite;
     }
@@ -3265,17 +3265,17 @@
       align-items: center;
       justify-content: center;
       padding: 14px;
-      box-shadow: 0 0 28px rgba(2, 78, 174, 0.55), 0 0 52px rgba(2, 78, 174, 0.22);
+      box-shadow: 0 0 28px rgba(37, 80, 124, 0.55), 0 0 52px rgba(37, 80, 124, 0.22);
       animation: wsLogoBreath 6.5s ease-in-out infinite;
     }
     @keyframes wsLogoBreath {
       0%,
       100% {
-        box-shadow: 0 0 24px rgba(2, 78, 174, 0.45), 0 0 48px rgba(2, 78, 174, 0.18);
+        box-shadow: 0 0 24px rgba(37, 80, 124, 0.45), 0 0 48px rgba(37, 80, 124, 0.18);
         transform: scale(1);
       }
       50% {
-        box-shadow: 0 0 36px rgba(2, 78, 174, 0.55), 0 0 72px rgba(2, 78, 174, 0.28);
+        box-shadow: 0 0 36px rgba(37, 80, 124, 0.55), 0 0 72px rgba(37, 80, 124, 0.28);
         transform: scale(1.04);
       }
     }
@@ -3517,7 +3517,7 @@
     .ws-scorecard:hover {
       background: var(--surface-3);
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong));
-      box-shadow: 0 6px 18px rgba(2, 78, 174, 0.12);
+      box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12);
       transform: translateY(-2px);
     }
     .ws-scorecard:focus-visible {
@@ -3624,7 +3624,7 @@
     .ws-sc-pill--intro,
     .ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
     html.dark .ws-sc-icon--intro,
-    html.dark .ws-sc-icon--scout { color: var(--primary-bright, #93C5FD); }
+    html.dark .ws-sc-icon--scout { color: var(--primary-bright, #8B9FAF); }
     /* Intro cards lead with a headline instead of a metric — give it presence
        and tint it to match the card's accent stroke. */
     .ws-sc-intro-title {
@@ -3666,7 +3666,7 @@
       color: var(--text-subtle);
     }
     .sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
-    html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #93C5FD); }
+    html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF); }
 
     /* Message lines: profile-avatar column + larger, high-contrast body copy
        (the timestamp / grounding meta row stays small). Mirrors scout-chat.css.
@@ -3682,7 +3682,7 @@
       font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
     }
     .sc-avatar svg { width: 18px; height: auto; }
-    .sc-avatar-scout { background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(2, 78, 174, 0.4); }
+    .sc-avatar-scout { background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(37, 80, 124, 0.4); }
     .sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
     .sc-line-scout strong { color: var(--primary); font-weight: 700; }
 
@@ -3694,7 +3694,7 @@
       color: color-mix(in srgb, var(--primary) 75%, var(--text-muted));
     }
     .sc-trust-chip .material-icons { font-size: 12px !important; }
-    html.dark .sc-trust-chip { color: var(--primary-bright, #93C5FD); }
+    html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 
     .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
     .sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
@@ -3880,7 +3880,7 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
     }
     #verification-sidebar .vs-stage--done .vs-stage-dot {
-      background: #3baa5c;
+      background: #32A966;
     }
     #verification-sidebar .vs-body {
       flex: 1;
@@ -3940,7 +3940,7 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
     }
     #verification-sidebar .vs-step--done .vs-step-num {
-      background: #3baa5c;
+      background: #32A966;
       color: #fff;
     }
     #verification-sidebar .vs-step-line {
@@ -4453,9 +4453,9 @@
       height: 30px;
       border-radius: 50%;
       background: none;
-      border: 1px solid #3a3050;
+      border: 1px solid #1A2339;
       cursor: pointer;
-      color: #B6B1C1;
+      color: #C5CFD7;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4463,9 +4463,9 @@
       flex-shrink: 0;
     }
     .amm-close-btn:hover {
-      background: #2c2439;
-      color: #e0dbe7;
-      border-color: #B6B1C1;
+      background: #1A2339;
+      color: #C5CFD7;
+      border-color: #C5CFD7;
     }
     .amm-search-wrap { padding: 14px 16px 10px; }
     .amm-search-inner {
@@ -4477,18 +4477,18 @@
       position: absolute;
       left: 11px;
       font-size: 1.125rem !important;
-      color: #B6B1C1;
+      color: #C5CFD7;
       pointer-events: none;
       user-select: none;
     }
     .amm-search {
       width: 100%;
       background: rgba(255, 255, 255, 0.04);
-      border: 1px solid #3a3050;
+      border: 1px solid #1A2339;
       border-radius: var(--radius-pill);
       padding: 8px 12px 8px 36px;
       font-size: var(--fs-ui);
-      color: #e0dbe7;
+      color: #C5CFD7;
       outline: none;
       font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
@@ -4523,7 +4523,7 @@
     }
     .amm-member-row:hover {
       background: rgba(255, 255, 255, 0.04);
-      border-color: #2c2439;
+      border-color: #1A2339;
     }
     .amm-avatar {
       width: 36px;
@@ -4544,13 +4544,13 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: #4ade80;
-      border: 1.5px solid #1c1130;
+      background: #6D947C;
+      border: 1.5px solid #1A2339;
     }
     .amm-member-info { flex: 1; min-width: 0; }
     .amm-empty-msg {
       text-align: center;
-      color: #B6B1C1;
+      color: #C5CFD7;
       padding: 20px 0;
       font-size: var(--fs-ui);
     }
@@ -4561,14 +4561,14 @@
     .amm-member-name {
       font-size: var(--fs-ui);
       font-weight: 600;
-      color: #fbf9ff;
+      color: #E2EEF7;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .amm-member-role {
       font-size: var(--fs-ui);
-      color: #B6B1C1;
+      color: #C5CFD7;
       margin-top: 1px;
     }
     .amm-add-btn {
@@ -4591,9 +4591,9 @@
       color: var(--primary);
     }
     .amm-add-btn.amm-added {
-      background: #00261a;
-      border-color: #004433;
-      color: #4ee0b7;
+      background: #1B2D22;
+      border-color: #1B2D22;
+      color: #6D947C;
       pointer-events: none;
     }
     .amm-footer {
@@ -4671,14 +4671,14 @@
       align-items: flex-start;
       gap: 14px;
       padding: 20px 20px 16px;
-      background: linear-gradient(135deg, rgba(242, 109, 91, 0.12) 0%, transparent 100%);
+      background: linear-gradient(135deg, rgba(210, 115, 38, 0.12) 0%, transparent 100%);
     }
     .so-header-icon {
       width: 42px;
       height: 42px;
       border-radius: var(--radius-pill);
-      background: rgba(242, 109, 91, 0.12);
-      border: 1px solid rgba(242, 109, 91, 0.3);
+      background: rgba(210, 115, 38, 0.12);
+      border: 1px solid rgba(210, 115, 38, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4732,8 +4732,8 @@
     }
     .so-btn-cancel:hover { background: var(--surface-3); border-color: var(--border-strong); }
     .so-btn-confirm {
-      background: #F26D5B;
-      border: 1px solid #F26D5B;
+      background: #D27326;
+      border: 1px solid #D27326;
       color: #fff;
     }
     .so-btn-confirm:hover { filter: brightness(1.06); }
@@ -4756,8 +4756,8 @@
       box-shadow: var(--shadow-card) !important;
     }
     html.dark #left-icon-rail {
-      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
-      border-color: rgba(2, 78, 174, 0.18) !important;
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%) !important;
+      border-color: rgba(37, 80, 124, 0.18) !important;
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
     }
     .lir-btn { color: var(--text-muted); }
@@ -4785,14 +4785,14 @@
     html.dark .lir-btn.lir-active.lir-settings,
     html.dark .lir-btn.lir-active.lir-nfp,
     html.dark .lir-layout-btn.lir-layout-active {
-      color: #93C5FD !important;
+      color: #8B9FAF !important;
       background: transparent !important;
     }
-    html.dark .lir-btn.lir-active.lir-tier   { color: #6EE7B7 !important; background: transparent !important; }
-    html.dark .lir-btn.lir-active.lir-shield { color: #93C5FD !important; background: transparent !important; }
-    html.dark .lir-btn.lir-active.lir-lens   { color: #67E8F9 !important; background: transparent !important; }
-    html.dark .lir-btn.lir-active.lir-vault  { color: #FCD34D !important; background: transparent !important; }
-    html.dark .lir-btn.lir-active.lir-notif  { color: #FCA5A5 !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-tier   { color: #B6C9BE !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-shield { color: #8B9FAF !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-lens   { color: #C5CFD7 !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-vault  { color: #FFC434 !important; background: transparent !important; }
+    html.dark .lir-btn.lir-active.lir-notif  { color: #FFE1DC !important; background: transparent !important; }
     .lir-divider { background: var(--border); }
     #lir-more-popover {
       background: var(--surface);
@@ -4836,8 +4836,8 @@
     html.dark #lens-panel .lens-inner,
     html.dark #vault-panel .vault-inner,
     html.dark #notif-panel .notif-inner {
-      background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%) !important;
-      border-color: rgba(2, 78, 174, 0.18) !important;
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%) !important;
+      border-color: rgba(37, 80, 124, 0.18) !important;
       box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
     }
 
@@ -4860,8 +4860,8 @@
     html.dark .shield-panel-header,
     html.dark .lens-panel-header,
     html.dark .vault-panel-header {
-      background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%) !important;
-      border-bottom-color: rgba(2, 78, 174, 0.20) !important;
+      background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%) !important;
+      border-bottom-color: rgba(37, 80, 124, 0.20) !important;
     }
     .side-panel-header .text-oyster-100,
     .side-panel-header .font-bold.text-oyster-100 {
@@ -5003,8 +5003,8 @@
     html:not(.dark) #ssr-scout  .w-10 .material-icons { color: var(--ter-amber) !important; }
     html:not(.dark) #ssr-shield .w-10 .material-icons { color: var(--ter-violet) !important; }
     html:not(.dark) #ssr-lens   .w-10 .material-icons { color: var(--ter-cyan) !important; }
-    html:not(.dark) #ssr-pulse  .w-10 .material-icons { color: #C026D3 !important; }
-    html:not(.dark) #ssr-vault  .w-10 .material-icons { color: #B4691B !important; }
+    html:not(.dark) #ssr-pulse  .w-10 .material-icons { color: #25507C !important; }
+    html:not(.dark) #ssr-vault  .w-10 .material-icons { color: #75360A !important; }
 
     /* Settings module — agent icon tints (dark mode). */
     html.dark #settings-screen .ss-agent-row > .w-10 {
@@ -5016,8 +5016,8 @@
     html.dark #ssr-scout  .w-10 .material-icons { color: var(--ter-amber) !important; }
     html.dark #ssr-shield .w-10 .material-icons { color: var(--primary) !important; }
     html.dark #ssr-lens   .w-10 .material-icons { color: var(--ter-cyan) !important; }
-    html.dark #ssr-pulse  .w-10 .material-icons { color: #C026D3 !important; }
-    html.dark #ssr-vault  .w-10 .material-icons { color: #B4691B !important; }
+    html.dark #ssr-pulse  .w-10 .material-icons { color: #25507C !important; }
+    html.dark #ssr-vault  .w-10 .material-icons { color: #75360A !important; }
 
     /* Primary action buttons (new conversation, send). */
     .btn-primary {
@@ -5207,7 +5207,7 @@
       justify-content: center;
       width: 30px;
       height: 30px;
-      border-radius: 6px;
+      border-radius: 50%;
       background: transparent;
       border: 0;
       color: var(--text-muted);
@@ -5310,11 +5310,11 @@
     .pf-module-menu-item.is-on .material-icons { color: var(--primary); }
     .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
     .pf-module-menu-item--off:hover {
-      background: color-mix(in srgb, #e5484d 14%, transparent);
-      color: #e5484d;
+      background: color-mix(in srgb, #DC3038 14%, transparent);
+      color: #DC3038;
     }
     .pf-module-menu-item--off:hover .material-symbols-outlined,
-    .pf-module-menu-item--off:hover .material-icons { color: #e5484d; }
+    .pf-module-menu-item--off:hover .material-icons { color: #DC3038; }
     /* Stacked panel controls — vertical list of icon+label rows, matching the
        menu-nav pattern (icon left, caption right). Used on Notifications and
        Agent Settings headers where the full control set needs to stay readable. */
@@ -5376,6 +5376,7 @@
       width: 100%;
       height: auto;
       min-height: 24px;
+      border-radius: 8px;
       justify-content: flex-start;
       padding: 2px 4px 2px 2px;
       opacity: 0.85;
@@ -5929,6 +5930,83 @@
       max-height: 60vh;
       box-shadow: var(--shadow-card), 0 -12px 28px -16px rgba(0, 0, 0, 0.55);
     }
+
+    /* ── Tabbed layout ───────────────────────────────────────────────────────
+       Every open side module is collapsed into #modules-tabbed; a tab strip sits
+       across the top and only the active module's body shows. The main chat
+       (#chat-shell) stays docked beside the tabbed pane. */
+    #modules-tabbed {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0%;
+      min-width: 0;
+      height: 100%;
+      max-height: 100%;
+      gap: 8px;
+      overflow: hidden;
+    }
+    /* Nothing open → let the chat fill the row. */
+    #modules-tabbed:not(:has(.mod-tab-pane)) { display: none; }
+    #mod-tab-strip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 6px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--text-subtle) 7%, transparent);
+      scrollbar-width: none;
+    }
+    #mod-tab-strip::-webkit-scrollbar { height: 0; display: none; }
+    .mod-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-subtle);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s;
+    }
+    .mod-tab .material-icons,
+    .mod-tab .material-symbols-outlined { font-size: 18px; }
+    .mod-tab:hover { color: var(--text); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+    .mod-tab.is-active { color: #fff; background: var(--primary); }
+    html:not(.dark) .mod-tab.is-active { color: #fff; background: var(--primary); }
+
+    /* The collapsed modules: one visible at a time, filling the pane. */
+    #modules-tabbed > .mod-tab-pane {
+      display: none !important;
+      flex: 1 1 0% !important;
+      width: auto !important;
+      min-width: 0 !important;
+      min-height: 0;
+      height: auto;
+    }
+    #modules-tabbed > .mod-tab-pane.tab-active { display: flex !important; }
+    /* Each module's inner card stretches to fill the tabbed pane (override the
+       fixed per-panel widths used in the column carousel). */
+    #modules-tabbed > .mod-tab-pane > * {
+      width: 100% !important;
+      max-width: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0;
+      animation: none !important;
+    }
+    @media (max-width: 900px) {
+      #modules-row.modules-tab { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
+      #modules-tabbed { flex: 0 0 auto; min-height: 60vh; }
+      .mod-tab-label { display: none; }
+    }
+
     /* Light-mode overrides for flip + layout */
     html:not(.dark) .lir-flip-btn { color: var(--text-subtle); }
     html:not(.dark) .lir-flip-btn:hover { color: var(--primary); }
@@ -6156,14 +6234,14 @@
       <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="revealPanel('scout')" title="WISE Foods" aria-label="Toggle WISE Foods panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="material-icons">search</span>
-        <span class="lir-dot" style="background:#FFB347"></span>
+        <span class="lir-dot" style="background:#FFC434"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
         <span class="lir-label">Foods</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-upf lir-active" id="lir-upf-btn" data-tip="UPF Analyzer" onclick="revealPanel('pulse')" title="UPF Analyzer" aria-label="Toggle UPF Analyzer panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
         <span class="material-icons">biotech</span>
-        <span class="lir-dot" style="background:#E879F9"></span>
+        <span class="lir-dot" style="background:#8B9FAF"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('upf')" title="On left — tap to move right"></span>
         <span class="lir-label">UPF</span>
       </button>
@@ -6174,7 +6252,7 @@
       <button type="button" class="lir-btn lir-panel-btn lir-tier lir-hidden" id="lir-tier-btn" data-tip="TIER — UPF Classification" onclick="revealPanel('nova')" title="TIER" aria-label="Toggle TIER panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
         <span class="material-icons">auto_awesome</span>
-        <span class="lir-dot" style="background:#4EE0B7"></span>
+        <span class="lir-dot" style="background:#6D947C"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('tier')" title="On left — tap to move right"></span>
         <span class="lir-label">TIER</span>
       </button>
@@ -6188,14 +6266,14 @@
       <button type="button" class="lir-btn lir-panel-btn lir-lens lir-hidden" id="lir-lens-btn" data-tip="LENS — Analytics" onclick="revealPanel('lens')" title="LENS" aria-label="Toggle LENS panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
         <span class="material-icons">analytics</span>
-        <span class="lir-dot" style="background:#5B9BD5"></span>
+        <span class="lir-dot" style="background:#687896"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('lens')" title="On left — tap to move right"></span>
         <span class="lir-label">LENS</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-vault lir-hidden" id="lir-vault-btn" data-tip="VAULT — Documents" onclick="revealPanel('vault')" title="VAULT" aria-label="Toggle VAULT panel">
         <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
         <span class="material-icons">lock</span>
-        <span class="lir-dot" style="background:#D4A853"></span>
+        <span class="lir-dot" style="background:#D7BE91"></span>
         <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('vault')" title="On left — tap to move right"></span>
         <span class="lir-label">Vault</span>
       </button>
@@ -6275,9 +6353,9 @@
     <!-- WISE Foods -->
     <div id="scout-panel">
       <div class="scout-inner">
-        <div class="side-panel-header scout-panel-header border-b border-[#1E1430]">
+        <div class="side-panel-header scout-panel-header border-b border-[#1A2339]">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#2A1A00] flex items-center justify-center shrink-0 ring-1 ring-amber-400/25">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#4D1007] flex items-center justify-center shrink-0 ring-1 ring-amber-400/25">
               <span class="material-icons text-[15px] text-amber-400">search</span>
             </div>
             <div>
@@ -6286,7 +6364,7 @@
             </div>
           </div>
         </div>
-        <div class="side-panel-search-row px-3 py-2 border-b border-[#1E1430]">
+        <div class="side-panel-search-row px-3 py-2 border-b border-[#1A2339]">
           <div class="panel-search-pill">
             <span class="material-icons text-oyster-600 text-[15px]">search</span>
             <input type="text" placeholder="Search product or brand…" class="flex-1 bg-transparent border-0 outline-none text-sm text-oyster-300 placeholder:text-oyster-700" />
@@ -6301,7 +6379,7 @@
       <div class="upf-inner">
         <div class="side-panel-header upf-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1A0026] flex items-center justify-center shrink-0 ring-1 ring-fuchsia-400/25">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1A2339] flex items-center justify-center shrink-0 ring-1 ring-fuchsia-400/25">
               <span class="material-icons text-[15px] text-fuchsia-400">biotech</span>
             </div>
             <div>
@@ -6332,7 +6410,7 @@
               <span class="upf-risk-badge">Ultra-Processed</span>
             </div>
             <div class="upf-score-bar-track">
-              <div class="upf-score-bar-fill" style="width:72%;background:linear-gradient(90deg,#E879F9,#FF7C7E)"></div>
+              <div class="upf-score-bar-fill" style="width:72%;background:linear-gradient(90deg,#8B9FAF,#DC3038)"></div>
             </div>
             <span class="font-bold text-oyster-300 mt-1 inline-block">72 <span class="font-normal text-oyster-600">/ 100 UPF score</span></span>
           </div>
@@ -6350,7 +6428,7 @@
       <div class="tier-inner">
         <div class="side-panel-header tier-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#002A22] flex items-center justify-center shrink-0 ring-1 ring-emerald-400/30">
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1B2D22] flex items-center justify-center shrink-0 ring-1 ring-emerald-400/30">
               <span class="material-icons text-[15px] text-emerald-300">auto_awesome</span>
             </div>
             <div>
@@ -6366,17 +6444,17 @@
           </div>
         </div>
         <div id="tier-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
-          <div class="rounded-lg px-3 py-2" style="background:#4EE0B711;border-left:3px solid #4EE0B7;">
-            <strong style="color:#4EE0B7">Whole</strong> — Unprocessed / minimally processed
+          <div class="rounded-lg px-3 py-2" style="background:#4EE0B711;border-left:3px solid #6D947C;">
+            <strong style="color:#6D947C">Whole</strong> — Unprocessed / minimally processed
           </div>
-          <div class="rounded-lg px-3 py-2" style="background:#A3E63511;border-left:3px solid #A3E635;">
-            <strong style="color:#A3E635">Refined</strong> — Culinary ingredients
+          <div class="rounded-lg px-3 py-2" style="background:#A3E63511;border-left:3px solid #B6C9BE;">
+            <strong style="color:#B6C9BE">Refined</strong> — Culinary ingredients
           </div>
-          <div class="rounded-lg px-3 py-2" style="background:#FFB34711;border-left:3px solid #FFB347;">
-            <strong style="color:#FFB347">Processed</strong> — Canned, cured, aged
+          <div class="rounded-lg px-3 py-2" style="background:#FFB34711;border-left:3px solid #FFC434;">
+            <strong style="color:#FFC434">Processed</strong> — Canned, cured, aged
           </div>
-          <div class="rounded-lg px-3 py-2" style="background:#FF7C7E11;border-left:3px solid #FF7C7E;">
-            <strong style="color:#FF7C7E">Ultra-Processed</strong> — Industrial formulations
+          <div class="rounded-lg px-3 py-2" style="background:#FF7C7E11;border-left:3px solid #DC3038;">
+            <strong style="color:#DC3038">Ultra-Processed</strong> — Industrial formulations
           </div>
           <p class="text-oyster-600 mt-2">TIER scores every ingredient against the four-tier UPF framework in real time.</p>
         </div>
@@ -6404,7 +6482,7 @@
           </div>
         </div>
         <div id="shield-panel-body" class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
-          <div class="rounded-lg p-3" style="background:rgba(164,170,255,0.06);border:1px solid rgba(164,170,255,0.18);">
+          <div class="rounded-lg p-3" style="background:rgba(104, 120, 150,0.06);border:1px solid rgba(104, 120, 150,0.18);">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-oyster-200">WISE Verified — Sample Co.</span>
               <span class="font-semibold" style="color:var(--primary)">In Review</span>
@@ -6412,8 +6490,8 @@
             <p class="mt-1 text-oyster-600">Badge issuance pending 3 compliance checks.</p>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div class="rounded-lg p-2 text-center" style="background:rgba(78,224,183,0.06);"><div class="text-base font-bold" style="color:#4EE0B7">12</div><div class="text-oyster-600">Active badges</div></div>
-            <div class="rounded-lg p-2 text-center" style="background:rgba(255,179,71,0.06);"><div class="text-base font-bold" style="color:#FFB347">4</div><div class="text-oyster-600">Re-certs due</div></div>
+            <div class="rounded-lg p-2 text-center" style="background:rgba(109, 148, 124,0.06);"><div class="text-base font-bold" style="color:#6D947C">12</div><div class="text-oyster-600">Active badges</div></div>
+            <div class="rounded-lg p-2 text-center" style="background:rgba(255, 196, 52,0.06);"><div class="text-base font-bold" style="color:#FFC434">4</div><div class="text-oyster-600">Re-certs due</div></div>
           </div>
           <p class="text-oyster-600 mt-2">SHIELD tracks badge eligibility, audit trails, and re-certification windows.</p>
         </div>
@@ -6425,8 +6503,8 @@
       <div class="lens-inner">
         <div class="side-panel-header lens-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#001A2E] flex items-center justify-center shrink-0 ring-1 ring-sky-400/30">
-              <span class="material-icons text-[15px]" style="color:#5B9BD5">analytics</span>
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1A2339] flex items-center justify-center shrink-0 ring-1 ring-sky-400/30">
+              <span class="material-icons text-[15px]" style="color:#687896">analytics</span>
             </div>
             <div>
               <div class="text-xs font-bold text-oyster-100">LENS <span class="font-bold text-oyster-500 ml-1">v2.0</span></div>
@@ -6441,24 +6519,24 @@
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-3 text-xs text-oyster-500">
-          <div class="rounded-lg p-3" style="background:rgba(91,155,213,0.06);border:1px solid rgba(91,155,213,0.18);">
+          <div class="rounded-lg p-3" style="background:rgba(104, 120, 150,0.06);border:1px solid rgba(104, 120, 150,0.18);">
             <div class="text-oyster-600 mb-1">Verifications this week</div>
-            <div class="text-xl font-bold text-oyster-100">128 <span class="text-xs font-semibold" style="color:#4EE0B7">+18%</span></div>
+            <div class="text-xl font-bold text-oyster-100">128 <span class="text-xs font-semibold" style="color:#6D947C">+18%</span></div>
             <div class="mt-2 flex items-end gap-1 h-10">
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:40%"></div>
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:55%"></div>
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:70%"></div>
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:60%"></div>
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:80%"></div>
-              <div class="flex-1 rounded-sm" style="background:#5B9BD5;height:90%"></div>
-              <div class="flex-1 rounded-sm" style="background:#7DC4F0;height:100%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:40%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:55%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:70%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:60%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:80%"></div>
+              <div class="flex-1 rounded-sm" style="background:#687896;height:90%"></div>
+              <div class="flex-1 rounded-sm" style="background:#8B9FAF;height:100%"></div>
             </div>
           </div>
           <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.03);">
             <div class="font-semibold text-oyster-200 mb-1">Top risk SKUs</div>
-            <div class="flex items-center justify-between"><span>SF-8821 · Granola</span><span style="color:#FF7C7E">72</span></div>
-            <div class="flex items-center justify-between"><span>SF-2204 · Cereal</span><span style="color:#FFB347">61</span></div>
-            <div class="flex items-center justify-between"><span>SF-9013 · Bar</span><span style="color:#FFB347">58</span></div>
+            <div class="flex items-center justify-between"><span>SF-8821 · Granola</span><span style="color:#DC3038">72</span></div>
+            <div class="flex items-center justify-between"><span>SF-2204 · Cereal</span><span style="color:#FFC434">61</span></div>
+            <div class="flex items-center justify-between"><span>SF-9013 · Bar</span><span style="color:#FFC434">58</span></div>
           </div>
         </div>
       </div>
@@ -6469,8 +6547,8 @@
       <div class="vault-inner">
         <div class="side-panel-header vault-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#261A0A] flex items-center justify-center shrink-0 ring-1 ring-amber-300/30">
-              <span class="material-icons text-[15px]" style="color:#D4A853">lock</span>
+            <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#1B2D22] flex items-center justify-center shrink-0 ring-1 ring-amber-300/30">
+              <span class="material-icons text-[15px]" style="color:#D7BE91">lock</span>
             </div>
             <div>
               <div class="text-xs font-bold text-oyster-100">VAULT <span class="font-bold text-oyster-500 ml-1">v1.2</span></div>
@@ -6485,22 +6563,22 @@
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-3 side-panel-body space-y-2 text-xs text-oyster-500">
-          <div class="rounded-lg p-3" style="background:rgba(212,168,83,0.06);border:1px solid rgba(212,168,83,0.18);">
+          <div class="rounded-lg p-3" style="background:rgba(215, 190, 145,0.06);border:1px solid rgba(215, 190, 145,0.18);">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-oyster-200">Attestation — Q2-2026</span>
-              <span class="font-semibold" style="color:#D4A853">Awaiting sign</span>
+              <span class="font-semibold" style="color:#D7BE91">Awaiting sign</span>
             </div>
             <p class="mt-1 text-oyster-600">12 SKUs queued for e-signature.</p>
           </div>
           <div class="rounded-lg p-2 flex items-center gap-2" style="background:rgba(255,255,255,0.03);">
-            <span class="material-icons text-[16px]" style="color:#D4A853">description</span>
+            <span class="material-icons text-[16px]" style="color:#D7BE91">description</span>
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-oyster-200 truncate">cert_SF-8821.pdf</div>
               <div class="text-oyster-600">Signed · Mar 12, 2026</div>
             </div>
           </div>
           <div class="rounded-lg p-2 flex items-center gap-2" style="background:rgba(255,255,255,0.03);">
-            <span class="material-icons text-[16px]" style="color:#D4A853">description</span>
+            <span class="material-icons text-[16px]" style="color:#D7BE91">description</span>
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-oyster-200 truncate">cert_SF-2204.pdf</div>
               <div class="text-oyster-600">Signed · Mar 11, 2026</div>
@@ -6807,8 +6885,8 @@
 
                 <!-- TIER (settings) -->
                 <div class="ss-agent-row" id="ssr-nova">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#002A22;">
-                        <span class="material-icons" style="font-size:20px;color:#4EE0B7">auto_awesome</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1B2D22;">
+                        <span class="material-icons" style="font-size:20px;color:#6D947C">auto_awesome</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name ssa-off" id="ssn-nova">
@@ -6832,8 +6910,8 @@
 
                     <!-- Scout WISE Foods (settings) -->
                     <div class="ss-agent-row" id="ssr-scout">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#2A1A00;">
-                        <span class="material-icons" style="font-size:20px;color:#FFB347">search</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#4D1007;">
+                        <span class="material-icons" style="font-size:20px;color:#FFC434">search</span>
                     </div>
                     <div class="ss-agent-body">
                             <div class="ss-agent-name ssa-off" id="ssn-scout">
@@ -6888,8 +6966,8 @@
 
                 <!-- LENS (settings) -->
                 <div class="ss-agent-row" id="ssr-lens">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#001A2E;">
-                        <span class="material-icons" style="font-size:20px;color:#5B9BD5">analytics</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1A2339;">
+                        <span class="material-icons" style="font-size:20px;color:#687896">analytics</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name ssa-off" id="ssn-lens">
@@ -6914,8 +6992,8 @@
 
                 <!-- VAULT (settings) -->
                 <div class="ss-agent-row" id="ssr-vault">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#261A0A;">
-                        <span class="material-icons" style="font-size:20px;color:#D4A853">lock</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1B2D22;">
+                        <span class="material-icons" style="font-size:20px;color:#D7BE91">lock</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name ssa-off" id="ssn-vault">
@@ -6939,8 +7017,8 @@
 
                 <!-- PULSE (settings) -->
                 <div class="ss-agent-row ssr-on" id="ssr-pulse">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1A0026;">
-                        <span class="material-icons" style="font-size:20px;color:#E879F9">biotech</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1A2339;">
+                        <span class="material-icons" style="font-size:20px;color:#8B9FAF">biotech</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-pulse">
@@ -7197,18 +7275,18 @@
               <div class="bo-hero" style="margin-bottom:2px">Processing level</div>
               <p class="bo-meta" style="margin-top:0;margin-bottom:10px">81% minimally or lightly processed</p>
               <div class="bo-stack">
-                <span style="width:68%;background:#024EAE" title="Minimally Processed 68%"></span>
-                <span style="width:13.3%;background:#3A72C2" title="Lightly Processed 13.3%"></span>
-                <span style="width:9.4%;background:#6E9AD6" title="Moderately Processed 9.4%"></span>
-                <span style="width:6.3%;background:#A3C0E7" title="Ultra-Processed 6.3%"></span>
-                <span style="width:3.1%;background:#D2E0F5" title="Super Ultra-Processed 3.1%"></span>
+                <span style="width:68%;background:#25507C" title="Minimally Processed 68%"></span>
+                <span style="width:13.3%;background:#25507C" title="Lightly Processed 13.3%"></span>
+                <span style="width:9.4%;background:#687896" title="Moderately Processed 9.4%"></span>
+                <span style="width:6.3%;background:#C5CFD7" title="Ultra-Processed 6.3%"></span>
+                <span style="width:3.1%;background:#E2EEF7" title="Super Ultra-Processed 3.1%"></span>
               </div>
               <div class="bo-legend">
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#024EAE"></span>Minimally · 68%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#3A72C2"></span>Lightly · 13.3%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#6E9AD6"></span>Moderately · 9.4%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#A3C0E7"></span>Ultra · 6.3%</div>
-                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#D2E0F5"></span>Super-Ultra · 3.1%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#25507C"></span>Minimally · 68%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#25507C"></span>Lightly · 13.3%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#687896"></span>Moderately · 9.4%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#C5CFD7"></span>Ultra · 6.3%</div>
+                <div class="bo-legend-item"><span class="bo-legend-dot" style="background:#E2EEF7"></span>Super-Ultra · 3.1%</div>
                 <div class="bo-legend-item"><span class="bo-legend-dot" style="background:var(--primary)"></span>Seed oils · 12% <span class="text-oyster-600">(peers 17–24%)</span></div>
               </div>
             </div>
@@ -7951,7 +8029,7 @@
       <div class="so-dialog">
           <div class="so-header">
               <div class="so-header-icon">
-                  <span class="material-icons" style="font-size:22px;color:#F26D5B">logout</span>
+                  <span class="material-icons" style="font-size:22px;color:#D27326">logout</span>
               </div>
               <div class="so-header-text">
                   <div class="so-title" id="so-title-id">Sign out of WISE?</div>
@@ -7977,13 +8055,13 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'Scout™', color: '#024EAE', icon: 'verified',     required: true,  on: true,  announce: null },
-      nova:   { name: 'TIER',       color: '#4EE0B7', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
-      scout:  { name: 'WISE Foods', color: '#FFB347', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
-      shield: { name: 'SHIELD',     color: '#024EAE', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
-      lens:   { name: 'LENS',       color: '#5B9BD5', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, SKU-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
-      vault:  { name: 'VAULT',      color: '#D4A853', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
-      pulse:  { name: 'PULSE',      color: '#E879F9', icon: 'biotech',      required: false, on: false, announce: { on: 'PULSE activated — the UPF Analyzer panel is open. Score ingredients, visualize processing tiers, inspect additive risks side-by-side.', off: 'PULSE paused — UPF Analyzer panel closed.' } },
+      wise:   { name: 'Scout™', color: '#25507C', icon: 'verified',     required: true,  on: true,  announce: null },
+      nova:   { name: 'TIER',       color: '#6D947C', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
+      scout:  { name: 'WISE Foods', color: '#FFC434', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
+      shield: { name: 'SHIELD',     color: '#25507C', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
+      lens:   { name: 'LENS',       color: '#687896', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, SKU-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
+      vault:  { name: 'VAULT',      color: '#D7BE91', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
+      pulse:  { name: 'PULSE',      color: '#8B9FAF', icon: 'biotech',      required: false, on: false, announce: { on: 'PULSE activated — the UPF Analyzer panel is open. Score ingredients, visualize processing tiers, inspect additive risks side-by-side.', off: 'PULSE paused — UPF Analyzer panel closed.' } },
     };
 
     /* Maps agent id → its panel module, open-class, and LIR icon button.
@@ -8001,12 +8079,12 @@
     let activeAgentId = 'wise';
 
     const TEAM_MEMBERS = [
-      { id: 'tm-sara', name: 'Sara Chen', role: 'Data Quality Lead', initials: 'SC', color: '#4EE0B7', bg: '#002A22', added: false },
-      { id: 'tm-marco', name: 'Marco Reyes', role: 'Brand Compliance Mgr', initials: 'MR', color: '#60A5FA', bg: '#00162E', added: false },
-      { id: 'tm-priya', name: 'Priya Nair', role: 'Ingredient Specialist', initials: 'PN', color: '#FFB347', bg: '#2A1A00', added: false },
-      { id: 'tm-jordan', name: 'Jordan Blake', role: 'Attestation Reviewer', initials: 'JB', color: '#F472B6', bg: '#2A0820', added: false },
-      { id: 'tm-luca', name: 'Luca Ferretti', role: 'Certification Analyst', initials: 'LF', color: '#60A5FA', bg: '#00162E', added: false },
-      { id: 'tm-aisha', name: 'Aisha Osei', role: 'Customer Success', initials: 'AO', color: '#34D399', bg: '#002218', added: false },
+      { id: 'tm-sara', name: 'Sara Chen', role: 'Data Quality Lead', initials: 'SC', color: '#6D947C', bg: '#1B2D22', added: false },
+      { id: 'tm-marco', name: 'Marco Reyes', role: 'Brand Compliance Mgr', initials: 'MR', color: '#8B9FAF', bg: '#1A2339', added: false },
+      { id: 'tm-priya', name: 'Priya Nair', role: 'Ingredient Specialist', initials: 'PN', color: '#FFC434', bg: '#4D1007', added: false },
+      { id: 'tm-jordan', name: 'Jordan Blake', role: 'Attestation Reviewer', initials: 'JB', color: '#DC3038', bg: '#1A2339', added: false },
+      { id: 'tm-luca', name: 'Luca Ferretti', role: 'Certification Analyst', initials: 'LF', color: '#8B9FAF', bg: '#1A2339', added: false },
+      { id: 'tm-aisha', name: 'Aisha Osei', role: 'Customer Success', initials: 'AO', color: '#32A966', bg: '#1B2D22', added: false },
     ];
 
     let topbarOverlayCloseTarget = null;
@@ -9217,7 +9295,7 @@
        0–20 red. The fill takes the status color; the track behind it takes the
        lightest shade of that same status. Keeps both a true function of %. */
     function paintBoBars() {
-      const STATUS = { 5: '#5FA511', 4: '#4ADE80', 3: '#EAB308', 2: '#F97316', 1: '#EF4444' };
+      const STATUS = { 5: '#6D947C', 4: '#6D947C', 3: '#FFC434', 2: '#D27326', 1: '#DC3038' };
       document.querySelectorAll('#brand-panel .bo-bar-fill').forEach((fill) => {
         const pct = parseFloat(fill.style.width) || 0;
         const lvl = pct >= 80 ? 5 : pct >= 60 ? 4 : pct >= 40 ? 3 : pct >= 20 ? 2 : 1;
@@ -9342,7 +9420,7 @@
             { label: 'Minimal', val: 3, display: '3 SKUs', color: 'var(--sec-green)' },
             { label: 'Light', val: 4, display: '4 SKUs', color: 'var(--ter-cyan)' },
             { label: 'Moderate', val: 3, display: '3 SKUs', color: 'var(--ter-amber)' },
-            { label: 'Ultra', val: 2, display: '2 SKUs', color: '#FB7185' },
+            { label: 'Ultra', val: 2, display: '2 SKUs', color: '#DC3038' },
             { label: 'Super-Ultra', val: 2, display: '2 SKUs', color: 'var(--sec-red)' },
           ], 4),
           { icon: 'eco', text: '10 of 14 sit at Moderate or cleaner' }),
@@ -9704,7 +9782,7 @@
         '<div class="wf-product-name">Organic Mixed Berry Granola</div>' +
         '<div class="wf-product-meta">Sunrise Foods · SKU SF-8821</div>' +
         '<div class="wf-score-row" style="margin-top:10px;"><span class="wf-score-label">Current WISE Score</span><span class="wf-score-num">54<small>/100</small></span></div>' +
-        '<div class="wf-score-track"><div class="wf-score-fill" style="width:54%;background:linear-gradient(90deg,#E879F9,#FF7C7E)"></div></div>' +
+        '<div class="wf-score-track"><div class="wf-score-fill" style="width:54%;background:linear-gradient(90deg,#8B9FAF,#DC3038)"></div></div>' +
         '<div style="margin-top:8px;"><span class="wf-tag wf-tag--red" style="margin-left:0;">Ultra-Processed</span></div>');
     }
 
@@ -9725,7 +9803,7 @@
     function wfBuildProjection() {
       wfAddSection(4, 'Projected WISE Score',
         '<div class="wf-score-row"><span class="wf-score-label">Before</span><span class="wf-score-num" style="font-size:0.8125rem;">54<small>/100</small></span></div>' +
-        '<div class="wf-score-track" style="margin-bottom:8px;"><div class="wf-score-fill" style="width:54%;background:linear-gradient(90deg,#E879F9,#FF7C7E)"></div></div>' +
+        '<div class="wf-score-track" style="margin-bottom:8px;"><div class="wf-score-fill" style="width:54%;background:linear-gradient(90deg,#8B9FAF,#DC3038)"></div></div>' +
         '<div class="wf-score-row"><span class="wf-score-label">After reformulation</span><span class="wf-score-num">88<small>/100</small></span></div>' +
         '<div class="wf-score-track"><div class="wf-score-fill" style="width:88%;background:linear-gradient(90deg,var(--sec-green),var(--ter-cyan))"></div></div>' +
         '<span class="wf-badge"><span class="material-icons">eco</span>Clears NON-UPF · +34 pts</span>');
@@ -10057,7 +10135,7 @@
     function vfBuildAnalyze() {
       vfAddSection('biotech', 'UPF Processing Analysis', 'No UPF markers',
         '<div class="vf-bar-row"><span class="vf-bar-label">Minimal</span><span class="vf-bar-track"><span class="vf-bar-fill" style="width:38%;background:var(--sec-green)"></span></span><span class="vf-bar-val">3</span></div>' +
-        '<div class="vf-bar-row"><span class="vf-bar-label">Light</span><span class="vf-bar-track"><span class="vf-bar-fill" style="width:25%;background:#84cc16"></span></span><span class="vf-bar-val">2</span></div>' +
+        '<div class="vf-bar-row"><span class="vf-bar-label">Light</span><span class="vf-bar-track"><span class="vf-bar-fill" style="width:25%;background:#6D947C"></span></span><span class="vf-bar-val">2</span></div>' +
         '<div class="vf-bar-row"><span class="vf-bar-label">Moderate</span><span class="vf-bar-track"><span class="vf-bar-fill" style="width:25%;background:var(--ter-amber)"></span></span><span class="vf-bar-val">2</span></div>' +
         '<div class="vf-bar-row"><span class="vf-bar-label">Ultra</span><span class="vf-bar-track"><span class="vf-bar-fill" style="width:12%;background:var(--sec-red)"></span></span><span class="vf-bar-val">1</span></div>' +
         '<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">' +
@@ -10499,7 +10577,7 @@
 
     function lrBuildTierLaunch() {
       lrInjectNavSection('tier-panel-body', 'Launch Tier · Chipotle Empanadas',
-        '<div class="wf-row"><span class="wf-dot" style="background:#FFB347"></span> Classification: <strong>Processed (Tier 3)</strong></div>' +
+        '<div class="wf-row"><span class="wf-dot" style="background:#FFC434"></span> Classification: <strong>Processed (Tier 3)</strong></div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--sec-green)"></span> No ultra-processed markers in eligible set</div>' +
         '<div class="wf-row"><span class="wf-dot" style="background:var(--ter-amber)"></span> Avoid “minimally processed” on-pack language</div>' +
         '<div style="margin-top:8px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Launch readiness · GREEN</span></div>');
@@ -10743,14 +10821,172 @@
       }
     }
     function setModuleLayout(mode) {
-      if (mode !== 'grid' && mode !== 'split' && mode !== 'stack') mode = 'col';
+      if (mode !== 'grid' && mode !== 'split' && mode !== 'stack' && mode !== 'tab') mode = 'col';
       const row = document.getElementById('modules-row');
       if (!row) return;
       applySplitWrap(mode === 'split');
+      applyTabWrap(mode === 'tab');
       row.classList.toggle('modules-grid', mode === 'grid');
       row.classList.toggle('modules-stack', mode === 'stack');
+      row.classList.toggle('modules-tab', mode === 'tab');
       try { localStorage.setItem('wise-module-layout', mode); } catch (_) {}
     }
+
+    /* ── Tabbed layout ───────────────────────────────────────────────
+       Mirrors the Portfolio workspace: every OPEN side module is collapsed
+       into a single #modules-tabbed container with a tab strip across the top;
+       only the selected module shows. The main Scout chat (#chat-shell) and the
+       navigation (#menu-panel) stay docked beside it. Opening a module from the
+       rail adds a tab and brings it to the front; closing it drops the tab and
+       returns the module to its home column. */
+    (function initTabbedLayout() {
+      /* Modules eligible to become tabs, each with the class that marks it
+         "open". The persistent chat (#chat-shell) and nav (#menu-panel) are
+         intentionally excluded so they stay docked, exactly like Portfolio
+         keeps Scout docked beside the tabbed pane. */
+      const TAB_MODULES = [
+        { id: 'history-panel',       open: 'open' },
+        { id: 'scout-panel',         open: 'sp-open' },
+        { id: 'upf-panel',           open: 'up-open' },
+        { id: 'tier-panel',          open: 'tp-open' },
+        { id: 'shield-panel',        open: 'sd-open' },
+        { id: 'lens-panel',          open: 'ln-open' },
+        { id: 'vault-panel',         open: 'vt-open' },
+        { id: 'nfp-panel',           open: 'nfp-open' },
+        { id: 'notif-panel',         open: 'notif-open' },
+        { id: 'workflow-panel',      open: 'wf-open' },
+        { id: 'verify-flow-panel',   open: 'vf-open' },
+        { id: 'intent-stack-column', open: 'is-active' },
+        { id: 'settings-screen',     open: 'open' },
+        { id: 'brand-panel',         open: 'open' },
+        { id: 'profile-panel',       open: 'open' },
+        { id: 'prefs-panel',         open: 'open' },
+        { id: 'apikeys-panel',       open: 'open' },
+        { id: 'help-panel',          open: 'open' },
+        { id: 'docs-panel',          open: 'open' },
+      ];
+
+      /* Remembers each module's home slot so it can be returned in place. */
+      const TAB_HOME = new WeakMap();
+
+      const byId = (id) => document.getElementById(id);
+      const isTabMode = () => document.getElementById('modules-row')?.classList.contains('modules-tab');
+      const isOpenModule = (m) => { const el = byId(m.id); return !!el && el.classList.contains(m.open); };
+
+      /* Short label + icon for a module's tab, read from its own header so the
+         tabs stay in sync with the module chrome (with a safe fallback). */
+      function tabMetaFor(el) {
+        const head = el.querySelector('.side-panel-header, .scout-panel-header, .panel-header, .ss-inner .side-panel-header');
+        const iconEl = (head || el).querySelector('.panel-header-icon .material-icons, .panel-header-icon .material-symbols-outlined, .material-symbols-outlined, .material-icons');
+        const labelEl = (head || el).querySelector('.font-bold, .panel-title, h1, h2, h3');
+        const sym = iconEl ? iconEl.classList.contains('material-symbols-outlined') : true;
+        const icon = iconEl ? iconEl.textContent.trim() : 'widgets';
+        let label = labelEl ? labelEl.textContent.trim() : '';
+        if (!label) label = el.id.replace(/-panel$|-screen$|-column$/,'').replace(/-/g,' ');
+        if (label.length > 22) label = label.slice(0, 21).trim() + '…';
+        return { icon, sym, label };
+      }
+
+      function rebuildTabStrip(preferId) {
+        const wrap = byId('modules-tabbed');
+        if (!wrap) return;
+        const strip = byId('mod-tab-strip');
+        const panes = Array.from(wrap.querySelectorAll('.mod-tab-pane'));
+        if (!strip) return;
+        if (!panes.length) { strip.innerHTML = ''; return; }
+
+        let active = preferId ? byId(preferId) : null;
+        if (!active || active.parentNode !== wrap) active = wrap.querySelector('.mod-tab-pane.tab-active');
+        if (!active || active.parentNode !== wrap) active = panes[panes.length - 1];
+        panes.forEach((p) => p.classList.toggle('tab-active', p === active));
+
+        strip.innerHTML = panes.map((p) => {
+          const meta = tabMetaFor(p);
+          const on = p === active;
+          const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+          return `<button type="button" class="mod-tab${on ? ' is-active' : ''}" role="tab"
+            aria-selected="${on ? 'true' : 'false'}" data-tab-id="${esc(p.id)}" title="${esc(meta.label)}">
+            <span class="${meta.sym ? 'material-symbols-outlined' : 'material-icons'}">${esc(meta.icon)}</span>
+            <span class="mod-tab-label">${esc(meta.label)}</span>
+          </button>`;
+        }).join('');
+      }
+
+      function setActiveTab(id) {
+        const wrap = byId('modules-tabbed');
+        const target = byId(id);
+        if (!wrap || !target || target.parentNode !== wrap) return;
+        rebuildTabStrip(id);
+      }
+
+      function moveIntoWrap(wrap, el) {
+        if (!el || el.parentNode === wrap) return;
+        TAB_HOME.set(el, { parent: el.parentNode, next: el.nextElementSibling });
+        el.classList.add('mod-tab-pane');
+        wrap.appendChild(el);
+      }
+
+      function moveHome(el) {
+        const home = TAB_HOME.get(el);
+        el.classList.remove('mod-tab-pane', 'tab-active');
+        if (home && home.parent) {
+          if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
+          else home.parent.appendChild(el);
+        }
+        TAB_HOME.delete(el);
+      }
+
+      /* Move newly-opened modules into the tabbed container and evict
+         newly-closed ones. Safe to call repeatedly. */
+      function syncTabModules(preferId) {
+        const wrap = byId('modules-tabbed');
+        if (!wrap) return;
+        TAB_MODULES.forEach((m) => {
+          const el = byId(m.id);
+          if (!el) return;
+          const open = el.classList.contains(m.open);
+          const inWrap = el.parentNode === wrap;
+          if (open && !inWrap) { moveIntoWrap(wrap, el); preferId = preferId || m.id; }
+          else if (!open && inWrap) { moveHome(el); }
+        });
+        rebuildTabStrip(preferId);
+      }
+
+      window.applyTabWrap = function applyTabWrap(on) {
+        const row = document.getElementById('modules-row');
+        const chat = document.getElementById('chat-shell');
+        if (!row) return;
+        let wrap = document.getElementById('modules-tabbed');
+        if (on && !wrap) {
+          wrap = document.createElement('div');
+          wrap.id = 'modules-tabbed';
+          const strip = document.createElement('div');
+          strip.id = 'mod-tab-strip';
+          strip.setAttribute('role', 'tablist');
+          strip.setAttribute('aria-label', 'Open modules');
+          wrap.appendChild(strip);
+          if (chat) row.insertBefore(wrap, chat);
+          else row.appendChild(wrap);
+          TAB_MODULES.forEach((m) => { if (isOpenModule(m)) moveIntoWrap(wrap, byId(m.id)); });
+          rebuildTabStrip();
+        } else if (!on && wrap) {
+          Array.from(wrap.querySelectorAll('.mod-tab-pane')).forEach(moveHome);
+          wrap.remove();
+        }
+      };
+
+      /* Keep the strip live as modules open/close from the rail or elsewhere. */
+      const mo = new MutationObserver(() => { if (isTabMode()) syncTabModules(); });
+      TAB_MODULES.forEach((m) => { const el = byId(m.id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
+
+      document.addEventListener('click', (e) => {
+        const tab = e.target.closest('.mod-tab[data-tab-id]');
+        if (tab && document.getElementById('modules-tabbed')?.contains(tab)) {
+          e.preventDefault();
+          setActiveTab(tab.dataset.tabId);
+        }
+      });
+    })();
 
     /* Relocate #settings-screen out of #chat-shell and into #panels-row so it
        behaves as a sibling panel (history / scout / upf), not a chat overlay.
@@ -11343,6 +11579,7 @@
         { mode: 'grid',  sym: false, icon: 'grid_view',          label: 'Grid' },
         { mode: 'split', sym: true,  icon: 'splitscreen_bottom', label: 'Split' },
         { mode: 'stack', sym: true,  icon: 'horizontal_split',   label: 'Stacked' },
+        { mode: 'tab',   sym: true,  icon: 'tab',                label: 'Tabbed' },
       ];
 
       function currentLayout() {
@@ -11463,7 +11700,7 @@
     /* Restore persisted layout mode */
     try {
       const savedLayout = localStorage.getItem('wise-module-layout');
-      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split' || savedLayout === 'stack') setModuleLayout(savedLayout);
+      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split' || savedLayout === 'stack' || savedLayout === 'tab') setModuleLayout(savedLayout);
     } catch (_) {}
     selectAgent('wise');
     updateAgentsCount();

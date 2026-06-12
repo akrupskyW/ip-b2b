@@ -19,25 +19,25 @@
   --border: rgba(17,24,39,0.08);
   --border-strong: rgba(17,24,39,0.14);
 
-  /* Deepened from #025ED3 so primary works as AAA text (7:1 on bg) AND as a
-     button fill (white-on-primary clears 7:1). rgb(2,78,174). */
-  --primary: #024EAE;
-  --primary-10: rgba(2, 78, 174, 0.10);
-  --primary-20: rgba(2, 78, 174, 0.20);
-  --primary-soft: rgba(2, 78, 174, 0.08);
-  --sec-green: #3BAA5C;
-  --sec-red: #D94C4C;
-  --ter-amber: #F5A524;
-  --ter-violet: #7C3AED;
-  --ter-cyan: #06B6D4;
+  /* Deepened from #25507C so primary works as AAA text (7:1 on bg) AND as a
+     button fill (white-on-primary clears 7:1). rgb(37, 80, 124). */
+  --primary: #25507C;
+  --primary-10: rgba(37, 80, 124, 0.10);
+  --primary-20: rgba(37, 80, 124, 0.20);
+  --primary-soft: rgba(37, 80, 124, 0.08);
+  --sec-green: #32A966;
+  --sec-red: #DC3038;
+  --ter-amber: #FFC434;
+  --ter-violet: #25507C;
+  --ter-cyan: #25507C;
 
   /* AAA-safe ink for semantic colors used as TEXT on their own light tints.
      The vibrant --sec-green / --ter-amber / --sec-red read below 7:1 as small
      text, so badges, deltas and status labels use these darker shades while
      keeping the tinted fills. All clear 7:1 on a 16% tint over surface-3. */
-  --sec-green-text: #104D27;
-  --ter-amber-text: #6F3604;
-  --sec-red-text: #831313;
+  --sec-green-text: #245E3B;
+  --ter-amber-text: #75360A;
+  --sec-red-text: #831F23;
 
   --r-sm: 10px;
   --r-md: 16px;
@@ -69,15 +69,15 @@ html.dark {
   --text-subtle: #B1BAC7;
   --border: rgba(255,255,255,0.08);
   --border-strong: rgba(255,255,255,0.14);
-  --primary-soft: rgba(2, 78, 174, 0.18);
+  --primary-soft: rgba(37, 80, 124, 0.18);
   /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. AAA (9.7:1) on surface. */
-  --primary-bright: #93C5FD;
+  --primary-bright: #8B9FAF;
 
   /* Softened pastel inks so semantic TEXT clears 7:1 on its own 16% tint over
      the navy surfaces (the vibrant fills only reached ~4.7:1 as small text). */
-  --sec-green-text: #AEDCBB;
-  --ter-amber-text: #FACF8A;
-  --sec-red-text: #FBB1B1;
+  --sec-green-text: #B6C9BE;
+  --ter-amber-text: #D7BE91;
+  --sec-red-text: #FFE1DC;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -279,7 +279,7 @@ body {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--sec-red, #ef4444);
+  background: var(--sec-red, #DC3038);
   border: 2px solid var(--surface);
 }
 .topbar-profile.has-dot.is-read::after { display: none; }
@@ -533,8 +533,8 @@ html.dark .topbar-menu-toggle:hover { color: var(--text) !important; background:
   animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 html.dark #alerts-panel .alerts-inner {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -551,8 +551,8 @@ html.dark #alerts-panel .alerts-inner {
   background: linear-gradient(135deg, color-mix(in srgb, var(--sec-red) 14%, transparent) 0%, transparent 70%);
 }
 html.dark .alerts-panel-header {
-  border-bottom-color: rgba(217, 76, 76, 0.18);
-  background: linear-gradient(135deg, rgba(217, 76, 76, 0.18) 0%, rgba(217, 76, 76, 0.05) 60%, transparent 100%);
+  border-bottom-color: rgba(220, 48, 56, 0.18);
+  background: linear-gradient(135deg, rgba(220, 48, 56, 0.18) 0%, rgba(220, 48, 56, 0.05) 60%, transparent 100%);
 }
 .alerts-panel-icon {
   width: 26px;
@@ -604,8 +604,8 @@ html.dark .alerts-panel-header {
 }
 .topbar-popover.hidden { display: none; }
 html.dark .topbar-popover {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border-color: rgba(2, 78, 174, 0.22);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -667,8 +667,8 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
 html.dark .wise-popover {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border-color: rgba(2, 78, 174, 0.22);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 .wise-popover-header {
@@ -706,7 +706,7 @@ html.dark .wise-popover-item:hover {
   color: var(--text);
 }
 html.dark .wise-popover-item.is-active {
-  background: rgba(2, 78, 174, 0.22);
+  background: rgba(37, 80, 124, 0.22);
   color: var(--primary-bright);
 }
 .wise-popover-item.danger { color: var(--sec-red-text); }
@@ -744,7 +744,7 @@ html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
   color: var(--primary);
 }
 html.dark .wise-pop-action:hover {
-  background: rgba(2, 78, 174, 0.18);
+  background: rgba(37, 80, 124, 0.18);
   color: var(--primary-bright);
 }
 .wise-pop-action .material-icons { font-size: 20px; color: var(--text-subtle); }
@@ -760,7 +760,7 @@ html.dark .wise-pop-action:hover .material-icons { color: var(--primary-bright);
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--sec-red, #ef4444);
+  background: var(--sec-red, #DC3038);
 }
 .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
 html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
@@ -1063,8 +1063,8 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 html.dark #menu-panel .menu-inner {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -1153,8 +1153,8 @@ html.dark #menu-panel .menu-inner {
   background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
 }
 html.dark .menu-panel-header {
-  border-bottom-color: rgba(2, 78, 174, 0.20);
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.24) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+  border-bottom-color: rgba(37, 80, 124, 0.20);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.24) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%);
 }
 .menu-panel-icon {
   /* Match .menu-nav-icon size so the header icon shares the exact column
@@ -1264,7 +1264,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--sec-red, #ef4444);
+  background: var(--sec-red, #DC3038);
   border: 2px solid var(--surface);
 }
 .menu-footer-profile.has-dot.is-read .menu-nav-icon::after { display: none; }
@@ -1360,22 +1360,22 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   background: var(--primary);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 1px 6px rgba(2, 78, 174, 0.35);
+  box-shadow: 0 1px 6px rgba(37, 80, 124, 0.35);
   transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .jam-play:hover { transform: scale(1.06); }
 .jam-play:active { transform: scale(0.94); }
 .jam-strip.is-playing .jam-play {
   background: linear-gradient(135deg, var(--primary), var(--ter-violet));
-  box-shadow: 0 0 0 4px rgba(2, 78, 174, 0.16), 0 2px 10px rgba(2, 78, 174, 0.45);
+  box-shadow: 0 0 0 4px rgba(37, 80, 124, 0.16), 0 2px 10px rgba(37, 80, 124, 0.45);
   animation: jamPulse 1.4s ease-in-out infinite;
 }
 .jam-play .jam-play-icon { font-size: 20px; }
 .jam-play:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 @keyframes jamPulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(2, 78, 174, 0.16), 0 2px 10px rgba(2, 78, 174, 0.45); }
-  50% { box-shadow: 0 0 0 8px rgba(2, 78, 174, 0.04), 0 2px 14px rgba(124, 58, 237, 0.5); }
+  0%, 100% { box-shadow: 0 0 0 4px rgba(37, 80, 124, 0.16), 0 2px 10px rgba(37, 80, 124, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 80, 124, 0.04), 0 2px 14px rgba(37, 80, 124, 0.5); }
 }
 
 /* Equalizer — staggered bouncing bars. Stretches across the whole middle of
@@ -1397,7 +1397,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   min-width: 2px;
   height: 30%;
   border-radius: 2px;
-  background: linear-gradient(to top, var(--primary), var(--blue-300, #93c5fd));
+  background: linear-gradient(to top, var(--primary), var(--blue-300, #8B9FAF));
   transform-origin: bottom;
   animation: jamEqIdle 2.4s ease-in-out infinite;
 }
@@ -1448,7 +1448,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   color: #fff;
   background: var(--primary);
   border-color: var(--primary);
-  box-shadow: 0 1px 6px rgba(2, 78, 174, 0.35);
+  box-shadow: 0 1px 6px rgba(37, 80, 124, 0.35);
 }
 .jam-song:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
@@ -1686,7 +1686,7 @@ html.dark .menu-nav-item.is-open {
 html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle,
 html.dark .menu-nav-group[data-open="true"] > .menu-nav-product {
   color: var(--text);
-  background: rgba(147, 197, 253, 0.08);
+  background: rgba(139, 159, 175, 0.08);
 }
 html.dark .menu-nav-group[data-open="true"] > .menu-nav-toggle .menu-nav-chevron {
   color: var(--primary-bright);
@@ -1703,7 +1703,7 @@ html.dark .menu-nav-subitem:hover {
 html.dark .menu-nav-subitem:hover .menu-nav-subicon { color: var(--text); }
 html.dark .menu-nav-subitem.is-active {
   color: var(--text);
-  background: rgba(2, 78, 174, 0.22);
+  background: rgba(37, 80, 124, 0.22);
 }
 html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-bright); }
 
@@ -2133,6 +2133,20 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
   flex-direction: column;
   position: relative;
 }
+/* Width/resize toggle in the module header resizes the WHOLE module (header +
+   bordered card + body), not just the inner content. The module keeps growing
+   to fill the row (flex-grow) but stops at the tier cap. Tier 0 = full (no
+   class, fills the row) · 1 = wide · 2 = reading. Each cap is also a % of the
+   row so the three steps stay visibly distinct even when Scout + the menu rail
+   leave the row narrow (a fixed-px cap alone would exceed the available width
+   and collapse the tiers into one identical size). The module sits left in the
+   row, so narrowing it frees space on its trailing edge. */
+#agent-main.main-w-wide   { max-width: min(1180px, 82%); }
+#agent-main.main-w-narrow { max-width: min(820px, 62%); }
+@media (max-width: 1024px) {
+  #agent-main.main-w-wide,
+  #agent-main.main-w-narrow { max-width: none; }
+}
 .agent-main-inner {
   flex: 1 1 0%;
   min-height: 0;
@@ -2149,8 +2163,8 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
   animation-delay: 0.05s;
 }
 html.dark .agent-main-inner {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -2177,8 +2191,8 @@ html.dark .agent-main-inner {
   background: var(--surface-2);
 }
 html.dark .agent-main-header {
-  border-bottom-color: rgba(2, 78, 174, 0.20);
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+  border-bottom-color: rgba(37, 80, 124, 0.20);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%);
 }
 .agent-main-icon {
   width: 26px;
@@ -2213,6 +2227,20 @@ html.dark .agent-main-header {
   background: var(--bg);
 }
 html.dark .agent-main-scroll { background: transparent; }
+
+/* Main-panel header control cluster (⋯ menu + width toggle) — floats right in
+   the normal header and is pinned top-right by the header-float rules above, so
+   every pane carries the same functions whether the header is shown or hidden.
+   The button + popover visuals come from scout-chat.css / the .topbar-popover
+   rules, both shared. */
+.agent-main-header .panel-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.agent-main-header .panel-more-wrap { position: relative; }
 @media (max-width: 767px) {
   .agent-main-scroll { padding: 20px 32px 36px; }
   .agent-main-header { padding: 12px; }
@@ -2285,6 +2313,86 @@ html.header-float .chat-topbar > *:last-child {
   margin: 0 !important;
   z-index: 6;
 }
+/* Scout keeps BOTH its resize (width) toggle AND its more-options menu in the
+   headerless view — exactly like every other module's floated controls. The
+   control cluster is the topbar's trailing element, so the float rule above
+   already lifts it into the top-right corner; these rules just guarantee the
+   whole cluster and every icon inside it stay rendered (so the resize + header
+   icons can't read as "missing") and lay them out identically to the other
+   modules' floated control menus — same transparent icon buttons, no extra
+   chrome. */
+html.header-float .chat-topbar > .sc-topbar-controls,
+html.header-float #chat-shell .chat-topbar > *:last-child {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 2px;
+}
+html.header-float .chat-topbar > .sc-topbar-controls,
+html.header-float .chat-topbar > .sc-topbar-controls *,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  visibility: visible !important;
+}
+html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  display: inline-flex !important;
+}
+/* Portfolio's docked Scout (#pf-chat-panel) AND the agent-overview / dashboard
+   Scout dock (#scout-dock-panel) get the SAME guarantees at id-level
+   specificity that ai-chat's #chat-shell scout enjoys, so no page- or
+   layout-specific rule can out-rank them and leave the resize + more buttons
+   reading as "missing" when the header is dropped. Drops the title/owl block,
+   floats the control cluster top-right, and force-renders every icon in it. */
+html.header-float #pf-chat-panel .chat-topbar > *:not(:last-child),
+html.header-float #scout-dock-panel .chat-topbar > *:not(:last-child) {
+  display: none !important;
+}
+html.header-float #pf-chat-panel .chat-topbar > *:last-child,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls,
+html.header-float #scout-dock-panel .chat-topbar > *:last-child,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  z-index: 6;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 2px;
+}
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls *,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls *,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  visibility: visible !important;
+}
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  display: inline-flex !important;
+}
+/* The Scout welcome screen is an opaque overlay (z-index 10, background
+   var(--bg)) that covers the whole card — in LIGHT mode it would paint right
+   over the header-float controls and hide them (in dark mode the overlay is
+   transparent, so they showed through). Lift the (height-0) topbar above that
+   overlay in headerless mode so the floated ⋯ + width controls stay visible
+   AND clickable on top of the welcome screen, in every theme. */
+html.header-float .scout-dock .chat-topbar,
+html.header-float #pf-chat-panel .chat-topbar,
+html.header-float #scout-dock-panel .chat-topbar {
+  z-index: 12 !important;
+}
 html.header-float .vs-header > *:not(button) {
   display: none !important;
 }
@@ -2307,8 +2415,8 @@ html.header-float .vs-header > button {
   margin-bottom: 28px;
 }
 html.dark .agent-hero {
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
-  border-color: rgba(2, 78, 174, 0.18);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
+  border-color: rgba(37, 80, 124, 0.18);
 }
 .agent-hero-eyebrow {
   font-size: var(--fs-label);
@@ -2543,8 +2651,8 @@ html.dark .agent-empty { background: rgba(255,255,255,0.03); border-color: rgba(
   box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.34);
 }
 html.dark .ag-sheet {
-  background: linear-gradient(160deg, #163950 0%, #102B3C 55%, #0A1C28 100%);
-  border-color: rgba(2, 78, 174, 0.22);
+  background: linear-gradient(160deg, #1A2339 0%, #1A2339 55%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
 }
 .ag-sheet.is-open { transform: translate(-50%, 0); }
 .ag-sheet-handle { width: 38px; height: 4px; border-radius: 999px; margin: 9px auto 2px; background: var(--text-subtle); opacity: 0.4; }
@@ -2554,7 +2662,7 @@ html.dark .ag-sheet {
 .ag-sheet-titles { min-width: 0; flex: 1; }
 .ag-sheet-eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); }
 .ag-sheet-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
-.ag-sheet-close { margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; cursor: pointer; background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; flex-shrink: 0; }
+.ag-sheet-close { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer; background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; flex-shrink: 0; }
 .ag-sheet-close:hover { color: var(--text); background: var(--surface-3); }
 .ag-sheet-body { padding: 18px; overflow-y: auto; }
 .ag-sheet-body .agent-cta { font-family: inherit; }
@@ -2578,7 +2686,7 @@ html.dark .ag-input { background: rgba(255,255,255,0.04); border-color: rgba(255
 .ag-flow { padding: 6px 0 2px; }
 .ag-flow-bar { height: 7px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
 html.dark .ag-flow-bar { background: rgba(255,255,255,0.08); }
-.ag-flow-fill { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--ter-cyan, #06b6d4)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.ag-flow-fill { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--ter-cyan, #25507C)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
 .ag-flow-pct { text-align: right; font-size: 0.6875rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
 .ag-flow-steps { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .ag-flow-step { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--text-subtle); }
@@ -2586,10 +2694,10 @@ html.dark .ag-flow-bar { background: rgba(255,255,255,0.08); }
 .ag-flow-step.is-active { color: var(--text); font-weight: 600; }
 .ag-flow-step.is-active .material-icons { color: var(--primary); animation: agSpin 0.9s linear infinite; }
 .ag-flow-step.is-done { color: var(--text-muted); }
-.ag-flow-step.is-done .material-icons { color: var(--sec-green, #16a34a); }
+.ag-flow-step.is-done .material-icons { color: var(--sec-green, #32A966); }
 @keyframes agSpin { to { transform: rotate(360deg); } }
 .ag-flow-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 6px 0; }
-.ag-flow-done-icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px; background: color-mix(in srgb, var(--sec-green, #16a34a) 16%, transparent); color: var(--sec-green, #16a34a); }
+.ag-flow-done-icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px; background: color-mix(in srgb, var(--sec-green, #32A966) 16%, transparent); color: var(--sec-green, #32A966); }
 .ag-flow-done-icon .material-icons { font-size: 30px !important; }
 .ag-flow-done-title { font-size: 1rem; font-weight: 800; color: var(--text); }
 .ag-flow-done-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0; max-width: 420px; }
@@ -2597,7 +2705,7 @@ html.dark .ag-flow-bar { background: rgba(255,255,255,0.08); }
 
 #ag-toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .ag-toast { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.18)); color: var(--text); font-size: 0.8125rem; font-weight: 600; animation: agToastIn 0.25s ease both; }
-html.dark .ag-toast { background: #142a3a; border-color: rgba(2, 78, 174,0.3); }
+html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); }
 .ag-toast .material-icons { font-size: 18px !important; color: var(--primary); }
 @keyframes agToastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 

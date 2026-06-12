@@ -19,8 +19,8 @@
   margin-bottom: 22px;
 }
 html.dark .pf-hero {
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.10) 60%, transparent 100%);
-  border-color: rgba(2, 78, 174, 0.18);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
+  border-color: rgba(37, 80, 124, 0.18);
 }
 .pf-hero-eyebrow {
   font-size: var(--fs-label);
@@ -196,16 +196,16 @@ html.dark .pf-kpi { background: rgba(255,255,255,0.025); border-color: rgba(255,
   gap: 14px;
   padding: 18px;
   border-radius: var(--r-md);
-  background: linear-gradient(150deg, rgba(2, 78, 174,0.10), transparent 75%);
+  background: linear-gradient(150deg, rgba(37, 80, 124,0.10), transparent 75%);
   border: 1px solid var(--border);
   margin-bottom: 8px;
 }
-html.dark .pf-briefing { border-color: rgba(2, 78, 174,0.20); }
+html.dark .pf-briefing { border-color: rgba(37, 80, 124,0.20); }
 .pf-agent-avatar {
   width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
   display: grid; place-items: center;
   background: linear-gradient(135deg, var(--primary), var(--ter-cyan));
-  color: #fff; box-shadow: 0 4px 14px rgba(2, 78, 174,0.35);
+  color: #fff; box-shadow: 0 4px 14px rgba(37, 80, 124,0.35);
 }
 .pf-agent-avatar .material-icons { font-size: 22px !important; }
 .pf-briefing-body { min-width: 0; flex: 1; }
@@ -384,7 +384,7 @@ html.dark .pf-step { background: rgba(255,255,255,0.025); border-color: rgba(255
 .pf-vault-gate {
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
   padding: 36px 24px; border-radius: var(--r-lg);
-  background: linear-gradient(150deg, rgba(245,165,36,0.10), transparent 70%);
+  background: linear-gradient(150deg, rgba(255, 196, 52,0.10), transparent 70%);
   border: 1px dashed color-mix(in srgb, var(--ter-amber) 40%, var(--border));
 }
 .pf-vault-lock { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: var(--ter-amber); }
@@ -399,9 +399,9 @@ html.dark .pf-asset { background: rgba(255,255,255,0.025); border-color: rgba(25
 .pf-asset:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
 .pf-asset-art { height: 96px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), var(--ter-cyan)); color: #fff; }
 .pf-asset-art .material-icons { font-size: 34px !important; }
-.pf-asset-art.art-green { background: linear-gradient(135deg, var(--sec-green), #15803d); }
-.pf-asset-art.art-amber { background: linear-gradient(135deg, var(--ter-amber), #b45309); }
-.pf-asset-art.art-violet { background: linear-gradient(135deg, var(--ter-violet), #6d28d9); }
+.pf-asset-art.art-green { background: linear-gradient(135deg, var(--sec-green), #245E3B); }
+.pf-asset-art.art-amber { background: linear-gradient(135deg, var(--ter-amber), #75360A); }
+.pf-asset-art.art-violet { background: linear-gradient(135deg, var(--ter-violet), #1A2339); }
 .pf-asset-meta { padding: 10px 12px; }
 .pf-asset-name { font-size: 0.75rem; font-weight: 700; color: var(--text); }
 .pf-asset-sub { font-size: 0.625rem; color: var(--text-subtle); margin-top: 2px; }
@@ -452,8 +452,8 @@ html.dark .pf-asset { background: rgba(255,255,255,0.025); border-color: rgba(25
   box-shadow: var(--shadow-card);
 }
 html.dark #left-icon-rail {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 .pf-module-rail {
@@ -532,8 +532,8 @@ html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--prima
   animation: panelBounceLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 html.dark .pf-module-inner {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border: 1px solid rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
   box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 .pf-module-header {
@@ -549,8 +549,8 @@ html.dark .pf-module-inner {
   background: var(--surface-2);
 }
 html.dark .pf-module-header {
-  border-bottom-color: rgba(2, 78, 174, 0.20);
-  background: linear-gradient(135deg, rgba(2, 78, 174, 0.20) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 100%);
+  border-bottom-color: rgba(37, 80, 124, 0.20);
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%);
 }
 html.dark .pf-module-scroll { background: transparent; }
 /* In-header side switcher — moves the module to the other side of Scout.
@@ -702,7 +702,7 @@ html.dark .pf-module-scroll { background: transparent; }
 .pf-module-menu-item.is-on .material-symbols-outlined { color: var(--primary); }
 .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
 .pf-module-menu-item--off:hover {
-  background: color-mix(in srgb, #e5484d 14%, transparent);
+  background: color-mix(in srgb, #DC3038 14%, transparent);
   color: var(--sec-red-text);
 }
 .pf-module-menu-item--off:hover .material-symbols-outlined { color: var(--sec-red-text); }
@@ -836,7 +836,7 @@ html.dark .pf-history-hicon {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: 50%;
   background: transparent;
   border: 0;
   color: var(--text-muted);
@@ -926,7 +926,7 @@ html.dark .pf-history-tabs { border-bottom-color: rgba(255, 255, 255, 0.08); }
   transition: background 0.15s ease;
 }
 .pf-history-item:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-html.dark .pf-history-item:hover { background: #413A4D; }
+html.dark .pf-history-item:hover { background: #1A2339; }
 .pf-history-item-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .pf-history-item-title {
   font-size: var(--fs-ui);
@@ -936,9 +936,9 @@ html.dark .pf-history-item:hover { background: #413A4D; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-html.dark .pf-history-item-title { color: #E0DBE7; }
+html.dark .pf-history-item-title { color: #C5CFD7; }
 .pf-history-item-meta { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 2px; }
-html.dark .pf-history-item-meta { color: #827C90; }
+html.dark .pf-history-item-meta { color: #687896; }
 .pf-history-chevron { font-size: 18px; color: var(--text-muted); flex-shrink: 0; }
 .pf-history-badge {
   display: inline-flex;
@@ -951,12 +951,12 @@ html.dark .pf-history-item-meta { color: #827C90; }
   flex-shrink: 0;
 }
 /* Badge palette — identical hues to ai-chat.html's .hb-* tokens. */
-.pf-history-badge.hb-progress { background: var(--ter-amber-10, rgba(245, 158, 11, 0.14)); color: var(--ter-amber-text, #6F3604); }
+.pf-history-badge.hb-progress { background: var(--ter-amber-10, rgba(255, 196, 52, 0.14)); color: var(--ter-amber-text, #75360A); }
 .pf-history-badge.hb-awaiting { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-.pf-history-badge.hb-complete { background: var(--sec-green-10, rgba(34, 197, 94, 0.14)); color: var(--sec-green-text, #104D27); }
-html.dark .pf-history-badge.hb-progress { background: #3D2200; color: #FFB347; }
-html.dark .pf-history-badge.hb-awaiting { background: var(--primary-soft, rgba(2, 78, 174, 0.18)); color: var(--primary); }
-html.dark .pf-history-badge.hb-complete { background: #003326; color: #4EE0B7; }
+.pf-history-badge.hb-complete { background: var(--sec-green-10, rgba(50, 169, 102, 0.14)); color: var(--sec-green-text, #245E3B); }
+html.dark .pf-history-badge.hb-progress { background: #4D1007; color: #FFC434; }
+html.dark .pf-history-badge.hb-awaiting { background: var(--primary-soft, rgba(37, 80, 124, 0.18)); color: var(--primary); }
+html.dark .pf-history-badge.hb-complete { background: #1B2D22; color: #6D947C; }
 
 /* ===== Column-view scroll polish =====
    In column view the nav rail is a frozen first column (position: sticky).
@@ -1145,6 +1145,99 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   border-radius: var(--r-md);
   box-shadow: var(--shadow-card), 0 -12px 28px -16px rgba(0, 0, 0, 0.55);
 }
+
+/* ===== Tabbed layout =====
+   The toggle's fifth mode. setModuleLayout() gathers every non-Scout module
+   into a #modules-tabbed wrapper; only the selected module's body is shown and
+   the tabs are injected straight into that module's own header bar (so the tab
+   bar IS the header — no double-stacked strip). Each module keeps its own
+   three-dot menu, so move-side / width / off all stay wired. Scout keeps its
+   own docked slot beside the tabbed container so the chat is always present. */
+#modules-row.modules-tab {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#modules-tabbed {
+  order: 10;
+  /* Fills the space Scout leaves, exactly like a normal module — so Scout keeps
+     its own fixed width + dock-position + width controls untouched. The "Width"
+     control caps the pane to a centred reading width (tabbed-wide / -narrow). */
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#modules-tabbed.tabbed-wide { max-width: 1100px; margin: 0 auto; }
+#modules-tabbed.tabbed-narrow { max-width: 820px; margin: 0 auto; }
+/* Only the active module's body is shown inside the tabbed container. */
+#modules-tabbed > .pf-module { flex: 1 1 0%; min-height: 0; }
+#modules-tabbed > .pf-module.is-open { display: none; }
+#modules-tabbed > .pf-module.is-open.tab-active { display: flex; }
+#modules-tabbed > .pf-module .pf-module-inner { animation: none; }
+
+/* The active module's header becomes the tab bar: hide its icon + titles and
+   let the injected .pf-tabs fill the row, with the three-dot menu kept right. */
+.pf-module-header.pf-tab-host { gap: 6px; }
+.pf-module-header.pf-tab-host > .agent-main-icon,
+.pf-module-header.pf-tab-host > .agent-main-titles,
+.pf-module-header.pf-tab-host > .pf-history-hicon,
+.pf-module-header.pf-tab-host > .pf-history-htitles { display: none; }
+.pf-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.pf-tabs::-webkit-scrollbar { height: 0; display: none; }
+.pf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.pf-tab .material-icons,
+.pf-tab .material-symbols-outlined { font-size: 18px; }
+.pf-tab:hover { color: var(--text); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.pf-tab.is-active {
+  color: var(--primary);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+html.dark .pf-tab.is-active { color: var(--primary-bright, var(--primary)); background: rgba(37, 80, 124, 0.28); }
+
+/* Scout is left fully intact in tab mode (fixed width, sticky dock, and its own
+   dock-position + width controls), so the tabbed pane just fills the rest. The
+   pane sits left by default; "Move to other side" reorders it to the right of
+   Scout (order 150 keeps it left of Alerts at 200). */
+@media (max-width: 560px) {
+  #modules-row.modules-tab { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
+  #modules-tabbed { flex: 0 0 auto; height: auto; max-height: none; min-height: 60vh; margin: 0; max-width: none; }
+}
+
 /* ===== Product Detail deep-dive (slide-over) ===== */
 .pf-deepdive-scrim {
   position: fixed; inset: 0; z-index: 400;
@@ -1163,8 +1256,8 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   display: flex; flex-direction: column;
 }
 html.dark .pf-deepdive {
-  background: linear-gradient(155deg, #163950 0%, #102B3C 60%, #0A1C28 100%);
-  border-left-color: rgba(2, 78, 174, 0.18);
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-left-color: rgba(37, 80, 124, 0.18);
 }
 .pf-deepdive.is-open { transform: translateX(0); }
 .pf-deepdive-head {
@@ -1175,7 +1268,7 @@ html.dark .pf-deepdive {
 .pf-deepdive-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); }
 .pf-deepdive-sub { font-size: 0.6875rem; color: var(--text-muted); margin-top: 2px; }
 .pf-deepdive-close {
-  margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; cursor: pointer;
+  margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
   background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center;
 }
 .pf-deepdive-close:hover { color: var(--text); background: var(--surface-3); }
@@ -1206,8 +1299,8 @@ html.dark .pf-deepdive {
   box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.34);
 }
 html.dark .pf-sheet {
-  background: linear-gradient(160deg, #163950 0%, #102B3C 55%, #0A1C28 100%);
-  border-color: rgba(2, 78, 174, 0.22);
+  background: linear-gradient(160deg, #1A2339 0%, #1A2339 55%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
 }
 .pf-sheet.is-open { transform: translate(-50%, 0); }
 .pf-sheet-handle {
@@ -1228,7 +1321,7 @@ html.dark .pf-sheet {
 .pf-sheet-eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); }
 .pf-sheet-title { font-size: 0.9375rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
 .pf-sheet-close {
-  margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; cursor: pointer;
+  margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
   background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; flex-shrink: 0;
 }
 .pf-sheet-close:hover { color: var(--text); background: var(--surface-3); }
@@ -1340,6 +1433,6 @@ html.dark .pf-match { background: rgba(255,255,255,0.03); border-color: rgba(255
   box-shadow: var(--shadow-2); color: var(--text); font-size: 0.8125rem; font-weight: 600;
   animation: pfToastIn 0.25s ease both;
 }
-html.dark .pf-toast { background: #142a3a; border-color: rgba(2, 78, 174,0.3); }
+html.dark .pf-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); }
 .pf-toast .material-icons { font-size: 18px !important; color: var(--primary); }
 @keyframes pfToastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
