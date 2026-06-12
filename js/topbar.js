@@ -296,6 +296,32 @@ export function restoreHeaderFloat() {
   applyHeaderFloat(isHeaderFloatOn());
 }
 
+/* Full bleed — strip the card container (background, border, shadow, radius) from
+   every module EXCEPT Scout, so those modules fill the full height of the screen
+   while staying switchable from the rail. Driven by a `full-bleed` class on <html>
+   so it reaches every module on every page; persisted so it survives navigation. */
+const FULL_BLEED_KEY = 'wise-full-bleed';
+
+/** True when full-bleed (containerless modules) was last left on. */
+export function isFullBleedOn() {
+  try { return localStorage.getItem(FULL_BLEED_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the full-bleed class on <html> and persist it. Each Appearance
+    popover reads isFullBleedOn() to render its own toggle state. */
+export function applyFullBleed(on) {
+  document.documentElement.classList.toggle('full-bleed', !!on);
+  try { localStorage.setItem(FULL_BLEED_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:full-bleed', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted full-bleed state onto the document (no popover needed). */
+export function restoreFullBleed() {
+  applyFullBleed(isFullBleedOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -343,6 +369,7 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     restoreMinimalUi();
     restoreHeaderFloat();
+    restoreFullBleed();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

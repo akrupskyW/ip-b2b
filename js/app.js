@@ -2,6 +2,15 @@ import { workspaceRoutes, savedViewItems, accountRoutes, defaultRouteId } from '
 import { getRouteFromHash, pushRoute, subscribeRoute } from './router.js';
 import { mountApplicationNavigation } from './navigation.js';
 import { createAiChatDrawer } from './ai-chat-drawer.js';
+import { buildAppearanceBody } from './appearance-menu.js';
+import {
+  applyMinimalUi, isMinimalUiOn, restoreMinimalUi,
+  applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat,
+  applyFullBleed, isFullBleedOn, restoreFullBleed,
+  positionPopoverForTopbar,
+} from './topbar.js';
+import { applyJamStrip, isJamStripOn } from './jam-strip.js';
+import { setTextSize } from './text-size.js';
 
     /** Chart.js UMD attaches here; ES modules do not get implicit globals. */
     const Chart = globalThis.Chart;
@@ -1688,6 +1697,63 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
       });
     }
 
+    /* ===== Appearance popover =====
+       The same Appearance menu the agent / portfolio / chat shells show, built
+       from the shared js/appearance-menu.js so this dashboard's nav stays in step
+       (Full bleed, Header, Minimal UI, Jam strip, Text size, Theme). This shell
+       has no module layouts, nav pivot, or Scout dock, so those are omitted. The
+       toggles write the same persisted state, so flipping one here carries over
+       to every other page. */
+    let activeAppearancePop = null;
+    let activeAppearanceAnchor = null;
+    function closeAppearancePop(){
+      if (!activeAppearancePop) return;
+      activeAppearanceAnchor?.classList.remove('is-open');
+      activeAppearanceAnchor?.setAttribute('aria-expanded', 'false');
+      activeAppearancePop.classList.remove('open');
+      const p = activeAppearancePop;
+      setTimeout(() => p.remove(), 220);
+      activeAppearancePop = null;
+      activeAppearanceAnchor = null;
+    }
+    function renderAppearancePop(pop){
+      pop.innerHTML = buildAppearanceBody({
+        isDark: document.documentElement.classList.contains('dark'),
+        showScoutDock: false,
+      });
+    }
+    function openAppearancePop(anchor){
+      if (activeAppearanceAnchor === anchor) { closeAppearancePop(); return; }
+      closeAppearancePop();
+      closePopover();
+      const pop = document.createElement('div');
+      pop.className = 'wise-popover';
+      document.body.appendChild(pop);
+      renderAppearancePop(pop);
+      positionPopoverForTopbar(pop, anchor);
+      requestAnimationFrame(() => pop.classList.add('open'));
+      activeAppearancePop = pop;
+      activeAppearanceAnchor = anchor;
+      anchor.classList.add('is-open');
+      anchor.setAttribute('aria-expanded', 'true');
+      pop.addEventListener('click', (ev) => {
+        const fzBtn = ev.target.closest('.fz-btn[data-fz]');
+        if (fzBtn && pop.contains(fzBtn)) { ev.stopPropagation(); setTextSize(fzBtn.dataset.fz); return; }
+        const minimal = ev.target.closest('[data-minimal]');
+        if (minimal && pop.contains(minimal)) { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn()); renderAppearancePop(pop); return; }
+        const header = ev.target.closest('[data-headerfloat]');
+        if (header && pop.contains(header)) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); renderAppearancePop(pop); return; }
+        const fullbleed = ev.target.closest('[data-fullbleed]');
+        if (fullbleed && pop.contains(fullbleed)) { ev.stopPropagation(); applyFullBleed(!isFullBleedOn()); renderAppearancePop(pop); return; }
+        const jam = ev.target.closest('[data-jam]');
+        if (jam && pop.contains(jam)) { ev.stopPropagation(); applyJamStrip(!isJamStripOn()); renderAppearancePop(pop); return; }
+        const theme = ev.target.closest('[data-pop-action="theme"]');
+        if (theme && pop.contains(theme)) { ev.stopPropagation(); applyTheme(STATE.theme === 'light' ? 'dark' : 'light'); renderAppearancePop(pop); return; }
+        if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+        closeAppearancePop();
+      });
+    }
+
     // ========== DETAIL DRAWER ==========
     function openDetail({ eyebrow, title, sub, icon, accent, body }){
       $('#detailEyebrow').textContent = eyebrow || '';
@@ -2018,6 +2084,15 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
       // Theme toggle
       $('#themeToggle').addEventListener('click', () => applyTheme(STATE.theme === 'light' ? 'dark' : 'light'));
 
+      // Appearance menu (shared with every other shell) + restore persisted
+      // app-wide appearance state so Full bleed / Header / Minimal UI / Jam carry
+      // over from other pages.
+      restoreMinimalUi(); restoreHeaderFloat(); restoreFullBleed();
+      $('#appearanceToggle')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openAppearancePop(e.currentTarget);
+      });
+
       // Sidebar toggle (topnav) → open/hidden, mirrors AI drawer
       $('#sidebarToggle').addEventListener('click', (e) => { e.preventDefault(); setSidebarOpen(!STATE.sidebarOpen); });
       // Sidebar compact toggle (footer button) → icon rail
@@ -2047,6 +2122,7 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
         if (e.key === 'Escape') {
           closeCmd();
           closePopover();
+          closeAppearancePop();
           if ($('#detailDrawer').classList.contains('open')) closeDetail();
         }
       });
@@ -2077,13 +2153,16 @@ import { createAiChatDrawer } from './ai-chat-drawer.js';
 
       // Close popovers on outside click
       document.addEventListener('mousedown', (e) => {
+        if (activeAppearancePop && !activeAppearancePop.contains(e.target) && !activeAppearanceAnchor?.contains(e.target)) {
+          closeAppearancePop();
+        }
         if (!activePopover) return;
         if (activePopover.contains(e.target)) return;
         if (e.target.closest('[data-action]')) return;
         closePopover();
       });
 
-      window.addEventListener('resize', () => { closePopover(); handleResize(); });
+      window.addEventListener('resize', () => { closePopover(); closeAppearancePop(); handleResize(); });
       handleResize();
     }
 

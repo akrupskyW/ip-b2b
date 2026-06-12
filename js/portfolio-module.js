@@ -26,10 +26,11 @@ import {
   isMenuPivoted,
 } from './agent-menu.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
-import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
+import { buildAppearanceBody } from './appearance-menu.js';
+import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 
@@ -2701,61 +2702,15 @@ function renderAvatarBody(pop) {
     <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
 }
 
-/* Scout dock off / left / right segmented control — keeps Scout stuck to a
-   side of the modules row (or hidden) across every page. Shared markup so the
-   portfolio and ai-chat popovers stay byte-for-byte in step. */
-function renderScoutDockRow() {
-  const mode = scoutDockMode();
-  const btn = (m, icon, label) =>
-    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
-  return `
-    <div class="fz-row">
-      <span class="fz-row-label">Dock Chat</span>
-      <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
-        ${btn('left', 'align_justify_flex_start', 'Dock chat left')}
-        ${btn('center', 'align_justify_center', 'Center chat')}
-        ${btn('right', 'align_justify_flex_end', 'Dock chat right')}
-      </div>
-    </div>`;
-}
-
 function renderAppearanceBody(pop) {
-  const fz = getStoredFontSize();
-  const dark = isDark();
-  const cur = currentModuleLayout();
-  pop.innerHTML = `
-    <div class="wise-popover-header">Appearance</div>
-    ${APPEARANCE_LAYOUTS.map((l) => `
-      <div class="wise-popover-item${l.mode === cur ? ' is-active' : ''}" data-layout="${l.mode}">
-        <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
-      </div>`).join('')}
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item${isMenuPivoted() ? ' is-active' : ''}" data-pivot="1">
-      <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
-    </div>
-    <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
-      <span class="material-symbols-outlined">compress</span>Minimal UI
-    </div>
-    <div class="wise-popover-item${isHeaderFloatOn() ? ' is-active' : ''}" data-headerfloat="1">
-      <span class="material-symbols-outlined">${isHeaderFloatOn() ? 'top_panel_close' : 'top_panel_open'}</span>Header
-    </div>
-    <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
-      <span class="material-icons">music_note</span>Jam strip
-    </div>
-    <div class="wise-popover-divider"></div>
-    ${renderScoutDockRow()}
-    <div class="wise-popover-divider"></div>
-    <div class="fz-row">
-      <span class="fz-row-label">Text size</span>
-      <div class="fz-btns">
-        ${['sm', 'md', 'lg', 'xl'].map((s) => `<button type="button" class="fz-btn${fz === s ? ' fz-active' : ''}" data-fz="${s}">${s === 'sm' ? 'S' : s === 'md' ? 'M' : s === 'lg' ? 'L' : 'XL'}</button>`).join('')}
-      </div>
-    </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="theme">
-      <span class="material-icons js-theme-icon">${dark ? 'light_mode' : 'dark_mode'}</span>
-      <span class="js-theme-label">${dark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
-    </div>`;
+  pop.innerHTML = buildAppearanceBody({
+    layouts: APPEARANCE_LAYOUTS,
+    currentLayout: currentModuleLayout(),
+    showPivot: true,
+    isPivoted: isMenuPivoted(),
+    isDark: isDark(),
+    scoutDockMode: scoutDockMode(),
+  });
 }
 
 function closeAvatar() {
@@ -2847,6 +2802,13 @@ function openAppearance(anchor) {
     if (headerFloatItem) {
       ev.stopPropagation();
       applyHeaderFloat(!isHeaderFloatOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const fullBleedItem = ev.target.closest('[data-fullbleed]');
+    if (fullBleedItem) {
+      ev.stopPropagation();
+      applyFullBleed(!isFullBleedOn());
       renderAppearanceBody(pop);
       return;
     }

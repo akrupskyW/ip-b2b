@@ -6093,11 +6093,12 @@
     </div>
     <script type="module">
       import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
-      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat } from '../js/topbar.js';
+      import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { initScoutTooltips } from '../js/scout-tooltip.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+      import { buildAppearanceBody } from '../js/appearance-menu.js';
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -6111,11 +6112,14 @@
         isMinimalUiOn,
         applyHeaderFloat,
         isHeaderFloatOn,
+        applyFullBleed,
+        isFullBleedOn,
         isJamStripOn,
         applyJamStrip,
       });
       restoreMinimalUi();
       restoreHeaderFloat();
+      restoreFullBleed();
       /* Use the exact same shell helper as the agent/portfolio pages: it leads
          the nav panel with the shared WISE brand strip and docks the collapse
          toggle beside the logo. The toggle collapses the panel to an icon rail
@@ -11456,54 +11460,14 @@
       }
 
       function renderAppearanceBody(pop) {
-        const fz = window.getStoredFontSize?.() || 'md';
-        const isDark = document.documentElement.classList.contains('dark');
-        const cur = currentLayout();
-        pop.innerHTML = `
-          <div class="wise-popover-header">Appearance</div>
-          ${LAYOUTS.map((l) => `
-            <div class="wise-popover-item${l.mode === cur ? ' is-active' : ''}" data-layout="${l.mode}">
-              <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
-            </div>`).join('')}
-          <div class="wise-popover-divider"></div>
-          <div class="wise-popover-item${window.isMenuPivoted?.() ? ' is-active' : ''}" data-pivot="1">
-            <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
-          </div>
-          <div class="wise-popover-item${window.isMinimalUiOn?.() ? ' is-active' : ''}" data-minimal="1">
-            <span class="material-symbols-outlined">compress</span>Minimal UI
-          </div>
-          <div class="wise-popover-item${window.isHeaderFloatOn?.() ? ' is-active' : ''}" data-headerfloat="1">
-            <span class="material-symbols-outlined">${window.isHeaderFloatOn?.() ? 'top_panel_close' : 'top_panel_open'}</span>Header
-          </div>
-          <div class="wise-popover-item${window.isJamStripOn?.() ? ' is-active' : ''}" data-jam="1">
-            <span class="material-icons">music_note</span>Jam strip
-          </div>
-          <div class="wise-popover-divider"></div>
-          ${(() => { const m = scoutDockMode(); const b = (mode, icon, label) => `<button type="button" class="fz-btn${m === mode ? ' fz-active' : ''}" data-scout-dock="${mode}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`; return `
-          <div class="fz-row">
-            <span class="fz-row-label">Dock Chat</span>
-            <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
-              ${b('left', 'align_justify_flex_start', 'Dock chat left')}
-              ${b('center', 'align_justify_center', 'Center chat')}
-              ${b('right', 'align_justify_flex_end', 'Dock chat right')}
-            </div>
-          </div>`; })()}
-          <div class="wise-popover-divider"></div>
-          <div class="fz-row">
-            <span class="fz-row-label">Text size</span>
-            <div class="fz-btns">
-              <button type="button" class="fz-btn${fz==='sm'?' fz-active':''}" data-fz="sm">S</button>
-              <button type="button" class="fz-btn${fz==='md'?' fz-active':''}" data-fz="md">M</button>
-              <button type="button" class="fz-btn${fz==='lg'?' fz-active':''}" data-fz="lg">L</button>
-              <button type="button" class="fz-btn${fz==='xl'?' fz-active':''}" data-fz="xl">XL</button>
-            </div>
-          </div>
-          <div class="wise-popover-divider"></div>
-          <div class="wise-popover-item" data-pop-action="theme">
-            <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
-            <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
-          </div>
-        `;
+        pop.innerHTML = buildAppearanceBody({
+          layouts: LAYOUTS,
+          currentLayout: currentLayout(),
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          scoutDockMode: scoutDockMode(),
+        });
       }
 
       function positionWisePopover(pop, anchor) {
@@ -11626,6 +11590,13 @@
           if (headerFloatItem && pop.contains(headerFloatItem)) {
             ev.stopPropagation();
             window.applyHeaderFloat?.(!window.isHeaderFloatOn?.());
+            renderAppearanceBody(pop);
+            return;
+          }
+          const fullBleedItem = ev.target.closest('[data-fullbleed]');
+          if (fullBleedItem && pop.contains(fullBleedItem)) {
+            ev.stopPropagation();
+            window.applyFullBleed?.(!window.isFullBleedOn?.());
             renderAppearanceBody(pop);
             return;
           }

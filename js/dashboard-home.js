@@ -19,6 +19,17 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
+/* Score element that count-ups from 0 on load. Target is stored in markup so
+   animation does not depend on a post-render prep pass. */
+function countUpMarkup(value, { tag = 'span', className = '', style = '' } = {}) {
+  const match = String(value).trim().match(/^(\d+)(.*)$/);
+  const to = match ? match[1] : '0';
+  const suffix = match ? match[2] : '';
+  const cls = className ? `dash-count-up ${className}` : 'dash-count-up';
+  const styleAttr = style ? ` style="${style}"` : '';
+  return `<${tag} class="${cls}" data-count-to="${esc(to)}" data-count-suffix="${esc(suffix)}"${styleAttr}>0${esc(suffix)}</${tag}>`;
+}
+
 /* Persisted brand banner (data URL or remote URL). Stored locally so an
    uploaded image survives reloads; falls back to the CSS gradient when unset. */
 const BANNER_KEY = 'wise-brand-banner';
@@ -212,7 +223,7 @@ function donutRing(parts, ring, cx, cy, r, sw, gapPx) {
       }
       const pct = Math.round((p.value / total) * 100);
       const d = roundedSector(cx, cy, ri, ro, a0, a1, cr);
-      return `<path class="dash-donut-arc" d="${d}" fill="${p.color}" data-ring="${esc(ring)}" data-label="${esc(p.label)}" data-value="${p.value}" data-pct="${pct}" data-color="${esc(p.color)}"></path>`;
+      return `<path class="dash-donut-arc" d="" data-full-d="${esc(d)}" data-a0="${a0}" data-a1="${a1}" data-ri="${ri}" data-ro="${ro}" data-cr="${cr}" data-cx="${cx}" data-cy="${cy}" fill="${p.color}" data-ring="${esc(ring)}" data-label="${esc(p.label)}" data-value="${p.value}" data-pct="${pct}" data-color="${esc(p.color)}"></path>`;
     })
     .join('');
 }
@@ -235,7 +246,7 @@ function doubleDonut(outer, inner, num, numClass, label, sub, ringNames) {
         </g>
       </svg>
       <div class="dash-donut-center">
-        <span class="dash-donut-num ${numClass}">${num}</span>
+        ${countUpMarkup(num, { className: `dash-donut-num ${numClass}`.trim() })}
         <span class="dash-donut-label">${esc(label)}</span>
         <span class="dash-donut-sub">${esc(sub)}</span>
       </div>
@@ -567,7 +578,7 @@ function renderClaim(d) {
     <section class="dash-claim">
       <div>
         <div class="dash-bignum-row">
-          <span class="dash-bignum">${c.discovered}</span>
+          ${countUpMarkup(c.discovered, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
         </div>
         <div class="dash-btn-row">
@@ -577,7 +588,7 @@ function renderClaim(d) {
       <div class="dash-claim-divider"></div>
       <div>
         <div class="dash-progress-pct">
-          <span class="dash-bignum">${c.claimedPct}%</span>
+          ${countUpMarkup(`${c.claimedPct}%`, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Brand Claimed</strong><br>${c.claimed} of ${c.discovered} products</span>
         </div>
         <div class="dash-btn-row">
@@ -587,9 +598,10 @@ function renderClaim(d) {
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-score">
         <div class="dash-score-num">
-          <span class="n">${ws}</span><span class="d">/100</span>
+          ${countUpMarkup(ws, { className: 'n' })}<span class="d">/100</span>
           <span class="dash-score-cap"><strong>${wsRating} WISEscore&#8482;</strong><br>across ${d.claim.discovered} products</span>
         </div>
+        <p class="dash-score-desc">A 0&#8211;100 rating of overall food quality, combining<br>ingredient safety, processing level, and nutrient density.</p>
       </div>
     </section>`;
 }
@@ -696,43 +708,47 @@ function renderWisescore(d) {
 }
 
 function renderPillarCards(d) {
-  const cards = d.pillars
-    .map((p) => {
-      const rating = ratingLabel(p.score);
-      const metrics = p.metrics
-        .map((m) => {
-          const color = metricColor(m.value);
-          return `
+  const renderCard = (p) => {
+    const rating = ratingLabel(p.score);
+    const metrics = p.metrics
+      .map((m) => {
+        const color = metricColor(m.value);
+        return `
           <div class="dash-metric-item">
-            <span class="dash-dot dash-metric-dot" style="background:${color}"></span>
             <span class="dash-metric-name">${esc(m.name)}</span>
-            <span class="dash-metric-val" style="color:${color}">${m.value}</span>
+            ${countUpMarkup(m.value, { className: 'dash-metric-val', style: `color:${color}` })}
             <div class="dash-metric-track"><div class="dash-metric-fill" style="width:${m.value}%;background:${color}"></div></div>
           </div>`;
-        })
-        .join('');
-      return `
+      })
+      .join('');
+    return `
         <article class="dash-pillar-card">
           <div class="dash-pillar-card-head">
             <div class="dash-score-num">
-              <span class="n">${p.score}</span><span class="d">/100</span>
+              ${countUpMarkup(p.score, { className: 'n' })}<span class="d">/100</span>
               <span class="dash-score-cap"><strong>${esc(rating)}</strong><br>${esc(p.name)}</span>
             </div>
           </div>
           <div class="dash-metric-list">${metrics}</div>
         </article>`;
-    })
-    .join('');
-  return `<section class="dash-three-up">${cards}</section>`;
-}
+  };
 
-function renderFooter() {
+  const columns = d.pillars
+    .map((p, i) => `${i > 0 ? '<div class="dash-claim-divider"></div>' : ''}${renderCard(p)}`)
+    .join('');
   return `
-    <section class="dash-card" style="padding:14px 20px;">
-      <button class="dash-report-link" type="button" data-dash-action="insights-report" style="margin:0;padding:0;border:none;">
-        <span class="dash-report-left"><span class="material-icons">description</span>View &amp; export the full WISEcode Insights report — every metric, distribution &amp; flagged SKU across all 3 pillars</span>
-        <span class="material-icons">arrow_outward</span>
-      </button>
+    <section class="dash-pillars-section">
+      <div class="dash-three-up dash-pillars">${columns}</div>
+      <div class="dash-pillars-cta">
+        <div class="dash-pillars-cta-inner">
+          <button class="dash-btn dash-btn--ghost dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
+            <span class="material-icons">description</span>
+            <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
+            <span class="material-icons dash-pillars-cta-arrow">arrow_outward</span>
+          </button>
+          <p class="dash-pillars-cta-note">Every metric, distribution &amp; flagged SKU across all 3 pillars</p>
+        </div>
+      </div>
     </section>`;
 }
 
@@ -747,12 +763,11 @@ export function renderDashboardHome(host) {
     ${renderHero(d)}
     <div class="dash">
       ${renderClaim(d)}
-      <section class="dash-two-up">
+      <section class="dash-two-up" id="dash-charts">
         ${renderUpf(d)}
         ${renderGras(d)}
       </section>
       ${renderPillarCards(d)}
-      ${renderFooter()}
     </div>`;
 
   /* Lightweight interactions: tab toggle + action routing. Real flows can be
@@ -836,6 +851,154 @@ export function renderDashboardHome(host) {
   });
 
   setupDonutPopover(host);
+  setupChartAnimations(host);
+}
+
+/* Easing helper for count-up and bar animations. */
+function easeOutCubic(t) {
+  return 1 - (1 - t) ** 3;
+}
+
+function countUpEl(el, duration = 1800) {
+  if (el.classList.contains('is-counted')) return;
+  const to = parseInt(el.getAttribute('data-count-to'), 10);
+  if (!Number.isFinite(to)) return;
+  el.classList.add('is-counted');
+  const suffix = el.getAttribute('data-count-suffix') || '';
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    el.textContent = `${Math.round(to * easeOutCubic(t))}${suffix}`;
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = `${to}${suffix}`;
+  };
+  requestAnimationFrame(tick);
+}
+
+function runCountUps(els, { duration = 1800, stagger = 0, delay = 0 } = {}) {
+  [...els].forEach((el, i) => {
+    if (!el.hasAttribute('data-count-to')) return;
+    setTimeout(() => countUpEl(el, duration), delay + i * stagger);
+  });
+}
+
+/* Prepare metric bars for entrance animation. */
+function prepChartElements(root) {
+  root.querySelectorAll('.dash-metric-fill').forEach((fill) => {
+    fill.dataset.targetWidth = fill.style.width;
+    fill.style.width = '0%';
+  });
+}
+
+function finalizeChartElements(root) {
+  root.querySelectorAll('.dash-count-up').forEach((el) => {
+    el.textContent = `${el.getAttribute('data-count-to')}${el.getAttribute('data-count-suffix') || ''}`;
+    el.classList.add('is-counted');
+  });
+  root.querySelectorAll('.dash-donut-arc[data-full-d]').forEach((arc) => {
+    arc.setAttribute('d', arc.getAttribute('data-full-d'));
+  });
+  root.querySelectorAll('.dash-metric-fill[data-target-width]').forEach((fill) => {
+    fill.style.width = fill.dataset.targetWidth;
+  });
+}
+
+const CHART_GAUGE_SWEEP_MS = 1400;
+const CHART_BAR_STAGGER_MS = 90;
+
+/* Sweep each arc segment around the ring instead of fading segments in. */
+function animateDonutSweep(card, duration = CHART_GAUGE_SWEEP_MS) {
+  const arcs = card.querySelectorAll('.dash-donut-arc');
+  if (!arcs.length) return;
+  const start = performance.now();
+  const tick = (now) => {
+    const t = easeOutCubic(Math.min(1, (now - start) / duration));
+    const sweep = t * 360;
+    arcs.forEach((arc) => {
+      const fullD = arc.getAttribute('data-full-d');
+      const a0 = parseFloat(arc.dataset.a0);
+      const a1 = parseFloat(arc.dataset.a1);
+      if (!fullD || !Number.isFinite(a0) || !Number.isFinite(a1)) return;
+      if (sweep <= a0) {
+        arc.setAttribute('d', '');
+        return;
+      }
+      if (sweep >= a1) {
+        arc.setAttribute('d', fullD);
+        return;
+      }
+      const ri = parseFloat(arc.dataset.ri);
+      const ro = parseFloat(arc.dataset.ro);
+      const cr = parseFloat(arc.dataset.cr);
+      const cx = parseFloat(arc.dataset.cx);
+      const cy = parseFloat(arc.dataset.cy);
+      arc.setAttribute('d', roundedSector(cx, cy, ri, ro, a0, sweep, cr));
+    });
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function animateDonutCard(card) {
+  if (card.classList.contains('is-chart-animating')) return;
+  card.classList.add('is-chart-animating');
+  animateDonutSweep(card);
+  runCountUps(card.querySelectorAll('.dash-count-up'));
+}
+
+function animateMetricBars(section) {
+  if (section.classList.contains('is-chart-animating')) return;
+  section.classList.add('is-chart-animating');
+  runCountUps(section.querySelectorAll('.dash-pillar-card-head .dash-count-up'), {
+    duration: 1800,
+    stagger: 220,
+  });
+  section.querySelectorAll('.dash-metric-item').forEach((item, i) => {
+    const delay = i * CHART_BAR_STAGGER_MS;
+    const fill = item.querySelector('.dash-metric-fill');
+    const val = item.querySelector('.dash-metric-val.dash-count-up');
+    if (fill) {
+      fill.style.transitionDelay = `${delay}ms`;
+      requestAnimationFrame(() => {
+        fill.style.width = fill.dataset.targetWidth || fill.style.width;
+      });
+    }
+    if (val) setTimeout(() => countUpEl(val, 1200), delay);
+  });
+}
+
+/* Animate charts when the user scrolls each section into view — no auto-scroll. */
+function setupChartAnimations(host) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  host.classList.add('dash-charts-pending');
+  prepChartElements(host);
+
+  if (reduced) {
+    host.classList.remove('dash-charts-pending');
+    finalizeChartElements(host);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      if (el.classList.contains('dash-claim')) {
+        runCountUps(el.querySelectorAll('.dash-count-up'), { duration: 1600, stagger: 220 });
+      } else if (el.classList.contains('dash-donut-card')) {
+        animateDonutCard(el);
+      } else if (el.classList.contains('dash-pillars')) {
+        animateMetricBars(el);
+      }
+      observer.unobserve(el);
+    });
+  }, { root: host, threshold: 0.25 });
+
+  const claimSection = host.querySelector('.dash-claim');
+  if (claimSection) observer.observe(claimSection);
+  host.querySelectorAll('.dash-donut-card').forEach((card) => observer.observe(card));
+  const pillarSection = host.querySelector('.dash-pillars');
+  if (pillarSection) observer.observe(pillarSection);
 }
 
 /* Floating popover on donut-segment hover. Styled to match the navigation

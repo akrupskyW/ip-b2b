@@ -15,11 +15,12 @@ import {
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
+import { buildAppearanceBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
-import { getStoredFontSize, setTextSize, applyStoredTextSize } from './text-size.js';
+import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { renderDashboardHome, editBrandBanner } from './dashboard-home.js';
 
 function escHtml(s) {
@@ -906,55 +907,11 @@ function refreshAppearancePopover() {
   renderAppearanceBody(activeAppearancePopover);
 }
 
-/* Dock Chat left / center / right segmented control — mirrors the portfolio
-   popover so the Doc chat's sticky side stays uniform across every agent page. */
-function renderScoutDockRow() {
-  const mode = scoutDockMode();
-  const btn = (m, icon, label) =>
-    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
-  return `
-    <div class="fz-row">
-      <span class="fz-row-label">Dock Chat</span>
-      <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
-        ${btn('left', 'align_justify_flex_start', 'Dock chat left')}
-        ${btn('center', 'align_justify_center', 'Center chat')}
-        ${btn('right', 'align_justify_flex_end', 'Dock chat right')}
-      </div>
-    </div>`;
-}
-
 function renderAppearanceBody(pop) {
-  const fz     = getStoredFontSize();
-  const isDark = isDarkMode();
-  pop.innerHTML = `
-    <div class="wise-popover-header">Appearance</div>
-    ${renderScoutDockRow()}
-    <div class="wise-popover-divider"></div>
-    <div class="fz-row">
-      <span class="fz-row-label">Text size</span>
-      <div class="fz-btns">
-        <button type="button" class="fz-btn${fz==='sm'?' fz-active':''}" data-fz="sm">S</button>
-        <button type="button" class="fz-btn${fz==='md'?' fz-active':''}" data-fz="md">M</button>
-        <button type="button" class="fz-btn${fz==='lg'?' fz-active':''}" data-fz="lg">L</button>
-        <button type="button" class="fz-btn${fz==='xl'?' fz-active':''}" data-fz="xl">XL</button>
-      </div>
-    </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
-      <span class="material-symbols-outlined">compress</span>Minimal UI
-    </div>
-    <div class="wise-popover-item${isHeaderFloatOn() ? ' is-active' : ''}" data-headerfloat="1">
-      <span class="material-symbols-outlined">${isHeaderFloatOn() ? 'top_panel_close' : 'top_panel_open'}</span>Header
-    </div>
-    <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
-      <span class="material-icons">music_note</span>Jam strip
-    </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="theme">
-      <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
-      <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
-    </div>
-  `;
+  pop.innerHTML = buildAppearanceBody({
+    isDark: isDarkMode(),
+    scoutDockMode: scoutDockMode(),
+  });
 }
 
 function openAppearancePopover(anchor) {
@@ -998,6 +955,13 @@ function openAppearancePopover(anchor) {
     if (headerFloatItem && pop.contains(headerFloatItem)) {
       ev.stopPropagation();
       applyHeaderFloat(!isHeaderFloatOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const fullBleedItem = ev.target.closest('[data-fullbleed]');
+    if (fullBleedItem && pop.contains(fullBleedItem)) {
+      ev.stopPropagation();
+      applyFullBleed(!isFullBleedOn());
       renderAppearanceBody(pop);
       return;
     }

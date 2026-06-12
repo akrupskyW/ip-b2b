@@ -336,6 +336,11 @@ html.dark .sc-welcome { background: transparent; }
 .ws-chips-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+/* Inside the Scout dock the card surface is the navy gradient (#1A2339), not
+   --surface — so the edge fades must blend into that, otherwise they read as a
+   darker band beside the chips in dark mode. */
+html.dark .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
+html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, #1A2339 0%, transparent 100%); }
 .ws-chips-wrap.has-prev::before { opacity: 1; }
 .ws-chips-wrap.has-next::after { opacity: 1; }
 .ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
@@ -388,6 +393,9 @@ html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--sur
 .ws-scorecards-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
 html.dark .ws-scorecards-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
 html.dark .ws-scorecards-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+/* Match the dock card's navy gradient surface (see .ws-chips-wrap above). */
+html.dark .sc-card .ws-scorecards-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
+html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to left, #1A2339 0%, transparent 100%); }
 .ws-scorecards-wrap.has-prev::before { opacity: 1; }
 .ws-scorecards-wrap.has-next::after { opacity: 1; }
 .ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
