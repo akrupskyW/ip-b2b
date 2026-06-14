@@ -1176,6 +1176,17 @@ export function renderDashboardHome(host) {
          correct data without needing to re-attach any listeners. */
       const d = getActiveData();
 
+      /* Tapping a pillar health card replays its entrance animation: the score
+         gauge replays just the metric-bar chart, the stamp icon replays the
+         score count-up together with the chart. */
+      const iconHit = e.target.closest('.dash-pillar-card-head .dash-stamp-icon');
+      const scoreHit = e.target.closest('.dash-pillar-card-head .dash-score-num');
+      if (iconHit || scoreHit) {
+        const card = (iconHit || scoreHit).closest('.dash-pillar-card');
+        reanimatePillarCard(card, { includeScore: !!iconHit });
+        return;
+      }
+
       const tab = e.target.closest('[data-dash-tab]');
       if (tab) {
         host.querySelectorAll('[data-dash-tab]').forEach((t) => t.classList.toggle('is-active', t === tab));
@@ -1457,6 +1468,56 @@ function animateMetricBars(section) {
     }
     if (val) setTimeout(() => countUpEl(val, 1200), delay);
   });
+}
+
+/* Replay a single pillar card's entrance animation on demand. The metric-bar
+   chart always replays; `includeScore` also rewinds and re-counts the big score
+   gauge. Bars snap back to 0 with the transition suppressed (so they don't
+   animate backwards), then sweep forward again on the next frame. */
+function reanimatePillarCard(card, { includeScore = false } = {}) {
+  if (!card) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const fills = [...card.querySelectorAll('.dash-metric-fill')];
+  fills.forEach((fill) => {
+    if (!fill.dataset.targetWidth) fill.dataset.targetWidth = fill.style.width;
+    fill.classList.remove('is-chart-ready');
+    fill.style.transition = 'none';
+    fill.style.transitionDelay = '';
+    fill.style.width = '0%';
+  });
+
+  card.querySelectorAll('.dash-metric-val.dash-count-up').forEach((el) => {
+    el.classList.remove('is-counted');
+    el.textContent = `0${el.getAttribute('data-count-suffix') || ''}`;
+  });
+
+  const scoreEl = card.querySelector('.dash-score-num .dash-count-up');
+  if (includeScore && scoreEl) {
+    scoreEl.classList.remove('is-counted');
+    scoreEl.textContent = `0${scoreEl.getAttribute('data-count-suffix') || ''}`;
+  }
+
+  /* Flush the width:0 / transition:none state before restoring the transition,
+     so the forward sweep starts cleanly from zero. */
+  void card.offsetWidth;
+  fills.forEach((fill) => { fill.style.transition = ''; });
+
+  card.querySelectorAll('.dash-metric-item').forEach((item, i) => {
+    const delay = i * CHART_BAR_STAGGER_MS;
+    const fill = item.querySelector('.dash-metric-fill');
+    const val = item.querySelector('.dash-metric-val.dash-count-up');
+    if (fill) {
+      fill.style.transitionDelay = `${delay}ms`;
+      requestAnimationFrame(() => {
+        fill.style.width = fill.dataset.targetWidth || fill.style.width;
+        setTimeout(() => markMetricFillReady(fill), 1200 + delay);
+      });
+    }
+    if (val) setTimeout(() => countUpEl(val, 1200), delay);
+  });
+
+  if (includeScore && scoreEl) countUpEl(scoreEl, 1800);
 }
 
 function animateHealthBar(heading) {

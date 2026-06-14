@@ -282,7 +282,7 @@ export function mountScoutChat(rootEl, opts = {}) {
   const onCount = () => agents.filter((a) => a.on).length;
   const agentCount = opts.agentCount != null ? opts.agentCount : onCount();
   const heading = opts.heading || 'What can Scout™ help with?';
-  const sub = opts.sub || 'Your AI Verification assistant — NON-UPF & beyond';
+  const sub = opts.sub !== undefined ? opts.sub : 'Your AI Verification assistant — NON-UPF & beyond';
   const intents = opts.intents || DEFAULT_INTENTS;
   const placeholder = opts.placeholder || 'Type a message';
   /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). When
@@ -372,7 +372,7 @@ export function mountScoutChat(rootEl, opts = {}) {
           <div class="ws-logo">${OWL_MARK}</div>
         </div>
         <h1 class="ws-heading">${esc(heading)}</h1>
-        <p class="ws-sub">${esc(sub)}</p>
+        ${sub ? `<p class="ws-sub">${esc(sub)}</p>` : ''}
         ${scorecardsHtml}
         ${chipsContainerHtml}
       </div>

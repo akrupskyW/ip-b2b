@@ -25,9 +25,59 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
   <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
   <link rel="stylesheet" href="dashboard.css?v=claim-restore2" />
+  <style>
+    /* =====================================================================
+       Typography lock-in (aha.html only) — Noto Serif is the display face for
+       H1/H2-level headings, the big stat numerals, and CTAs across the
+       dashboard + Scout welcome. Body copy, labels, eyebrows, pills and
+       descriptions stay in DM Sans. Scoped to body[data-product-id="dashboard"]
+       so the shared agent-page.css / scout-chat.css aren't touched elsewhere.
+    ===================================================================== */
+    body[data-product-id="dashboard"] {
+      --font-serif: 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+    }
+
+    /* --- H1 / H2 headings --- */
+    body[data-product-id="dashboard"] .ws-heading,
+    body[data-product-id="dashboard"] .dash-hero-title,
+    body[data-product-id="dashboard"] .dash-section-title,
+    body[data-product-id="dashboard"] .dash-card-title,
+    body[data-product-id="dashboard"] .dash-pillars-cta-headline,
+    body[data-product-id="dashboard"] .dash-modal-title,
+    body[data-product-id="dashboard"] .dash-report-summary,
+    body[data-product-id="dashboard"] .agent-hero-title,
+    body[data-product-id="dashboard"] .agent-section-title,
+    body[data-product-id="dashboard"] .agent-card-title {
+      font-family: var(--font-serif);
+      letter-spacing: -0.01em;
+    }
+
+    /* --- Big stat numerals (47 / 6% / 79 / 92% / 75 …) --- */
+    body[data-product-id="dashboard"] .dash-bignum,
+    body[data-product-id="dashboard"] .dash-pct,
+    body[data-product-id="dashboard"] .dash-score-num .n,
+    body[data-product-id="dashboard"] .dash-donut-num,
+    body[data-product-id="dashboard"] .dash-headline-num,
+    body[data-product-id="dashboard"] .dash-wisescore-num .n,
+    body[data-product-id="dashboard"] .dash-pillar-score,
+    body[data-product-id="dashboard"] .dash-report-stat-val {
+      font-family: var(--font-serif);
+    }
+
+    /* --- CTAs / primary action buttons --- */
+    body[data-product-id="dashboard"] .dash-btn,
+    body[data-product-id="dashboard"] .dash-cta-banner-btn,
+    body[data-product-id="dashboard"] .dash-pillars-cta-btn,
+    body[data-product-id="dashboard"] .dash-ai-btn,
+    body[data-product-id="dashboard"] .agent-cta {
+      font-family: var(--font-serif);
+      letter-spacing: 0;
+    }
+  </style>
 </head>
 <body data-product-id="dashboard">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

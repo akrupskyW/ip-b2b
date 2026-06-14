@@ -461,7 +461,7 @@ function setupScoutDock() {
 
   mountScoutDock(dock, isDashboard
     ? {
-        sub: 'Your AI assistant across every WISE agent',
+        sub: '',
         chipsFlow: 'wrap',
         intents: DASHBOARD_SCOUT_INTENTS,
         intentReplies: DASHBOARD_SCOUT_REPLIES,
@@ -478,7 +478,7 @@ function setupScoutDock() {
         },
       }
     : {
-        sub: 'Your AI assistant across every WISE agent',
+        sub: '',
         onIntent: (intent) => {
           const go = {
             customer_profile: 'ai-chat.html',
