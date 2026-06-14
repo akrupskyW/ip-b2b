@@ -139,8 +139,8 @@ const PORTFOLIO_INTENTS = [
 const PORTFOLIO_INTENT_REPLIES = {
   'go-ledger': 'Opening My Foods Portfolio — every product with its resolution, shield status, and visibility in one place. Want me to filter to what needs attention?',
   'go-discovered': 'Opening Discovered Foods — matches from across the public WISEcode registry. Want me to surface the ones closest to your portfolio?',
-  'go-reports': 'Opening Portfolio Reports — UPF, GRAS, and WISEcode insights at the brand and SKU level. Which report should I pull up first?',
-  faq_intro: 'Here’s your portfolio risk at a glance: beverages carry the highest exposure with <strong>3 SKUs</strong> that need attention. Want me to open them in My Foods Portfolio?',
+  'go-reports': 'Opening Portfolio Reports — UPF, GRAS, and WISEcode insights at the brand and UPC level. Which report should I pull up first?',
+  faq_intro: 'Here’s your portfolio risk at a glance: beverages carry the highest exposure with <strong>3 UPCs</strong> that need attention. Want me to open them in My Foods Portfolio?',
   'go-vault': 'Opening your Assets — <strong>10 new “Back-to-School” tiles</strong> plus refreshed retail sheets are waiting in the Non-UPF folder. Want the latest badges?',
   /* Openers for the two "at a glance" intro cards — orientation, not data. */
   scorecard_tour: 'Quick tour: the rail up top is your portfolio at a glance — UPF status, state compliance, ingredient quality, and seed-oil exposure, each card one click from the detail. Want to start with where you lead, or where you need to act?',
@@ -157,16 +157,16 @@ const PORTFOLIO_SCORECARDS = {
     {
       icon: 'science', iconTone: 'brand',
       pill: { tone: 'up', icon: 'priority_high', text: 'Do next' },
-      metric: '18', metricUnit: ' SKUs',
+      metric: '18', metricUnit: ' UPCs',
       title: 'Reformulate CA targets',
-      desc: '18 SKUs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.',
+      desc: '18 UPCs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.',
       action: 'Plan reformulation', intent: 'go-ledger', ask: 'Plan reformulation for my California targets',
     },
     {
       variant: 'intro', icon: 'space_dashboard', iconTone: 'intro',
       pill: { tone: 'intro', icon: 'auto_awesome', text: 'Start here' },
       title: 'Your whole portfolio, decoded',
-      desc: 'UPF status, compliance, and ingredient health — every SKU, one view.',
+      desc: 'UPF status, compliance, and ingredient health — every UPC, one view.',
       action: 'Take the tour', intent: 'scorecard_tour', ask: 'Give me a quick tour of my portfolio',
     },
     {
@@ -181,7 +181,7 @@ const PORTFOLIO_SCORECARDS = {
       pill: { tone: 'up', icon: 'verified', text: 'Verify' },
       metric: '100', metricUnit: '% pass',
       title: 'Publish your SB25 claim',
-      desc: 'All 192 SKUs clear Texas SB25 — get it verified and live on retail listings.',
+      desc: 'All 192 UPCs clear Texas SB25 — get it verified and live on retail listings.',
       action: 'Start verification', intent: 'go-ledger', ask: 'Verify and publish my Texas SB25 claim',
     },
     {
@@ -189,16 +189,16 @@ const PORTFOLIO_SCORECARDS = {
       pill: { tone: 'up', icon: 'shield', text: 'Attest' },
       metric: '174', metricUnit: ' ready',
       title: 'Activate Non-UPF Shields',
-      desc: '174 of 192 SKUs qualify as Not-Ultra-Processed — attest and switch the shields on.',
-      action: 'Run verification', intent: 'go-ledger', ask: 'Activate the Non-UPF Shield on my eligible SKUs',
+      desc: '174 of 192 UPCs qualify as Not-Ultra-Processed — attest and switch the shields on.',
+      action: 'Run verification', intent: 'go-ledger', ask: 'Activate the Non-UPF Shield on my eligible UPCs',
     },
     {
       icon: 'filter_alt', iconTone: 'brand',
       pill: { tone: 'up', icon: 'rule', text: 'Review' },
-      metric: '18', metricUnit: ' SKUs',
+      metric: '18', metricUnit: ' UPCs',
       title: 'Trim the UPF tail',
-      desc: '9.4% of SKUs are ultra or super-ultra processed — target the worst offenders next.',
-      action: 'Explore data', intent: 'go-ledger', ask: 'Show me my ultra-processed SKUs to fix next',
+      desc: '9.4% of UPCs are ultra or super-ultra processed — target the worst offenders next.',
+      action: 'Explore data', intent: 'go-ledger', ask: 'Show me my ultra-processed UPCs to fix next',
     },
     {
       icon: 'campaign', iconTone: 'brand',
@@ -218,7 +218,7 @@ function portfolioReply(text, intent) {
   if (/(verif|shield|non-upf|clean label|attest)/.test(q))
     return 'I’ve pre-qualified <strong>5 UPCs</strong> for the Non-UPF Shield. I can run <strong>Confirm → Attest → Activate</strong> whenever you’re ready.';
   if (/(risk|high-risk|beverage)/.test(q))
-    return 'Beverages carry your highest exposure — <strong>3 SKUs</strong> need attention. Want me to open them in the Ledger?';
+    return 'Beverages carry your highest exposure — <strong>3 UPCs</strong> need attention. Want me to open them in the Ledger?';
   if (/(tag|discover|retail|search)/.test(q))
     return 'Retailers are searching <strong>“Seed-Oil-Free”</strong> and <strong>“Sodium-Reduced.”</strong> You have 3 untagged matches I can fix.';
   if (/(recipe|nfp|ingredient|sugar)/.test(q))
@@ -470,7 +470,7 @@ function viewVerified() {
 
     <div class="pf-section-label"><span class="material-icons">event_repeat</span>Lifecycle Watchdog</div>
     <div class="pf-card">
-      <p class="pf-card-desc"><em>“A renewal is due for your top-selling SKU ‘V3 Shake’ in 15 days. Formulation hasn't changed — shall I re-verify based on current data?”</em></p>
+      <p class="pf-card-desc"><em>“A renewal is due for your top-selling UPC ‘V3 Shake’ in 15 days. Formulation hasn't changed — shall I re-verify based on current data?”</em></p>
       <div class="pf-mission-actions" style="margin-top:10px;"><button class="pf-btn pf-btn--primary" data-flow="auto-renew">Automate renewal</button><button class="pf-btn pf-btn--ghost" data-ack="Reminder snoozed — I'll nudge you in 7 days.">Snooze</button></div>
     </div>`;
 }
@@ -674,7 +674,7 @@ function viewAnalytics() {
 
     <div class="pf-section-label"><span class="material-icons">science</span>Ingredients</div>
     <div class="pf-chart-grid">
-      ${chartCard('pf-chart-ing-flags', 'leaderboard', 'Ingredient Flag Frequency', 'SKUs affected by the most-flagged ingredients.')}
+      ${chartCard('pf-chart-ing-flags', 'leaderboard', 'Ingredient Flag Frequency', 'UPCs affected by the most-flagged ingredients.')}
       ${chartCard('pf-chart-ing-cats', 'donut_small', 'Ingredient Categories', 'Flagged ingredients grouped by category.')}
     </div>
 
@@ -935,7 +935,7 @@ function makeAnalyticsCharts() {
     type: 'bar',
     data: {
       labels: ['Carrageenan', 'Polysorbate-80', 'Mono- & diglycerides', 'HFCS', 'Sodium benzoate', 'Red 40', 'BHA / BHT'],
-      datasets: [{ label: 'SKUs', data: [148, 132, 121, 96, 84, 67, 52], backgroundColor: amber, borderRadius: 6 }],
+      datasets: [{ label: 'UPCs', data: [148, 132, 121, 96, 84, 67, 52], backgroundColor: amber, borderRadius: 6 }],
     },
     options: pfHBarOpts(),
   }));
@@ -1125,8 +1125,8 @@ const VIEWS = {
   reports: viewPlaceholder,
   'report-brand-upf': viewPlaceholder,
   'report-brand-gras': viewPlaceholder,
-  'report-sku-upf': viewPlaceholder,
-  'report-sku-gras': viewPlaceholder,
+  'report-upc-upf': viewPlaceholder,
+  'report-upc-gras': viewPlaceholder,
   'report-brand-insights': viewPlaceholder,
   vault: viewVault,
   /* Legacy views retained for reference / reuse (not currently in the nav). */
@@ -1361,7 +1361,7 @@ const FLOWS = {
     doneTitle: 'Spec sheet parsed', doneText: 'Parsed <strong>15/15 nutrients</strong> and a full ingredient list. The draft is ready for a Brand Verified audit.',
     cta: { label: 'Open the Ledger', go: 'ledger' } },
   'ingest-erp': { icon: 'table_view', title: 'Sync ERP / CSV',
-    steps: ['Connecting to source…', 'Reading 248 rows…', 'Normalizing fields…', 'De-duplicating SKUs…'],
+    steps: ['Connecting to source…', 'Reading 248 rows…', 'Normalizing fields…', 'De-duplicating UPCs…'],
     doneTitle: 'Import complete', doneText: 'Synced <strong>248 products</strong> — 12 parsed cleanly and are ready for audit.',
     cta: { label: 'Open the Ledger', go: 'ledger' } },
   'ingest-url': { icon: 'link', title: 'Scrape product URL',
@@ -1977,8 +1977,8 @@ const RAIL_LABELS = {
   reports: 'Reports',
   'report-brand-upf': 'Brand UPF',
   'report-brand-gras': 'Brand GRAS',
-  'report-sku-upf': 'SKU UPF',
-  'report-sku-gras': 'SKU GRAS',
+  'report-upc-upf': 'UPC UPF',
+  'report-upc-gras': 'UPC GRAS',
   'report-brand-insights': 'Insights',
   vault: 'Assets',
 };

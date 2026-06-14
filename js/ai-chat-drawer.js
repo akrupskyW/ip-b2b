@@ -26,7 +26,7 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
     const p = prompt.toLowerCase();
     if (p.includes('risk'))
       return {
-        body: `Of <b>1,248 SKUs</b>, 154 sit in the high-risk band — concentrated in beverages and snacks. The dominant driver is a recurring emulsifier cluster shared across 3 suppliers. <b>4.2% portfolio risk reduction</b> is reachable with a targeted substitution plan.`,
+        body: `Of <b>1,248 UPCs</b>, 154 sit in the high-risk band — concentrated in beverages and snacks. The dominant driver is a recurring emulsifier cluster shared across 3 suppliers. <b>4.2% portfolio risk reduction</b> is reachable with a targeted substitution plan.`,
         chips: [
           { icon: 'arrow_forward', text: 'Open risk view', cls: 'chip-primary', action: 'open:products' },
           { icon: 'verified', text: '94% confidence' },
@@ -34,7 +34,7 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
       };
     if (p.includes('supplier'))
       return {
-        body: `Across <b>54 active suppliers</b>, 12 have stale documentation (>90 days). Nordmark and Helios Co. account for 7 of the 12, and both supply your highest-risk SKUs. Generating a follow-up batch now would clear ~80% within one cycle.`,
+        body: `Across <b>54 active suppliers</b>, 12 have stale documentation (>90 days). Nordmark and Helios Co. account for 7 of the 12, and both supply your highest-risk UPCs. Generating a follow-up batch now would clear ~80% within one cycle.`,
         chips: [
           { icon: 'factory', text: '12 suppliers flagged', cls: '', action: 'toast:Suppliers · 12 flagged' },
           { icon: 'arrow_forward', text: 'Draft follow-ups', cls: 'chip-primary', action: 'toast:Draft queued · 12 follow-ups' },
@@ -50,7 +50,7 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
       };
     if (p.includes('verification'))
       return {
-        body: `I found <b>847 SKUs</b> ready for verification this cycle. 38 of those have minor missing documentation that can be auto-requested. Should I draft the request batch and assign reviewers from your verification team?`,
+        body: `I found <b>847 UPCs</b> ready for verification this cycle. 38 of those have minor missing documentation that can be auto-requested. Should I draft the request batch and assign reviewers from your verification team?`,
         chips: [
           { icon: 'verified', text: '847 ready', cls: '', action: 'open:verification' },
           { icon: 'arrow_forward', text: 'Open queue', cls: 'chip-primary', action: 'open:verification' },
@@ -66,7 +66,7 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
       };
     if (p.includes('processing'))
       return {
-        body: `Processing severity is rising in snacks (+12% MoM). 92 SKUs cross the medium-to-high threshold, driven mainly by 4 additive groups. Recipe-level alternatives exist for 71 of these.`,
+        body: `Processing severity is rising in snacks (+12% MoM). 92 UPCs cross the medium-to-high threshold, driven mainly by 4 additive groups. Recipe-level alternatives exist for 71 of these.`,
         chips: [
           { icon: 'precision_manufacturing', text: '92 flags', cls: '', action: 'open:processing' },
           { icon: 'arrow_forward', text: 'Show alternatives', cls: 'chip-primary', action: 'send:Show recipe-level alternatives' },

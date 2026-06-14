@@ -51,9 +51,9 @@ import { setTextSize } from './text-size.js';
 
     // ========== DATA ==========
     const RAILS = [
-      { id:'portfolio', icon:'inventory_2', title:'Portfolio Overview', desc:'1,248 SKUs · 6 categories', metric:'12.4%', delta:'+1.8%', deltaDir:'up', status:'Live', statusClass:'status-info', spark:'down', color:'primary' },
+      { id:'portfolio', icon:'inventory_2', title:'Portfolio Overview', desc:'1,248 UPCs · 6 categories', metric:'12.4%', delta:'+1.8%', deltaDir:'up', status:'Live', statusClass:'status-info', spark:'down', color:'primary' },
       { id:'ingredient', icon:'science', title:'Ingredient Review', desc:'9,420 ingredients tracked', metric:'214', delta:'+18', deltaDir:'up', status:'Review', statusClass:'status-warn', spark:'wave', color:'amber' },
-      { id:'processing', icon:'precision_manufacturing', title:'Processing Flags', desc:'Severity by SKU group', metric:'92', delta:'+6', deltaDir:'up', status:'Risk', statusClass:'status-risk', spark:'up', color:'red' },
+      { id:'processing', icon:'precision_manufacturing', title:'Processing Flags', desc:'Severity by UPC group', metric:'92', delta:'+6', deltaDir:'up', status:'Risk', statusClass:'status-risk', spark:'up', color:'red' },
       { id:'verification', icon:'verified', title:'Verification Queue', desc:'Ready for review cycle', metric:'38', delta:'+12', deltaDir:'up', status:'Queue', statusClass:'status-info', spark:'wave', color:'cyan' },
       { id:'claims', icon:'gavel', title:'Claims Review', desc:'Pending compliance pass', metric:'24', delta:'-4', deltaDir:'down', status:'Open', statusClass:'status-warn', spark:'down', color:'amber' },
       { id:'supplier', icon:'factory', title:'Supplier Data', desc:'54 suppliers · 12 stale docs', metric:'88%', delta:'+2%', deltaDir:'up', status:'OK', statusClass:'status-ok', spark:'up', color:'green' },
@@ -82,18 +82,18 @@ import { setTextSize } from './text-size.js';
     ];
 
     const VERIFICATION = [
-      { title:'Citrus Sparkle Soda — Variant Pack', meta:'Atlas Foods · 18 SKUs · ready for review', state:'ready' },
-      { title:'Cold-Pressed Juice Family', meta:'Bright Co. · 8 SKUs · review needed', state:'review' },
-      { title:'Berry Granola Mix Line', meta:'Atlas Foods · 6 SKUs · missing supplier docs', state:'missing' },
-      { title:'Crisp Multigrain Bundle', meta:'Northgate · 12 SKUs · ready for review', state:'ready' },
-      { title:'Garden Veggie Crackers', meta:'Atlas Foods · 5 SKUs · high-risk claims', state:'risk' },
+      { title:'Citrus Sparkle Soda — Variant Pack', meta:'Atlas Foods · 18 UPCs · ready for review', state:'ready' },
+      { title:'Cold-Pressed Juice Family', meta:'Bright Co. · 8 UPCs · review needed', state:'review' },
+      { title:'Berry Granola Mix Line', meta:'Atlas Foods · 6 UPCs · missing supplier docs', state:'missing' },
+      { title:'Crisp Multigrain Bundle', meta:'Northgate · 12 UPCs · ready for review', state:'ready' },
+      { title:'Garden Veggie Crackers', meta:'Atlas Foods · 5 UPCs · high-risk claims', state:'risk' },
     ];
 
     const SUPPLIERS = [
-      { name:'Nordmark', sub:'Beverages · 32 SKUs', pct:92, color:'primary' },
-      { name:'Helios Co.', sub:'Spreads · 14 SKUs', pct:78, color:'amber' },
-      { name:'Verdant Mills', sub:'Pasta · 9 SKUs', pct:96, color:'green' },
-      { name:'Bright Co.', sub:'Juice · 12 SKUs', pct:84, color:'cyan' },
+      { name:'Nordmark', sub:'Beverages · 32 UPCs', pct:92, color:'primary' },
+      { name:'Helios Co.', sub:'Spreads · 14 UPCs', pct:78, color:'amber' },
+      { name:'Verdant Mills', sub:'Pasta · 9 UPCs', pct:96, color:'green' },
+      { name:'Bright Co.', sub:'Juice · 12 UPCs', pct:84, color:'cyan' },
     ];
 
 
@@ -129,10 +129,10 @@ import { setTextSize } from './text-size.js';
     }
 
     const RAIL_CONTEXT = {
-      portfolio:   { title:'Portfolio Overview',  sub:'1,248 SKUs across 6 categories · last refresh 2 minutes ago' },
+      portfolio:   { title:'Portfolio Overview',  sub:'1,248 UPCs across 6 categories · last refresh 2 minutes ago' },
       ingredient:  { title:'Ingredient Review',   sub:'9,420 ingredients · 214 flagged this cycle' },
-      processing:  { title:'Processing Flags',    sub:'92 SKUs cross medium-to-high threshold · severity rising' },
-      verification:{ title:'Verification Queue',  sub:'38 in queue · 847 SKUs ready for review cycle' },
+      processing:  { title:'Processing Flags',    sub:'92 UPCs cross medium-to-high threshold · severity rising' },
+      verification:{ title:'Verification Queue',  sub:'38 in queue · 847 UPCs ready for review cycle' },
       claims:      { title:'Claims Review',       sub:'24 open · 6 require document refresh' },
       supplier:    { title:'Supplier Data',       sub:'54 suppliers · 12 stale documents · 88% completeness' },
       competitive: { title:'Competitive Set',     sub:'Tracked peer movement · +4.6% vs category avg' },
@@ -422,15 +422,15 @@ import { setTextSize } from './text-size.js';
         const r = STATUS_MAP[p.risk];
         const v = VERIF_MAP[p.verif];
         const pc = PROC_MAP[p.proc];
-        const sku = 'WS-' + (1000 + idx * 137 % 9000);
+        const upc = 'WS-' + (1000 + idx * 137 % 9000);
         return `
-        <tr data-product-idx="${idx}" data-sku="${sku}">
+        <tr data-product-idx="${idx}" data-upc="${upc}">
           <td>
             <div class="table-product">
               <div class="table-thumb"><span class="material-symbols-rounded ms-fill" style="font-size:18px;">${p.icon}</span></div>
               <div>
                 <div style="font-weight:600;">${p.name}</div>
-                <div style="font-size:11px;color:var(--text-muted);">SKU · ${sku}</div>
+                <div style="font-size:11px;color:var(--text-muted);">UPC · ${upc}</div>
               </div>
             </div>
           </td>
@@ -443,7 +443,7 @@ import { setTextSize } from './text-size.js';
         </tr>`;
       }).join('');
       $$('tr[data-product-idx]', tbody).forEach(tr => {
-        tr.addEventListener('click', () => openProductDetail(PRODUCTS[+tr.dataset.productIdx], tr.dataset.sku));
+        tr.addEventListener('click', () => openProductDetail(PRODUCTS[+tr.dataset.productIdx], tr.dataset.upc));
       });
     }
 
@@ -652,11 +652,11 @@ import { setTextSize } from './text-size.js';
 
         ${insightCardHtml({
           eyebrow:'AI Intelligence · 96% confidence',
-          headline:'38% of high-risk SKUs share three common emulsifier clusters.',
+          headline:'38% of high-risk UPCs share three common emulsifier clusters.',
           text:`Atlas Foods' beverage and snack lines show a recurring co-occurrence of carrageenan, polysorbate-80, and mono- &amp; diglycerides — accounting for the majority of recent risk flags. Reviewing supplier substitutions in these clusters could reduce portfolio risk by an estimated 4.2%.`,
           chips:[
             {icon:'auto_awesome',text:'Generated by WISE Enterprise',cls:'chip-ai'},
-            {icon:'inventory_2',text:'147 SKUs',action:'view-skus'},
+            {icon:'inventory_2',text:'147 UPCs',action:'view-upcs'},
             {icon:'science',text:'3 ingredient clusters',action:'view-clusters'},
             {icon:'arrow_forward',text:'Review supplier substitutes',cls:'chip-primary',action:'review-substitutes'},
           ]
@@ -735,12 +735,12 @@ import { setTextSize } from './text-size.js';
 
     // ========== PRODUCTS MODULE ==========
     const BRANDS = [
-      { name:'Atlas Foods', sku:412, risk:14.2, color:'var(--primary)' },
-      { name:'Northgate',   sku:218, risk:9.6,  color:'var(--ter-amber)' },
-      { name:'Verdant Mills', sku:184, risk:6.1, color:'var(--sec-green)' },
-      { name:'Bright Co.',  sku:142, risk:11.4, color:'var(--ter-cyan)' },
-      { name:'Helios Co.',  sku:128, risk:13.0, color:'var(--ter-violet)' },
-      { name:'Sunrise Foods',sku:96, risk:8.4,  color:'var(--sec-red)' },
+      { name:'Atlas Foods', upc:412, risk:14.2, color:'var(--primary)' },
+      { name:'Northgate',   upc:218, risk:9.6,  color:'var(--ter-amber)' },
+      { name:'Verdant Mills', upc:184, risk:6.1, color:'var(--sec-green)' },
+      { name:'Bright Co.',  upc:142, risk:11.4, color:'var(--ter-cyan)' },
+      { name:'Helios Co.',  upc:128, risk:13.0, color:'var(--ter-violet)' },
+      { name:'Sunrise Foods',upc:96, risk:8.4,  color:'var(--sec-red)' },
     ];
 
     function renderProductsModule(){
@@ -771,8 +771,8 @@ import { setTextSize } from './text-size.js';
             body:`<div id="brandsList"></div>`})}
           ${panelHtml({icon:'auto_awesome', color:'var(--ter-violet)', title:'AI Recommendations', sub:'Product portfolio actions',
             body:`<div class="timeline">
-              <div class="timeline-item violet"><div class="timeline-time">Today · 2h ago</div><div class="timeline-title">Reformulate Crisp Multigrain to reduce processing severity by 12%</div><div class="timeline-sub">Estimated impact: 28 SKUs · medium effort</div></div>
-              <div class="timeline-item green"><div class="timeline-time">Today · 4h ago</div><div class="timeline-title">Discontinue 6 underperforming beverage SKUs</div><div class="timeline-sub">Combined risk score: 18.4 · low margin</div></div>
+              <div class="timeline-item violet"><div class="timeline-time">Today · 2h ago</div><div class="timeline-title">Reformulate Crisp Multigrain to reduce processing severity by 12%</div><div class="timeline-sub">Estimated impact: 28 UPCs · medium effort</div></div>
+              <div class="timeline-item green"><div class="timeline-time">Today · 4h ago</div><div class="timeline-title">Discontinue 6 underperforming beverage UPCs</div><div class="timeline-sub">Combined risk score: 18.4 · low margin</div></div>
               <div class="timeline-item amber"><div class="timeline-time">Yesterday</div><div class="timeline-title">Bundle Garden Veggie Crackers with verified jam line</div><div class="timeline-sub">Cross-sell opportunity · positive sentiment</div></div>
               <div class="timeline-item"><div class="timeline-time">2 days ago</div><div class="timeline-title">Expand pasta line into low-sodium variants</div><div class="timeline-sub">Category demand up 14% YoY</div></div>
             </div>`})}
@@ -824,7 +824,7 @@ import { setTextSize } from './text-size.js';
         const r = STATUS_MAP[p.risk];
         const v = VERIF_MAP[p.verif];
         return `
-        <div class="surface product-card card-hover" data-product-idx="${idx % PRODUCTS.length}" data-sku="WS-${1100+idx*51%9000}">
+        <div class="surface product-card card-hover" data-product-idx="${idx % PRODUCTS.length}" data-upc="WS-${1100+idx*51%9000}">
           <div class="product-card-top">
             <div class="product-thumb"><span class="material-symbols-rounded">${p.icon}</span></div>
             <div style="min-width:0;flex:1;">
@@ -843,7 +843,7 @@ import { setTextSize } from './text-size.js';
         </div>`;
       }).join('');
       $$('.product-card', grid).forEach(card => {
-        card.addEventListener('click', () => openProductDetail(PRODUCTS[+card.dataset.productIdx], card.dataset.sku));
+        card.addEventListener('click', () => openProductDetail(PRODUCTS[+card.dataset.productIdx], card.dataset.upc));
       });
 
       // Brands list
@@ -854,25 +854,25 @@ import { setTextSize } from './text-size.js';
           </div>
           <div class="list-body">
             <div class="list-title">${b.name}</div>
-            <div class="list-sub">${b.sku} SKUs · avg risk ${b.risk}%</div>
+            <div class="list-sub">${b.upc} UPCs · avg risk ${b.risk}%</div>
           </div>
-          <div class="list-value" style="color:${b.color};">${Math.round(b.sku/1248*100)}%</div>
+          <div class="list-value" style="color:${b.color};">${Math.round(b.upc/1248*100)}%</div>
         </div>
       `).join('');
     }
 
     // ========== INGREDIENTS MODULE ==========
     const INGREDIENT_FULL = [
-      { name:'Carrageenan',                cat:'Emulsifier', risk:'risk', skus:142, suppliers:4, last:'2h ago' },
-      { name:'Polysorbate-80',             cat:'Emulsifier', risk:'risk', skus:118, suppliers:3, last:'3h ago' },
-      { name:'High-Fructose Corn Syrup',   cat:'Sweetener',  risk:'warn', skus:96,  suppliers:6, last:'5h ago' },
-      { name:'Sodium Benzoate',            cat:'Preservative', risk:'warn', skus:74, suppliers:4, last:'Yesterday' },
-      { name:'Mono- & Diglycerides',       cat:'Emulsifier', risk:'warn', skus:62, suppliers:5, last:'Yesterday' },
-      { name:'Natural Flavors',            cat:'Flavor',     risk:'info', skus:48, suppliers:8, last:'2d ago' },
-      { name:'Red 40',                     cat:'Color',      risk:'risk', skus:32, suppliers:2, last:'3d ago' },
-      { name:'Soy Lecithin',               cat:'Emulsifier', risk:'ok',   skus:84, suppliers:5, last:'4d ago' },
-      { name:'Citric Acid (E330)',         cat:'Acidifier',  risk:'ok',   skus:312, suppliers:9, last:'1w ago' },
-      { name:'Maltodextrin',               cat:'Bulking',    risk:'warn', skus:88, suppliers:4, last:'1w ago' },
+      { name:'Carrageenan',                cat:'Emulsifier', risk:'risk', upcs:142, suppliers:4, last:'2h ago' },
+      { name:'Polysorbate-80',             cat:'Emulsifier', risk:'risk', upcs:118, suppliers:3, last:'3h ago' },
+      { name:'High-Fructose Corn Syrup',   cat:'Sweetener',  risk:'warn', upcs:96,  suppliers:6, last:'5h ago' },
+      { name:'Sodium Benzoate',            cat:'Preservative', risk:'warn', upcs:74, suppliers:4, last:'Yesterday' },
+      { name:'Mono- & Diglycerides',       cat:'Emulsifier', risk:'warn', upcs:62, suppliers:5, last:'Yesterday' },
+      { name:'Natural Flavors',            cat:'Flavor',     risk:'info', upcs:48, suppliers:8, last:'2d ago' },
+      { name:'Red 40',                     cat:'Color',      risk:'risk', upcs:32, suppliers:2, last:'3d ago' },
+      { name:'Soy Lecithin',               cat:'Emulsifier', risk:'ok',   upcs:84, suppliers:5, last:'4d ago' },
+      { name:'Citric Acid (E330)',         cat:'Acidifier',  risk:'ok',   upcs:312, suppliers:9, last:'1w ago' },
+      { name:'Maltodextrin',               cat:'Bulking',    risk:'warn', upcs:88, suppliers:4, last:'1w ago' },
     ];
 
     function renderIngredientsModule(){
@@ -887,25 +887,25 @@ import { setTextSize } from './text-size.js';
         ${insightCardHtml({
           eyebrow:'AI Intelligence · 92% confidence',
           headline:'Three emulsifier ingredients drive 64% of high-risk flags.',
-          text:'Carrageenan, polysorbate-80, and mono- &amp; diglycerides repeatedly co-occur in flagged SKUs across beverages and snacks. Consider sourcing verified equivalents from your approved suppliers.',
+          text:'Carrageenan, polysorbate-80, and mono- &amp; diglycerides repeatedly co-occur in flagged UPCs across beverages and snacks. Consider sourcing verified equivalents from your approved suppliers.',
           chips:[
             {icon:'science',text:'3 ingredients',cls:'chip-ai'},
-            {icon:'inventory_2',text:'322 SKUs affected',action:'view-skus'},
+            {icon:'inventory_2',text:'322 UPCs affected',action:'view-upcs'},
             {icon:'arrow_forward',text:'View substitution plan',cls:'chip-primary',action:'review-substitutes'},
           ]
         })}
 
         <div class="grid-2 fade-up" style="animation-delay:.3s;">
-          ${panelHtml({icon:'bar_chart', color:'var(--ter-amber)', title:'Top Flagged Ingredients', sub:'By SKU count',
+          ${panelHtml({icon:'bar_chart', color:'var(--ter-amber)', title:'Top Flagged Ingredients', sub:'By UPC count',
             body:`<div class="chart-wrap lg"><canvas id="chart-ing-flags"></canvas></div>`})}
           ${panelHtml({icon:'donut_small', color:'var(--ter-violet)', title:'Ingredient Categories', sub:'Flag distribution',
             body:`<div class="chart-wrap lg"><canvas id="chart-ing-cats"></canvas></div>`})}
         </div>
 
-        ${panelHtml({icon:'list_alt', color:'var(--ter-amber)', title:'Ingredient Catalog', sub:`${INGREDIENT_FULL.length} ingredients · sorted by SKU impact`,
+        ${panelHtml({icon:'list_alt', color:'var(--ter-amber)', title:'Ingredient Catalog', sub:`${INGREDIENT_FULL.length} ingredients · sorted by UPC impact`,
           headerRight:`<button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;" data-action="filter"><span class="material-symbols-rounded" style="font-size:16px;">tune</span>Filter</button>`,
           body:`<div class="data-table-wrap"><table class="data-table">
-            <thead><tr><th>Ingredient</th><th>Category</th><th>Risk</th><th>SKUs Affected</th><th>Suppliers</th><th>Last Flagged</th></tr></thead>
+            <thead><tr><th>Ingredient</th><th>Category</th><th>Risk</th><th>UPCs Affected</th><th>Suppliers</th><th>Last Flagged</th></tr></thead>
             <tbody id="ingredientTbody"></tbody>
           </table></div>`})}
       `;
@@ -917,10 +917,10 @@ import { setTextSize } from './text-size.js';
 
       const ctx1 = $('#chart-ing-flags').getContext('2d');
       const labels = INGREDIENT_FULL.slice(0,7).map(i => i.name);
-      const values = INGREDIENT_FULL.slice(0,7).map(i => i.skus);
+      const values = INGREDIENT_FULL.slice(0,7).map(i => i.upcs);
       STATE.charts.iFlags = new Chart(ctx1, {
         type: 'bar',
-        data: { labels, datasets: [{ label:'SKUs', data: values, backgroundColor: colorVar('--ter-amber'), borderRadius:6 }] },
+        data: { labels, datasets: [{ label:'UPCs', data: values, backgroundColor: colorVar('--ter-amber'), borderRadius:6 }] },
         options: { ...chartBase(), indexAxis:'y',
           plugins: { legend:{display:false}, tooltip: tooltipStyle() },
           scales: { x:{ grid:{color:colorVar('--grid')}, ticks:{font:{size:11}} }, y:{ grid:{display:false}, ticks:{font:{size:11}} } } }
@@ -947,7 +947,7 @@ import { setTextSize } from './text-size.js';
           <td><div style="display:flex;align-items:center;gap:10px;"><div class="table-thumb"><span class="material-symbols-rounded ms-fill" style="font-size:18px;color:${r.color};">science</span></div><div style="font-weight:600;">${i.name}</div></div></td>
           <td style="color:var(--text-muted);">${i.cat}</td>
           <td><span class="pill ${r.cls}"><span class="dot" style="background:${r.color};"></span>${r.label}</span></td>
-          <td style="font-variant-numeric:tabular-nums;">${i.skus}</td>
+          <td style="font-variant-numeric:tabular-nums;">${i.upcs}</td>
           <td style="color:var(--text-muted);">${i.suppliers}</td>
           <td style="color:var(--text-muted);font-size:12px;">${i.last}</td>
         </tr>`;
@@ -959,7 +959,7 @@ import { setTextSize } from './text-size.js';
           openDetail({
             eyebrow:`Ingredient · ${i.cat}`,
             title:i.name,
-            sub:`${i.skus} SKUs affected · ${i.suppliers} suppliers`,
+            sub:`${i.upcs} UPCs affected · ${i.suppliers} suppliers`,
             icon:'science', accent:r.color,
             body:`
               <div class="detail-section">
@@ -967,7 +967,7 @@ import { setTextSize } from './text-size.js';
                 <div class="detail-meta-grid">
                   <div class="detail-meta"><div class="detail-meta-label">Risk</div><div class="detail-meta-value"><span class="pill ${r.cls}"><span class="dot" style="background:${r.color};"></span>${r.label}</span></div></div>
                   <div class="detail-meta"><div class="detail-meta-label">Category</div><div class="detail-meta-value">${i.cat}</div></div>
-                  <div class="detail-meta"><div class="detail-meta-label">SKUs Affected</div><div class="detail-meta-value">${i.skus}</div></div>
+                  <div class="detail-meta"><div class="detail-meta-label">UPCs Affected</div><div class="detail-meta-value">${i.upcs}</div></div>
                   <div class="detail-meta"><div class="detail-meta-label">Suppliers</div><div class="detail-meta-value">${i.suppliers}</div></div>
                 </div>
               </div>
@@ -978,7 +978,7 @@ import { setTextSize } from './text-size.js';
                   <div class="insight-body">
                     <div class="insight-eyebrow">87% confidence</div>
                     <div class="insight-headline">Substitute candidates identified.</div>
-                    <div class="insight-text">Two verified suppliers stock approved alternatives. Estimated portfolio risk reduction: ~3 points across affected SKUs.</div>
+                    <div class="insight-text">Two verified suppliers stock approved alternatives. Estimated portfolio risk reduction: ~3 points across affected UPCs.</div>
                   </div>
                 </div>
               </div>`
@@ -992,7 +992,7 @@ import { setTextSize } from './text-size.js';
       $('#moduleContent').innerHTML = `
         <div class="kpi-grid">
           ${kpiCardHtml({label:'Avg Processing Score', value:'68',   delta:'▲ 4',  deltaDir:'down', icon:'precision_manufacturing', color:'var(--sec-red)', sparkId:'pr-sp-1', delay:.05})}
-          ${kpiCardHtml({label:'High Severity SKUs',   value:'92',   delta:'▲ 12', deltaDir:'down', icon:'warning',                 color:'var(--ter-amber)', sparkId:'pr-sp-2', delay:.1})}
+          ${kpiCardHtml({label:'High Severity UPCs',   value:'92',   delta:'▲ 12', deltaDir:'down', icon:'warning',                 color:'var(--ter-amber)', sparkId:'pr-sp-2', delay:.1})}
           ${kpiCardHtml({label:'Avg Additive Load',    value:'7.2',  delta:'▲ 0.6', deltaDir:'down', icon:'colorize',                color:'var(--ter-violet)', sparkId:'pr-sp-3', delay:.15})}
           ${kpiCardHtml({label:'Markers Flagged',      value:'214',  delta:'▲ 18',  deltaDir:'down', icon:'flag',                    color:'var(--ter-cyan)', sparkId:'pr-sp-4', delay:.2})}
         </div>
@@ -1000,7 +1000,7 @@ import { setTextSize } from './text-size.js';
         ${insightCardHtml({
           eyebrow:'AI Intelligence · 89% confidence',
           headline:'Processing severity rising in snacks (+12% MoM).',
-          text:'92 SKUs now cross the medium-to-high threshold, driven mainly by 4 additive groups. Recipe-level alternatives exist for 71 of these.',
+          text:'92 UPCs now cross the medium-to-high threshold, driven mainly by 4 additive groups. Recipe-level alternatives exist for 71 of these.',
           chips:[
             {icon:'precision_manufacturing',text:'92 flags',cls:'chip-ai'},
             {icon:'arrow_forward',text:'Show alternatives',cls:'chip-primary',action:'review-substitutes'},
@@ -1092,15 +1092,15 @@ import { setTextSize } from './text-size.js';
     // ========== VERIFICATION MODULE ==========
     const VERIF_FULL = {
       ready: [
-        { title:'Citrus Sparkle Soda', meta:'Atlas Foods · 18 SKUs', due:'May 15' },
-        { title:'Crisp Multigrain Bundle', meta:'Northgate · 12 SKUs', due:'May 16' },
-        { title:'Wholewheat Pasta line', meta:'Verdant Mills · 9 SKUs', due:'May 18' },
-        { title:'Cold-Pressed Juice', meta:'Bright Co. · 8 SKUs', due:'May 20' },
+        { title:'Citrus Sparkle Soda', meta:'Atlas Foods · 18 UPCs', due:'May 15' },
+        { title:'Crisp Multigrain Bundle', meta:'Northgate · 12 UPCs', due:'May 16' },
+        { title:'Wholewheat Pasta line', meta:'Verdant Mills · 9 UPCs', due:'May 18' },
+        { title:'Cold-Pressed Juice', meta:'Bright Co. · 8 UPCs', due:'May 20' },
       ],
       review: [
-        { title:'Berry Granola Mix', meta:'Atlas Foods · 6 SKUs', due:'May 13' },
-        { title:'Almond Butter Spread', meta:'Helios Co. · 4 SKUs', due:'May 14' },
-        { title:'Cereal Variety Pack', meta:'Northgate · 3 SKUs', due:'May 14' },
+        { title:'Berry Granola Mix', meta:'Atlas Foods · 6 UPCs', due:'May 13' },
+        { title:'Almond Butter Spread', meta:'Helios Co. · 4 UPCs', due:'May 14' },
+        { title:'Cereal Variety Pack', meta:'Northgate · 3 UPCs', due:'May 14' },
       ],
       missing: [
         { title:'Cold-Pressed Juice (extended)', meta:'Bright Co. · supplier docs', due:'Overdue 2d' },
@@ -1129,8 +1129,8 @@ import { setTextSize } from './text-size.js';
               <div class="timeline-item green"><div class="timeline-time">2h ago</div><div class="timeline-title">Citrus Sparkle Soda · approved</div><div class="timeline-sub">Reviewed by Maya Chen</div></div>
               <div class="timeline-item amber"><div class="timeline-time">4h ago</div><div class="timeline-title">Berry Granola · review requested</div><div class="timeline-sub">Awaiting supplier response</div></div>
               <div class="timeline-item red"><div class="timeline-time">Yesterday</div><div class="timeline-title">Veggie Crackers Bundle · COA missing</div><div class="timeline-sub">Escalated to compliance</div></div>
-              <div class="timeline-item violet"><div class="timeline-time">2d ago</div><div class="timeline-title">12 SKUs auto-queued by WISE</div><div class="timeline-sub">High-confidence candidates identified</div></div>
-              <div class="timeline-item"><div class="timeline-time">3d ago</div><div class="timeline-title">Q2 cycle opened</div><div class="timeline-sub">847 SKUs in scope</div></div>
+              <div class="timeline-item violet"><div class="timeline-time">2d ago</div><div class="timeline-title">12 UPCs auto-queued by WISE</div><div class="timeline-sub">High-confidence candidates identified</div></div>
+              <div class="timeline-item"><div class="timeline-time">3d ago</div><div class="timeline-title">Q2 cycle opened</div><div class="timeline-sub">847 UPCs in scope</div></div>
             </div>`})}
         </div>
 
@@ -1342,12 +1342,12 @@ import { setTextSize } from './text-size.js';
 
     // ========== INSIGHTS MODULE ==========
     const INSIGHTS = [
-      { icon:'science', conf:96, headline:'Emulsifier cluster drives 38% of high-risk SKUs', text:'Three ingredients co-occur in flagged SKUs. Substitute supplier batch identified.', tag:'Ingredient', action:'review-substitutes' },
-      { icon:'factory', conf:91, headline:'Nordmark documentation lag impacts 32 SKUs', text:'Stale certifications block downstream verification for beverages. Recommend follow-up batch.', tag:'Supplier', action:'view-clusters' },
-      { icon:'precision_manufacturing', conf:89, headline:'Snack processing severity rising 12% MoM', text:'Recipe-level alternatives exist for 71 SKUs. Estimated risk reduction: 8 points.', tag:'Processing', action:'review-substitutes' },
-      { icon:'leaderboard', conf:88, headline:'Atlas leads category on verification readiness', text:'+18 points vs. category average. Strong position for retailer partnerships.', tag:'Competitive', action:'view-skus' },
+      { icon:'science', conf:96, headline:'Emulsifier cluster drives 38% of high-risk UPCs', text:'Three ingredients co-occur in flagged UPCs. Substitute supplier batch identified.', tag:'Ingredient', action:'review-substitutes' },
+      { icon:'factory', conf:91, headline:'Nordmark documentation lag impacts 32 UPCs', text:'Stale certifications block downstream verification for beverages. Recommend follow-up batch.', tag:'Supplier', action:'view-clusters' },
+      { icon:'precision_manufacturing', conf:89, headline:'Snack processing severity rising 12% MoM', text:'Recipe-level alternatives exist for 71 UPCs. Estimated risk reduction: 8 points.', tag:'Processing', action:'review-substitutes' },
+      { icon:'leaderboard', conf:88, headline:'Atlas leads category on verification readiness', text:'+18 points vs. category average. Strong position for retailer partnerships.', tag:'Competitive', action:'view-upcs' },
       { icon:'gavel', conf:84, headline:'EU jurisdiction claims slowing resolution time', text:'6 open claims clustering in EU labeling. Counsel engagement recommended.', tag:'Compliance', action:'view-verification' },
-      { icon:'storefront', conf:82, headline:'Wholewheat Pasta drives growth in low-risk band', text:'14% YoY · highest verification rate across portfolio (96%).', tag:'Brand', action:'view-skus' },
+      { icon:'storefront', conf:82, headline:'Wholewheat Pasta drives growth in low-risk band', text:'14% YoY · highest verification rate across portfolio (96%).', tag:'Brand', action:'view-upcs' },
     ];
 
     function renderInsightsModule(){
@@ -1454,7 +1454,7 @@ import { setTextSize } from './text-size.js';
           text:'Portfolio Risk Brief, Supplier Gap Analysis, and Verification Cycle Retrospective have been auto-drafted based on this week\'s data movement.',
           chips:[
             {icon:'auto_awesome',text:'AI drafted',cls:'chip-ai'},
-            {icon:'arrow_forward',text:'Review drafts',cls:'chip-primary',action:'view-skus'},
+            {icon:'arrow_forward',text:'Review drafts',cls:'chip-primary',action:'view-upcs'},
           ]
         })}
 
@@ -1509,7 +1509,7 @@ import { setTextSize } from './text-size.js';
               <div class="detail-section">
                 <div class="detail-section-title">Preview</div>
                 <div style="padding:14px;background:var(--surface-2);border-radius:12px;font-size:13px;line-height:1.7;color:var(--text-muted);">
-                  <b style="color:var(--text);">Executive summary.</b> This report covers ${r.tags.join(', ')} signals across the active portfolio for the most recent reporting period. Key findings include risk concentration in select SKUs, supplier documentation gaps, and recommended action items.
+                  <b style="color:var(--text);">Executive summary.</b> This report covers ${r.tags.join(', ')} signals across the active portfolio for the most recent reporting period. Key findings include risk concentration in select UPCs, supplier documentation gaps, and recommended action items.
                 </div>
               </div>`
           });
@@ -1584,7 +1584,7 @@ import { setTextSize } from './text-size.js';
     }
     const CMD_ITEMS = [
       { icon:'dashboard', title:'Open Dashboard', sub:'Module', action:()=>setTopModule('dashboard') },
-      { icon:'inventory_2', title:'Search Products', sub:'1,248 SKUs', action:()=>setTopModule('products') },
+      { icon:'inventory_2', title:'Search Products', sub:'1,248 UPCs', action:()=>setTopModule('products') },
       { icon:'science', title:'Search Ingredients', sub:'9,420 ingredients', action:()=>setTopModule('ingredients') },
       { icon:'verified', title:'Open Verification Queue', sub:'38 in queue', action:()=>setTopModule('verification') },
       { icon:'gavel', title:'Open Compliance', sub:'24 open claims', action:()=>setTopModule('compliance') },
@@ -1777,7 +1777,7 @@ import { setTextSize } from './text-size.js';
       $('#detailDrawer').setAttribute('aria-hidden', 'true');
     }
 
-    function openProductDetail(p, sku){
+    function openProductDetail(p, upc){
       const r = STATUS_MAP[p.risk];
       const v = VERIF_MAP[p.verif];
       const pc = PROC_MAP[p.proc];
@@ -1812,12 +1812,12 @@ import { setTextSize } from './text-size.js';
             <div class="insight-icon"><span class="material-symbols-rounded">auto_awesome</span></div>
             <div class="insight-body">
               <div class="insight-eyebrow">AI · 92% confidence</div>
-              <div class="insight-headline">Two supplier substitutions could shift this SKU to medium risk.</div>
+              <div class="insight-headline">Two supplier substitutions could shift this UPC to medium risk.</div>
               <div class="insight-text">Replacing the current emulsifier source with a verified equivalent from your approved list would reduce risk score by ~14 points within one cycle.</div>
             </div>
           </div>
         </div>`;
-      openDetail({ eyebrow:`Product · ${sku}`, title:p.name, sub:`${p.brand} · ${p.cat}`, icon:p.icon, accent, body });
+      openDetail({ eyebrow:`Product · ${upc}`, title:p.name, sub:`${p.brand} · ${p.cat}`, icon:p.icon, accent, body });
     }
 
     function openVerificationDetail(v, stateMap){
@@ -1908,7 +1908,7 @@ import { setTextSize } from './text-size.js';
             <div class="popover-header">Notifications</div>
             <div class="popover-item" data-pop-action="n1">
               <span class="material-symbols-rounded" style="color:var(--sec-red);">priority_high</span>
-              <div class="popover-item-body"><div>6 new high-risk SKUs flagged</div><div class="popover-item-sub">Beverage portfolio · 12m ago</div></div>
+              <div class="popover-item-body"><div>6 new high-risk UPCs flagged</div><div class="popover-item-sub">Beverage portfolio · 12m ago</div></div>
             </div>
             <div class="popover-item" data-pop-action="n2">
               <span class="material-symbols-rounded" style="color:var(--ter-amber);">hourglass_top</span>
@@ -1999,8 +1999,8 @@ import { setTextSize } from './text-size.js';
           setTopModule('verification');
           showToast({ title:'Switched to Verification', icon:'verified' });
           break;
-        case 'view-skus':
-          showToast({ title:'147 SKUs', sub:'Opening filtered product view', icon:'inventory_2' });
+        case 'view-upcs':
+          showToast({ title:'147 UPCs', sub:'Opening filtered product view', icon:'inventory_2' });
           setTimeout(() => setTopModule('products'), 400);
           break;
         case 'view-clusters':
@@ -2013,10 +2013,10 @@ import { setTextSize } from './text-size.js';
           break;
         case 'view-beverages':
           setTopModule('products');
-          showToast({ title:'Beverage view opened', sub:'184 SKUs · filtered to beverage category', icon:'local_drink', kind:'success' });
+          showToast({ title:'Beverage view opened', sub:'184 UPCs · filtered to beverage category', icon:'local_drink', kind:'success' });
           break;
         case 'ai-attach':
-          showToast({ title:'Attach context', sub:'Drag in a SKU, supplier, or report', icon:'attach_file', kind:'ai' });
+          showToast({ title:'Attach context', sub:'Drag in a UPC, supplier, or report', icon:'attach_file', kind:'ai' });
           break;
         case 'ai-voice':
           const btn = $('#aiVoiceBtn');

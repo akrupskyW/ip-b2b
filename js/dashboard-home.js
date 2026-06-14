@@ -48,20 +48,53 @@ function countUpMarkup(value, { tag = 'span', className = '', style = '' } = {})
      can't shove the trailing label — but a 1-digit percent ("6%") doesn't get a
      2-digit gap that wouldn't match the non-percent columns in the same row. */
   return isPct
-    ? `<span class="dash-pct-wrap" style="min-width:${to.length}ch">${el}<span class="dash-pct">%</span></span>`
+    ? `<span class="dash-pct-wrap">${el}<span class="dash-pct">%</span></span>`
     : el;
 }
 
 /* Persisted brand banner (data URL or remote URL). Stored locally so an
-   uploaded image survives reloads; falls back to the CSS gradient when unset. */
+   uploaded image survives reloads. Three states are distinguished:
+     • a URL / data URL  → a custom banner the user chose
+     • unset (no key)     → fresh: show the bundled default product banner
+     • the "__none__" sentinel → the user explicitly removed the banner, so the
+       hero falls back to the flat WISE-bug pattern instead of the default. */
 const BANNER_KEY = 'wise-brand-banner';
-function getBrandBanner() {
+const BANNER_NONE = '__none__';
+const DEFAULT_BANNER = '../assets/dash-hero-banner.png';
+function getStoredBanner() {
   try { return localStorage.getItem(BANNER_KEY) || ''; } catch (_) { return ''; }
+}
+/* The image actually shown in the hero: a saved custom image, the bundled
+   default product banner when nothing has been chosen yet, or '' when the
+   banner was explicitly removed (which reveals the flat pattern). */
+function getBrandBanner() {
+  const v = getStoredBanner();
+  if (v === BANNER_NONE) return '';
+  return v || DEFAULT_BANNER;
 }
 function setBrandBanner(url) {
   try {
-    if (url) localStorage.setItem(BANNER_KEY, url);
-    else localStorage.removeItem(BANNER_KEY);
+    localStorage.setItem(BANNER_KEY, url || BANNER_NONE);
+  } catch (_) { /* quota (large data URLs) — keep session-only */ }
+}
+
+/* Persisted brand logo — mirrors the banner store. Unset → the bundled default
+   Date Better badge; the "__none__" sentinel → the logo was removed (the hero
+   shows an "add logo" placeholder); otherwise a custom URL / data URL. */
+const LOGO_KEY = 'wise-brand-logo';
+const LOGO_NONE = '__none__';
+const DEFAULT_LOGO = '../assets/date-better-logo.png';
+function getStoredLogo() {
+  try { return localStorage.getItem(LOGO_KEY) || ''; } catch (_) { return ''; }
+}
+function getBrandLogo() {
+  const v = getStoredLogo();
+  if (v === LOGO_NONE) return '';
+  return v || DEFAULT_LOGO;
+}
+function setBrandLogo(url) {
+  try {
+    localStorage.setItem(LOGO_KEY, url || LOGO_NONE);
   } catch (_) { /* quota (large data URLs) — keep session-only */ }
 }
 /* CSS-safe url() value for inline background-image. */
@@ -303,66 +336,79 @@ function cardMenu(key, label) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Brand banner editor — a centered modal panel opened from the hero's */
-/* three-dot menu. Lets you upload a file (stored as a data URL) or     */
-/* paste an image URL, preview it, then save or remove the banner.      */
+/* Brand image editor — a centered modal panel reused for the hero      */
+/* banner and the brand logo. Lets you upload a file (stored as a data  */
+/* URL) or paste an image URL, preview it, then save or remove it.      */
 /* ------------------------------------------------------------------ */
 
-let bannerModalEls = null;
+let imageModalEls = null;
 
-function ensureBannerModal() {
-  if (bannerModalEls) return bannerModalEls;
+function ensureImageModal() {
+  if (imageModalEls) return imageModalEls;
   const scrim = document.createElement('div');
   scrim.className = 'dash-modal-scrim';
   const modal = document.createElement('div');
   modal.className = 'dash-modal';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-label', 'Update brand image');
   scrim.appendChild(modal);
   document.body.appendChild(scrim);
-  scrim.addEventListener('click', (e) => { if (e.target === scrim) closeBannerModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBannerModal(); });
-  bannerModalEls = { scrim, modal };
-  return bannerModalEls;
+  scrim.addEventListener('click', (e) => { if (e.target === scrim) closeImageModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeImageModal(); });
+  imageModalEls = { scrim, modal };
+  return imageModalEls;
 }
 
-function closeBannerModal() {
-  if (!bannerModalEls) return;
-  bannerModalEls.scrim.classList.remove('is-open');
+function closeImageModal() {
+  if (!imageModalEls) return;
+  imageModalEls.scrim.classList.remove('is-open');
 }
 
-function openBannerModal(onSave) {
-  const { scrim, modal } = ensureBannerModal();
-  const current = getBrandBanner();
+/* Generic image picker. `cfg` carries the copy + the current/save hooks so the
+   same panel serves both the hero banner and the brand logo. */
+function openImageModal(cfg) {
+  const {
+    eyebrow = 'Brand image',
+    title = 'Update image',
+    emptyLabel = 'Nothing yet',
+    dropHint = 'PNG, JPG or WEBP',
+    urlPlaceholder = 'https://…/image.jpg',
+    saveLabel = 'Save',
+    previewMod = '',
+    getCurrent,
+    onSave,
+  } = cfg;
+  const { scrim, modal } = ensureImageModal();
+  modal.setAttribute('aria-label', title);
+  const current = getCurrent();
   let draft = current;
 
   modal.innerHTML = `
     <header class="dash-modal-head">
       <div class="dash-modal-titles">
-        <span class="dash-modal-eyebrow">Brand banner</span>
-        <h2 class="dash-modal-title">Update brand image</h2>
+        <span class="dash-modal-eyebrow">${esc(eyebrow)}</span>
+        <h2 class="dash-modal-title">${esc(title)}</h2>
       </div>
       <button class="dash-modal-close" type="button" data-banner-close aria-label="Close"><span class="material-icons">close</span></button>
     </header>
     <div class="dash-modal-body">
-      <div class="dash-banner-preview">
+      <div class="dash-banner-preview${previewMod ? ` ${previewMod}` : ''}">
         <div class="dash-banner-preview-img" id="dash-banner-preview-img"></div>
-        <span class="dash-banner-preview-empty" id="dash-banner-preview-empty"><span class="material-icons">image</span>No banner yet</span>
+        <span class="dash-banner-preview-empty" id="dash-banner-preview-empty"><span class="material-icons">image</span>${esc(emptyLabel)}</span>
       </div>
       <label class="dash-banner-drop" id="dash-banner-drop">
         <input type="file" accept="image/*" id="dash-banner-file" hidden>
         <span class="material-icons">cloud_upload</span>
-        <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">PNG, JPG or WEBP — wide images look best</span></span>
+        <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">${esc(dropHint)}</span></span>
       </label>
       <div class="dash-banner-or"><span>or paste a URL</span></div>
-      <input type="url" class="dash-banner-url" id="dash-banner-url" placeholder="https://…/banner.jpg" autocomplete="off">
+      <input type="url" class="dash-banner-url" id="dash-banner-url" placeholder="${esc(urlPlaceholder)}" autocomplete="off">
     </div>
     <footer class="dash-modal-foot">
       <button class="dash-btn dash-btn--ghost" type="button" data-banner-remove><span class="material-icons">delete</span>Remove</button>
       <div class="dash-modal-foot-right">
         <button class="dash-btn dash-btn--ghost" type="button" data-banner-close>Cancel</button>
-        <button class="dash-btn dash-btn--primary" type="button" data-banner-save><span class="material-icons">check</span>Save banner</button>
+        <button class="dash-btn dash-btn--primary" type="button" data-banner-save><span class="material-icons">check</span>${esc(saveLabel)}</button>
       </div>
     </footer>`;
 
@@ -385,7 +431,7 @@ function openBannerModal(onSave) {
     }
   };
   setPreview(current);
-  if (current && !current.startsWith('data:')) urlInput.value = current;
+  if (current && /^https?:/i.test(current)) urlInput.value = current;
 
   urlInput.addEventListener('input', () => setPreview(urlInput.value.trim()));
 
@@ -402,11 +448,10 @@ function openBannerModal(onSave) {
 
   modal.querySelector('[data-banner-remove]').addEventListener('click', () => { urlInput.value = ''; setPreview(''); });
   modal.querySelector('[data-banner-save]').addEventListener('click', () => {
-    setBrandBanner(draft);
     if (typeof onSave === 'function') onSave(draft);
-    closeBannerModal();
+    closeImageModal();
   });
-  modal.querySelectorAll('[data-banner-close]').forEach((b) => b.addEventListener('click', closeBannerModal));
+  modal.querySelectorAll('[data-banner-close]').forEach((b) => b.addEventListener('click', closeImageModal));
 
   requestAnimationFrame(() => scrim.classList.add('is-open'));
 }
@@ -415,11 +460,58 @@ function openBannerModal(onSave) {
    panel's far-right "More" menu (agent-overview.js). Opens the modal and
    applies the chosen image straight to the hero banner. */
 export function editBrandBanner() {
-  openBannerModal((url) => {
-    const bg = document.getElementById('dash-hero-bg');
-    const hero = document.getElementById('dash-hero');
-    if (bg) bg.style.backgroundImage = url ? cssUrl(url) : '';
-    if (hero) hero.classList.toggle('has-image', !!url);
+  openImageModal({
+    eyebrow: 'Brand banner',
+    title: 'Update brand image',
+    emptyLabel: 'No banner yet',
+    dropHint: 'PNG, JPG or WEBP — wide images look best',
+    urlPlaceholder: 'https://…/banner.jpg',
+    saveLabel: 'Save banner',
+    getCurrent: getBrandBanner,
+    onSave(url) {
+      setBrandBanner(url);
+      const bg = document.getElementById('dash-hero-bg');
+      const hero = document.getElementById('dash-hero');
+      if (bg) bg.style.backgroundImage = url ? cssUrl(url) : '';
+      if (hero) hero.classList.toggle('has-image', !!url);
+    },
+  });
+}
+
+/* Markup for the hero's circular logo badge — a button so it's clickable
+   (opens the logo editor) and keyboard reachable. Empty state shows an
+   "add" affordance instead of an image. */
+function heroLogoInner(url) {
+  return `
+    ${url
+      ? `<img src="${esc(url)}" alt="${esc(DATA.brand.name)} logo" loading="lazy" />`
+      : `<span class="material-icons dash-hero-logo-ph">add_photo_alternate</span>`}
+    <span class="dash-hero-logo-edit" aria-hidden="true"><span class="material-icons">edit</span></span>`;
+}
+
+/* Reflect a saved/removed logo onto the hero badge without a full re-render. */
+function applyBrandLogo(url) {
+  const el = document.getElementById('dash-hero-logo');
+  if (!el) return;
+  el.classList.toggle('is-empty', !url);
+  el.innerHTML = heroLogoInner(url);
+}
+
+/* Logo editor — same panel as the banner, scoped to the round brand badge. */
+function editBrandLogo() {
+  openImageModal({
+    eyebrow: 'Brand logo',
+    title: 'Update brand logo',
+    emptyLabel: 'No logo yet',
+    dropHint: 'PNG or SVG with transparent edges — square images look best',
+    urlPlaceholder: 'https://…/logo.png',
+    saveLabel: 'Save logo',
+    previewMod: 'dash-banner-preview--logo',
+    getCurrent: getBrandLogo,
+    onSave(url) {
+      setBrandLogo(url);
+      applyBrandLogo(url);
+    },
   });
 }
 
@@ -436,11 +528,11 @@ const REPORTS = {
     eyebrow: 'Brand report',
     title: 'Brand UPF Report',
     accent: 'is-teal',
-    summary: (d) => `${d.upf.nonCount} of ${d.upf.total} analyzed SKUs are Non-UPF (${d.upf.pct}%).`,
+    summary: (d) => `${d.upf.nonCount} of ${d.upf.total} analyzed products are Non-UPF (${d.upf.pct}%).`,
     stats: (d) => [
       { label: 'Non-UPF score', value: `${d.upf.pct}%` },
-      { label: 'Non-UPF SKUs', value: `${d.upf.nonCount}` },
-      { label: 'Analyzed SKUs', value: `${d.upf.total}` },
+      { label: 'Non-UPF products', value: `${d.upf.nonCount}` },
+      { label: 'Analyzed products', value: `${d.upf.total}` },
     ],
     groups: (d) => [
       { title: 'Health status', parts: d.upf.split },
@@ -451,10 +543,10 @@ const REPORTS = {
     eyebrow: 'Brand report',
     title: 'Brand GRAS Report',
     accent: 'is-teal',
-    summary: (d) => `${d.gras.grasCount} of ${d.gras.total} analyzed SKUs are GRAS (${d.gras.pct}%) across ${d.gras.uniqueIngredients} unique ingredients.`,
+    summary: (d) => `${d.gras.grasCount} of ${d.gras.total} analyzed products are GRAS (${d.gras.pct}%) across ${d.gras.uniqueIngredients} unique ingredients.`,
     stats: (d) => [
       { label: 'GRAS score', value: `${d.gras.pct}%` },
-      { label: 'GRAS SKUs', value: `${d.gras.grasCount}` },
+      { label: 'GRAS products', value: `${d.gras.grasCount}` },
       { label: 'Unique ingredients', value: `${d.gras.uniqueIngredients}` },
     ],
     groups: (d) => [
@@ -521,7 +613,7 @@ function openReportModal(card, d) {
         <span class="material-icons">hourglass_top</span>
         <div>
           <div class="dash-report-pending-title">The full report is on its way</div>
-          <div class="dash-report-pending-sub">Per-SKU breakdowns, ingredient-level detail and exportable tables will appear here once the report is finalized.</div>
+          <div class="dash-report-pending-sub">Per-product breakdowns, ingredient-level detail and exportable tables will appear here once the report is finalized.</div>
         </div>
       </div>
     </div>
@@ -542,10 +634,18 @@ function openReportModal(card, d) {
 
 function renderHero(d) {
   const banner = getBrandBanner();
+  const logo = getBrandLogo();
   return `
     <section class="dash-hero${banner ? ' has-image' : ''}" id="dash-hero">
       <div class="dash-hero-bg" id="dash-hero-bg"${banner ? ` style="background-image:${cssUrl(banner)}"` : ''}></div>
+      <div class="dash-hero-pattern" aria-hidden="true">
+        ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-hero-bug dash-hero-bug--right')}
+        ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-hero-bug dash-hero-bug--left')}
+      </div>
       <div class="dash-hero-scrim" aria-hidden="true"></div>
+      <button class="dash-hero-logo${logo ? '' : ' is-empty'}" id="dash-hero-logo" type="button" data-dash-action="edit-logo" title="Update brand logo" aria-label="Update brand logo">
+        ${heroLogoInner(logo)}
+      </button>
       <div class="dash-hero-left">
         <div class="dash-hero-row">
           <h1 class="dash-hero-title">Welcome, ${esc(d.brand.name)}</h1>
@@ -572,18 +672,18 @@ function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) 
 function renderScoreBand(d) {
   const ws = d.wisescore.average;
   const wsRating = ratingLabel(ws);
-  const wsTone = ws >= 85 ? 'excellent' : 'good';
+  const wsTone = scoreTierTone(ws) === 'excellent' ? 'excellent' : 'good';
   const upfTone = d.upf.pct >= 85 ? 'excellent' : 'good';
   const grasTone = d.gras.pct >= 85 ? 'excellent' : 'good';
   return `
     <section class="dash-score-band">
       ${scoreCard({
         num: d.upf.pct, pct: true, denom: 'Non-UPF', rating: ratingLabel(d.upf.pct), ratingTone: upfTone, icon: 'eco',
-        note: `<strong>${d.upf.nonCount} of ${d.upf.total}</strong> analyzed SKUs are Non&#8209;UPF · ${d.upf.nonCount} qualify for the verification shield.`,
+        note: `<strong>${d.upf.nonCount} of ${d.upf.total}</strong> analyzed products are Non&#8209;UPF · ${d.upf.nonCount} qualify for the verification shield.`,
       })}
       ${scoreCard({
         num: d.gras.pct, pct: true, denom: 'GRAS', rating: ratingLabel(d.gras.pct), ratingTone: grasTone, icon: 'biotech',
-        note: `<strong>${d.gras.grasCount} of ${d.gras.total}</strong> analyzed SKUs are GRAS across ${d.gras.uniqueIngredients} unique ingredients.`,
+        note: `<strong>${d.gras.grasCount} of ${d.gras.total}</strong> analyzed products are GRAS across ${d.gras.uniqueIngredients} unique ingredients.`,
       })}
       ${scoreCard({
         num: ws, denom: '/100', rating: wsRating, ratingTone: wsTone, icon: 'verified',
@@ -594,49 +694,48 @@ function renderScoreBand(d) {
 
 function renderClaim(d) {
   const c = d.claim;
-  const ws = d.wisescore.average;
-  const wsRating = ratingLabel(ws);
+  const u = d.upf;
   return `
     <section class="dash-claim">
-      <div>
+      <div class="dash-claim-col">
         <div class="dash-bignum-row">
           ${countUpMarkup(c.discovered, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="review-portfolio"><span class="material-icons">inventory_2</span>Review your food portfolio</button>
+          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-icons">verified_user</span>Claim your products</button>
+        </div>
+      </div>
+      <div class="dash-claim-divider"></div>
+      <div class="dash-claim-col">
+        <div class="dash-progress-pct">
+          ${countUpMarkup(`${c.claimedPct}%`, { className: 'dash-bignum' })}
+          <span class="dash-bignum-cap"><strong>Products Claimed</strong><br>${c.claimed} of ${c.discovered} products</span>
+        </div>
+        <div class="dash-btn-row">
+          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-icons">inventory_2</span>Review your food portfolio</button>
         </div>
         <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-icons">add</span>Add food</button>
       </div>
       <div class="dash-claim-divider"></div>
-      <div>
-        <div class="dash-progress-pct">
-          ${countUpMarkup(`${c.claimedPct}%`, { className: 'dash-bignum' })}
-          <span class="dash-bignum-cap"><strong>Brand Claimed</strong><br>${c.claimed} of ${c.discovered} products</span>
+      <div class="dash-claim-col dash-claim-col--nudge">
+        ${u.nonCount > 0 ? `
+        <div class="dash-score-toast" role="status">
+          <span class="dash-score-toast-icon"><span class="material-icons">verified</span></span>
+          <div class="dash-score-toast-body">
+            <div class="dash-score-toast-title">${u.nonCount} products are ready to verify</div>
+            <p class="dash-score-toast-text">Earn the Non&#8209;UPF verification shield on these products so they stand out on retail listings — it only takes a moment to start.</p>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+          </div>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
+        </div>` : ''}
+        <div class="dash-bignum-row">
+          ${countUpMarkup(u.nonCount, { className: 'dash-bignum' })}
+          <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-skus"><span class="material-icons">verified_user</span>Claim your SKUs</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start verification</button>
         </div>
-        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="dispute-sku"><span class="material-icons">gavel</span>Dispute SKU</button>
-      </div>
-      <div class="dash-claim-divider"></div>
-      <div class="dash-claim-score">
-        ${ws >= 60 ? `
-        <div class="dash-score-toast" role="status">
-          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
-          <span class="dash-score-toast-icon"><span class="material-icons">celebration</span></span>
-          <div class="dash-score-toast-body">
-            <div class="dash-score-toast-title">You're doing great, ${esc(d.brand.name)}!</div>
-            <p class="dash-score-toast-text">A ${wsRating.toLowerCase()} WISEscore&#8482; of ${ws} puts your portfolio ahead of most brands. Keep the momentum going &mdash; verify your Non&#8209;UPF SKUs to earn the shield on retail listings.</p>
-            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Verify your Non&#8209;UPF SKUs<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
-          </div>
-        </div>` : ''}
-        <div class="dash-score-num">
-          ${countUpMarkup(ws, { className: 'n' })}<span class="d">/100</span>
-          <span class="dash-score-cap"><strong>${wsRating} WISEscore&#8482;</strong><br>across ${d.claim.discovered} products</span>
-        </div>
-        <p class="dash-score-desc">A 0&#8211;100 rating of overall food quality, combining<br>ingredient safety, processing level, and nutrient density.</p>
-        <button class="dash-text-link" type="button" data-dash-action="scroll-pillars"><span class="material-icons">arrow_downward</span>Understand the WISEscore&#8482;</button>
       </div>
     </section>`;
 }
@@ -646,7 +745,7 @@ function renderUpf(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <h3 class="dash-card-title"><span class="dash-term" data-tip="Ultra-Processed Food" tabindex="0" role="term">UPF</span> status across ${u.total} analyzed SKUs</h3>
+        <h3 class="dash-card-title"><span class="dash-term" data-tip="Ultra-Processed Food" tabindex="0" role="term">UPF</span> status across ${u.total} analyzed products</h3>
         ${cardMenu('upf', 'Brand UPF report')}
       </div>
       <div class="dash-donut-row">
@@ -655,14 +754,6 @@ function renderUpf(d) {
           ${legendGroup('Health status', u.split)}
           ${legendGroup('Processing levels', u.distribution)}
         </div>
-      </div>
-      <div class="dash-callout dash-callout--green">
-        <span class="dash-callout-icon"><span class="material-icons">verified</span></span>
-        <div class="dash-callout-body">
-          <div class="dash-callout-title">${u.nonCount} products qualify for the NON-UPF Verification Shield</div>
-          <div class="dash-callout-sub">Get them verified to display the badge on retail listings.</div>
-        </div>
-        <button class="dash-callout-btn" type="button" data-dash-action="verify-upf">Start Verification<span class="material-icons">arrow_outward</span></button>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="upf-report">
         <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} UPF Report</span>
@@ -676,7 +767,7 @@ function renderGras(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed SKUs</h3>
+        <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed products</h3>
         ${cardMenu('gras', 'Brand GRAS report')}
       </div>
       <div class="dash-donut-row">
@@ -686,14 +777,6 @@ function renderGras(d) {
           ${legendGroup('GRAS levels', g.distribution)}
         </div>
       </div>
-      <div class="dash-callout dash-callout--amber">
-        <span class="dash-callout-icon"><span class="material-icons">warning</span></span>
-        <div class="dash-callout-body">
-          <div class="dash-callout-title">2 unsafe &amp; 9 unknown ingredients flagged</div>
-          <div class="dash-callout-sub">Titanium Dioxide, Red 40 detected across 3 products.</div>
-        </div>
-        <button class="dash-callout-btn" type="button" data-dash-action="review-flagged">Review Flagged<span class="material-icons">arrow_outward</span></button>
-      </div>
       <button class="dash-report-link" type="button" data-dash-action="gras-report">
         <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} GRAS Report</span>
         <span class="dash-report-right">View Report<span class="material-icons">arrow_outward</span></span>
@@ -701,17 +784,67 @@ function renderGras(d) {
     </section>`;
 }
 
+/* The five WISEscore status tiers — 20 points each (0–19 … 80–100). Single
+   source of truth for the rating label and the hover popover on the status
+   word in the pillars heading. */
+const STATUS_TIERS = [
+  { label: 'Excellent', min: 80, range: '80–100', tone: 'excellent', desc: 'Top-tier food quality — strong nutrition, clean ingredients, and healthy long-term outcomes.' },
+  { label: 'Good', min: 60, range: '60–79', tone: 'good', desc: 'Solid, well-rounded products with only minor areas left to improve.' },
+  { label: 'Fair', min: 40, range: '40–59', tone: 'fair', desc: 'Acceptable overall, but with clear weaknesses in one or more pillars.' },
+  { label: 'Poor', min: 20, range: '20–39', tone: 'poor', desc: 'Notable concerns across processing level, ingredients, or nutrient density.' },
+  { label: 'Critical', min: 0, range: '0–19', tone: 'critical', desc: 'Serious issues — heavily processed or carrying high-risk ingredients.' },
+];
+
+const SCORE_TIER_COLORS = {
+  excellent: { fill: '#38a865', core: '#e8ffe2' },
+  good: { fill: '#6aab58', core: '#d4f0c8' },
+  fair: { fill: '#c4a032', core: '#fff0a0' },
+  poor: { fill: '#c46832', core: '#ffc090' },
+  critical: { fill: '#9e2830', core: '#ffb4b4' },
+};
+
+function scoreTierTone(score) {
+  return (STATUS_TIERS.find((t) => score >= t.min) || STATUS_TIERS[STATUS_TIERS.length - 1]).tone;
+}
+
+/* WISEscore health bar with animated fill + score — sits under the pillars headline. */
+function wisescoreHealthBar(score) {
+  const color = metricColor(score);
+  const pct = Math.min(100, Math.max(0, Math.round(score)));
+  return `
+    <div class="dash-ws-health-bar" role="group" aria-label="WISEscore ${pct}">
+      <div class="dash-ws-health-track" style="--bar-color:${color}">
+        <div class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}">
+          ${countUpMarkup(score, { className: 'dash-ws-health-num' })}
+        </div>
+      </div>
+    </div>`;
+}
+
 function ratingLabel(score) {
-  if (score >= 85) return 'Excellent';
-  if (score >= 65) return 'Good';
-  if (score >= 50) return 'Fair';
-  return 'Needs work';
+  return (STATUS_TIERS.find((t) => score >= t.min) || STATUS_TIERS[STATUS_TIERS.length - 1]).label;
+}
+
+/* Underlined status word that reveals a popover with all five WISEscore status
+   definitions on hover/focus. The tier matching the current score is marked. */
+function statusTerm(score) {
+  const current = ratingLabel(score);
+  const rows = STATUS_TIERS.map((t) => `
+        <div class="dash-status-tip-row${t.label === current ? ' is-current' : ''}">
+          <div class="dash-status-tip-line">
+            <span class="dash-status-tip-dot dash-status-tip-dot--${t.tone}"></span>
+            <span class="dash-status-tip-label">${esc(t.label)}</span>
+            <span class="dash-status-tip-range">${esc(t.range)}</span>
+          </div>
+          <p class="dash-status-tip-desc">${esc(t.desc)}</p>
+        </div>`).join('');
+  return `<span class="dash-status-term" tabindex="0" role="button" aria-label="WISEscore status definitions">${esc(current)}<span class="dash-status-tip" role="tooltip"><span class="dash-status-tip-head">WISEscore status scale</span>${rows}</span></span>`;
 }
 
 function renderWisescore(d) {
   const w = d.wisescore;
   const rating = ratingLabel(w.average);
-  const badgeMod = w.average >= 85 ? 'excellent' : 'good';
+  const badgeMod = scoreTierTone(w.average) === 'excellent' ? 'excellent' : 'good';
   const pillars = w.pillars
     .map(
       (p) => `
@@ -771,12 +904,16 @@ function renderPillarCards(d) {
   const columns = d.pillars
     .map((p, i) => `${i > 0 ? '<div class="dash-claim-divider"></div>' : ''}${renderCard(p)}`)
     .join('');
+  const ws = d.wisescore.average;
   return `
     <section class="dash-pillars-section">
-      <div class="dash-section-head">
-        <h2 class="dash-section-title">The 3 pillars of the WISEscore&#8482;</h2>
+      <div class="dash-pillars-heading">
+        <div class="dash-section-head">
+          <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
+        </div>
+        ${wisescoreHealthBar(ws)}
+        <p class="dash-pillars-intro">Across all ${d.claim.discovered} discovered products, nutrient quality, ingredient quality, and health outcomes are weighed against one another &mdash; so a food can't earn a high score by acing one dimension while failing another.</p>
       </div>
-      <p class="dash-pillars-intro">We don't grade these pillars in isolation &mdash; nutrient quality, ingredient quality, and health outcomes are weighed against one another so a product can't earn a high score by acing one dimension while failing another. A clean ingredient list still loses ground if the nutrient profile is poor, and strong nutrition is discounted when processing or flagged additives put long-term health outcomes at risk. The result is a single score that reflects how a food actually performs across the things that matter, not just how it looks on one label.</p>
       <div class="dash-three-up dash-pillars">${columns}</div>
       <div class="dash-pillars-cta">
         <div class="dash-cta-banner">
@@ -784,7 +921,7 @@ function renderPillarCards(d) {
           ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-cta-bug dash-cta-bug--left')}
           <div class="dash-cta-banner-scrim" aria-hidden="true"></div>
           <div class="dash-pillars-cta-inner">
-            <h2 class="dash-pillars-cta-headline">Every metric, distribution &amp; flagged SKU across all 3 pillars</h2>
+            <h2 class="dash-pillars-cta-headline">Every metric, distribution &amp; flagged product across all 3 pillars</h2>
             <button class="dash-btn dash-cta-banner-btn dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
               <span class="material-icons">description</span>
               <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
@@ -854,6 +991,12 @@ export function renderDashboardHome(host) {
 
     const a = action.dataset.dashAction;
 
+    /* Brand logo badge → open the shared image editor scoped to the logo. */
+    if (a === 'edit-logo') {
+      editBrandLogo();
+      return;
+    }
+
     /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
        reload, and only disappears for the current view when closed. */
     if (a === 'dismiss-score-toast') {
@@ -899,8 +1042,8 @@ export function renderDashboardHome(host) {
     const route = {
       'review-portfolio': 'portfolio.html',
       'add-food': 'portfolio.html',
-      'dispute-sku': 'portfolio.html',
-      'claim-skus': 'portfolio.html',
+      'dispute-upc': 'portfolio.html',
+      'claim-upcs': 'portfolio.html',
       'verify-upf': 'portfolio.html',
       'ask-ai': 'ai-chat.html',
     }[a];
@@ -912,6 +1055,7 @@ export function renderDashboardHome(host) {
     if (!e.target.closest('.dash-kebab-wrap')) closeMenus(null);
   });
 
+  setupChartPressGuard(host);
   setupDonutPopover(host);
   setupChartAnimations(host);
 }
@@ -962,16 +1106,57 @@ function finalizeChartElements(root) {
   });
   root.querySelectorAll('.dash-metric-fill[data-target-width]').forEach((fill) => {
     fill.style.width = fill.dataset.targetWidth;
+    markMetricFillReady(fill);
   });
 }
 
 const CHART_GAUGE_SWEEP_MS = 1400;
 const CHART_BAR_STAGGER_MS = 90;
 
+/* Selectors for chart surfaces that are display-only (hover popover on donuts
+   is the sole interaction). Presses must not re-fire entrance animations. */
+const CHART_PRESS_SEL = '.dash-donut-svg, .dash-ws-health-bar, .dash-metric-track, .dash-metric-fill';
+
+function isDonutSweepComplete(card) {
+  const arcs = card.querySelectorAll('.dash-donut-arc');
+  if (!arcs.length) return false;
+  return [...arcs].every((arc) => {
+    const fullD = arc.getAttribute('data-full-d');
+    return fullD && arc.getAttribute('d') === fullD;
+  });
+}
+
+function areMetricBarsComplete(section) {
+  const fills = section.querySelectorAll('.dash-metric-fill');
+  if (!fills.length) return false;
+  return [...fills].every((fill) => {
+    const target = fill.dataset.targetWidth;
+    return target && fill.style.width === target;
+  });
+}
+
+function markMetricFillReady(fill) {
+  fill.classList.add('is-chart-ready');
+  fill.style.transition = 'none';
+}
+
+/* Swallow pointerdown/click on chart surfaces (capture phase) so a press cannot
+   re-trigger entrance animations or the dashboard's content click handler. */
+function setupChartPressGuard(host) {
+  const swallowPress = (e) => {
+    if (!e.target.closest(CHART_PRESS_SEL)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  host.addEventListener('pointerdown', swallowPress, true);
+  host.addEventListener('click', swallowPress, true);
+}
+
 /* Sweep each arc segment around the ring instead of fading segments in. */
 function animateDonutSweep(card, duration = CHART_GAUGE_SWEEP_MS) {
   const arcs = card.querySelectorAll('.dash-donut-arc');
   if (!arcs.length) return;
+  if (isDonutSweepComplete(card)) return;
   const start = performance.now();
   const tick = (now) => {
     const t = easeOutCubic(Math.min(1, (now - start) / duration));
@@ -1003,6 +1188,10 @@ function animateDonutSweep(card, duration = CHART_GAUGE_SWEEP_MS) {
 
 function animateDonutCard(card) {
   if (card.classList.contains('is-chart-animating')) return;
+  if (isDonutSweepComplete(card)) {
+    card.classList.add('is-chart-animating');
+    return;
+  }
   card.classList.add('is-chart-animating');
   animateDonutSweep(card);
   runCountUps(card.querySelectorAll('.dash-count-up'));
@@ -1010,6 +1199,11 @@ function animateDonutCard(card) {
 
 function animateMetricBars(section) {
   if (section.classList.contains('is-chart-animating')) return;
+  if (areMetricBarsComplete(section)) {
+    section.classList.add('is-chart-animating');
+    section.querySelectorAll('.dash-metric-fill').forEach(markMetricFillReady);
+    return;
+  }
   section.classList.add('is-chart-animating');
   runCountUps(section.querySelectorAll('.dash-pillar-card-head .dash-count-up'), {
     duration: 1800,
@@ -1023,10 +1217,27 @@ function animateMetricBars(section) {
       fill.style.transitionDelay = `${delay}ms`;
       requestAnimationFrame(() => {
         fill.style.width = fill.dataset.targetWidth || fill.style.width;
+        setTimeout(() => markMetricFillReady(fill), 1200 + delay);
       });
     }
     if (val) setTimeout(() => countUpEl(val, 1200), delay);
   });
+}
+
+function animateHealthBar(heading) {
+  if (heading.classList.contains('is-ws-health-animated')) return;
+  heading.classList.add('is-ws-health-animated');
+  const fill = heading.querySelector('.dash-ws-health-fill');
+  const scoreEl = heading.querySelector('.dash-ws-health-num');
+  if (fill && !fill.classList.contains('is-chart-ready')) {
+    requestAnimationFrame(() => {
+      fill.style.width = fill.dataset.targetWidth || fill.style.width;
+      setTimeout(() => markMetricFillReady(fill), 1200);
+    });
+  }
+  if (scoreEl && !scoreEl.classList.contains('is-counted')) {
+    countUpEl(scoreEl, 1200);
+  }
 }
 
 /* Animate charts when the user scrolls each section into view — no auto-scroll. */
@@ -1049,6 +1260,8 @@ function setupChartAnimations(host) {
         runCountUps(el.querySelectorAll('.dash-count-up'), { duration: 1600, stagger: 220 });
       } else if (el.classList.contains('dash-donut-card')) {
         animateDonutCard(el);
+      } else if (el.classList.contains('dash-pillars-heading')) {
+        animateHealthBar(el);
       } else if (el.classList.contains('dash-pillars')) {
         animateMetricBars(el);
       }
@@ -1059,6 +1272,8 @@ function setupChartAnimations(host) {
   const claimSection = host.querySelector('.dash-claim');
   if (claimSection) observer.observe(claimSection);
   host.querySelectorAll('.dash-donut-card').forEach((card) => observer.observe(card));
+  const pillarHeading = host.querySelector('.dash-pillars-heading');
+  if (pillarHeading) observer.observe(pillarHeading);
   const pillarSection = host.querySelector('.dash-pillars');
   if (pillarSection) observer.observe(pillarSection);
 }

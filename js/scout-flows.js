@@ -256,13 +256,13 @@ const FLOWS = {
       },
       verified: {
         say: 'Here are the strong performers. <strong>11 products</strong> hold a live NON-UPF verification — these anchor the 82.',
-        status: 'Listing verified SKUs…',
+        status: 'Listing verified UPCs…',
         run: (s) => {
           s.section('portfolio', 2, 'Verified · holding the score',
             rowLine('var(--sec-green,#32A966)', 'Organic Rolled Oats', '94', 'wf-tag--green') +
             rowLine('var(--sec-green,#32A966)', 'Sprouted Almonds', '91', 'wf-tag--green') +
             rowLine('var(--sec-green,#32A966)', 'Quinoa Blend', '88', 'wf-tag--green') +
-            `<p class="wf-note">+ 8 more verified SKUs scoring 80–95.</p>`);
+            `<p class="wf-note">+ 8 more verified UPCs scoring 80–95.</p>`);
           s.progress('portfolio', 2, 4);
         },
         choices: [{ label: 'Now show what’s dragging it down', icon: 'south', say: 'Now show what’s dragging it down', next: 'detractors', primary: true }],
@@ -301,8 +301,8 @@ const FLOWS = {
         run: (s) => {
           s.section('portfolio', 3, 'Recommended action',
             `<div class="wf-product-name">Reformulate: Mixed Berry Granola</div>` +
-            `<div class="wf-product-meta">Sunrise Foods · SKU SF-8821</div>` +
-            scoreBlock('Projected SKU score', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)'));
+            `<div class="wf-product-meta">Sunrise Foods · UPC SF-8821</div>` +
+            scoreBlock('Projected UPC score', '88', '/100', 88, 'linear-gradient(90deg,var(--sec-green,#32A966),#8B9FAF)'));
           s.progress('portfolio', 4, 4);
           s.setSub('portfolio', 'Projected · 82 → 86');
         },
@@ -366,7 +366,7 @@ const FLOWS = {
         run: (s) => {
           s.section('renewals', 2, 'Sprouted Almonds · detail',
             `<div class="wf-product-name">Sprouted Almonds</div>` +
-            `<div class="wf-product-meta">Nutrient Survival · SKU NS-204</div>` +
+            `<div class="wf-product-meta">Nutrient Survival · UPC NS-204</div>` +
             rowLine('var(--sec-green,#32A966)', 'Recipe unchanged since issue', 'Clean', 'wf-tag--green') +
             rowLine('var(--primary)', 'NFP+ on file', 'Ready', 'wf-tag--blue'));
         },
@@ -375,7 +375,7 @@ const FLOWS = {
         ],
       },
       renew: {
-        say: 'Renewing through <strong>Confirm → Attest → Activate</strong>. I’ve spun up the verification stepper and locked the attestation for both SKUs — confirm the renewal and I’ll process payment.',
+        say: 'Renewing through <strong>Confirm → Attest → Activate</strong>. I’ve spun up the verification stepper and locked the attestation for both UPCs — confirm the renewal and I’ll process payment.',
         status: 'Preparing renewals…',
         run: (s) => {
           s.open('verify', { title: 'Verification', icon: 'verified', sub: 'Confirm → Attest → Activate' });
@@ -410,7 +410,7 @@ const FLOWS = {
           sub: 'Both expiring Shields are live again with a fresh 12-month term.',
           icon: 'verified',
           recap: [
-            'Re-attested <strong>2 SKUs</strong> with no recipe changes',
+            'Re-attested <strong>2 UPCs</strong> with no recipe changes',
             'Processed renewal payment of <strong>$200</strong>',
             'Re-issued both Verified Shield badges',
             'Extended NON-UPF status for <strong>12 months</strong>',
@@ -537,7 +537,7 @@ const FLOWS = {
         run: (s) => {
           s.section('plan', 1, 'Target product',
             `<div class="wf-product-name">Organic Mixed Berry Granola</div>` +
-            `<div class="wf-product-meta">Sunrise Foods · SKU SF-8821</div>` +
+            `<div class="wf-product-meta">Sunrise Foods · UPC SF-8821</div>` +
             scoreBlock('Current WISE Score', '54', '/100', 54, 'linear-gradient(90deg,#8B9FAF,#DC3038)') +
             `<div style="margin-top:8px"><span class="wf-tag wf-tag--red" style="margin-left:0">Ultra-Processed</span></div>`);
           s.progress('plan', 1, 4);
@@ -612,7 +612,7 @@ const FLOWS = {
       s.section('launch', 1, 'Readiness',
         scoreBlock('Launch-ready', '78', '%', 78, 'linear-gradient(90deg,var(--ter-amber,#FFC434),#FFC434)'));
       s.section('launch', 2, 'Open items',
-        rowLine('var(--ter-amber,#FFC434)', 'NFP+ images missing (1 SKU)', 'Assets', 'wf-tag--amber') +
+        rowLine('var(--ter-amber,#FFC434)', 'NFP+ images missing (1 UPC)', 'Assets', 'wf-tag--amber') +
         rowLine('var(--sec-red,#DC3038)', 'Claims copy unreviewed', 'Compliance', 'wf-tag--red') +
         rowLine('var(--ter-amber,#FFC434)', 'Allergen statement draft', 'Label', 'wf-tag--amber') +
         rowLine('var(--ter-amber,#FFC434)', 'Retailer onboarding form', 'Retail', 'wf-tag--amber'));

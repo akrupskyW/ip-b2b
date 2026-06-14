@@ -40,7 +40,7 @@ const DEFAULT_INTENT_REPLIES = {
   customer_profile: 'Let’s start a new verification. I’ll set up the customer profile, then walk you through <strong>Confirm → Attest → Activate</strong> on your eligible UPCs. Who are we verifying first?',
   resume_prompt: 'Picking up where you left off — you have verifications in progress. Want me to reopen your most recent draft, or list them all so you can choose which to continue?',
   faq_intro: 'Ask me anything about verification, UPF scoring, the WISE Foods registry, or the Verified Shield Badge. What would you like to know?',
-  registry_home: 'Opening the WISE Foods registry. I can search SKUs, pull nutritional metadata, and cross-reference products. Which food should I look up?',
+  registry_home: 'Opening the WISE Foods registry. I can search UPCs, pull nutritional metadata, and cross-reference products. Which food should I look up?',
   add_food_intro: 'Let’s add a new food. Paste a label, spec sheet, or product URL and I’ll parse it into NFP+ toward the <strong>Brand Verified</strong> standard.',
   edit_food_select: 'Which product would you like to edit? I’ll open it so you can update NFP+, ingredients, images, and visibility.',
 };
@@ -55,7 +55,7 @@ const DEFAULT_AGENTS = [
     id: 'wise', name: 'Scout™', version: 'v3.2', group: 'core',
     icon: 'verified', color: 'var(--primary)', bg: '',
     tagline: 'Verification Orchestrator',
-    desc: 'The core Scout™ agent that orchestrates your entire verification workflow — from customer profiling through SKU analysis, attestation, and badge issuance. Cannot be disabled.',
+    desc: 'The core Scout™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.',
     tags: ['Verification', 'Routing', 'Payments', 'Onboarding'],
     required: true, on: true,
   },
@@ -71,8 +71,8 @@ const DEFAULT_AGENTS = [
     id: 'scout', name: 'WISE Foods', version: 'v1.8', group: 'core',
     icon: 'search', color: '#FFC434', bg: '#4D1007',
     tagline: 'WISE Foods Agent',
-    desc: 'Queries the WISE Foods registry to match SKUs, look up nutritional metadata, cross-reference product databases, and handle bulk import validation.',
-    tags: ['SKU Lookup', 'Registry', 'Bulk Import', 'Matching'],
+    desc: 'Queries the WISE Foods registry to match UPCs, look up nutritional metadata, cross-reference product databases, and handle bulk import validation.',
+    tags: ['UPC Lookup', 'Registry', 'Bulk Import', 'Matching'],
     on: false,
   },
   {
@@ -87,8 +87,8 @@ const DEFAULT_AGENTS = [
     id: 'lens', name: 'LENS', version: 'v2.0', group: 'specialist',
     icon: 'analytics', color: '#687896', bg: '#1A2339',
     tagline: 'Analytics & Insights Agent',
-    desc: 'Deep-dives into verification trends, brand-level SKU analytics, ingredient risk scoring, and generates scheduled insight reports for brands and retail partners.',
-    tags: ['Trend Reports', 'SKU Analytics', 'Risk Scoring', 'Dashboards'],
+    desc: 'Deep-dives into verification trends, brand-level UPC analytics, ingredient risk scoring, and generates scheduled insight reports for brands and retail partners.',
+    tags: ['Trend Reports', 'UPC Analytics', 'Risk Scoring', 'Dashboards'],
     on: false,
   },
   {
@@ -138,8 +138,8 @@ function defaultReply(text, intent) {
   const q = String(text).toLowerCase();
   if (/(verif|shield|non-upf|clean label|attest)/.test(q))
     return 'I can run the verification flow — <strong>Confirm → Attest → Activate</strong>. Want me to start with your eligible UPCs?';
-  if (/(food|registry|sku|product|search)/.test(q))
-    return 'Searching the WISE Foods registry now. I’ll match SKUs and pull nutritional metadata for you.';
+  if (/(food|registry|upc|product|search)/.test(q))
+    return 'Searching the WISE Foods registry now. I’ll match UPCs and pull nutritional metadata for you.';
   if (/(add|new food|ingest|upload|parse)/.test(q))
     return 'Let’s add it. Paste a label, spec sheet, or URL and I’ll parse it toward the Brand Verified standard.';
   if (/(edit|update|change)/.test(q))

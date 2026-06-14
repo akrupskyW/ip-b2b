@@ -18,6 +18,8 @@
      column width — not the viewport. Establish a query container for that. */
   container-type: inline-size;
   container-name: dash;
+  /* Donut ring stroke (sw=26 in a 300 viewBox, rendered at 252px). */
+  --dash-donut-ring-h: calc(252px * 26 / 300);
 }
 /* The width/resize toggle now resizes the WHOLE module (#agent-main) — see
    pages/agent-page.css — so the dashboard content simply fills whatever width
@@ -75,9 +77,10 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   padding: 30px 64px 28px;
   background: var(--surface);
 }
-/* Banner artwork — defaults to the brand product banner; an uploaded image
-   (set inline via the banner editor) overrides this. The gradient stays as a
-   final fallback layered beneath the artwork. */
+/* Banner artwork — by default the hero shows the flat WISE-bug pattern (see
+   .dash-hero-pattern below, mirroring the CTA block at the foot of the page).
+   An uploaded image (set inline via the banner editor) layers on top; the flat
+   primary-blue fill stays as the base so the surface is never bare. */
 .dash-hero-bg {
   position: absolute;
   inset: 0;
@@ -85,17 +88,42 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  background-image: url('../assets/dash-hero-banner.png'),
-    linear-gradient(135deg, #1A2339 0%, var(--primary) 58%, #25507C 100%);
+  background-color: color-mix(in srgb, var(--primary) 78%, #1A2339);
 }
-/* Dark scrim keeps the headline + subtext legible over any image, in any theme. */
+/* The embossed WISE bug pattern that fills the hero whenever no custom banner
+   image is set — same language as the .dash-cta-banner block at the bottom of
+   the page (two debossed marks bleeding off opposite edges on flat blue). */
+.dash-hero-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.dash-hero-bug {
+  position: absolute;
+  top: 50%;
+  width: min(620px, 92%);
+  height: auto;
+  color: color-mix(in srgb, #0B1426 38%, var(--primary));
+  filter: drop-shadow(0 1.5px 0 rgba(255, 255, 255, 0.14));
+}
+.dash-hero-bug--right { right: 0; transform: translate(40%, -52%); }
+.dash-hero-bug--left  { left: 0;  transform: translate(-46%, -34%) rotate(-28deg); }
+/* Once a custom banner image is uploaded, the flat pattern steps aside. */
+.dash-hero.has-image .dash-hero-pattern { display: none; }
+/* Dark scrim keeps the headline + subtext legible over an uploaded image. The
+   flat-blue default pattern is dark enough on its own, so the scrim only
+   appears once a custom banner is in place. */
 .dash-hero-scrim {
+  display: none;
   position: absolute;
   inset: 0;
   z-index: -1;
   background: linear-gradient(180deg, rgba(7, 12, 26, 0.18) 0%, rgba(7, 12, 26, 0.46) 52%, rgba(7, 12, 26, 0.78) 100%);
 }
-.dash-hero-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dash-hero.has-image .dash-hero-scrim { display: block; }
+.dash-hero-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-right: 184px; }
 .dash-hero-row { display: flex; align-items: center; gap: 14px; }
 .dash-hero-title {
   margin: 0;
@@ -111,6 +139,69 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.82);
 }
+/* Brand logo — a circular badge floated to the right, sitting on top of the
+   banner artwork (or the default flat pattern) and vertically centered. It's a
+   button: clicking it opens the same image editor as the banner. */
+.dash-hero-logo {
+  position: absolute;
+  top: 50%;
+  right: 56px;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 136px;
+  height: 136px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(7, 12, 26, 0.34), 0 0 0 5px rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.dash-hero-logo:hover,
+.dash-hero-logo:focus-visible {
+  transform: translateY(-50%) scale(1.04);
+  box-shadow: 0 14px 34px rgba(7, 12, 26, 0.42), 0 0 0 5px rgba(255, 255, 255, 0.28);
+  outline: none;
+}
+.dash-hero-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Empty state — no logo set: a soft surface with a centered add icon. */
+.dash-hero-logo.is-empty {
+  background: color-mix(in srgb, var(--surface) 88%, #fff);
+}
+.dash-hero-logo-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 42px;
+  color: var(--text-subtle);
+}
+/* "Edit" overlay revealed on hover / focus, anchored to the bottom of the badge. */
+.dash-hero-logo-edit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38%;
+  background: linear-gradient(180deg, rgba(7, 12, 26, 0) 0%, rgba(7, 12, 26, 0.62) 100%);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.dash-hero-logo-edit .material-icons { font-size: 18px; margin-bottom: 8px; }
+.dash-hero-logo:hover .dash-hero-logo-edit,
+.dash-hero-logo:focus-visible .dash-hero-logo-edit { opacity: 1; }
 /* Track the scroll area's smaller mobile padding (20px / 32px) so the banner
    stays flush to the module edges on narrow viewports. */
 @media (max-width: 767px) {
@@ -119,6 +210,12 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
     margin: -20px -32px 20px;
     padding: 24px 32px 22px;
   }
+  .dash-hero-logo { width: 92px; height: 92px; right: 28px; }
+  .dash-hero-left { padding-right: 124px; }
+}
+@media (max-width: 520px) {
+  .dash-hero-logo { display: none; }
+  .dash-hero-left { padding-right: 0; }
 }
 /* Banner three-dot menu pinned to the top-right corner over the artwork. */
 .dash-hero-kebab { position: absolute; top: 14px; right: 14px; z-index: 3; }
@@ -250,21 +347,61 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
   grid-template-columns: 1fr 1px 1fr 1px 1fr;
   gap: 28px;
   align-items: stretch;
-  padding-top: 34px;
-  padding-bottom: 34px;
+  padding: 34px 36px;
 }
 .dash-claim > div:not(.dash-claim-divider) {
   display: flex;
   flex-direction: column;
 }
-.dash-claim > div:not(.dash-claim-divider) .dash-btn-row { margin-top: auto; padding-top: 18px; }
+.dash-claim-col { display: flex; flex-direction: column; min-height: 100%; }
+/* Fixed offset from the number row (no margin:auto). Because every column's
+   number row is the same height and starts at the same top edge, this lands all
+   three buttons on the same line — and the "Add food" link in column 2 just
+   hangs below its button without dragging anything out of alignment. */
+.dash-claim > .dash-claim-col .dash-btn-row { margin-top: 20px; }
+/* Claim row stats — same layout as before the refactor: label bottom-aligned
+   to the big number with reserved digit width; % sits top-aligned on the digit. */
+.dash-claim .dash-bignum { font-size: 4.5rem; }
+.dash-claim .dash-bignum-row,
+.dash-claim .dash-progress-pct {
+  display: flex;
+  align-items: last baseline;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+.dash-claim .dash-progress-pct { gap: 14px; }
+.dash-claim .dash-bignum-cap { margin-left: -5px; }
+/* inline-block (not inline-flex) so the wrapper's baseline is the digit's
+   baseline — matching the plain numbers in the other columns so the label sits
+   on the same line. The "%" rides up via vertical-align without lowering it. */
+.dash-claim .dash-progress-pct .dash-pct-wrap {
+  display: inline-block;
+  min-width: 0;
+  font-size: 4.5rem;
+  line-height: 1;
+}
+.dash-claim .dash-progress-pct .dash-pct {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: top;
+}
+/* inherit the wrapper's size so the responsive breakpoints (which scale the
+   wrapper) carry through, and beat the global .dash-progress-pct .dash-bignum
+   rule that would otherwise blow this up to 5rem. */
+.dash-claim .dash-progress-pct .dash-pct-wrap .dash-bignum { font-size: inherit; min-width: 0; }
 /* Third column: the portfolio WISEscore, styled to match the score-band card
    (big number + rating badge + note) while sitting inline in the claim row. */
 .dash-claim-score { display: flex; flex-direction: column; align-items: flex-start; position: relative; }
 
-/* Celebratory WISEscore toast — pops up just over the WISEscore card when the
-   score is healthy (>=60). Small × dismisses it for the current view; it is
-   not persisted, so it returns on reload. */
+/* Claim column that hosts a floating nudge toast — establishes the positioning
+   context so the absolutely-placed toast pops over this column. */
+.dash-claim-col--nudge { position: relative; }
+
+/* Nudge toast — pops up just over the column it belongs to (e.g. the "products
+   qualify" count) to push the next action. Small × dismisses it for the current
+   view; it is not persisted, so it returns on reload. */
 .dash-score-toast {
   position: absolute;
   left: -6px;
@@ -527,6 +664,106 @@ html.dark .dash-text-link:hover { color: #fff; }
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* WISEscore status word (e.g. "Good") in the claim row — underlined; hovering
+   or focusing reveals a popover listing all five status tiers and what they
+   mean, with the current tier highlighted. */
+.dash-status-term {
+  position: relative;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+  text-underline-offset: 3px;
+}
+.dash-status-term:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.dash-status-tip {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  z-index: 40;
+  width: 320px;
+  max-width: 80vw;
+  padding: 12px 13px 10px;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card, 0 12px 32px rgba(0, 0, 0, 0.18));
+  font-weight: 400;
+  text-align: left;
+  text-decoration: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+  pointer-events: none;
+}
+.dash-status-term:hover .dash-status-tip,
+.dash-status-term:focus .dash-status-tip,
+.dash-status-term:focus-visible .dash-status-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+html.dark .dash-status-tip {
+  background: #14242f;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.dash-status-tip-head {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 7px;
+}
+.dash-status-tip-row {
+  padding: 5px 6px;
+  border-radius: 8px;
+}
+.dash-status-tip-row.is-current {
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+}
+.dash-status-tip-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-status-tip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-status-tip-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.dash-status-tip-range {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.dash-status-tip-desc {
+  margin: 2px 0 0 17px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.dash-status-tip-dot--excellent { background: var(--sec-green, #32A966); }
+.dash-status-tip-dot--good { background: #7DC470; }
+.dash-status-tip-dot--fair { background: var(--ter-amber, #FFC434); }
+.dash-status-tip-dot--poor { background: #D27326; }
+.dash-status-tip-dot--critical { background: var(--sec-red, #DC3038); }
+
 .dash-headline {
   display: flex;
   align-items: center;
@@ -640,15 +877,18 @@ html.dark .dash-kebab-sep { background: rgba(255, 255, 255, 0.08); }
 .dash-donut-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .dash-donut-arc {
   /* Segments are filled annular-sector paths (gently rounded corners), so hover
-     emphasis uses brightness + a soft glow rather than growing a stroke. */
-  cursor: pointer;
+     emphasis uses brightness + a soft glow rather than growing a stroke. The
+     donut is hover-only (popover on hover); pressing does nothing, so keep the
+     default cursor rather than implying the segments are clickable. */
+  cursor: default;
   transition: opacity 0.14s ease, filter 0.14s ease;
 }
-.dash-charts-pending .dash-metric-fill { width: 0; }
+.dash-charts-pending .dash-metric-fill:not(.is-chart-ready) { width: 0; }
 @media (prefers-reduced-motion: reduce) {
   .dash-charts-pending .dash-metric-fill { width: auto; }
   .dash-metric-fill { transition: none; }
 }
+.is-chart-ready { transition: none !important; }
 .dash-donut-arc.is-hover {
   filter: brightness(1.07) saturate(1.05) drop-shadow(0 0 5px rgba(0, 0, 0, 0.18));
 }
@@ -1023,17 +1263,67 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
 }
 .dash-pillars-section .dash-section-head { margin-bottom: 14px; }
 .dash-pillars-intro {
-  max-width: 58%;
-  margin: 0 0 24px;
   font-size: 0.9rem;
   line-height: 1.55;
   color: var(--text-muted);
 }
-@media (max-width: 1024px) {
-  .dash-pillars-intro { max-width: 75%; }
+/* WISEscore health bar — score sits inside the fill at its trailing edge. */
+.dash-ws-health-bar {
+  width: 100%;
+  max-width: 480px;
+  margin: 14px auto 20px;
 }
-@media (max-width: 767px) {
-  .dash-pillars-intro { max-width: 100%; }
+.dash-ws-health-track {
+  position: relative;
+  height: var(--dash-donut-ring-h);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bar-color, var(--text-subtle)) 15%, transparent);
+  overflow: hidden;
+}
+.dash-ws-health-fill.dash-metric-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  min-width: 0;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.dash-ws-health-num {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-pillars-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+  padding: 0 80px;
+  margin-bottom: 32px;
+}
+.dash-pillars-heading .dash-section-head {
+  width: 100%;
+  margin-bottom: 0;
+  justify-content: center;
+}
+.dash-pillars-heading .dash-section-title {
+  max-width: 720px;
+}
+.dash-pillars-heading .dash-pillars-intro {
+  max-width: 640px;
+  margin: 0 auto 0;
 }
 .dash-three-up {
   display: grid;
@@ -1044,6 +1334,8 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   grid-template-columns: 1fr 1px 1fr 1px 1fr;
   gap: 28px;
   align-items: stretch;
+  padding-left: 36px;
+  padding-right: 36px;
 }
 .dash-pillar-card { min-width: 0; }
 .dash-pillar-card-head { margin-bottom: 18px; }
@@ -1203,6 +1495,7 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   .dash-three-up { grid-template-columns: 1fr; }
   .dash-pillars .dash-claim-divider { display: none; }
   .dash-score-band { grid-template-columns: 1fr; }
+  .dash-pillars-heading { padding-left: 48px; padding-right: 48px; }
 }
 
 /* The UPF / GRAS cards each pack a fixed donut + legend stack (~470px), so the
@@ -1217,8 +1510,16 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
 @container dash (max-width: 640px) {
   .dash-claim,
   .dash-wisescore { gap: 16px; }
+  .dash-claim { padding-left: 20px; padding-right: 20px; }
+  .dash-pillars { padding-left: 20px; padding-right: 20px; }
+  .dash-pillars-heading { padding-left: 32px; padding-right: 32px; margin-bottom: 24px; }
+  .dash-pillars-heading .dash-pillars-intro { max-width: 100%; }
   .dash-bignum,
   .dash-progress-pct .dash-bignum,
+  .dash-claim .dash-bignum,
+  .dash-claim .dash-progress-pct .dash-pct-wrap { font-size: 3.4rem; }
+  .dash-claim .dash-progress-pct .dash-pct { font-size: 1.3rem; }
+  .dash-bignum,
   .dash-claim-score .dash-score-num .n,
   .dash-pillar-card-head .dash-score-num .n { font-size: 3.4rem; }
   .dash-progress-pct .dash-pct { font-size: 1.3rem; }
@@ -1402,6 +1703,22 @@ html.dark .dash-modal-eyebrow { color: var(--primary-bright); }
   color: var(--text-subtle);
 }
 .dash-banner-preview-empty .material-icons { font-size: 18px; }
+/* Logo variant — a fixed, centered round preview (a true circle, not the wide
+   banner aspect) that shows the whole mark. The grid container centers it. */
+.dash-banner-preview--logo {
+  aspect-ratio: auto;
+  height: 188px;
+}
+.dash-banner-preview--logo .dash-banner-preview-img {
+  position: static;
+  inset: auto;
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  background-color: #fff;
+  background-size: cover;
+  box-shadow: 0 0 0 1px var(--border);
+}
 
 .dash-banner-drop {
   display: flex;

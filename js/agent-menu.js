@@ -219,12 +219,12 @@ export const PORTFOLIO_SECTIONS = {
     icon: 'summarize',
     sub: 'Reports & exports',
     tagline:
-      'Standardized portfolio reports across UPF, GRAS, and WISEcode insights — at the brand and SKU level.',
+      'Standardized portfolio reports across UPF, GRAS, and WISEcode insights — at the brand and UPC level.',
     children: [
       'report-brand-upf',
       'report-brand-gras',
-      'report-sku-upf',
-      'report-sku-gras',
+      'report-upc-upf',
+      'report-upc-gras',
       'report-brand-insights',
     ],
   },
@@ -244,21 +244,21 @@ export const PORTFOLIO_SECTIONS = {
     sub: 'Report · Brand level',
     tagline: 'Generally Recognized As Safe (GRAS) status across your brand.',
   },
-  'report-sku-upf': {
-    id: 'report-sku-upf',
-    label: 'SKU UPF Report',
+  'report-upc-upf': {
+    id: 'report-upc-upf',
+    label: 'UPC UPF Report',
     icon: 'description',
     parent: 'reports',
-    sub: 'Report · SKU level',
-    tagline: 'Ultra-processed food exposure at the individual SKU level.',
+    sub: 'Report · UPC level',
+    tagline: 'Ultra-processed food exposure at the individual UPC level.',
   },
-  'report-sku-gras': {
-    id: 'report-sku-gras',
-    label: 'SKU GRAS Report',
+  'report-upc-gras': {
+    id: 'report-upc-gras',
+    label: 'UPC GRAS Report',
     icon: 'description',
     parent: 'reports',
-    sub: 'Report · SKU level',
-    tagline: 'Generally Recognized As Safe (GRAS) status at the SKU level.',
+    sub: 'Report · UPC level',
+    tagline: 'Generally Recognized As Safe (GRAS) status at the UPC level.',
   },
   'report-brand-insights': {
     id: 'report-brand-insights',
@@ -287,8 +287,8 @@ export const PORTFOLIO_SECTION_IDS = [
   'reports',
   'report-brand-upf',
   'report-brand-gras',
-  'report-sku-upf',
-  'report-sku-gras',
+  'report-upc-upf',
+  'report-upc-gras',
   'report-brand-insights',
   'vault',
 ];
