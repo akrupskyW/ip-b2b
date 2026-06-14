@@ -139,10 +139,8 @@ function cssUrl(url) {
 /* Palette for chart segments (resolves against shared CSS tokens). */
 const C = {
   green: 'var(--sec-green)',
-  /* Soft, same-hue green used as the muted complement in the monochromatic
-     health-status gauges (recedes into the card surface). */
-  greenSoft: 'color-mix(in srgb, var(--sec-green) 55%, var(--surface))',
-  /* A distinctly lighter shade of green for the second processing level. */
+  /* A distinctly lighter shade of green — the "Good" tier and the second
+     processing level. */
   greenLight: '#7DC470',
   teal: 'var(--ter-cyan)',
   /* Soft, same-hue blue used as the muted complement in the monochromatic
@@ -194,15 +192,15 @@ const DATA = {
   wisescore: {
     average: 79,
     pillars: [
-      { name: 'Nutrient Quality', icon: 'eco', score: 75, color: C.green },
-      { name: 'Ingredient Quality', icon: 'biotech', score: 89, color: C.teal },
-      { name: 'Health Outcomes', icon: 'favorite', score: 72, color: C.green },
+      { name: 'Nutrient Quality', icon: 'eco', score: 75 },
+      { name: 'Ingredient Quality', icon: 'biotech', score: 89 },
+      { name: 'Health Outcomes', icon: 'favorite', score: 72 },
     ],
   },
   pillars: [
     {
-      name: 'Nutrient Quality', tag: 'NQ', rating: 'Good', ratingTone: 'good',
-      score: 75, ring: C.green,
+      name: 'Nutrient Quality', tag: 'NQ',
+      score: 75,
       metrics: [
         { name: 'Fiber Density', value: 74 },
         { name: 'Sugar Density', value: 68 },
@@ -212,8 +210,8 @@ const DATA = {
       ],
     },
     {
-      name: 'Ingredient Quality', tag: 'IG', rating: 'Excellent', ratingTone: 'excellent',
-      score: 89, ring: C.teal,
+      name: 'Ingredient Quality', tag: 'IG',
+      score: 89,
       metrics: [
         { name: 'Ultra-Processed Food', value: 91 },
         { name: 'Banned / Unsafe Ingredients', value: 96 },
@@ -223,8 +221,8 @@ const DATA = {
       ],
     },
     {
-      name: 'Health Outcomes', tag: 'THRIVE', rating: 'Good', ratingTone: 'good',
-      score: 72, ring: C.green,
+      name: 'Health Outcomes', tag: 'THRIVE',
+      score: 72,
       metrics: [
         { name: 'Heart Health', value: 76 },
         { name: 'Diabetes Friendly', value: 69 },
@@ -284,15 +282,15 @@ const DATA_ALT = {
   wisescore: {
     average: 48,
     pillars: [
-      { name: 'Nutrient Quality', icon: 'eco', score: 46, color: C.amber },
-      { name: 'Ingredient Quality', icon: 'biotech', score: 51, color: C.amber },
-      { name: 'Health Outcomes', icon: 'favorite', score: 44, color: C.amber },
+      { name: 'Nutrient Quality', icon: 'eco', score: 46 },
+      { name: 'Ingredient Quality', icon: 'biotech', score: 51 },
+      { name: 'Health Outcomes', icon: 'favorite', score: 44 },
     ],
   },
   pillars: [
     {
-      name: 'Nutrient Quality', tag: 'NQ', rating: 'Fair', ratingTone: 'fair',
-      score: 46, ring: C.amber,
+      name: 'Nutrient Quality', tag: 'NQ',
+      score: 46,
       metrics: [
         { name: 'Fiber Density', value: 42 },
         { name: 'Sugar Density', value: 38 },
@@ -302,8 +300,8 @@ const DATA_ALT = {
       ],
     },
     {
-      name: 'Ingredient Quality', tag: 'IG', rating: 'Fair', ratingTone: 'fair',
-      score: 51, ring: C.amber,
+      name: 'Ingredient Quality', tag: 'IG',
+      score: 51,
       metrics: [
         { name: 'Ultra-Processed Food', value: 34 },
         { name: 'Banned / Unsafe Ingredients', value: 58 },
@@ -313,8 +311,8 @@ const DATA_ALT = {
       ],
     },
     {
-      name: 'Health Outcomes', tag: 'THRIVE', rating: 'Fair', ratingTone: 'fair',
-      score: 44, ring: C.amber,
+      name: 'Health Outcomes', tag: 'THRIVE',
+      score: 44,
       metrics: [
         { name: 'Heart Health', value: 41 },
         { name: 'Diabetes Friendly', value: 38 },
@@ -333,13 +331,6 @@ let _dashboardHost  = null;
 /* The currently active dataset. */
 function getActiveData() {
   return _altBrandActive ? DATA_ALT : DATA;
-}
-
-function metricColor(v) {
-  if (v >= 80) return C.green;
-  if (v >= 65) return C.greenSoft;
-  if (v >= 50) return C.amber;
-  return C.red;
 }
 
 function legend(parts) {
@@ -856,20 +847,12 @@ function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) 
     </article>`;
 }
 
-function scoreBandTone(pct) {
-  if (pct >= 80) return 'excellent';
-  if (pct >= 60) return 'good';
-  if (pct >= 40) return 'fair';
-  if (pct >= 20) return 'poor';
-  return 'critical';
-}
-
 function renderScoreBand(d) {
   const ws = d.wisescore.average;
   const wsRating = ratingLabel(ws);
   const wsTone = scoreTierTone(ws);
-  const upfTone = scoreBandTone(d.upf.pct);
-  const grasTone = scoreBandTone(d.gras.pct);
+  const upfTone = scoreTierTone(d.upf.pct);
+  const grasTone = scoreTierTone(d.gras.pct);
   return `
     <section class="dash-score-band">
       ${scoreCard({
@@ -987,31 +970,41 @@ function renderGras(d) {
 }
 
 /* The five WISEscore status tiers — 20 points each (0–19 … 80–100). Single
-   source of truth for the rating label and the hover popover on the status
-   word in the pillars heading. */
+   source of truth for the rating label, tier color, and the hover popover on
+   the status word in the pillars heading. The scale runs worst→best:
+   Poor (red) · Fair (orange) · Okay (amber) · Good (light green) · Excellent (green). */
 const STATUS_TIERS = [
   { label: 'Excellent', min: 80, range: '80–100', tone: 'excellent', desc: 'Top-tier food quality — strong nutrition, clean ingredients, and healthy long-term outcomes.' },
   { label: 'Good', min: 60, range: '60–79', tone: 'good', desc: 'Solid, well-rounded products with only minor areas left to improve.' },
-  { label: 'Fair', min: 40, range: '40–59', tone: 'fair', desc: 'Acceptable overall, but with clear weaknesses in one or more pillars.' },
-  { label: 'Poor', min: 20, range: '20–39', tone: 'poor', desc: 'Notable concerns across processing level, ingredients, or nutrient density.' },
-  { label: 'Critical', min: 0, range: '0–19', tone: 'critical', desc: 'Serious issues — heavily processed or carrying high-risk ingredients.' },
+  { label: 'Okay', min: 40, range: '40–59', tone: 'okay', desc: 'Acceptable overall, but with clear weaknesses in one or more pillars.' },
+  { label: 'Fair', min: 20, range: '20–39', tone: 'fair', desc: 'Notable concerns across processing level, ingredients, or nutrient density.' },
+  { label: 'Poor', min: 0, range: '0–19', tone: 'poor', desc: 'Serious issues — heavily processed or carrying high-risk ingredients.' },
 ];
 
+/* Tier → chart color, drawn from the same palette as the donuts and segment
+   bars so a score's color is identical everywhere it appears (pillar bars,
+   health bar, per-metric bars, status dots). */
 const SCORE_TIER_COLORS = {
-  excellent: { fill: '#38a865', core: '#e8ffe2' },
-  good: { fill: '#6aab58', core: '#d4f0c8' },
-  fair: { fill: '#c4a032', core: '#fff0a0' },
-  poor: { fill: '#c46832', core: '#ffc090' },
-  critical: { fill: '#9e2830', core: '#ffb4b4' },
+  excellent: C.green,
+  good: C.greenLight,
+  okay: C.amber,
+  fair: C.orange,
+  poor: C.red,
 };
 
 function scoreTierTone(score) {
   return (STATUS_TIERS.find((t) => score >= t.min) || STATUS_TIERS[STATUS_TIERS.length - 1]).tone;
 }
 
+/* Canonical score→color used across the dashboard. Tier-based so colors always
+   line up with the status scale and rating labels. */
+function scoreColor(score) {
+  return SCORE_TIER_COLORS[scoreTierTone(score)];
+}
+
 /* WISEscore health bar with animated fill + score — sits under the pillars headline. */
 function wisescoreHealthBar(score) {
-  const color = metricColor(score);
+  const color = scoreColor(score);
   const pct = Math.min(100, Math.max(0, Math.round(score)));
   return `
     <div class="dash-ws-health-bar" role="group" aria-label="WISEscore ${pct}">
@@ -1048,14 +1041,15 @@ function renderWisescore(d) {
   const rating = ratingLabel(w.average);
   const badgeMod = scoreTierTone(w.average);
   const pillars = w.pillars
-    .map(
-      (p) => `
+    .map((p) => {
+      const c = scoreColor(p.score);
+      return `
       <div class="dash-pillar-row">
-        <span class="dash-pillar-name"><span class="material-icons" style="color:${p.color}">${esc(p.icon)}</span>${esc(p.name)}</span>
-        <div class="dash-pillar-track" style="--bar-color:${p.color}"><div class="dash-pillar-fill" style="width:${p.score}%;background:${p.color}"></div></div>
+        <span class="dash-pillar-name"><span class="material-icons" style="color:${c}">${esc(p.icon)}</span>${esc(p.name)}</span>
+        <div class="dash-pillar-track" style="--bar-color:${c}"><div class="dash-pillar-fill" style="width:${p.score}%;background:${c}"></div></div>
         <span class="dash-pillar-score">${p.score}</span>
-      </div>`
-    )
+      </div>`;
+    })
     .join('');
   return `
     <section style="margin-top:18px;">
@@ -1082,7 +1076,7 @@ function renderPillarCards(d) {
     const rating = ratingLabel(p.score);
     const metrics = p.metrics
       .map((m) => {
-        const color = metricColor(m.value);
+        const color = scoreColor(m.value);
         return `
           <div class="dash-metric-item">
             <span class="dash-metric-name">${esc(m.name)}</span>
@@ -1175,17 +1169,6 @@ export function renderDashboardHome(host) {
       /* Always read the live dataset so actions after a brand switch use the
          correct data without needing to re-attach any listeners. */
       const d = getActiveData();
-
-      /* Tapping a pillar health card replays its entrance animation: the score
-         gauge replays just the metric-bar chart, the stamp icon replays the
-         score count-up together with the chart. */
-      const iconHit = e.target.closest('.dash-pillar-card-head .dash-stamp-icon');
-      const scoreHit = e.target.closest('.dash-pillar-card-head .dash-score-num');
-      if (iconHit || scoreHit) {
-        const card = (iconHit || scoreHit).closest('.dash-pillar-card');
-        reanimatePillarCard(card, { includeScore: !!iconHit });
-        return;
-      }
 
       const tab = e.target.closest('[data-dash-tab]');
       if (tab) {
@@ -1299,7 +1282,7 @@ export function renderDashboardHome(host) {
     });
   }
 
-  setupChartPressGuard(host);
+  setupChartReplay(host);
   setupDonutPopover(host);
   setupChartAnimations(host);
 }
@@ -1307,6 +1290,10 @@ export function renderDashboardHome(host) {
 /* Easing helper for count-up and bar animations. */
 function easeOutCubic(t) {
   return 1 - (1 - t) ** 3;
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function countUpEl(el, duration = 1800) {
@@ -1357,9 +1344,16 @@ function finalizeChartElements(root) {
 const CHART_GAUGE_SWEEP_MS = 1400;
 const CHART_BAR_STAGGER_MS = 90;
 
-/* Selectors for chart surfaces that are display-only (hover popover on donuts
-   is the sole interaction). Presses must not re-fire entrance animations. */
-const CHART_PRESS_SEL = '.dash-donut-svg, .dash-ws-health-bar, .dash-metric-track, .dash-metric-fill';
+/* Tap targets that replay a chart's entrance animation when clicked. */
+const CHART_REPLAY_SEL = [
+  '.dash-donut',
+  '.dash-ws-health-bar',
+  '.dash-pillar-card-head .dash-score-num',
+  '.dash-pillar-card-head .dash-stamp-icon',
+  '.dash-pillar-card .dash-metric-list',
+  '.dash-claim .dash-bignum-row',
+  '.dash-claim .dash-progress-pct',
+].join(', ');
 
 function isDonutSweepComplete(card) {
   const arcs = card.querySelectorAll('.dash-donut-arc');
@@ -1384,18 +1378,22 @@ function markMetricFillReady(fill) {
   fill.style.transition = 'none';
 }
 
-/* Swallow pointerdown/click on chart surfaces (capture phase) so a press cannot
-   re-trigger entrance animations or the dashboard's content click handler. */
-function setupChartPressGuard(host) {
-  if (host._dashPressGuardAttached) return;
-  host._dashPressGuardAttached = true;
-  const swallowPress = (e) => {
-    if (!e.target.closest(CHART_PRESS_SEL)) return;
-    e.preventDefault();
-    e.stopPropagation();
-  };
-  host.addEventListener('pointerdown', swallowPress, true);
-  host.addEventListener('click', swallowPress, true);
+/* Clicking any chart surface replays that chart's entrance animation. Handled
+   in the capture phase so the gesture is consumed before the dashboard's
+   content click handler runs; pointerdown default is suppressed on the same
+   surfaces to avoid stray text selection on a tap. */
+function setupChartReplay(host) {
+  if (host._dashChartReplayAttached) return;
+  host._dashChartReplayAttached = true;
+  host.addEventListener('pointerdown', (e) => {
+    if (e.target.closest && e.target.closest(CHART_REPLAY_SEL)) e.preventDefault();
+  }, true);
+  host.addEventListener('click', (e) => {
+    if (replayChartFromTarget(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
 }
 
 /* Sweep each arc segment around the ring instead of fading segments in. */
@@ -1476,7 +1474,7 @@ function animateMetricBars(section) {
    animate backwards), then sweep forward again on the next frame. */
 function reanimatePillarCard(card, { includeScore = false } = {}) {
   if (!card) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (prefersReducedMotion()) return;
 
   const fills = [...card.querySelectorAll('.dash-metric-fill')];
   fills.forEach((fill) => {
@@ -1518,6 +1516,99 @@ function reanimatePillarCard(card, { includeScore = false } = {}) {
   });
 
   if (includeScore && scoreEl) countUpEl(scoreEl, 1800);
+}
+
+/* Replay a donut gauge (UPF / GRAS): rewind the ring arcs and the centred
+   count-up, clear the completion guard, then re-run the sweep. */
+function reanimateDonutCard(card) {
+  if (!card) return;
+  if (prefersReducedMotion()) return;
+  card.querySelectorAll('.dash-donut-arc[data-full-d]').forEach((arc) => arc.setAttribute('d', ''));
+  card.querySelectorAll('.dash-count-up').forEach((el) => {
+    el.classList.remove('is-counted');
+    el.textContent = `0${el.getAttribute('data-count-suffix') || ''}`;
+  });
+  card.classList.remove('is-chart-animating');
+  animateDonutCard(card);
+}
+
+/* Replay the WISEscore health bar: snap the fill back to 0 (transition
+   suppressed), rewind the score, then re-run the fill + count-up. */
+function reanimateHealthBar(heading) {
+  if (!heading) return;
+  if (prefersReducedMotion()) return;
+  const fill = heading.querySelector('.dash-ws-health-fill');
+  const scoreEl = heading.querySelector('.dash-ws-health-num');
+  if (fill) {
+    if (!fill.dataset.targetWidth) fill.dataset.targetWidth = fill.style.width;
+    fill.classList.remove('is-chart-ready');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+  }
+  if (scoreEl) {
+    scoreEl.classList.remove('is-counted');
+    scoreEl.textContent = `0${scoreEl.getAttribute('data-count-suffix') || ''}`;
+  }
+  void heading.offsetWidth;
+  if (fill) fill.style.transition = '';
+  heading.classList.remove('is-ws-health-animated');
+  animateHealthBar(heading);
+}
+
+/* Replay a standalone count-up stat (the claim big-number tiles). */
+function reanimateCounter(scope) {
+  if (!scope) return;
+  if (prefersReducedMotion()) return;
+  const els = scope.querySelectorAll('.dash-count-up');
+  els.forEach((el) => {
+    el.classList.remove('is-counted');
+    el.textContent = `0${el.getAttribute('data-count-suffix') || ''}`;
+  });
+  runCountUps(els, { duration: 1600 });
+}
+
+/* Map a clicked element to the chart component it belongs to and replay it.
+   Returns true when a chart was matched so the caller can swallow the gesture.
+     • Pillar card — stamp icon replays score + bars; score gauge or the metric
+       list replays just the bars.
+     • Donut gauge — the ring + centre stat.
+     • WISEscore health bar — the fill + score.
+     • Claim tiles — the big-number count-up. */
+function replayChartFromTarget(el) {
+  if (!el || !el.closest) return false;
+
+  const pillarCard = el.closest('.dash-pillar-card');
+  if (pillarCard) {
+    if (el.closest('.dash-stamp-icon')) {
+      reanimatePillarCard(pillarCard, { includeScore: true });
+      return true;
+    }
+    if (el.closest('.dash-score-num') || el.closest('.dash-metric-list')) {
+      reanimatePillarCard(pillarCard, { includeScore: false });
+      return true;
+    }
+    return false;
+  }
+
+  const donut = el.closest('.dash-donut');
+  if (donut) {
+    reanimateDonutCard(donut.closest('.dash-donut-card'));
+    return true;
+  }
+
+  const wsBar = el.closest('.dash-ws-health-bar');
+  if (wsBar) {
+    reanimateHealthBar(wsBar.closest('.dash-pillars-heading'));
+    return true;
+  }
+
+  const counter = el.closest('.dash-claim .dash-bignum-row, .dash-claim .dash-progress-pct');
+  if (counter) {
+    reanimateCounter(counter);
+    return true;
+  }
+
+  return false;
 }
 
 function animateHealthBar(heading) {

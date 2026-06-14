@@ -855,9 +855,9 @@ html.dark .dash-status-tip {
 }
 .dash-status-tip-dot--excellent { background: var(--sec-green, #32A966); }
 .dash-status-tip-dot--good { background: #7DC470; }
-.dash-status-tip-dot--fair { background: var(--ter-amber, #FFC434); }
-.dash-status-tip-dot--poor { background: #D27326; }
-.dash-status-tip-dot--critical { background: var(--sec-red, #DC3038); }
+.dash-status-tip-dot--okay { background: var(--ter-amber, #FFC434); }
+.dash-status-tip-dot--fair { background: #D27326; }
+.dash-status-tip-dot--poor { background: var(--sec-red, #DC3038); }
 
 .dash-headline {
   display: flex;
@@ -1354,14 +1354,14 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   font-weight: 700;
   margin: 12px 0;
 }
-.dash-badge--good { background: color-mix(in srgb, var(--sec-green) 16%, transparent); color: var(--sec-green-text); }
-.dash-badge--excellent { background: color-mix(in srgb, var(--ter-cyan) 16%, transparent); color: var(--sec-green-text); }
-.dash-badge--fair { background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: #a07a10; }
-html.dark .dash-badge--fair { color: #d4a830; }
-.dash-badge--poor { background: color-mix(in srgb, #D27326 18%, transparent); color: #9e4a10; }
-html.dark .dash-badge--poor { color: #e08840; }
-.dash-badge--critical { background: color-mix(in srgb, var(--sec-red) 18%, transparent); color: #8e1818; }
-html.dark .dash-badge--critical { color: #f07070; }
+.dash-badge--excellent { background: color-mix(in srgb, var(--sec-green) 18%, transparent); color: var(--sec-green-text); }
+.dash-badge--good { background: color-mix(in srgb, #7DC470 24%, transparent); color: var(--sec-green-text); }
+.dash-badge--okay { background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: #a07a10; }
+html.dark .dash-badge--okay { color: #d4a830; }
+.dash-badge--fair { background: color-mix(in srgb, #D27326 18%, transparent); color: #9e4a10; }
+html.dark .dash-badge--fair { color: #e08840; }
+.dash-badge--poor { background: color-mix(in srgb, var(--sec-red) 18%, transparent); color: #8e1818; }
+html.dark .dash-badge--poor { color: #f07070; }
 .dash-wisescore-note { font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; max-width: 230px; }
 .dash-wisescore-note strong { color: var(--text); }
 
@@ -1506,6 +1506,22 @@ html.dark .dash-badge--critical { color: #f07070; }
   border-color: color-mix(in srgb, var(--primary) 26%, var(--surface-3));
 }
 .dash-pillar-card-head .dash-stamp-icon:active { transform: translateY(-50%) scale(0.92); }
+
+/* Every chart surface replays its entrance animation on tap — surface the
+   affordance with a pointer cursor and a small press response. */
+.dash-donut,
+.dash-ws-health-bar,
+.dash-claim .dash-bignum-row,
+.dash-claim .dash-progress-pct {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dash-ws-health-bar {
+  transition: transform 0.12s ease;
+}
+.dash-ws-health-bar:active { transform: scale(0.99); }
+.dash-donut { transition: transform 0.16s ease; }
+.dash-donut:active { transform: scale(0.985); }
 
 /* --- Floated label stamp --------------------------------------------------
    A small, faint brand-linen disc floated to the far right of a score, with an
