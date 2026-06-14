@@ -832,16 +832,11 @@ export function setMenuPivot(on) {
   panel.classList.toggle('mp-pivot', on);
   shellWrapEl()?.classList.toggle('menu-pivoted', on);
 
-  if (on) {
-    /* Flatten: every icon — including children of collapsed groups — is
-       shown in the row, so make them all interactive + readable. */
-    panel.querySelectorAll('.menu-nav-children').forEach((el) => {
-      el.removeAttribute('inert');
-      el.removeAttribute('aria-hidden');
-    });
-  } else {
-    syncGroupChildrenInert(panel);
-  }
+  /* The pivot bar mirrors the vertical nav: only OPEN groups expose their
+     children. Collapsed groups stay non-interactive so the row shows the
+     same top-level products as the left-hand nav (no flattened sub-sections
+     or duplicate report icons). */
+  syncGroupChildrenInert(panel);
 
   try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
   try {

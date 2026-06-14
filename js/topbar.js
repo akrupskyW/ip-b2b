@@ -270,15 +270,30 @@ export function restoreMinimalUi() {
   applyMinimalUi(isMinimalUiOn());
 }
 
+/** Read a page-level appearance default from `<body data-default-…>`.
+    Returns `null` when the attribute is absent so callers can skip the override. */
+export function pageAppearanceDefault(dataKey) {
+  try {
+    const v = document.body?.dataset?.[dataKey];
+    if (v === undefined) return null;
+    return v === '1' || v === 'true';
+  } catch { return null; }
+}
+
 /* Header float — drop every module/panel header strip entirely (no space kept)
    and pin its right-floated icons/actions (.panel-controls) absolutely over the
    top-right of the module content. Driven by a `header-float` class on <html> so
    it reaches every module on every page; persisted so it survives navigation. */
 const HEADER_FLOAT_KEY = 'wise-header-float';
 
-/** True when header-float (headerless modules) was last left on. */
+/** True when header-float (headerless modules) is on. Defaults to ON app-wide
+    so module/panel headers are hidden out of the box; an explicit user choice
+    (stored '0') is still respected. */
 export function isHeaderFloatOn() {
-  try { return localStorage.getItem(HEADER_FLOAT_KEY) === '1'; } catch { return false; }
+  try {
+    const v = localStorage.getItem(HEADER_FLOAT_KEY);
+    return v === null ? true : v === '1';
+  } catch { return true; }
 }
 
 /** Toggle the header-float class on <html> and persist it. Each Appearance

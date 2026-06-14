@@ -40,12 +40,26 @@ function layoutsSection(layouts, currentLayout) {
   return `${items}<div class="wise-popover-divider"></div>`;
 }
 
+/**
+ * A binary on/off setting row. Instead of highlighting the whole row when
+ * active, it shows a Material Symbols switch glyph to the LEFT of the label —
+ * `toggle_on` (blue) when on, `toggle_off` (gray) when off. The data-* hook and
+ * label match the old rows so every shell's existing click handlers keep working.
+ *
+ * @param {string} dataAttr  Full data-* attribute string (e.g. `data-minimal="1"`).
+ * @param {boolean} on        Whether the setting is currently on.
+ * @param {string} label      Visible row label.
+ */
+function toggleRow(dataAttr, on, label) {
+  return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}" ${dataAttr} role="switch" aria-checked="${on ? 'true' : 'false'}">
+      <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${label}
+    </div>`;
+}
+
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
   if (!showPivot) return '';
-  return `<div class="wise-popover-item${isPivoted ? ' is-active' : ''}" data-pivot="1">
-      <span class="material-symbols-outlined">pivot_table_chart</span>Pivot Navigation
-    </div>`;
+  return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation');
 }
 
 /** "Dock Chat" segmented control (left / center / right) for the Scout dock. */
@@ -92,21 +106,11 @@ export function buildAppearanceBody({
     <div class="wise-popover-header">Appearance</div>
     ${layoutsSection(layouts, currentLayout)}
     ${pivotSection(showPivot, isPivoted)}
-    <div class="wise-popover-item${isMinimalUiOn() ? ' is-active' : ''}" data-minimal="1">
-      <span class="material-symbols-outlined">compress</span>Minimal UI
-    </div>
-    <div class="wise-popover-item${isHeaderFloatOn() ? ' is-active' : ''}" data-headerfloat="1">
-      <span class="material-symbols-outlined">${isHeaderFloatOn() ? 'top_panel_close' : 'top_panel_open'}</span>Header
-    </div>
-    <div class="wise-popover-item${isFullBleedOn() ? ' is-active' : ''}" data-fullbleed="1">
-      <span class="material-symbols-outlined">crop_free</span>Full bleed
-    </div>
-    <div class="wise-popover-item${isJamStripOn() ? ' is-active' : ''}" data-jam="1">
-      <span class="material-icons">music_note</span>Jam strip
-    </div>
-    <div class="wise-popover-item${isColorblindOn() ? ' is-active' : ''}" data-colorblind="1">
-      <span class="material-symbols-outlined">contrast</span>Colorblind mode
-    </div>
+    ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
+    ${toggleRow('data-headerfloat="1"', isHeaderFloatOn(), 'Header')}
+    ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
+    ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip')}
+    ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Colorblind mode')}
     <div class="wise-popover-divider"></div>
     ${showScoutDock ? scoutDockSection(scoutDockMode) : ''}
     <div class="fz-row">

@@ -101,16 +101,18 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   overflow: hidden;
   pointer-events: none;
 }
+/* A single, way-oversized WISE bug tilted to a jaunty angle and pulled mostly
+   into the hero (only a sliver bleeds off the right edge). */
 .dash-hero-bug {
   position: absolute;
   top: 50%;
-  width: min(620px, 92%);
+  right: 0;
+  width: min(1280px, 130%);
   height: auto;
   color: color-mix(in srgb, #0B1426 38%, var(--primary));
   filter: drop-shadow(0 1.5px 0 rgba(255, 255, 255, 0.14));
+  transform: translate(calc(14% + 120px), calc(-50% + 40px)) rotate(-18deg);
 }
-.dash-hero-bug--right { right: 0; transform: translate(40%, -52%); }
-.dash-hero-bug--left  { left: 0;  transform: translate(-46%, -34%) rotate(-28deg); }
 /* Once a custom banner image is uploaded, the flat pattern steps aside. */
 .dash-hero.has-image .dash-hero-pattern { display: none; }
 /* Dark scrim keeps the headline + subtext legible over an uploaded image. The
@@ -140,6 +142,85 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.82);
 }
+
+/* ---- Brand comparison toggle (inline with hero headline) ---- */
+.dash-brand-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 5px;
+  border-radius: 20px;
+  background: rgba(236, 72, 153, 0.12);
+  border: 1.5px solid rgba(236, 72, 153, 0.35);
+  color: rgb(240, 130, 185);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, color 0.18s;
+}
+.dash-brand-toggle:hover {
+  background: rgba(236, 72, 153, 0.22);
+  border-color: rgba(236, 72, 153, 0.6);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.12);
+  color: #fff;
+}
+.dash-brand-toggle.is-on,
+.dash-brand-toggle[aria-checked="true"] {
+  background: rgb(219, 39, 119);
+  border-color: rgb(190, 24, 93);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(190, 24, 93, 0.4);
+}
+.dash-brand-toggle.is-on:hover,
+.dash-brand-toggle[aria-checked="true"]:hover {
+  background: rgb(190, 24, 93);
+  box-shadow: 0 2px 14px rgba(190, 24, 93, 0.5);
+}
+/* The pill track + sliding thumb */
+.dash-brand-toggle-track {
+  position: relative;
+  width: 26px;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(236, 72, 153, 0.3);
+  flex-shrink: 0;
+  transition: background 0.18s;
+}
+.dash-brand-toggle.is-on .dash-brand-toggle-track,
+.dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-track {
+  background: rgba(255, 255, 255, 0.3);
+}
+.dash-brand-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgb(236, 72, 153);
+  transition: transform 0.18s ease, background 0.18s;
+}
+.dash-brand-toggle.is-on .dash-brand-toggle-thumb,
+.dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
+  transform: translateX(10px);
+  background: #fff;
+}
+.dash-brand-toggle-text { font-size: 11.5px; font-weight: 600; }
+
+/* Alt-brand state: tint the hero scrim warmer to visually distinguish. */
+.dash-hero.is-alt-brand .dash-hero-scrim {
+  background: linear-gradient(
+    to right,
+    rgba(10, 10, 18, 0.72) 0%,
+    rgba(40, 16, 8, 0.55) 60%,
+    rgba(40, 16, 8, 0.0) 100%
+  );
+}
 /* Brand logo — a circular badge floated to the right, sitting on top of the
    banner artwork (or the default flat pattern) and vertically centered. It's a
    button: clicking it opens the same image editor as the banner. */
@@ -159,6 +240,17 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   box-shadow: 0 10px 28px rgba(7, 12, 26, 0.34), 0 0 0 5px rgba(255, 255, 255, 0.16);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+  animation: dash-hero-logo-bounce 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s both;
+}
+@keyframes dash-hero-logo-bounce {
+  0%   { transform: translate(28px, -50%) scale(0.42); opacity: 0; }
+  52%  { transform: translate(-8px, -50%) scale(1.1); opacity: 1; }
+  70%  { transform: translate(4px, -50%) scale(0.96); }
+  84%  { transform: translate(-2px, -50%) scale(1.03); }
+  100% { transform: translateY(-50%) scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-hero-logo { animation: none; }
 }
 .dash-hero-logo:hover,
 .dash-hero-logo:focus-visible {
@@ -366,12 +458,14 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
 .dash-claim .dash-bignum-row,
 .dash-claim .dash-progress-pct {
   display: flex;
-  align-items: last baseline;
+  /* Label sits directly below the numerical score, then the buttons follow. */
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   margin: 10px 0 0;
 }
-.dash-claim .dash-progress-pct { gap: 14px; }
-.dash-claim .dash-bignum-cap { margin-left: -5px; }
+.dash-claim .dash-progress-pct { gap: 6px; }
+.dash-claim .dash-bignum-cap { margin-left: 0; }
 /* inline-block (not inline-flex) so the wrapper's baseline is the digit's
    baseline — matching the plain numbers in the other columns so the label sits
    on the same line. The "%" rides up via vertical-align without lowering it. */
@@ -792,6 +886,30 @@ html.dark .dash-status-tip {
 }
 .dash-card-topbar .dash-card-title { margin: 4px 0 0; }
 
+/* Title + inline controls (e.g. the GRAS health-status toggle) sit together on
+   the left; the kebab stays pinned to the right via the topbar's space-between. */
+.dash-card-topbar-lead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* Bare variant of the hero brand toggle (used on the GRAS donut card): drop the
+   pill container (background / border / shadow / padding) so only the track +
+   thumb switch shows. */
+.dash-brand-toggle--bare,
+.dash-brand-toggle--bare:hover,
+.dash-brand-toggle--bare.is-on,
+.dash-brand-toggle--bare.is-on:hover {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.dash-brand-toggle--bare.is-on .dash-brand-toggle-track { background: rgb(219, 39, 119); }
+
 .dash-kebab-wrap { position: relative; flex-shrink: 0; }
 .dash-kebab {
   display: grid;
@@ -875,6 +993,12 @@ html.dark .dash-kebab-sep { background: rgba(255, 255, 255, 0.08); }
   height: 252px;
   flex-shrink: 0;
 }
+/* The single (levels-only) donut shares the exact dimensions of the double
+   donut and is swapped in when the health-status ring is toggled off. */
+.dash-donut-single { display: none; }
+.dash-donut-card.is-health-hidden .dash-donut-double { display: none; }
+.dash-donut-card.is-health-hidden .dash-donut-single { display: block; }
+.dash-donut-card.is-health-hidden .dash-donut-legend-group--health { display: none; }
 .dash-donut-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .dash-donut-arc {
   /* Segments are filled annular-sector paths (gently rounded corners), so hover
@@ -922,6 +1046,9 @@ html.dark .dash-donut-center::before {
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
 }
+/* Single (levels-only) donut: the ring sits at the outer radius, so grow the
+   center disc to meet its inner edge instead of leaving a gap. */
+.dash-donut-single .dash-donut-center::before { width: 184px; height: 184px; }
 .dash-donut-center > * { position: relative; z-index: 1; max-width: 120px; }
 .dash-donut-num {
   font-size: 2.3rem;
@@ -1229,6 +1356,12 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
 }
 .dash-badge--good { background: color-mix(in srgb, var(--sec-green) 16%, transparent); color: var(--sec-green-text); }
 .dash-badge--excellent { background: color-mix(in srgb, var(--ter-cyan) 16%, transparent); color: var(--sec-green-text); }
+.dash-badge--fair { background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: #a07a10; }
+html.dark .dash-badge--fair { color: #d4a830; }
+.dash-badge--poor { background: color-mix(in srgb, #D27326 18%, transparent); color: #9e4a10; }
+html.dark .dash-badge--poor { color: #e08840; }
+.dash-badge--critical { background: color-mix(in srgb, var(--sec-red) 18%, transparent); color: #8e1818; }
+html.dark .dash-badge--critical { color: #f07070; }
 .dash-wisescore-note { font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; max-width: 230px; }
 .dash-wisescore-note strong { color: var(--text); }
 
@@ -1352,6 +1485,50 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   margin-bottom: 10px;
 }
 .dash-pillar-card-head .dash-score-cap strong { color: var(--text); font-size: 1.0625rem; font-weight: 700; }
+
+/* --- Floated label stamp --------------------------------------------------
+   A small, faint brand-linen disc floated to the far right of a score, with an
+   outline glyph for the label inside. Pressed into the page with the same
+   debossed feel as the hero bug — a light bottom-edge highlight over a whisper
+   of top shade reads as stamped/engraved rather than drawn. */
+.dash-pillar-card-head,
+.dash-claim .dash-bignum-row,
+.dash-claim .dash-progress-pct {
+  position: relative;
+}
+.dash-stamp-icon {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 14%, var(--surface-3));
+  color: color-mix(in srgb, var(--primary) 26%, var(--surface-3));
+  background: transparent;
+  box-shadow:
+    inset 0 1px 1px rgba(17, 24, 39, 0.07),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  user-select: none;
+}
+/* Claim stats stack number-over-label, so center the disc to the number (4.5rem)
+   rather than the whole block. (Pillar cards lay the score out in a single row,
+   so the default top:50% already lands on the number there.) */
+.dash-claim .dash-bignum-row > .dash-stamp-icon,
+.dash-claim .dash-progress-pct > .dash-stamp-icon {
+  top: 2.25rem;
+}
+.dash-stamp-icon .material-symbols-outlined {
+  font-size: 26px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 24;
+  line-height: 1;
+}
 
 .dash-pillars-cta {
   display: flex;
@@ -1525,6 +1702,9 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   .dash-pillar-card-head .dash-score-num .n { font-size: 3.4rem; }
   .dash-progress-pct .dash-pct { font-size: 1.3rem; }
   .dash-progress-pct .dash-pct-wrap { font-size: 3.4rem; }
+  /* Numbers shrink to 3.4rem here, so re-center the claim disc on the number. */
+  .dash-claim .dash-bignum-row > .dash-stamp-icon,
+  .dash-claim .dash-progress-pct > .dash-stamp-icon { top: 1.7rem; }
 }
 /* ...and only stack once they genuinely can't fit (mobile-width column). */
 @container dash (max-width: 480px) {
@@ -1534,11 +1714,15 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   .dash-claim-divider,
   .dash-wisescore .dash-claim-divider { display: none; }
 
-  /* Single-pane: caption drops below the big number; multi-column keeps side-by-side. */
+  /* Single-pane: caption drops below the big number; multi-column keeps side-by-side.
+     Stacked vertically the 32px side-by-side gap reads as too much air, so tighten it. */
   .dash-bignum-row,
-  .dash-progress-pct {
+  .dash-progress-pct,
+  .dash-claim .dash-bignum-row,
+  .dash-claim .dash-progress-pct {
     flex-direction: column;
     align-items: flex-start;
+    gap: 6px;
   }
   .dash-claim-score .dash-score-num {
     display: grid;

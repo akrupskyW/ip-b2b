@@ -14,10 +14,11 @@ import {
   mountAgentMenu,
   toggleMenuPivot,
   isMenuPivoted,
+  setMenuPivot,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { initScoutTooltips } from './scout-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
 import { buildAppearanceBody } from './appearance-menu.js';
@@ -300,6 +301,17 @@ function renderMain(agent) {
 /* A blank shell page (menu + top bar + Scout dock, empty main) used for
    product destinations that don't yet have bespoke content — e.g. the
    top-level Dashboard. Driven by `<body data-product-id="…">` (no agent id). */
+
+/** Apply `<body data-default-…>` appearance overrides declared by the host page. */
+function applyBodyAppearanceDefaults() {
+  const pivot = pageAppearanceDefault('defaultPivot');
+  if (pivot !== null) setMenuPivot(pivot);
+  const fullBleed = pageAppearanceDefault('defaultFullBleed');
+  if (fullBleed !== null) applyFullBleed(fullBleed);
+  const header = pageAppearanceDefault('defaultHeader');
+  if (header !== null) applyHeaderFloat(header);
+}
+
 function bootstrapBlankPage(productId) {
   mountTopbar({ variant: 'agent', logoHref: 'ai-chat.html' });
 
@@ -329,6 +341,8 @@ function bootstrapBlankPage(productId) {
       activeProductId: productId || null,
     });
   }
+
+  applyBodyAppearanceDefaults();
 
   setupTrailingRail();
   /* Give the dashboard's main panel the same header cluster (⋯ menu + width
@@ -412,6 +426,28 @@ export function bootstrapAgentPage() {
      Scout stays uniform as you move between pages.
 ==================================================================== */
 
+/* Intent chips surfaced in the Scout dock on the Dashboard page — each one
+   maps to an action available from aha.html, laid out as a plain wrapped grid
+   (no carousel) so every chip is always visible. The action chips navigate to
+   where the task is performed; the "discuss" chips continue the conversation
+   inside the dock. */
+const DASHBOARD_SCOUT_INTENTS = [
+  { intent: 'start_verification',  label: 'Start verification',        icon: 'verified' },
+  { intent: 'claim_products',      label: 'Claim your products',       icon: 'verified_user' },
+  { intent: 'discuss_portfolio',   label: 'Discuss your food portfolio', icon: 'inventory_2' },
+  { intent: 'add_food',            label: 'Add a food',                icon: 'add' },
+  { intent: 'discuss_upf_report',  label: 'Discuss the UPF report',    icon: 'description' },
+  { intent: 'discuss_gras_report', label: 'Discuss the GRAS report',   icon: 'description' },
+];
+
+/* On-topic replies for the "discuss" chips so a click continues the Scout
+   conversation with a relevant answer rather than a generic fallback. */
+const DASHBOARD_SCOUT_REPLIES = {
+  discuss_portfolio: 'Let’s dig into your food portfolio. I can break down how many products are claimed, which are Non‑UPF, and where the gaps are. Want a quick summary, or should we focus on a specific product?',
+  discuss_upf_report: 'Happy to walk you through the Brand UPF report — the Non‑UPF split, processing‑level distribution, and which products qualify for the verification shield. What would you like to start with?',
+  discuss_gras_report: 'Let’s go through the Brand GRAS report — flagged additives, ingredient risk, and what it means for your products. Which part should I unpack first?',
+};
+
 function setupScoutDock() {
   const row = document.getElementById('modules-row');
   if (!row || document.getElementById('scout-dock-panel')) return;
@@ -420,20 +456,39 @@ function setupScoutDock() {
   dock.className = 'scout-dock scout-dock-open';
   dock.setAttribute('aria-label', 'Scout™ chat');
   row.appendChild(dock);
-  mountScoutDock(dock, {
-    sub: 'Your AI assistant across every WISE agent',
-    /* Intent chips that map to a destination navigate there; everything
-       else continues the conversation inside the dock. */
-    onIntent: (intent) => {
-      const go = {
-        customer_profile: 'ai-chat.html',
-        resume_prompt: 'ai-chat.html',
-        registry_home: 'ai-chat.html',
-      }[intent];
-      if (go) { window.location.href = go; return true; }
-      return false;
-    },
-  });
+
+  const isDashboard = document.body.dataset.productId === 'dashboard';
+
+  mountScoutDock(dock, isDashboard
+    ? {
+        sub: 'Your AI assistant across every WISE agent',
+        chipsFlow: 'wrap',
+        intents: DASHBOARD_SCOUT_INTENTS,
+        intentReplies: DASHBOARD_SCOUT_REPLIES,
+        /* Action chips jump to where the task is done; "discuss" chips fall
+           through (return false) to continue the Scout conversation. */
+        onIntent: (intent) => {
+          const go = {
+            start_verification: 'portfolio.html',
+            claim_products: 'portfolio.html',
+            add_food: 'portfolio.html',
+          }[intent];
+          if (go) { window.location.href = go; return true; }
+          return false;
+        },
+      }
+    : {
+        sub: 'Your AI assistant across every WISE agent',
+        onIntent: (intent) => {
+          const go = {
+            customer_profile: 'ai-chat.html',
+            resume_prompt: 'ai-chat.html',
+            registry_home: 'ai-chat.html',
+          }[intent];
+          if (go) { window.location.href = go; return true; }
+          return false;
+        },
+      });
 }
 
 /* ====================================================================

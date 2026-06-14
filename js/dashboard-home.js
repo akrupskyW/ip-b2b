@@ -52,6 +52,24 @@ function countUpMarkup(value, { tag = 'span', className = '', style = '' } = {})
     : el;
 }
 
+/* A faint brand-linen glyph floated to the far right of a score, representing
+   its label. Pressed into the page with the same debossed feel as the hero
+   bug (light bottom-edge highlight), so it reads as stamped rather than drawn. */
+const STAMP_ICONS = {
+  'Nutrient Quality': 'eco',
+  'Ingredient Quality': 'grocery',
+  'Health Outcomes': 'monitor_heart',
+  'Products Discovered': 'search',
+  'Products Claimed': 'inventory_2',
+  'Products Qualify': 'verified',
+};
+function stampIcon(label) {
+  const name = STAMP_ICONS[label];
+  if (!name) return '';
+  return `<span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">${name}</span></span>`;
+}
+
+/* ------------------------------------------------------------------ */
 /* Persisted brand banner (data URL or remote URL). Stored locally so an
    uploaded image survives reloads. Three states are distinguished:
      • a URL / data URL  → a custom banner the user chose
@@ -97,6 +115,22 @@ function setBrandLogo(url) {
     localStorage.setItem(LOGO_KEY, url || LOGO_NONE);
   } catch (_) { /* quota (large data URLs) — keep session-only */ }
 }
+
+/* One-time reset to the bundled Date Better brand art. An earlier session left
+   a custom banner/logo saved in localStorage, which then overrode the default
+   Date Better hero banner + logo and survived ordinary cache clears (localStorage
+   isn't part of the HTTP cache). Wipe both keys once so the hero falls back to the
+   defaults; the version flag means future custom uploads are left untouched. */
+(function resetBrandArtToDateBetterOnce() {
+  const FLAG = 'wise-brand-reset-datebetter-v1';
+  try {
+    if (localStorage.getItem(FLAG)) return;
+    localStorage.removeItem(BANNER_KEY);
+    localStorage.removeItem(LOGO_KEY);
+    localStorage.setItem(FLAG, '1');
+  } catch (_) { /* storage unavailable — defaults already apply */ }
+})();
+
 /* CSS-safe url() value for inline background-image. */
 function cssUrl(url) {
   return `url('${String(url).replace(/'/g, '%27')}')`;
@@ -150,10 +184,11 @@ const DATA = {
     ],
     uniqueIngredients: 61,
     distribution: [
-      { label: 'GRAS', value: 32, color: C.green },
-      { label: 'Historical', value: 18, color: C.orange },
-      { label: 'Unknown', value: 9, color: C.amber },
-      { label: 'Unsafe', value: 2, color: C.red },
+      { label: 'GRAS', value: 15, color: C.green },
+      { label: 'Historical', value: 6, color: C.greenLight },
+      { label: 'Unclear', value: 1, color: C.amber },
+      { label: 'Unknown Flavors', value: 1, color: C.orange },
+      { label: 'Unsafe', value: 1, color: C.red },
     ],
   },
   wisescore: {
@@ -200,6 +235,105 @@ const DATA = {
     },
   ],
 };
+
+/* ------------------------------------------------------------------ */
+/* Alternate brand data — Great Value (mass-market value label)        */
+/* A large private-label portfolio: 547 products, mostly moderately    */
+/* and ultra-processed, with Fair-range WISEscores across all pillars. */
+/* ------------------------------------------------------------------ */
+
+const ALT_BANNER = '../assets/great-value-banner.png';
+const ALT_LOGO   = '../assets/great-value-mark.png';
+
+const DATA_ALT = {
+  brand: { name: 'Great Value', initials: 'GV' },
+  claim: { discovered: 547, claimedPct: 0, claimed: 0, unclaimed: 547 },
+  upf: {
+    pct: 34,
+    nonCount: 186,
+    total: 547,
+    split: [
+      { label: 'Non-UPF', value: 186, color: C.teal },
+      { label: 'UPF', value: 361, color: C.tealSoft },
+    ],
+    distribution: [
+      { label: 'Minimally Processed', value: 62, color: C.green },
+      { label: 'Lightly Processed', value: 124, color: C.greenLight },
+      { label: 'Moderately Processed', value: 198, color: C.amber },
+      { label: 'Ultra-Processed', value: 131, color: C.orange },
+      { label: 'Super Ultra-Processed', value: 32, color: C.red },
+    ],
+  },
+  gras: {
+    pct: 41,
+    grasCount: 224,
+    total: 547,
+    split: [
+      { label: 'GRAS', value: 224, color: C.teal },
+      { label: 'Non-GRAS', value: 323, color: C.tealSoft },
+    ],
+    uniqueIngredients: 412,
+    distribution: [
+      { label: 'GRAS', value: 130, color: C.green },
+      { label: 'Historical', value: 94, color: C.greenLight },
+      { label: 'Unclear', value: 150, color: C.amber },
+      { label: 'Unknown Flavors', value: 130, color: C.orange },
+      { label: 'Unsafe', value: 43, color: C.red },
+    ],
+  },
+  wisescore: {
+    average: 48,
+    pillars: [
+      { name: 'Nutrient Quality', icon: 'eco', score: 46, color: C.amber },
+      { name: 'Ingredient Quality', icon: 'biotech', score: 51, color: C.amber },
+      { name: 'Health Outcomes', icon: 'favorite', score: 44, color: C.amber },
+    ],
+  },
+  pillars: [
+    {
+      name: 'Nutrient Quality', tag: 'NQ', rating: 'Fair', ratingTone: 'fair',
+      score: 46, ring: C.amber,
+      metrics: [
+        { name: 'Fiber Density', value: 42 },
+        { name: 'Sugar Density', value: 38 },
+        { name: 'Protein Density', value: 54 },
+        { name: 'Carbohydrate Quality', value: 44 },
+        { name: 'Fat Quality', value: 47 },
+      ],
+    },
+    {
+      name: 'Ingredient Quality', tag: 'IG', rating: 'Fair', ratingTone: 'fair',
+      score: 51, ring: C.amber,
+      metrics: [
+        { name: 'Ultra-Processed Food', value: 34 },
+        { name: 'Banned / Unsafe Ingredients', value: 58 },
+        { name: 'Clean Label', value: 46 },
+        { name: 'Emulsifiers of Concern', value: 52 },
+        { name: 'Seed Oils of Concern', value: 63 },
+      ],
+    },
+    {
+      name: 'Health Outcomes', tag: 'THRIVE', rating: 'Fair', ratingTone: 'fair',
+      score: 44, ring: C.amber,
+      metrics: [
+        { name: 'Heart Health', value: 41 },
+        { name: 'Diabetes Friendly', value: 38 },
+        { name: 'Gut Health', value: 43 },
+        { name: 'Muscle Health', value: 51 },
+        { name: 'Anti-Inflammatory', value: 47 },
+      ],
+    },
+  ],
+};
+
+/* Module-level brand toggle state. */
+let _altBrandActive = false;
+let _dashboardHost  = null;
+
+/* The currently active dataset. */
+function getActiveData() {
+  return _altBrandActive ? DATA_ALT : DATA;
+}
 
 function metricColor(v) {
   if (v >= 80) return C.green;
@@ -293,7 +427,7 @@ function doubleDonut(outer, inner, num, numClass, label, sub, ringNames) {
   const rInner = 90;
   const sw = 26;
   return `
-    <div class="dash-donut">
+    <div class="dash-donut dash-donut-double">
       <svg class="dash-donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(label)} ${num}">
         <g transform="rotate(-90 ${cx} ${cy})">
           ${donutRing(outer, ringNames[0], cx, cy, rOuter, sw, 11)}
@@ -308,10 +442,47 @@ function doubleDonut(outer, inner, num, numClass, label, sub, ringNames) {
     </div>`;
 }
 
-/* Titled legend group used beside the donut (one per ring). */
-function legendGroup(title, parts) {
+/* Single-segmented donut: just the levels ring, drawn at the outer radius so it
+   keeps the exact same diameter/footprint as the double donut it replaces when
+   the health-status ring is toggled off. */
+function singleDonut(parts, num, numClass, label, sub, ringName) {
+  const size = 300;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 124;
+  const sw = 26;
   return `
-    <div class="dash-donut-legend-group">
+    <div class="dash-donut dash-donut-single" aria-hidden="true">
+      <svg class="dash-donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(label)} ${num}">
+        <g transform="rotate(-90 ${cx} ${cy})">
+          ${donutRing(parts, ringName, cx, cy, r, sw, 11)}
+        </g>
+      </svg>
+      <div class="dash-donut-center">
+        ${countUpMarkup(num, { className: `dash-donut-num ${numClass}`.trim() })}
+        <span class="dash-donut-label">${esc(label)}</span>
+        <span class="dash-donut-sub">${esc(sub)}</span>
+      </div>
+    </div>`;
+}
+
+/* Pink switch (default on = health-status ring shown). Toggling it off removes
+   the health-status component of the card. */
+function healthToggle(key) {
+  return `
+    <button type="button" class="dash-brand-toggle dash-brand-toggle--bare is-on" role="switch" aria-checked="true" data-dash-action="toggle-${key}-health" title="Show or hide the health status ring" aria-label="Show or hide the health status ring">
+      <span class="dash-brand-toggle-track" aria-hidden="true">
+        <span class="dash-brand-toggle-thumb"></span>
+      </span>
+    </button>`;
+}
+
+/* Titled legend group used beside the donut (one per ring). An optional
+   modifier lets a group be targeted for show/hide (e.g. the health-status ring
+   toggle on the GRAS card). */
+function legendGroup(title, parts, mod) {
+  return `
+    <div class="dash-donut-legend-group${mod ? ` dash-donut-legend-group--${mod}` : ''}">
       <div class="dash-donut-legend-title">${esc(title)}</div>
       ${legend(parts)}
     </div>`;
@@ -481,10 +652,10 @@ export function editBrandBanner() {
 /* Markup for the hero's circular logo badge — a button so it's clickable
    (opens the logo editor) and keyboard reachable. Empty state shows an
    "add" affordance instead of an image. */
-function heroLogoInner(url) {
+function heroLogoInner(url, brandName = DATA.brand.name) {
   return `
     ${url
-      ? `<img src="${esc(url)}" alt="${esc(DATA.brand.name)} logo" loading="lazy" />`
+      ? `<img src="${esc(url)}" alt="${esc(brandName)} logo" loading="lazy" />`
       : `<span class="material-icons dash-hero-logo-ph">add_photo_alternate</span>`}
     <span class="dash-hero-logo-edit" aria-hidden="true"><span class="material-icons">edit</span></span>`;
 }
@@ -494,7 +665,7 @@ function applyBrandLogo(url) {
   const el = document.getElementById('dash-hero-logo');
   if (!el) return;
   el.classList.toggle('is-empty', !url);
-  el.innerHTML = heroLogoInner(url);
+  el.innerHTML = heroLogoInner(url, DATA.brand.name);
 }
 
 /* Logo editor — same panel as the banner, scoped to the round brand badge. */
@@ -632,25 +803,41 @@ function openReportModal(card, d) {
   requestAnimationFrame(() => scrim.classList.add('is-open'));
 }
 
-function renderHero(d) {
-  const banner = getBrandBanner();
-  const logo = getBrandLogo();
+function renderHero(d, isAlt = false) {
+  const banner = isAlt ? ALT_BANNER : getBrandBanner();
+  const logo   = isAlt ? ALT_LOGO   : getBrandLogo();
+  const heroDesc = isAlt
+    ? `Comparing food intelligence WISEcode has gathered on Great Value — ${d.claim.discovered} products analyzed for UPF status, ingredient quality, and health outcomes. Scores reflect the full private-label catalog.`
+    : `Here's the food intelligence WISEcode has gathered on your portfolio — UPF status, ingredient and nutrient quality, and health-outcome metrics. Review what we found, then claim your products to manage them.`;
+  const toggleLabel = isAlt ? 'Back to Date Better Snacks' : 'Compare: Great Value';
   return `
-    <section class="dash-hero${banner ? ' has-image' : ''}" id="dash-hero">
+    <section class="dash-hero${banner ? ' has-image' : ''}${isAlt ? ' is-alt-brand' : ''}" id="dash-hero">
       <div class="dash-hero-bg" id="dash-hero-bg"${banner ? ` style="background-image:${cssUrl(banner)}"` : ''}></div>
       <div class="dash-hero-pattern" aria-hidden="true">
-        ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-hero-bug dash-hero-bug--right')}
-        ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-hero-bug dash-hero-bug--left')}
+        ${BUG_WATERMARK_SVG.replace('dash-cta-bug', 'dash-hero-bug')}
       </div>
       <div class="dash-hero-scrim" aria-hidden="true"></div>
-      <button class="dash-hero-logo${logo ? '' : ' is-empty'}" id="dash-hero-logo" type="button" data-dash-action="edit-logo" title="Update brand logo" aria-label="Update brand logo">
-        ${heroLogoInner(logo)}
+      <button class="dash-hero-logo${logo ? '' : ' is-empty'}" id="dash-hero-logo" type="button"
+        data-dash-action="${isAlt ? '' : 'edit-logo'}"
+        title="${isAlt ? d.brand.name + ' logo' : 'Update brand logo'}"
+        aria-label="${isAlt ? d.brand.name + ' logo' : 'Update brand logo'}">
+        ${heroLogoInner(logo, d.brand.name)}
       </button>
       <div class="dash-hero-left">
         <div class="dash-hero-row">
           <h1 class="dash-hero-title">Welcome, ${esc(d.brand.name)}</h1>
+          <button class="dash-brand-toggle${isAlt ? ' is-on' : ''}"
+            type="button" role="switch" aria-checked="${isAlt}"
+            data-dash-action="switch-brand"
+            title="${toggleLabel}"
+            aria-label="${toggleLabel}">
+            <span class="dash-brand-toggle-track" aria-hidden="true">
+              <span class="dash-brand-toggle-thumb"></span>
+            </span>
+            <span class="dash-brand-toggle-text">Bad Scores/High Numbers</span>
+          </button>
         </div>
-        <p class="dash-hero-desc">Here's the food intelligence WISEcode has gathered on your portfolio — UPF status, ingredient and nutrient quality, and health-outcome metrics. Review what we found, then claim your products to manage them.</p>
+        <p class="dash-hero-desc">${heroDesc}</p>
       </div>
     </section>`;
 }
@@ -669,12 +856,20 @@ function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) 
     </article>`;
 }
 
+function scoreBandTone(pct) {
+  if (pct >= 80) return 'excellent';
+  if (pct >= 60) return 'good';
+  if (pct >= 40) return 'fair';
+  if (pct >= 20) return 'poor';
+  return 'critical';
+}
+
 function renderScoreBand(d) {
   const ws = d.wisescore.average;
   const wsRating = ratingLabel(ws);
-  const wsTone = scoreTierTone(ws) === 'excellent' ? 'excellent' : 'good';
-  const upfTone = d.upf.pct >= 85 ? 'excellent' : 'good';
-  const grasTone = d.gras.pct >= 85 ? 'excellent' : 'good';
+  const wsTone = scoreTierTone(ws);
+  const upfTone = scoreBandTone(d.upf.pct);
+  const grasTone = scoreBandTone(d.gras.pct);
   return `
     <section class="dash-score-band">
       ${scoreCard({
@@ -701,6 +896,7 @@ function renderClaim(d) {
         <div class="dash-bignum-row">
           ${countUpMarkup(c.discovered, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
+          ${stampIcon('Products Discovered')}
         </div>
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-icons">verified_user</span>Claim your products</button>
@@ -711,6 +907,7 @@ function renderClaim(d) {
         <div class="dash-progress-pct">
           ${countUpMarkup(`${c.claimedPct}%`, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Claimed</strong><br>${c.claimed} of ${c.discovered} products</span>
+          ${stampIcon('Products Claimed')}
         </div>
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-icons">inventory_2</span>Review your food portfolio</button>
@@ -732,6 +929,7 @@ function renderClaim(d) {
         <div class="dash-bignum-row">
           ${countUpMarkup(u.nonCount, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
+          ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start verification</button>
@@ -767,13 +965,17 @@ function renderGras(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed products</h3>
+        <div class="dash-card-topbar-lead">
+          <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed products</h3>
+          ${healthToggle('gras')}
+        </div>
         ${cardMenu('gras', 'Brand GRAS report')}
       </div>
       <div class="dash-donut-row">
         ${doubleDonut(g.split, g.distribution, `${g.pct}%`, 'is-teal', 'GRAS', `${g.grasCount} of ${g.total} products`, ['Health status', 'GRAS level'])}
+        ${singleDonut(g.distribution, `${g.pct}%`, 'is-teal', 'GRAS', `${g.grasCount} of ${g.total} products`, 'GRAS level')}
         <div class="dash-donut-legends">
-          ${legendGroup('Health status', g.split)}
+          ${legendGroup('Health status', g.split, 'health')}
           ${legendGroup('GRAS levels', g.distribution)}
         </div>
       </div>
@@ -844,7 +1046,7 @@ function statusTerm(score) {
 function renderWisescore(d) {
   const w = d.wisescore;
   const rating = ratingLabel(w.average);
-  const badgeMod = scoreTierTone(w.average) === 'excellent' ? 'excellent' : 'good';
+  const badgeMod = scoreTierTone(w.average);
   const pillars = w.pillars
     .map(
       (p) => `
@@ -896,6 +1098,7 @@ function renderPillarCards(d) {
               ${countUpMarkup(p.score, { className: 'n' })}<span class="d">/100</span>
               <span class="dash-score-cap"><strong>${esc(rating)}</strong><br>${esc(p.name)}</span>
             </div>
+            ${stampIcon(p.name)}
           </div>
           <div class="dash-metric-list">${metrics}</div>
         </article>`;
@@ -939,9 +1142,11 @@ function renderPillarCards(d) {
  */
 export function renderDashboardHome(host) {
   if (!host) return;
-  const d = DATA;
+  _dashboardHost = host;
+  const d = getActiveData();
+  const isAlt = _altBrandActive;
   host.innerHTML = `
-    ${renderHero(d)}
+    ${renderHero(d, isAlt)}
     <div class="dash">
       ${renderClaim(d)}
       <section class="dash-two-up" id="dash-charts">
@@ -951,109 +1156,137 @@ export function renderDashboardHome(host) {
       ${renderPillarCards(d)}
     </div>`;
 
-  /* Lightweight interactions: tab toggle + action routing. Real flows can be
-     wired later; for now actions route to the WISEowl chat / portfolio. */
-  const closeMenus = (except) => {
-    host.querySelectorAll('.dash-kebab-menu').forEach((m) => {
-      if (m === except) return;
-      m.hidden = true;
-      const btn = host.querySelector(`.dash-kebab[data-dash-menu="${m.dataset.dashMenuFor}"]`);
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-    });
-  };
+  /* Wire interactions only once per host element. On re-renders triggered by
+     the brand toggle, the innerHTML is replaced but the same host node is
+     reused — skipping this block prevents duplicate listeners stacking up. */
+  if (!host._dashEventsAttached) {
+    host._dashEventsAttached = true;
 
-  host.addEventListener('click', (e) => {
-    const tab = e.target.closest('[data-dash-tab]');
-    if (tab) {
-      host.querySelectorAll('[data-dash-tab]').forEach((t) => t.classList.toggle('is-active', t === tab));
-      return;
-    }
+    const closeMenus = (except) => {
+      host.querySelectorAll('.dash-kebab-menu').forEach((m) => {
+        if (m === except) return;
+        m.hidden = true;
+        const btn = host.querySelector(`.dash-kebab[data-dash-menu="${m.dataset.dashMenuFor}"]`);
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    };
 
-    /* Three-dot menu toggle. */
-    const kebab = e.target.closest('[data-dash-menu]');
-    if (kebab) {
-      const menu = host.querySelector(`.dash-kebab-menu[data-dash-menu-for="${kebab.dataset.dashMenu}"]`);
-      const willOpen = menu && menu.hidden;
-      closeMenus(willOpen ? menu : null);
-      if (menu) {
-        menu.hidden = !willOpen;
-        kebab.setAttribute('aria-expanded', String(willOpen));
+    host.addEventListener('click', (e) => {
+      /* Always read the live dataset so actions after a brand switch use the
+         correct data without needing to re-attach any listeners. */
+      const d = getActiveData();
+
+      const tab = e.target.closest('[data-dash-tab]');
+      if (tab) {
+        host.querySelectorAll('[data-dash-tab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+        return;
       }
-      return;
-    }
 
-    const action = e.target.closest('[data-dash-action]');
-    if (!action) {
-      closeMenus(null);
-      return;
-    }
-    closeMenus(null);
-
-    const a = action.dataset.dashAction;
-
-    /* Brand logo badge → open the shared image editor scoped to the logo. */
-    if (a === 'edit-logo') {
-      editBrandLogo();
-      return;
-    }
-
-    /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
-       reload, and only disappears for the current view when closed. */
-    if (a === 'dismiss-score-toast') {
-      action.closest('.dash-score-toast')?.remove();
-      return;
-    }
-
-    /* Full report modal — from the card kebab and the in-card report links. */
-    const rep = a.match(/^(upf|gras)-report$/);
-    if (rep) {
-      openReportModal(rep[1], d);
-      return;
-    }
-
-    /* Card menu items: share / export / insert into chat. */
-    const m = a.match(/^(share|export|chat)-(upf|gras)$/);
-    if (m) {
-      const [, op, card] = m;
-      const label = card === 'upf' ? 'Brand UPF report' : 'Brand GRAS report';
-      if (op === 'chat') {
-        try { sessionStorage.setItem('wise-chat-insert', `Let's continue on the ${label} — walk me through the ${card.toUpperCase()} scorecard.`); } catch (_) {}
-        window.location.href = 'ai-chat.html';
-      } else if (op === 'share') {
-        const url = window.location.href;
-        if (navigator.share) {
-          navigator.share({ title: label, url }).catch(() => {});
-        } else if (navigator.clipboard) {
-          navigator.clipboard.writeText(url).catch(() => {});
+      /* Three-dot menu toggle. */
+      const kebab = e.target.closest('[data-dash-menu]');
+      if (kebab) {
+        const menu = host.querySelector(`.dash-kebab-menu[data-dash-menu-for="${kebab.dataset.dashMenu}"]`);
+        const willOpen = menu && menu.hidden;
+        closeMenus(willOpen ? menu : null);
+        if (menu) {
+          menu.hidden = !willOpen;
+          kebab.setAttribute('aria-expanded', String(willOpen));
         }
-      } else if (op === 'export') {
-        window.location.href = card === 'upf' ? 'portfolio.html' : 'portfolio.html';
+        return;
       }
-      return;
-    }
 
-    /* Smooth-scroll down to the WISEscore pillars section. */
-    if (a === 'scroll-pillars') {
-      const target = host.querySelector('.dash-pillars-section');
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
+      const action = e.target.closest('[data-dash-action]');
+      if (!action) {
+        closeMenus(null);
+        return;
+      }
+      closeMenus(null);
 
-    const route = {
-      'review-portfolio': 'portfolio.html',
-      'add-food': 'portfolio.html',
-      'dispute-upc': 'portfolio.html',
-      'claim-upcs': 'portfolio.html',
-      'verify-upf': 'portfolio.html',
-      'ask-ai': 'ai-chat.html',
-    }[a];
-    if (route) window.location.href = route;
-  });
+      const a = action.dataset.dashAction;
 
-  /* Close any open card menu when clicking outside the dashboard. */
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dash-kebab-wrap')) closeMenus(null);
-  });
+      /* Brand logo badge → open the shared image editor scoped to the logo. */
+      if (a === 'edit-logo') {
+        if (!_altBrandActive) editBrandLogo();
+        return;
+      }
+
+      /* Brand comparison toggle — swap the entire dashboard dataset. */
+      if (a === 'switch-brand') {
+        _altBrandActive = !_altBrandActive;
+        renderDashboardHome(host);
+        return;
+      }
+
+      /* Pink health-status toggle on a donut card — swaps the double donut for
+         the single (levels-only) donut and hides the health-status legend. */
+      const ht = a.match(/^toggle-(upf|gras)-health$/);
+      if (ht) {
+        const card = action.closest('.dash-donut-card');
+        const showHealth = action.getAttribute('aria-checked') !== 'true';
+        action.setAttribute('aria-checked', String(showHealth));
+        action.classList.toggle('is-on', showHealth);
+        if (card) card.classList.toggle('is-health-hidden', !showHealth);
+        return;
+      }
+
+      /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
+         reload, and only disappears for the current view when closed. */
+      if (a === 'dismiss-score-toast') {
+        action.closest('.dash-score-toast')?.remove();
+        return;
+      }
+
+      /* Full report modal — from the card kebab and the in-card report links. */
+      const rep = a.match(/^(upf|gras)-report$/);
+      if (rep) {
+        openReportModal(rep[1], d);
+        return;
+      }
+
+      /* Card menu items: share / export / insert into chat. */
+      const m = a.match(/^(share|export|chat)-(upf|gras)$/);
+      if (m) {
+        const [, op, card] = m;
+        const label = card === 'upf' ? 'Brand UPF report' : 'Brand GRAS report';
+        if (op === 'chat') {
+          try { sessionStorage.setItem('wise-chat-insert', `Let's continue on the ${label} — walk me through the ${card.toUpperCase()} scorecard.`); } catch (_) {}
+          window.location.href = 'ai-chat.html';
+        } else if (op === 'share') {
+          const url = window.location.href;
+          if (navigator.share) {
+            navigator.share({ title: label, url }).catch(() => {});
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).catch(() => {});
+          }
+        } else if (op === 'export') {
+          window.location.href = card === 'upf' ? 'portfolio.html' : 'portfolio.html';
+        }
+        return;
+      }
+
+      /* Smooth-scroll down to the WISEscore pillars section. */
+      if (a === 'scroll-pillars') {
+        const target = host.querySelector('.dash-pillars-section');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      const route = {
+        'review-portfolio': 'portfolio.html',
+        'add-food': 'portfolio.html',
+        'dispute-upc': 'portfolio.html',
+        'claim-upcs': 'portfolio.html',
+        'verify-upf': 'portfolio.html',
+        'ask-ai': 'ai-chat.html',
+      }[a];
+      if (route) window.location.href = route;
+    });
+
+    /* Close any open card menu when clicking outside the dashboard. */
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dash-kebab-wrap')) closeMenus(null);
+    });
+  }
 
   setupChartPressGuard(host);
   setupDonutPopover(host);
@@ -1143,6 +1376,8 @@ function markMetricFillReady(fill) {
 /* Swallow pointerdown/click on chart surfaces (capture phase) so a press cannot
    re-trigger entrance animations or the dashboard's content click handler. */
 function setupChartPressGuard(host) {
+  if (host._dashPressGuardAttached) return;
+  host._dashPressGuardAttached = true;
   const swallowPress = (e) => {
     if (!e.target.closest(CHART_PRESS_SEL)) return;
     e.preventDefault();
@@ -1289,6 +1524,9 @@ function setupDonutPopover(host) {
     tip.setAttribute('role', 'tooltip');
     document.body.appendChild(tip);
   }
+
+  if (host._dashDonutPopoverAttached) return;
+  host._dashDonutPopoverAttached = true;
 
   const place = (x, y) => {
     const pad = 14;

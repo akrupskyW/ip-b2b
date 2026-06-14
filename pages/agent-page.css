@@ -715,6 +715,22 @@ html.dark .wise-popover-item.is-active {
 .wise-popover-item.is-active .material-icons { color: var(--primary); }
 html.dark .wise-popover-item.is-active .material-icons { color: var(--primary-bright); }
 .wise-popover-item.danger .material-icons { color: var(--sec-red-text); }
+/* Binary on/off settings: a Material Symbols switch on the left of the label
+   replaces the old full-row highlight. Blue = on, gray = off. The row itself
+   never takes the active background, so state reads only from the switch. */
+.wise-popover-item.wise-toggle-item.is-active { background: none; color: var(--text); }
+.wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
+html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.wise-popover-item .wise-toggle-ico {
+  font-size: 22px;
+  color: var(--text-subtle);
+  transition: color .15s ease;
+}
+.wise-popover-item.is-on .wise-toggle-ico,
+.wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
+.wise-popover-item:hover .wise-toggle-ico { color: var(--text-subtle); }
+html.dark .wise-popover-item.is-on .wise-toggle-ico,
+html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
 .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
 html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
 
@@ -2037,9 +2053,11 @@ html.dark #menu-panel.mp-pivot .menu-brand-bar { border-right-color: rgba(255, 2
 html.dark #menu-panel.mp-pivot .menu-nav > *:not(:first-child) {
   border-left-color: rgba(255, 255, 255, 0.10);
 }
-/* Drop the grid expand/collapse — every group's children sit inline. */
-#menu-panel.mp-pivot .menu-nav-children,
-#menu-panel.mp-pivot .menu-nav-group[data-open="false"] > .menu-nav-children {
+/* Mirror the vertical nav: only OPEN groups reveal their children inline.
+   Collapsed groups stay collapsed so the bar shows the same top-level rows
+   as the left-hand nav — no flattened Portfolio sub-sections / report
+   children leaking in as duplicate icons. */
+#menu-panel.mp-pivot .menu-nav-group[data-open="true"] > .menu-nav-children {
   display: flex;
   grid-template-rows: none;
   overflow: visible;
@@ -2048,8 +2066,10 @@ html.dark #menu-panel.mp-pivot .menu-nav > *:not(:first-child) {
   margin: 0;
   padding: 0;
 }
-#menu-panel.mp-pivot .menu-nav-children-inner,
-#menu-panel.mp-pivot .menu-nav-group[data-open="false"] > .menu-nav-children .menu-nav-children-inner {
+#menu-panel.mp-pivot .menu-nav-group[data-open="false"] > .menu-nav-children {
+  display: none !important;
+}
+#menu-panel.mp-pivot .menu-nav-group[data-open="true"] > .menu-nav-children .menu-nav-children-inner {
   flex-direction: row;
   align-items: center;
   visibility: visible;

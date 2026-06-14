@@ -313,9 +313,21 @@ export function mountScoutChat(rootEl, opts = {}) {
     : null;
   const scorecardsHtml = scorecards ? buildScorecardsHtml(scorecards, id) : '';
 
+  /* 'carousel' (default) = horizontal scroll row with scroll buttons + edge
+     fades; 'wrap' = plain wrapped flex grid, no controls, no overflow. */
+  const chipsFlow = opts.chipsFlow === 'wrap' ? 'wrap' : 'carousel';
+
   const chipsHtml = intents.map((c, i) =>
     `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-icons">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
   ).join('');
+
+  const chipsContainerHtml = chipsFlow === 'wrap'
+    ? `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`
+    : `<div class="ws-chips-wrap">
+        <div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-chip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-icons">chevron_left</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
+      </div>`;
 
   rootEl.classList.add('sc-card');
   rootEl.innerHTML = `
@@ -362,11 +374,7 @@ export function mountScoutChat(rootEl, opts = {}) {
         <h1 class="ws-heading">${esc(heading)}</h1>
         <p class="ws-sub">${esc(sub)}</p>
         ${scorecardsHtml}
-        <div class="ws-chips-wrap">
-          <div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>
-          <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-chip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-icons">chevron_left</span></button>
-          <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
-        </div>
+        ${chipsContainerHtml}
       </div>
       <div class="sc-settings sc-hidden" id="${id}-settings">${buildAgentsPanelHtml(agents, id)}</div>
     </div>
@@ -594,9 +602,9 @@ export function mountScoutChat(rootEl, opts = {}) {
   }
 
   /* Intent-chip carousel — single horizontal row with the same scroll controls
-     + edge fades as the score-card rail, so every module shortcut stays
-     reachable in the narrower dock. */
-  {
+     + edge fades as the score-card rail. Only wired when chipsFlow is 'carousel'
+     (the default); 'wrap' mode uses plain flex-wrap and needs no scroll logic. */
+  if (chipsFlow === 'carousel') {
     const rail = rootEl.querySelector(`#${id}-chips`);
     const wrap = rail?.closest('.ws-chips-wrap');
     if (rail && wrap) {

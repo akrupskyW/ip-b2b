@@ -237,6 +237,17 @@
     .wise-popover-item:hover .material-symbols-outlined,
     .wise-popover-item.is-active .material-icons,
     .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary); }
+    /* Binary on/off settings: switch glyph on the left (blue on, gray off);
+       no full-row highlight. */
+    .wise-popover-item.wise-toggle-item.is-active { background: none; color: var(--text); }
+    .wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
+    html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .wise-popover-item .wise-toggle-ico { font-size: 22px; color: var(--text-subtle); transition: color .15s ease; }
+    .wise-popover-item:hover .wise-toggle-ico { color: var(--text-subtle); }
+    .wise-popover-item.is-on .wise-toggle-ico,
+    .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
+    html.dark .wise-popover-item.is-on .wise-toggle-ico,
+    html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
     .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
     html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
     .fz-row {
