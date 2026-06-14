@@ -39,11 +39,12 @@ html.dark .dash-card {
   background: rgba(255, 255, 255, 0.025);
   border-color: rgba(255, 255, 255, 0.06);
 }
-/* Donut "circular health gauge" cards (UPF / GRAS): much tighter corners.
+/* Donut "circular health gauge" cards (UPF / GRAS). Corner radius matches the
+   Scout module (--r-md) so the cards and the CTA banner read as one family.
    Each card is its own query container so donut + legend respond to the card
    width (e.g. two-up halves) — not only the full dashboard column. */
 .dash-donut-card {
-  border-radius: 6px;
+  border-radius: var(--r-md);
   container-type: inline-size;
   container-name: donut-card;
 }
@@ -1372,7 +1373,7 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   width: 100%;
   min-height: 220px;
   padding: 44px 32px;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--primary) 78%, #1A2339);
   box-shadow: 0 10px 30px rgba(26, 35, 57, 0.28);
 }
