@@ -24,7 +24,7 @@
  *   mountScoutDock(document.getElementById('scout-dock-panel'), { ... });
  */
 
-import { mountScoutChat } from './scout-chat.js';
+import { mountScoutChat, OWL_BUG } from './scout-chat.js';
 
 export const SCOUT_DOCK_KEY = 'wise-scout-dock';
 
@@ -45,9 +45,10 @@ export function readScoutDockState() {
     return {
       wide: widthTierOf(raw.wide),
       side: normalizeSide(raw),
+      collapsed: raw.collapsed === true,
     };
   } catch (_) {
-    return { wide: 0, side: 'right' };
+    return { wide: 0, side: 'right', collapsed: false };
   }
 }
 
@@ -87,6 +88,15 @@ function isScoutSolo(dock) {
    class, its side class/flex-order, and the topbar control buttons. */
 export function applyScoutDockState(dock, state = readScoutDockState()) {
   if (!dock) return;
+
+  /* Collapsed = the whole Scout module folds away to a floating circle (the
+     WISE-owl bug). The dock is pulled out of the modules row entirely so the
+     remaining modules re-flow and resize across their single/double/triple
+     widths; the circle reopens it. Everything below (width/side/solo) only
+     matters in the expanded state, so bail early once the circle is shown. */
+  dock.classList.toggle('scout-dock-collapsed', state.collapsed);
+  syncScoutFab(dock, state.collapsed);
+  if (state.collapsed) return;
 
   /* The dock is always shown now; the three modes only change where it sits.
      'left'/'right' lock it flush to an edge; 'center' floats it mid-row but
@@ -133,6 +143,44 @@ export function setScoutDockPosition(mode) {
 }
 
 /**
+ * Collapse the Scout module to a floating circle, or restore it. Persisted via
+ * `wise-scout-dock` so the choice carries across navigations and tabs, and
+ * applied to every dock on the page so they stay in lock-step.
+ * @param {boolean} collapsed
+ */
+export function setScoutCollapsed(collapsed) {
+  const state = writeScoutDockState({ collapsed: collapsed === true });
+  document.querySelectorAll('.scout-dock').forEach((dock) => applyScoutDockState(dock, state));
+  return state;
+}
+
+/* The floating circle shown when Scout is collapsed — a fixed FAB carrying the
+   WISE-owl bug. One per dock, created lazily and reused. Clicking it reopens
+   the module. We keep it in the DOM (just hidden) when expanded so the
+   show/hide is a class toggle, not a rebuild. */
+function ensureScoutFab(dock) {
+  if (dock.__scoutFab) return dock.__scoutFab;
+  const fab = document.createElement('button');
+  fab.type = 'button';
+  fab.className = 'scout-dock-fab';
+  fab.setAttribute('aria-label', 'Open Scout™');
+  fab.title = 'Open Scout™';
+  fab.innerHTML = `<span class="scout-dock-fab-bug">${OWL_BUG}</span>`;
+  fab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setScoutCollapsed(false);
+  });
+  document.body.appendChild(fab);
+  dock.__scoutFab = fab;
+  return fab;
+}
+
+function syncScoutFab(dock, collapsed) {
+  const fab = collapsed ? ensureScoutFab(dock) : dock.__scoutFab;
+  if (fab) fab.classList.toggle('is-shown', !!collapsed);
+}
+
+/**
  * Mount the shared Scout chat into a dock element and wire up persistence.
  * @param {HTMLElement} dock  an element already marked `.scout-dock`
  * @param {object} [opts]     forwarded to mountScoutChat()
@@ -151,6 +199,10 @@ export function mountScoutDock(dock, opts = {}) {
       applyScoutDockState(dock);
       if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(wide);
     },
+    /* "Close conversation" folds the whole module into the floating circle
+       instead of navigating away. The remaining modules then re-flow to fill
+       the row. A caller can still override with its own onClose. */
+    onClose: typeof opts.onClose === 'function' ? opts.onClose : () => setScoutCollapsed(true),
   });
 
   /* Scout is the fixed anchor that modules flip around — it never flips sides

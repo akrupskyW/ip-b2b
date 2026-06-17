@@ -79,7 +79,7 @@
     }
   </style>
 </head>
-<body data-product-id="dashboard">
+<body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="1" data-default-header="1">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
@@ -101,6 +101,63 @@
     </div>
   </div>
 
+  <script>
+    /* Minimum font-size floor (this page only): no rendered text ever drops
+       below 12px. Content here is injected dynamically by agent-overview.js and
+       the chart modules, so a MutationObserver re-applies the floor as nodes
+       arrive. Decorative em-based glyphs (e.g. the superscript % on a large
+       numeral) compute well above 12px and are left untouched. */
+    (function () {
+      var MIN = 12;
+      function clamp(el) {
+        if (el.nodeType !== 1 || el.dataset.wiseMinFs === '1') return;
+        var fs = parseFloat(window.getComputedStyle(el).fontSize);
+        if (fs && fs < MIN) {
+          el.style.setProperty('font-size', MIN + 'px', 'important');
+        }
+        el.dataset.wiseMinFs = '1';
+      }
+      function scan(root) {
+        if (!root || root.nodeType !== 1) return;
+        clamp(root);
+        var nodes = root.querySelectorAll('*');
+        for (var i = 0; i < nodes.length; i++) clamp(nodes[i]);
+      }
+      new MutationObserver(function (muts) {
+        for (var i = 0; i < muts.length; i++) {
+          var added = muts[i].addedNodes;
+          for (var j = 0; j < added.length; j++) scan(added[j]);
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+      scan(document.body);
+    })();
+  </script>
+  <script>
+    /* Truncate the dashboard (this page only): keep everything up to and
+       including the pillars section — whose CTA reads "Every metric,
+       distribution & flagged product across all 3 pillars" — and drop every
+       container rendered after it (breakdown, radar, ingredients, products,
+       flags, distribution). Content is injected dynamically by
+       dashboard-home.js, so a MutationObserver removes the trailing sections as
+       soon as the pillars section appears. */
+    (function () {
+      function truncate() {
+        var pillars = document.querySelector('.dash-pillars-section');
+        if (!pillars) return false;
+        var sib = pillars.nextElementSibling;
+        while (sib) {
+          var next = sib.nextElementSibling;
+          sib.remove();
+          sib = next;
+        }
+        return true;
+      }
+      truncate();
+      /* Keep observing: the brand-toggle re-renders the whole dashboard, which
+         re-adds the trailing sections, so re-truncate whenever the DOM changes. */
+      new MutationObserver(truncate).observe(document.body, { childList: true, subtree: true });
+    })();
+  </script>
   <script type="module" src="../js/agent-overview.js"></script>
   <script src="/livereload.js?snipver=1"></script>
 </body>

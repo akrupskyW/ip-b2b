@@ -109,6 +109,62 @@
   left: 268px;
   right: 0;
 }
+/* Collapsed = "Close conversation" folded the whole module into the floating
+   circle below. Pull the dock out of the modules row entirely (display:none
+   beats the .scout-dock-open flex rule via the extra class) so the remaining
+   modules re-flow and resize across their single/double/triple widths. */
+.scout-dock.scout-dock-open.scout-dock-collapsed { display: none; }
+
+/* Floating circle — the collapsed Scout module. A fixed FAB carrying the
+   WISE-owl bug; click it to reopen the module. Hidden until `is-shown`. */
+.scout-dock-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  width: 56px;
+  height: 56px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #fff 18%, var(--primary));
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.22);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.18s ease;
+}
+.scout-dock-fab.is-shown {
+  display: inline-flex;
+  animation: scoutFabPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.scout-dock-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), 0 3px 10px rgba(0, 0, 0, 0.26);
+}
+.scout-dock-fab:active { transform: scale(0.96); }
+.scout-dock-fab:focus-visible {
+  outline: 2px solid color-mix(in srgb, #fff 70%, var(--primary));
+  outline-offset: 2px;
+}
+.scout-dock-fab-bug {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 16px;
+}
+.scout-dock-fab-bug svg { width: 28px; height: 16px; color: #fff; }
+@keyframes scoutFabPop {
+  from { opacity: 0; transform: scale(0.4) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (max-width: 767px) {
+  .scout-dock-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; }
+}
+
 .scout-dock .sc-card {
   transform-origin: right center;
   animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;

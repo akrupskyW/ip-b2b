@@ -434,6 +434,57 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
 }
 .dash-score-note strong { color: var(--text); }
 
+/* ---- Top 5 best performing products — same column treatment as the claim row
+   above (big numeral + caption + stamp icon + button), laid out as one row that
+   wraps responsively (5 → 3+2 → 2 → stacked) as the panel narrows. ---- */
+.dash-claim.dash-top5-claim {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px 26px;
+  align-items: stretch;
+}
+/* Each performer fills the row when all five fit, but is capped so any wrapped
+   (partial) row stays horizontally centered rather than pinned left. */
+.dash-claim.dash-top5-claim > .dash-claim-col {
+  flex: 1 1 168px;
+  max-width: 260px;
+}
+/* Vertical divider between columns (same as the claim row above). */
+.dash-claim.dash-top5-claim > .dash-claim-divider {
+  flex: 0 0 1px;
+  width: 1px;
+  align-self: stretch;
+}
+.dash-top5-section { display: flex; flex-direction: column; }
+.dash-top5-title { margin: 0 0 16px; }
+.dash-top5-claim .dash-bignum { font-size: 3.4rem; }
+/* Reserve two lines for the product name (clear of the stamp icon) so every
+   column is the same height and the buttons line up across all five. */
+.dash-top5-claim .dash-bignum-cap { padding-right: 54px; min-height: 2.7em; }
+/* The product names are two full-size bold lines (vs. the claim row's one bold
+   + one small line), so the shared `margin-top: 20px` reads as too much air
+   above the button. Tighten it so the name→button gap visually matches the
+   claim row above. */
+.dash-claim.dash-top5-claim > .dash-claim-col .dash-btn-row { margin-top: 16px; }
+
+/* Rank digit sits straight inside the stamped circle (no nested icon), keeping
+   the same debossed tone + a light bottom highlight so it reads as engraved. */
+.dash-stamp-num {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html.dark .dash-stamp-num { text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
+/* Small raised "#" before the rank digit. */
+.dash-stamp-hash {
+  font-size: 0.58em;
+  font-weight: 700;
+  vertical-align: 0.5em;
+  margin-right: 0.04em;
+}
+
 /* ---- Claim status card ---- */
 .dash-claim {
   display: grid;
@@ -819,6 +870,7 @@ html.dark .dash-status-tip {
   margin-bottom: 7px;
 }
 .dash-status-tip-row {
+  display: block;
   padding: 5px 6px;
   border-radius: 8px;
 }
@@ -848,6 +900,7 @@ html.dark .dash-status-tip {
   color: var(--text-subtle);
 }
 .dash-status-tip-desc {
+  display: block;
   margin: 2px 0 0 17px;
   font-size: 0.72rem;
   line-height: 1.35;
@@ -858,6 +911,21 @@ html.dark .dash-status-tip {
 .dash-status-tip-dot--okay { background: var(--ter-amber, #FFC434); }
 .dash-status-tip-dot--fair { background: #D27326; }
 .dash-status-tip-dot--poor { background: var(--sec-red, #DC3038); }
+
+/* The Portfolio Analysis section is the last block on the page, so its status
+   popover would open downward off the bottom of the scroll area and get
+   clipped. Flip it to open upward (above the word) so the full scale shows. */
+.dash-seg-note .dash-status-tip {
+  top: auto;
+  bottom: calc(100% + 9px);
+  transform: translateY(-4px);
+}
+.dash-seg-note .dash-status-term:hover .dash-status-tip,
+.dash-seg-note .dash-status-term:focus .dash-status-tip,
+.dash-seg-note .dash-status-term:focus-visible .dash-status-tip,
+.dash-seg-note .dash-status-term:focus-within .dash-status-tip {
+  transform: translateY(0);
+}
 
 .dash-headline {
   display: flex;
@@ -1472,6 +1540,112 @@ html.dark .dash-badge--poor { color: #f07070; }
   padding-right: 36px;
 }
 .dash-pillar-card { min-width: 0; }
+
+/* ---- Pillar breakdown — left-aligned header + per-pillar health bars ---- */
+.dash-pillars-breakdown {
+  width: 100%;
+  padding-top: 40px;
+}
+.dash-breakdown-card { padding: 28px 32px; }
+/* Full-width headline sitting above the three columns. */
+.dash-breakdown-title {
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 24px;
+  justify-content: flex-start;
+}
+.dash-breakdown-title .dash-section-title { max-width: 100%; }
+/* Three columns: description · circular WISEscore gauge · health bars. */
+.dash-breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1.2fr;
+  gap: 44px;
+  align-items: center;
+}
+.dash-breakdown-grid > * { min-width: 0; }
+.dash-breakdown-intro .dash-pillars-intro { margin: 0; }
+.dash-breakdown-donut-col {
+  display: flex;
+  justify-content: center;
+}
+
+/* WISEscore donut + pink overall/per-pillar toggle (middle column). */
+.dash-breakdown-donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 0;
+}
+.dash-breakdown-donut-stage {
+  position: relative;
+  width: 252px;
+  height: 252px;
+}
+.dash-breakdown-donut-stage .dash-bd-donut {
+  position: absolute;
+  inset: 0;
+}
+/* Faint gauge tracks are decorative — no hover popover or dimming. */
+.dash-bd-donut .dash-donut-arc--track { pointer-events: none; }
+.dash-bd-donut--pillars { display: none; }
+.dash-breakdown-donut.is-pillars-view .dash-bd-donut--overall { display: none; }
+.dash-breakdown-donut.is-pillars-view .dash-bd-donut--pillars { display: block; }
+/* Single ring sits at the outer radius, so grow the center disc out flush to
+   the ring's inner edge — no surface gap between the disc and the donut. */
+.dash-bd-donut .dash-donut-center::before { width: 190px; height: 190px; }
+/* Toggle pinned to the top-right, sitting right above the gauge. */
+.dash-breakdown-donut-toggle {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.dash-bd-toggle-label { color: var(--text-muted); transition: color 0.15s ease; }
+.dash-breakdown-donut:not(.is-pillars-view) .dash-bd-toggle-label:first-child,
+.dash-breakdown-donut.is-pillars-view .dash-bd-toggle-label:last-child {
+  color: var(--text);
+}
+.dash-breakdown-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+/* Three columns need room — stack them once the card gets tight. */
+@media (max-width: 1024px) {
+  .dash-breakdown-grid { grid-template-columns: 1fr; gap: 30px; }
+}
+.dash-breakdown-bar { min-width: 0; }
+.dash-breakdown-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.dash-breakdown-bar-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.dash-breakdown-bar-rating {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.dash-ws-health-bar--inline {
+  max-width: 100%;
+  margin: 0;
+}
+
 .dash-pillar-card-head { margin-bottom: 18px; }
 .dash-pillar-card-head .dash-score-num { gap: 4px; }
 .dash-pillar-card-head .dash-score-num .n { font-size: 5rem; }
@@ -1522,6 +1696,512 @@ html.dark .dash-badge--poor { color: #f07070; }
 .dash-ws-health-bar:active { transform: scale(0.99); }
 .dash-donut { transition: transform 0.16s ease; }
 .dash-donut:active { transform: scale(0.985); }
+
+/* ---- Pillar metrics radar (spider) chart ----
+   Lives in the left column of a .dash-two-up row at the bottom of the page,
+   matching the UPF / GRAS donut cards. The web uses the brand palette: a
+   primary-blue data polygon with per-pillar colored vertex dots (green /
+   cyan / amber), the same families used everywhere else on the dashboard. */
+.dash-radar-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+.dash-radar {
+  width: 100%;
+  max-width: 420px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.16s ease;
+}
+.dash-radar:active { transform: scale(0.985); }
+.dash-radar-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.dash-radar-grid {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.dash-radar-spoke {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+html.dark .dash-radar-grid,
+html.dark .dash-radar-spoke { stroke: rgba(255, 255, 255, 0.1); }
+.dash-radar-ringval {
+  fill: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+}
+.dash-radar-axis-label {
+  fill: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.dash-radar-poly {
+  fill: color-mix(in srgb, var(--primary) 16%, transparent);
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+html.dark .dash-radar-poly {
+  fill: color-mix(in srgb, var(--primary-bright) 18%, transparent);
+  stroke: var(--primary-bright);
+}
+.dash-radar-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+html.dark .dash-radar-dot { stroke: #14242f; }
+.dash-radar-dot.is-hover {
+  filter: brightness(1.08) drop-shadow(0 0 5px currentColor);
+}
+/* Legend below the radar: one responsive, centred row (wraps only when the
+   card gets too narrow) reusing the shared donut-legend item styling. */
+.dash-radar-legend {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.dash-radar-legend .dash-legend {
+  justify-content: center;
+  align-items: center;
+  gap: 12px 30px;
+  margin-top: 0;
+  font-size: 0.8125rem;
+}
+.dash-radar-legend .dash-legend-item { gap: 8px; }
+
+/* ---- "Where to focus" opportunity scatter ----
+   Left column of a two-up row: a metric-score vs. share-below-Good scatter
+   paired with a ranked "highest-leverage fixes" list. Lines, ticks, and labels
+   reuse the same hairline/token language as the radar; dots are colored by the
+   status scale and pop in (staggered) on scroll. Point names surface on hover
+   via the shared tooltip rather than as always-on labels. */
+.dash-scatter-row { margin-top: 26px; align-items: stretch; }
+.dash-scatter-section { display: flex; flex-direction: column; }
+.dash-scatter-side { display: flex; flex-direction: column; }
+.dash-scatter-intro {
+  margin: 6px 0 0;
+  max-width: 52ch;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.dash-scatter-plot {
+  margin-top: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+.dash-scatter-fix-score {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dash-scatter-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.dash-scatter-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+html.dark .dash-scatter-grid { stroke: rgba(255, 255, 255, 0.07); }
+.dash-scatter-divider {
+  stroke: var(--border-strong, var(--border));
+  stroke-width: 1.25;
+  stroke-dasharray: 4 4;
+}
+html.dark .dash-scatter-divider { stroke: rgba(255, 255, 255, 0.18); }
+.dash-scatter-zone {
+  fill: color-mix(in srgb, var(--sec-red) 9%, transparent);
+}
+html.dark .dash-scatter-zone {
+  fill: color-mix(in srgb, var(--sec-red) 14%, transparent);
+}
+.dash-scatter-tick {
+  fill: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+}
+.dash-scatter-axis-title {
+  fill: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dash-scatter-zone-label {
+  fill: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.dash-scatter-zone-label--fix { fill: var(--sec-red); opacity: 0.85; }
+.dash-scatter-pt {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.dash-scatter-dot {
+  /* Border is a darker shade of the dot's own status color (passed via the
+     --dot-color custom property on each circle) so it reads as a sharper,
+     same-hue rim rather than a soft white halo. */
+  stroke: color-mix(in srgb, var(--dot-color, var(--surface)) 68%, #000);
+  stroke-width: 1.25;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.dash-scatter-dot.is-hover {
+  filter: brightness(1.08) drop-shadow(0 0 6px currentColor);
+}
+
+/* ---- GRAS status horizontal bar chart ----
+   Right-column companion to the radar in the bottom .dash-two-up row. One
+   ranked bar per GRAS level, reusing the "fat health bar" from the three
+   pillars (.dash-ws-health-bar) — a thick pill track with the count sitting
+   inside the colored fill. Bars are colored to match the GRAS legend and reuse
+   .dash-metric-fill so the shared chart entrance / replay animations grow them
+   from the left. */
+.dash-gras-bar-card {
+  display: flex;
+  flex-direction: column;
+}
+.dash-gras-bar-body {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+.dash-gras-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dash-gras-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.dash-gras-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dash-gras-bar-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 0;
+}
+.dash-gras-bar-name .dash-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-gras-bar-share {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+/* Keep the count legible even on the shortest bars: never let the fill shrink
+   below enough room for the number + its padding. */
+.dash-gras-bar-fill {
+  min-width: 2.6rem;
+  transition: width 1.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+}
+.dash-gras-bar-fill.is-hover {
+  filter: brightness(1.06) saturate(1.08);
+}
+.dash-gras-bar-val { color: var(--text); }
+
+/* --- Top highest-processing ingredients table -----------------------------
+   A full-width card whose rows reuse the chunky WISEscore health-bar track +
+   fill (.dash-ws-health-*). Each row is a CSS grid so the rank, ingredient,
+   fat bar, share % and level pill line up into clean columns; the header row
+   shares the same template so labels sit over their columns. */
+.dash-ingredients-section,
+.dash-products-section {
+  width: 100%;
+  padding-top: 40px;
+}
+/* Two flag cards side by side — reuses the .dash-two-up grid. */
+.dash-flags-section { padding-top: 40px; align-items: stretch; }
+.dash-flag-card { display: flex; flex-direction: column; }
+.dash-ingredients-card { padding: 28px 32px; }
+.dash-ing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dash-ing-eyebrow .material-icons { font-size: 13px; }
+.dash-ing-eyebrow--unsafe {
+  background: color-mix(in srgb, var(--sec-red) 16%, transparent);
+  color: var(--sec-red);
+}
+.dash-ing-eyebrow--unknown {
+  background: color-mix(in srgb, #D27326 16%, transparent);
+  color: #b85e18;
+}
+html.dark .dash-ing-eyebrow--unknown { color: #e08840; }
+/* Muted footer note (e.g. "No further Unsafe ingredients detected"). */
+.dash-ing-empty {
+  margin: 18px 0 4px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-subtle);
+}
+
+/* --- Segmented score-distribution bar (no card; plain background) ---------
+   Big stat on the left, one stacked bar sized by tier share, and a legend
+   whose items sit directly under their segment (matched flex ratios) joined
+   by a short vertical connector. */
+.dash-seg-section { width: 100%; padding: 72px 56px 80px; }
+/* Heading row reuses the shared section-head / section-title / section-note
+   styles used across the dashboard; the note sits right-aligned. */
+.dash-seg-head { margin-bottom: 30px; }
+.dash-seg-row {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+/* Left stat block — same big numeral + rating badge + note as the WISEscore
+   stat (.dash-wisescore-num / .dash-badge / .dash-wisescore-note). */
+.dash-seg-score { flex-shrink: 0; max-width: 240px; }
+.dash-seg-num .d { font-weight: 700; color: var(--text-subtle); }
+.dash-seg-note { margin-top: 12px; font-size: 1.25rem; line-height: 1.4; max-width: 280px; }
+/* Keep the trailing period snug to the tooltipped status word (no underline). */
+.dash-seg-note-period { margin-left: -0.08em; }
+.dash-seg-bars { flex: 1; min-width: 0; }
+/* The bar itself — segments butt together; only the bar ends are rounded.
+   clip-path drives the left-to-right reveal (kept off the legend below). */
+.dash-seg-track {
+  display: flex;
+  height: var(--dash-donut-ring-h);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-charts-pending .dash-seg-track:not(.is-seg-ready) { clip-path: inset(0 100% 0 0); }
+@media (prefers-reduced-motion: reduce) {
+  .dash-seg-track { transition: none; clip-path: inset(0 0 0 0); }
+}
+.dash-seg-part {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-basis: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.dash-seg-part-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  padding: 0 8px;
+}
+/* Legend row mirrors the bar's flex ratios so each cell lines up with its
+   segment; the connector sits at the cell's center (= segment center). */
+.dash-seg-legend { display: flex; margin-top: 0; }
+.dash-seg-leg-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-basis: 0;
+  min-width: 0;
+  padding: 0 4px;
+}
+.dash-seg-leg-line {
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  opacity: 0.55;
+}
+.dash-seg-leg-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.dash-seg-leg-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-seg-leg-name { font-weight: 600; color: var(--text); }
+.dash-seg-leg-count {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Description rides on the shared .dash-pillars-intro paragraph style; only the
+   top spacing + inline emphasis are tuned here. */
+.dash-seg-measures { margin: 30px 0 0; max-width: 980px; }
+.dash-seg-measures strong { color: var(--text); font-weight: 700; }
+.dash-seg-measures em { font-style: italic; color: var(--text-subtle); }
+
+/* Stack the stat above the bar on narrow widths. */
+@container dash (max-width: 720px) {
+  .dash-seg-row { flex-direction: column; align-items: flex-start; gap: 18px; }
+  .dash-seg-bars { width: 100%; }
+}
+.dash-ing-note {
+  margin: 10px 0 24px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+/* Vertical stack of fat bars — copies the pillar-breakdown layout: a name row
+   above each chunky WISEscore health bar, with the share % living inside the
+   colored fill (.dash-ws-health-num). */
+.dash-ing-table {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.dash-ing-row { min-width: 0; }
+/* Linked product rows (anti-inflammatory table): bar block on the left, a
+   centered "View report" action on the far right. */
+.dash-ing-row--linked {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+}
+.dash-ing-row--linked .dash-ing-bar-main { flex: 1 1 auto; min-width: 0; }
+/* Far-right action — mirrors the bar block on the left: the "View report" label
+   occupies the bar-head band (centered in line with the level chip) and the
+   chevron circle occupies the bar band (same height + circle aspect as the fat
+   health bar, in line with it). The 9px spacer matches .dash-ing-bar-head's
+   margin-bottom so the two bands register exactly. */
+.dash-ing-report {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-rows: 1fr 9px var(--dash-donut-ring-h);
+  align-items: center;
+  justify-items: center;
+  width: 64px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+.dash-ing-report-label { grid-row: 1; }
+.dash-ing-report-icon {
+  grid-row: 3;
+  display: grid;
+  place-items: center;
+  width: var(--dash-donut-ring-h);
+  height: var(--dash-donut-ring-h);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--primary);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+html.dark .dash-ing-report-icon { color: var(--primary-bright); }
+.dash-ing-report-icon .material-icons { font-size: 16px; }
+.dash-ing-report-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+.dash-ing-report:hover { color: var(--text); }
+.dash-ing-report:hover .dash-ing-report-icon {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+html.dark .dash-ing-report:hover .dash-ing-report-icon { color: #fff; }
+/* Name (left) + level pill (right), sitting just above the bar — mirrors
+   .dash-breakdown-bar-head. */
+.dash-ing-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.dash-ing-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 0;
+}
+.dash-ing-rank {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+/* Keep the bar at the full fat size (matching the big health bars above). The
+   fill carries a min-width so a low-share % stays readable inside its nub. */
+.dash-ing-bar { max-width: 100%; margin: 0; }
+.dash-ing-bar .dash-ws-health-fill { min-width: 2.9rem; }
+/* Level pill — soft tinted chip echoing the badge scale (PL4 = orange / PL3 =
+   amber) so it groups with the bar colors. */
+.dash-ing-level {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 3px 9px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.dash-ing-level--pl4 {
+  background: color-mix(in srgb, #D27326 18%, transparent);
+  color: #9e4a10;
+}
+html.dark .dash-ing-level--pl4 { color: #e08840; }
+.dash-ing-level--pl3 {
+  background: color-mix(in srgb, var(--ter-amber) 20%, transparent);
+  color: #a07a10;
+}
+html.dark .dash-ing-level--pl3 { color: #d4a830; }
+
+@media (max-width: 640px) {
+  .dash-ingredients-card { padding: 22px 18px; }
+}
 
 /* --- Floated label stamp --------------------------------------------------
    A small, faint brand-linen disc floated to the far right of a score, with an
@@ -1711,6 +2391,7 @@ html.dark .dash-badge--poor { color: #f07070; }
   .dash-pillars .dash-claim-divider { display: none; }
   .dash-score-band { grid-template-columns: 1fr; }
   .dash-pillars-heading { padding-left: 48px; padding-right: 48px; }
+  .dash-breakdown-grid { grid-template-columns: 1fr; gap: 32px; }
 }
 
 /* The UPF / GRAS cards each pack a fixed donut + legend stack (~470px), so the
@@ -1727,6 +2408,7 @@ html.dark .dash-badge--poor { color: #f07070; }
   .dash-wisescore { gap: 16px; }
   .dash-claim { padding-left: 20px; padding-right: 20px; }
   .dash-pillars { padding-left: 20px; padding-right: 20px; }
+  .dash-breakdown-card { padding: 22px 20px; }
   .dash-pillars-heading { padding-left: 32px; padding-right: 32px; margin-bottom: 24px; }
   .dash-pillars-heading .dash-pillars-intro { max-width: 100%; }
   .dash-bignum,

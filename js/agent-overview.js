@@ -449,6 +449,9 @@ const DASHBOARD_SCOUT_REPLIES = {
 };
 
 function setupScoutDock() {
+  /* Pages can opt out of the persistent Scout dock with
+     `<body data-hide-scout>` (e.g. analytics-types.html). */
+  if (document.body.dataset.hideScout) return;
   const row = document.getElementById('modules-row');
   if (!row || document.getElementById('scout-dock-panel')) return;
   const dock = document.createElement('aside');

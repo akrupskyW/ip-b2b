@@ -232,6 +232,80 @@ const DATA = {
       ],
     },
   ],
+  /* Top processing-driving ingredients across the portfolio. `pct` = share of
+     products that contain the ingredient; `level` = its processing tier
+     (PL4 highest → PL3). Ranked PL4 first, then PL3, each by descending share. */
+  topIngredients: [
+    { name: 'Citric Acid',        pct: 83, level: 'PL4' },
+    { name: 'Natural Flavors',    pct: 42, level: 'PL4' },
+    { name: 'Sunflower Lecithin', pct: 33, level: 'PL4' },
+    { name: 'Tapioca Syrup',      pct: 25, level: 'PL4' },
+    { name: 'Dark Chocolate',     pct: 75, level: 'PL3' },
+    { name: 'Cane Sugar',         pct: 67, level: 'PL3' },
+    { name: 'Cocoa Powder',       pct: 54, level: 'PL3' },
+    { name: 'Pea Protein',        pct: 38, level: 'PL3' },
+    { name: 'Rice Flour',         pct: 29, level: 'PL3' },
+    { name: 'Coconut Oil',        pct: 21, level: 'PL3' },
+  ],
+  /* Per-product anti-inflammatory score (0–100), sorted highest to lowest.
+     `score` drives both the fat bar fill and its rating tier (Excellent / Good
+     / …) via the shared WISEscore status scale. */
+  topProducts: [
+    { name: 'Ginger Turmeric Bar',        score: 91 },
+    { name: 'Almond Coconut Crisp',       score: 89 },
+    { name: 'Pistachio Rose Bar',         score: 87 },
+    { name: 'Matcha Cashew Bites',        score: 85 },
+    { name: 'Walnut Brownie Bar',         score: 84 },
+    { name: 'Cherry Almond Crisp',        score: 82 },
+    { name: 'Macadamia Coconut Crisp',    score: 81 },
+    { name: 'Cashew Lime Crisp',          score: 80 },
+    { name: 'Pecan Maple Bar',            score: 78 },
+    { name: 'Banana Walnut Bites',        score: 76 },
+    { name: 'Blueberry Lemon Crisp',      score: 74 },
+    { name: 'Lemon Tahini Crisp',         score: 73 },
+    { name: 'Hazelnut Cacao Bites',       score: 71 },
+    { name: 'Peanut Butter Date Bites',   score: 70 },
+    { name: 'Dark Chocolate Date Bar',    score: 69 },
+    { name: 'Espresso Date Energy Ball',  score: 67 },
+    { name: 'Cinnamon Apple Crisp',       score: 65 },
+    { name: 'Vanilla Bean Date Bar',      score: 63 },
+    { name: 'Pumpkin Spice Date Bar',     score: 61 },
+    { name: 'Tropical Mango Date Bar',    score: 57 },
+    { name: 'Strawberry Vanilla Bar',     score: 54 },
+    { name: 'Chocolate Peanut Crisp',     score: 47 },
+    { name: 'Protein Boost Bar — Choc.',  score: 34 },
+    { name: 'Protein Boost Bar — Vanilla', score: 28 },
+  ],
+  /* GRAS flag lists — top ingredients (by share of products) in the two
+     riskiest GRAS buckets. Unsafe = classified unsafe; Unknown = GRAS status
+     not established. Each is a "top 5" slice. */
+  unsafeIngredients: [
+    { name: 'Titanium Dioxide', pct: 8 },
+    { name: 'Red 40',           pct: 4 },
+  ],
+  unknownIngredients: [
+    { name: 'Natural Flavors',   pct: 42 },
+    { name: 'Lime Oil',          pct: 33 },
+    { name: 'Citrus Extract',    pct: 21 },
+    { name: 'Vanilla Extract',   pct: 17 },
+    { name: 'Sunflower Extract', pct: 12 },
+  ],
+  /* Distribution of the Anti-Inflammatory score across the portfolio, bucketed
+     by rating tier. Drives the segmented bar; the left-hand stat reads off the
+     Excellent tier. */
+  scoreDistribution: {
+    metric: 'Anti-Inflammatory',
+    total: 24,
+    tiers: [
+      { label: 'Excellent', count: 8,  pct: 33, color: 'var(--sec-green)' },
+      { label: 'Good',      count: 11, pct: 46, color: '#17B0A0' },
+      { label: 'OK',        count: 3,  pct: 13, color: '#2E74D6' },
+      { label: 'Fair',      count: 2,  pct: 8,  color: '#E07D1F' },
+      { label: 'Poor',      count: 0,  pct: 0,  color: '#9AA3AE' },
+    ],
+    measures: 'Scores how well a product’s ingredients support the body’s ability to reduce chronic inflammation — a driver of heart disease, metabolic disorders, and immune dysfunction. High scores reflect omega-3 presence, polyphenol density, low seed oil exposure, and absence of pro-inflammatory additives.',
+    pillar: 'Health Outcomes Pillar',
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -322,6 +396,57 @@ const DATA_ALT = {
       ],
     },
   ],
+  topIngredients: [
+    { name: 'Maltodextrin',          pct: 71, level: 'PL4' },
+    { name: 'Artificial Flavors',    pct: 64, level: 'PL4' },
+    { name: 'High-Fructose Corn Syrup', pct: 58, level: 'PL4' },
+    { name: 'Soy Lecithin',          pct: 49, level: 'PL4' },
+    { name: 'Mono- & Diglycerides',  pct: 41, level: 'PL4' },
+    { name: 'Enriched Wheat Flour',  pct: 78, level: 'PL3' },
+    { name: 'Cane Sugar',            pct: 69, level: 'PL3' },
+    { name: 'Palm Oil',             pct: 52, level: 'PL3' },
+    { name: 'Modified Corn Starch',  pct: 44, level: 'PL3' },
+    { name: 'Dextrose',              pct: 36, level: 'PL3' },
+  ],
+  topProducts: [
+    { name: 'Trail Mix Clusters',    score: 58 },
+    { name: 'Granola Crunch Bar',    score: 54 },
+    { name: 'Peanut Butter Bar',     score: 51 },
+    { name: 'Fruit & Nut Bar',       score: 49 },
+    { name: 'Chocolate Chip Cookie', score: 45 },
+    { name: 'Cheese Crackers',       score: 42 },
+    { name: 'Sandwich Cremes',       score: 38 },
+    { name: 'Toaster Pastry',        score: 34 },
+    { name: 'Snack Cake',            score: 29 },
+    { name: 'Fruit Snacks',          score: 24 },
+  ],
+  unsafeIngredients: [
+    { name: 'Titanium Dioxide',   pct: 16 },
+    { name: 'Red 40',             pct: 12 },
+    { name: 'Potassium Bromate',  pct: 8 },
+    { name: 'BHA',                pct: 6 },
+    { name: 'Azodicarbonamide',   pct: 4 },
+  ],
+  unknownIngredients: [
+    { name: 'Artificial Flavors', pct: 64 },
+    { name: 'Caramel Color',      pct: 41 },
+    { name: 'Natural Flavors',    pct: 38 },
+    { name: 'Yeast Extract',      pct: 22 },
+    { name: 'Spice Extract',      pct: 15 },
+  ],
+  scoreDistribution: {
+    metric: 'Anti-Inflammatory',
+    total: 547,
+    tiers: [
+      { label: 'Excellent', count: 27,  pct: 5,  color: 'var(--sec-green)' },
+      { label: 'Good',      count: 88,  pct: 16, color: '#17B0A0' },
+      { label: 'OK',        count: 197, pct: 36, color: '#2E74D6' },
+      { label: 'Fair',      count: 164, pct: 30, color: '#E07D1F' },
+      { label: 'Poor',      count: 71,  pct: 13, color: '#9AA3AE' },
+    ],
+    measures: 'Scores how well a product’s ingredients support the body’s ability to reduce chronic inflammation — a driver of heart disease, metabolic disorders, and immune dysfunction. High scores reflect omega-3 presence, polyphenol density, low seed oil exposure, and absence of pro-inflammatory additives.',
+    pillar: 'Health Outcomes Pillar',
+  },
 };
 
 /* Module-level brand toggle state. */
@@ -870,6 +995,39 @@ function renderScoreBand(d) {
     </section>`;
 }
 
+/* Top 5 best performing products — laid out identically to the claim row above
+   it (big numeral + caption, divided into columns). Shown as the second row on
+   the analytics-types page; content comes straight from the live `topProducts`
+   dataset (the highest-scoring products). */
+function renderTopPerformers(d) {
+  const items = (d.topProducts || []).slice(0, 5);
+  if (!items.length) return '';
+  const rankLabels = ['1st place', '2nd place', '3rd place', '4th place', '5th place'];
+  const cols = items
+    .map((it, i) => {
+      const score = Math.min(100, Math.max(0, Math.round(it.score)));
+      return `
+        <div class="dash-claim-col">
+          <div class="dash-bignum-row">
+            ${countUpMarkup(score, { className: 'dash-bignum' })}
+            <span class="dash-bignum-cap"><strong>${esc(it.name)}</strong></span>
+            <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`}"><span class="dash-stamp-hash">#</span>${i + 1}</span>
+          </div>
+          <div class="dash-btn-row">
+            <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-icons">description</span>View report</button>
+          </div>
+        </div>`;
+    })
+    .join('<div class="dash-claim-divider"></div>');
+  return `
+    <section class="dash-top5-section">
+      <h2 class="dash-section-title dash-top5-title">Top Five Products</h2>
+      <div class="dash-claim dash-top5-claim">
+        ${cols}
+      </div>
+    </section>`;
+}
+
 function renderClaim(d) {
   const c = d.claim;
   const u = d.upf;
@@ -1021,19 +1179,23 @@ function ratingLabel(score) {
 }
 
 /* Underlined status word that reveals a popover with all five WISEscore status
-   definitions on hover/focus. The tier matching the current score is marked. */
-function statusTerm(score) {
-  const current = ratingLabel(score);
+   definitions on hover/focus. The tier whose label matches `current` is marked. */
+function statusTermLabel(current) {
   const rows = STATUS_TIERS.map((t) => `
-        <div class="dash-status-tip-row${t.label === current ? ' is-current' : ''}">
-          <div class="dash-status-tip-line">
+        <span class="dash-status-tip-row${t.label === current ? ' is-current' : ''}">
+          <span class="dash-status-tip-line">
             <span class="dash-status-tip-dot dash-status-tip-dot--${t.tone}"></span>
             <span class="dash-status-tip-label">${esc(t.label)}</span>
             <span class="dash-status-tip-range">${esc(t.range)}</span>
-          </div>
-          <p class="dash-status-tip-desc">${esc(t.desc)}</p>
-        </div>`).join('');
+          </span>
+          <span class="dash-status-tip-desc">${esc(t.desc)}</span>
+        </span>`).join('');
   return `<span class="dash-status-term" tabindex="0" role="button" aria-label="WISEscore status definitions">${esc(current)}<span class="dash-status-tip" role="tooltip"><span class="dash-status-tip-head">WISEscore status scale</span>${rows}</span></span>`;
+}
+
+/* Same popover, keyed off a numeric score (resolves the score's rating tier). */
+function statusTerm(score) {
+  return statusTermLabel(ratingLabel(score));
 }
 
 function renderWisescore(d) {
@@ -1130,6 +1292,759 @@ function renderPillarCards(d) {
     </section>`;
 }
 
+/* A single labelled WISEscore health bar (pillar name + rating above, animated
+   fill with the score inside). Reuses the same fill markup as the overall bar so
+   the shared chart-animation + replay machinery picks it up automatically. */
+function pillarBreakdownBar(name, score) {
+  const color = scoreColor(score);
+  const pct = Math.min(100, Math.max(0, Math.round(score)));
+  return `
+    <div class="dash-breakdown-bar">
+      <div class="dash-breakdown-bar-head">
+        <span class="dash-breakdown-bar-name">${esc(name)}</span>
+        <span class="dash-breakdown-bar-rating">${esc(ratingLabel(score))}</span>
+      </div>
+      <div class="dash-ws-health-bar dash-ws-health-bar--inline" role="group" aria-label="${esc(name)} ${pct}">
+        <div class="dash-ws-health-track" style="--bar-color:${color}">
+          <div class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}">
+            ${countUpMarkup(score, { className: 'dash-ws-health-num' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Faint background track for the unfilled portion of a gauge. */
+const GAUGE_TRACK = 'color-mix(in srgb, var(--text-subtle) 14%, transparent)';
+
+/* One ring donut sized to match the UPF / GRAS cards' single donut. `variant`
+   namespaces the overall vs. per-pillar versions so the toggle can swap them.
+   `ringMarkup` is the pre-built set of <path> arcs to render. */
+function bdDonut(ringMarkup, variant, num, label, sub, ariaLabel) {
+  const size = 300;
+  const cx = size / 2;
+  const cy = size / 2;
+  return `
+    <div class="dash-donut dash-bd-donut dash-bd-donut--${variant}"${variant === 'pillars' ? ' aria-hidden="true"' : ''}>
+      <svg class="dash-donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(ariaLabel)}">
+        <g transform="rotate(-90 ${cx} ${cy})">${ringMarkup}</g>
+      </svg>
+      <div class="dash-donut-center">
+        ${countUpMarkup(num, { className: 'dash-donut-num' })}
+        <span class="dash-donut-label">${esc(label)}</span>
+        <span class="dash-donut-sub">${esc(sub)}</span>
+      </div>
+    </div>`;
+}
+
+/* One gauge arc as a sweepable .dash-donut-arc path. Track arcs (no `meta`) are
+   inert — no hover popover; filled arcs carry the pillar name, score and color. */
+function gaugeArc(cx, cy, ri, ro, a0, a1, cr, color, ringName, meta) {
+  if (a1 - a0 <= 0.05) return '';
+  const d = roundedSector(cx, cy, ri, ro, a0, a1, cr);
+  const dataAttrs = meta
+    ? ` data-label="${esc(meta.label)}" data-value="${meta.value}" data-pct="${meta.pct}" data-color="${esc(color)}"`
+    : '';
+  return `<path class="dash-donut-arc${meta ? '' : ' dash-donut-arc--track'}" d="" data-full-d="${esc(d)}" data-a0="${a0}" data-a1="${a1}" data-ri="${ri}" data-ro="${ro}" data-cr="${cr}" data-cx="${cx}" data-cy="${cy}" fill="${color}" data-ring="${esc(ringName)}"${dataAttrs}></path>`;
+}
+
+/* Single-value gauge: a continuous faint track spanning the full ring with the
+   leading colored fill (= `pct`%) laid on top, so the track reads as one
+   connected bar rather than a separate segment. */
+function gaugeRing(pct, color, ringName, meta, cx, cy, r, sw, gapPx) {
+  const circ = 2 * Math.PI * r;
+  const ro = r + sw / 2;
+  const ri = r - sw / 2;
+  const gapDeg = (gapPx / circ) * 360;
+  const cr = 7;
+  const start = gapDeg / 2;
+  const end = 360 - gapDeg / 2;
+  const fillEnd = start + (end - start) * (Math.min(100, Math.max(0, pct)) / 100);
+  return (
+    gaugeArc(cx, cy, ri, ro, start, end, cr, GAUGE_TRACK, ringName, null) +
+    gaugeArc(cx, cy, ri, ro, start, fillEnd, cr, color, ringName, meta)
+  );
+}
+
+/* Per-pillar gauge ring: each pillar owns an equal 1/N section of the ring. The
+   whole section is drawn as one continuous faint track, then the leading colored
+   fill (= score%, in the pillar's status color) is laid on top — so each third
+   reads like a radial progress bar whose track stays joined to its fill. */
+function pillarGaugeRing(pillars, ringName, cx, cy, r, sw, gapPx) {
+  const circ = 2 * Math.PI * r;
+  const ro = r + sw / 2;
+  const ri = r - sw / 2;
+  const gapDeg = (gapPx / circ) * 360;
+  const cr = 7;
+  const sectionDeg = 360 / pillars.length;
+  return pillars
+    .map((p, i) => {
+      const segStart = i * sectionDeg + gapDeg / 2;
+      const segEnd = (i + 1) * sectionDeg - gapDeg / 2;
+      const fillEnd = segStart + (segEnd - segStart) * (Math.min(100, Math.max(0, p.score)) / 100);
+      const color = scoreColor(p.score);
+      const meta = { label: p.name, value: p.score, pct: p.score };
+      return (
+        gaugeArc(cx, cy, ri, ro, segStart, segEnd, cr, GAUGE_TRACK, ringName, null) +
+        gaugeArc(cx, cy, ri, ro, segStart, fillEnd, cr, color, ringName, meta)
+      );
+    })
+    .join('');
+}
+
+/* The overall WISEscore donut (a single-color gauge: score arc + faint
+   remainder) plus the segmented per-pillar donut, swapped by a pink toggle. */
+function wisescoreDonut(d) {
+  const ws = d.wisescore.average;
+  const rating = ratingLabel(ws);
+  const cx = 150;
+  const cy = 150;
+  const r = 124;
+  const sw = 26;
+  const overallRing = gaugeRing(ws, scoreColor(ws), 'WISEscore', { label: 'WISEscore', value: ws, pct: ws }, cx, cy, r, sw, 11);
+  const pillarRing = pillarGaugeRing(d.wisescore.pillars, 'Pillar score', cx, cy, r, sw, 11);
+  return `
+    <div class="dash-breakdown-donut">
+      <div class="dash-breakdown-donut-toggle">
+        <button type="button" class="dash-brand-toggle dash-brand-toggle--bare" role="switch" aria-checked="false" data-dash-action="toggle-breakdown-view" title="Switch between the overall score and the per-pillar breakdown" aria-label="Switch between the overall score and the per-pillar breakdown">
+          <span class="dash-brand-toggle-track" aria-hidden="true">
+            <span class="dash-brand-toggle-thumb"></span>
+          </span>
+        </button>
+      </div>
+      <div class="dash-breakdown-donut-stage">
+        ${bdDonut(overallRing, 'overall', ws, 'WISEscore', `${rating} overall`, `WISEscore ${ws}`)}
+        ${bdDonut(pillarRing, 'pillars', ws, 'WISEscore', 'Across 3 pillars', `WISEscore ${ws} across 3 pillars`)}
+      </div>
+    </div>`;
+}
+
+/* Pillar breakdown: a full-width headline, then three columns — the
+   description paragraph, the circular WISEscore gauge (overall / per-pillar
+   toggle), and one health bar per pillar. */
+function renderPillarBreakdown(d) {
+  const ws = d.wisescore.average;
+  const bars = d.wisescore.pillars
+    .map((p) => pillarBreakdownBar(p.name, p.score))
+    .join('');
+  return `
+    <section class="dash-pillars-breakdown">
+      <div class="dash-card dash-breakdown-card">
+        <div class="dash-section-head dash-breakdown-title">
+          <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
+        </div>
+        <div class="dash-breakdown-grid">
+          <div class="dash-breakdown-intro">
+            <p class="dash-pillars-intro">Across all ${d.claim.discovered} discovered products, nutrient quality, ingredient quality, and health outcomes are weighed against one another &mdash; so a food can't earn a high score by acing one dimension while failing another.</p>
+          </div>
+          <div class="dash-breakdown-donut-col">
+            ${wisescoreDonut(d)}
+          </div>
+          <div class="dash-breakdown-bars">${bars}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pillar metrics radar (spider) chart — all 15 per-metric scores from */
+/* the three pillars plotted on one web. Each vertex dot is colored by  */
+/* its own metric's status tier (scoreColor), matching the score→color  */
+/* scale used everywhere else so the dots read as a status heat-map.    */
+/* ------------------------------------------------------------------ */
+
+/* Compact axis labels for the radar — the full metric names are too long to
+   ring the web, so each maps to the short form used on the chart. */
+const RADAR_SHORT = {
+  'Fiber Density': 'Fiber',
+  'Sugar Density': 'Sugar',
+  'Protein Density': 'Protein',
+  'Carbohydrate Quality': 'Carbs',
+  'Fat Quality': 'Fat',
+  'Ultra-Processed Food': 'UPF',
+  'Banned / Unsafe Ingredients': 'Banned',
+  'Clean Label': 'Clean',
+  'Emulsifiers of Concern': 'Emulsif',
+  'Seed Oils of Concern': 'Seeds',
+  'Heart Health': 'Heart',
+  'Diabetes Friendly': 'Diabetes',
+  'Gut Health': 'Gut',
+  'Muscle Health': 'Muscle',
+  'Anti-Inflammatory': 'Anti-Inf',
+};
+
+/* Build the radar SVG. Dots render collapsed at the center (and the polygon
+   degenerate) so the shared chart-animation machinery can sweep them outward
+   on load / on tap, mirroring the donut gauges' entrance. Full vertex coords
+   are stashed on each dot (data-fx / data-fy) for the animation to lerp to. */
+function radarChart(d) {
+  /* A generous square viewBox leaves room for the axis labels to ring the web
+     without clipping; the chart itself only fills the inner radius. */
+  const size = 420;
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = 145;
+  const labelR = maxR + 24;
+  const levels = [20, 40, 60, 80, 100];
+
+  const axes = [];
+  d.pillars.forEach((p) => {
+    p.metrics.forEach((m) => {
+      axes.push({
+        label: RADAR_SHORT[m.name] || m.name,
+        full: m.name,
+        value: m.value,
+        /* Each vertex dot is colored by its own metric's status tier (the same
+           scoreColor scale as the rest of the dashboard) so the dots read as a
+           status heat-map, not a fixed per-pillar hue. */
+        color: scoreColor(m.value),
+        group: p.name,
+      });
+    });
+  });
+
+  const n = axes.length || 1;
+  const ang = (i) => ((-90 + (360 / n) * i) * Math.PI) / 180;
+  const pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+
+  /* Concentric web rings (one polygon per level). */
+  const rings = levels
+    .map((lv) => {
+      const rr = (lv / 100) * maxR;
+      const pts = axes.map((_, i) => pt(i, rr).map((v) => v.toFixed(1)).join(',')).join(' ');
+      return `<polygon class="dash-radar-grid" points="${pts}"></polygon>`;
+    })
+    .join('');
+
+  /* Spokes from the centre to each axis. */
+  const spokes = axes
+    .map((_, i) => {
+      const [x, y] = pt(i, maxR);
+      return `<line class="dash-radar-spoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`;
+    })
+    .join('');
+
+  /* Numeric scale labels climbing the top (Protein) axis. */
+  const ringLabels = levels
+    .map((lv) => {
+      const [x, y] = pt(0, (lv / 100) * maxR);
+      return `<text class="dash-radar-ringval" x="${(x + 8).toFixed(1)}" y="${(y + 3).toFixed(1)}">${lv}</text>`;
+    })
+    .join('');
+
+  /* Axis labels, anchored + baseline-nudged by quadrant so they sit cleanly
+     outside the web instead of overlapping the vertices. */
+  const axisLabels = axes
+    .map((a, i) => {
+      const [x, y] = pt(i, labelR);
+      const cos = Math.cos(ang(i));
+      const sin = Math.sin(ang(i));
+      let anchor = 'middle';
+      if (cos > 0.25) anchor = 'start';
+      else if (cos < -0.25) anchor = 'end';
+      let dy = 4;
+      if (sin < -0.5) dy = -1;
+      else if (sin > 0.5) dy = 11;
+      return `<text class="dash-radar-axis-label" x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}">${esc(a.label)}</text>`;
+    })
+    .join('');
+
+  /* Data dots — full target coords stashed for the entrance sweep; rendered
+     collapsed at the centre so the web animates outward on load / tap. */
+  const dots = axes
+    .map((a, i) => {
+      const [fx, fy] = pt(i, (a.value / 100) * maxR);
+      return `<circle class="dash-radar-dot" cx="${cx}" cy="${cy}" r="5" fill="${a.color}" data-fx="${fx.toFixed(1)}" data-fy="${fy.toFixed(1)}" data-ring="${esc(a.group)}" data-label="${esc(a.full)}" data-value="${a.value}" data-pct="${a.value}" data-color="${a.color}"></circle>`;
+    })
+    .join('');
+
+  const collapsed = axes.map(() => `${cx},${cy}`).join(' ');
+
+  return `
+    <div class="dash-radar">
+      <svg class="dash-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="WISEscore pillar metrics radar" data-cx="${cx}" data-cy="${cy}">
+        <g class="dash-radar-grid-g">${rings}${spokes}</g>
+        ${ringLabels}
+        <polygon class="dash-radar-poly" points="${collapsed}"></polygon>
+        ${dots}
+        ${axisLabels}
+      </svg>
+    </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* GRAS status horizontal bar chart — the five GRAS levels (GRAS /     */
+/* Historical / Unclear / Unknown Flavors / Unsafe) plotted as ranked  */
+/* horizontal bars. Bars are scaled to the largest count so the chart  */
+/* fills the track, and each row carries its own colored legend dot so */
+/* the GRAS legend reads inline. Fills reuse .dash-metric-fill so the  */
+/* shared chart entrance / replay machinery animates them for free.    */
+/* ------------------------------------------------------------------ */
+function grasBarChart(d) {
+  const dist = d.gras.distribution;
+  const max = dist.reduce((m, p) => Math.max(m, p.value), 0) || 1;
+  const total = dist.reduce((s, p) => s + p.value, 0) || 1;
+  const rows = dist
+    .map((p) => {
+      const w = Math.max(2, Math.round((p.value / max) * 100));
+      const pct = Math.round((p.value / total) * 100);
+      return `
+        <div class="dash-gras-bar-item">
+          <div class="dash-gras-bar-head">
+            <span class="dash-gras-bar-name"><span class="dash-dot" style="background:${p.color}"></span>${esc(p.label)}</span>
+            <span class="dash-gras-bar-share">${pct}%</span>
+          </div>
+          <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-gras-bar" role="group" aria-label="${esc(p.label)} ${p.value}">
+            <div class="dash-gras-bar-track dash-ws-health-track" style="--bar-color:${p.color}">
+              <div class="dash-ws-health-fill dash-metric-fill dash-gras-bar-fill" style="width:${w}%;background:${p.color}"
+                   data-ring="GRAS status" data-label="${esc(p.label)}" data-value="${p.value}" data-pct="${pct}" data-color="${p.color}">
+                ${countUpMarkup(p.value, { className: 'dash-ws-health-num dash-gras-bar-val' })}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+  return `<div class="dash-gras-bars">${rows}</div>`;
+}
+
+/* Bottom two-column row holding the pillar-metrics radar in the left column —
+   the same grid the UPF / GRAS donut cards sit in. The left card's legend
+   reuses the shared donut-legend component; the right card pairs the radar
+   with a GRAS-status horizontal bar chart for visual parity. */
+function renderPillarRadar(d) {
+  const legendParts = d.pillars.map((p) => ({
+    label: p.name,
+    value: p.score,
+    /* Status color from the pillar's own score, matching the score→color scale
+       used by the donuts and health bars (not a fixed per-pillar hue). */
+    color: scoreColor(p.score),
+  }));
+  return `
+    <section class="dash-two-up dash-radar-section">
+      <section class="dash-card dash-donut-card dash-radar-card">
+        <div class="dash-card-topbar">
+          <h3 class="dash-card-title">WISEscore&#8482; metrics across all 3 pillars</h3>
+          ${cardMenu('radar', 'Pillar metrics radar')}
+        </div>
+        <div class="dash-radar-body">
+          ${radarChart(d)}
+          <div class="dash-radar-legend">${legend(legendParts)}</div>
+        </div>
+      </section>
+      <section class="dash-card dash-donut-card dash-gras-bar-card">
+        <div class="dash-card-topbar">
+          <h3 class="dash-card-title">GRAS status across ${d.gras.total} analyzed products</h3>
+          ${cardMenu('grasbars', 'GRAS status breakdown')}
+        </div>
+        <div class="dash-gras-bar-body">
+          ${grasBarChart(d)}
+        </div>
+      </section>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Top processing-driving ingredients — a ranked table whose rows use  */
+/* the same chunky WISEscore health-bar track + fill as the pillar     */
+/* breakdown. Each row: rank · ingredient · fat bar (share of prods) ·  */
+/* the share %, and the ingredient's processing level (PL4 / PL3).     */
+/* ------------------------------------------------------------------ */
+function renderTopIngredients(d) {
+  const items = d.topIngredients || [];
+  if (!items.length) return '';
+  /* PL4 (highest processing) reads in the orange "Ultra-Processed" hue, PL3 in
+     amber — same tokens the UPF / GRAS distributions use, so the levels group
+     by color at a glance. */
+  const levelColor = (lvl) => (lvl === 'PL4' ? C.orange : C.amber);
+  const rows = items
+    .map((it, i) => {
+      const color = levelColor(it.level);
+      const pct = Math.min(100, Math.max(0, Math.round(it.pct)));
+      return `
+        <div class="dash-ing-row">
+          <div class="dash-ing-bar-head">
+            <span class="dash-ing-name"><span class="dash-ing-rank">${i + 1}</span>${esc(it.name)}</span>
+            <span class="dash-badge dash-ing-level dash-ing-level--${it.level.toLowerCase()}">${esc(it.level)}</span>
+          </div>
+          <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-ing-bar" role="group" aria-label="${esc(it.name)} — ${pct}% of products">
+            <div class="dash-ws-health-track" style="--bar-color:${color}">
+              <div class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}">
+                <span class="dash-count-up dash-ws-health-num" data-count-to="${pct}" data-count-suffix="%">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+  return `
+    <section class="dash-ingredients-section">
+      <div class="dash-card dash-ingredients-card">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <span class="dash-ing-eyebrow">Top 10</span>
+            <h3 class="dash-card-title">Highest-processing ingredients</h3>
+          </div>
+          ${cardMenu('topingredients', 'Highest-processing ingredients')}
+        </div>
+        <p class="dash-ing-note">Ranked PL4 &rarr; PL3 &middot; % = share of products containing this ingredient.</p>
+        <div class="dash-ing-table">
+          ${rows}
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* All products — anti-inflammatory score. Same fat-bar UI as the top  */
+/* ingredients table (name above the bar, value inside the colored     */
+/* fill), but each row is a product and the value is its 0–100 score —  */
+/* so the fill color + rating pill follow the WISEscore status scale.   */
+/* ------------------------------------------------------------------ */
+function renderTopProducts(d) {
+  const items = d.topProducts || [];
+  if (!items.length) return '';
+  const rows = items
+    .map((it, i) => {
+      const score = Math.min(100, Math.max(0, Math.round(it.score)));
+      const color = scoreColor(score);
+      const tone = scoreTierTone(score);
+      return `
+        <div class="dash-ing-row dash-ing-row--linked">
+          <div class="dash-ing-bar-main">
+            <div class="dash-ing-bar-head">
+              <span class="dash-ing-name"><span class="dash-ing-rank">${i + 1}</span>${esc(it.name)}</span>
+              <span class="dash-badge dash-ing-level dash-badge--${tone}">${esc(ratingLabel(score))}</span>
+            </div>
+            <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-ing-bar" role="group" aria-label="${esc(it.name)} — anti-inflammatory score ${score}">
+              <div class="dash-ws-health-track" style="--bar-color:${color}">
+                <div class="dash-ws-health-fill dash-metric-fill" style="width:${score}%;background:${color}">
+                  ${countUpMarkup(score, { className: 'dash-ws-health-num' })}
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="dash-ing-report" type="button" data-dash-action="antiinflammatory-report" aria-label="View report for ${esc(it.name)}">
+            <span class="dash-ing-report-label">View report</span>
+            <span class="dash-ing-report-icon"><span class="material-icons">chevron_right</span></span>
+          </button>
+        </div>`;
+    })
+    .join('');
+  return `
+    <section class="dash-products-section">
+      <div class="dash-card dash-ingredients-card">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <span class="dash-ing-eyebrow">All products</span>
+            <h3 class="dash-card-title">Anti-inflammatory score</h3>
+          </div>
+          ${cardMenu('antiinflammatory', 'Anti-inflammatory score by product')}
+        </div>
+        <p class="dash-ing-note">${d.upf.total} products &middot; sorted highest to lowest.</p>
+        <div class="dash-ing-table">
+          ${rows}
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* GRAS flag cards — Unsafe + Unknown ingredients, side by side. Same  */
+/* fat-bar UI (name above the bar, share % inside the colored fill) as  */
+/* the tables above; only the fill color + accent change per bucket.    */
+/* ------------------------------------------------------------------ */
+function flagBarRows(items, color) {
+  return items
+    .map((it, i) => {
+      const pct = Math.min(100, Math.max(0, Math.round(it.pct)));
+      return `
+        <div class="dash-ing-row">
+          <div class="dash-ing-bar-head">
+            <span class="dash-ing-name"><span class="dash-ing-rank">${i + 1}</span>${esc(it.name)}</span>
+          </div>
+          <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-ing-bar" role="group" aria-label="${esc(it.name)} — ${pct}% of products">
+            <div class="dash-ws-health-track" style="--bar-color:${color}">
+              <div class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}">
+                <span class="dash-count-up dash-ws-health-num" data-count-to="${pct}" data-count-suffix="%">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
+function renderIngredientFlags(d) {
+  const unsafe = d.unsafeIngredients || [];
+  const unknown = d.unknownIngredients || [];
+  if (!unsafe.length && !unknown.length) return '';
+  const unsafeEmpty = unsafe.length < 5
+    ? `<p class="dash-ing-empty">No further Unsafe ingredients detected</p>`
+    : '';
+  return `
+    <section class="dash-two-up dash-flags-section">
+      <div class="dash-card dash-ingredients-card dash-flag-card">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <span class="dash-ing-eyebrow dash-ing-eyebrow--unsafe"><span class="material-icons">warning</span>Unsafe</span>
+            <h3 class="dash-card-title">Unsafe ingredients</h3>
+          </div>
+          ${cardMenu('unsafeingredients', 'Unsafe ingredients')}
+        </div>
+        <p class="dash-ing-note">Ingredients classified as Unsafe &middot; top 5 by portfolio prevalence.</p>
+        <div class="dash-ing-table">${flagBarRows(unsafe, C.red)}</div>
+        ${unsafeEmpty}
+      </div>
+      <div class="dash-card dash-ingredients-card dash-flag-card">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <span class="dash-ing-eyebrow dash-ing-eyebrow--unknown"><span class="material-icons">help</span>Unknown</span>
+            <h3 class="dash-card-title">Unknown ingredients</h3>
+          </div>
+          ${cardMenu('unknowningredients', 'Unknown ingredients')}
+        </div>
+        <p class="dash-ing-note">GRAS status not established &middot; top 5 by portfolio prevalence.</p>
+        <div class="dash-ing-table">${flagBarRows(unknown, C.orange)}</div>
+      </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Segmented score-distribution bar (no card — sits on the plain page).*/
+/* A big "rated Excellent" stat on the left, a single stacked bar whose */
+/* segments are sized to each tier's share, and a legend where each item */
+/* sits directly under its segment, joined by a short vertical connector.*/
+/* ------------------------------------------------------------------ */
+function renderScoreDistribution(d) {
+  const dist = d.scoreDistribution;
+  if (!dist || !Array.isArray(dist.tiers)) return '';
+  /* Only tiers with products get a segment + a legend item (so a 0-count tier
+     has nothing to point at). */
+  const shown = dist.tiers.filter((t) => t.pct > 0);
+  if (!shown.length) return '';
+  const exc = dist.tiers.find((t) => t.label === 'Excellent') || dist.tiers[0];
+
+  /* Color each tier from the canonical status palette (SCORE_TIER_COLORS) so the
+     bar matches the status dots, pillar bars, and rating labels everywhere else
+     — not the ad-hoc per-tier colors on the data. "OK"/"Okay" both map to okay. */
+  const tierColor = (label) => {
+    const key = String(label || '').trim().toLowerCase();
+    const tone = key.startsWith('ok') ? 'okay' : key;
+    return SCORE_TIER_COLORS[tone] || C.ink;
+  };
+
+  const segs = shown
+    .map((t) => `
+        <div class="dash-seg-part" style="flex-grow:${t.pct};background:${tierColor(t.label)}" title="${esc(t.label)} ${t.pct}%">
+          <span class="dash-seg-part-label">${t.pct}%</span>
+        </div>`)
+    .join('');
+
+  const legend = shown
+    .map((t) => `
+        <div class="dash-seg-leg-cell" style="flex-grow:${t.pct}">
+          <span class="dash-seg-leg-line" style="background:${tierColor(t.label)}"></span>
+          <span class="dash-seg-leg-info">
+            <span class="dash-seg-leg-dot" style="background:${tierColor(t.label)}"></span>
+            <span class="dash-seg-leg-name">${esc(t.label)}</span>
+            ${countUpMarkup(t.count, { className: 'dash-seg-leg-count' })}
+          </span>
+        </div>`)
+    .join('');
+
+  const measures = dist.measures
+    ? `<p class="dash-pillars-intro dash-seg-measures"><strong>What this measures:</strong> ${esc(dist.measures)}${dist.pillar ? ` <em>${esc(dist.pillar)}.</em>` : ''}</p>`
+    : '';
+
+  return `
+    <section class="dash-seg-section">
+      <div class="dash-section-head dash-seg-head">
+        <h2 class="dash-section-title">Portfolio Analysis</h2>
+      </div>
+      <div class="dash-seg-row">
+        <div class="dash-seg-score">
+          <div class="dash-wisescore-num dash-seg-num">${countUpMarkup(exc.pct, { className: 'n dash-seg-pct-num' })}<span class="d">%</span></div>
+          <p class="dash-wisescore-note dash-seg-note">${exc.count} of ${dist.total} products rated ${statusTermLabel(exc.label)}<span class="dash-seg-note-period">.</span></p>
+        </div>
+        <div class="dash-seg-bars">
+          <div class="dash-seg-track">${segs}</div>
+          <div class="dash-seg-legend">${legend}</div>
+        </div>
+      </div>
+      ${measures}
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* "Where to focus" opportunity scatter — every WISEscore metric plotted */
+/* by its current score (Y) against the share of products scoring below  */
+/* Good (X). The shaded lower-right zone (high share below Good + low     */
+/* score) flags the highest-leverage fixes. Dots are colored by the      */
+/* canonical status scale (scoreColor) so the plot reads as a status      */
+/* heat-map — the same language as the radar and pillar bars — instead of */
+/* per-category hues. Sits in the left column of a two-up row, paired     */
+/* with a ranked "highest-leverage fixes" list. Point names surface on    */
+/* hover (shared tooltip) rather than as always-on labels, matching the   */
+/* radar. Reuses the shared hover-tooltip + replay machinery. */
+/* ------------------------------------------------------------------ */
+
+/* Deterministic "% of products scoring below Good" for a metric. Derived from
+   the metric's own score (lower score → more products below Good) with a small,
+   name-seeded jitter so the cloud scatters naturally instead of sitting on a
+   single line. Stays stable across re-renders and brand switches. */
+function focusBelowGood(name, value) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const jitter = (h % 15) - 7;
+  const raw = (100 - value) * 0.82 + jitter;
+  return Math.max(6, Math.min(76, Math.round(raw)));
+}
+
+function renderFocusScatter(d) {
+  const pillars = d.pillars || [];
+  const points = [];
+  pillars.forEach((p) => {
+    (p.metrics || []).forEach((m) => {
+      points.push({
+        label: RADAR_SHORT[m.name] || m.name,
+        full: m.name,
+        group: p.name,
+        score: m.value,
+        below: focusBelowGood(m.name, m.value),
+        color: scoreColor(m.value),
+      });
+    });
+  });
+  if (!points.length) return '';
+
+  /* Plot geometry — a compact viewBox sized close to a single column so the
+     chart and its SVG text read at a natural scale at half width (and simply
+     scale up when the two-up collapses to one column). */
+  const W = 520;
+  const H = 430;
+  const m = { l: 46, r: 18, t: 26, b: 46 };
+  const plotW = W - m.l - m.r;
+  const plotH = H - m.t - m.b;
+  const X_MAX = 80;
+  const Y_MIN = 30;
+  const Y_MAX = 100;
+  const X_THRESH = 40;
+  const Y_THRESH = 60;
+  const xScale = (v) => m.l + (v / X_MAX) * plotW;
+  const yScale = (v) => m.t + (1 - (v - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+
+  const xTicks = [0, 20, 40, 60, 80];
+  const yTicks = [30, 40, 50, 60, 70, 80, 90, 100];
+
+  const gridV = xTicks
+    .map((t) => `<line class="dash-scatter-grid" x1="${xScale(t).toFixed(1)}" y1="${m.t}" x2="${xScale(t).toFixed(1)}" y2="${(m.t + plotH).toFixed(1)}"></line>`)
+    .join('');
+  const gridH = yTicks
+    .map((t) => `<line class="dash-scatter-grid" x1="${m.l}" y1="${yScale(t).toFixed(1)}" x2="${(m.l + plotW).toFixed(1)}" y2="${yScale(t).toFixed(1)}"></line>`)
+    .join('');
+
+  const xTickLabels = xTicks
+    .map((t) => `<text class="dash-scatter-tick" x="${xScale(t).toFixed(1)}" y="${(m.t + plotH + 16).toFixed(1)}" text-anchor="middle">${t}%</text>`)
+    .join('');
+  const yTickLabels = yTicks
+    .map((t) => `<text class="dash-scatter-tick" x="${(m.l - 8).toFixed(1)}" y="${(yScale(t) + 3.5).toFixed(1)}" text-anchor="end">${t}</text>`)
+    .join('');
+
+  /* Shaded "priority fix" zone — high share below Good (x > threshold) AND low
+     score (y < threshold): the lower-right rectangle. */
+  const zoneX = xScale(X_THRESH);
+  const zoneY = yScale(Y_THRESH);
+  const zoneRect = `<rect class="dash-scatter-zone" x="${zoneX.toFixed(1)}" y="${zoneY.toFixed(1)}" width="${(m.l + plotW - zoneX).toFixed(1)}" height="${(m.t + plotH - zoneY).toFixed(1)}"></rect>`;
+
+  /* Dashed threshold dividers. */
+  const dividers = `
+    <line class="dash-scatter-divider" x1="${zoneX.toFixed(1)}" y1="${m.t}" x2="${zoneX.toFixed(1)}" y2="${(m.t + plotH).toFixed(1)}"></line>
+    <line class="dash-scatter-divider" x1="${m.l}" y1="${zoneY.toFixed(1)}" x2="${(m.l + plotW).toFixed(1)}" y2="${zoneY.toFixed(1)}"></line>`;
+
+  /* Quadrant labels. */
+  const zoneLabels = `
+    <text class="dash-scatter-zone-label" x="${(m.l + 6).toFixed(1)}" y="${(m.t + 14).toFixed(1)}" text-anchor="start">Strengths</text>
+    <text class="dash-scatter-zone-label" x="${(m.l + plotW - 6).toFixed(1)}" y="${(m.t + 14).toFixed(1)}" text-anchor="end">High-impact wins</text>
+    <text class="dash-scatter-zone-label" x="${(m.l + 6).toFixed(1)}" y="${(m.t + plotH - 7).toFixed(1)}" text-anchor="start">Watch</text>
+    <text class="dash-scatter-zone-label dash-scatter-zone-label--fix" x="${(m.l + plotW - 6).toFixed(1)}" y="${(m.t + plotH - 7).toFixed(1)}" text-anchor="end">Priority fix</text>`;
+
+  /* Axis titles. */
+  const axisTitles = `
+    <text class="dash-scatter-axis-title" x="${(m.l + plotW / 2).toFixed(1)}" y="${(H - 6).toFixed(1)}" text-anchor="middle">% of products scoring below Good</text>
+    <text class="dash-scatter-axis-title" transform="translate(${(m.l - 34).toFixed(1)},${(m.t + plotH / 2).toFixed(1)}) rotate(-90)" text-anchor="middle">Metric score</text>`;
+
+  const dots = points
+    .map((p) => {
+      const cx = xScale(p.below);
+      const cy = yScale(p.score);
+      return `
+        <g class="dash-scatter-pt">
+          <circle class="dash-scatter-dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="${p.color}" style="--dot-color:${p.color}"
+            data-ring="${esc(p.group)}" data-label="${esc(p.full)}" data-value="${p.score}" data-pct="${p.below}" data-color="${p.color}"></circle>
+        </g>`;
+    })
+    .join('');
+
+  /* Companion right column: the highest-leverage fixes, ranked by a simple
+     leverage score (share below Good + distance under a perfect score) so the
+     metrics deepest in the priority zone surface first. Each row reuses the fat
+     inline health bar (filled to its share-below-Good, colored by status). */
+  const ranked = [...points]
+    .sort((a, b) => (b.below + (100 - b.score)) - (a.below + (100 - a.score)))
+    .slice(0, 6);
+  const fixRows = ranked
+    .map((p, i) => `
+        <div class="dash-ing-row">
+          <div class="dash-ing-bar-head">
+            <span class="dash-ing-name"><span class="dash-ing-rank">${i + 1}</span>${esc(p.label)}</span>
+            <span class="dash-scatter-fix-score">Score ${p.score}</span>
+          </div>
+          <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-ing-bar" role="group" aria-label="${esc(p.full)} — ${p.below}% of products below Good">
+            <div class="dash-ws-health-track" style="--bar-color:${p.color}">
+              <div class="dash-ws-health-fill dash-metric-fill" style="width:${p.below}%;background:${p.color}">
+                <span class="dash-count-up dash-ws-health-num" data-count-to="${p.below}" data-count-suffix="%">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>`)
+    .join('');
+
+  return `
+    <section class="dash-two-up dash-scatter-row">
+      <section class="dash-card dash-scatter-section">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">Where to focus</h3>
+            <p class="dash-scatter-intro">Each metric by its score (vertical) vs. the share of products scoring below Good (horizontal). The shaded lower-right zone flags the highest-leverage fixes. Hover any point for details.</p>
+          </div>
+        </div>
+        <div class="dash-scatter-plot">
+          <svg class="dash-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Opportunity prioritization — metric score versus share of products scoring below Good">
+            ${zoneRect}
+            <g class="dash-scatter-grid-g">${gridV}${gridH}</g>
+            ${dividers}
+            ${zoneLabels}
+            ${xTickLabels}
+            ${yTickLabels}
+            ${axisTitles}
+            ${dots}
+          </svg>
+        </div>
+      </section>
+      <section class="dash-card dash-ingredients-card dash-scatter-side">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <span class="dash-ing-eyebrow">Ranked</span>
+            <h3 class="dash-card-title">Highest-leverage fixes</h3>
+          </div>
+        </div>
+        <p class="dash-ing-note">% = share of products scoring below Good on this metric.</p>
+        <div class="dash-ing-table">${fixRows}</div>
+      </section>
+    </section>`;
+}
+
 /**
  * Render the dashboard into the given scroll host element.
  * @param {HTMLElement} host  typically #agent-main-scroll
@@ -1143,11 +2058,19 @@ export function renderDashboardHome(host) {
     ${renderHero(d, isAlt)}
     <div class="dash">
       ${renderClaim(d)}
+      ${document.body.dataset.hideScout ? renderTopPerformers(d) : ''}
       <section class="dash-two-up" id="dash-charts">
         ${renderUpf(d)}
         ${renderGras(d)}
       </section>
       ${renderPillarCards(d)}
+      ${renderPillarBreakdown(d)}
+      ${renderPillarRadar(d)}
+      ${renderTopIngredients(d)}
+      ${renderTopProducts(d)}
+      ${renderIngredientFlags(d)}
+      ${renderScoreDistribution(d)}
+      ${document.body.dataset.hideScout ? renderFocusScatter(d) : ''}
     </div>`;
 
   /* Wire interactions only once per host element. On re-renders triggered by
@@ -1223,6 +2146,22 @@ export function renderDashboardHome(host) {
         return;
       }
 
+      /* Pink toggle on the pillar-breakdown donut — swaps the single-color
+         overall gauge for the segmented per-pillar donut, replaying the sweep
+         of whichever donut becomes visible. */
+      if (a === 'toggle-breakdown-view') {
+        const wrap = action.closest('.dash-breakdown-donut');
+        const showPillars = action.getAttribute('aria-checked') !== 'true';
+        action.setAttribute('aria-checked', String(showPillars));
+        action.classList.toggle('is-on', showPillars);
+        if (wrap) {
+          wrap.classList.toggle('is-pillars-view', showPillars);
+          const shown = wrap.querySelector(showPillars ? '.dash-bd-donut--pillars' : '.dash-bd-donut--overall');
+          reanimateDonutCard(shown);
+        }
+        return;
+      }
+
       /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
          reload, and only disappears for the current view when closed. */
       if (a === 'dismiss-score-toast') {
@@ -1230,20 +2169,30 @@ export function renderDashboardHome(host) {
         return;
       }
 
-      /* Full report modal — from the card kebab and the in-card report links. */
-      const rep = a.match(/^(upf|gras)-report$/);
-      if (rep) {
-        openReportModal(rep[1], d);
+      /* The radar's "view full report" jumps to the per-pillar breakdown. */
+      if (a === 'radar-report') {
+        host.querySelector('.dash-pillars-breakdown')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
 
-      /* Card menu items: share / export / insert into chat. */
-      const m = a.match(/^(share|export|chat)-(upf|gras)$/);
+      /* Full report modal — from the card kebab and the in-card report links.
+         The GRAS bar chart ("grasbars") shares the GRAS report. */
+      const rep = a.match(/^(upf|gras|grasbars)-report$/);
+      if (rep) {
+        openReportModal(rep[1] === 'grasbars' ? 'gras' : rep[1], d);
+        return;
+      }
+
+      /* Card menu items: share / export / insert into chat. The GRAS bar
+         chart ("grasbars") is treated as the GRAS scorecard. */
+      const m = a.match(/^(share|export|chat)-(upf|gras|radar|grasbars)$/);
       if (m) {
-        const [, op, card] = m;
-        const label = card === 'upf' ? 'Brand UPF report' : 'Brand GRAS report';
+        const [, op, rawCard] = m;
+        const card = rawCard === 'grasbars' ? 'gras' : rawCard;
+        const label = { upf: 'Brand UPF report', gras: 'Brand GRAS report', radar: 'WISEscore pillar metrics' }[card];
         if (op === 'chat') {
-          try { sessionStorage.setItem('wise-chat-insert', `Let's continue on the ${label} — walk me through the ${card.toUpperCase()} scorecard.`); } catch (_) {}
+          const ask = card === 'radar' ? 'walk me through the pillar metrics.' : `walk me through the ${card.toUpperCase()} scorecard.`;
+          try { sessionStorage.setItem('wise-chat-insert', `Let's continue on the ${label} — ${ask}`); } catch (_) {}
           window.location.href = 'ai-chat.html';
         } else if (op === 'share') {
           const url = window.location.href;
@@ -1271,6 +2220,7 @@ export function renderDashboardHome(host) {
         'dispute-upc': 'portfolio.html',
         'claim-upcs': 'portfolio.html',
         'verify-upf': 'portfolio.html',
+        'topproduct-report': 'portfolio.html',
         'ask-ai': 'ai-chat.html',
       }[a];
       if (route) window.location.href = route;
@@ -1339,6 +2289,7 @@ function finalizeChartElements(root) {
     fill.style.width = fill.dataset.targetWidth;
     markMetricFillReady(fill);
   });
+  root.querySelectorAll('.dash-radar-svg').forEach((svg) => setRadarProgress(svg, 1));
 }
 
 const CHART_GAUGE_SWEEP_MS = 1400;
@@ -1347,6 +2298,9 @@ const CHART_BAR_STAGGER_MS = 90;
 /* Tap targets that replay a chart's entrance animation when clicked. */
 const CHART_REPLAY_SEL = [
   '.dash-donut',
+  '.dash-radar',
+  '.dash-scatter-plot',
+  '.dash-gras-bars',
   '.dash-ws-health-bar',
   '.dash-pillar-card-head .dash-score-num',
   '.dash-pillar-card-head .dash-stamp-icon',
@@ -1441,6 +2395,131 @@ function animateDonutCard(card) {
   runCountUps(card.querySelectorAll('.dash-count-up'));
 }
 
+/* Drive the radar web to a progress t (0 = collapsed at center, 1 = full):
+   lerp each vertex dot from the center toward its stored target, and rebuild
+   the data polygon from the dots' live positions. */
+function setRadarProgress(svg, t) {
+  const cx = parseFloat(svg.dataset.cx);
+  const cy = parseFloat(svg.dataset.cy);
+  const e = easeOutCubic(Math.max(0, Math.min(1, t)));
+  const pts = [];
+  svg.querySelectorAll('.dash-radar-dot').forEach((dot) => {
+    const fx = parseFloat(dot.dataset.fx);
+    const fy = parseFloat(dot.dataset.fy);
+    const x = cx + (fx - cx) * e;
+    const y = cy + (fy - cy) * e;
+    dot.setAttribute('cx', x.toFixed(2));
+    dot.setAttribute('cy', y.toFixed(2));
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  });
+  const poly = svg.querySelector('.dash-radar-poly');
+  if (poly) poly.setAttribute('points', pts.join(' '));
+}
+
+function isRadarComplete(svg) {
+  const dot = svg.querySelector('.dash-radar-dot');
+  if (!dot) return false;
+  return (
+    Math.abs(parseFloat(dot.getAttribute('cx')) - parseFloat(dot.dataset.fx)) < 0.5 &&
+    Math.abs(parseFloat(dot.getAttribute('cy')) - parseFloat(dot.dataset.fy)) < 0.5
+  );
+}
+
+/* Sweep the radar web outward from the center, matching the donut gauge feel. */
+function animateRadar(section, duration = CHART_GAUGE_SWEEP_MS) {
+  const svg = section.querySelector('.dash-radar-svg');
+  if (!svg) return;
+  if (section.classList.contains('is-chart-animating') && isRadarComplete(svg)) return;
+  section.classList.add('is-chart-animating');
+  if (isRadarComplete(svg)) { setRadarProgress(svg, 1); return; }
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    setRadarProgress(svg, t);
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+/* Replay the radar entrance: collapse to center, then sweep back out. */
+function reanimateRadar(section) {
+  if (!section) return;
+  if (prefersReducedMotion()) return;
+  const svg = section.querySelector('.dash-radar-svg');
+  if (!svg) return;
+  setRadarProgress(svg, 0);
+  section.classList.remove('is-chart-animating');
+  animateRadar(section);
+}
+
+/* Pop the scatter points in, staggered, scaling up from their plotted spot —
+   matching the playful entrance of the donut + radar gauges. Default CSS leaves
+   the points visible, so reduced-motion (and any no-JS path) just shows them. */
+function animateScatter(section) {
+  if (!section || section.classList.contains('is-scatter-animated')) return;
+  section.classList.add('is-scatter-animated');
+  const pts = [...section.querySelectorAll('.dash-scatter-pt')];
+  if (!pts.length) return;
+  if (prefersReducedMotion()) {
+    pts.forEach((g) => { g.style.opacity = '1'; g.style.transform = 'none'; });
+    return;
+  }
+  pts.forEach((g) => {
+    g.style.transition = 'none';
+    g.style.opacity = '0';
+    g.style.transform = 'scale(0.2)';
+  });
+  void section.offsetWidth;
+  pts.forEach((g, i) => {
+    const delay = i * 45;
+    g.style.transition = `opacity .4s ease ${delay}ms, transform .5s cubic-bezier(.34,1.56,.64,1) ${delay}ms`;
+    g.style.opacity = '1';
+    g.style.transform = 'scale(1)';
+  });
+}
+
+/* Replay the scatter entrance: reset the staggered pop, then re-run it. */
+function reanimateScatter(section) {
+  if (!section || prefersReducedMotion()) return;
+  section.classList.remove('is-scatter-animated');
+  animateScatter(section);
+}
+
+/* Grow the GRAS-status bars out from the left, staggered top-to-bottom to echo
+   the metric-bar entrance. Scoped to .dash-gras-bar-fill so it can run
+   independently of the radar sweep that shares the same section. */
+function animateGrasBars(card) {
+  if (!card) return;
+  const fills = [...card.querySelectorAll('.dash-gras-bar-fill')];
+  if (!fills.length) return;
+  fills.forEach((fill, i) => {
+    if (fill.classList.contains('is-chart-ready')) return;
+    const delay = i * CHART_BAR_STAGGER_MS;
+    fill.style.transitionDelay = `${delay}ms`;
+    requestAnimationFrame(() => {
+      fill.style.width = fill.dataset.targetWidth || fill.style.width;
+      setTimeout(() => markMetricFillReady(fill), 1200 + delay);
+    });
+    const val = fill.closest('.dash-gras-bar-item')?.querySelector('.dash-gras-bar-val.dash-count-up');
+    if (val && !val.classList.contains('is-counted')) setTimeout(() => countUpEl(val, 1200), delay);
+  });
+}
+
+/* Replay the GRAS bars: reset each fill to zero width, then grow them back. */
+function reanimateGrasBars(card) {
+  if (!card || prefersReducedMotion()) return;
+  card.querySelectorAll('.dash-gras-bar-fill').forEach((fill) => {
+    fill.classList.remove('is-chart-ready');
+    fill.style.transition = '';
+    fill.style.width = '0%';
+  });
+  card.querySelectorAll('.dash-gras-bar-val.dash-count-up').forEach((el) => {
+    el.classList.remove('is-counted');
+    el.textContent = `0${el.getAttribute('data-count-suffix') || ''}`;
+  });
+  requestAnimationFrame(() => animateGrasBars(card));
+}
+
 function animateMetricBars(section) {
   if (section.classList.contains('is-chart-animating')) return;
   if (areMetricBarsComplete(section)) {
@@ -1466,6 +2545,84 @@ function animateMetricBars(section) {
     }
     if (val) setTimeout(() => countUpEl(val, 1200), delay);
   });
+}
+
+/* Animate the breakdown card: sweep the visible WISEscore donut + count up its
+   center, then stagger-fill each per-pillar health bar with its score. */
+function animatePillarBars(section) {
+  if (section.classList.contains('is-chart-animating')) return;
+  section.classList.add('is-chart-animating');
+
+  /* The visible donut (overall by default); the hidden variant animates lazily
+     the first time the toggle reveals it. */
+  const wrap = section.querySelector('.dash-breakdown-donut');
+  const donut = wrap && wrap.querySelector(
+    wrap.classList.contains('is-pillars-view') ? '.dash-bd-donut--pillars' : '.dash-bd-donut--overall'
+  );
+  if (donut) {
+    animateDonutSweep(donut);
+    runCountUps(donut.querySelectorAll('.dash-count-up'));
+  }
+
+  if (areMetricBarsComplete(section)) {
+    section.querySelectorAll('.dash-metric-fill').forEach(markMetricFillReady);
+    return;
+  }
+  const bars = [...section.querySelectorAll('.dash-ws-health-bar')];
+  bars.forEach((bar, i) => {
+    const delay = i * CHART_BAR_STAGGER_MS;
+    const fill = bar.querySelector('.dash-ws-health-fill');
+    const num = bar.querySelector('.dash-ws-health-num.dash-count-up');
+    if (fill) {
+      fill.style.transitionDelay = `${delay}ms`;
+      requestAnimationFrame(() => {
+        fill.style.width = fill.dataset.targetWidth || fill.style.width;
+        setTimeout(() => markMetricFillReady(fill), 1200 + delay);
+      });
+    }
+    if (num) setTimeout(() => countUpEl(num, 1200), delay);
+  });
+}
+
+/* Animate the top-ingredients table: stagger-fill each row's fat bar to its
+   share-of-products width, then count up the matching % readouts in the right
+   column. Mirrors the pillar-breakdown sweep but the value lives beside the
+   bar (its own table column) rather than inside the fill. */
+function animateIngredientBars(section) {
+  if (section.classList.contains('is-chart-animating')) return;
+  section.classList.add('is-chart-animating');
+
+  if (areMetricBarsComplete(section)) {
+    section.querySelectorAll('.dash-metric-fill').forEach(markMetricFillReady);
+    section.querySelectorAll('.dash-count-up').forEach((el) => {
+      el.textContent = `${el.getAttribute('data-count-to')}${el.getAttribute('data-count-suffix') || ''}`;
+    });
+    return;
+  }
+
+  const bars = [...section.querySelectorAll('.dash-ws-health-bar')];
+  bars.forEach((bar, i) => {
+    const delay = i * CHART_BAR_STAGGER_MS;
+    const fill = bar.querySelector('.dash-ws-health-fill');
+    if (fill) {
+      fill.style.transitionDelay = `${delay}ms`;
+      requestAnimationFrame(() => {
+        fill.style.width = fill.dataset.targetWidth || fill.style.width;
+        setTimeout(() => markMetricFillReady(fill), 1200 + delay);
+      });
+    }
+  });
+  runCountUps(section.querySelectorAll('.dash-count-up'), { duration: 1200, stagger: CHART_BAR_STAGGER_MS });
+}
+
+/* Reveal the segmented distribution bar left-to-right (clip-path), then count
+   up the headline % and the per-tier product counts. */
+function animateSegBar(section) {
+  if (section.classList.contains('is-chart-animating')) return;
+  section.classList.add('is-chart-animating');
+  const track = section.querySelector('.dash-seg-track');
+  if (track) track.classList.add('is-seg-ready');
+  runCountUps(section.querySelectorAll('.dash-count-up'), { duration: 1400, stagger: 90 });
 }
 
 /* Replay a single pillar card's entrance animation on demand. The metric-bar
@@ -1592,13 +2749,31 @@ function replayChartFromTarget(el) {
 
   const donut = el.closest('.dash-donut');
   if (donut) {
-    reanimateDonutCard(donut.closest('.dash-donut-card'));
+    reanimateDonutCard(donut.closest('.dash-donut-card') || donut);
+    return true;
+  }
+
+  const radar = el.closest('.dash-radar');
+  if (radar) {
+    reanimateRadar(radar.closest('.dash-radar-card') || radar);
+    return true;
+  }
+
+  const scatter = el.closest('.dash-scatter-plot');
+  if (scatter) {
+    reanimateScatter(scatter.closest('.dash-scatter-section') || scatter);
+    return true;
+  }
+
+  const grasBars = el.closest('.dash-gras-bars');
+  if (grasBars) {
+    reanimateGrasBars(grasBars.closest('.dash-gras-bar-card') || grasBars);
     return true;
   }
 
   const wsBar = el.closest('.dash-ws-health-bar');
   if (wsBar) {
-    reanimateHealthBar(wsBar.closest('.dash-pillars-heading'));
+    reanimateHealthBar(wsBar);
     return true;
   }
 
@@ -1651,6 +2826,23 @@ function setupChartAnimations(host) {
         animateHealthBar(el);
       } else if (el.classList.contains('dash-pillars')) {
         animateMetricBars(el);
+      } else if (el.classList.contains('dash-pillars-breakdown')) {
+        animatePillarBars(el);
+      } else if (el.classList.contains('dash-ingredients-section')) {
+        animateIngredientBars(el);
+      } else if (el.classList.contains('dash-products-section')) {
+        animateIngredientBars(el);
+      } else if (el.classList.contains('dash-flags-section')) {
+        animateIngredientBars(el);
+      } else if (el.classList.contains('dash-seg-section')) {
+        animateSegBar(el);
+      } else if (el.classList.contains('dash-radar-section')) {
+        animateRadar(el);
+        animateGrasBars(el.querySelector('.dash-gras-bar-card'));
+      } else if (el.classList.contains('dash-scatter-row')) {
+        animateScatter(el.querySelector('.dash-scatter-section'));
+        const side = el.querySelector('.dash-scatter-side');
+        if (side) animateIngredientBars(side);
       }
       observer.unobserve(el);
     });
@@ -1658,11 +2850,29 @@ function setupChartAnimations(host) {
 
   const claimSection = host.querySelector('.dash-claim');
   if (claimSection) observer.observe(claimSection);
+  /* The Top 5 performers row is a second `.dash-claim` block — observe it too so
+     its score count-ups fire (querySelector only grabs the first one above). */
+  const topPerformers = host.querySelector('.dash-top5-claim');
+  if (topPerformers) observer.observe(topPerformers);
   host.querySelectorAll('.dash-donut-card').forEach((card) => observer.observe(card));
   const pillarHeading = host.querySelector('.dash-pillars-heading');
   if (pillarHeading) observer.observe(pillarHeading);
   const pillarSection = host.querySelector('.dash-pillars');
   if (pillarSection) observer.observe(pillarSection);
+  const breakdownSection = host.querySelector('.dash-pillars-breakdown');
+  if (breakdownSection) observer.observe(breakdownSection);
+  const ingredientsSection = host.querySelector('.dash-ingredients-section');
+  if (ingredientsSection) observer.observe(ingredientsSection);
+  const productsSection = host.querySelector('.dash-products-section');
+  if (productsSection) observer.observe(productsSection);
+  const flagsSection = host.querySelector('.dash-flags-section');
+  if (flagsSection) observer.observe(flagsSection);
+  const segSection = host.querySelector('.dash-seg-section');
+  if (segSection) observer.observe(segSection);
+  const radarSection = host.querySelector('.dash-radar-section');
+  if (radarSection) observer.observe(radarSection);
+  const scatterRow = host.querySelector('.dash-scatter-row');
+  if (scatterRow) observer.observe(scatterRow);
 }
 
 /* Floating popover on donut-segment hover. Styled to match the navigation
@@ -1709,8 +2919,9 @@ function setupDonutPopover(host) {
 
   const hide = () => tip.classList.remove('is-visible');
 
+  const TIP_SEL = '.dash-donut-arc, .dash-radar-dot, .dash-gras-bar-fill, .dash-scatter-dot';
   host.addEventListener('pointerover', (e) => {
-    const arc = e.target.closest('.dash-donut-arc');
+    const arc = e.target.closest(TIP_SEL);
     if (!arc) return;
     arc.classList.add('is-hover');
     show(arc);
@@ -1718,13 +2929,13 @@ function setupDonutPopover(host) {
   });
   host.addEventListener('pointermove', (e) => {
     if (!tip.classList.contains('is-visible')) return;
-    if (!e.target.closest('.dash-donut-arc')) return;
+    if (!e.target.closest(TIP_SEL)) return;
     place(e.clientX, e.clientY);
   });
   host.addEventListener('pointerout', (e) => {
-    const arc = e.target.closest('.dash-donut-arc');
+    const arc = e.target.closest(TIP_SEL);
     if (!arc) return;
-    if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.dash-donut-arc') === arc) return;
+    if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(TIP_SEL) === arc) return;
     arc.classList.remove('is-hover');
     hide();
   });

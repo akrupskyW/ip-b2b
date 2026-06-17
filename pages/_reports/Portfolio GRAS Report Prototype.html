@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WISEcode Intelligence — Portfolio GRAS Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1628;--blue:#1A5CFF;--ink:#2B2830;
+  --page-bg:#F4F6FA;--card-bg:#FFFFFF;--card-border:#DDE2EE;
+  --neutral-400:#9CA3AF;--neutral-500:#71717A;--neutral-700:#374151;
+  --green-dark:#166534;--green-mid:#16A34A;--green-bg:#DCFCE7;
+  --teal:#0F766E;--teal-mid:#14B8A6;--teal-bg:#F0FDFA;
+  --amber:#92400E;--amber-mid:#D97706;--amber-bg:#FEF3C7;
+  --red-mid:#DC2626;--red-bg:#FEE2E2;--red-dark:#991B1B;
+  --gras-color:#16A34A;--hist-color:#0F766E;--unk-color:#D97706;--unsafe-color:#DC2626;
+}
+body{font-family:'Figtree',sans-serif;background:var(--page-bg);color:var(--ink);font-size:14px;line-height:1.5}
+.page{max-width:980px;margin:28px auto;background:var(--card-bg);border:1px solid var(--card-border);border-radius:6px;overflow:hidden;box-shadow:0 4px 28px rgba(10,22,40,.1)}
+.topbar{background:var(--navy);display:flex;justify-content:space-between;align-items:center;padding:12px 28px}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.topbar-logo-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.topbar-logo-svg{height:20px;width:auto}
+.topbar-logo-text{color:rgba(255,255,255,.5);font-size:9px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.15)}
+.topbar-report-type{color:rgba(255,255,255,.9);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.topbar-meta{display:flex;gap:20px;align-items:center}
+.topbar-meta-item{text-align:right}
+.topbar-meta-label{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em}
+.topbar-meta-value{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;font-family:'JetBrains Mono',monospace}
+.export-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--blue);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.04em}
+.export-btn svg{width:13px;height:13px}
+.brand-header{padding:22px 28px 18px;border-bottom:1px solid var(--card-border)}
+.brand-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:4px}
+.report-title{font-size:24px;font-weight:800;color:var(--navy);font-family:'Helvetica Neue','Arial',sans-serif;line-height:1.2}
+.report-subtitle{font-size:12px;color:var(--neutral-500);margin-top:4px}
+.section{border-top:1px solid var(--card-border)}
+.section-rule{height:3px;background:var(--blue)}
+.section-header{display:flex;align-items:center;gap:12px;padding:10px 28px;background:var(--navy)}
+.section-num{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace}
+.section-title{font-size:12px;font-weight:700;color:#FFF;text-transform:uppercase;letter-spacing:.1em;font-family:'Helvetica Neue','Arial',sans-serif}
+.section-subtitle{font-size:11px;color:rgba(255,255,255,.4);margin-left:auto}
+.section-body{padding:22px 28px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stat-box{background:var(--page-bg);border:1px solid var(--card-border);border-radius:8px;padding:18px 20px;text-align:center}
+.stat-number{font-size:40px;font-weight:900;color:var(--navy);font-family:'Helvetica Neue','Arial',sans-serif;line-height:1}
+.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--neutral-500);margin-top:6px}
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.chart-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;padding:18px}
+.chart-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.chart-count{font-size:11px;color:var(--neutral-500);margin-bottom:12px}
+.chart-wrap{position:relative;height:160px;display:flex;align-items:center;justify-content:center}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-pct{font-size:28px;font-weight:900;font-family:'Helvetica Neue','Arial',sans-serif;line-height:1}
+.donut-sub{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500);margin-top:1px}
+.chart-legend{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;font-size:11.5px}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-right:6px}
+.legend-label{display:flex;align-items:center;flex:1;color:var(--neutral-700)}
+.legend-pct{color:var(--neutral-500);font-size:11px;margin-right:8px}
+.legend-count{font-weight:700;color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:11px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.top5-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;padding:18px}
+.top5-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.top5-subtitle{font-size:11px;color:var(--neutral-500);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--card-border)}
+.col-headers{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--card-border);margin-bottom:10px}
+.ingredient-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.ingredient-row:last-child{margin-bottom:0}
+.ingredient-rank{font-size:11px;font-weight:700;color:var(--neutral-400);font-family:'JetBrains Mono',monospace;width:16px;flex-shrink:0;text-align:right}
+.ingredient-name{font-size:13px;font-weight:600;color:var(--ink);width:160px;flex-shrink:0}
+.ingredient-bar-wrap{flex:1;background:var(--page-bg);border-radius:999px;height:10px;overflow:hidden;border:1px solid var(--card-border)}
+.ingredient-bar{height:100%;border-radius:999px}
+.ingredient-pct{font-size:12px;font-weight:700;color:var(--ink);font-family:'JetBrains Mono',monospace;width:36px;text-align:right;flex-shrink:0}
+.sku-table{width:100%;border-collapse:collapse}
+.sku-table th{font-size:10px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;color:var(--neutral-500);text-align:left;padding:8px 12px;border-bottom:2px solid var(--card-border);background:var(--page-bg)}
+.sku-table td{padding:9px 12px;border-bottom:1px solid var(--card-border);font-size:13px;color:var(--ink);vertical-align:middle}
+.sku-table tr:last-child td{border-bottom:none}
+.sku-table tr:hover td{background:#F8FAFF;cursor:pointer}
+.gras-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.gras-ok{background:#DCFCE7;color:var(--green-dark)}
+.gras-hist{background:#F0FDFA;color:var(--teal)}
+.gras-unk{background:#FEF3C7;color:var(--amber)}
+.gras-unsafe{background:#FEE2E2;color:var(--red-dark)}
+.drill-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--page-bg);border:1px solid var(--card-border);border-radius:5px;font-size:11px;font-weight:600;color:var(--blue);cursor:pointer}
+.drill-btn:hover{background:var(--card-border)}
+.drill-btn svg{width:11px;height:11px}
+.sku-name{font-weight:600}
+.page-footer{background:var(--navy);padding:10px 28px;display:flex;justify-content:space-between;align-items:center}
+.footer-left{font-size:11px;color:rgba(255,255,255,.45)}
+.footer-center{font-size:11px;color:rgba(255,255,255,.3);font-family:'JetBrains Mono',monospace;text-align:center}
+.footer-right{font-size:11px;color:rgba(255,255,255,.6);font-weight:700}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo-wrap">
+      <svg class="topbar-logo-svg" viewBox="0 0 688 101" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M350.541 21.129C354.105 21.129 357.545 21.6976 360.857 22.8333C364.2 23.9372 367.133 25.5607 369.656 27.7051C372.211 29.8185 374.042 32.3902 375.146 35.4183L365.825 38.7786C365.289 37.233 364.262 35.8931 362.748 34.7576C361.235 33.5906 359.406 32.675 357.261 32.0126C355.148 31.3501 352.906 31.0172 350.541 31.0172C348.017 30.9857 345.651 31.3962 343.443 32.2479C341.266 33.0681 339.485 34.2055 338.097 35.6565C336.709 37.1075 336.013 38.7941 336.013 40.7183C336.013 43.0842 336.662 44.8816 337.956 46.1119C339.249 47.342 340.983 48.2575 343.159 48.8569C345.367 49.4247 347.828 49.9462 350.541 50.4193C354.894 51.1133 358.916 52.2645 362.607 53.8733C366.329 55.4821 369.311 57.6262 371.551 60.3076C373.822 62.9572 374.956 66.2225 374.956 70.1022C374.956 74.0138 373.822 77.4534 371.551 80.4186C369.311 83.3523 366.329 85.638 362.607 87.2783C358.916 88.8871 354.894 89.6915 350.541 89.6915C346.913 89.6915 343.426 89.1257 340.082 87.9901C336.739 86.8545 333.82 85.2288 331.328 83.1154C328.837 80.9705 327.056 78.4292 325.983 75.4958L335.211 72.0419C335.747 73.5556 336.771 74.9127 338.285 76.1112C339.83 77.2783 341.661 78.1937 343.775 78.8561C345.92 79.5186 348.175 79.8515 350.541 79.8515C353.064 79.8515 355.43 79.4409 357.638 78.6208C359.878 77.8006 361.676 76.6633 363.032 75.2122C364.42 73.7612 365.113 72.058 365.113 70.1022C365.113 68.0836 364.389 66.4272 362.938 65.134C361.519 63.8407 359.688 62.8171 357.448 62.0601C355.24 61.303 352.938 60.7343 350.541 60.3558C345.904 59.5987 341.74 58.4946 338.049 57.0436C334.39 55.5926 331.489 53.5565 329.343 50.9383C327.23 48.3201 326.173 44.9137 326.173 40.7183C326.173 36.7752 327.291 33.3355 329.531 30.4019C331.802 27.4685 334.784 25.1991 338.475 23.5904C342.197 21.9501 346.219 21.129 350.541 21.129Z" fill="white"/><path d="M456.172 39.7683C460.02 39.7685 463.585 40.6672 466.865 42.4651C470.177 44.263 472.905 46.677 475.049 49.7047L466.25 54.4858C464.925 52.9088 463.38 51.7074 461.614 50.8872C459.848 50.0357 458.033 49.6113 456.172 49.6112C453.585 49.6112 451.233 50.3213 449.119 51.7408C447.038 53.1287 445.381 54.9738 444.151 57.2762C442.953 59.547 442.354 62.0389 442.353 64.7512C442.353 67.4325 442.969 69.9262 444.199 72.229C445.429 74.4999 447.086 76.3283 449.168 77.7162C451.281 79.1042 453.617 79.8005 456.172 79.8005C458.127 79.8003 459.989 79.3564 461.755 78.4733C463.521 77.5902 465.02 76.4246 466.25 74.974L475.049 79.7522C472.905 82.7485 470.177 85.1458 466.865 86.9437C463.585 88.7416 460.02 89.6403 456.172 89.6405C451.819 89.6405 447.843 88.5222 444.248 86.283C440.683 84.0433 437.826 81.0447 435.681 77.2908C433.568 73.5057 432.513 69.3247 432.513 64.7512C432.513 61.282 433.127 58.0491 434.357 55.0529C435.587 52.0247 437.276 49.3756 439.421 47.1044C441.598 44.8018 444.119 43.0013 446.99 41.708C449.86 40.4146 452.923 39.7683 456.172 39.7683Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M502.828 39.7683C507.181 39.7685 511.14 40.8891 514.704 43.1287C518.3 45.3683 521.155 48.3809 523.268 52.1662C525.413 55.9512 526.487 60.1461 526.487 64.7512C526.487 68.1892 525.871 71.4076 524.641 74.404C523.411 77.4008 521.707 80.0527 519.531 82.3555C517.386 84.6264 514.878 86.4075 512.008 87.7008C509.169 88.994 506.109 89.6403 502.828 89.6405C498.476 89.6405 494.5 88.5222 490.904 86.283C487.339 84.0433 484.485 81.0447 482.34 77.2908C480.227 73.5054 479.17 69.3252 479.17 64.7512C479.17 61.282 479.783 58.0491 481.013 55.0529C482.243 52.0248 483.933 49.3755 486.078 47.1044C488.254 44.8016 490.778 43.0013 493.649 41.708C496.519 40.415 499.58 39.7683 502.828 39.7683ZM502.828 49.6112C500.242 49.6112 497.889 50.3046 495.776 51.6926C493.694 53.0805 492.038 54.9256 490.808 57.228C489.609 59.5304 489.01 62.0388 489.01 64.7512C489.01 67.5587 489.642 70.0996 490.904 72.3708C492.166 74.6416 493.836 76.4563 495.918 77.8126C498.031 79.1375 500.336 79.8005 502.828 79.8005C505.446 79.8003 507.796 79.104 509.878 77.7162C511.959 76.3284 513.599 74.4997 514.798 72.229C516.028 69.9262 516.644 67.4325 516.644 64.7512C516.644 62.0078 516.014 59.4847 514.753 57.1826C513.522 54.8798 511.864 53.049 509.782 51.6926C507.7 50.3053 505.383 49.6114 502.828 49.6112Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M580.74 88.4126H570.9V81.4565C569.355 83.9168 567.335 85.9032 564.843 87.4173C562.351 88.8998 559.433 89.6404 556.089 89.6405C552.651 89.6405 549.433 88.9941 546.436 87.7008C543.44 86.4075 540.788 84.6267 538.485 82.3555C536.214 80.0527 534.433 77.4007 533.14 74.404C531.847 71.4075 531.2 68.1892 531.2 64.7512C531.2 61.3132 531.846 58.0947 533.14 55.0983C534.433 52.0707 536.214 49.4206 538.485 47.1497C540.788 44.8469 543.44 43.0495 546.436 41.7562C549.433 40.463 552.651 39.8165 556.089 39.8165C559.433 39.8166 562.351 40.5739 564.843 42.0879C567.335 43.5705 569.355 45.5264 570.9 47.9551V24.8693C570.901 21.2482 572.813 17.7911 576.6 17.434H580.74V88.4126ZM556.183 49.3276C553.439 49.3277 550.931 50.0211 548.66 51.409C546.42 52.797 544.622 54.6583 543.266 56.9926C541.941 59.3266 541.278 61.9126 541.278 64.7512C541.278 67.6218 541.955 70.2265 543.311 72.5608C544.699 74.8633 546.514 76.7083 548.753 78.0962C551.024 79.4525 553.502 80.1293 556.183 80.1294C558.959 80.1294 561.389 79.4526 563.471 78.0962C565.552 76.7082 567.161 74.8468 568.297 72.5126C569.464 70.1783 570.047 67.5901 570.047 64.7512C570.047 61.8811 569.464 59.2784 568.297 56.9444C567.13 54.6102 565.504 52.7654 563.422 51.409C561.372 50.0211 558.959 49.3276 556.183 49.3276Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M610.357 39.7683C613.984 39.7683 617.313 40.5256 620.341 42.0397C623.369 43.5223 625.955 45.5892 628.1 48.2387C630.245 50.8569 631.823 53.886 632.833 57.3244C633.842 60.731 634.142 64.3597 633.732 68.2079H597.25C597.66 70.3837 598.448 72.3545 599.615 74.1205C600.814 75.8554 602.328 77.2285 604.158 78.238C606.019 79.2474 608.085 79.7689 610.357 79.8005C612.754 79.8005 614.932 79.2013 616.887 78.0026C618.874 76.8042 620.498 75.1472 621.759 73.0344L631.744 75.3512C629.851 79.5467 626.997 82.9863 623.18 85.6676C619.363 88.3173 615.088 89.6405 610.357 89.6405C606.004 89.6405 602.029 88.5226 598.432 86.283C594.868 84.0433 592.014 81.0447 589.869 77.2908C587.755 73.5055 586.698 69.325 586.698 64.7512C586.698 61.2818 587.314 58.0493 588.544 55.0529C589.774 52.025 591.461 49.3754 593.606 47.1044C595.783 44.8016 598.307 43.0013 601.177 41.708C604.048 40.4148 607.108 39.7683 610.357 39.7683ZM610.357 48.474C608.117 48.474 606.034 49.0122 604.11 50.0847C602.217 51.1572 600.641 52.625 599.38 54.4858C598.15 56.315 597.328 58.3798 596.918 60.6819H623.795C623.48 58.4111 622.675 56.3605 621.382 54.5312C620.12 52.6703 618.528 51.2026 616.604 50.1301C614.711 49.026 612.628 48.474 610.357 48.474Z" fill="white"/><path d="M238.126 70.814L250.476 22.2179H259.42L271.818 70.814L284.213 22.2179H294.339L277.495 88.4608H266.186L254.971 44.5976L243.758 88.4608H232.543L215.602 22.2179H225.728L238.126 70.814Z" fill="white"/><path d="M314.164 88.4608H304.321V22.2179H314.164V88.4608Z" fill="white"/><path d="M427.012 32.0608H395.734V48.0515H420.907V57.8944H395.734V78.6208H427.012V88.4608H385.891V22.2179H427.012V32.0608Z" fill="white"/><path d="M7.72084 35.6522C7.72084 35.6522 0.0435715 47.7494 0.0435715 58.0481C0.0435715 81.1921 17.0614 99.6409 40.0779 99.9915C48.2738 100.052 57.1549 99.9915 64.2705 92.6894C38.2427 92.6894 22.3264 73.777 22.3264 58.0481C22.3264 58.0481 21.9519 45.6894 27.5694 35.9526L7.72084 35.6522Z" fill="white"/><path d="M80.5615 14.7368C87.6771 14.7368 91.5382 22.7337 93.1073 29.2111H93.2946C94.8636 22.7337 98.7248 14.7368 105.84 14.7368H167.259C171.906 14.7368 171.906 12.8643 171.906 7.32269C171.906 2.80876 174.846 0 178.868 0H186.121V14.7368C186.121 27.7131 178.868 28.5339 171.531 28.5339L157.084 28.583H114.828C110.334 28.583 110.072 29.2111 108.275 33.7051C106.788 37.4206 93.2946 73.0277 93.2946 73.0277H93.1073C93.1073 73.0277 79.6135 37.4206 78.1273 33.7051C76.3297 29.2111 76.0675 28.583 71.5735 28.583H29.3177L14.8705 28.5339C7.53389 28.5339 0.280831 27.7131 0.280831 14.7368V0H7.53389C11.2789 0 14.496 3.37051 14.496 7.32269C14.496 12.8643 14.496 14.7368 19.1434 14.7368H80.5615Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M68.5375 35.9523C71.1658 35.9523 71.3535 37.2826 71.9167 38.6953L84.6808 71.5913C79.6732 80.6013 71.1663 85.7609 60.6932 85.7609C44.8506 85.7608 30.0037 72.7999 30.0037 54.6695C30.0038 48.2288 31.2462 40.1469 35.9957 35.9523H68.5375ZM60.2234 44.5345C55.1279 44.5345 50.9972 48.6005 50.9972 54.0781C50.9972 59.5557 55.1279 63.6217 60.2234 63.6217C65.3188 63.6216 69.4496 59.5556 69.4496 54.0781C69.4496 48.6005 65.3188 44.5346 60.2234 44.5345Z" fill="white"/><path d="M178.494 35.6522C178.494 35.6522 186.171 47.7494 186.171 58.0481C186.171 81.1921 169.153 99.6409 146.136 99.9915C137.941 100.052 129.059 99.9915 121.944 92.6894C147.972 92.6894 163.888 73.777 163.888 58.0481C163.888 58.0481 164.262 45.6894 158.645 35.9526L178.494 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M117.677 35.9523C115.049 35.9523 114.861 37.2826 114.298 38.6953L101.534 71.5913C106.541 80.6013 115.048 85.7609 125.521 85.7609C141.364 85.7608 156.211 72.7999 156.211 54.6695C156.211 48.2288 154.968 40.1469 150.219 35.9523H117.677ZM125.991 44.5345C131.087 44.5345 135.217 48.6005 135.217 54.0781C135.217 59.5557 131.087 63.6217 125.991 63.6217C120.896 63.6216 116.765 59.5556 116.765 54.0781C116.765 48.6005 120.896 44.5346 125.991 44.5345Z" fill="white"/></svg>
+      <span class="topbar-logo-text">Intelligence</span>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-report-type">Portfolio GRAS Report</div>
+  </div>
+  <div class="topbar-meta">
+    <div class="topbar-meta-item">
+      <div class="topbar-meta-label">Report ID</div>
+      <div class="topbar-meta-value">WC-BR-GRAS-DBS-001</div>
+    </div>
+    <div class="topbar-meta-item">
+      <div class="topbar-meta-label">Generated</div>
+      <div class="topbar-meta-value">Jun 9, 2026 · 10:22 AM CDT</div>
+    </div>
+    <div class="topbar-meta-item" style="margin-left:8px">
+      <button class="export-btn">
+        <svg viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M3.5 5.5l3 3 3-3M2 10h9" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BRAND HEADER -->
+<div class="brand-header">
+  <div class="brand-label">Date Better Snacks</div>
+  <div class="report-title">GRAS Report</div>
+  <div class="report-subtitle">WISEcode Intelligence · Generally Recognized as Safe · Portfolio-level analysis · June 2026</div>
+</div>
+
+<!-- S1: PORTFOLIO OVERVIEW -->
+<div class="section">
+  <div class="section-rule"></div>
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <span class="section-title">Portfolio Overview</span>
+    <span class="section-subtitle">Date Better Snacks · all active SKUs</span>
+  </div>
+  <div class="section-body">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-number">24</div><div class="stat-label">Foods in Portfolio</div></div>
+      <div class="stat-box"><div class="stat-number">8.4</div><div class="stat-label">Avg Ingredients / Food</div></div>
+      <div class="stat-box"><div class="stat-number">61</div><div class="stat-label">Unique Ingredients</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: PORTFOLIO ANALYTICS -->
+<div class="section">
+  <div class="section-rule"></div>
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <span class="section-title">Portfolio Analytics</span>
+    <span class="section-subtitle">GRAS classification across all 24 products</span>
+  </div>
+  <div class="section-body">
+    <div class="charts-grid">
+
+      <!-- GRAS Portfolio donut -->
+      <div class="chart-card">
+        <div class="chart-title">GRAS Portfolio</div>
+        <div class="chart-count">24 products</div>
+        <div class="chart-wrap">
+          <canvas id="grasPortfolioChart"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct" style="color:var(--green-mid)">88%</div>
+            <div class="donut-sub">GRAS</div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#16A34A"></span>GRAS</span><span class="legend-pct">88%</span><span class="legend-count">21</span></div>
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#DC2626"></span>Non-GRAS</span><span class="legend-pct">12%</span><span class="legend-count">3</span></div>
+        </div>
+      </div>
+
+      <!-- Food GRAS Status Distribution bar -->
+      <div class="chart-card">
+        <div class="chart-title">Food GRAS Status Distribution</div>
+        <div class="chart-count">24 products</div>
+        <div class="chart-wrap" style="height:180px">
+          <canvas id="foodGrasChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Ingredient GRAS Distribution donut -->
+      <div class="chart-card">
+        <div class="chart-title">Ingredient GRAS Distribution</div>
+        <div class="chart-count">61 unique ingredients</div>
+        <div class="chart-wrap">
+          <canvas id="ingGrasChart"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct" style="color:var(--green-mid)">52%</div>
+            <div class="donut-sub">GRAS</div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#16A34A"></span>GRAS</span><span class="legend-pct">52%</span><span class="legend-count">32</span></div>
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#0F766E"></span>Historical</span><span class="legend-pct">30%</span><span class="legend-count">18</span></div>
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#D97706"></span>Unknown</span><span class="legend-pct">15%</span><span class="legend-count">9</span></div>
+          <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:#DC2626"></span>Unsafe</span><span class="legend-pct">3%</span><span class="legend-count">2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: UNSAFE & UNKNOWN INGREDIENT USAGE -->
+<div class="section">
+  <div class="section-rule"></div>
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <span class="section-title">Unsafe & Unknown GRAS Ingredient Usage</span>
+    <span class="section-subtitle">% = share of portfolio SKUs containing this ingredient</span>
+  </div>
+  <div class="section-body">
+    <div class="two-col">
+
+      <!-- Unsafe Top 5 -->
+      <div class="top5-card">
+        <div class="top5-title" style="color:var(--red-dark)">⚠ Unsafe Ingredients</div>
+        <div class="top5-subtitle">Ingredients classified as Unsafe · top 5 by portfolio prevalence</div>
+        <div class="col-headers">
+          <span style="width:16px;flex-shrink:0"></span>
+          <span style="width:160px;flex-shrink:0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">Ingredient</span>
+          <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">Portfolio SKUs Containing</span>
+          <span style="width:36px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">SKUs %</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">1</span>
+          <span class="ingredient-name">Titanium Dioxide</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:8%;background:#DC2626"></div></div>
+          <span class="ingredient-pct" style="color:var(--red-mid)">8%</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">2</span>
+          <span class="ingredient-name">Red 40</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:4%;background:#DC2626"></div></div>
+          <span class="ingredient-pct" style="color:var(--red-mid)">4%</span>
+        </div>
+        <div style="padding:12px 0 4px;font-size:11px;color:var(--neutral-400);font-style:italic;text-align:center">No further Unsafe ingredients detected</div>
+      </div>
+
+      <!-- Unknown Top 5 -->
+      <div class="top5-card">
+        <div class="top5-title" style="color:var(--amber)">? Unknown Ingredients</div>
+        <div class="top5-subtitle">GRAS status not established · top 5 by portfolio prevalence</div>
+        <div class="col-headers">
+          <span style="width:16px;flex-shrink:0"></span>
+          <span style="width:160px;flex-shrink:0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">Ingredient</span>
+          <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">Portfolio SKUs Containing</span>
+          <span style="width:36px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--neutral-500)">SKUs %</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">1</span>
+          <span class="ingredient-name">Natural Flavors</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:42%;background:#D97706"></div></div>
+          <span class="ingredient-pct" style="color:var(--amber-mid)">42%</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">2</span>
+          <span class="ingredient-name">Lime Oil</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:33%;background:#D97706"></div></div>
+          <span class="ingredient-pct" style="color:var(--amber-mid)">33%</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">3</span>
+          <span class="ingredient-name">Citrus Extract</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:21%;background:#D97706"></div></div>
+          <span class="ingredient-pct" style="color:var(--amber-mid)">21%</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">4</span>
+          <span class="ingredient-name">Vanilla Extract</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:17%;background:#D97706"></div></div>
+          <span class="ingredient-pct" style="color:var(--amber-mid)">17%</span>
+        </div>
+        <div class="ingredient-row">
+          <span class="ingredient-rank">5</span>
+          <span class="ingredient-name">Sunflower Extract</span>
+          <div class="ingredient-bar-wrap"><div class="ingredient-bar" style="width:12%;background:#D97706"></div></div>
+          <span class="ingredient-pct" style="color:var(--amber-mid)">12%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S4: SKU TABLE -->
+<div class="section">
+  <div class="section-rule"></div>
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <span class="section-title">Product-Level GRAS Classification</span>
+    <span class="section-subtitle">All 24 active SKUs · click any row to view SKU NFP+ Report</span>
+  </div>
+  <div class="section-body">
+    <table class="sku-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>UPC</th>
+          <th>GRAS Status</th>
+          <th>Unsafe Ingredients</th>
+          <th>Unknown Ingredients</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="skuBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="page-footer">
+  <div class="footer-left">WISEcode Intelligence™ · Portfolio GRAS Report · Date Better Snacks</div>
+  <div class="footer-center">WC-BR-GRAS-DBS-001 · Generated Jun 9, 2026 · wisecode.ai</div>
+  <div class="footer-right">Page 1 of 1</div>
+</div>
+</div>
+
+<script>
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+const defaults = { plugins: { legend: { display: false } }, animation: { duration: 600 } };
+
+new Chart(document.getElementById('grasPortfolioChart'), {
+  type: 'doughnut',
+  data: { labels: ['GRAS', 'Non-GRAS'], datasets: [{ data: [21, 3], backgroundColor: ['#16A34A', '#DC2626'], borderWidth: 0, hoverOffset: 4 }] },
+  options: { ...defaults, cutout: '72%' }
+});
+
+new Chart(document.getElementById('foodGrasChart'), {
+  type: 'bar',
+  data: {
+    labels: ['GRAS', 'Historical', 'Unknown', 'Non-GRAS'],
+    datasets: [{ data: [14, 7, 6, 3], backgroundColor: ['#16A34A', '#0F766E', '#D97706', '#DC2626'], borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    ...defaults,
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Figtree' }, color: '#71717A' } },
+      y: { grid: { color: '#F0F0F0' }, ticks: { font: { size: 10 }, color: '#71717A', stepSize: 2 }, beginAtZero: true }
+    },
+    plugins: { ...defaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} products` } } }
+  }
+});
+
+new Chart(document.getElementById('ingGrasChart'), {
+  type: 'doughnut',
+  data: { labels: ['GRAS', 'Historical', 'Unknown', 'Unsafe'], datasets: [{ data: [32, 18, 9, 2], backgroundColor: ['#16A34A', '#0F766E', '#D97706', '#DC2626'], borderWidth: 0, hoverOffset: 4 }] },
+  options: { ...defaults, cutout: '72%' }
+});
+
+// ── SKU TABLE ─────────────────────────────────────────────────────────────────
+const skus = [
+  { name: 'Cashew Lime Crisp',           upc: '8 10207 71198 8', status: 'Historical', unsafe: 0, unknown: 2 },
+  { name: 'Dark Chocolate Date Bar',     upc: '8 10207 71199 5', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Almond Coconut Crisp',        upc: '8 10207 71200 8', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Peanut Butter Date Bites',    upc: '8 10207 71201 5', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Walnut Brownie Bar',          upc: '8 10207 71202 2', status: 'Historical', unsafe: 0, unknown: 1 },
+  { name: 'Tropical Mango Date Bar',     upc: '8 10207 71203 9', status: 'Unknown',    unsafe: 0, unknown: 3 },
+  { name: 'Cinnamon Apple Crisp',        upc: '8 10207 71204 6', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Espresso Date Energy Ball',   upc: '8 10207 71205 3', status: 'Historical', unsafe: 0, unknown: 1 },
+  { name: 'Pistachio Rose Bar',          upc: '8 10207 71206 0', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Lemon Tahini Crisp',          upc: '8 10207 71207 7', status: 'Unknown',    unsafe: 0, unknown: 2 },
+  { name: 'Hazelnut Cacao Bites',        upc: '8 10207 71208 4', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Strawberry Vanilla Bar',      upc: '8 10207 71209 1', status: 'Historical', unsafe: 0, unknown: 1 },
+  { name: 'Macadamia Coconut Crisp',     upc: '8 10207 71210 7', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Pecan Maple Bar',             upc: '8 10207 71211 4', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Blueberry Lemon Crisp',       upc: '8 10207 71212 1', status: 'Unknown',    unsafe: 0, unknown: 2 },
+  { name: 'Pumpkin Spice Date Bar',      upc: '8 10207 71213 8', status: 'Historical', unsafe: 0, unknown: 2 },
+  { name: 'Matcha Cashew Bites',         upc: '8 10207 71214 5', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Cherry Almond Crisp',         upc: '8 10207 71215 2', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Ginger Turmeric Bar',         upc: '8 10207 71216 9', status: 'Historical', unsafe: 0, unknown: 1 },
+  { name: 'Banana Walnut Bites',         upc: '8 10207 71217 6', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Vanilla Bean Date Bar',       upc: '8 10207 71218 3', status: 'GRAS',       unsafe: 0, unknown: 0 },
+  { name: 'Chocolate Peanut Crisp',      upc: '8 10207 71219 0', status: 'Unknown',    unsafe: 0, unknown: 2 },
+  { name: 'Protein Boost Bar — Choc.',   upc: '8 10207 71220 6', status: 'Non-GRAS',   unsafe: 1, unknown: 2 },
+  { name: 'Protein Boost Bar — Vanilla', upc: '8 10207 71221 3', status: 'Non-GRAS',   unsafe: 1, unknown: 3 },
+];
+
+const statusConfig = {
+  'GRAS':     { cls: 'gras-ok',     label: '✓ GRAS' },
+  'Historical':{ cls: 'gras-hist',  label: 'Historical' },
+  'Unknown':  { cls: 'gras-unk',    label: '? Unknown' },
+  'Non-GRAS': { cls: 'gras-unsafe', label: '⚠ Non-GRAS' },
+};
+
+document.getElementById('skuBody').innerHTML = skus.map(s => {
+  const sc = statusConfig[s.status];
+  const unsafeCell = s.unsafe > 0
+    ? `<span style="color:var(--red-mid);font-weight:700">${s.unsafe} ingredient${s.unsafe > 1 ? 's' : ''}</span>`
+    : `<span style="color:var(--neutral-400)">—</span>`;
+  const unknownCell = s.unknown > 0
+    ? `<span style="color:var(--amber-mid);font-weight:700">${s.unknown} ingredient${s.unknown > 1 ? 's' : ''}</span>`
+    : `<span style="color:var(--neutral-400)">—</span>`;
+  return `<tr onclick="alert('Opens SKU NFP+ Report for: ${s.name}')">
+    <td><div class="sku-name">${s.name}</div></td>
+    <td><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--neutral-500)">${s.upc}</span></td>
+    <td><span class="gras-badge ${sc.cls}">${sc.label}</span></td>
+    <td>${unsafeCell}</td>
+    <td>${unknownCell}</td>
+    <td><a class="drill-btn" onclick="event.stopPropagation();alert('Opens SKU NFP+ Report for: ${s.name}')">
+      <svg viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 5.5h4M5.5 3.5l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      View Report
+    </a></td>
+  </tr>`;
+}).join('');
+</script>
+</body>
+</html>
