@@ -1052,11 +1052,10 @@
 
     /* --- Status pills (shared by table + cards), themed off WISE tokens --- */
     .upf-pill {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center;
       padding: 4px 11px; border-radius: var(--radius-pill, 999px);
       font-size: 12px; font-weight: 800; white-space: nowrap; line-height: 1.2;
     }
-    .upf-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
     .upf-pill--good { background: color-mix(in srgb, var(--sec-green) 15%, transparent); color: var(--sec-green-text); }
     .upf-pill--primary { background: var(--primary-soft); color: var(--primary); }
     html.dark .upf-pill--primary { color: var(--primary-bright, var(--primary)); }
@@ -3767,12 +3766,12 @@
          ramps with the metric's score (higher score → richer/darker), giving
          variation between metrics without losing the pillar's identity. */
       const PILLAR_HUE = {
-        'Nutrient Quality':   { h: 145, s: 56, l: 40 },
-        'Ingredient Quality': { h: 190, s: 64, l: 38 },
-        'Health Outcomes':    { h: 256, s: 44, l: 54 },
+        'Nutrient Quality':   { h: 146, s: 54, l: 43 },  /* --sec-green  #32A966 */
+        'Ingredient Quality': { h: 210, s: 54, l: 31 },  /* --primary    #25507C */
+        'Health Outcomes':    { h:  43, s: 100, l: 60 }, /* --ter-amber  #FFC434 */
       };
       function pillarColor(group, value) {
-        const base = PILLAR_HUE[group] || { h: 145, s: 55, l: 44 };
+        const base = PILLAR_HUE[group] || { h: 146, s: 54, l: 43 };
         const t = Math.max(0, Math.min(1, (value - 45) / 55)); /* 45–100 → 0–1 */
         const l = base.l + (1 - t) * 24;  /* lower score → lighter   */
         const s = base.s - (1 - t) * 16;  /* lower score → softer     */
@@ -3780,7 +3779,7 @@
       }
       /* Representative solid hue for a pillar's legend dot. */
       function pillarSwatch(group) {
-        const b = PILLAR_HUE[group] || { h: 145, s: 55, l: 44 };
+        const b = PILLAR_HUE[group] || { h: 146, s: 54, l: 43 };
         return `hsl(${b.h} ${b.s}% ${b.l + 4}%)`;
       }
 

@@ -251,11 +251,11 @@ const DATA = {
      `score` drives both the fat bar fill and its rating tier (Excellent / Good
      / …) via the shared WISEscore status scale. */
   topProducts: [
-    { name: 'Ginger Turmeric Bar',        score: 91 },
-    { name: 'Almond Coconut Crisp',       score: 89 },
-    { name: 'Pistachio Rose Bar',         score: 87 },
-    { name: 'Matcha Cashew Bites',        score: 85 },
-    { name: 'Walnut Brownie Bar',         score: 84 },
+    { name: 'Ginger Turmeric Bar',        score: 91, img: '../assets/top5-ginger-turmeric-bar.png' },
+    { name: 'Almond Coconut Crisp',       score: 89, img: '../assets/top5-almond-coconut-crisp.png' },
+    { name: 'Pistachio Rose Bar',         score: 87, img: '../assets/top5-pistachio-rose-bar.png' },
+    { name: 'Matcha Cashew Bites',        score: 85, img: '../assets/top5-matcha-cashew-bites.png' },
+    { name: 'Walnut Brownie Bar',         score: 84, img: '../assets/top5-walnut-brownie-bar.png' },
     { name: 'Cherry Almond Crisp',        score: 82 },
     { name: 'Macadamia Coconut Crisp',    score: 81 },
     { name: 'Cashew Lime Crisp',          score: 80 },
@@ -1032,7 +1032,7 @@ function renderTopPerformers(d) {
           <div class="dash-bignum-row">
             ${countUpMarkup(score, { className: 'dash-bignum' })}
             <span class="dash-bignum-cap"><strong>${esc(it.name)}</strong></span>
-            <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`}"><span class="dash-stamp-hash">#</span>${i + 1}</span>
+            <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
           </div>
           <div class="dash-btn-row">
             <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-icons">description</span>View report</button>
@@ -1981,10 +1981,10 @@ function renderScoreDistribution(d) {
 /* "Where to focus" opportunity scatter — every WISEscore metric plotted */
 /* by its current score (Y) against the share of products scoring below  */
 /* Good (X). The shaded lower-right zone (high share below Good + low     */
-/* score) flags the highest-leverage fixes. Dots are colored by the      */
-/* canonical status scale (scoreColor) so the plot reads as a status      */
-/* heat-map — the same language as the radar and pillar bars — instead of */
-/* per-category hues. Sits in the left column of a two-up row, paired     */
+/* score) flags the highest-leverage fixes. Dots are colored by the       */
+/* quadrant they fall in (green Strengths, amber attention, red Priority  */
+/* fix), drawn from the brand status palette, so the cloud reads as a     */
+/* focus heat-map. Sits in the left column of a two-up row, paired        */
 /* with a ranked "highest-leverage fixes" list. Point names surface on    */
 /* hover (shared tooltip) rather than as always-on labels, matching the   */
 /* radar. Reuses the shared hover-tooltip + replay machinery. */
@@ -2025,7 +2025,7 @@ function renderFocusScatter(d) {
         group: p.name,
         score: m.value,
         below: FOCUS_IMPACT[short] != null ? FOCUS_IMPACT[short] : focusBelowGood(m.name, m.value),
-        color: scoreColor(m.value),
+        color: null,
       });
     });
   });
@@ -2046,6 +2046,18 @@ function renderFocusScatter(d) {
   const Y_THRESH = 65;
   const xScale = (v) => m.l + (v / X_MAX) * plotW;
   const yScale = (v) => m.t + (1 - (v - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+
+  /* Color each point by the quadrant it lands in rather than by its raw score:
+     a metric can score well yet still sit deep in the lower-right priority zone
+     (many products below Good), so a status-only color would read green inside
+     the red zone. Mapping to the quadrant keeps the brand palette but lets the
+     cloud read as a true focus heat-map — green Strengths, amber attention, red
+     Priority fix. */
+  const focusColor = (below, score) =>
+    (below >= X_THRESH && score < Y_THRESH) ? C.red
+      : (below < X_THRESH && score >= Y_THRESH) ? C.green
+        : C.amber;
+  points.forEach((p) => { p.color = focusColor(p.below, p.score); });
 
   const xTicks = [0, 20, 40, 60, 80];
   const yTicks = [30, 40, 50, 60, 70, 80, 90, 100];
@@ -2076,15 +2088,18 @@ function renderFocusScatter(d) {
     <line class="dash-scatter-divider" x1="${m.l}" y1="${zoneY.toFixed(1)}" x2="${(m.l + plotW).toFixed(1)}" y2="${zoneY.toFixed(1)}"></line>`;
 
   /* Quadrant labels — rendered as small rounded chips pinned to each corner so
-     they stay legible against the plot without the chunky all-caps text. */
+     they stay legible against the plot without the chunky all-caps text. Only
+     the pill's outer edge is pinned to the corner (left edge for 'start', right
+     edge for 'end'); the label is then centered inside the pill both ways, so
+     padding stays symmetric regardless of how the width estimate lands. */
   const zoneChip = (text, x, y, anchor, fix) => {
-    const padX = 6, h = 15, charW = 4.9;
+    const padX = 9, h = 18, charW = 5.0;
     const w = text.length * charW + padX * 2;
-    const rx = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
-    const tx = anchor === 'start' ? x + padX : anchor === 'end' ? x - padX : x;
+    const rx = anchor === 'start' ? x : x - w;
+    const cx = rx + w / 2;
     return `<g class="dash-scatter-zone-chip${fix ? ' is-fix' : ''}">
       <rect class="dash-scatter-chip-bg" x="${rx.toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="${(h / 2).toFixed(1)}"></rect>
-      <text class="dash-scatter-zone-label${fix ? ' dash-scatter-zone-label--fix' : ''}" x="${tx.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}">${text}</text>
+      <text class="dash-scatter-zone-label${fix ? ' dash-scatter-zone-label--fix' : ''}" x="${cx.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central">${text}</text>
     </g>`;
   };
   const zoneLabels = `
