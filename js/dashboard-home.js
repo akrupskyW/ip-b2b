@@ -306,6 +306,18 @@ const DATA = {
     measures: 'Scores how well a product’s ingredients support the body’s ability to reduce chronic inflammation — a driver of heart disease, metabolic disorders, and immune dysfunction. High scores reflect omega-3 presence, polyphenol density, low seed oil exposure, and absence of pro-inflammatory additives.',
     pillar: 'Health Outcomes Pillar',
   },
+  /* Single-metric spotlight rendered report-style below the anti-inflammatory
+     card. `dist` is the five-tier share (Excellent → Poor, must read with the
+     SPOT_TIERS order); `top`/`low` are the best- and worst-scoring SKUs. */
+  metricSpotlight: {
+    name: 'Gut Health',
+    desc: 'Measures prebiotic fiber and fermentable carbohydrates that support a healthy gut microbiome.',
+    score: 71,
+    rating: 'Good',
+    dist: [21, 42, 25, 8, 4],
+    top: { name: 'Turmeric Oatmeal', score: 91 },
+    low: { name: 'Frosted Granola', score: 39 },
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -446,6 +458,15 @@ const DATA_ALT = {
     ],
     measures: 'Scores how well a product’s ingredients support the body’s ability to reduce chronic inflammation — a driver of heart disease, metabolic disorders, and immune dysfunction. High scores reflect omega-3 presence, polyphenol density, low seed oil exposure, and absence of pro-inflammatory additives.',
     pillar: 'Health Outcomes Pillar',
+  },
+  metricSpotlight: {
+    name: 'Gut Health',
+    desc: 'Measures prebiotic fiber and fermentable carbohydrates that support a healthy gut microbiome.',
+    score: 43,
+    rating: 'OK',
+    dist: [5, 16, 36, 30, 13],
+    top: { name: 'Trail Mix Clusters', score: 58 },
+    low: { name: 'Fruit Snacks', score: 24 },
   },
 };
 
@@ -1324,9 +1345,12 @@ function bdDonut(ringMarkup, variant, num, label, sub, ariaLabel) {
   const size = 300;
   const cx = size / 2;
   const cy = size / 2;
+  /* The ring's outer edge is at radius 137 (r 124 + half the 26px stroke), so it
+     only spans 13→287 of the 300-unit box. Crop the viewBox to that tight bound
+     so the gauge fills its (smaller) container instead of carrying dead padding. */
   return `
     <div class="dash-donut dash-bd-donut dash-bd-donut--${variant}"${variant === 'pillars' ? ' aria-hidden="true"' : ''}>
-      <svg class="dash-donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(ariaLabel)}">
+      <svg class="dash-donut-svg" viewBox="13 13 274 274" role="img" aria-label="${esc(ariaLabel)}">
         <g transform="rotate(-90 ${cx} ${cy})">${ringMarkup}</g>
       </svg>
       <div class="dash-donut-center">
@@ -1750,6 +1774,93 @@ function renderTopProducts(d) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Metric spotlight — one metric broken down with a header (name +       */
+/* rating + score + blurb) sitting above the same segmented status bar   */
+/* used by the Portfolio Analysis section below. Its Top/Low SKUs and a   */
+/* "View report" drill ride as chips floated to the top-right of the      */
+/* header. Driven by d.metricSpotlight; sits below the anti-inflammatory  */
+/* card.                                                                  */
+/* ------------------------------------------------------------------ */
+const SPOT_TIERS = [
+  { label: 'Excellent' },
+  { label: 'Good' },
+  { label: 'OK' },
+  { label: 'Fair' },
+  { label: 'Poor' },
+];
+const SPOT_BADGE_TONE = { Excellent: 'excellent', Good: 'good', OK: 'okay', Fair: 'fair', Poor: 'poor' };
+
+/* Match the segmented Portfolio Analysis bar's palette exactly (OK→okay). */
+function spotTierColor(label) {
+  const key = String(label || '').trim().toLowerCase();
+  return SCORE_TIER_COLORS[key.startsWith('ok') ? 'okay' : key] || C.ink;
+}
+
+function renderMetricSpotlight(d) {
+  const m = d.metricSpotlight;
+  if (!m) return '';
+  const dist = m.dist || [];
+  const tone = SPOT_BADGE_TONE[m.rating] || 'good';
+
+  const segs = SPOT_TIERS
+    .map((t, i) => {
+      const p = dist[i] || 0;
+      const color = spotTierColor(t.label);
+      return p > 0
+        ? `<div class="dash-seg-part" style="flex-grow:${p};background:${color}" title="${esc(t.label)} ${p}%"><span class="dash-seg-part-label">${p}%</span></div>`
+        : '';
+    })
+    .join('');
+
+  const legend = SPOT_TIERS
+    .map((t, i) => {
+      const p = dist[i] || 0;
+      const color = spotTierColor(t.label);
+      return p > 0
+        ? `<div class="dash-seg-leg-cell" style="flex-grow:${p}">
+            <span class="dash-seg-leg-line" style="background:${color}"></span>
+            <span class="dash-seg-leg-info">
+              <span class="dash-seg-leg-dot" style="background:${color}"></span>
+              <span class="dash-seg-leg-name">${esc(t.label)}</span>
+            </span>
+          </div>`
+        : '';
+    })
+    .join('');
+
+  return `
+    <section class="dash-mrow-section">
+      <div class="dash-card dash-mrow-card">
+        <div class="dash-section-head dash-mrow-head">
+          <h2 class="dash-section-title dash-mrow-title">${esc(m.name)}</h2>
+        </div>
+        <div class="dash-seg-row dash-mrow-row">
+          <div class="dash-seg-score dash-mrow-score-block">
+            <div class="dash-wisescore-num dash-seg-num">${countUpMarkup(m.score, { className: 'n dash-seg-pct-num' })}<span class="d">/ 100</span></div>
+            <span class="dash-badge dash-badge--${tone} dash-mrow-badge">${esc(m.rating)}</span>
+            <p class="dash-wisescore-note dash-seg-note dash-mrow-note">${esc(m.desc)}</p>
+          </div>
+          <div class="dash-seg-bars dash-mrow-seg">
+            <div class="dash-mrow-seg-head">
+              <div class="dash-mrow-chips">
+                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
+                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.low.score))}</span></span>
+              </div>
+            </div>
+            <div class="dash-mrow-seg-body">
+              <div class="dash-mrow-seg-main">
+                <div class="dash-seg-track">${segs}</div>
+                <div class="dash-seg-legend">${legend}</div>
+              </div>
+              <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="dash-mrow-report-icon"><span class="material-icons">chevron_right</span></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
 /* GRAS flag cards — Unsafe + Unknown ingredients, side by side. Same  */
 /* fat-bar UI (name above the bar, share % inside the colored fill) as  */
 /* the tables above; only the fill color + accent change per bucket.    */
@@ -1787,7 +1898,6 @@ function renderIngredientFlags(d) {
       <div class="dash-card dash-ingredients-card dash-flag-card">
         <div class="dash-card-topbar">
           <div class="dash-card-topbar-lead">
-            <span class="dash-ing-eyebrow dash-ing-eyebrow--unsafe"><span class="material-icons">warning</span>Unsafe</span>
             <h3 class="dash-card-title">Unsafe ingredients</h3>
           </div>
           ${cardMenu('unsafeingredients', 'Unsafe ingredients')}
@@ -1799,7 +1909,6 @@ function renderIngredientFlags(d) {
       <div class="dash-card dash-ingredients-card dash-flag-card">
         <div class="dash-card-topbar">
           <div class="dash-card-topbar-lead">
-            <span class="dash-ing-eyebrow dash-ing-eyebrow--unknown"><span class="material-icons">help</span>Unknown</span>
             <h3 class="dash-card-title">Unknown ingredients</h3>
           </div>
           ${cardMenu('unknowningredients', 'Unknown ingredients')}
@@ -1918,12 +2027,12 @@ function renderFocusScatter(d) {
   });
   if (!points.length) return '';
 
-  /* Plot geometry — a compact viewBox sized close to a single column so the
-     chart and its SVG text read at a natural scale at half width (and simply
-     scale up when the two-up collapses to one column). */
+  /* Plot geometry — a wide, low-profile viewBox (~2:1) so the chart renders
+     about half as tall as its column width. Text still reads at a natural scale
+     since the SVG is width:100%; height:auto. */
   const W = 520;
-  const H = 430;
-  const m = { l: 46, r: 18, t: 26, b: 46 };
+  const H = 215;
+  const m = { l: 46, r: 18, t: 22, b: 42 };
   const plotW = W - m.l - m.r;
   const plotH = H - m.t - m.b;
   const X_MAX = 80;
@@ -2068,6 +2177,7 @@ export function renderDashboardHome(host) {
       ${renderPillarRadar(d)}
       ${renderTopIngredients(d)}
       ${renderTopProducts(d)}
+      ${renderMetricSpotlight(d)}
       ${renderIngredientFlags(d)}
       ${renderScoreDistribution(d)}
       ${document.body.dataset.hideScout ? renderFocusScatter(d) : ''}
@@ -2836,6 +2946,8 @@ function setupChartAnimations(host) {
         animateIngredientBars(el);
       } else if (el.classList.contains('dash-seg-section')) {
         animateSegBar(el);
+      } else if (el.classList.contains('dash-mrow-section')) {
+        animateSegBar(el);
       } else if (el.classList.contains('dash-radar-section')) {
         animateRadar(el);
         animateGrasBars(el.querySelector('.dash-gras-bar-card'));
@@ -2869,6 +2981,8 @@ function setupChartAnimations(host) {
   if (flagsSection) observer.observe(flagsSection);
   const segSection = host.querySelector('.dash-seg-section');
   if (segSection) observer.observe(segSection);
+  const spotlightSection = host.querySelector('.dash-mrow-section');
+  if (spotlightSection) observer.observe(spotlightSection);
   const radarSection = host.querySelector('.dash-radar-section');
   if (radarSection) observer.observe(radarSection);
   const scatterRow = host.querySelector('.dash-scatter-row');

@@ -459,14 +459,18 @@ html.dark .dash-score-icon { background: rgba(255, 255, 255, 0.06); }
 .dash-top5-section { display: flex; flex-direction: column; }
 .dash-top5-title { margin: 0 0 16px; }
 .dash-top5-claim .dash-bignum { font-size: 3.4rem; }
-/* Reserve two lines for the product name (clear of the stamp icon) so every
-   column is the same height and the buttons line up across all five. */
-.dash-top5-claim .dash-bignum-cap { padding-right: 54px; min-height: 2.7em; }
+/* Reserve two lines for the product name (clear of the stamp icon, now on the
+   left) so every column is the same height and the buttons line up. */
+.dash-top5-claim .dash-bignum-cap { padding-left: 54px; padding-right: 0; min-height: 2.7em; }
+/* Flip the score and the rank stamp: the stamp disc is pinned to the LEFT and
+   the score + product name are right-aligned to the right edge of the column. */
+.dash-claim.dash-top5-claim .dash-bignum-row { align-items: flex-end; text-align: right; }
+.dash-claim.dash-top5-claim .dash-stamp-icon { right: auto; left: 4px; }
 /* The product names are two full-size bold lines (vs. the claim row's one bold
    + one small line), so the shared `margin-top: 20px` reads as too much air
    above the button. Tighten it so the name→button gap visually matches the
    claim row above. */
-.dash-claim.dash-top5-claim > .dash-claim-col .dash-btn-row { margin-top: 16px; }
+.dash-claim.dash-top5-claim > .dash-claim-col .dash-btn-row { margin-top: 16px; justify-content: flex-end; }
 
 /* Rank digit sits straight inside the stamped circle (no nested icon), keeping
    the same debossed tone + a light bottom highlight so it reads as engraved. */
@@ -1576,11 +1580,18 @@ html.dark .dash-badge--poor { color: #f07070; }
   align-items: center;
   width: 100%;
   margin-top: 0;
+  /* The toggle row above the gauge is ~24px tall; mirror it as bottom padding
+     so the gauge sits vertically centered in its column (no top-heavy gap) and
+     gets breathing room beneath the ring. */
+  padding-bottom: 24px;
 }
 .dash-breakdown-donut-stage {
   position: relative;
-  width: 252px;
-  height: 252px;
+  /* Sized to the gauge's cropped viewBox (see bdDonut) so the box hugs the
+     ring rather than leaving the ~9% padding the square SVG carried — keeps
+     the gauge the same visual size while tightening the column height. */
+  width: 230px;
+  height: 230px;
 }
 .dash-breakdown-donut-stage .dash-bd-donut {
   position: absolute;
@@ -1600,7 +1611,7 @@ html.dark .dash-badge--poor { color: #f07070; }
   align-self: flex-end;
   align-items: center;
   gap: 10px;
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2048,6 +2059,9 @@ html.dark .dash-ing-eyebrow--unknown { color: #e08840; }
   height: 14px;
   border-radius: 1px;
   opacity: 0.55;
+  /* Overlap the bar's bottom edge by 1px so the connector always reads as
+     fused to the bar (no sub-pixel gap), then drops down to the name. */
+  margin-top: -1px;
 }
 .dash-seg-leg-info {
   display: inline-flex;
@@ -2150,6 +2164,115 @@ html.dark .dash-ing-report-icon { color: var(--primary-bright); }
   background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 html.dark .dash-ing-report:hover .dash-ing-report-icon { color: #fff; }
+
+/* ===================================================================== */
+/* Metric spotlight — a header (metric name + rating pill + score + blurb) */
+/* sitting above the same segmented status bar used by the Portfolio       */
+/* Analysis section (.dash-seg-*). The Top/Low SKUs and a View report      */
+/* drill ride as intent-style chips floated to the top-right of the header.*/
+/* ===================================================================== */
+.dash-mrow-card { margin-top: 16px; }
+/* Header: the metric name reads as a section title (matching the Portfolio
+   Analysis heading), with the Top/Low SKU chips floated to the right. */
+.dash-mrow-head {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.dash-mrow-title { flex: 1 1 auto; min-width: 0; }
+/* Score block reuses the Portfolio Analysis stat (.dash-seg-score): a big
+   numeral + rating badge with the metric description as its note. */
+.dash-mrow-score-block { display: flex; flex-direction: column; align-items: flex-start; }
+/* Compact the score numeral + description here so the left column stays a
+   lightweight label beside the bar (rather than a hero stat). */
+.dash-mrow-score-block .dash-seg-num .n { font-size: 2.1rem; }
+.dash-mrow-score-block .dash-seg-num .d { font-size: 0.875rem; }
+.dash-mrow-badge { margin: 10px 0 0; }
+.dash-mrow-note { margin-top: 10px; font-size: 0.8125rem; line-height: 1.45; max-width: 230px; }
+
+/* Chips — pill style echoing the intent chips used elsewhere. */
+.dash-mrow-chips {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  flex-shrink: 0; justify-content: flex-start;
+}
+.dash-mrow-chip {
+  display: inline-flex; align-items: center; gap: 7px; max-width: 240px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  font-family: inherit; font-size: 0.8125rem; color: var(--text-muted);
+}
+.dash-mrow-chip-tag {
+  font-size: 0.625rem; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-pill);
+  letter-spacing: .05em; text-transform: uppercase; flex-shrink: 0;
+}
+.dash-mrow-chip-tag--top { background: #DCFCE7; color: #166534; }
+.dash-mrow-chip-tag--low { background: #FEE2E2; color: #991B1B; }
+html.dark .dash-mrow-chip-tag--top { background: color-mix(in srgb, #16A34A 28%, transparent); color: #86efac; }
+html.dark .dash-mrow-chip-tag--low { background: color-mix(in srgb, #DC2626 28%, transparent); color: #fca5a5; }
+.dash-mrow-chip-name {
+  font-weight: 600; color: var(--text); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-mrow-chip-score { color: var(--text-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+html.dark .dash-mrow-chip { background: rgba(255,255,255,0.04); border-color: var(--border-strong); }
+
+/* Bar + drill row — the segmented status bar (.dash-seg-track / -legend) on
+   the left with a "View report" action on the far right. Mirrors the
+   anti-inflammatory chart's linked rows: the chevron circle sits in line with
+   the health bar and the label rides right above it. Top-aligned so the circle
+   registers against the bar band, not the legend below it. */
+.dash-mrow-seg { display: flex; flex-direction: column; }
+/* Head row sitting directly above the bar: the Top/Low SKU chips on the left,
+   in line with the "View report" label that floats above the chevron on the
+   right. */
+.dash-mrow-seg-head { display: flex; align-items: center; min-height: 28px; margin-bottom: 10px; }
+.dash-mrow-seg-body { display: flex; align-items: flex-start; gap: 18px; }
+.dash-mrow-seg-main { flex: 1 1 auto; min-width: 0; }
+/* Reuse the segmented Portfolio Analysis bar; keep the legend flush so the
+   connector lines stay fused to the bar. */
+.dash-mrow-seg .dash-seg-legend { margin-top: 0; }
+/* View report — a chevron in a hairline circle the exact height of the health
+   bar (so it lines up with it), with the muted label floated just above. */
+.dash-mrow-report {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  height: var(--dash-donut-ring-h);
+  width: 64px;
+  padding: 0; background: none; border: none; cursor: pointer;
+  font-family: inherit; color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+.dash-mrow-report-label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem; font-weight: 600; line-height: 1.1;
+  text-align: center; white-space: nowrap;
+}
+.dash-mrow-report-icon {
+  display: grid; place-items: center;
+  width: var(--dash-donut-ring-h); height: var(--dash-donut-ring-h);
+  border-radius: 50%; border: 1px solid var(--border); color: var(--primary);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.dash-mrow-report-icon .material-icons { font-size: 16px; }
+html.dark .dash-mrow-report-icon { color: var(--primary-bright); }
+.dash-mrow-report:hover { color: var(--text); }
+.dash-mrow-report:hover .dash-mrow-report-icon {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+html.dark .dash-mrow-report:hover .dash-mrow-report-icon { color: #fff; }
+
+@media (max-width: 720px) {
+  .dash-mrow-chips { justify-content: flex-start; }
+}
+
 /* Name (left) + level pill (right), sitting just above the bar — mirrors
    .dash-breakdown-bar-head. */
 .dash-ing-bar-head {
