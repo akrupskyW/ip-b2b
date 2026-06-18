@@ -1101,10 +1101,15 @@ html.dark .dash-kebab-sep { background: rgba(255, 255, 255, 0.08); }
   text-align: center;
   pointer-events: none;
 }
-/* Raised disc behind the center stat so it reads as elevated above the rings. */
+/* Raised disc behind the center stat so it reads as elevated above the rings.
+   Pinned to the container center (inset 0 + margin auto) so it stays perfectly
+   concentric with the SVG ring — without explicit offsets the abspos disc rode
+   the flex static position and drifted off-center from the ring. */
 .dash-donut-center::before {
   content: "";
   position: absolute;
+  inset: 0;
+  margin: auto;
   width: 130px;
   height: 130px;
   border-radius: 50%;
@@ -1562,7 +1567,11 @@ html.dark .dash-badge--poor { color: #f07070; }
 /* Three columns: description · circular WISEscore gauge · health bars. */
 .dash-breakdown-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1.2fr;
+  /* Middle column is a fixed gauge width so the donut can never overflow into
+     the bars (an `auto` track collapses under the gauge's %-width wrapper and
+     the fixed-size stage spills out). Side columns share the rest, with the
+     bars column kept the narrower of the two. */
+  grid-template-columns: 1.1fr 200px 0.9fr;
   gap: 44px;
   align-items: center;
 }
@@ -1578,11 +1587,13 @@ html.dark .dash-badge--poor { color: #f07070; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
+  /* Width tracks the gauge itself (not 100% — a percentage width here collapses
+     the auto grid track and lets the fixed-size stage overflow into the bars). */
+  width: max-content;
   margin-top: 0;
-  /* The toggle row above the gauge is ~24px tall; mirror it as bottom padding
-     so the gauge sits vertically centered in its column (no top-heavy gap) and
-     gets breathing room beneath the ring. */
+  /* Mirror the toggle row above the gauge (16px track + 8px margin = 24px) as
+     bottom padding so the ring is symmetric within the column and stays
+     vertically centered against the description / bars columns. */
   padding-bottom: 24px;
 }
 .dash-breakdown-donut-stage {
@@ -1590,12 +1601,17 @@ html.dark .dash-badge--poor { color: #f07070; }
   /* Sized to the gauge's cropped viewBox (see bdDonut) so the box hugs the
      ring rather than leaving the ~9% padding the square SVG carried — keeps
      the gauge the same visual size while tightening the column height. */
-  width: 230px;
-  height: 230px;
+  width: 184px;
+  height: 184px;
 }
 .dash-breakdown-donut-stage .dash-bd-donut {
   position: absolute;
   inset: 0;
+  /* Override the base .dash-donut's fixed 252px box — with that width set,
+     inset:0 is ignored (over-constrained) and the gauge overflows the stage.
+     Filling 100% makes it honor the stage size instead. */
+  width: 100%;
+  height: 100%;
 }
 /* Faint gauge tracks are decorative — no hover popover or dimming. */
 .dash-bd-donut .dash-donut-arc--track { pointer-events: none; }
@@ -1603,8 +1619,11 @@ html.dark .dash-badge--poor { color: #f07070; }
 .dash-breakdown-donut.is-pillars-view .dash-bd-donut--overall { display: none; }
 .dash-breakdown-donut.is-pillars-view .dash-bd-donut--pillars { display: block; }
 /* Single ring sits at the outer radius, so grow the center disc out flush to
-   the ring's inner edge — no surface gap between the disc and the donut. */
-.dash-bd-donut .dash-donut-center::before { width: 190px; height: 190px; }
+   the ring's inner edge — no surface gap between the disc and the donut. The
+   ring's inner hole is 222/274 (= ~81%) of the cropped viewBox, so sizing the
+   disc as a % of the stage keeps it flush to the ring's inner edge at any
+   gauge size (a touch over 81% so it tucks under the edge — no gap). */
+.dash-bd-donut .dash-donut-center::before { width: 81%; height: 81%; }
 /* Toggle pinned to the top-right, sitting right above the gauge. */
 .dash-breakdown-donut-toggle {
   display: inline-flex;
@@ -2175,42 +2194,53 @@ html.dark .dash-ing-report:hover .dash-ing-report-icon { color: #fff; }
 /* Header: the metric name reads as a section title (matching the Portfolio
    Analysis heading), with the Top/Low SKU chips floated to the right. */
 .dash-mrow-head {
-  align-items: center;
+  align-items: baseline;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 12px 24px;
+  gap: 10px;
   margin-top: 0;
   margin-bottom: 8px;
 }
-.dash-mrow-title { flex: 1 1 auto; min-width: 0; }
-/* Score block reuses the Portfolio Analysis stat (.dash-seg-score): a big
-   numeral + rating badge with the metric description as its note. */
-.dash-mrow-score-block { display: flex; flex-direction: column; align-items: flex-start; }
-/* Compact the score numeral + description here so the left column stays a
-   lightweight label beside the bar (rather than a hero stat). */
-.dash-mrow-score-block .dash-seg-num .n { font-size: 2.1rem; }
-.dash-mrow-score-block .dash-seg-num .d { font-size: 0.875rem; }
-.dash-mrow-badge { margin: 10px 0 0; }
-.dash-mrow-note { margin-top: 10px; font-size: 0.8125rem; line-height: 1.45; max-width: 230px; }
+/* The rating chip prepends the headline; the title shrinks to match the card
+   headings elsewhere on the page (.dash-card-title, e.g. "Unsafe ingredients"). */
+.dash-mrow-title { flex: 0 1 auto; min-width: 0; font-size: 1.0625rem; font-weight: 700; }
+/* Score numeral rides inline in the header, right after the headline: the
+   number matches the headline size, the "/ 100" matches the description. */
+.dash-mrow-score { flex-shrink: 0; }
+.dash-mrow-score .n { font-size: 1.0625rem; line-height: 1; }
+.dash-mrow-score .d { font-size: 0.8125rem; }
+/* Compact pill sitting just before the headline, sized to match it. */
+.dash-mrow-badge { margin: 0; padding: 3px 10px; font-size: 0.75rem; }
+/* Description rides inline at the end of the header, to the right of the
+   headline, as one long line (no max-width clamp). */
+.dash-mrow-note { margin: 0; font-size: 0.8125rem; line-height: 1.45; max-width: none; flex: 1 1 auto; min-width: 0; }
+/* Responsive: once the dash column tightens, the description drops to its own
+   line below the status + score + name instead of riding inline on the right. */
+@container dash (max-width: 860px) {
+  .dash-mrow-note { flex-basis: 100%; }
+}
 
-/* Chips — pill style echoing the intent chips used elsewhere. */
+/* Top/Low chips — slim intent-style pills (matching .chip / .ws-intent-chip
+   elsewhere), floated to the right of the description in the header so they
+   drop to the next line as the column tightens. */
 .dash-mrow-chips {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  flex-shrink: 0; justify-content: flex-start;
+  flex-shrink: 0;
 }
 .dash-mrow-chip {
-  display: inline-flex; align-items: center; gap: 7px; max-width: 240px;
-  padding: 6px 12px; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: baseline; gap: 6px; max-width: 230px;
+  padding: 4px 12px; border-radius: var(--radius-pill);
   background: var(--surface-2); border: 1px solid var(--border-strong);
-  font-family: inherit; font-size: 0.8125rem; color: var(--text-muted);
+  font-family: inherit; font-size: 0.75rem; font-weight: 500; color: var(--text-muted);
 }
 .dash-mrow-chip-tag {
-  font-size: 0.625rem; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-pill);
-  letter-spacing: .05em; text-transform: uppercase; flex-shrink: 0;
+  font-size: 0.625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  flex-shrink: 0;
 }
-.dash-mrow-chip-tag--top { background: #DCFCE7; color: #166534; }
-.dash-mrow-chip-tag--low { background: #FEE2E2; color: #991B1B; }
-html.dark .dash-mrow-chip-tag--top { background: color-mix(in srgb, #16A34A 28%, transparent); color: #86efac; }
-html.dark .dash-mrow-chip-tag--low { background: color-mix(in srgb, #DC2626 28%, transparent); color: #fca5a5; }
+.dash-mrow-chip-tag--top { color: #166534; }
+.dash-mrow-chip-tag--low { color: #991B1B; }
+html.dark .dash-mrow-chip-tag--top { color: #86efac; }
+html.dark .dash-mrow-chip-tag--low { color: #fca5a5; }
 .dash-mrow-chip-name {
   font-weight: 600; color: var(--text); min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -2218,60 +2248,22 @@ html.dark .dash-mrow-chip-tag--low { background: color-mix(in srgb, #DC2626 28%,
 .dash-mrow-chip-score { color: var(--text-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 html.dark .dash-mrow-chip { background: rgba(255,255,255,0.04); border-color: var(--border-strong); }
 
-/* Bar + drill row — the segmented status bar (.dash-seg-track / -legend) on
-   the left with a "View report" action on the far right. Mirrors the
-   anti-inflammatory chart's linked rows: the chevron circle sits in line with
-   the health bar and the label rides right above it. Top-aligned so the circle
-   registers against the bar band, not the legend below it. */
-.dash-mrow-seg { display: flex; flex-direction: column; }
-/* Head row sitting directly above the bar: the Top/Low SKU chips on the left,
-   in line with the "View report" label that floats above the chevron on the
-   right. */
-.dash-mrow-seg-head { display: flex; align-items: center; min-height: 28px; margin-bottom: 10px; }
-.dash-mrow-seg-body { display: flex; align-items: flex-start; gap: 18px; }
-.dash-mrow-seg-main { flex: 1 1 auto; min-width: 0; }
-/* Reuse the segmented Portfolio Analysis bar; keep the legend flush so the
-   connector lines stay fused to the bar. */
+/* Segmented status bar (.dash-seg-track / -legend), now full width since the
+   Top/Low chips + View report all live up in the header. Keep the legend flush
+   so the connector lines stay fused to the bar. */
 .dash-mrow-seg .dash-seg-legend { margin-top: 0; }
-/* View report — a chevron in a hairline circle the exact height of the health
-   bar (so it lines up with it), with the muted label floated just above. */
+/* View report — rides in the header alongside the Top/Low chips, styled like
+   them (same compact text) but with no pill background, just a chevron. */
 .dash-mrow-report {
-  position: relative;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  height: var(--dash-donut-ring-h);
-  width: 64px;
-  padding: 0; background: none; border: none; cursor: pointer;
-  font-family: inherit; color: var(--text-muted);
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 4px 4px; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
   transition: color 0.15s ease;
 }
-.dash-mrow-report-label {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.7rem; font-weight: 600; line-height: 1.1;
-  text-align: center; white-space: nowrap;
-}
-.dash-mrow-report-icon {
-  display: grid; place-items: center;
-  width: var(--dash-donut-ring-h); height: var(--dash-donut-ring-h);
-  border-radius: 50%; border: 1px solid var(--border); color: var(--primary);
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.dash-mrow-report-icon .material-icons { font-size: 16px; }
-html.dark .dash-mrow-report-icon { color: var(--primary-bright); }
-.dash-mrow-report:hover { color: var(--text); }
-.dash-mrow-report:hover .dash-mrow-report-icon {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-}
-html.dark .dash-mrow-report:hover .dash-mrow-report-icon { color: #fff; }
-
-@media (max-width: 720px) {
-  .dash-mrow-chips { justify-content: flex-start; }
-}
+.dash-mrow-report-icon { font-size: 16px !important; transition: transform 0.15s ease; }
+.dash-mrow-report:hover { color: var(--primary); }
+html.dark .dash-mrow-report:hover { color: var(--primary-bright); }
+.dash-mrow-report:hover .dash-mrow-report-icon { transform: translateX(2px); }
 
 /* Name (left) + level pill (right), sitting just above the bar — mirrors
    .dash-breakdown-bar-head. */

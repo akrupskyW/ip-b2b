@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
   <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="dashboard.css?v=gut-health-portfolio" />
+  <link rel="stylesheet" href="dashboard.css?v=gut-health-portfolio-10" />
   <style>
     /* =====================================================================
        Typography lock-in (aha.html only) — Noto Serif is the display face for
@@ -107,6 +107,13 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 4px;
+    }
+
+    /* The shared scatter intro is capped at 52ch (sized for the narrower
+       two-column dashboard layout), which makes it wrap midway here. Let it run
+       the full width of the card so it fills the container. */
+    .dash-scatter-section .dash-scatter-intro {
+      max-width: none;
     }
 
     /* Scatter x/y axis tick numbers: smaller + regular weight. Exempted from the
@@ -196,8 +203,12 @@
       font-size: 13px; color: var(--text-subtle); line-height: 1.65;
       max-width: 760px; margin: 10px 0 18px;
     }
-    .att-scroll { overflow-x: auto; padding-bottom: 4px; }
-    .att-stage { position: relative; margin: 0 auto; width: 100%; }
+    .att-scroll { overflow-x: auto; overflow-y: visible; padding-bottom: 4px; }
+    #att-tree-card .att-scroll {
+      padding-top: 92px;
+      margin-top: -76px;
+    }
+    .att-stage { position: relative; margin: 0 auto; width: 100%; overflow: visible; }
 
     /* --- Performance matrix grid (products × metric codes) ---
        A dense SKU × metric cross-reference: rows are products, columns are the
@@ -205,9 +216,9 @@
        metric. Built as a CSS grid so columns stay aligned for column scanning. */
     .pmx {
       display: grid;
-      grid-template-columns: minmax(132px, 168px) repeat(15, minmax(44px, 1fr));
+      grid-template-columns: 40px 1px minmax(132px, 168px) repeat(15, minmax(44px, 1fr));
       gap: 4px;
-      min-width: 860px;
+      min-width: 920px;
     }
     .pmx-corner { background: transparent; }
     /* Horizontal metric codes sit on the x-axis below the cells. */
@@ -219,15 +230,37 @@
       font-size: 11px; font-weight: 700; letter-spacing: .01em;
       line-height: 1.18; color: var(--text);
     }
-    .pmx-rowhead {
-      display: flex; align-items: center; justify-content: flex-end;
-      gap: 8px; padding-right: 12px; min-width: 0;
+    .pmx-rowavatar {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 2px;
+    }
+    .pmx-avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; flex: none;
+      border-radius: 50%; overflow: hidden;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .pmx-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pmx-avatar-ph { font-size: 16px; color: var(--text-subtle); }
+    .pmx-rowdivider {
+      align-self: stretch;
+      width: 1px;
+      margin: 4px 0;
+      background: var(--border);
+    }
+    html.dark .pmx-rowdivider { background: rgba(255, 255, 255, .12); }
+    .pmx-rowmeta {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 10px 0 8px; min-width: 0;
     }
     .pmx-rowname {
       font-size: 13px; font-weight: 700; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      min-width: 0;
     }
     .pmx-rowscore {
+      margin-left: auto;
       font-size: 11px; font-weight: 800; color: var(--text-subtle);
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
@@ -238,6 +271,81 @@
       font-variant-numeric: tabular-nums; cursor: default;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
       transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
+    }
+    /* Poor / fair cells host a floating fix nudge (mirrors aha.html's score toast). */
+    .pmx-cell--fix {
+      position: relative;
+      z-index: 2;
+      overflow: visible;
+    }
+    .pmx-fix-toast {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 6px);
+      z-index: 8;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      width: max-content;
+      min-width: 148px;
+      max-width: 196px;
+      padding: 9px 10px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--primary, #25507C) 0%, #336699 100%);
+      color: #fff;
+      box-shadow: 0 10px 26px rgba(37, 80, 124, 0.38), 0 3px 8px rgba(0, 0, 0, 0.14);
+      pointer-events: auto;
+      transform: translateX(-50%);
+      animation:
+        dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
+        dash-score-toast-float 3.6s ease-in-out 0.32s infinite;
+    }
+    .pmx-fix-toast::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      width: 11px;
+      height: 11px;
+      margin-left: -5px;
+      background: #336699;
+      transform: rotate(45deg);
+      border-radius: 0 0 2px 0;
+    }
+    .pmx-fix-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 1px; }
+    .pmx-fix-toast-icon .material-icons { font-size: 16px; color: #fff; }
+    .pmx-fix-toast-body { min-width: 0; }
+    .pmx-fix-toast-title {
+      font-size: 11px; font-weight: 700; line-height: 1.25;
+      padding-right: 14px;
+    }
+    .pmx-fix-toast-text {
+      margin: 2px 0 0;
+      font-size: 10px;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.92);
+    }
+    .pmx-fix-toast-close {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .pmx-fix-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
+    .pmx-fix-toast-close .material-icons { font-size: 11px; }
+    @media (prefers-reduced-motion: reduce) {
+      .pmx-fix-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
     }
     .pmx-cell span { opacity: 0; transition: opacity .1s ease; }
     .pmx-cell:hover {
@@ -289,35 +397,39 @@
     ===================================================================== */
     @container dash (max-width: 760px) {
       .pmx {
-        grid-template-columns: minmax(104px, 152px) repeat(15, minmax(30px, 1fr));
-        min-width: 620px;
+        grid-template-columns: 34px 1px minmax(104px, 152px) repeat(15, minmax(30px, 1fr));
+        min-width: 680px;
       }
+      .pmx-avatar { width: 28px; height: 28px; }
     }
     @container dash (max-width: 560px) {
       .pmx {
-        grid-template-columns: minmax(82px, 1fr) repeat(15, minmax(18px, 1fr));
+        grid-template-columns: 28px 1px minmax(82px, 1fr) repeat(15, minmax(18px, 1fr));
         min-width: 0; gap: 3px;
       }
       .pmx-cell { min-height: 26px; border-radius: 4px; }
-      .pmx-rowhead { gap: 6px; padding-right: 8px; }
+      .pmx-avatar { width: 24px; height: 24px; }
+      .pmx-rowmeta { padding-left: 6px; gap: 6px; }
+      .pmx-fix-toast { display: none; }
     }
     @container dash (max-width: 440px) {
       .pmx {
-        grid-template-columns: minmax(66px, 1fr) repeat(15, minmax(13px, 1fr));
+        grid-template-columns: 24px 1px minmax(66px, 1fr) repeat(15, minmax(13px, 1fr));
         gap: 2px;
       }
       .pmx-cell { min-height: 22px; border-radius: 3px; }
       .pmx-xlabel { padding-top: 5px; }
+      .pmx-avatar { width: 20px; height: 20px; }
     }
 
     /* =====================================================================
        Rich cursor-following tooltip for the matrix cells. Explains exactly
-       what's being hovered: the product (+ overall score), the metric (full
-       name, category, what it measures), the status tier (+ score band and a
-       plain-language meaning), and a mini five-tier scale with the current
-       tier highlighted. Built/positioned by the inline script below; styled to
-       match the shared #dash-donut-tip popover. Floored to the page's 12px
-       minimum font size, so type sizes are authored at 12px and up.
+       what's being hovered: the product (+ its WISEscore), the metric (full
+       name, category, what it measures), a health bar filled to that score,
+       and a plain-language meaning of the metric's status directly beneath it.
+       Built/positioned by the inline script below; styled to match the shared
+       #dash-donut-tip popover. Floored to the page's 12px minimum font size, so
+       type sizes are authored at 12px and up.
     ===================================================================== */
     #pmx-tip {
       position: fixed; z-index: 10000; left: 0; top: 0;
@@ -345,21 +457,16 @@
     }
     .pmx-tip-metric { font-size: 13px; font-weight: 800; color: var(--text); }
     .pmx-tip-metric-desc { font-size: 12px; line-height: 1.5; color: var(--text-subtle); margin-top: 3px; }
-    .pmx-tip-status { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-    .pmx-tip-dot {
-      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--tier, var(--primary)) 24%, transparent);
+    .pmx-tip-status-desc { font-size: 12px; line-height: 1.5; color: var(--text-subtle); margin-top: 9px; }
+    .pmx-tip-bar { margin: 13px 0 0; }
+    .pmx-tip-bar-track {
+      position: relative; height: 10px; border-radius: 999px; overflow: hidden;
+      background: color-mix(in srgb, var(--text-subtle) 16%, transparent);
     }
-    .pmx-tip-status-label { font-size: 13px; font-weight: 800; color: var(--text); }
-    .pmx-tip-status-range {
-      font-size: 12px; font-weight: 700; color: var(--text-subtle);
-      margin-left: auto; font-variant-numeric: tabular-nums;
+    .pmx-tip-bar-fill {
+      position: absolute; left: 0; top: 0; bottom: 0; min-width: 6px;
+      border-radius: 999px; transition: width .2s ease;
     }
-    .pmx-tip-status-desc { font-size: 12px; line-height: 1.5; color: var(--text-subtle); margin-top: 5px; }
-    .pmx-tip-scale { display: flex; align-items: center; gap: 3px; margin: 11px 0 0; height: 9px; }
-    .pmx-tip-scale-seg { flex: 1; height: 6px; border-radius: 3px; opacity: .38; transition: opacity .1s ease; }
-    .pmx-tip-scale-seg.is-active { opacity: 1; height: 9px; box-shadow: 0 0 0 1.5px var(--surface); }
-    html.dark .pmx-tip-scale-seg.is-active { box-shadow: 0 0 0 1.5px #14242f; }
     .pmx-tip-foot {
       font-size: 12px; line-height: 1.45; color: var(--text-muted);
       margin-top: 11px; padding-top: 9px; border-top: 1px dashed var(--border);
@@ -380,16 +487,27 @@
     .pa-ringval { fill: var(--text-subtle); font-size: 11px; font-weight: 600; }
     .pa-axis-label { fill: var(--text-muted); font-size: 13px; font-weight: 600; }
     .pa-wedge {
-      fill-opacity: 0.82;
+      fill-opacity: 0.92;
       stroke: var(--surface);
       stroke-width: 1.5;
       stroke-linejoin: round;
       cursor: pointer;
+      /* Elevation + depth: a broad ambient shadow paired with a tight contact
+         shadow lifts each wedge off the grid so the rosette reads as a cluster
+         of raised petals rather than a flat fill. */
+      filter: drop-shadow(0 3px 5px rgba(8, 15, 26, 0.22)) drop-shadow(0 1px 1.5px rgba(8, 15, 26, 0.16));
       transition: fill-opacity 0.15s ease, filter 0.15s ease;
     }
     .pa-wedge:hover {
       fill-opacity: 1;
-      filter: brightness(1.05) drop-shadow(0 0 5px currentColor);
+      /* Lift the hovered wedge higher (deeper shadow) and add its status-color glow. */
+      filter: brightness(1.05) drop-shadow(0 7px 11px rgba(8, 15, 26, 0.28)) drop-shadow(0 0 6px currentColor);
+    }
+    html.dark .pa-wedge {
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.4));
+    }
+    html.dark .pa-wedge:hover {
+      filter: brightness(1.08) drop-shadow(0 7px 13px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 6px currentColor);
     }
 
     /* =====================================================================
@@ -549,6 +667,9 @@
         height: auto !important;
         min-height: 0 !important;
         overflow: visible !important;
+        /* Always print/export on a plain white page, even in dark mode. */
+        background: #fff !important;
+        background-color: #fff !important;
       }
       /* Render at a "small desktop" width, then scale the whole report down to
          fit US Letter — so the roomy desktop layout (wide matrix, multi-column
@@ -583,6 +704,10 @@
       .dash-section { break-inside: avoid; page-break-inside: avoid; }
       /* Let the collapsible matrix scroller expand so nothing is clipped. */
       .att-scroll { overflow: visible !important; }
+      /* Snap any in-flight matrix entrance to its finished (visible) state so a
+         print captured mid-sweep still shows every cell at full size. */
+      .pmx-cell.is-pmx-in { animation: none !important; }
+      .pmx-fix-toast { display: none !important; }
       @page { size: 8.5in 11in; margin: 14mm; }
     }
 
@@ -700,6 +825,678 @@
       .az-nav-item,
       .az-nav-tick,
       .az-nav-label { transition: none; }
+    }
+
+    /* --- Pink "skinny bars" toggle, pinned to the top of the floating nav.
+       Flips every chunky WISEscore health bar (.dash-ws-health-bar) to a slim
+       track; the switch track turns pink when engaged. The label rides the same
+       hover-reveal behaviour as the section items below it. ------------------ */
+    .az-nav { --az-pink: #ec4899; }
+    .az-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+      padding: 6px 4px;
+      border: none;
+      background: none;
+      border-radius: 9px;
+      cursor: pointer;
+      color: var(--text-subtle);
+      font-family: inherit;
+      text-align: right;
+      transition: background .12s ease, color .12s ease;
+    }
+    .az-toggle:hover,
+    .az-toggle:focus-visible {
+      background: color-mix(in srgb, var(--az-pink) 14%, var(--surface));
+      color: var(--text);
+      outline: none;
+    }
+    .az-switch {
+      flex: none;
+      position: relative;
+      width: 26px;
+      height: 15px;
+      border-radius: 999px;
+      background: var(--border);
+      transition: background .16s ease;
+    }
+    html.dark .az-switch { background: rgba(255, 255, 255, .22); }
+    .az-switch-dot {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+      transition: transform .16s ease;
+    }
+    .az-toggle[aria-checked="true"] .az-switch { background: var(--az-pink); }
+    .az-toggle[aria-checked="true"] .az-switch-dot { transform: translateX(11px); }
+    .az-toggle[aria-checked="true"] .az-nav-label { color: var(--az-pink); font-weight: 800; }
+    .az-nav-sep {
+      height: 1px;
+      margin: 5px 2px 6px;
+      background: var(--border);
+    }
+    html.dark .az-nav-sep { background: rgba(255, 255, 255, .1); }
+    @media (prefers-reduced-motion: reduce) {
+      .az-toggle,
+      .az-switch,
+      .az-switch-dot { transition: none; }
+    }
+
+    /* =====================================================================
+       Skinny health-bar mode (toggled by the pink switch above). Only the
+       "fat" WISEscore bars (.dash-ws-health-bar) are affected: the chunky
+       ~22px track collapses to a slim 8px pill, the score baked into the
+       coloured fill is hidden, and the relocated score (.az-score-chip,
+       injected once per bar by the script below) surfaces in the row's head —
+       joining the existing rating / share chip, or standing in for it when the
+       head has none. The slim, score-above layout mirrors the pillar-card
+       metric bars. The segmented and pillar-metric bars are left untouched.
+    ===================================================================== */
+    body.az-skinny-bars .dash-ws-health-track { height: 4px; }
+    body.az-skinny-bars .dash-ws-health-bar { position: relative; }
+    body.az-skinny-bars .dash-ws-health-fill { min-width: 0; padding-right: 0; }
+    body.az-skinny-bars .dash-ws-health-fill .dash-ws-health-num,
+    body.az-skinny-bars .dash-ws-health-fill .dash-pct-wrap,
+    body.az-skinny-bars .dash-ws-health-fill .dash-pct { display: none; }
+
+    /* The relocated score chip: hidden in fat mode, revealed in skinny mode. */
+    .az-score-chip { display: none; }
+    body.az-skinny-bars .az-score-chip {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Every head row above a skinny bar: pin the row's label on the left and
+       float all its chips — status / rating / intent chips plus the relocated
+       score — together to the right. */
+    body.az-skinny-bars .dash-breakdown-bar-head,
+    body.az-skinny-bars .dash-ing-bar-head,
+    body.az-skinny-bars .dash-gras-bar-head {
+      justify-content: flex-start;
+      margin-bottom: 6px;
+    }
+    body.az-skinny-bars .dash-breakdown-bar-head > .dash-breakdown-bar-name,
+    body.az-skinny-bars .dash-ing-bar-head > .dash-ing-name,
+    body.az-skinny-bars .dash-gras-bar-head > .dash-gras-bar-name { margin-right: auto; }
+
+    /* Bars with no per-row head (the overall WISEscore bar): float the score at
+       the bar's top-right, "in place of the chip". */
+    body.az-skinny-bars .az-score-chip--overlay {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 6px);
+    }
+
+    /* =====================================================================
+       Product-Level UPF Classification (analytics-types.html only).
+       A sortable table of every active SKU with its UPF classification, NOVA
+       processing level, and Non-UPF shield status. Every column header sorts
+       (click to toggle asc/desc); a pink switch flips the whole table into a
+       responsive grid of cards — same rows, same sort order, card layout.
+       Built on the shared .att-card shell and the WISE token palette so it
+       sits seamlessly beside the other report cards. Injected by the inline
+       script below.
+    ===================================================================== */
+    #upf-class-card { --upf-pink: #ec4899; }
+
+    /* Controls bar: count + sort dropdown on the left, the pink view toggle on
+       the right. Stacks on narrow report columns. */
+    .upf-controls {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+
+    /* Pink view toggle (table ↔ cards). A label-less switch; track turns pink
+       when card view is on. */
+    .upf-toggle {
+      display: inline-flex; align-items: center;
+      padding: 6px; border: none; background: none; cursor: pointer;
+      border-radius: 9px; font-family: inherit;
+      transition: background .12s ease;
+    }
+    .upf-toggle:hover,
+    .upf-toggle:focus-visible {
+      background: color-mix(in srgb, var(--upf-pink) 12%, transparent);
+      outline: none;
+    }
+    .upf-switch {
+      flex: none; position: relative; width: 42px; height: 24px;
+      border-radius: 999px; background: var(--upf-pink); transition: background .16s ease;
+    }
+    .upf-switch-dot {
+      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+      transition: transform .16s ease;
+    }
+    .upf-toggle[aria-checked="true"] .upf-switch { background: var(--upf-pink); }
+    .upf-toggle[aria-checked="true"] .upf-switch-dot { transform: translateX(18px); }
+
+    /* --- Table view --- */
+    .upf-table-wrap { overflow-x: auto; padding-bottom: 2px; }
+    .upf-table-wrap[hidden] { display: none; }
+    .upf-table {
+      width: 100%; min-width: 720px; border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+    .upf-table thead th {
+      padding: 0 0 11px; border-bottom: 1px solid var(--border-strong);
+      text-align: left; vertical-align: bottom;
+    }
+    .upf-table .upf-th-action { width: 1%; white-space: nowrap; }
+    .upf-th-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 0; margin: 0; border: none; background: none; cursor: pointer;
+      font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+      transition: color .12s ease;
+    }
+    .upf-th-btn:hover, .upf-th-btn:focus-visible { color: var(--text); outline: none; }
+    .upf-th-arrow {
+      display: inline-flex; width: 12px; height: 12px; flex: none;
+      opacity: .28; transition: opacity .12s ease, transform .12s ease;
+    }
+    .upf-th-arrow svg { width: 12px; height: 12px; display: block; }
+    .upf-th-btn[data-sort="asc"] .upf-th-arrow { opacity: 1; color: var(--primary); transform: rotate(180deg); }
+    .upf-th-btn[data-sort="desc"] .upf-th-arrow { opacity: 1; color: var(--primary); }
+    html.dark .upf-th-btn[data-sort] .upf-th-arrow { color: var(--primary-bright, var(--primary)); }
+    .upf-th-action .upf-th-label {
+      font-size: 11px; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .upf-table tbody td {
+      padding: 14px 18px 14px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text); vertical-align: middle;
+    }
+    .upf-table tbody tr:last-child td { border-bottom: none; }
+    .upf-table tbody tr { transition: background .12s ease; }
+    .upf-table tbody tr:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    .upf-name { font-weight: 700; color: var(--text); white-space: nowrap; }
+    .upf-upc { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--text-subtle); letter-spacing: .02em; white-space: nowrap; }
+
+    /* --- Status pills (shared by table + cards), themed off WISE tokens --- */
+    .upf-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 11px; border-radius: var(--radius-pill, 999px);
+      font-size: 12px; font-weight: 800; white-space: nowrap; line-height: 1.2;
+    }
+    .upf-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+    .upf-pill--good { background: color-mix(in srgb, var(--sec-green) 15%, transparent); color: var(--sec-green-text); }
+    .upf-pill--primary { background: var(--primary-soft); color: var(--primary); }
+    html.dark .upf-pill--primary { color: var(--primary-bright, var(--primary)); }
+    .upf-pill--warn { background: color-mix(in srgb, var(--ter-amber) 24%, transparent); color: var(--ter-amber-text); }
+    .upf-pill--alert { background: color-mix(in srgb, var(--sec-red) 16%, transparent); color: var(--sec-red-text); }
+
+    /* --- Card view --- */
+    .upf-cards {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+    }
+    .upf-cards[hidden] { display: none; }
+    .upf-card {
+      display: flex; flex-direction: column; gap: 14px;
+      padding: 18px; border: 1px solid var(--border); border-radius: 14px;
+      background: var(--surface); box-shadow: var(--shadow-1);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .upf-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
+    .upf-card-top { display: flex; flex-direction: column; gap: 4px; }
+    .upf-card-name { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
+    .upf-card-upc { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--text-subtle); letter-spacing: .02em; }
+    .upf-card-fields { display: flex; flex-direction: column; gap: 10px; }
+    .upf-field { display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
+    .upf-field-label {
+      font-size: 10.5px; font-weight: 800; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .upf-card .dash-mrow-report { align-self: flex-start; margin: -2px 0 0 -4px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .upf-card, .upf-toggle, .upf-switch, .upf-switch-dot, .upf-th-arrow { transition: none; }
+    }
+
+    /* =====================================================================
+       Ingredient GRAS & Historical Safety (analytics-types.html only).
+       A second sortable table built on the exact same shell, controls, pills
+       and card view as the Product-Level UPF Classification card above — only
+       the columns and data differ. Reuses every .upf-* class; the few rules
+       below just let the long "Basis for Classification" prose wrap instead of
+       forcing a single line, and top-align the row so the ingredient name and
+       status pill sit with the first line of that prose.
+    ===================================================================== */
+    #gras-class-card { --upf-pink: #ec4899; }
+    #gras-class-card .upf-table { min-width: 640px; }
+    #gras-class-card .upf-table tbody td { vertical-align: top; }
+    #gras-class-card .upf-basis {
+      display: block; max-width: 640px;
+      font-size: 13px; line-height: 1.55; color: var(--text-subtle); white-space: normal;
+    }
+    #gras-class-card .upf-card-basis {
+      font-size: 13px; line-height: 1.55; color: var(--text-subtle);
+    }
+
+    /* =====================================================================
+       Ingredient Processing Details (analytics-types.html only).
+       Same sortable-table shell as the GRAS card above, with an added numeric
+       Processing Score column. Rules below mirror the GRAS prose-wrapping and
+       add a tone-coloured score so it reads at a glance.
+    ===================================================================== */
+    #proc-class-card { --upf-pink: #ec4899; }
+    #proc-class-card .upf-table { min-width: 720px; }
+    #proc-class-card .upf-table tbody td { vertical-align: top; }
+    #proc-class-card .upf-basis {
+      display: block; max-width: 560px;
+      font-size: 13px; line-height: 1.55; color: var(--text-subtle); white-space: normal;
+    }
+    #proc-class-card .upf-card-basis {
+      font-size: 13px; line-height: 1.55; color: var(--text-subtle);
+    }
+    #proc-class-card .upf-score { font-weight: 800; font-size: 15px; }
+    #proc-class-card .upf-score--warn { color: var(--ter-amber-text); }
+    #proc-class-card .upf-score--good { color: var(--sec-green-text); }
+
+    /* =====================================================================
+       UPF Processing Spectrum (analytics-types.html only).
+       The dashboard's first row: a six-segment scale that frames the whole
+       report. The leading segment is the brand-blue "Non-UPF Verified" tier
+       (the WISEcode Shield); the remaining five run the NOVA-style processing
+       ladder from Minimal → Super Ultra, each segment a solid status colour.
+       Injected as the first child of .dash by the inline script below.
+    ===================================================================== */
+    .pscale {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      isolation: isolate;
+    }
+    .pscale-col {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      gap: 7px; padding: 24px 16px 26px; min-height: 104px; text-align: center;
+      color: #fff; background: var(--c, var(--primary));
+    }
+    /* Thin separators between adjacent segments so the band still reads as a
+       connected scale. */
+    .pscale-col + .pscale-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, .18); }
+    /* Large, minimal icon disc stamped into the segment's own colour — the same
+       debossed treatment as the scorecard stamp marks, adapted to sit tone-on-tone
+       over a solid coloured background (translucent white instead of tinted ink). */
+    .pscale-ico {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 56px; height: 56px; border-radius: 50%; margin-bottom: 4px;
+      border: 1.5px solid rgba(255, 255, 255, .28);
+      background: rgba(255, 255, 255, .12);
+      color: rgba(255, 255, 255, .96);
+      box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, .10),
+        inset 0 -1px 0 rgba(255, 255, 255, .35),
+        0 1px 0 rgba(0, 0, 0, .06);
+    }
+    .pscale-ico .material-symbols-outlined {
+      font-size: 30px; line-height: 1;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 24;
+    }
+    .pscale-tier {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.0625rem; font-weight: 700; line-height: 1.12; letter-spacing: -0.01em;
+    }
+    .pscale-cap {
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: rgba(255, 255, 255, .82); line-height: 1.25;
+    }
+    .pscale-desc {
+      margin-top: 4px;
+      font-size: 0.75rem; font-weight: 400; line-height: 1.42;
+      color: rgba(255, 255, 255, .88);
+    }
+    /* The brand-blue verified tier leads the scale and is visually anchored by
+       its shield mark. */
+    .pscale-col--verified { background: var(--primary); }
+
+    /* Narrow report columns: let the scale wrap to two rows of three rather
+       than crushing six segments into a sliver. */
+    @container dash (max-width: 640px) {
+      .pscale { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* =====================================================================
+       Product hero (analytics-types.html only). Merges the aha.html welcome
+       hero — full-bleed brand banner + circular brand badge — with the product
+       identity header from the spec: eyebrow, product name, claim / verified
+       pills, a product-image slot, and the UPC/GTIN. Injected as the first
+       child of the rendered `.dash`, then pulled full-bleed with the same
+       negative margins the shared .dash-hero uses (cancelling the scroll pane's
+       28px top / 64px side padding — see .agent-main-scroll).
+    ===================================================================== */
+    .att-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      min-height: 232px;
+      margin: -28px -64px 0;
+      padding: 28px 56px;
+      background: color-mix(in srgb, var(--primary) 78%, #1A2339);
+    }
+    /* Banner artwork (kept from the aha.html hero) sits behind everything. */
+    .att-hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover;
+    }
+    /* Scrim keeps the headline + pills + UPC legible over the banner image. */
+    .att-hero-scrim {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(105deg, rgba(7, 12, 26, 0.84) 0%, rgba(7, 12, 26, 0.62) 46%, rgba(7, 12, 26, 0.4) 100%);
+    }
+    /* Product image slot (left) — a framed, light card holding the SKU shot.
+       Distinct from the circular brand badge on the right. It's a button: click
+       to upload / paste a product photo (mirrors the hero logo + banner editors). */
+    .att-hero-product {
+      position: relative;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 116px;
+      height: 150px;
+      padding: 0;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 26px rgba(7, 12, 26, 0.34);
+      overflow: hidden;
+      color: var(--primary);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .att-hero-product:hover,
+    .att-hero-product:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(7, 12, 26, 0.44);
+      outline: none;
+    }
+    .att-hero-product-ph { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .att-hero-product img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .att-hero-product .material-icons { font-size: 30px; opacity: 0.7; }
+    .att-hero-product-label {
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; text-align: center; line-height: 1.25;
+      color: color-mix(in srgb, var(--primary) 68%, #475569);
+    }
+    /* "Edit" affordance revealed on hover / focus — same language as the hero
+       logo badge in aha.html. */
+    .att-hero-product-edit {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      height: 34%;
+      background: linear-gradient(180deg, rgba(7, 12, 26, 0) 0%, rgba(7, 12, 26, 0.64) 100%);
+      color: #fff; opacity: 0; transition: opacity 0.18s ease;
+    }
+    .att-hero-product-edit .material-icons { font-size: 18px; opacity: 1; margin-bottom: 6px; color: #fff; }
+    .att-hero-product:hover .att-hero-product-edit,
+    .att-hero-product:focus-visible .att-hero-product-edit { opacity: 1; }
+    /* Body (center) — brand line, product name, status pills. */
+    .att-hero-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    /* Brand line — the circular brand badge sits inline, prepended to the
+       eyebrow brand name. */
+    .att-hero-brandline { display: inline-flex; align-items: center; gap: 9px; }
+    /* The brand badge is a button: click to upload / paste a logo (mirrors the
+       product-image slot and the aha.html hero logo editor). */
+    .att-hero-logo {
+      position: relative;
+      width: 30px; height: 30px; flex-shrink: 0; padding: 0; border: 0;
+      border-radius: 50%; overflow: hidden; background: #fff; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(7, 12, 26, 0.34), 0 0 0 2px rgba(255, 255, 255, 0.28);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .att-hero-logo:hover,
+    .att-hero-logo:focus-visible {
+      transform: scale(1.07);
+      outline: none;
+      box-shadow: 0 3px 12px rgba(7, 12, 26, 0.44), 0 0 0 2px rgba(255, 255, 255, 0.55);
+    }
+    .att-hero-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .att-hero-logo-ph {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%; color: var(--primary);
+    }
+    .att-hero-logo-ph .material-icons { font-size: 16px; }
+    .att-hero-logo-edit {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(7, 12, 26, 0.52); color: #fff;
+      opacity: 0; transition: opacity 0.18s ease;
+    }
+    .att-hero-logo-edit .material-icons { font-size: 14px; }
+    .att-hero-logo:hover .att-hero-logo-edit,
+    .att-hero-logo:focus-visible .att-hero-logo-edit { opacity: 1; }
+    .att-hero-eyebrow {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #9DC1FF;
+    }
+    .att-hero-title {
+      margin: 0;
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 2.1rem; font-weight: 800; line-height: 1.05;
+      letter-spacing: -0.02em; color: #fff;
+    }
+    .att-hero-pills { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 2px; }
+    .att-hero-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 13px 6px 9px; border-radius: 999px;
+      font-size: 12.5px; font-weight: 700; line-height: 1; white-space: nowrap;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .att-hero-pill .material-icons { font-size: 16px; }
+    .att-hero-pill sup { font-size: 0.62em; font-weight: 700; }
+    .att-hero-pill--claimed {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.94);
+    }
+    .att-hero-pill--verified {
+      background: rgba(99, 132, 255, 0.28);
+      border: 1px solid rgba(157, 193, 255, 0.5);
+      color: #EAF1FF;
+    }
+    .att-hero-pill--verified .material-icons { color: #9DC1FF; }
+    /* Aside (right) — the UPC/GTIN in its own card with a real, scannable
+       UPC-A barcode (rendered as SVG) above the human-readable digits. */
+    .att-hero-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
+    .att-hero-upc {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 10px 13px 9px; border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(7, 12, 26, 0.32);
+    }
+    .att-hero-upc-label {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #64748B;
+    }
+    .att-hero-upc-barcode { display: block; width: 168px; height: auto; }
+    @media (max-width: 900px) {
+      .att-hero { gap: 20px; padding: 26px 40px; }
+      .att-hero-title { font-size: 1.75rem; }
+    }
+    @media (max-width: 767px) {
+      .att-hero {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 16px;
+        min-height: 0;
+        margin: -20px -32px 0;
+        padding: 22px 28px;
+      }
+      .att-hero-product { width: 92px; height: 120px; }
+      .att-hero-body { flex-basis: 100%; order: 3; }
+      .att-hero-aside { align-items: flex-start; gap: 12px; }
+    }
+
+    /* =====================================================================
+       Report headers (analytics-types.html only). The two portfolio reports
+       from the screenshots — the Date Better Snacks GRAS Report and the
+       Purely Elizabeth Portfolio Insights Report — rendered as full-bleed
+       hero banners. Borrows the aha.html welcome-hero treatment: that hero
+       has no default image, so it falls back to a flat primary-blue field
+       with an oversized, embossed WISE-bug watermark (see .dash-hero-pattern
+       / .dash-hero-bug in dashboard.css). Only the report copy is carried
+       over — none of the source prototype's UI chrome (topbar, export
+       buttons, report-ID chips). Colours stay within our palette tokens.
+    ===================================================================== */
+    .rpt-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 200px;
+      /* Vertical spacing is handled by the .dash flex `gap`; the negative
+         side margins break the banner full-bleed out of the scroll padding,
+         matching .att-hero. */
+      margin: 0 -64px;
+      padding: 30px 64px 28px;
+      background: color-mix(in srgb, var(--primary) 78%, #1A2339);
+    }
+    .rpt-hero-pattern {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    /* A single oversized WISE bug, tilted and pulled mostly into the banner
+       with only a sliver bleeding off the right edge (mirrors .dash-hero-bug). */
+    .rpt-hero-bug {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      width: min(1280px, 130%);
+      height: auto;
+      color: color-mix(in srgb, #0B1426 38%, var(--primary));
+      filter: drop-shadow(0 1.5px 0 rgba(255, 255, 255, 0.14));
+      transform: translate(calc(14% + 120px), calc(-50% + 40px)) rotate(-18deg);
+    }
+    .rpt-hero-body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+      /* Leave room for the circular brand badge floated to the right. */
+      padding-right: 168px;
+    }
+    /* Brand logo — a circular badge floated to the right and vertically
+       centered, sitting on top of the watermark (mirrors .dash-hero-logo in
+       dashboard.css). Static here (no editor) since these are report banners. */
+    .rpt-hero-logo {
+      position: absolute;
+      top: 50%;
+      right: 56px;
+      transform: translateY(-50%);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(7, 12, 26, 0.34), 0 0 0 5px rgba(255, 255, 255, 0.16);
+    }
+    .rpt-hero-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    /* Initials fallback when a brand has no logo asset. */
+    .rpt-hero-logo-monogram {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--primary);
+    }
+    .rpt-hero-eyebrow {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #9DC1FF;
+    }
+    .rpt-hero-title {
+      margin: 0;
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .rpt-hero-tagline {
+      margin: 1px 0 0;
+      font-family: var(--font-serif, Georgia, serif);
+      font-style: italic;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.86);
+    }
+    .rpt-hero-meta {
+      margin: 5px 0 0;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.78);
+    }
+    .rpt-hero-badge {
+      margin-top: 9px;
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #EAF1FF;
+      background: rgba(99, 132, 255, 0.28);
+      border: 1px solid rgba(157, 193, 255, 0.5);
+    }
+    @media (max-width: 900px) {
+      .rpt-hero { min-height: 0; padding: 26px 40px; }
+      .rpt-hero-title { font-size: 1.75rem; }
+      .rpt-hero-logo { width: 96px; height: 96px; right: 32px; }
+      .rpt-hero-logo-monogram { font-size: 2rem; }
+      .rpt-hero-body { padding-right: 132px; }
+    }
+    @media (max-width: 767px) {
+      .rpt-hero { margin: 0 -32px; padding: 22px 28px; }
+      .rpt-hero-logo { right: 24px; }
+    }
+    @media (max-width: 520px) {
+      .rpt-hero-logo { display: none; }
+      .rpt-hero-body { padding-right: 0; }
     }
   </style>
 </head>
@@ -849,6 +1646,404 @@
         }
       }).observe(document.body, { childList: true, subtree: true });
       scan(document.body);
+    })();
+  </script>
+  <script>
+    /* =====================================================================
+       Product hero (analytics-types.html only). The shared dashboard JS owns
+       #agent-main-scroll and rebuilds its innerHTML on first render and on the
+       brand toggle, so we can't author the hero statically. Instead we inject
+       it as the FIRST child of the rendered `.dash` and re-assert that position
+       whenever the dashboard re-renders. Merges the aha.html welcome hero
+       (banner background + circular brand badge — both from the same default
+       assets) with the product header: eyebrow, product name, Brand Claimed /
+       Non-UPF Verified pills, a product-image slot, and a valid UPC-A.
+    ===================================================================== */
+    (function () {
+      var BANNER = '../assets/dash-hero-banner.png';
+      var LOGO   = '../assets/date-better-logo.png';
+      var UPC    = '810207711988'; /* valid 12-digit UPC-A (check digit 8) */
+
+      /* Encode a 12-digit UPC-A into its 95-module bit string: left guard +
+         6 L-coded digits + centre guard + 6 R-coded digits + right guard. */
+      function upcBits(code) {
+        var L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+        var R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+        var bits = '101';
+        for (var i = 0; i < 6; i++) bits += L[+code[i]];
+        bits += '01010';
+        for (var j = 6; j < 12; j++) bits += R[+code[j]];
+        return bits + '101';
+      }
+
+      /* Render the bit string as an SVG barcode in classic UPC-A layout: the
+         number-system + check digits drop into the quiet zones beside the
+         extended guard bars, the two inner groups of five sit beneath the
+         shorter data bars. */
+      function barcodeSvg(code) {
+        var bits = upcBits(code);          /* 95 modules */
+        var quiet = 9, W = quiet * 2 + bits.length, H = 44;
+        var guardBottom = 32, dataBottom = 29;
+        var isGuard = function (i) { return i < 3 || (i >= 45 && i <= 49) || i >= 92; };
+        var rects = '';
+        for (var i = 0; i < bits.length; i++) {
+          if (bits[i] !== '1') continue;
+          rects += '<rect x="' + (quiet + i) + '" y="0" width="1" height="' + (isGuard(i) ? guardBottom : dataBottom) + '" fill="#0B1220"/>';
+        }
+        var t = function (x, s) {
+          return '<text x="' + x + '" y="42" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="5.5" font-weight="600" fill="#0B1220">' + s + '</text>';
+        };
+        var txt = t(quiet - 4.5, code[0]) + t(quiet + 24, code.slice(1, 6)) +
+                  t(quiet + 71, code.slice(6, 11)) + t(quiet + 95 + 4.5, code[11]);
+        return '<svg class="att-hero-upc-barcode" viewBox="0 0 ' + W + ' ' + H + '" role="img" ' +
+               'aria-label="UPC ' + code + '" xmlns="http://www.w3.org/2000/svg">' +
+               '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff"/>' + rects + txt + '</svg>';
+      }
+
+      /* --- Editable images: the product slot AND the circular brand logo are
+         both click-to-edit, mirroring the hero logo / banner editors in
+         aha.html. Each persists its choice in localStorage so it survives
+         reloads + dashboard re-renders. --- */
+      function escAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function cssUrl(u) { return "url('" + String(u).replace(/'/g, '%27') + "')"; }
+
+      /* Product image store — defaults to the bundled Cashew Lime Crisp shot;
+         '__none__' → removed (shows the "Add Product Image" placeholder). */
+      var PROD_KEY = 'att-product-image', PROD_NONE = '__none__';
+      var DEFAULT_PRODUCT = '../assets/date-better-cashew-lime-crisp.png';
+      function getProductImage() {
+        var v;
+        try { v = localStorage.getItem(PROD_KEY) || ''; } catch (_) { v = ''; }
+        if (v === PROD_NONE) return '';
+        return v || DEFAULT_PRODUCT;
+      }
+      function setProductImage(url) {
+        try { localStorage.setItem(PROD_KEY, url || PROD_NONE); } catch (_) { /* quota */ }
+      }
+      function productInner(url) {
+        var body = url
+          ? '<img src="' + escAttr(url) + '" alt="Cashew Lime Crisp product image" />'
+          : '<span class="att-hero-product-ph"><span class="material-icons">add_photo_alternate</span><span class="att-hero-product-label">Add Product Image</span></span>';
+        return body + '<span class="att-hero-product-edit" aria-hidden="true"><span class="material-icons">edit</span></span>';
+      }
+      function applyProductImage(url) {
+        var btn = document.getElementById('att-hero-product');
+        if (btn) btn.innerHTML = productInner(url);
+      }
+
+      /* Brand logo store — mirrors dashboard-home.js and reuses the same
+         'wise-brand-logo' key so the badge stays in sync with the shared
+         dashboard: unset → bundled default Date Better badge, '__none__' →
+         removed (shows an "add logo" affordance). */
+      var LOGO_KEY = 'wise-brand-logo', LOGO_NONE = '__none__';
+      function getBrandLogo() {
+        var v;
+        try { v = localStorage.getItem(LOGO_KEY) || ''; } catch (_) { v = ''; }
+        if (v === LOGO_NONE) return '';
+        return v || LOGO;
+      }
+      function setBrandLogo(url) {
+        try { localStorage.setItem(LOGO_KEY, url || LOGO_NONE); } catch (_) { /* quota */ }
+      }
+
+      /* One-time prefill: clear any stale values left from earlier testing so
+         both the brand logo and the product image show their bundled defaults
+         out of the box. Future uploads / removals persist normally. */
+      (function prefillDefaultsOnce() {
+        var FLAG = 'att-hero-prefill-v1';
+        try {
+          if (localStorage.getItem(FLAG)) return;
+          localStorage.removeItem(PROD_KEY);
+          localStorage.removeItem(LOGO_KEY);
+          localStorage.setItem(FLAG, '1');
+        } catch (_) { /* storage unavailable — defaults already apply */ }
+      })();
+      function logoInner(url) {
+        var body = url
+          ? '<img src="' + escAttr(url) + '" alt="Date Better Snacks logo" />'
+          : '<span class="att-hero-logo-ph"><span class="material-icons">add_photo_alternate</span></span>';
+        return body + '<span class="att-hero-logo-edit" aria-hidden="true"><span class="material-icons">edit</span></span>';
+      }
+      function applyBrandLogo(url) {
+        var btn = document.getElementById('att-hero-logo');
+        if (btn) btn.innerHTML = logoInner(url);
+      }
+
+      /* Self-contained image editor modal — reuses the shared .dash-modal /
+         .dash-banner-* styles (loaded via dashboard.css) for visual parity with
+         the hero logo + banner editors in aha.html. Parameterised so the same
+         panel serves both the product image and the brand logo. */
+      var imageModalEls = null;
+      function ensureImageModal() {
+        if (imageModalEls) return imageModalEls;
+        var scrim = document.createElement('div');
+        scrim.className = 'dash-modal-scrim';
+        var modal = document.createElement('div');
+        modal.className = 'dash-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        scrim.appendChild(modal);
+        document.body.appendChild(scrim);
+        scrim.addEventListener('click', function (e) { if (e.target === scrim) closeImageModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImageModal(); });
+        imageModalEls = { scrim: scrim, modal: modal };
+        return imageModalEls;
+      }
+      function closeImageModal() { if (imageModalEls) imageModalEls.scrim.classList.remove('is-open'); }
+
+      function openImageModal(cfg) {
+        var refs = ensureImageModal();
+        var scrim = refs.scrim, modal = refs.modal;
+        var current = cfg.getCurrent();
+        var draft = current;
+        modal.setAttribute('aria-label', cfg.title);
+        modal.innerHTML =
+          '<header class="dash-modal-head">' +
+            '<div class="dash-modal-titles">' +
+              '<span class="dash-modal-eyebrow">' + escAttr(cfg.eyebrow) + '</span>' +
+              '<h2 class="dash-modal-title">' + escAttr(cfg.title) + '</h2>' +
+            '</div>' +
+            '<button class="dash-modal-close" type="button" data-img-close aria-label="Close"><span class="material-icons">close</span></button>' +
+          '</header>' +
+          '<div class="dash-modal-body">' +
+            '<div class="dash-banner-preview' + (cfg.previewMod ? ' ' + cfg.previewMod : '') + '">' +
+              '<div class="dash-banner-preview-img" id="att-img-preview-img"></div>' +
+              '<span class="dash-banner-preview-empty" id="att-img-preview-empty"><span class="material-icons">image</span>' + escAttr(cfg.emptyLabel) + '</span>' +
+            '</div>' +
+            '<label class="dash-banner-drop" id="att-img-drop">' +
+              '<input type="file" accept="image/*" id="att-img-file" hidden>' +
+              '<span class="material-icons">cloud_upload</span>' +
+              '<span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">' + escAttr(cfg.dropHint) + '</span></span>' +
+            '</label>' +
+            '<div class="dash-banner-or"><span>or paste a URL</span></div>' +
+            '<input type="url" class="dash-banner-url" id="att-img-url" placeholder="' + escAttr(cfg.urlPlaceholder) + '" autocomplete="off">' +
+          '</div>' +
+          '<footer class="dash-modal-foot">' +
+            '<button class="dash-btn dash-btn--ghost" type="button" data-img-remove><span class="material-icons">delete</span>Remove</button>' +
+            '<div class="dash-modal-foot-right">' +
+              '<button class="dash-btn dash-btn--ghost" type="button" data-img-close>Cancel</button>' +
+              '<button class="dash-btn dash-btn--primary" type="button" data-img-save><span class="material-icons">check</span>' + escAttr(cfg.saveLabel) + '</button>' +
+            '</div>' +
+          '</footer>';
+
+        var previewImg = modal.querySelector('#att-img-preview-img');
+        var previewEmpty = modal.querySelector('#att-img-preview-empty');
+        var urlInput = modal.querySelector('#att-img-url');
+        var fileInput = modal.querySelector('#att-img-file');
+        var drop = modal.querySelector('#att-img-drop');
+
+        function setPreview(val) {
+          draft = val || '';
+          if (draft) {
+            previewImg.style.backgroundImage = cssUrl(draft);
+            previewImg.style.display = 'block';
+            previewEmpty.style.display = 'none';
+          } else {
+            previewImg.style.backgroundImage = '';
+            previewImg.style.display = 'none';
+            previewEmpty.style.display = '';
+          }
+        }
+        setPreview(current);
+        if (current && /^https?:/i.test(current)) urlInput.value = current;
+
+        urlInput.addEventListener('input', function () { setPreview(urlInput.value.trim()); });
+
+        function readFile(file) {
+          if (!file || !file.type.startsWith('image/')) return;
+          var reader = new FileReader();
+          reader.onload = function () { urlInput.value = ''; setPreview(reader.result); };
+          reader.readAsDataURL(file);
+        }
+        fileInput.addEventListener('change', function () { readFile(fileInput.files[0]); });
+        ['dragover', 'dragenter'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('is-drag'); }); });
+        ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('is-drag'); }); });
+        drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('is-drag'); readFile(e.dataTransfer.files[0]); });
+
+        modal.querySelector('[data-img-remove]').addEventListener('click', function () { urlInput.value = ''; setPreview(''); });
+        modal.querySelector('[data-img-save]').addEventListener('click', function () {
+          cfg.onSave(draft);
+          closeImageModal();
+        });
+        modal.querySelectorAll('[data-img-close]').forEach(function (b) { b.addEventListener('click', closeImageModal); });
+
+        requestAnimationFrame(function () { scrim.classList.add('is-open'); });
+      }
+
+      function openProductModal() {
+        openImageModal({
+          eyebrow: 'Product image',
+          title: 'Update product image',
+          emptyLabel: 'No product image yet',
+          dropHint: 'PNG, JPG or WEBP — product shots look best',
+          urlPlaceholder: 'https://…/product.jpg',
+          saveLabel: 'Save image',
+          getCurrent: getProductImage,
+          onSave: function (url) { setProductImage(url); applyProductImage(url); },
+        });
+      }
+      function openLogoModal() {
+        openImageModal({
+          eyebrow: 'Brand logo',
+          title: 'Update brand logo',
+          emptyLabel: 'No logo yet',
+          dropHint: 'PNG, JPG or WEBP — square images look best',
+          urlPlaceholder: 'https://…/logo.png',
+          saveLabel: 'Save logo',
+          previewMod: 'dash-banner-preview--logo',
+          getCurrent: getBrandLogo,
+          onSave: function (url) { setBrandLogo(url); applyBrandLogo(url); },
+        });
+      }
+
+      function build() {
+        var sec = document.createElement('section');
+        sec.className = 'att-hero';
+        sec.id = 'att-hero';
+        sec.innerHTML =
+          '<div class="att-hero-bg" style="background-image:url(\'' + BANNER + '\')" aria-hidden="true"></div>' +
+          '<div class="att-hero-scrim" aria-hidden="true"></div>' +
+          '<button class="att-hero-product" type="button" id="att-hero-product" aria-label="Update product image" title="Update product image">' +
+            productInner(getProductImage()) +
+          '</button>' +
+          '<div class="att-hero-body">' +
+            '<div class="att-hero-brandline">' +
+              '<button class="att-hero-logo" type="button" id="att-hero-logo" aria-label="Update brand logo" title="Update brand logo">' +
+                logoInner(getBrandLogo()) +
+              '</button>' +
+              '<span class="att-hero-eyebrow">Date Better Snacks</span>' +
+            '</div>' +
+            '<h1 class="att-hero-title">Cashew Lime Crisp</h1>' +
+            '<div class="att-hero-pills">' +
+              '<span class="att-hero-pill att-hero-pill--claimed"><span class="material-icons">check_circle</span>Brand Claimed</span>' +
+              '<span class="att-hero-pill att-hero-pill--verified"><span class="material-icons">verified</span>Non-UPF Verified<sup>&trade;</sup></span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="att-hero-aside">' +
+            '<div class="att-hero-upc">' +
+              '<div class="att-hero-upc-label">UPC / GTIN</div>' +
+              barcodeSvg(UPC) +
+            '</div>' +
+          '</div>';
+        var prodBtn = sec.querySelector('#att-hero-product');
+        if (prodBtn) prodBtn.addEventListener('click', openProductModal);
+        var logoBtn = sec.querySelector('#att-hero-logo');
+        if (logoBtn) logoBtn.addEventListener('click', openLogoModal);
+        return sec;
+      }
+
+      function mount() {
+        var scroll = document.getElementById('agent-main-scroll');
+        var dash = scroll && scroll.querySelector('.dash');
+        if (!dash) return false;
+        var existing = document.getElementById('att-hero');
+        /* Already mounted as the first row — nothing to do (and crucially no DOM
+           mutation, so this can't loop the observer below). */
+        if (existing && existing.parentNode === dash && dash.firstElementChild === existing) return true;
+        if (existing) existing.remove();
+        dash.insertBefore(build(), dash.firstChild);
+        return true;
+      }
+
+      function init() {
+        mount();
+        var host = document.getElementById('agent-main-scroll') || document.body;
+        new MutationObserver(mount).observe(host, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+  <script>
+    /* Report-header heroes (analytics-types.html only). Mounts the two
+       portfolio reports from the screenshots — the GRAS Report and the
+       Portfolio Insights Report — as full-bleed banners directly beneath the
+       product hero. Each reuses the aha.html welcome-hero look (flat blue +
+       embossed WISE-bug watermark, since that hero has no default image), and
+       carries only the report copy. Mounted via the same observe-and-inject
+       pattern the other cards on this page use, so the banners survive the
+       shared dashboard re-renders. */
+    (function () {
+      /* The WISE bug used as the embossed watermark — same artwork as
+         .dash-hero-bug / .dash-cta-bug in dashboard-home.js. */
+      var BUG_SVG =
+        '<svg class="rpt-hero-bug" viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+          '<path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="currentColor"/>' +
+          '<path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="currentColor"/>' +
+          '<path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="currentColor"/>' +
+          '<path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>' +
+          '<path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>' +
+        '</svg>';
+
+      /* Copy lifted verbatim from the two report prototypes' brand headers. */
+      var REPORTS = [
+        {
+          eyebrow: 'Date Better Snacks',
+          title: 'GRAS Report',
+          meta: 'WISEcode Intelligence \u00b7 Generally Recognized as Safe \u00b7 Portfolio-level analysis \u00b7 June 2026',
+          logo: '../assets/date-better-logo.png',
+        },
+        {
+          eyebrow: 'Purely Elizabeth',
+          title: 'Portfolio Insights Report',
+          tagline: 'Your Food Intelligence Unlocked',
+          meta: 'WISEcode Intelligence\u2122 \u00b7 15 Metrics across 3 categories \u00b7 24 SKUs analyzed \u00b7 June 2026',
+          badge: 'v2 \u00b7 Visual Edition',
+          /* No brand asset on hand for Purely Elizabeth — fall back to initials. */
+          monogram: 'PE',
+        },
+      ];
+
+      function build(r) {
+        var sec = document.createElement('section');
+        sec.className = 'rpt-hero';
+        var html =
+          '<div class="rpt-hero-pattern" aria-hidden="true">' + BUG_SVG + '</div>' +
+          '<div class="rpt-hero-body">' +
+            '<span class="rpt-hero-eyebrow">' + r.eyebrow + '</span>' +
+            '<h2 class="rpt-hero-title">' + r.title + '</h2>';
+        if (r.tagline) html += '<p class="rpt-hero-tagline">' + r.tagline + '</p>';
+        if (r.meta) html += '<p class="rpt-hero-meta">' + r.meta + '</p>';
+        if (r.badge) html += '<span class="rpt-hero-badge">' + r.badge + '</span>';
+        html += '</div>';
+        if (r.logo) {
+          html += '<div class="rpt-hero-logo"><img src="' + r.logo + '" alt="' + r.eyebrow + ' logo" /></div>';
+        } else if (r.monogram) {
+          html += '<div class="rpt-hero-logo" aria-hidden="true"><span class="rpt-hero-logo-monogram">' + r.monogram + '</span></div>';
+        }
+        sec.innerHTML = html;
+        return sec;
+      }
+
+      function mount() {
+        var scroll = document.getElementById('agent-main-scroll');
+        var dash = scroll && scroll.querySelector('.dash');
+        if (!dash) return false;
+        /* Already present — no DOM mutation (so the observer below can't loop). */
+        if (dash.querySelector('.rpt-hero')) return true;
+        var frag = document.createDocumentFragment();
+        REPORTS.forEach(function (r) { frag.appendChild(build(r)); });
+        /* Sit directly beneath the product hero when it's there; otherwise lead
+           the column (the product hero re-asserts itself as the first child, so
+           the final order is product hero → report heroes either way). */
+        var anchor = document.getElementById('att-hero');
+        if (anchor && anchor.parentNode === dash) {
+          dash.insertBefore(frag, anchor.nextSibling);
+        } else {
+          dash.insertBefore(frag, dash.firstChild);
+        }
+        return true;
+      }
+
+      function init() {
+        mount();
+        var host = document.getElementById('agent-main-scroll') || document.body;
+        new MutationObserver(mount).observe(host, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
     })();
   </script>
   <script>
@@ -1049,6 +2244,60 @@
       };
 
       const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
+
+      /* Actionable fix copy for poor-tier cells — surfaced in the floating toast. */
+      const FIX_TIPS = {
+        'Protein':  { title: 'Raise protein density', text: 'Add legume, nut, or seed protein so each serving delivers more quality protein per calorie.' },
+        'Fiber':    { title: 'Add more fiber', text: 'Work in whole grains, oats, or bran to lift satiety and gut-health scores.' },
+        'Fat':      { title: 'Improve fat quality', text: 'Swap refined fats for nuts, seeds, or cold-pressed oils and trim saturated fat.' },
+        'Carbs':    { title: 'Upgrade carb quality', text: 'Replace refined flour and syrups with whole-food grains and minimally processed starches.' },
+        'Sugar':    { title: 'Cut added sugar', text: 'Reduce syrups and concentrates — date paste or whole fruit can sweeten with less added sugar.' },
+        'Clean':    { title: 'Clean up the label', text: 'Shorten the ingredient list to recognizable whole foods and drop cosmetic additives.' },
+        'Banned':   { title: 'Remove banned additives', text: 'Audit the formula against restricted-additive lists and swap flagged ingredients.' },
+        'Emulsif':  { title: 'Drop synthetic emulsifiers', text: 'Remove lecithin substitutes and gums linked to gut disruption; rely on whole-food binders.' },
+        'UPF':      { title: 'Reduce processing level', text: 'Move toward NOVA 1–2 by cutting industrial isolates and cosmetic reformulation steps.' },
+        'Seeds':    { title: 'Swap seed oils', text: 'Replace refined high-omega-6 seed oils with olive, coconut, or nut-based fats.' },
+        'Anti-Inf': { title: 'Lower inflammation load', text: 'Cut refined carbs, seed oils, and additives that drive inflammatory markers.' },
+        'Muscle':   { title: 'Support muscle & metabolism', text: 'Balance protein with complex carbs and cut empty calories that drag metabolic scores.' },
+        'Heart':    { title: 'Protect heart health', text: 'Trim sodium and saturated fat while adding fiber and healthy unsaturated fats.' },
+        'Gut':      { title: 'Improve gut health', text: 'Add prebiotic fiber and remove emulsifiers and ultra-processed bases that harm the microbiome.' },
+        'Diabetes': { title: 'Stabilize blood sugar', text: 'Lower glycemic load by cutting added sugar and pairing carbs with protein and fiber.' },
+      };
+
+      const PH_FALLBACK = '<span class="material-icons pmx-avatar-ph">photo_camera</span>';
+      function skuImgUrl(name) {
+        return 'https://picsum.photos/seed/' + encodeURIComponent('pmx-' + name) + '/72/72';
+      }
+      function avatarHTML(name) {
+        return `<span class="pmx-avatar"><img src="${escAttr(skuImgUrl(name))}" alt="${escAttr(name)} product image" loading="lazy" /></span>`;
+      }
+      function wireAvatars(stage) {
+        stage.querySelectorAll('.pmx-avatar img').forEach((img) => {
+          img.addEventListener('error', () => {
+            const holder = img.closest('.pmx-avatar');
+            if (holder) holder.innerHTML = PH_FALLBACK;
+          }, { once: true });
+        });
+      }
+
+      function fixToastHTML(metric, rating) {
+        const meta = METRIC_META[metric] || { full: metric };
+        const tip = FIX_TIPS[metric] || {
+          title: 'Fix this metric',
+          text: 'Reformulate to lift this product\'s score on ' + meta.full + '.',
+        };
+        const tierLabel = 'Poor';
+        return `
+          <div class="pmx-fix-toast" role="status">
+            <span class="pmx-fix-toast-icon"><span class="material-icons">build</span></span>
+            <div class="pmx-fix-toast-body">
+              <div class="pmx-fix-toast-title">${esc(tip.title)} (${tierLabel})</div>
+              <p class="pmx-fix-toast-text">${esc(tip.text)}</p>
+            </div>
+            <button class="pmx-fix-toast-close" type="button" aria-label="Dismiss"><span class="material-icons">close</span></button>
+          </div>`;
+      }
 
       /* Rating index (0–4) → tier key, for cell colouring straight off the matrix. */
       const RATING_TIER = ['excellent', 'good', 'okay', 'fair', 'poor'];
@@ -1114,31 +2363,47 @@
         const rows = expanded ? sorted : sorted.slice(0, COLLAPSED_ROWS);
 
         rows.forEach((s) => {
-          const head = document.createElement('div');
-          head.className = 'pmx-rowhead';
-          head.innerHTML = `<span class="pmx-rowname">${esc(s.name)}</span><span class="pmx-rowscore">${s.score}</span>`;
-          frag.appendChild(head);
+          const avatar = document.createElement('div');
+          avatar.className = 'pmx-rowavatar';
+          avatar.innerHTML = avatarHTML(s.name);
+          frag.appendChild(avatar);
+
+          const divider = document.createElement('div');
+          divider.className = 'pmx-rowdivider';
+          divider.setAttribute('aria-hidden', 'true');
+          frag.appendChild(divider);
+
+          const meta = document.createElement('div');
+          meta.className = 'pmx-rowmeta';
+          meta.innerHTML = `<span class="pmx-rowname">${esc(s.name)}</span><span class="pmx-rowscore">${s.score}</span>`;
+          frag.appendChild(meta);
 
           s.r.forEach((rating, i) => {
             const tier = TIERS[RATING_TIER[rating]];
+            const metric = METRICS[i];
             const cell = document.createElement('div');
-            cell.className = 'pmx-cell';
+            cell.className = 'pmx-cell' + (rating >= 4 ? ' pmx-cell--fix' : '');
             cell.style.cssText = `background:${tier.fill};color:${tier.ink};`;
-            /* Data for the rich hover tooltip (built by showTip below). */
             cell.dataset.sku = s.name;
             cell.dataset.skuScore = s.score;
             cell.dataset.metric = i;
             cell.dataset.rating = rating;
-            cell.innerHTML = `<span>${tier.label.charAt(0)}</span>`;
+            cell.innerHTML = `<span>${tier.label.charAt(0)}</span>` +
+              (rating >= 4 ? fixToastHTML(metric, rating) : '');
             frag.appendChild(cell);
           });
         });
 
-        /* X-axis: an empty corner, then the 15 horizontal metric codes below the
-           cells (all rendered in the standard text colour, like the row names). */
+        /* X-axis: empty corners for the product columns, then the 15 metric codes. */
         const corner = document.createElement('div');
         corner.className = 'pmx-corner';
         frag.appendChild(corner);
+        const corner2 = document.createElement('div');
+        corner2.className = 'pmx-corner';
+        frag.appendChild(corner2);
+        const corner3 = document.createElement('div');
+        corner3.className = 'pmx-corner';
+        frag.appendChild(corner3);
         METRICS.forEach((m) => {
           const x = document.createElement('div');
           x.className = 'pmx-xlabel';
@@ -1195,27 +2460,24 @@
         const metric = METRICS[mi];
         const meta = METRIC_META[metric] || { full: metric, cat: '', desc: '' };
         const tier = TIERS[RATING_TIER[rating]];
-        const scale = Object.values(TIERS).map((t) =>
-          `<span class="pmx-tip-scale-seg${t.label === tier.label ? ' is-active' : ''}" style="background:${t.fill}" title="${t.label} (${t.range})"></span>`
-        ).join('');
+        const pct = Math.max(0, Math.min(100, +skuScore || 0));
         return `
           <div class="pmx-tip-head">
             <div>
               <div class="pmx-tip-sku">${esc(sku)}</div>
-              <div class="pmx-tip-sku-sub">Overall WISEscore <strong>${esc(skuScore)}</strong> / 100</div>
+              <div class="pmx-tip-sku-sub">WISEscore&trade; <strong>${esc(skuScore)}</strong> / 100</div>
             </div>
           </div>
           <div class="pmx-tip-divider"></div>
           <div class="pmx-tip-eyebrow">${esc(meta.cat)}</div>
           <div class="pmx-tip-metric">${esc(meta.full)}</div>
           <div class="pmx-tip-metric-desc">${esc(meta.desc)}</div>
-          <div class="pmx-tip-status" style="--tier:${tier.fill}">
-            <span class="pmx-tip-dot" style="background:${tier.fill}"></span>
-            <span class="pmx-tip-status-label">${tier.label}</span>
-            <span class="pmx-tip-status-range">Band ${tier.range}</span>
+          <div class="pmx-tip-bar">
+            <div class="pmx-tip-bar-track">
+              <div class="pmx-tip-bar-fill" style="width:${pct}%; background:${tier.fill}"></div>
+            </div>
           </div>
           <div class="pmx-tip-status-desc">${esc(tier.desc)}</div>
-          <div class="pmx-tip-scale">${scale}</div>
           <div class="pmx-tip-foot">A cell's colour is this product's status on this metric. Scan a column to compare every SKU on one metric; scan a row for one product's full profile.</div>`;
       }
 
@@ -1229,6 +2491,15 @@
         if (y + h + pad > window.innerHeight) y = e.clientY - h - off;
         tipEl.style.left = Math.max(pad, x) + 'px';
         tipEl.style.top = Math.max(pad, y) + 'px';
+      }
+
+      function wireFixToasts(stage) {
+        stage.addEventListener('click', (e) => {
+          const btn = e.target.closest('.pmx-fix-toast-close');
+          if (!btn || !stage.contains(btn)) return;
+          e.stopPropagation();
+          btn.closest('.pmx-fix-toast')?.remove();
+        });
       }
 
       function wireTips(stage) {
@@ -1272,6 +2543,8 @@
         const moreBtn = card.querySelector('#att-more');
         let grid = render(stage);
         wireTips(stage);
+        wireFixToasts(stage);
+        wireAvatars(stage);
         syncMore(moreBtn);
 
         /* Strip the entrance class once each cell finishes so the hover
@@ -1285,7 +2558,10 @@
 
         /* Tap anywhere on the matrix to replay the sweep — mirrors the other
            charts' click-to-replay. */
-        stage.addEventListener('click', () => animateCells(grid));
+        stage.addEventListener('click', (e) => {
+          if (e.target.closest('.pmx-fix-toast')) return;
+          animateCells(grid);
+        });
 
         /* Entrance sweep when the matrix scrolls into view (once). */
         if (window.IntersectionObserver) {
@@ -1300,6 +2576,7 @@
         moreBtn.addEventListener('click', () => {
           expanded = !expanded;
           grid = render(stage);
+          wireAvatars(stage);
           syncMore(moreBtn);
           animateCells(grid);
         });
@@ -1308,6 +2585,996 @@
 
       /* The dashboard content is injected by agent-overview.js on DOMContentLoaded;
          wait for it to land, then append the treemap below all charts. */
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Product-Level UPF Classification (analytics-types.html only).
+       A sortable table of every active SKU: UPF classification, NOVA
+       processing level, and Non-UPF shield status. Every column header sorts
+       (click to toggle asc/desc) and a matching sort dropdown stays in sync;
+       the pink switch flips the same rows — in the same sort order — into a
+       responsive grid of cards. Built on the shared .att-card shell and the
+       WISE token palette, appended below the Performance Matrix.
+    ===================================================================== */
+    (function () {
+      const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
+
+      /* Tone + sort-rank for each cell value. `tone` selects the pill colour
+         (good/primary/warn/alert → WISE token tints); `rank` orders the value
+         within its column (lower = "better" / less processed, ascending). */
+      const CLS_MAP = {
+        'Non-UPF':        { tone: 'good',  rank: 0 },
+        'Minimally UPF':  { tone: 'warn',  rank: 1 },
+        'UPF':            { tone: 'alert', rank: 2 },
+      };
+      const PROC_MAP = {
+        'Minimally Processed':  { tone: 'good',  rank: 1 },
+        'Lightly Processed':    { tone: 'good',  rank: 2 },
+        'Moderately Processed': { tone: 'warn',  rank: 3 },
+        'Highly Processed':     { tone: 'alert', rank: 4 },
+      };
+      const SHIELD_MAP = {
+        'Non-UPF Verified': { tone: 'good',    rank: 0 },
+        'Pre-Qualified':    { tone: 'primary', rank: 1 },
+        'Under Review':     { tone: 'warn',    rank: 2 },
+        'Flagged':          { tone: 'alert',   rank: 3 },
+      };
+
+      /* The portfolio's 24 active SKUs. The first seven mirror the source
+         report exactly; the rest extend the line with consistent UPCs and a
+         little variety so every column sorts meaningfully. */
+      const ROWS = [
+        { name: 'Cashew Lime Crisp',      upc: '8 10207 71198 8', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Dark Chocolate Date Bar', upc: '8 10207 71199 5', cls: 'Non-UPF',      proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Almond Coconut Crisp',   upc: '8 10207 71200 8', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Non-UPF Verified' },
+        { name: 'Peanut Butter Date Bites', upc: '8 10207 71201 5', cls: 'Non-UPF',     proc: 'Minimally Processed',  shield: 'Non-UPF Verified' },
+        { name: 'Walnut Brownie Bar',     upc: '8 10207 71202 2', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Tropical Mango Date Bar', upc: '8 10207 71203 9', cls: 'Non-UPF',      proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Cinnamon Apple Crisp',   upc: '8 10207 71204 6', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Maple Pecan Granola Bar', upc: '8 10207 71205 3', cls: 'Non-UPF',      proc: 'Lightly Processed',    shield: 'Non-UPF Verified' },
+        { name: 'Cherry Almond Bites',    upc: '8 10207 71206 0', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Espresso Hazelnut Bar',  upc: '8 10207 71207 7', cls: 'Minimally UPF', proc: 'Moderately Processed', shield: 'Under Review' },
+        { name: 'Lemon Coconut Crisp',    upc: '8 10207 71208 4', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Banana Walnut Bar',      upc: '8 10207 71209 1', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Non-UPF Verified' },
+        { name: 'Sea Salt Almond Bar',    upc: '8 10207 71210 7', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Non-UPF Verified' },
+        { name: 'Pumpkin Spice Crisp',    upc: '8 10207 71211 4', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Ginger Turmeric Bites',  upc: '8 10207 71212 1', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Cocoa Almond Date Bar',  upc: '8 10207 71213 8', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Non-UPF Verified' },
+        { name: 'Strawberry Oat Bar',     upc: '8 10207 71214 5', cls: 'Minimally UPF', proc: 'Moderately Processed', shield: 'Under Review' },
+        { name: 'Matcha Cashew Crisp',    upc: '8 10207 71215 2', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Honey Sesame Bar',       upc: '8 10207 71216 9', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Blueberry Flax Bites',   upc: '8 10207 71217 6', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Non-UPF Verified' },
+        { name: 'Salted Caramel Date Bar', upc: '8 10207 71218 3', cls: 'Minimally UPF', proc: 'Moderately Processed', shield: 'Under Review' },
+        { name: 'Orange Cranberry Crisp', upc: '8 10207 71219 0', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Pre-Qualified' },
+        { name: 'Vanilla Chai Bites',     upc: '8 10207 71220 6', cls: 'Non-UPF',       proc: 'Minimally Processed',  shield: 'Pre-Qualified' },
+        { name: 'Chili Lime Cashew Bar',  upc: '8 10207 71221 3', cls: 'Non-UPF',       proc: 'Lightly Processed',    shield: 'Non-UPF Verified' },
+      ];
+
+      /* Columns, in render order. `map` columns are pill-rendered + rank-sorted. */
+      const COLS = [
+        { key: 'name',   label: 'Product',            type: 'text' },
+        { key: 'upc',    label: 'UPC',                type: 'upc'  },
+        { key: 'cls',    label: 'UPF Classification', type: 'rank', map: CLS_MAP },
+        { key: 'proc',   label: 'Processing Level',   type: 'rank', map: PROC_MAP },
+        { key: 'shield', label: 'Shield Status',      type: 'rank', map: SHIELD_MAP },
+      ];
+
+      const VIEW_KEY = 'upf-view-cards';
+      const sort = { key: 'name', dir: 1 };          /* default: Product A–Z */
+      /* Default to card view on narrow viewports; a stored toggle choice wins. */
+      const NARROW_MQ = window.matchMedia('(max-width: 700px)');
+      let userPref = null;
+      try { const v = localStorage.getItem(VIEW_KEY); if (v === '0' || v === '1') userPref = v === '1'; } catch (_) {}
+      let cardsView = userPref !== null ? userPref : NARROW_MQ.matches;
+
+      const upcNum = (s) => Number(String(s).replace(/\D/g, '')) || 0;
+
+      function compare(a, b) {
+        const col = COLS.find((c) => c.key === sort.key) || COLS[0];
+        let r;
+        if (col.type === 'upc') r = upcNum(a.upc) - upcNum(b.upc);
+        else if (col.type === 'rank') {
+          const ra = (col.map[a[col.key]] || {}).rank ?? 99;
+          const rb = (col.map[b[col.key]] || {}).rank ?? 99;
+          r = ra - rb;
+        } else r = String(a[col.key]).localeCompare(String(b[col.key]), undefined, { sensitivity: 'base' });
+        if (r === 0 && col.key !== 'name') r = a.name.localeCompare(b.name);
+        return r * sort.dir;
+      }
+
+      function pill(value, col) {
+        const tone = (col.map[value] || {}).tone || 'good';
+        return `<span class="upf-pill upf-pill--${tone}">${esc(value)}</span>`;
+      }
+
+      const REPORT_BTN =
+        '<button type="button" class="dash-mrow-report" aria-label="View report">' +
+        '<span class="dash-mrow-report-label">View report</span>' +
+        '<span class="material-icons dash-mrow-report-icon">north_east</span></button>';
+
+      /* Circular product thumbnail for the leading (titleless) column. Uses the
+         row's `img` URL when supplied, otherwise a deterministic seeded
+         placeholder photo (same product → same image across re-renders). Error
+         fallback is wired in JS after render (see wireAvatars). */
+      const PH_FALLBACK = '<span class="material-icons upf-avatar-ph">photo_camera</span>';
+      function imgSrc(r) {
+        return r.img || ('https://picsum.photos/seed/' + encodeURIComponent('upf-' + r.upc) + '/72/72');
+      }
+      function avatar(r) {
+        return `<span class="upf-avatar"><img src="${escAttr(imgSrc(r))}" alt="${escAttr(r.name)} product image" loading="lazy" /></span>`;
+      }
+      function wireAvatars(card) {
+        card.querySelectorAll('.upf-avatar img').forEach((img) => {
+          img.addEventListener('error', () => {
+            const holder = img.closest('.upf-avatar');
+            if (holder) holder.innerHTML = PH_FALLBACK;
+          }, { once: true });
+        });
+      }
+
+      function arrowSvg() {
+        return '<span class="upf-th-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      }
+
+      function buildCard() {
+        const card = document.createElement('section');
+        card.className = 'att-card';
+        card.id = 'upf-class-card';
+
+        const headCells = '<th class="upf-th-avatar" aria-hidden="true"></th>' + COLS.map((c) =>
+          `<th><button type="button" class="upf-th-btn" data-key="${c.key}">${esc(c.label)}${arrowSvg()}</button></th>`
+        ).join('') + '<th class="upf-th-action"><span class="upf-th-label">Report</span></th>';
+
+        card.innerHTML = `
+          <div class="att-head">
+            <span class="att-title">Product-Level UPF Classification</span>
+          </div>
+          <p class="att-intro">Every active SKU in the portfolio with its ultra-processed-food classification,
+            NOVA processing level, and Non-UPF shield status. Click any column header to sort, or flip the pink
+            toggle to view each row as a card. Click a row's report action to open its SKU NFP+ report.</p>
+          <div class="upf-controls">
+            <button type="button" class="upf-toggle" id="upf-view-toggle" role="switch" aria-checked="false" aria-label="Card view" title="Toggle card view">
+              <span class="upf-switch"><span class="upf-switch-dot"></span></span>
+            </button>
+          </div>
+          <div class="upf-table-wrap" id="upf-table-wrap">
+            <table class="upf-table">
+              <thead><tr>${headCells}</tr></thead>
+              <tbody id="upf-tbody"></tbody>
+            </table>
+          </div>
+          <div class="upf-cards" id="upf-cards" hidden></div>`;
+        return card;
+      }
+
+      function rowCells(r) {
+        return `
+          <td class="upf-th-avatar">${avatar(r)}</td>
+          <td><span class="upf-name">${esc(r.name)}</span></td>
+          <td><span class="upf-upc">${esc(r.upc)}</span></td>
+          <td>${pill(r.cls, COLS[2])}</td>
+          <td>${pill(r.proc, COLS[3])}</td>
+          <td>${pill(r.shield, COLS[4])}</td>
+          <td class="upf-th-action">${REPORT_BTN}</td>`;
+      }
+
+      function cardMarkup(r) {
+        return `
+          <div class="upf-card">
+            <div class="upf-card-top">
+              ${avatar(r)}
+              <div class="upf-card-titles">
+                <span class="upf-card-name">${esc(r.name)}</span>
+                <span class="upf-card-upc">${esc(r.upc)}</span>
+              </div>
+            </div>
+            <div class="upf-card-fields">
+              <div class="upf-field">${pill(r.cls, COLS[2])}</div>
+              <div class="upf-field">${pill(r.proc, COLS[3])}</div>
+              <div class="upf-field">${pill(r.shield, COLS[4])}</div>
+            </div>
+            ${REPORT_BTN}
+          </div>`;
+      }
+
+      function render(card) {
+        const data = ROWS.slice().sort(compare);
+        card.querySelector('#upf-tbody').innerHTML = data.map((r) => `<tr>${rowCells(r)}</tr>`).join('');
+        card.querySelector('#upf-cards').innerHTML = data.map(cardMarkup).join('');
+        wireAvatars(card);
+
+        /* Header arrow state. */
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          if (btn.dataset.key === sort.key) btn.setAttribute('data-sort', sort.dir === 1 ? 'asc' : 'desc');
+          else btn.removeAttribute('data-sort');
+        });
+
+        const toggle = card.querySelector('#upf-view-toggle');
+        toggle.setAttribute('aria-checked', cardsView ? 'true' : 'false');
+        card.querySelector('#upf-table-wrap').hidden = cardsView;
+        card.querySelector('#upf-cards').hidden = !cardsView;
+      }
+
+      function wire(card) {
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (sort.key === key) sort.dir *= -1;
+            else { sort.key = key; sort.dir = 1; }
+            render(card);
+          });
+        });
+
+        card.querySelector('#upf-view-toggle').addEventListener('click', () => {
+          cardsView = !cardsView;
+          userPref = cardsView;
+          try { localStorage.setItem(VIEW_KEY, cardsView ? '1' : '0'); } catch (_) {}
+          render(card);
+        });
+
+        /* Follow the viewport when the user hasn't explicitly chosen a view. */
+        NARROW_MQ.addEventListener('change', (e) => {
+          if (userPref !== null) return;
+          cardsView = e.matches;
+          render(card);
+        });
+      }
+
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        if (!dash || document.getElementById('upf-class-card')) return false;
+        const card = buildCard();
+        dash.appendChild(card);
+        render(card);
+        wire(card);
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Ingredient GRAS & Historical Safety (analytics-types.html only).
+       A duplicate of the Product-Level UPF Classification card above — same
+       sortable table, same pink table↔cards toggle, same pills — but listing
+       every unique portfolio ingredient with its FDA safety status (GRAS or
+       accepted through historical use) and the basis for that classification.
+       Appended directly below the UPF Classification card.
+    ===================================================================== */
+    (function () {
+      const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      /* Tone + sort-rank per status value. GRAS sorts ahead of Historical. */
+      const STATUS_MAP = {
+        '✓ GRAS':     { tone: 'good',    rank: 0 },
+        'Historical': { tone: 'primary', rank: 1 },
+      };
+
+      /* Every unique ingredient across the portfolio, with its safety basis. */
+      const ROWS = [
+        { name: 'Cocoa Mass',    status: 'Historical', basis: 'Recognized as safe through long history of use in food prior to the 1958 Food Additives Amendment. GRAS status not formally reviewed under the FDA\u2019s current notification program but accepted through historical evidence of safe consumption.' },
+        { name: 'Quinoa',        status: 'Historical', basis: 'Ancient grain with thousands of years of documented safe human consumption. Accepted as safe through historical use. Limited formal FDA GRAS review given its recent adoption in the U.S. market; no adverse effects on record at typical food quantities.' },
+        { name: 'Medjool Dates', status: '✓ GRAS',     basis: 'Whole fruit recognized as GRAS. No processing additives or chemical treatments applied. FDA GRAS affirmed for whole and minimally processed fruits.' },
+        { name: 'Cashews',       status: '✓ GRAS',     basis: 'Tree nut recognized as GRAS as a whole food ingredient. No safety concerns at typical consumption levels. Allergen declaration required; not a GRAS safety concern.' },
+        { name: 'Cocoa Butter',  status: '✓ GRAS',     basis: 'Naturally occurring fat from cacao beans. FDA GRAS affirmed. Widely used in food manufacturing with an established safety profile.' },
+        { name: 'Cane Sugar',    status: '✓ GRAS',     basis: 'Refined sucrose from sugarcane. FDA GRAS affirmed as a sweetener. Safety concerns relate to dietary quantity, not ingredient safety at the GRAS classification level.' },
+        { name: 'Citric Acid',   status: '✓ GRAS',     basis: 'FDA GRAS affirmed as an acidulant and flavoring agent. Produced via microbial fermentation; extensively studied and safe at levels used in food products.' },
+        { name: 'Lime Juice',    status: '✓ GRAS',     basis: 'Whole citrus juice recognized as GRAS. FDA affirmed for use as a flavoring and acidulant. No safety concerns at concentrations used in food.' },
+        { name: 'Sea Salt',      status: '✓ GRAS',     basis: 'Sodium chloride from evaporated seawater. FDA GRAS affirmed as a flavor enhancer and preservative. Dietary sodium intake concerns are separate from GRAS ingredient classification.' },
+      ];
+
+      /* Columns, in render order. The status column is pill-rendered + rank-sorted. */
+      const COLS = [
+        { key: 'name',   label: 'Ingredient',              type: 'text' },
+        { key: 'status', label: 'Status',                  type: 'rank', map: STATUS_MAP },
+        { key: 'basis',  label: 'Basis for Classification', type: 'text' },
+      ];
+
+      const VIEW_KEY = 'gras-view-cards';
+      const sort = { key: 'name', dir: 1 };          /* default: Ingredient A–Z */
+      /* Default to card view on narrow viewports; a stored toggle choice wins. */
+      const NARROW_MQ = window.matchMedia('(max-width: 700px)');
+      let userPref = null;
+      try { const v = localStorage.getItem(VIEW_KEY); if (v === '0' || v === '1') userPref = v === '1'; } catch (_) {}
+      let cardsView = userPref !== null ? userPref : NARROW_MQ.matches;
+
+      function compare(a, b) {
+        const col = COLS.find((c) => c.key === sort.key) || COLS[0];
+        let r;
+        if (col.type === 'rank') {
+          const ra = (col.map[a[col.key]] || {}).rank ?? 99;
+          const rb = (col.map[b[col.key]] || {}).rank ?? 99;
+          r = ra - rb;
+        } else r = String(a[col.key]).localeCompare(String(b[col.key]), undefined, { sensitivity: 'base' });
+        if (r === 0 && col.key !== 'name') r = a.name.localeCompare(b.name);
+        return r * sort.dir;
+      }
+
+      function pill(value, col) {
+        const tone = (col.map[value] || {}).tone || 'good';
+        return `<span class="upf-pill upf-pill--${tone}">${esc(value)}</span>`;
+      }
+
+      function arrowSvg() {
+        return '<span class="upf-th-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      }
+
+      function buildCard() {
+        const card = document.createElement('section');
+        card.className = 'att-card';
+        card.id = 'gras-class-card';
+
+        const headCells = COLS.map((c) =>
+          `<th><button type="button" class="upf-th-btn" data-key="${c.key}">${esc(c.label)}${arrowSvg()}</button></th>`
+        ).join('');
+
+        card.innerHTML = `
+          <div class="att-head">
+            <span class="att-title">Historical &amp; GRAS Ingredients</span>
+          </div>
+          <p class="att-intro">Every unique ingredient across the portfolio with its FDA safety classification —
+            Generally Recognized As Safe (GRAS) or accepted through historical use — and the basis for that
+            determination. Click any column header to sort, or flip the pink toggle to view each row as a card.</p>
+          <div class="upf-controls">
+            <button type="button" class="upf-toggle" id="gras-view-toggle" role="switch" aria-checked="false" aria-label="Card view" title="Toggle card view">
+              <span class="upf-switch"><span class="upf-switch-dot"></span></span>
+            </button>
+          </div>
+          <div class="upf-table-wrap" id="gras-table-wrap">
+            <table class="upf-table">
+              <thead><tr>${headCells}</tr></thead>
+              <tbody id="gras-tbody"></tbody>
+            </table>
+          </div>
+          <div class="upf-cards" id="gras-cards" hidden></div>`;
+        return card;
+      }
+
+      function rowCells(r) {
+        return `
+          <td><span class="upf-name">${esc(r.name)}</span></td>
+          <td>${pill(r.status, COLS[1])}</td>
+          <td><span class="upf-basis">${esc(r.basis)}</span></td>`;
+      }
+
+      function cardMarkup(r) {
+        return `
+          <div class="upf-card">
+            <div class="upf-card-top">
+              <span class="upf-card-name">${esc(r.name)}</span>
+            </div>
+            <div class="upf-card-fields">
+              <div class="upf-field">${pill(r.status, COLS[1])}</div>
+              <div class="upf-field"><span class="upf-card-basis">${esc(r.basis)}</span></div>
+            </div>
+          </div>`;
+      }
+
+      function render(card) {
+        const data = ROWS.slice().sort(compare);
+        card.querySelector('#gras-tbody').innerHTML = data.map((r) => `<tr>${rowCells(r)}</tr>`).join('');
+        card.querySelector('#gras-cards').innerHTML = data.map(cardMarkup).join('');
+
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          if (btn.dataset.key === sort.key) btn.setAttribute('data-sort', sort.dir === 1 ? 'asc' : 'desc');
+          else btn.removeAttribute('data-sort');
+        });
+
+        const toggle = card.querySelector('#gras-view-toggle');
+        toggle.setAttribute('aria-checked', cardsView ? 'true' : 'false');
+        card.querySelector('#gras-table-wrap').hidden = cardsView;
+        card.querySelector('#gras-cards').hidden = !cardsView;
+      }
+
+      function wire(card) {
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (sort.key === key) sort.dir *= -1;
+            else { sort.key = key; sort.dir = 1; }
+            render(card);
+          });
+        });
+
+        card.querySelector('#gras-view-toggle').addEventListener('click', () => {
+          cardsView = !cardsView;
+          userPref = cardsView;
+          try { localStorage.setItem(VIEW_KEY, cardsView ? '1' : '0'); } catch (_) {}
+          render(card);
+        });
+
+        /* Follow the viewport when the user hasn't explicitly chosen a view. */
+        NARROW_MQ.addEventListener('change', (e) => {
+          if (userPref !== null) return;
+          cardsView = e.matches;
+          render(card);
+        });
+      }
+
+      /* Mount directly below the UPF Classification card so it stays last. */
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        const upf = document.getElementById('upf-class-card');
+        if (!dash || !upf || document.getElementById('gras-class-card')) return false;
+        const card = buildCard();
+        upf.insertAdjacentElement('afterend', card);
+        render(card);
+        wire(card);
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       UPF Processing Spectrum (analytics-types.html only).
+       Builds the dashboard's first row: a six-segment scale. Segment one is
+       the brand-blue "Non-UPF Verified" tier (the WISEcode Shield); segments
+       two through six are the processing ladder — Minimal, Lightly, Moderate,
+       Ultra, Super Ultra — each a solid status colour. Inserted as the very
+       first child of .dash so it sits above the Discovery & Claims row.
+    ===================================================================== */
+    (function () {
+      const COLS = [
+        { tier: 'Non-UPF Verified', cap: 'WISEcode Shield',        color: 'var(--primary)', verified: true,
+          icon: 'verified',     desc: 'Passes the WISEcode Non-UPF algorithmic threshold and has completed the Verification Program.' },
+        { tier: 'Minimally',        cap: 'Processed',              color: '#2E9E5B',
+          icon: 'eco',          desc: 'Whole foods cleaned, portioned, frozen, or dried. No added ingredients and no industrial transformation.' },
+        { tier: 'Lightly',          cap: 'Processed',              color: '#84B83C',
+          icon: 'blender',      desc: 'Simple physical methods — roasting, grinding, fermenting — using only culinary ingredients.' },
+        { tier: 'Moderately',       cap: 'Processed',              color: '#E9A91C',
+          icon: 'soup_kitchen', desc: 'Refined ingredients such as added salt, sugar, or oil. Processing stays recognizable and traditional.' },
+        { tier: 'Ultra',            cap: 'Processed',              color: '#E2742B',
+          icon: 'factory',      desc: 'Industrial formulations built from additives, emulsifiers, and ingredients rarely used in home kitchens.' },
+        { tier: 'Super-Ultra',      cap: 'Processed',              color: '#D23B33',
+          icon: 'science',      desc: 'Heavily engineered products dominated by cosmetic additives with little or no whole-food basis.' },
+      ];
+
+      function buildRow() {
+        const section = document.createElement('section');
+        section.className = 'pscale';
+        section.setAttribute('aria-label', 'UPF processing spectrum');
+        section.innerHTML = COLS.map((c) => `
+          <div class="pscale-col${c.verified ? ' pscale-col--verified' : ''}" style="--c:${c.color}">
+            <span class="pscale-ico" aria-hidden="true"><span class="material-symbols-outlined">${c.icon}</span></span>
+            <span class="pscale-tier">${c.tier}</span>
+            <span class="pscale-cap">${c.cap}</span>
+            <span class="pscale-desc">${c.desc}</span>
+          </div>`).join('');
+        return section;
+      }
+
+      /* Mount as the first row, before the Discovery & Claims (.dash-claim) row. */
+      function mount() {
+        const dash = document.querySelector('#agent-main-scroll .dash') || document.querySelector('.dash');
+        if (!dash) return false;
+        if (dash.querySelector(':scope > .pscale')) return true;
+        dash.insertAdjacentElement('afterbegin', buildRow());
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Ingredient Processing Details (analytics-types.html only).
+       A third sortable table built on the exact same shell as the GRAS card
+       above — same controls, pills and card view — listing every unique
+       portfolio ingredient with its NOVA-style processing level, a 1–4
+       processing score, and the basis for that classification. Defaults to
+       highest-to-lowest processing level. Appended directly below the GRAS
+       card so it stays last.
+    ===================================================================== */
+    (function () {
+      const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      /* Tone + sort-rank per processing level. Moderate sorts ahead of Low. */
+      const LEVEL_MAP = {
+        '\u26A0 Moderate': { tone: 'warn', rank: 0 },
+        '\u2713 Low':      { tone: 'good', rank: 1 },
+      };
+
+      /* Every unique portfolio ingredient, sorted highest to lowest processing. */
+      const ROWS = [
+        { name: 'Citric Acid',    level: '\u26A0 Moderate', score: 3, expl: 'Fermentation-derived organic acid used as an acidulant and preservative. While naturally occurring in citrus fruits, commercial citric acid is produced via microbial fermentation \u2014 a multi-step industrial process. Used within established GRAS scope at this concentration.' },
+        { name: 'Dark Chocolate', level: '\u26A0 Moderate', score: 2, expl: 'Multi-step processing \u2014 roast, winnow, grind, conch \u2014 applied to whole cacao beans. Does not involve fractionation, synthetic additives, or industrial emulsifiers. Cocoa mass, cane sugar, and cocoa butter are the only sub-ingredients. Traditional processing method; no artificial modification.' },
+        { name: 'Cane Sugar',     level: '\u26A0 Moderate', score: 3, expl: 'Refined sucrose extracted from sugarcane via crystallization. Involves physical and chemical processing steps to remove molasses and impurities. Raises added-sugar load but does not introduce synthetic compounds. Score elevated by refining process and sugar density contribution.' },
+        { name: 'Lime Oil',       level: '\u26A0 Moderate', score: 3, expl: 'Cold-pressed or steam-distilled essential oil from lime peel. Concentration process elevates processing classification above whole-fruit ingredients. No synthetic additives or carrier solvents detected at this formulation level. GRAS status: Unknown \u2014 botanical extract with limited systematic review.' },
+        { name: 'Medjool Dates',  level: '\u2713 Low',      score: 1, expl: '\u2014' },
+        { name: 'Cocoa Mass',     level: '\u2713 Low',      score: 1, expl: '\u2014' },
+        { name: 'Cashews',        level: '\u2713 Low',      score: 1, expl: '\u2014' },
+        { name: 'Cocoa Butter',   level: '\u2713 Low',      score: 2, expl: '\u2014' },
+        { name: 'Quinoa',         level: '\u2713 Low',      score: 1, expl: '\u2014' },
+        { name: 'Lime Juice',     level: '\u2713 Low',      score: 1, expl: '\u2014' },
+        { name: 'Sea Salt',       level: '\u2713 Low',      score: 1, expl: '\u2014' },
+      ];
+
+      /* Columns, in render order. Level is pill-rendered + rank-sorted; score is numeric. */
+      const COLS = [
+        { key: 'name',  label: 'Ingredient',       type: 'text' },
+        { key: 'level', label: 'Processing Level',  type: 'rank', map: LEVEL_MAP },
+        { key: 'score', label: 'Processing Score',  type: 'num' },
+        { key: 'expl',  label: 'Explanation',       type: 'text' },
+      ];
+
+      const VIEW_KEY = 'proc-view-cards';
+      const sort = { key: 'level', dir: 1 };         /* default: highest processing first */
+      const NARROW_MQ = window.matchMedia('(max-width: 700px)');
+      let userPref = null;
+      try { const v = localStorage.getItem(VIEW_KEY); if (v === '0' || v === '1') userPref = v === '1'; } catch (_) {}
+      let cardsView = userPref !== null ? userPref : NARROW_MQ.matches;
+
+      function compare(a, b) {
+        const col = COLS.find((c) => c.key === sort.key) || COLS[0];
+        let r;
+        if (col.type === 'rank') {
+          const ra = (col.map[a[col.key]] || {}).rank ?? 99;
+          const rb = (col.map[b[col.key]] || {}).rank ?? 99;
+          r = ra - rb;
+          if (r === 0) r = b.score - a.score;          /* within a level, higher score first */
+        } else if (col.type === 'num') {
+          r = a[col.key] - b[col.key];
+        } else r = String(a[col.key]).localeCompare(String(b[col.key]), undefined, { sensitivity: 'base' });
+        if (r === 0 && col.key !== 'name') r = a.name.localeCompare(b.name);
+        return r * sort.dir;
+      }
+
+      function pill(value, col) {
+        const tone = (col.map[value] || {}).tone || 'good';
+        return `<span class="upf-pill upf-pill--${tone}">${esc(value)}</span>`;
+      }
+
+      function scoreCell(r) {
+        const tone = (LEVEL_MAP[r.level] || {}).tone || 'good';
+        return `<span class="upf-score upf-score--${tone}">${esc(r.score)}</span>`;
+      }
+
+      function arrowSvg() {
+        return '<span class="upf-th-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      }
+
+      function buildCard() {
+        const card = document.createElement('section');
+        card.className = 'att-card';
+        card.id = 'proc-class-card';
+
+        const headCells = COLS.map((c) =>
+          `<th><button type="button" class="upf-th-btn" data-key="${c.key}">${esc(c.label)}${arrowSvg()}</button></th>`
+        ).join('');
+
+        card.innerHTML = `
+          <div class="att-head">
+            <span class="att-title">Ingredient Processing Details</span>
+          </div>
+          <p class="att-intro">Every unique ingredient across the portfolio with its NOVA-style processing level, a
+            1\u20134 processing score (1 = lowest, 4 = highest), and the basis for that classification. Click any column
+            header to sort, or flip the pink toggle to view each row as a card.</p>
+          <div class="upf-controls">
+            <button type="button" class="upf-toggle" id="proc-view-toggle" role="switch" aria-checked="false" aria-label="Card view" title="Toggle card view">
+              <span class="upf-switch"><span class="upf-switch-dot"></span></span>
+            </button>
+          </div>
+          <div class="upf-table-wrap" id="proc-table-wrap">
+            <table class="upf-table">
+              <thead><tr>${headCells}</tr></thead>
+              <tbody id="proc-tbody"></tbody>
+            </table>
+          </div>
+          <div class="upf-cards" id="proc-cards" hidden></div>`;
+        return card;
+      }
+
+      function rowCells(r) {
+        return `
+          <td><span class="upf-name">${esc(r.name)}</span></td>
+          <td>${pill(r.level, COLS[1])}</td>
+          <td>${scoreCell(r)}</td>
+          <td><span class="upf-basis">${esc(r.expl)}</span></td>`;
+      }
+
+      function cardMarkup(r) {
+        return `
+          <div class="upf-card">
+            <div class="upf-card-top">
+              <span class="upf-card-name">${esc(r.name)}</span>
+            </div>
+            <div class="upf-card-fields">
+              <div class="upf-field">${pill(r.level, COLS[1])}</div>
+              <div class="upf-field"><span class="upf-field-label">Score</span>${scoreCell(r)}</div>
+              <div class="upf-field"><span class="upf-card-basis">${esc(r.expl)}</span></div>
+            </div>
+          </div>`;
+      }
+
+      function render(card) {
+        const data = ROWS.slice().sort(compare);
+        card.querySelector('#proc-tbody').innerHTML = data.map((r) => `<tr>${rowCells(r)}</tr>`).join('');
+        card.querySelector('#proc-cards').innerHTML = data.map(cardMarkup).join('');
+
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          if (btn.dataset.key === sort.key) btn.setAttribute('data-sort', sort.dir === 1 ? 'asc' : 'desc');
+          else btn.removeAttribute('data-sort');
+        });
+
+        const toggle = card.querySelector('#proc-view-toggle');
+        toggle.setAttribute('aria-checked', cardsView ? 'true' : 'false');
+        card.querySelector('#proc-table-wrap').hidden = cardsView;
+        card.querySelector('#proc-cards').hidden = !cardsView;
+      }
+
+      function wire(card) {
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (sort.key === key) sort.dir *= -1;
+            else { sort.key = key; sort.dir = 1; }
+            render(card);
+          });
+        });
+
+        card.querySelector('#proc-view-toggle').addEventListener('click', () => {
+          cardsView = !cardsView;
+          userPref = cardsView;
+          try { localStorage.setItem(VIEW_KEY, cardsView ? '1' : '0'); } catch (_) {}
+          render(card);
+        });
+
+        NARROW_MQ.addEventListener('change', (e) => {
+          if (userPref !== null) return;
+          cardsView = e.matches;
+          render(card);
+        });
+      }
+
+      /* Mount directly below the GRAS card so it stays last. */
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        const gras = document.getElementById('gras-class-card');
+        if (!dash || !gras || document.getElementById('proc-class-card')) return false;
+        const card = buildCard();
+        gras.insertAdjacentElement('afterend', card);
+        render(card);
+        wire(card);
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <style>
+    /* =====================================================================
+       Product-Level GRAS Classification (analytics-types.html only).
+       A fourth sortable table built on the exact same shell, controls, pills
+       and card view as the Product-Level UPF Classification card above — only
+       the columns and data differ. Reuses every .upf-* class; the rules below
+       just add the tone-coloured "N ingredients" count cells (red = unsafe,
+       amber = unknown) and the neutral em-dash for a zero count.
+    ===================================================================== */
+    #gras-prod-card { --upf-pink: #ec4899; }
+    #gras-prod-card .upf-table { min-width: 800px; }
+    .upf-count { font-weight: 700; white-space: nowrap; }
+    .upf-count--alert { color: var(--sec-red-text); }
+    .upf-count--warn { color: var(--ter-amber-text); }
+    .upf-count--none { color: var(--text-subtle); font-weight: 600; }
+
+    /* Leading product-image column: a titleless cell holding a circular
+       thumbnail. Shows the product image when one is supplied, otherwise a
+       neutral placeholder circle. */
+    .upf-th-avatar { width: 1%; white-space: nowrap; }
+    #gras-prod-card .upf-table thead th.upf-th-avatar,
+    #gras-prod-card .upf-table tbody td.upf-th-avatar,
+    #upf-class-card .upf-table thead th.upf-th-avatar,
+    #upf-class-card .upf-table tbody td.upf-th-avatar { padding-left: 6px; padding-right: 14px; }
+    .upf-avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; flex: none;
+      border-radius: 50%; overflow: hidden;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .upf-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .upf-avatar-ph { font-size: 18px; color: var(--text-subtle); }
+
+    /* No leading dot inside the status chips for these cards (the level chips
+       already carry their own ⚠ / ✓ icon). */
+    #gras-prod-card .upf-pill::before,
+    #proc-class-card .upf-pill::before { display: none; }
+
+    /* Card view: avatar sits on its own row, with the product name + UPC
+       dropping to the next row beneath it. */
+    #gras-prod-card .upf-card-top,
+    #upf-class-card .upf-card-top { flex-direction: column; align-items: flex-start; gap: 10px; }
+    #gras-prod-card .upf-card-titles,
+    #upf-class-card .upf-card-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  </style>
+
+  <script>
+    /* =====================================================================
+       Product-Level GRAS Classification (analytics-types.html only).
+       The fourth sortable table: every active SKU with its overall GRAS
+       classification plus a count of any unsafe / unknown-status ingredients
+       it contains. Cloned from the Product-Level UPF Classification card so it
+       shares the same shell, controls, pills, card view and report action;
+       mounted directly below the Ingredient Processing Details card so it sits
+       at the very bottom of the report.
+    ===================================================================== */
+    (function () {
+      const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
+
+      /* Tone + sort-rank for each GRAS status value (lower rank = "better"). */
+      const GRAS_MAP = {
+        '\u2713 GRAS':    { tone: 'good',    rank: 0 },
+        'Historical':     { tone: 'primary', rank: 1 },
+        '? Unknown':      { tone: 'warn',    rank: 2 },
+        '\u26A0 Non-GRAS': { tone: 'alert',  rank: 3 },
+      };
+
+      /* The portfolio's 24 active SKUs, with per-product GRAS status and the
+         number of unsafe / unknown-status ingredients each one contains. */
+      const ROWS = [
+        { name: 'Cashew Lime Crisp',         upc: '8 10207 71198 8', gras: 'Historical',      unsafe: 0, unknown: 2 },
+        { name: 'Dark Chocolate Date Bar',   upc: '8 10207 71199 5', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Almond Coconut Crisp',      upc: '8 10207 71200 8', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Peanut Butter Date Bites',  upc: '8 10207 71201 5', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Walnut Brownie Bar',        upc: '8 10207 71202 2', gras: 'Historical',      unsafe: 0, unknown: 1 },
+        { name: 'Tropical Mango Date Bar',   upc: '8 10207 71203 9', gras: '? Unknown',       unsafe: 0, unknown: 3 },
+        { name: 'Cinnamon Apple Crisp',      upc: '8 10207 71204 6', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Espresso Date Energy Ball', upc: '8 10207 71205 3', gras: 'Historical',      unsafe: 0, unknown: 1 },
+        { name: 'Pistachio Rose Bar',        upc: '8 10207 71206 0', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Lemon Tahini Crisp',        upc: '8 10207 71207 7', gras: '? Unknown',       unsafe: 0, unknown: 2 },
+        { name: 'Hazelnut Cacao Bites',      upc: '8 10207 71208 4', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Strawberry Vanilla Bar',    upc: '8 10207 71209 1', gras: 'Historical',      unsafe: 0, unknown: 1 },
+        { name: 'Macadamia Coconut Crisp',   upc: '8 10207 71210 7', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Pecan Maple Bar',           upc: '8 10207 71211 4', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Blueberry Lemon Crisp',     upc: '8 10207 71212 1', gras: '? Unknown',       unsafe: 0, unknown: 2 },
+        { name: 'Pumpkin Spice Date Bar',    upc: '8 10207 71213 8', gras: 'Historical',      unsafe: 0, unknown: 2 },
+        { name: 'Matcha Cashew Bites',       upc: '8 10207 71214 5', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Cherry Almond Crisp',       upc: '8 10207 71215 2', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Ginger Turmeric Bar',       upc: '8 10207 71216 9', gras: 'Historical',      unsafe: 0, unknown: 1 },
+        { name: 'Banana Walnut Bites',       upc: '8 10207 71217 6', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Vanilla Bean Date Bar',     upc: '8 10207 71218 3', gras: '\u2713 GRAS',     unsafe: 0, unknown: 0 },
+        { name: 'Chocolate Peanut Crisp',    upc: '8 10207 71219 0', gras: '? Unknown',       unsafe: 0, unknown: 2 },
+        { name: 'Protein Boost Bar \u2014 Choc.',   upc: '8 10207 71220 6', gras: '\u26A0 Non-GRAS', unsafe: 1, unknown: 2 },
+        { name: 'Protein Boost Bar \u2014 Vanilla', upc: '8 10207 71221 3', gras: '\u26A0 Non-GRAS', unsafe: 1, unknown: 3 },
+      ];
+
+      /* Columns, in render order. `map` columns are pill-rendered + rank-sorted;
+         `count` columns sort numerically and render as tone-coloured text. */
+      const COLS = [
+        { key: 'name',    label: 'Product',              type: 'text' },
+        { key: 'upc',     label: 'UPC',                  type: 'upc'  },
+        { key: 'gras',    label: 'GRAS Status',          type: 'rank', map: GRAS_MAP },
+        { key: 'unsafe',  label: 'Unsafe Ingredients',   type: 'count', tone: 'alert' },
+        { key: 'unknown', label: 'Unknown Ingredients',  type: 'count', tone: 'warn' },
+      ];
+
+      const VIEW_KEY = 'gras-prod-view-cards';
+      const sort = { key: 'name', dir: 1 };          /* default: Product A–Z */
+      const NARROW_MQ = window.matchMedia('(max-width: 700px)');
+      let userPref = null;
+      try { const v = localStorage.getItem(VIEW_KEY); if (v === '0' || v === '1') userPref = v === '1'; } catch (_) {}
+      let cardsView = userPref !== null ? userPref : NARROW_MQ.matches;
+
+      const upcNum = (s) => Number(String(s).replace(/\D/g, '')) || 0;
+
+      function compare(a, b) {
+        const col = COLS.find((c) => c.key === sort.key) || COLS[0];
+        let r;
+        if (col.type === 'upc') r = upcNum(a.upc) - upcNum(b.upc);
+        else if (col.type === 'count') r = a[col.key] - b[col.key];
+        else if (col.type === 'rank') {
+          const ra = (col.map[a[col.key]] || {}).rank ?? 99;
+          const rb = (col.map[b[col.key]] || {}).rank ?? 99;
+          r = ra - rb;
+        } else r = String(a[col.key]).localeCompare(String(b[col.key]), undefined, { sensitivity: 'base' });
+        if (r === 0 && col.key !== 'name') r = a.name.localeCompare(b.name);
+        return r * sort.dir;
+      }
+
+      function pill(value, col) {
+        const tone = (col.map[value] || {}).tone || 'good';
+        return `<span class="upf-pill upf-pill--${tone}">${esc(value)}</span>`;
+      }
+
+      function countCell(n, col) {
+        if (!n) return '<span class="upf-count upf-count--none">\u2014</span>';
+        return `<span class="upf-count upf-count--${col.tone}">${n} ingredient${n === 1 ? '' : 's'}</span>`;
+      }
+
+      /* Circular product thumbnail for the leading (titleless) column. Uses the
+         row's `img` URL when supplied, otherwise a deterministic seeded
+         placeholder photo (same product → same image across re-renders). Error
+         fallback is wired in JS after render (see wireAvatars). */
+      const PH_FALLBACK = '<span class="material-icons upf-avatar-ph">photo_camera</span>';
+      function imgSrc(r) {
+        return r.img || ('https://picsum.photos/seed/' + encodeURIComponent('gras-' + r.upc) + '/72/72');
+      }
+      function avatar(r) {
+        return `<span class="upf-avatar"><img src="${escAttr(imgSrc(r))}" alt="${escAttr(r.name)} product image" loading="lazy" /></span>`;
+      }
+      function wireAvatars(card) {
+        card.querySelectorAll('.upf-avatar img').forEach((img) => {
+          img.addEventListener('error', () => {
+            const holder = img.closest('.upf-avatar');
+            if (holder) holder.innerHTML = PH_FALLBACK;
+          }, { once: true });
+        });
+      }
+
+      const REPORT_BTN =
+        '<button type="button" class="dash-mrow-report" aria-label="View report">' +
+        '<span class="dash-mrow-report-label">View report</span>' +
+        '<span class="material-icons dash-mrow-report-icon">north_east</span></button>';
+
+      function arrowSvg() {
+        return '<span class="upf-th-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      }
+
+      function buildCard() {
+        const card = document.createElement('section');
+        card.className = 'att-card';
+        card.id = 'gras-prod-card';
+
+        const headCells = '<th class="upf-th-avatar" aria-hidden="true"></th>' + COLS.map((c) =>
+          `<th><button type="button" class="upf-th-btn" data-key="${c.key}">${esc(c.label)}${arrowSvg()}</button></th>`
+        ).join('') + '<th class="upf-th-action"><span class="upf-th-label">Report</span></th>';
+
+        card.innerHTML = `
+          <div class="att-head">
+            <span class="att-title">Product-Level GRAS Classification</span>
+          </div>
+          <p class="att-intro">Every active SKU in the portfolio with its overall GRAS classification and a count of any
+            unsafe or unknown-status ingredients it contains. Click any column header to sort, or flip the pink toggle to
+            view each row as a card. Click a row's report action to open its SKU NFP+ report.</p>
+          <div class="upf-controls">
+            <button type="button" class="upf-toggle" id="gras-prod-view-toggle" role="switch" aria-checked="false" aria-label="Card view" title="Toggle card view">
+              <span class="upf-switch"><span class="upf-switch-dot"></span></span>
+            </button>
+          </div>
+          <div class="upf-table-wrap" id="gras-prod-table-wrap">
+            <table class="upf-table">
+              <thead><tr>${headCells}</tr></thead>
+              <tbody id="gras-prod-tbody"></tbody>
+            </table>
+          </div>
+          <div class="upf-cards" id="gras-prod-cards" hidden></div>`;
+        return card;
+      }
+
+      function rowCells(r) {
+        return `
+          <td class="upf-th-avatar">${avatar(r)}</td>
+          <td><span class="upf-name">${esc(r.name)}</span></td>
+          <td><span class="upf-upc">${esc(r.upc)}</span></td>
+          <td>${pill(r.gras, COLS[2])}</td>
+          <td>${countCell(r.unsafe, COLS[3])}</td>
+          <td>${countCell(r.unknown, COLS[4])}</td>
+          <td class="upf-th-action">${REPORT_BTN}</td>`;
+      }
+
+      function cardMarkup(r) {
+        return `
+          <div class="upf-card">
+            <div class="upf-card-top">
+              ${avatar(r)}
+              <div class="upf-card-titles">
+                <span class="upf-card-name">${esc(r.name)}</span>
+                <span class="upf-card-upc">${esc(r.upc)}</span>
+              </div>
+            </div>
+            <div class="upf-card-fields">
+              <div class="upf-field">${pill(r.gras, COLS[2])}</div>
+              <div class="upf-field"><span class="upf-field-label">Unsafe</span>${countCell(r.unsafe, COLS[3])}</div>
+              <div class="upf-field"><span class="upf-field-label">Unknown</span>${countCell(r.unknown, COLS[4])}</div>
+            </div>
+            ${REPORT_BTN}
+          </div>`;
+      }
+
+      function render(card) {
+        const data = ROWS.slice().sort(compare);
+        card.querySelector('#gras-prod-tbody').innerHTML = data.map((r) => `<tr>${rowCells(r)}</tr>`).join('');
+        card.querySelector('#gras-prod-cards').innerHTML = data.map(cardMarkup).join('');
+        wireAvatars(card);
+
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          if (btn.dataset.key === sort.key) btn.setAttribute('data-sort', sort.dir === 1 ? 'asc' : 'desc');
+          else btn.removeAttribute('data-sort');
+        });
+
+        const toggle = card.querySelector('#gras-prod-view-toggle');
+        toggle.setAttribute('aria-checked', cardsView ? 'true' : 'false');
+        card.querySelector('#gras-prod-table-wrap').hidden = cardsView;
+        card.querySelector('#gras-prod-cards').hidden = !cardsView;
+      }
+
+      function wire(card) {
+        card.querySelectorAll('.upf-th-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (sort.key === key) sort.dir *= -1;
+            else { sort.key = key; sort.dir = 1; }
+            render(card);
+          });
+        });
+
+        card.querySelector('#gras-prod-view-toggle').addEventListener('click', () => {
+          cardsView = !cardsView;
+          userPref = cardsView;
+          try { localStorage.setItem(VIEW_KEY, cardsView ? '1' : '0'); } catch (_) {}
+          render(card);
+        });
+
+        NARROW_MQ.addEventListener('change', (e) => {
+          if (userPref !== null) return;
+          cardsView = e.matches;
+          render(card);
+        });
+      }
+
+      /* Mount directly below the Ingredient Processing Details card so it stays
+         at the very bottom of the report. Fall back to the GRAS / UPF cards or
+         the dash itself if the processing card hasn't mounted yet. */
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        if (!dash || document.getElementById('gras-prod-card')) return false;
+        const anchor = document.getElementById('proc-class-card')
+          || document.getElementById('gras-class-card')
+          || document.getElementById('upf-class-card');
+        const card = buildCard();
+        if (anchor) anchor.insertAdjacentElement('afterend', card);
+        else dash.appendChild(card);
+        render(card);
+        wire(card);
+        return true;
+      }
+
       function init() {
         if (mount()) return;
         const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
@@ -1535,10 +3802,499 @@
         return did;
       }
 
+      /* Snap every polar wedge to its full radius for export/print — the
+         entrance sweep is gated on scroll-into-view, so an off-screen radar
+         would otherwise print collapsed at the centre. */
+      function finalizeForExport() {
+        document.querySelectorAll('.dash-radar[data-polar="1"]').forEach((radar) => {
+          if (!radar._paWedges) return;
+          radar._paWedges.forEach((w) => w.path.setAttribute('d', wedgePath(w.a0, w.a1, w.rFull)));
+        });
+      }
+      window.addEventListener('wise:finalize-charts', finalizeForExport);
+      window.addEventListener('beforeprint', finalizeForExport);
+
       function init() {
         scan();
         const host = document.getElementById('agent-main-scroll') || document.body;
         new MutationObserver(scan).observe(host, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Floating section navigation (analytics-types.html only). Builds a fixed
+       right-edge rail listing every chart / section on the page and wires it
+       up as a scrollspy: clicking an item smooth-scrolls the report's scroll
+       pane (#agent-main-scroll) to that section, and an IntersectionObserver
+       keeps the item for the section currently in view highlighted.
+
+       The dashboard body is injected asynchronously by agent-overview.js, and
+       two of the sections (the Portfolio Overview stats row and the
+       Performance Matrix card) are added later still by the inline scripts
+       above — so we (re)build whenever the DOM changes until every known
+       section has appeared, sorting the rail by true document order.
+    ===================================================================== */
+    (function () {
+      /* Known sections, in render order, each with a stable label. Selectors
+         are resolved against the rendered `.dash` container. */
+      const SECTIONS = [
+        { sel: ':scope > .pscale',        label: 'Processing Spectrum' },
+        { sel: ':scope > .dash-claim:not(.att-overview-claim)', label: 'Discovery & Claims' },
+        { sel: '.att-overview-claim',     label: 'Portfolio Overview' },
+        { sel: '.dash-top5-section',      label: 'Top Five Products' },
+        { sel: '#dash-charts',            label: 'UPF & GRAS Status' },
+        { sel: '.dash-pillars-section',   label: 'WISEscore Pillars' },
+        { sel: '.dash-pillars-breakdown', label: 'Pillar Breakdown' },
+        { sel: '.dash-radar-section',     label: 'Pillar Metrics' },
+        { sel: '.dash-ingredients-section', label: 'Processing Hotspots' },
+        { sel: '.dash-products-section',  label: 'Anti-Inflammatory' },
+        { sel: '.dash-mrow-section',      label: 'Metrics Highlight' },
+        { sel: '.dash-flags-section',     label: 'Ingredient Flags' },
+        { sel: '.dash-seg-section',       label: 'Score Distribution' },
+        { sel: '.dash-scatter-row',       label: 'Where to Focus' },
+        { sel: '#att-tree-card',          label: 'Performance Matrix' },
+        { sel: '#upf-class-card',         label: 'UPF Classification' },
+        { sel: '#gras-class-card',        label: 'GRAS Classification' },
+        { sel: '#gras-prod-card',         label: 'Product GRAS' },
+      ];
+
+      const nav = document.getElementById('az-nav');
+      const list = document.getElementById('az-nav-inner');
+      if (!nav || !list) return;
+
+      const reduceMotion = () =>
+        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const scroller = () => document.getElementById('agent-main-scroll');
+
+      /* ---- Skinny-bar toggle -------------------------------------------------
+         Flips every chunky .dash-ws-health-bar to a slim track and relocates the
+         score from inside the fill up into the row's head. The relocated score
+         is injected once per bar (hidden until skinny mode via CSS); we read the
+         final value off the count-up's data-count-to so it's correct regardless
+         of animation timing. State persists across reloads. */
+      const SKINNY_KEY = 'az-skinny-bars';
+
+      function readScore(num) {
+        const to = num.getAttribute('data-count-to') || (num.textContent || '').trim();
+        let suffix = num.getAttribute('data-count-suffix') || '';
+        if (!suffix && num.closest('.dash-pct-wrap')) suffix = '%';
+        return to + suffix;
+      }
+
+      function enhanceBars() {
+        const sc = scroller();
+        const root = (sc && sc.querySelector('.dash')) || document.body;
+        root.querySelectorAll('.dash-ws-health-bar').forEach((bar) => {
+          if (bar.dataset.azScore) return;
+          const num = bar.querySelector('.dash-ws-health-num');
+          if (!num) return;
+          bar.dataset.azScore = '1';
+          const chip = document.createElement('span');
+          chip.className = 'az-score-chip';
+          chip.textContent = readScore(num);
+          const fill = bar.querySelector('.dash-ws-health-fill');
+          if (fill && fill.style.background) chip.style.color = fill.style.background;
+          const head = bar.previousElementSibling;
+          if (head && head.nodeType === 1 && /-bar-head\b/.test(head.className || '')) {
+            head.appendChild(chip);
+          } else {
+            chip.classList.add('az-score-chip--overlay');
+            bar.appendChild(chip);
+          }
+        });
+      }
+
+      function applySkinny(on) {
+        document.body.classList.toggle('az-skinny-bars', on);
+        try { localStorage.setItem(SKINNY_KEY, on ? '1' : '0'); } catch (_) {}
+      }
+
+      let skinny = false;
+      try { skinny = localStorage.getItem(SKINNY_KEY) === '1'; } catch (_) {}
+
+      function buildToggle() {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'az-toggle';
+        btn.setAttribute('role', 'switch');
+        btn.setAttribute('aria-checked', skinny ? 'true' : 'false');
+        btn.title = 'Toggle slim health bars';
+        btn.innerHTML =
+          '<span class="az-nav-label">Skinny bars</span>' +
+          '<span class="az-switch"><span class="az-switch-dot"></span></span>';
+        btn.addEventListener('click', () => {
+          skinny = !skinny;
+          btn.setAttribute('aria-checked', skinny ? 'true' : 'false');
+          enhanceBars();
+          applySkinny(skinny);
+        });
+        list.appendChild(btn);
+        const sep = document.createElement('div');
+        sep.className = 'az-nav-sep';
+        list.appendChild(sep);
+      }
+
+      let entries = [];   /* [{ el, btn }] in document order */
+      let spy = null;
+      let activeEl = null;
+
+      function setActive(el) {
+        if (el === activeEl) return;
+        activeEl = el;
+        entries.forEach((e) => e.btn.classList.toggle('is-active', e.el === el));
+      }
+
+      function scrollTo(el) {
+        const sc = scroller();
+        if (!sc) return;
+        const top = el.getBoundingClientRect().top
+          - sc.getBoundingClientRect().top + sc.scrollTop - 18;
+        sc.scrollTo({ top: Math.max(0, top), behavior: reduceMotion() ? 'auto' : 'smooth' });
+      }
+
+      /* Scrollspy: a section is "current" while its top sits in the upper band
+         of the scroll pane. We keep the set of in-band sections and light up
+         the earliest one in document order. */
+      function wireSpy() {
+        const sc = scroller();
+        if (!sc || !('IntersectionObserver' in window)) return;
+        if (spy) spy.disconnect();
+        const visible = new Set();
+        spy = new IntersectionObserver((obs) => {
+          obs.forEach((o) => {
+            if (o.isIntersecting) visible.add(o.target);
+            else visible.delete(o.target);
+          });
+          for (const e of entries) {
+            if (visible.has(e.el)) { setActive(e.el); return; }
+          }
+        }, { root: sc, rootMargin: '-12% 0px -70% 0px', threshold: 0 });
+        entries.forEach((e) => spy.observe(e.el));
+      }
+
+      function build() {
+        const sc = scroller();
+        const dash = sc && sc.querySelector('.dash');
+        if (!dash) return false;
+
+        const found = [];
+        SECTIONS.forEach((s) => {
+          let el;
+          try { el = dash.querySelector(s.sel); } catch (_) { el = null; }
+          if (el && !found.some((f) => f.el === el)) found.push({ el, label: s.label });
+        });
+        if (!found.length) return false;
+
+        found.sort((a, b) =>
+          (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+
+        /* Skip a rebuild if the same sections are already shown, so the live
+           MutationObserver doesn't thrash the rail on unrelated DOM churn. */
+        const sig = found.map((f) => f.label).join('|');
+        if (sig === list.dataset.sig) return found.length === SECTIONS.length;
+        list.dataset.sig = sig;
+
+        list.innerHTML = '';
+        buildToggle();
+        enhanceBars();
+        applySkinny(skinny);
+        entries = found.map((f) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'az-nav-item';
+          btn.title = f.label;
+          btn.innerHTML =
+            '<span class="az-nav-label">' + f.label + '</span><span class="az-nav-tick"></span>';
+          btn.addEventListener('click', () => { setActive(f.el); scrollTo(f.el); });
+          list.appendChild(btn);
+          return { el: f.el, btn };
+        });
+
+        nav.hidden = false;
+        activeEl = null;
+        wireSpy();
+        return found.length === SECTIONS.length;
+      }
+
+      function init() {
+        const complete = build();
+        const host = document.getElementById('agent-main-scroll') || document.body;
+        const obs = new MutationObserver(() => { if (build()) obs.disconnect(); });
+        obs.observe(host, { childList: true, subtree: true });
+        /* Stop watching after a grace period even if a section never appears,
+           so the observer doesn't run for the life of the page. */
+        if (!complete) setTimeout(() => obs.disconnect(), 12000);
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <style>
+    /* =====================================================================
+       Metrics Highlight chart (analytics-types.html only).
+       Turns the shared "Metric Spotlight" card (the single gut-health row) into
+       a multi-row chart: one gut-health-styled row per Clean-Label / additive
+       metric. Every row reuses the exact spotlight markup — the rating badge +
+       title + score + description header (.dash-mrow-*) sitting above the same
+       segmented status bar (.dash-seg-*) — so the styling matches gut health
+       precisely. Only the stacking, the COMPOSITE/COMPONENT tag, the component
+       sub-group, and the inter-row dividers are added here.
+    ===================================================================== */
+    .att-mhc-rows { display: flex; flex-direction: column; }
+    /* Each top-level block (a row or the component group) is separated by a
+       hairline divider, mirroring the table rows in the source design. */
+    .att-mhc-rows > * { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); }
+    .att-mhc-rows > *:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    html.dark .att-mhc-rows > * { border-top-color: rgba(255, 255, 255, 0.08); }
+    /* Tighten the head→bar gap so each stacked row stays compact. */
+    .att-mhc-row .dash-mrow-head { margin-bottom: 12px; }
+    .att-mhc-row .dash-mrow-card,
+    .att-mhc-row { margin-top: 0; }
+    /* Give the segmented chart room to breathe so it isn't flush against the
+       divider line of the following row. */
+    .att-mhc-row { padding-bottom: 14px; }
+
+    /* Stack the metric name (with its score) and the description in a single
+       left-hand column so the description sits directly beneath the name with a
+       tight gap, while the Top/Low + View report chips stay pinned top-right. */
+    .att-mhc-row .dash-mrow-main {
+      flex: 1 1 auto; min-width: 0;
+      display: flex; flex-direction: column;
+    }
+    .att-mhc-row .dash-mrow-titlerow {
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .att-mhc-row .dash-mrow-note { margin-top: 3px; }
+    .att-mhc-row .dash-mrow-chips { margin-left: auto; }
+
+    /* Composite / component indicator: a single bare icon riding just before the
+       metric name (no pill, no background) so the kind reads at a glance. */
+    .att-mhc-icon {
+      font-size: 18px !important; vertical-align: -3px; margin-right: 7px;
+      color: var(--text-subtle);
+    }
+    .att-mhc-icon--composite { color: var(--primary); }
+
+    /* Component sub-group: a left accent + indent gathers the four Clean-Label
+       components under their heading, the way the source design nests them. */
+    .att-mhc-group {
+      margin-left: 2px; padding-left: 16px;
+      border-left: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    .att-mhc-subhead {
+      display: flex; align-items: center; gap: 9px; margin-bottom: 16px;
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .att-mhc-subhead-count {
+      padding: 2px 9px; border-radius: var(--radius-pill, 999px);
+      background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary);
+      letter-spacing: 0.05em;
+    }
+    .att-mhc-group .att-mhc-row + .att-mhc-row {
+      margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--border);
+    }
+    html.dark .att-mhc-group .att-mhc-row + .att-mhc-row { border-top-color: rgba(255, 255, 255, 0.08); }
+  </style>
+
+  <script>
+    /* =====================================================================
+       Metrics Highlight chart (analytics-types.html only).
+       Rebuilds the shared Metric Spotlight card into a stack of gut-health-style
+       rows, one per metric below. Content is taken verbatim from the portfolio's
+       Clean-Label / additive breakdown; the markup is the same the shared module
+       emits for the gut-health spotlight, so styling stays identical.
+    ===================================================================== */
+    (function () {
+      const TIER = {
+        excellent: { label: 'Excellent', color: 'var(--sec-green)' },
+        good:      { label: 'Good',      color: '#7DC470' },
+        okay:      { label: 'OK',        color: 'var(--ter-amber)' },
+        fair:      { label: 'Fair',      color: '#D27326' },
+        poor:      { label: 'Poor',      color: 'var(--sec-red)' },
+      };
+      const ORDER = ['excellent', 'good', 'okay', 'fair', 'poor'];
+
+      const CLEAN_LABEL = {
+        kind: 'composite', name: 'Clean Label', tone: 'excellent', score: 88,
+        desc: 'Composite score evaluating the absence of 4 categories of artificial additives.',
+        dist: { excellent: 58, good: 29, okay: 9, fair: 4 },
+        top: { name: 'Original Granola', score: 96 }, low: { name: 'Frosted Granola', score: 72 },
+      };
+      const COMPONENTS = [
+        { kind: 'component', name: 'Artificial Colors', tone: 'excellent', score: 95,
+          desc: 'Presence of synthetic colorants with no nutritional benefit.',
+          dist: { excellent: 75, good: 20, okay: 5 },
+          top: { name: 'Original Granola', score: 100 }, low: { name: 'Berry Blend Granola', score: 88 } },
+        { kind: 'component', name: 'Artificial Flavors', tone: 'excellent', score: 87,
+          desc: 'Synthetic flavor compounds used in place of natural sources.',
+          dist: { excellent: 58, good: 29, okay: 13 },
+          top: { name: 'Original Granola', score: 100 }, low: { name: 'Vanilla Bean Granola', score: 79 } },
+        { kind: 'component', name: 'Artificial Sweeteners', tone: 'excellent', score: 96,
+          desc: 'Non-caloric synthetic sweeteners linked to gut microbiome disruption.',
+          dist: { excellent: 83, good: 13, okay: 4 },
+          top: { name: 'Most SKUs', score: 100 }, low: { name: 'Protein Granola', score: 88 } },
+        { kind: 'component', name: 'Artificial Preservatives', tone: 'excellent', score: 82,
+          desc: 'Chemical preservatives that extend shelf life without nutritional benefit.',
+          dist: { excellent: 63, good: 25, okay: 8, fair: 4 },
+          top: { name: 'Original Granola', score: 100 }, low: { name: 'Frosted Granola', score: 72 } },
+      ];
+      const STANDALONE = [
+        { kind: 'metric', name: 'Banned / Unsafe Ingredients', tone: 'good', score: 79,
+          desc: 'Screens for ingredients prohibited in key global markets (EU, UK, Canada) or flagged by major health agencies.',
+          dist: { excellent: 46, good: 33, okay: 13, fair: 8 },
+          top: { name: 'Original Granola', score: 100 }, low: { name: 'Protein Blend Mix', score: 54 } },
+        { kind: 'metric', name: 'Emulsifiers of Concern', tone: 'good', score: 74,
+          desc: 'Identifies emulsifiers associated with gut microbiome disruption in peer-reviewed research.',
+          dist: { excellent: 38, good: 38, okay: 17, fair: 7 },
+          top: { name: 'Original Oatmeal', score: 92 }, low: { name: 'Blueberry Muffin Mix', score: 49 } },
+        { kind: 'metric', name: 'Ultra-Processed Food', tone: 'good', score: 61,
+          desc: 'Measures degree of industrial processing using NOVA classification. Non-UPF products score highest.',
+          dist: { excellent: 29, good: 33, okay: 21, fair: 13, poor: 4 },
+          top: { name: 'Original Granola', score: 88 }, low: { name: 'Protein Bar', score: 31 } },
+        { kind: 'metric', name: 'Seed Oils of Concern', tone: 'okay', score: 58,
+          desc: 'Evaluates presence of high-omega-6 industrial seed oils linked to inflammation.',
+          dist: { excellent: 21, good: 29, okay: 29, fair: 17, poor: 4 },
+          top: { name: 'Coconut Granola', score: 88 }, low: { name: 'Granola Snack Mix', score: 34 } },
+      ];
+
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+      function segHTML(dist) {
+        return ORDER.map((k) => {
+          const p = dist[k] || 0;
+          if (!p) return '';
+          return `<div class="dash-seg-part" style="flex-grow:${p};background:${TIER[k].color}" title="${TIER[k].label} ${p}%"><span class="dash-seg-part-label">${p}%</span></div>`;
+        }).join('');
+      }
+
+      function legendHTML(dist) {
+        return ORDER.map((k) => {
+          const p = dist[k] || 0;
+          if (!p) return '';
+          const c = TIER[k].color;
+          return `<div class="dash-seg-leg-cell" style="flex-grow:${p}">
+              <span class="dash-seg-leg-line" style="background:${c}"></span>
+              <span class="dash-seg-leg-info">
+                <span class="dash-seg-leg-dot" style="background:${c}"></span>
+                <span class="dash-seg-leg-name">${TIER[k].label}</span>
+              </span>
+            </div>`;
+        }).join('');
+      }
+
+      function rowHTML(m) {
+        const t = TIER[m.tone];
+        const icon = m.kind === 'composite'
+          ? '<span class="material-icons att-mhc-icon att-mhc-icon--composite" title="Composite metric">widgets</span>'
+          : m.kind === 'component'
+            ? '<span class="material-icons att-mhc-icon" title="Component metric">extension</span>'
+            : '';
+        return `
+          <div class="att-mhc-row">
+            <div class="dash-section-head dash-mrow-head">
+              <span class="dash-badge dash-badge--${m.tone} dash-mrow-badge">${t.label}</span>
+              <div class="dash-mrow-main">
+                <div class="dash-mrow-titlerow">
+                  <h2 class="dash-section-title dash-mrow-title">${icon}${esc(m.name)}</h2>
+                  <div class="dash-wisescore-num dash-seg-num dash-mrow-score"><span class="n dash-seg-pct-num att-mhc-count" data-to="${m.score}">0</span><span class="d">/ 100</span></div>
+                </div>
+                <p class="dash-wisescore-note dash-mrow-note">${esc(m.desc)}</p>
+              </div>
+              <div class="dash-mrow-chips">
+                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${m.top.score}</span></span>
+                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${m.low.score}</span></span>
+                <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-icons dash-mrow-report-icon">north_east</span></button>
+              </div>
+            </div>
+            <div class="dash-seg-row dash-mrow-row">
+              <div class="dash-seg-bars dash-mrow-seg">
+                <div class="dash-seg-track">${segHTML(m.dist)}</div>
+                <div class="dash-seg-legend">${legendHTML(m.dist)}</div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function buildHTML() {
+        return `
+          <div class="att-mhc-rows">
+            ${rowHTML(CLEAN_LABEL)}
+            <div class="att-mhc-group">
+              <div class="att-mhc-subhead"><span class="att-mhc-subhead-count">4 Components</span><span>Clean Label Components</span></div>
+              ${COMPONENTS.map(rowHTML).join('')}
+            </div>
+            ${STANDALONE.map(rowHTML).join('')}
+          </div>`;
+      }
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function countUp(el, to, dur) {
+        const start = performance.now();
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      }
+
+      /* Reveal the stacked rows the same way the shared module reveals the
+         single gut-health bar: wipe each segmented track open (clip-path via
+         .is-seg-ready) and count the scores up, once, on scroll-in. */
+      function reveal(card) {
+        const tracks = card.querySelectorAll('.dash-seg-track');
+        const nums = card.querySelectorAll('.att-mhc-count');
+        if (reduced) {
+          tracks.forEach((tk) => tk.classList.add('is-seg-ready'));
+          nums.forEach((n) => { n.textContent = n.getAttribute('data-to'); });
+          return;
+        }
+        const run = () => {
+          tracks.forEach((tk) => tk.classList.add('is-seg-ready'));
+          nums.forEach((n) => countUp(n, parseInt(n.getAttribute('data-to'), 10) || 0, 1300));
+        };
+        if (!window.IntersectionObserver) { run(); return; }
+        let done = false;
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((en) => { if (en.isIntersecting && !done) { done = true; run(); io.disconnect(); } });
+        }, { threshold: 0.2 });
+        io.observe(card);
+      }
+
+      function mount() {
+        const card = document.querySelector('.dash-mrow-section .dash-mrow-card');
+        if (!card || card.dataset.mhc === '1') return !!card;
+        card.dataset.mhc = '1';
+        card.innerHTML = buildHTML();
+        reveal(card);
+        return true;
+      }
+
+      /* Snap the stacked rows to their finished state for export/print: open
+         every clip-path track and jump each score to its final value. (The
+         reveal is gated on scroll-into-view, so off-screen rows would otherwise
+         print collapsed with 0 scores.) */
+      function finalizeForExport() {
+        const card = document.querySelector('.dash-mrow-section .dash-mrow-card');
+        if (!card) return;
+        card.querySelectorAll('.dash-seg-track').forEach((tk) => tk.classList.add('is-seg-ready'));
+        card.querySelectorAll('.att-mhc-count').forEach((n) => { n.textContent = n.getAttribute('data-to'); });
+      }
+      window.addEventListener('wise:finalize-charts', finalizeForExport);
+      window.addEventListener('beforeprint', finalizeForExport);
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
       else init();

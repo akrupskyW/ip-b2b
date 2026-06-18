@@ -1288,10 +1288,10 @@ function renderPillarCards(d) {
   return `
     <section class="dash-pillars-section">
       <div class="dash-pillars-heading">
+        ${wisescoreHealthBar(ws)}
         <div class="dash-section-head">
           <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
         </div>
-        ${wisescoreHealthBar(ws)}
         <p class="dash-pillars-intro">Across all ${d.claim.discovered} discovered products, nutrient quality, ingredient quality, and health outcomes are weighed against one another &mdash; so a food can't earn a high score by acing one dimension while failing another.</p>
       </div>
       <div class="dash-three-up dash-pillars">${columns}</div>
@@ -1454,11 +1454,11 @@ function renderPillarBreakdown(d) {
   return `
     <section class="dash-pillars-breakdown">
       <div class="dash-card dash-breakdown-card">
-        <div class="dash-section-head dash-breakdown-title">
-          <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
-        </div>
         <div class="dash-breakdown-grid">
           <div class="dash-breakdown-intro">
+            <div class="dash-section-head dash-breakdown-title">
+              <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
+            </div>
             <p class="dash-pillars-intro">Across all ${d.claim.discovered} discovered products, nutrient quality, ingredient quality, and health outcomes are weighed against one another &mdash; so a food can't earn a high score by acing one dimension while failing another.</p>
           </div>
           <div class="dash-breakdown-donut-col">
@@ -1832,28 +1832,20 @@ function renderMetricSpotlight(d) {
     <section class="dash-mrow-section">
       <div class="dash-card dash-mrow-card">
         <div class="dash-section-head dash-mrow-head">
+          <span class="dash-badge dash-badge--${tone} dash-mrow-badge">${esc(m.rating)}</span>
           <h2 class="dash-section-title dash-mrow-title">${esc(m.name)}</h2>
+          <div class="dash-wisescore-num dash-seg-num dash-mrow-score">${countUpMarkup(m.score, { className: 'n dash-seg-pct-num' })}<span class="d">/ 100</span></div>
+          <p class="dash-wisescore-note dash-mrow-note">${esc(m.desc)}</p>
+          <div class="dash-mrow-chips">
+            <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
+            <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.low.score))}</span></span>
+            <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-icons dash-mrow-report-icon">chevron_right</span></button>
+          </div>
         </div>
         <div class="dash-seg-row dash-mrow-row">
-          <div class="dash-seg-score dash-mrow-score-block">
-            <div class="dash-wisescore-num dash-seg-num">${countUpMarkup(m.score, { className: 'n dash-seg-pct-num' })}<span class="d">/ 100</span></div>
-            <span class="dash-badge dash-badge--${tone} dash-mrow-badge">${esc(m.rating)}</span>
-            <p class="dash-wisescore-note dash-seg-note dash-mrow-note">${esc(m.desc)}</p>
-          </div>
           <div class="dash-seg-bars dash-mrow-seg">
-            <div class="dash-mrow-seg-head">
-              <div class="dash-mrow-chips">
-                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
-                <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.low.score))}</span></span>
-              </div>
-            </div>
-            <div class="dash-mrow-seg-body">
-              <div class="dash-mrow-seg-main">
-                <div class="dash-seg-track">${segs}</div>
-                <div class="dash-seg-legend">${legend}</div>
-              </div>
-              <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="dash-mrow-report-icon"><span class="material-icons">chevron_right</span></span></button>
-            </div>
+            <div class="dash-seg-track">${segs}</div>
+            <div class="dash-seg-legend">${legend}</div>
           </div>
         </div>
       </div>
@@ -2027,11 +2019,11 @@ function renderFocusScatter(d) {
   });
   if (!points.length) return '';
 
-  /* Plot geometry — a wide, low-profile viewBox (~2:1) so the chart renders
-     about half as tall as its column width. Text still reads at a natural scale
-     since the SVG is width:100%; height:auto. */
+  /* Plot geometry — a wide viewBox so the chart renders a bit shy of half as
+     tall as its column width. Text still reads at a natural scale since the SVG
+     is width:100%; height:auto. */
   const W = 520;
-  const H = 215;
+  const H = 255;
   const m = { l: 46, r: 18, t: 22, b: 42 };
   const plotW = W - m.l - m.r;
   const plotH = H - m.t - m.b;
@@ -2400,6 +2392,46 @@ function finalizeChartElements(root) {
     markMetricFillReady(fill);
   });
   root.querySelectorAll('.dash-radar-svg').forEach((svg) => setRadarProgress(svg, 1));
+  /* Segmented distribution bars reveal via a clip-path wipe (.is-seg-ready). */
+  root.querySelectorAll('.dash-seg-track').forEach((track) => track.classList.add('is-seg-ready'));
+  /* Scatter points pop in from scale(0.2)/opacity 0 — snap them to rest. */
+  root.querySelectorAll('.dash-scatter-pt').forEach((pt) => {
+    pt.style.transition = 'none';
+    pt.style.opacity = '1';
+    pt.style.transform = 'none';
+  });
+}
+
+/* Snap every chart on the page to its finished state — used so exports (the
+   header "Export to PDF" / the browser print + Save-as-PDF dialogs) always
+   capture fully-revealed charts, regardless of how far the user has scrolled
+   (the scroll-triggered entrance animations never fire for off-screen
+   sections). Tracks the latest rendered host and binds the print listeners
+   once. A `wise:finalize-charts` event is also dispatched so the page's
+   stand-alone chart modules (matrix, polar radar, metric spotlight) can snap
+   themselves to their finished state at the same moment. */
+let printFinalizeHost = null;
+let printFinalizeBound = false;
+
+function finalizeAllChartsForPrint() {
+  if (printFinalizeHost) {
+    printFinalizeHost.classList.remove('dash-charts-pending');
+    finalizeChartElements(printFinalizeHost);
+  }
+  window.dispatchEvent(new CustomEvent('wise:finalize-charts'));
+}
+
+function setupPrintFinalize(host) {
+  printFinalizeHost = host;
+  if (printFinalizeBound) return;
+  printFinalizeBound = true;
+  window.addEventListener('beforeprint', finalizeAllChartsForPrint);
+  if (window.matchMedia) {
+    const mq = window.matchMedia('print');
+    const onChange = (e) => { if (e.matches) finalizeAllChartsForPrint(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
 }
 
 const CHART_GAUGE_SWEEP_MS = 1400;
@@ -2917,6 +2949,8 @@ function setupChartAnimations(host) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   host.classList.add('dash-charts-pending');
   prepChartElements(host);
+  /* Ensure any export/print snapshots the fully-revealed charts. */
+  setupPrintFinalize(host);
 
   if (reduced) {
     host.classList.remove('dash-charts-pending');
