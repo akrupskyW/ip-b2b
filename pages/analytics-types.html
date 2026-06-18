@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
   <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="dashboard.css?v=gut-health-portfolio-10" />
+  <link rel="stylesheet" href="dashboard.css?v=gut-health-portfolio-11" />
   <style>
     /* =====================================================================
        Typography lock-in (aha.html only) — Noto Serif is the display face for
@@ -280,31 +280,38 @@
     }
     .pmx-fix-toast {
       position: absolute;
-      left: 50%;
-      bottom: calc(100% + 6px);
+      /* Default placement: floating above the cell. The exact horizontal `left`
+         (in px, relative to the cell) and the --pmx-arrow-x are set by JS so the
+         bubble stays inside the scroll box and the arrow keeps pointing at the
+         cell. The float/entrance animations only translateY, so they never fight
+         this horizontal positioning. */
+      left: 0;
+      bottom: calc(100% + 8px);
       z-index: 8;
       display: flex;
       align-items: flex-start;
-      gap: 7px;
+      gap: 8px;
       width: max-content;
-      min-width: 148px;
-      max-width: 196px;
-      padding: 9px 10px;
-      border-radius: 11px;
+      min-width: 170px;
+      max-width: 224px;
+      padding: 10px 12px 11px;
+      border-radius: 12px;
       background: linear-gradient(135deg, var(--primary, #25507C) 0%, #336699 100%);
       color: #fff;
       box-shadow: 0 10px 26px rgba(37, 80, 124, 0.38), 0 3px 8px rgba(0, 0, 0, 0.14);
       pointer-events: auto;
-      transform: translateX(-50%);
       animation:
         dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
         dash-score-toast-float 3.6s ease-in-out 0.32s infinite;
     }
+    /* Arrow for the default (above-the-cell) placement: points down at the cell.
+       Its x is re-pointed at the cell centre via --pmx-arrow-x when the bubble is
+       shifted sideways to stay on-screen. */
     .pmx-fix-toast::after {
       content: "";
       position: absolute;
-      bottom: -6px;
-      left: 50%;
+      bottom: -5px;
+      left: var(--pmx-arrow-x, 50%);
       width: 11px;
       height: 11px;
       margin-left: -5px;
@@ -312,38 +319,52 @@
       transform: rotate(45deg);
       border-radius: 0 0 2px 0;
     }
-    .pmx-fix-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 1px; }
-    .pmx-fix-toast-icon .material-icons { font-size: 16px; color: #fff; }
+    /* Flipped placement: when there isn't room above (top rows scrolled near the
+       viewport top), the bubble drops below the cell and the arrow points up. */
+    .pmx-fix-toast--below {
+      bottom: auto;
+      top: calc(100% + 8px);
+    }
+    .pmx-fix-toast--below::after {
+      bottom: auto;
+      top: -5px;
+      background: var(--primary, #25507C);
+      border-radius: 2px 0 0 0;
+    }
+    .pmx-fix-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 0; }
+    .pmx-fix-toast-icon .material-icons { font-size: 17px; color: #fff; }
     .pmx-fix-toast-body { min-width: 0; }
+    /* Type authored at the page's 12px floor so the min-font-size clamp leaves it
+       untouched (it used to bump 10/11px up to 12px and break the layout). */
     .pmx-fix-toast-title {
-      font-size: 11px; font-weight: 700; line-height: 1.25;
-      padding-right: 14px;
+      font-size: 12px; font-weight: 800; line-height: 1.3;
+      padding-right: 20px;
     }
     .pmx-fix-toast-text {
-      margin: 2px 0 0;
-      font-size: 10px;
-      line-height: 1.35;
-      color: rgba(255, 255, 255, 0.92);
+      margin: 3px 0 0;
+      font-size: 12px;
+      line-height: 1.42;
+      color: rgba(255, 255, 255, 0.94);
     }
     .pmx-fix-toast-close {
       position: absolute;
-      top: 4px;
-      right: 4px;
+      top: 6px;
+      right: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 16px;
-      height: 16px;
+      width: 19px;
+      height: 19px;
       padding: 0;
       border: none;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.22);
       color: #fff;
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: background 0.15s ease, transform 0.1s ease;
     }
-    .pmx-fix-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
-    .pmx-fix-toast-close .material-icons { font-size: 11px; }
+    .pmx-fix-toast-close:hover { background: rgba(255, 255, 255, 0.42); transform: scale(1.08); }
+    .pmx-fix-toast-close .material-icons { font-size: 14px; line-height: 1; }
     @media (prefers-reduced-motion: reduce) {
       .pmx-fix-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
     }
@@ -480,12 +501,16 @@
        script below, which reads the data straight off the rendered radar.
     ===================================================================== */
     .pa-svg { width: 100%; height: auto; display: block; overflow: visible; }
-    .pa-grid { fill: none; stroke: var(--border); stroke-width: 1; }
-    .pa-spoke { stroke: var(--border); stroke-width: 1; }
+    /* Recessed "well" the rosette sits inside: a subtly grey disc stamped into
+       the card with an inset shadow, so the petals read as raised above it. */
+    .pa-bg { fill: color-mix(in srgb, var(--border) 60%, var(--surface)); }
+    html.dark .pa-bg { fill: rgba(255, 255, 255, 0.035); }
+    .pa-grid { fill: none; stroke: color-mix(in srgb, var(--border) 70%, transparent); stroke-width: 1; }
+    .pa-spoke { stroke: color-mix(in srgb, var(--border) 70%, transparent); stroke-width: 1; }
     html.dark .pa-grid,
-    html.dark .pa-spoke { stroke: rgba(255, 255, 255, 0.1); }
+    html.dark .pa-spoke { stroke: rgba(255, 255, 255, 0.08); }
     .pa-ringval { fill: var(--text-subtle); font-size: 11px; font-weight: 600; }
-    .pa-axis-label { fill: var(--text-muted); font-size: 13px; font-weight: 600; }
+    .pa-axis-label { fill: var(--text-muted); font-size: 11px; font-weight: 600; }
     .pa-wedge {
       fill-opacity: 0.92;
       stroke: var(--surface);
@@ -1624,9 +1649,10 @@
       var MIN = 12;
       function clamp(el) {
         if (el.nodeType !== 1 || el.dataset.wiseMinFs === '1') return;
-        /* The scatter axis tick numbers are intentionally sub-12px (decorative,
-           like the em-based glyphs noted above) — leave them at their CSS size. */
-        if (el.getAttribute && /\bdash-scatter-tick\b/.test(el.getAttribute('class') || '')) return;
+        /* The scatter axis tick numbers and quadrant chip labels are
+           intentionally sub-12px (decorative, like the em-based glyphs noted
+           above) — leave them at their CSS size. */
+        if (el.getAttribute && /\bdash-scatter-(tick|zone-label)\b/.test(el.getAttribute('class') || '')) return;
         var fs = parseFloat(window.getComputedStyle(el).fontSize);
         if (fs && fs < MIN) {
           el.style.setProperty('font-size', MIN + 'px', 'important');
@@ -2299,6 +2325,57 @@
           </div>`;
       }
 
+      /* Keep every fix toast inside the visible scroll box and pointed at its
+         cell. The bubble is centred over its cell, then clamped horizontally to
+         the scroll viewport (so the rightmost "Diabetes" toast can't run off the
+         edge) while the arrow is re-aimed at the cell centre. Vertically it sits
+         above the cell, flipping below only when the row is scrolled too close to
+         the top of the view to fit. */
+      function positionFixToasts(stage) {
+        const toasts = stage.querySelectorAll('.pmx-fix-toast');
+        if (!toasts.length) return;
+        const scrollBox = stage.closest('.att-scroll');
+        const bound = (scrollBox || stage).getBoundingClientRect();
+        /* The scroll box clips both axes (overflow-x:auto forces y to auto too),
+           so its own top edge — not the dashboard viewport — is what would crop a
+           toast floating above the first row. Its 92px top padding is the room. */
+        const topBound = bound.top + 6;
+        const pad = 10, gap = 8;
+        toasts.forEach((toast) => {
+          const cell = toast.parentElement;
+          if (!cell) return;
+          const cellRect = cell.getBoundingClientRect();
+          if (!cellRect.width) return; /* hidden (collapsed/responsive) — skip */
+          const tw = toast.offsetWidth;
+          const th = toast.offsetHeight;
+          const cellCenter = cellRect.left + cellRect.width / 2;
+
+          /* Horizontal: centre on the cell, then clamp into the scroll box. */
+          let leftVX = cellCenter - tw / 2;
+          const minLeft = bound.left + pad;
+          const maxLeft = bound.right - pad - tw;
+          leftVX = maxLeft >= minLeft
+            ? Math.max(minLeft, Math.min(maxLeft, leftVX))
+            : minLeft;
+          toast.style.left = (leftVX - cellRect.left) + 'px';
+
+          /* Arrow follows the cell centre, clamped to the bubble's body. */
+          let arrowX = cellCenter - leftVX;
+          arrowX = Math.max(14, Math.min(tw - 14, arrowX));
+          toast.style.setProperty('--pmx-arrow-x', arrowX + 'px');
+
+          /* Vertical: prefer above; flip below if it would clip the view's top. */
+          const flipBelow = (cellRect.top - gap - th) < topBound;
+          toast.classList.toggle('pmx-fix-toast--below', flipBelow);
+        });
+      }
+
+      let posRaf = 0;
+      function schedulePos(stage) {
+        if (posRaf) return;
+        posRaf = requestAnimationFrame(() => { posRaf = 0; positionFixToasts(stage); });
+      }
+
       /* Rating index (0–4) → tier key, for cell colouring straight off the matrix. */
       const RATING_TIER = ['excellent', 'good', 'okay', 'fair', 'poor'];
 
@@ -2413,6 +2490,7 @@
 
         grid.appendChild(frag);
         stage.appendChild(grid);
+        schedulePos(stage);
         return grid;
       }
 
@@ -2553,6 +2631,9 @@
           if (e.animationName === 'pmxCellIn' && e.target.classList.contains('pmx-cell')) {
             e.target.classList.remove('is-pmx-in');
             e.target.style.animationDelay = '';
+            /* Cells settle back to scale(1) after the sweep — re-measure so the
+               toasts are anchored to their final geometry. */
+            schedulePos(stage);
           }
         });
 
@@ -2580,6 +2661,16 @@
           syncMore(moreBtn);
           animateCells(grid);
         });
+
+        /* Re-anchor the toasts whenever the geometry can change: window resize,
+           horizontal scroll of the matrix, or vertical scroll of the dashboard
+           (which decides whether a toast floats above or below its cell). */
+        positionFixToasts(stage);
+        const scrollBox = stage.closest('.att-scroll');
+        const viewport = document.getElementById('agent-main-scroll');
+        window.addEventListener('resize', () => schedulePos(stage));
+        if (scrollBox) scrollBox.addEventListener('scroll', () => schedulePos(stage), { passive: true });
+        if (viewport) viewport.addEventListener('scroll', () => schedulePos(stage), { passive: true });
         return true;
       }
 
@@ -3039,8 +3130,8 @@
        Builds the dashboard's first row: a six-segment scale. Segment one is
        the brand-blue "Non-UPF Verified" tier (the WISEcode Shield); segments
        two through six are the processing ladder — Minimal, Lightly, Moderate,
-       Ultra, Super Ultra — each a solid status colour. Inserted as the very
-       first child of .dash so it sits above the Discovery & Claims row.
+       Ultra, Super Ultra — each a solid status colour. Mounted directly beneath
+       the Portfolio Insights Report hero (the last .rpt-hero banner).
     ===================================================================== */
     (function () {
       const COLS = [
@@ -3072,13 +3163,23 @@
         return section;
       }
 
-      /* Mount as the first row, before the Discovery & Claims (.dash-claim) row. */
+      /* Mount directly beneath the Portfolio Insights Report (the last
+         .rpt-hero). If the report heroes haven't rendered yet, park the row at
+         the top and keep observing until they appear. */
       function mount() {
         const dash = document.querySelector('#agent-main-scroll .dash') || document.querySelector('.dash');
         if (!dash) return false;
-        if (dash.querySelector(':scope > .pscale')) return true;
-        dash.insertAdjacentElement('afterbegin', buildRow());
-        return true;
+        const heroes = dash.querySelectorAll(':scope > .rpt-hero');
+        const lastHero = heroes.length ? heroes[heroes.length - 1] : null;
+        let row = dash.querySelector(':scope > .pscale');
+        if (row && lastHero && row.previousElementSibling === lastHero) return true;
+        if (!row) row = buildRow();
+        if (lastHero) {
+          dash.insertBefore(row, lastHero.nextSibling);
+          return true;
+        }
+        if (!row.parentNode) dash.insertAdjacentElement('afterbegin', row);
+        return false;
       }
 
       function init() {
@@ -3654,12 +3755,50 @@
        for them.
     ===================================================================== */
     (function () {
-      const SIZE = 420, CX = 210, CY = 210, MAX_R = 145, LABEL_R = MAX_R + 24;
+      const SIZE = 460, CX = 230, CY = 230, MAX_R = 145, LABEL_R = MAX_R + 20;
       const LEVELS = [20, 40, 60, 80, 100];
       const NS = 'http://www.w3.org/2000/svg';
       const rad = (deg) => (deg * Math.PI) / 180;
       const P = (deg, r) => [CX + r * Math.cos(rad(deg)), CY + r * Math.sin(rad(deg))];
       const f = (v) => Number(v).toFixed(1);
+
+      /* Each of the three pillars gets its own hue family so the rosette reads
+         as three distinct groups at a glance. Within a pillar the wedge shade
+         ramps with the metric's score (higher score → richer/darker), giving
+         variation between metrics without losing the pillar's identity. */
+      const PILLAR_HUE = {
+        'Nutrient Quality':   { h: 145, s: 56, l: 40 },
+        'Ingredient Quality': { h: 190, s: 64, l: 38 },
+        'Health Outcomes':    { h: 256, s: 44, l: 54 },
+      };
+      function pillarColor(group, value) {
+        const base = PILLAR_HUE[group] || { h: 145, s: 55, l: 44 };
+        const t = Math.max(0, Math.min(1, (value - 45) / 55)); /* 45–100 → 0–1 */
+        const l = base.l + (1 - t) * 24;  /* lower score → lighter   */
+        const s = base.s - (1 - t) * 16;  /* lower score → softer     */
+        return `hsl(${base.h} ${Math.round(s)}% ${Math.round(l)}%)`;
+      }
+      /* Representative solid hue for a pillar's legend dot. */
+      function pillarSwatch(group) {
+        const b = PILLAR_HUE[group] || { h: 145, s: 55, l: 44 };
+        return `hsl(${b.h} ${b.s}% ${b.l + 4}%)`;
+      }
+
+      /* Word-wrap a long metric name into <= 2 short lines so the full names
+         ("Banned / Unsafe Ingredients", "Carbohydrate Quality", …) ring the
+         chart without clipping. */
+      function wrapLabel(text, max) {
+        const words = String(text).split(/\s+/);
+        const lines = [];
+        let cur = '';
+        words.forEach((w) => {
+          const cand = cur ? cur + ' ' + w : w;
+          if (cand.length > max && cur) { lines.push(cur); cur = w; }
+          else cur = cand;
+        });
+        if (cur) lines.push(cur);
+        return lines;
+      }
 
       /* Pull each metric off the rendered radar. Dots and axis labels are
          emitted in the same axis order, so they pair by index. */
@@ -3700,6 +3839,28 @@
           return el;
         };
 
+        /* Inset-shadow filter — paints a soft dark rim on the inside edge of a
+           shape, so the grey backing disc looks debossed (pressed into the
+           card) rather than floating on top of it. */
+        const defs = mk('defs', {});
+        const filt = mk('filter', { id: 'pa-well', x: '-25%', y: '-25%', width: '150%', height: '150%' });
+        filt.appendChild(mk('feComponentTransfer', { in: 'SourceAlpha', result: 'inv' }));
+        filt.lastChild.appendChild(mk('feFuncA', { type: 'table', tableValues: '1 0' }));
+        filt.appendChild(mk('feGaussianBlur', { in: 'inv', stdDeviation: '5' }));
+        filt.appendChild(mk('feOffset', { dx: '0', dy: '3', result: 'blur' }));
+        filt.appendChild(mk('feFlood', { 'flood-color': 'rgba(8,15,26,0.34)', result: 'col' }));
+        filt.appendChild(mk('feComposite', { in: 'col', in2: 'blur', operator: 'in' }));
+        filt.appendChild(mk('feComposite', { in2: 'SourceAlpha', operator: 'in', result: 'shadow' }));
+        const merge = mk('feMerge', {});
+        merge.appendChild(mk('feMergeNode', { in: 'SourceGraphic' }));
+        merge.appendChild(mk('feMergeNode', { in: 'shadow' }));
+        filt.appendChild(merge);
+        defs.appendChild(filt);
+        add(defs);
+
+        /* Recessed backing disc the rosette sits inside. */
+        add(mk('circle', { class: 'pa-bg', cx: CX, cy: CY, r: f(MAX_R + 8), filter: 'url(#pa-well)' }));
+
         /* Concentric grid rings. */
         LEVELS.forEach((lv) => add(mk('circle', { class: 'pa-grid', cx: CX, cy: CY, r: f((lv / 100) * MAX_R) })));
 
@@ -3713,8 +3874,9 @@
         const wedges = axes.map((a, i) => {
           const center = -90 + span * i;
           const a0 = center - half, a1 = center + half;
-          const path = mk('path', { class: 'pa-wedge', fill: a.color, d: wedgePath(a0, a1, 0) });
-          path.style.color = a.color;
+          const color = pillarColor(a.group, a.value);
+          const path = mk('path', { class: 'pa-wedge', fill: color, d: wedgePath(a0, a1, 0) });
+          path.style.color = color;
           const title = document.createElementNS(NS, 'title');
           title.textContent = `${a.full}: ${a.value}` + (a.group ? ` · ${a.group}` : '');
           path.appendChild(title);
@@ -3730,7 +3892,10 @@
           add(t);
         });
 
-        /* Axis labels, anchored by quadrant so they ring the chart cleanly. */
+        /* Axis labels — the FULL metric name (e.g. "Anti-Inflammatory",
+           "Gut Health"), wrapped to <= 2 lines, anchored by quadrant and
+           vertically centred on the axis so they ring the chart cleanly. */
+        const LH = 12;
         axes.forEach((a, i) => {
           const center = -90 + span * i;
           const [x, y] = P(center, LABEL_R);
@@ -3739,8 +3904,14 @@
           if (cos > 0.25) anchor = 'start'; else if (cos < -0.25) anchor = 'end';
           let dy = 4;
           if (sin < -0.5) dy = -1; else if (sin > 0.5) dy = 11;
-          const t = mk('text', { class: 'pa-axis-label', x: f(x), y: f(y + dy), 'text-anchor': anchor });
-          t.textContent = a.short;
+          const lines = wrapLabel(a.full || a.short, 15);
+          const t = mk('text', { class: 'pa-axis-label', x: f(x), y: f(y), 'text-anchor': anchor });
+          const startDy = dy - ((lines.length - 1) * LH) / 2;
+          lines.forEach((ln, li) => {
+            const ts = mk('tspan', { x: f(x), dy: f(li === 0 ? startDy : LH) });
+            ts.textContent = ln;
+            t.appendChild(ts);
+          });
           add(t);
         });
 
@@ -3764,6 +3935,19 @@
         requestAnimationFrame(tick);
       }
 
+      /* Repaint the radar card's pillar legend dots to the matching pillar
+         hue, so the legend keys the three colour families in the chart. */
+      function recolorLegend(radar) {
+        const card = radar.closest('.dash-radar-card') || radar.parentElement;
+        if (!card) return;
+        card.querySelectorAll('.dash-radar-legend .dash-legend-item').forEach((item) => {
+          const name = (item.querySelector('.dash-legend-l') || item).textContent.trim();
+          const key = Object.keys(PILLAR_HUE).find((k) => name.indexOf(k) !== -1);
+          const dot = item.querySelector('.dash-dot');
+          if (key && dot) dot.style.background = pillarSwatch(key);
+        });
+      }
+
       function convert(radar) {
         if (!radar || radar.dataset.polar === '1') return false;
         const axes = readAxes(radar);
@@ -3773,6 +3957,7 @@
         radar.innerHTML = '';
         radar.appendChild(svg);
         radar._paWedges = wedges;
+        recolorLegend(radar);
         if (window.IntersectionObserver) {
           const io = new IntersectionObserver((entries) => {
             entries.forEach((en) => { if (en.isIntersecting) { animate(wedges, 1200); io.disconnect(); } });
@@ -4290,6 +4475,36 @@
       }
       window.addEventListener('wise:finalize-charts', finalizeForExport);
       window.addEventListener('beforeprint', finalizeForExport);
+
+      /* Replay one row's reveal on tap: snap its segmented track shut (transition
+         suppressed so it doesn't run backwards), rewind its score, then re-run
+         the clip-path wipe + count-up. */
+      function replayRow(row) {
+        if (reduced) return;
+        const tracks = [...row.querySelectorAll('.dash-seg-track')];
+        const nums = [...row.querySelectorAll('.att-mhc-count')];
+        tracks.forEach((tk) => { tk.style.transition = 'none'; tk.classList.remove('is-seg-ready'); });
+        nums.forEach((n) => { n.textContent = '0'; });
+        void row.offsetWidth;
+        tracks.forEach((tk) => { tk.style.transition = ''; tk.classList.add('is-seg-ready'); });
+        nums.forEach((n) => countUp(n, parseInt(n.getAttribute('data-to'), 10) || 0, 1300));
+      }
+
+      /* Tap the segmented bar of any row to replay just that row. Intercept at
+         document capture (before the shared dashboard host handler, which would
+         otherwise replay every row's wipe but leave these custom counters at 0)
+         and scope the hit to the bar area so the title + report action stay
+         clickable. */
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest) return;
+        const bars = e.target.closest('.dash-mrow-card[data-mhc="1"] .dash-seg-bars');
+        if (!bars) return;
+        const row = bars.closest('.att-mhc-row');
+        if (!row) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        replayRow(row);
+      }, true);
 
       function init() {
         if (mount()) return;

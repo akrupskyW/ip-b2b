@@ -2002,17 +2002,29 @@ function focusBelowGood(name, value) {
   return Math.max(6, Math.min(76, Math.round(raw)));
 }
 
+/* Real "% of products scoring below Good" per metric, keyed by its short
+   label. These are the portfolio-impact figures behind each metric, so points
+   spread naturally across all four quadrants (Strengths / High-impact wins /
+   Watch / Priority fix) instead of collapsing onto a synthetic inverse-of-score
+   diagonal. Any metric not in the table falls back to the derived value. */
+const FOCUS_IMPACT = {
+  Protein: 37, Fiber: 37, Fat: 49, Carbs: 63, Sugar: 71,
+  Clean: 13, Banned: 21, Emulsif: 24, UPF: 38, Seeds: 50,
+  'Anti-Inf': 29, Muscle: 37, Heart: 41, Gut: 54, Diabetes: 67,
+};
+
 function renderFocusScatter(d) {
   const pillars = d.pillars || [];
   const points = [];
   pillars.forEach((p) => {
     (p.metrics || []).forEach((m) => {
+      const short = RADAR_SHORT[m.name] || m.name;
       points.push({
-        label: RADAR_SHORT[m.name] || m.name,
+        label: short,
         full: m.name,
         group: p.name,
         score: m.value,
-        below: focusBelowGood(m.name, m.value),
+        below: FOCUS_IMPACT[short] != null ? FOCUS_IMPACT[short] : focusBelowGood(m.name, m.value),
         color: scoreColor(m.value),
       });
     });
@@ -2031,7 +2043,7 @@ function renderFocusScatter(d) {
   const Y_MIN = 30;
   const Y_MAX = 100;
   const X_THRESH = 40;
-  const Y_THRESH = 60;
+  const Y_THRESH = 65;
   const xScale = (v) => m.l + (v / X_MAX) * plotW;
   const yScale = (v) => m.t + (1 - (v - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
 
@@ -2063,12 +2075,23 @@ function renderFocusScatter(d) {
     <line class="dash-scatter-divider" x1="${zoneX.toFixed(1)}" y1="${m.t}" x2="${zoneX.toFixed(1)}" y2="${(m.t + plotH).toFixed(1)}"></line>
     <line class="dash-scatter-divider" x1="${m.l}" y1="${zoneY.toFixed(1)}" x2="${(m.l + plotW).toFixed(1)}" y2="${zoneY.toFixed(1)}"></line>`;
 
-  /* Quadrant labels. */
+  /* Quadrant labels — rendered as small rounded chips pinned to each corner so
+     they stay legible against the plot without the chunky all-caps text. */
+  const zoneChip = (text, x, y, anchor, fix) => {
+    const padX = 6, h = 15, charW = 4.9;
+    const w = text.length * charW + padX * 2;
+    const rx = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
+    const tx = anchor === 'start' ? x + padX : anchor === 'end' ? x - padX : x;
+    return `<g class="dash-scatter-zone-chip${fix ? ' is-fix' : ''}">
+      <rect class="dash-scatter-chip-bg" x="${rx.toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="${(h / 2).toFixed(1)}"></rect>
+      <text class="dash-scatter-zone-label${fix ? ' dash-scatter-zone-label--fix' : ''}" x="${tx.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}">${text}</text>
+    </g>`;
+  };
   const zoneLabels = `
-    <text class="dash-scatter-zone-label" x="${(m.l + 6).toFixed(1)}" y="${(m.t + 14).toFixed(1)}" text-anchor="start">Strengths</text>
-    <text class="dash-scatter-zone-label" x="${(m.l + plotW - 6).toFixed(1)}" y="${(m.t + 14).toFixed(1)}" text-anchor="end">High-impact wins</text>
-    <text class="dash-scatter-zone-label" x="${(m.l + 6).toFixed(1)}" y="${(m.t + plotH - 7).toFixed(1)}" text-anchor="start">Watch</text>
-    <text class="dash-scatter-zone-label dash-scatter-zone-label--fix" x="${(m.l + plotW - 6).toFixed(1)}" y="${(m.t + plotH - 7).toFixed(1)}" text-anchor="end">Priority fix</text>`;
+    ${zoneChip('Strengths', m.l + 6, m.t + 12, 'start')}
+    ${zoneChip('High-impact wins', m.l + plotW - 6, m.t + 12, 'end')}
+    ${zoneChip('Watch', m.l + 6, m.t + plotH - 10, 'start')}
+    ${zoneChip('Priority fix', m.l + plotW - 6, m.t + plotH - 10, 'end', true)}`;
 
   /* Axis titles. */
   const axisTitles = `
@@ -2444,6 +2467,7 @@ const CHART_REPLAY_SEL = [
   '.dash-scatter-plot',
   '.dash-gras-bars',
   '.dash-ws-health-bar',
+  '.dash-seg-bars',
   '.dash-pillar-card-head .dash-score-num',
   '.dash-pillar-card-head .dash-stamp-icon',
   '.dash-pillar-card .dash-metric-list',
@@ -2767,6 +2791,29 @@ function animateSegBar(section) {
   runCountUps(section.querySelectorAll('.dash-count-up'), { duration: 1400, stagger: 90 });
 }
 
+/* Replay a segmented distribution bar on demand: snap each track's clip-path
+   wipe shut (transition suppressed so it doesn't animate backwards), rewind the
+   headline % + per-tier count-ups, then re-run the left-to-right reveal. */
+function reanimateSegBar(section) {
+  if (!section) return;
+  if (prefersReducedMotion()) return;
+  const tracks = [...section.querySelectorAll('.dash-seg-track')];
+  tracks.forEach((track) => {
+    track.style.transition = 'none';
+    track.classList.remove('is-seg-ready');
+  });
+  section.querySelectorAll('.dash-count-up').forEach((el) => {
+    el.classList.remove('is-counted');
+    el.textContent = `0${el.getAttribute('data-count-suffix') || ''}`;
+  });
+  /* Flush the collapsed/transition-off state before restoring the transition so
+     the wipe replays cleanly from the left edge. */
+  void section.offsetWidth;
+  tracks.forEach((track) => { track.style.transition = ''; });
+  section.classList.remove('is-chart-animating');
+  animateSegBar(section);
+}
+
 /* Replay a single pillar card's entrance animation on demand. The metric-bar
    chart always replays; `includeScore` also rewinds and re-counts the big score
    gauge. Bars snap back to 0 with the transition suppressed (so they don't
@@ -2916,6 +2963,15 @@ function replayChartFromTarget(el) {
   const wsBar = el.closest('.dash-ws-health-bar');
   if (wsBar) {
     reanimateHealthBar(wsBar);
+    return true;
+  }
+
+  /* Segmented distribution bars (the per-pillar distribution + the gut-health
+     spotlight). Scope the hit to the bar area only so the row's title and
+     "View report" action stay clickable. */
+  const segBars = el.closest('.dash-seg-bars');
+  if (segBars) {
+    reanimateSegBar(segBars.closest('.dash-seg-section, .dash-mrow-section') || segBars);
     return true;
   }
 

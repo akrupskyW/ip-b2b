@@ -1715,6 +1715,7 @@ html.dark .dash-badge--poor { color: #f07070; }
    affordance with a pointer cursor and a small press response. */
 .dash-donut,
 .dash-ws-health-bar,
+.dash-seg-bars,
 .dash-claim .dash-bignum-row,
 .dash-claim .dash-progress-pct {
   cursor: pointer;
@@ -1724,6 +1725,8 @@ html.dark .dash-badge--poor { color: #f07070; }
   transition: transform 0.12s ease;
 }
 .dash-ws-health-bar:active { transform: scale(0.99); }
+.dash-seg-bars { transition: transform 0.12s ease; }
+.dash-seg-bars:active { transform: scale(0.995); }
 .dash-donut { transition: transform 0.16s ease; }
 .dash-donut:active { transform: scale(0.985); }
 
@@ -1870,16 +1873,28 @@ html.dark .dash-scatter-zone {
   fill: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
+  font-family: var(--font-serif, Georgia, 'Times New Roman', serif);
 }
 .dash-scatter-zone-label {
   fill: var(--text-subtle);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.7;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
-.dash-scatter-zone-label--fix { fill: var(--sec-red); opacity: 0.85; }
+.dash-scatter-zone-label--fix { fill: var(--sec-red); }
+/* Quadrant chip — a slim rounded pill behind each zone label. */
+.dash-scatter-chip-bg {
+  fill: color-mix(in srgb, var(--surface) 86%, transparent);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.dash-scatter-zone-chip.is-fix .dash-scatter-chip-bg {
+  fill: color-mix(in srgb, var(--sec-red) 10%, var(--surface));
+  stroke: color-mix(in srgb, var(--sec-red) 35%, var(--border));
+}
+html.dark .dash-scatter-chip-bg {
+  fill: color-mix(in srgb, var(--surface) 70%, transparent);
+}
 .dash-scatter-pt {
   transform-box: fill-box;
   transform-origin: center;
