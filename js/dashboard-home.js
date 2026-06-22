@@ -1049,6 +1049,45 @@ function renderTopPerformers(d) {
     </section>`;
 }
 
+/* Photo variant of the Top 5 row: each column's content sits on top of a
+   full-bleed hero card showing the product's food photo, layered with the same
+   scrim + white type treatment as the page hero. Falls back to the flat brand
+   surface for any product without an image. */
+function renderTopPerformersHero(d) {
+  const items = (d.topProducts || []).slice(0, 5);
+  if (!items.length) return '';
+  const rankLabels = ['1st place', '2nd place', '3rd place', '4th place', '5th place'];
+  const cols = items
+    .map((it, i) => {
+      const score = Math.min(100, Math.max(0, Math.round(it.score)));
+      const hasImg = !!it.img;
+      const bgStyle = hasImg ? ` style="background-image:${cssUrl(it.img)}"` : '';
+      return `
+        <div class="dash-claim-col dash-top5-hero-col${hasImg ? ' has-image' : ''}">
+          <div class="dash-top5-hero-bg"${bgStyle}></div>
+          <div class="dash-top5-hero-scrim" aria-hidden="true"></div>
+          <div class="dash-top5-hero-content">
+            <div class="dash-bignum-row">
+              ${countUpMarkup(score, { className: 'dash-bignum' })}
+              <span class="dash-bignum-cap"><strong>${esc(it.name)}</strong></span>
+              <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
+            </div>
+            <div class="dash-btn-row">
+              <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-icons">description</span>View report</button>
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+  return `
+    <section class="dash-top5-section dash-top5-hero-section">
+      <h2 class="dash-section-title dash-top5-title">Top Five Products</h2>
+      <div class="dash-claim dash-top5-claim dash-top5-hero-claim">
+        ${cols}
+      </div>
+    </section>`;
+}
+
 function renderClaim(d) {
   const c = d.claim;
   const u = d.upf;
@@ -1288,10 +1327,10 @@ function renderPillarCards(d) {
   return `
     <section class="dash-pillars-section">
       <div class="dash-pillars-heading">
-        ${wisescoreHealthBar(ws)}
         <div class="dash-section-head">
           <h2 class="dash-section-title">The 3 pillars of your ${statusTerm(ws)} WISEscore&#8482;</h2>
         </div>
+        ${wisescoreHealthBar(ws)}
         <p class="dash-pillars-intro">Across all ${d.claim.discovered} discovered products, nutrient quality, ingredient quality, and health outcomes are weighed against one another &mdash; so a food can't earn a high score by acing one dimension while failing another.</p>
       </div>
       <div class="dash-three-up dash-pillars">${columns}</div>
@@ -1776,7 +1815,7 @@ function renderTopProducts(d) {
 /* ------------------------------------------------------------------ */
 /* Metric spotlight — one metric broken down with a header (name +       */
 /* rating + score + blurb) sitting above the same segmented status bar   */
-/* used by the Portfolio Analysis section below. Its Top/Low SKUs and a   */
+/* used by the Portfolio Analysis section below. Its Low/High SKUs and a  */
 /* "View report" drill ride as chips floated to the top-right of the      */
 /* header. Driven by d.metricSpotlight; sits below the anti-inflammatory  */
 /* card.                                                                  */
@@ -1837,8 +1876,8 @@ function renderMetricSpotlight(d) {
           <div class="dash-wisescore-num dash-seg-num dash-mrow-score">${countUpMarkup(m.score, { className: 'n dash-seg-pct-num' })}<span class="d">/ 100</span></div>
           <p class="dash-wisescore-note dash-mrow-note">${esc(m.desc)}</p>
           <div class="dash-mrow-chips">
-            <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
             <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.low.score))}</span></span>
+            <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--high">High</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
             <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-icons dash-mrow-report-icon">chevron_right</span></button>
           </div>
         </div>
@@ -2198,6 +2237,7 @@ export function renderDashboardHome(host) {
     <div class="dash">
       ${renderClaim(d)}
       ${document.body.dataset.hideScout ? renderTopPerformers(d) : ''}
+      ${document.body.dataset.hideScout ? renderTopPerformersHero(d) : ''}
       <section class="dash-two-up" id="dash-charts">
         ${renderUpf(d)}
         ${renderGras(d)}

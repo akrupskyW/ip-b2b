@@ -518,6 +518,75 @@ html.dark .dash-stamp-num--photo { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 
 }
 .dash-stamp-num-inner { position: relative; z-index: 1; }
 
+/* ---- Top 5 (hero-card variant) — same column content as the row above, but
+   each column sits on a full-bleed product photo dressed in the same scrim +
+   white type treatment as the page hero. Laid out as equal-width cards (no
+   dividers) that wrap responsively. ---- */
+.dash-claim.dash-top5-hero-claim {
+  gap: 18px;
+}
+.dash-claim.dash-top5-hero-claim > .dash-top5-hero-col {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: 1 1 168px;
+  max-width: 260px;
+  min-height: 220px;
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--primary) 78%, #1A2339);
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+/* Product photo fills the card; the flat brand fill stays as the base so a
+   missing image still reads as a hero surface (matching the page hero). */
+.dash-top5-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+/* Same bottom-weighted darkening as the hero scrim, so the white score + name
+   stay legible over any photo. */
+.dash-top5-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(7, 12, 26, 0.12) 0%, rgba(7, 12, 26, 0.46) 50%, rgba(7, 12, 26, 0.82) 100%);
+}
+.dash-top5-hero-content { display: flex; flex-direction: column; }
+/* Anchor the rank disc to the number row (content is bottom-pinned in the card,
+   so the claim row's fixed top offset would float it to the card top instead). */
+.dash-top5-hero-claim .dash-bignum-row { position: relative; }
+.dash-top5-hero-claim .dash-bignum-row > .dash-stamp-icon {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+/* White type over the photo (the base classes paint black/muted ink). */
+.dash-top5-hero-claim .dash-bignum { color: #fff; }
+.dash-top5-hero-claim .dash-bignum-cap { color: rgba(255, 255, 255, 0.88); }
+.dash-top5-hero-claim .dash-bignum-cap strong { color: #fff; }
+/* Rank disc: a translucent frosted token that pops on the photo. */
+.dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num {
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #fff;
+  background: rgba(17, 24, 39, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+/* Ghost button reads as light-on-dark over the photo. */
+.dash-top5-hero-claim .dash-btn--ghost {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(2px);
+}
+.dash-top5-hero-claim .dash-btn--ghost:hover { background: rgba(255, 255, 255, 0.26); }
+
 /* ---- Claim status card ---- */
 .dash-claim {
   display: grid;
@@ -2281,9 +2350,9 @@ html.dark .dash-ing-report:hover .dash-ing-report-icon { color: #fff; }
   font-size: 0.625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   flex-shrink: 0;
 }
-.dash-mrow-chip-tag--top { color: #166534; }
+.dash-mrow-chip-tag--high { color: #166534; }
 .dash-mrow-chip-tag--low { color: #991B1B; }
-html.dark .dash-mrow-chip-tag--top { color: #86efac; }
+html.dark .dash-mrow-chip-tag--high { color: #86efac; }
 html.dark .dash-mrow-chip-tag--low { color: #fca5a5; }
 .dash-mrow-chip-name {
   font-weight: 600; color: var(--text); min-width: 0;
