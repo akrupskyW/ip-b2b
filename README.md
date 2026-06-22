@@ -1,30 +1,37 @@
-# 🚧🚧🚧 WORK IN PROGRESS — DO NOT PULL YET 🚧🚧🚧
+# WISE — Food Intelligence Dashboard
 
----
+A front-end prototype for the WISE brand/food-intelligence platform: an interactive
+dashboard, Scout AI chat surfaces, analytics views, and report prototypes built as
+static HTML/CSS/JS.
 
-# ⛔️ KEVIN — STOP. DO NOT PULL THIS DESIGN. ⛔️
+## Structure
 
-## ‼️ THIS DESIGN IS **NOT DONE**. ‼️
+- `index.html` — app hub / entry point
+- `pages/` — individual screens (dashboard `aha.html`, `analytics-types.html`,
+  `ai-chat.html`, accessibility review, report prototypes in `_reports/`, etc.)
+- `js/` — UI modules (dashboard rendering, Scout chat/dock, topbar, appearance menu,
+  navigation, charts/animations)
+- `assets/` — brand art, product imagery, banners
+- `dev_server.py` — optional local dev server with live reload
 
-> # 🛑 KEVIN IS **NOT ALLOWED** TO PULL THIS YET. 🛑
->
-> ### This branch is still under active development and is **NOT READY** for review, pulling, deploying, or sharing.
->
-> ### If your name is **Kevin**: please **DO NOT** `git pull`, `git clone`, `git fetch`, or otherwise grab this design. It is **incomplete** and **will change**.
+## Running locally
 
----
+Any static file server works. For example:
 
-### ⚠️ WAIT FOR THE GREEN LIGHT ⚠️
+```bash
+python3 -m http.server 8000
+```
 
-You will get an explicit go-ahead when this is finished. Until then:
+Then open http://localhost:8000/pages/aha.html
 
-- ❌ **Do NOT pull**
-- ❌ **Do NOT clone**
-- ❌ **Do NOT deploy**
-- ❌ **Do NOT use this as a reference for anything final**
+For live reload during development:
 
-**Status: IN PROGRESS — NOT FINISHED.**
+```bash
+pip install livereload
+python3 dev_server.py
+```
 
----
+## Notes
 
-# 🚧🚧🚧 WORK IN PROGRESS — DO NOT PULL YET 🚧🚧🚧
+This is a design/UX prototype. Data shown is placeholder/mock content, and charts are
+rendered with lightweight CSS/SVG rather than a charting library.
