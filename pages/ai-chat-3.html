@@ -2252,11 +2252,11 @@
     }
     .cmp-tool-spacer { flex: 1; }
 
-    /* Chart-type toggle — segmented pill sitting left of the Add button.
-       Left = line/bar rows (default), right = overlaid spider chart. */
+    /* Chart-type toggle — bare icon row sitting left of the Add button.
+       Health bars (default) · spider · parallel coordinates. No pill container. */
     .cmp-chart-toggle {
-      display: inline-flex; align-items: center; gap: 2px; padding: 2px;
-      border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface);
+      display: inline-flex; align-items: center; gap: 2px; padding: 0;
+      border-radius: 999px; border: none; background: transparent;
     }
     .cmp-chart-btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -2269,14 +2269,14 @@
 
     /* Spider (radar) chart */
     .cmp-radar-wrap {
-      margin-top: 12px; padding: 14px 12px 12px; border-radius: 14px;
+      margin-top: 12px; padding: 14px 8px 12px; border-radius: 14px;
       border: 1px solid var(--border); background: var(--surface-2);
     }
     .cmp-radar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
     .cmp-radar-title { font-size: 1.0rem; font-weight: 800; color: var(--text); }
     .cmp-radar-sub { font-size: var(--fs-label); color: var(--text-muted); }
     .cmp-radar-canvas { display: flex; justify-content: center; }
-    .cmp-radar-svg { width: 100%; max-width: 360px; height: auto; overflow: visible; }
+    .cmp-radar-svg { width: 100%; max-width: none; height: auto; overflow: visible; }
     .cmp-radar-ring { fill: none; stroke: var(--border-strong); stroke-width: 1; opacity: 0.7; }
     .cmp-radar-spoke { stroke: var(--border-strong); stroke-width: 1; opacity: 0.6; }
     .cmp-radar-tick { fill: var(--text-subtle); font-size: 9px; font-weight: 700; }
@@ -2303,6 +2303,25 @@
       padding: 22px 12px; font-size: var(--fs-ui); color: var(--text-muted);
     }
     .cmp-radar-note .material-icons { font-size: 19px !important; color: var(--text-subtle); }
+
+    /* Parallel-coordinates chart — one vertical axis per metric, one polyline
+       per entity crossing every axis. Reuses the radar wrap/head/legend chrome. */
+    .cmp-par-svg { width: 100%; max-width: none; height: auto; overflow: visible; }
+    .cmp-par-axis { stroke: var(--border-strong); stroke-width: 1.25; opacity: 0.85; }
+    .cmp-par-grid { stroke: var(--border-strong); stroke-width: 1; opacity: 0.35; stroke-dasharray: 3 4; }
+    .cmp-par-tick { fill: var(--text-subtle); font-size: 9px; font-weight: 700; }
+    .cmp-par-label { fill: var(--text); font-size: 10px; font-weight: 700; }
+    .cmp-par-avg { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.6; }
+    .cmp-par-series {
+      fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
+      opacity: 0; animation: cmpParIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: var(--delay, 0ms);
+    }
+    .cmp-par-series-g circle {
+      opacity: 0; animation: cmpRadarDot 0.4s ease forwards;
+      animation-delay: calc(var(--delay, 0ms) + 220ms);
+    }
+    @keyframes cmpParIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
     .cmp-tool-select {
       display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px;
@@ -2454,6 +2473,47 @@
     .cmp-takeaway-head {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
+    /* Title + swap glyph sit together on the left; the stamp icon stays right. */
+    .cmp-takeaway-titlewrap { display: flex; align-items: center; gap: 5px; min-width: 0; }
+    .cmp-takeaway-swap-wrap { position: relative; display: inline-flex; }
+    .cmp-takeaway-swap {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; padding: 0; border: 0; border-radius: 5px;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+    }
+    .cmp-takeaway-swap .material-symbols-outlined {
+      font-size: 15px !important; line-height: 1;
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'opsz' 20;
+    }
+    .cmp-takeaway-swap:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); transform: scale(1.06); }
+    .cmp-takeaway-swap[aria-expanded="true"] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .cmp-takeaway-swap:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    /* Swap menu — compact popover of the takeaways not already on the board. */
+    .cmp-takeaway-menu {
+      position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+      min-width: 190px; padding: 5px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: 0 12px 30px -8px rgba(17, 24, 39, 0.28), 0 2px 6px rgba(17, 24, 39, 0.10);
+      animation: cmpTakeawayMenuIn 0.14s ease;
+    }
+    .cmp-takeaway-menu--left { left: auto; right: 0; }
+    @keyframes cmpTakeawayMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .cmp-takeaway-menu-title {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-subtle); padding: 5px 8px 4px;
+    }
+    .cmp-takeaway-menu-item {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 7px 8px; border: 0; border-radius: 8px; background: transparent;
+      text-align: left; cursor: pointer; color: var(--text);
+      transition: background 0.12s ease;
+    }
+    .cmp-takeaway-menu-item:hover { background: var(--surface-2); }
+    .cmp-takeaway-menu-item.is-active { background: color-mix(in srgb, var(--primary) 9%, transparent); }
+    .cmp-takeaway-menu-ic { font-size: 16px !important; color: var(--primary); font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20; }
+    .cmp-takeaway-menu-lbl { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
+    .cmp-takeaway-menu-check { font-size: 15px !important; color: var(--primary); }
     .cmp-takeaway-ic {
       width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -2478,11 +2538,13 @@
     .cmp-takeaway-sub-lbl { font-size: var(--fs-label); color: var(--text-muted); margin-top: 2px; line-height: 1.3; }
     .cmp-takeaway-sep { border: 0; border-top: 1px solid var(--border); margin: 11px 0 10px; }
     /* AI-generated "why" insight + inline chat affordance. */
-    .cmp-takeaway-insight { display: flex; align-items: flex-start; gap: 6px; }
-    .cmp-takeaway-insight-body { flex: 1; min-width: 0; font-size: var(--fs-label); color: var(--text-muted); line-height: 1.45; }
+    .cmp-takeaway-insight { min-width: 0; }
+    .cmp-takeaway-insight-body { min-width: 0; font-size: var(--fs-label); color: var(--text-muted); line-height: 1.45; }
+    /* Inline chat affordance — flows right after the last word of the insight
+       (like .cmp-insight-chat), not floated to the top-right of the block. */
     .cmp-takeaway-chat {
-      flex-shrink: 0; display: inline-flex; align-items: center; margin-top: 1px;
-      color: var(--primary); cursor: pointer;
+      display: inline-flex; align-items: center; vertical-align: middle;
+      margin-left: 3px; color: var(--primary); cursor: pointer;
       transition: opacity 0.15s ease, transform 0.12s ease;
     }
     .cmp-takeaway-chat .material-icons { font-size: 15px !important; color: var(--primary); }
@@ -2765,6 +2827,87 @@
     /* Insight — plain copy in the row (the rail already labels it). */
     .cmp-insight { padding: 11px 12px 13px; }
     .cmp-insight-body { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.5; }
+
+    /* ════════════════════════════════════════════════════════════════════
+       COMPARE RAIL — icon + body layout, compact collapse, hover flyout.
+       The metric rail's icon is a direct child of .cmp-rail-metric and the
+       textual content (name / description / hint) lives in .cmp-rail-body
+       beside it. In the normal (wide) layout this reads exactly like the
+       previous markup — icon left, name to its right, desc + hint stacked
+       beneath. When the board carries 4+ entity columns the grid gains
+       .cmp-grid--compact: the rail shrinks to an icon-only strip and the
+       body becomes a floating card revealed on hover/focus, so the entity
+       columns keep a legible width no matter how many are added.
+       ════════════════════════════════════════════════════════════════════ */
+    .cmp-rail-metric { display: flex; flex-direction: row; align-items: flex-start; gap: 8px; }
+    .cmp-rail-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .cmp-rail-metric > .cmp-rail-body { flex: 1 1 auto; }
+    /* The body already sits in its own column beside the icon, so the old
+       icon-clearing indent on the description / hint is no longer needed. */
+    /* Center the name against its 28px icon on the first line (matches the
+       previous inline icon+label baseline) while desc/hint stack beneath. */
+    .cmp-rail-metric > .cmp-rail-body .cmp-rail-metric-name { font-weight: 700; min-height: 28px; }
+    .cmp-rail-body .cmp-rail-metric-desc,
+    .cmp-rail-body .cmp-rail-metric-hint { padding-left: 0; }
+    /* Header rail lead icon only appears in the collapsed layout. */
+    .cmp-rail-lead-ic { display: none; }
+
+    /* ── Compact (icon-only) rail ─────────────────────────────────────── */
+    .cmp-grid--compact .cmp-cell--rail {
+      position: relative; overflow: visible;
+      padding-left: 6px; padding-right: 6px;
+    }
+    /* Let the hover flyout escape the rounded grid clip while compact. */
+    .cmp-grid-wrap--compact { overflow: visible; }
+    .cmp-grid--compact .cmp-rail-metric { justify-content: center; align-items: center; height: 100%; }
+    .cmp-grid--compact .cmp-cell--rail.cmp-hcell { justify-content: center; align-items: center; }
+    .cmp-grid--compact .cmp-cell--rail.cmp-hcell .cmp-rail-lead-ic {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: #0B0B0F; border: 1.5px solid #fff;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent);
+    }
+    .cmp-grid--compact .cmp-cell--rail.cmp-hcell .cmp-rail-lead-ic .material-icons {
+      font-size: 15px !important; color: #fff !important;
+    }
+    /* A subtle cue that a collapsed rail cell holds more on hover. */
+    .cmp-grid--compact .cmp-cell--rail { cursor: help; }
+    .cmp-grid--compact .cmp-cell--rail:hover { background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+
+    /* Collapse the textual body into a floating card, revealed on hover/focus. */
+    .cmp-grid--compact .cmp-rail-body {
+      position: absolute; left: calc(100% + 4px); top: 6px;
+      width: 244px; max-width: 62vw; z-index: 40;
+      padding: 11px 13px; border-radius: 12px; gap: 5px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-card, 0 12px 40px rgba(0,0,0,0.4));
+      opacity: 0; visibility: hidden; transform: translateX(-6px);
+      transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+      pointer-events: none;
+    }
+    .cmp-grid--compact .cmp-cell--rail:hover .cmp-rail-body,
+    .cmp-grid--compact .cmp-cell--rail:focus-within .cmp-rail-body {
+      opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto;
+    }
+    /* Rail cells are keyboard-focusable in compact so the flyout is reachable. */
+    .cmp-grid--compact .cmp-cell--rail:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .cmp-grid--compact .cmp-rail-body { transition: none; }
+    }
+
+    /* ── Container-driven responsiveness ──────────────────────────────────
+       The board reflows off its own width (not the viewport) so it stacks
+       cleanly whether it's a narrow docked column or a full-width mobile
+       card. Key Takeaways drop from 4 → 2 → 1 columns; the ranked bars and
+       toolbar already wrap on their own. */
+    .cmp-body { container: cmpbody / inline-size; }
+    @container cmpbody (max-width: 600px) {
+      .cmp-takeaways { grid-template-columns: repeat(2, 1fr); }
+    }
+    @container cmpbody (max-width: 360px) {
+      .cmp-takeaways { grid-template-columns: 1fr; }
+      .cmp-rank-bar { width: 64px; }
+    }
 
     /* ── Launch Readiness — stacked dual-module column ───────────────────
        Two workflow modules share one #panels-row-right slot and stack
@@ -4256,8 +4399,8 @@
     .sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
     .sc-line-scout strong { color: var(--primary); font-weight: 700; }
 
-    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
-    .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 1px; }
+    .sc-line-time { font-size: 0.625rem; font-weight: 500; color: color-mix(in srgb, var(--text-subtle) 55%, transparent); letter-spacing: 0.02em; }
     .sc-trust-chip {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
@@ -4269,36 +4412,43 @@
     /* ── Answer feedback (thumbs up/down) ─────────────────────────────────
        Shown under compare-board chat replies. Thumbs-down opens a small
        popover of quick reasons anchored to the bar. */
+    /* Sized to read as one of the in-chat reply chips (.sc-reply-chips .chip):
+       same font, compact height, hugging its content. */
     .sc-feedback {
       position: relative;
-      display: inline-flex; align-items: center; gap: 4px;
-      margin-top: 8px; padding: 3px 5px 3px 11px;
+      display: inline-flex; align-items: center; gap: 2px;
+      margin-top: 8px; padding: 2px 5px 2px 11px;
       border: 1px solid var(--border-strong); border-radius: var(--radius-pill, 999px);
       background: var(--surface-2);
     }
-    .sc-fb-label { font-size: 0.6875rem; font-weight: 600; color: var(--text-subtle); margin-right: 2px; }
+    .sc-fb-label { font-size: var(--fs-label); font-weight: 500; line-height: 1.25; color: var(--text-muted); margin-right: 2px; }
     .sc-fb-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border-radius: 50%;
+      width: 22px; height: 22px; border-radius: 50%;
       border: 1px solid transparent; background: transparent;
       color: var(--text-muted); cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .sc-fb-btn .material-icons { font-size: 15px !important; }
+    .sc-fb-btn .material-icons { font-size: 14px !important; }
     .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
     .sc-fb-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
     .sc-fb-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
     .sc-fb-thanks {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.6875rem; font-weight: 600; color: var(--primary);
+      font-size: var(--fs-label); font-weight: 500; color: var(--primary);
     }
     .sc-fb-thanks .material-icons { font-size: 14px !important; }
+    /* Popover: opens ABOVE the bar, anchored to its right edge by default
+       (top-right). The flip modifiers below are toggled by JS when there isn't
+       room above (open down) or when it would clip the left edge (anchor left). */
     .sc-fb-pop {
-      position: absolute; z-index: 30; top: calc(100% + 6px); left: 0;
+      position: absolute; z-index: 30; bottom: calc(100% + 6px); right: 0; left: auto; top: auto;
       min-width: 190px; padding: 8px;
       background: var(--surface-1, #fff); border: 1px solid var(--border-strong);
       border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
     }
+    .sc-fb-pop.sc-fb-pop--down { top: calc(100% + 6px); bottom: auto; }
+    .sc-fb-pop.sc-fb-pop--left { left: 0; right: auto; }
     .sc-fb-pop.hidden { display: none; }
     .sc-fb-pop-title {
       font-size: 0.625rem; font-weight: 700; letter-spacing: 0.03em;
@@ -7407,6 +7557,10 @@
               <span class="material-icons topbar-menu-icon">add_circle_outline</span>
               <span>Start new conversation</span>
             </button>
+            <button type="button" class="topbar-menu-item" id="scout-copy-transcript-item" onclick="copyTranscript(this)">
+              <span class="material-icons topbar-menu-icon">content_copy</span>
+              <span>Copy transcript</span>
+            </button>
             <button type="button" class="topbar-menu-item" onclick="exportConversation(); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">download</span>
               <span>Export conversation</span>
@@ -9758,7 +9912,21 @@
         scoutFeedbackThanks(bar, 'Glad that helped.');
       } else if (pop) {
         pop.classList.remove('hidden');
+        scoutFeedbackPositionPop(pop);
       }
+    }
+
+    /* Keep the "what was off?" popover on-screen: default to top-right, flip
+       downward when there's no room above, and left-anchor if the right-anchored
+       box would clip the left edge. */
+    function scoutFeedbackPositionPop(pop) {
+      const bar = pop.closest('.sc-feedback');
+      if (!bar) return;
+      pop.classList.remove('sc-fb-pop--down', 'sc-fb-pop--left');
+      const barRect = bar.getBoundingClientRect();
+      const pr = pop.getBoundingClientRect();
+      if (barRect.top - pr.height - 8 < 0) pop.classList.add('sc-fb-pop--down');
+      if (pr.left < 8) pop.classList.add('sc-fb-pop--left');
     }
 
     function scoutFeedbackReason(btn, reason) {
@@ -10929,6 +11097,7 @@
       metricMenuOpen: false,
       chartMode: 'bars',   /* 'bars' = per-metric line/bar rows · 'radar' = overlaid spider chart */
       followDone: {},
+      takeawaySlots: ['perf', 'prot', 'clean', 'val'],   /* which takeaway lives in each of the four cards (swappable) */
     };
 
     /* ── Module open / close ──────────────────────────────────────────── */
@@ -10970,6 +11139,7 @@
         scope: null, metrics: CMP_DEFAULT_METRICS.slice(), category: 'all',
         showAvg: false, shown: [], pending: [], stale: false, recalcing: false,
         drill: false, metricMenuOpen: false, chartMode: 'bars', followDone: {},
+        takeawaySlots: ['perf', 'prot', 'clean', 'val'],
       };
       const body = document.getElementById('cmp-body');
       if (body) {
@@ -11346,9 +11516,9 @@
       });
     }
 
-    /* ── Chart-type toggle (bar/line rows ⇄ overlaid spider chart) ─────── */
+    /* ── Chart-type toggle (health bars ⇄ spider ⇄ parallel coords) ────── */
     function cmpSetChartMode(mode) {
-      const m = mode === 'radar' ? 'radar' : 'bars';
+      const m = (mode === 'radar' || mode === 'parallel') ? mode : 'bars';
       if (compareState.chartMode === m) return;
       compareState.chartMode = m;
       renderCompare();
@@ -11371,7 +11541,7 @@
           '<span class="material-icons">radar</span>Nothing scored yet — recalculate to plot the spider chart.</div></div>';
       }
 
-      const size = 320, cx = size / 2, cy = size / 2, R = size / 2 - 54;
+      const size = 320, cx = size / 2, cy = size / 2, R = size / 2 - 46;
       const rings = [0.25, 0.5, 0.75, 1];
       const ang = i => (Math.PI * 2 * i / M) - Math.PI / 2;
       const pt = (i, r) => [cx + Math.cos(ang(i)) * R * r, cy + Math.sin(ang(i)) * R * r];
@@ -11426,6 +11596,80 @@
         '<div class="cmp-radar-canvas">' +
           `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all metrics for each ${scope.noun}">` +
             gridEls + axisEls + avgEls + polyEls +
+          '</svg>' +
+        '</div>' +
+        '<div class="cmp-radar-legend">' + legend + '</div>' +
+      '</div>';
+    }
+
+    /* Build the multi-series parallel-coordinates plot: one vertical axis per
+       selected metric, one polyline per entity threading its value across every
+       axis (drawn in the entity's brand colour), plus an optional dashed
+       category-average line. Returns an HTML string. */
+    function cmpParallelSection(scope, metrics, ents, showAvg) {
+      const M = metrics.length;
+      if (M < 2) {
+        return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
+          '<span class="material-icons">ssid_chart</span>' +
+          'Add at least 2 metrics from the <strong>Metrics</strong> menu to plot parallel coordinates.' +
+          '</div></div>';
+      }
+      if (!ents.length) {
+        return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
+          '<span class="material-icons">ssid_chart</span>Nothing scored yet — recalculate to plot parallel coordinates.</div></div>';
+      }
+
+      const W = 520, H = 250;
+      const padT = 20, padB = 42, padL = 34, padR = 20;
+      const plotH = H - padT - padB;
+      const axisX = i => (M === 1 ? W / 2 : padL + (W - padL - padR) * i / (M - 1));
+      const yFor = v => padT + (1 - Math.max(0, Math.min(100, v)) / 100) * plotH;
+
+      /* Horizontal reference gridlines across all axes + value ticks on the left. */
+      const rings = [0, 25, 50, 75, 100];
+      let gridEls = rings.map(rv =>
+        `<line class="cmp-par-grid" x1="${axisX(0).toFixed(1)}" y1="${yFor(rv).toFixed(1)}" x2="${axisX(M - 1).toFixed(1)}" y2="${yFor(rv).toFixed(1)}"></line>` +
+        `<text class="cmp-par-tick" x="${(axisX(0) - 6).toFixed(1)}" y="${(yFor(rv) + 3).toFixed(1)}" text-anchor="end">${rv}</text>`).join('');
+
+      /* Vertical axes + metric labels beneath each one. */
+      const axisEls = metrics.map((m, i) => {
+        const x = axisX(i);
+        const anchor = i === 0 ? 'start' : (i === M - 1 ? 'end' : 'middle');
+        return `<line class="cmp-par-axis" x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}"></line>` +
+          `<text class="cmp-par-label" x="${x.toFixed(1)}" y="${(H - padB + 16).toFixed(1)}" text-anchor="${anchor}">${cmpMetricShort(m)}</text>`;
+      }).join('');
+
+      /* Optional dashed category-average line. */
+      let avgEls = '';
+      if (showAvg) {
+        const pts = metrics.map((m, i) => {
+          const v = cmpAvgFor(scope, m.id, compareState.category);
+          return `${axisX(i).toFixed(1)},${yFor(v).toFixed(1)}`;
+        }).join(' ');
+        avgEls = `<polyline class="cmp-par-avg" points="${pts}"></polyline>`;
+      }
+
+      /* One polyline + vertices per entity, in its own brand colour. */
+      const seriesEls = ents.map((ent, ei) => {
+        const color = ent.color || cmpMetricColor('wisescore');
+        const coords = metrics.map((m, i) => [axisX(i), yFor(cmpScoreFor(ent, m.id))]);
+        const pts = coords.map(c => `${c[0].toFixed(1)},${c[1].toFixed(1)}`).join(' ');
+        const dots = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" style="fill:${color}"></circle>`).join('');
+        return `<g class="cmp-par-series-g" style="--delay:${ei * 90}ms">` +
+          `<polyline class="cmp-par-series" points="${pts}" style="stroke:${color};--delay:${ei * 90}ms"></polyline>${dots}</g>`;
+      }).join('');
+
+      const legend = ents.map(ent => {
+        const color = ent.color || cmpMetricColor('wisescore');
+        return `<span class="cmp-radar-key"><span class="cmp-radar-swatch" style="background:${color}"></span>${ent.name}</span>`;
+      }).join('') + (showAvg ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span>Category avg</span>' : '');
+
+      return '<div class="cmp-radar-wrap">' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">Parallel coordinates</span>' +
+        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<div class="cmp-radar-canvas">' +
+          `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
+            gridEls + axisEls + avgEls + seriesEls +
           '</svg>' +
         '</div>' +
         '<div class="cmp-radar-legend">' + legend + '</div>' +
@@ -11501,8 +11745,9 @@
           `<label class="cmp-switch"><input type="checkbox" ${showAvg ? 'checked' : ''} onchange="cmpToggleCategoryAvg()"><span class="cmp-switch-track"></span>Category avg</label>` +
           '<span class="cmp-tool-spacer"></span>' +
           '<div class="cmp-chart-toggle" role="group" aria-label="Chart type">' +
-            `<button type="button" class="cmp-chart-btn ${compareState.chartMode !== 'radar' ? 'is-active' : ''}" onclick="cmpSetChartMode('bars')" title="Line chart view" aria-label="Line chart view" aria-pressed="${compareState.chartMode !== 'radar'}"><span class="material-icons">show_chart</span></button>` +
+            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'bars' ? 'is-active' : ''}" onclick="cmpSetChartMode('bars')" title="Health bar view" aria-label="Health bar view" aria-pressed="${compareState.chartMode === 'bars'}"><span class="material-icons">align_horizontal_left</span></button>` +
             `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'radar' ? 'is-active' : ''}" onclick="cmpSetChartMode('radar')" title="Spider chart view" aria-label="Spider chart view" aria-pressed="${compareState.chartMode === 'radar'}"><span class="material-icons">radar</span></button>` +
+            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'parallel' ? 'is-active' : ''}" onclick="cmpSetChartMode('parallel')" title="Parallel coordinates view" aria-label="Parallel coordinates view" aria-pressed="${compareState.chartMode === 'parallel'}"><span class="material-icons">ssid_chart</span></button>` +
           '</div>' +
           `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary" onclick="cmpPromptAddEntity()" ${compareState.shown.length >= 5 ? 'disabled' : ''}><span class="material-icons">add</span>${scope.addLabel}</button>` +
         '</div>';
@@ -11515,12 +11760,18 @@
       /* ── The aligned grid ── */
       /* Rail keeps a comfortable minimum but can flex; entity columns share
          the rest and shrink to zero so the grid always fits its container
-         without a horizontal scrollbar, whatever the column count. */
-      const cols = 'minmax(172px, 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))';
+         without a horizontal scrollbar, whatever the column count. Once the
+         board carries 4+ entity columns the rail collapses to an icon-only
+         strip (compact mode) so the columns keep a legible width — the full
+         rail label + description then surface in a hover/focus flyout. */
+      const compact = ordered.length >= 4;
+      const cols = compact
+        ? '48px repeat(' + ordered.length + ', minmax(0, 1fr))'
+        : 'minmax(172px, 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))';
       const cells = [];
 
       /* Header row */
-      cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell"><div class="cmp-rail-h">Compare Foods</div><div class="cmp-summary-meta">' + rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics</div></div>');
+      cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell"><span class="cmp-rail-lead-ic" aria-hidden="true"><span class="material-icons">table_chart</span></span><div class="cmp-rail-body"><div class="cmp-rail-h">Compare Foods</div><div class="cmp-summary-meta">' + rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics</div></div></div>');
       ordered.forEach(ent => {
         const isPending = pendingSet.has(ent.id);
         const rank = rankOf.get(ent.id);
@@ -11544,15 +11795,15 @@
         cells.push(
           '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm +
           `<div class="cmp-tile"${tileStyle}>${img}${badge}` +
-            `<div class="cmp-tile-overlay"><div class="cmp-ent-name">${ent.name}${you}</div>${sub}</div>` +
+            `<div class="cmp-tile-overlay"><div class="cmp-ent-name" title="${ent.name}">${ent.name}${you}</div>${sub}</div>` +
           `</div>` +
           '</div>');
       });
 
       /* Score row */
-      cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayScores()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayScores()}"><span class="material-icons">verified</span></span>WISEscore</div>' +
+      cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayScores()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayScores()}"><span class="material-icons">verified</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">WISEscore</div>' +
         '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
-        '</div></div>');
+        '</div></div></div>');
       ordered.forEach(ent => {
         if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--num"></span><div class="cmp-score-lbl">Pending</div></div>'); return; }
         if (ent.na) { cells.push('<div class="cmp-cell cmp-cell--entity"><span class="cmp-metric-na">N/A · no products in ' + compareState.category + '</span></div>'); return; }
@@ -11563,17 +11814,19 @@
       });
 
       const radarMode = compareState.chartMode === 'radar';
+      const parallelMode = compareState.chartMode === 'parallel';
+      const chartOverlay = radarMode || parallelMode;
 
-      /* Metric rows — only in the default bar/line view. In radar mode these
-         per-metric rows collapse into a single overlaid spider chart below. */
-      if (!radarMode) {
+      /* Metric rows — only in the default health-bar view. In radar/parallel
+         mode these per-metric rows collapse into a single overlaid chart below. */
+      if (!chartOverlay) {
         metrics.forEach((m, mi) => {
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
-            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span>' + cmpMetricShort(m) + '</div>' +
+            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + '</div>' +
             '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-icons">forum</span></a></div>' +
             (avg != null ? '<div class="cmp-rail-metric-hint">avg ' + Math.round(avg) + '</div>' : '') +
-            '</div></div>');
+            '</div></div></div>');
           ordered.forEach(ent => {
             const pc = ent.primary ? ' is-primary' : '';
             if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>'); return; }
@@ -11590,7 +11843,7 @@
         });
 
         /* Insight row */
-        cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-ic" style="--mic:#C9A227"><span class="material-icons">auto_awesome</span></span>Insight</div></div>');
+        cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic" style="--mic:#C9A227"><span class="material-icons">auto_awesome</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">Insight</div></div></div></div>');
         ordered.forEach(ent => {
           const pc = ent.primary ? ' is-primary' : '';
           if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-pending-badge"><span class="material-icons">schedule</span>Recalculate to generate</span></div>'); return; }
@@ -11601,40 +11854,51 @@
         });
       }
 
-      const gridWrapCls = 'cmp-grid-wrap' + (compareState.recalcing ? ' is-recalcing' : '');
-      const gridCls = 'cmp-grid' + (compareState._settle ? ' cmp-settled' : '');
+      const gridWrapCls = 'cmp-grid-wrap' + (compareState.recalcing ? ' is-recalcing' : '') + (compact ? ' cmp-grid-wrap--compact' : '');
+      const gridCls = 'cmp-grid' + (compareState._settle ? ' cmp-settled' : '') + (compact ? ' cmp-grid--compact' : '');
       const grid = `<div class="${gridWrapCls}"><div class="${gridCls}" style="grid-template-columns:${cols}">${cells.join('')}</div></div>`;
 
-      /* ── Spider (radar) chart — all metrics overlaid for every entity ── */
-      const radar_html = radarMode
-        ? cmpRadarSection(scope, metrics, ordered.filter(e => !e.na && !pendingSet.has(e.id)), showAvg)
-        : '';
+      /* ── Overlay chart — spider or parallel coords for every entity ── */
+      const chartEnts = ordered.filter(e => !e.na && !pendingSet.has(e.id));
+      const chart_html = radarMode
+        ? cmpRadarSection(scope, metrics, chartEnts, showAvg)
+        : (parallelMode ? cmpParallelSection(scope, metrics, chartEnts, showAvg) : '');
 
       /* ── Key Takeaways (auto-generated, responsive to what's on the board) ── */
       const live = ordered.filter(e => !e.na && !pendingSet.has(e.id));
       function topBy(metricId) { return live.slice().sort((a, b) => cmpScoreFor(b, metricId) - cmpScoreFor(a, metricId))[0]; }
-      const tPerf = topBy('wisescore'), tProt = topBy('protein_density'), tClean = topBy('clean_label'), tVal = topBy('cost_value');
-      const takeawayCards = [['perf', tPerf], ['prot', tProt], ['clean', tClean], ['val', tVal]].map(([key, e]) => {
-        if (!e) return null;
+      const takeawaySlots = compareState.takeawaySlots || ['perf', 'prot', 'clean', 'val'];
+      const takeawayCards = takeawaySlots.map((key, slotIdx) => {
         const meta = CMP_TAKEAWAY_META[key];
+        if (!meta) return null;
+        const e = topBy(meta.metric);
+        if (!e) return null;
         const score = Math.round(cmpScoreFor(e, meta.metric));
-        return { key, entId: e.id, ic: meta.ic, lbl: meta.lbl, val: e.name, subLabel: meta.subLabel, score, why: cmpTakeawayWhy(key, e, score) };
+        return { key, slotIdx, entId: e.id, ic: meta.ic, lbl: meta.lbl, val: e.name, subLabel: meta.subLabel, score, why: cmpTakeawayWhy(key, e, score) };
       }).filter(Boolean);
       const takeaways =
         '<div class="cmp-takeaways-sec"><div class="cmp-section-label">Key Takeaways</div><div class="cmp-takeaways">' +
         takeawayCards.map(c => `<div class="cmp-takeaway">` +
-          `<div class="cmp-takeaway-head"><div class="cmp-takeaway-lbl">${c.lbl}</div><span class="cmp-takeaway-ic" aria-hidden="true"><span class="material-symbols-outlined">${c.ic}</span></span></div>` +
+          `<div class="cmp-takeaway-head">` +
+            `<div class="cmp-takeaway-titlewrap">` +
+              `<div class="cmp-takeaway-lbl">${c.lbl}</div>` +
+              `<div class="cmp-takeaway-swap-wrap">` +
+                `<button type="button" class="cmp-takeaway-swap" title="Swap this takeaway" aria-label="Swap this takeaway" aria-haspopup="menu" aria-expanded="false" onclick="cmpToggleTakeawayMenu(event, ${c.slotIdx})"><span class="material-symbols-outlined">swap_horiz</span></button>` +
+              `</div>` +
+            `</div>` +
+            `<span class="cmp-takeaway-ic" aria-hidden="true"><span class="material-symbols-outlined">${c.ic}</span></span>` +
+          `</div>` +
           `<div class="cmp-takeaway-score" data-count="${c.score}">${c.score}</div>` +
           `<div class="cmp-takeaway-val">${c.val}</div>` +
           `<div class="cmp-takeaway-sub-lbl">${c.subLabel}</div>` +
           `<hr class="cmp-takeaway-sep">` +
-          `<div class="cmp-takeaway-insight"><span class="cmp-takeaway-insight-body">${c.why}</span>` +
-            `<a class="cmp-takeaway-chat" role="button" tabindex="0" title="Chat about this takeaway" aria-label="Chat with WISEai about this takeaway" onclick="cmpChatTakeaway('${c.entId}','${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cmpChatTakeaway('${c.entId}','${c.key}')}"><span class="material-icons">forum</span></a>` +
+          `<div class="cmp-takeaway-insight"><span class="cmp-takeaway-insight-body">${c.why}` +
+            `<a class="cmp-takeaway-chat" role="button" tabindex="0" title="Chat about this takeaway" aria-label="Chat with WISEai about this takeaway" onclick="cmpChatTakeaway('${c.entId}','${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cmpChatTakeaway('${c.entId}','${c.key}')}"><span class="material-icons">forum</span></a></span>` +
           `</div>` +
         `</div>`).join('') +
         '</div></div>';
 
-      body.innerHTML = recalcBar + toolbar + grid + radar_html + takeaways;
+      body.innerHTML = recalcBar + toolbar + grid + chart_html + takeaways;
       body.scrollTop = 0;
       compareState._settle = false;   /* consume the one-shot settle animation flag */
       /* Count the WISEscores + takeaway scores up on render so they animate
@@ -12003,10 +12267,17 @@
     /* Key-takeaway metadata + AI "why" copy, shared by the board cards and the
        chat handler so both read identically. */
     const CMP_TAKEAWAY_META = {
-      perf:  { metric: 'wisescore',       topic: 'top performer',   ic: 'emoji_events',  lbl: 'Top Performer',   subLabel: 'WISEscore' },
-      prot:  { metric: 'protein_density', topic: 'highest protein', ic: 'fitness_center', lbl: 'Highest Protein', subLabel: 'Protein density' },
-      clean: { metric: 'clean_label',     topic: 'cleanest label',  ic: 'spa',            lbl: 'Cleanest Label',  subLabel: 'Clean label' },
-      val:   { metric: 'cost_value',      topic: 'best value',      ic: 'savings',        lbl: 'Best Value',      subLabel: 'Value' },
+      perf:    { metric: 'wisescore',         topic: 'top performer',          ic: 'emoji_events',      lbl: 'Top Performer',     subLabel: 'WISEscore' },
+      prot:    { metric: 'protein_density',   topic: 'highest protein',        ic: 'fitness_center',    lbl: 'Highest Protein',   subLabel: 'Protein density' },
+      clean:   { metric: 'clean_label',       topic: 'cleanest label',         ic: 'spa',               lbl: 'Cleanest Label',    subLabel: 'Clean label' },
+      val:     { metric: 'cost_value',        topic: 'best value',             ic: 'savings',           lbl: 'Best Value',        subLabel: 'Value' },
+      fiber:   { metric: 'fiber_density',     topic: 'most fiber',             ic: 'grass',             lbl: 'Most Fiber',        subLabel: 'Fiber density' },
+      lowupf:  { metric: 'upf',               topic: 'least processed',        ic: 'blender',           lbl: 'Least Processed',   subLabel: 'UPF score' },
+      gras:    { metric: 'gras',              topic: 'safest additives',       ic: 'health_and_safety', lbl: 'Safest Additives',  subLabel: 'GRAS score' },
+      gut:     { metric: 'gut_health',        topic: 'best for gut health',    ic: 'clean_hands',       lbl: 'Best Gut Health',   subLabel: 'Gut health' },
+      heart:   { metric: 'heart_healthy',     topic: 'most heart-healthy',     ic: 'favorite',          lbl: 'Heart Healthy',     subLabel: 'Heart health' },
+      antiinf: { metric: 'anti_inflammatory', topic: 'most anti-inflammatory', ic: 'healing',           lbl: 'Anti-Inflammatory', subLabel: 'Anti-inflammatory' },
+      lowsugar:{ metric: 'sugar_density',     topic: 'lowest sugar',           ic: 'icecream',          lbl: 'Lowest Sugar',      subLabel: 'Sugar density' },
     };
     function cmpTakeawayWhy(key, ent, score) {
       switch (key) {
@@ -12014,9 +12285,84 @@
         case 'prot':  return `<strong>${ent.name}</strong> leads on protein density (${score}) — genuinely protein-forward from real sources, not propped up by isolates just to earn a label claim.`;
         case 'clean': return `<strong>${ent.name}</strong> carries the cleanest label (${score}) — the fewest artificial colors, flavors, sweeteners and preservatives across the compared products.`;
         case 'val':   return `<strong>${ent.name}</strong> is the best value (${score}) — top-tier composite quality at the lowest cost per serving in the set.`;
-        default:      return `<strong>${ent.name}</strong> stands out here.`;
+        case 'fiber': return `<strong>${ent.name}</strong> delivers the most fiber (${score}) — the highest fiber density in the set, from whole-food sources rather than added isolates.`;
+        case 'lowupf':return `<strong>${ent.name}</strong> is the least processed (${score}) — the lowest ultra-processing footprint across the compared products.`;
+        case 'gras':  return `<strong>${ent.name}</strong> has the safest additive profile (${score}) — the strongest GRAS standing, with the fewest ingredients of concern in the set.`;
+        case 'gut':   return `<strong>${ent.name}</strong> is best for gut health (${score}) — the most fiber- and ferment-friendly profile, with the fewest emulsifiers of concern.`;
+        case 'heart': return `<strong>${ent.name}</strong> is the most heart-healthy (${score}) — the best fat quality and sodium balance, with no seed oils of concern.`;
+        case 'antiinf':return `<strong>${ent.name}</strong> is the most anti-inflammatory (${score}) — the highest score on inflammation-lowering nutrients and the cleanest additive panel.`;
+        case 'lowsugar':return `<strong>${ent.name}</strong> carries the lowest sugar load (${score}) — the least added sugar per serving across the compared products.`;
+        default:
+          const m = CMP_TAKEAWAY_META[key];
+          const lbl = m ? m.subLabel.toLowerCase() : 'this measure';
+          return `<strong>${ent.name}</strong> leads on ${lbl} (${score}) — the strongest result in the compared set on this measure.`;
       }
     }
+
+    /* ── Swap a takeaway card ─────────────────────────────────────────────
+       Each of the four cards can be re-pointed at any takeaway that isn't
+       already on the board. The swap glyph (right of the card title) opens a
+       compact menu of the remaining takeaways; picking one re-renders that
+       slot. If the chosen takeaway already lives in another card, the two
+       cards trade places so the board never shows a duplicate. */
+    function cmpToggleTakeawayMenu(ev, slotIdx) {
+      ev.stopPropagation();
+      const btn = ev.currentTarget;
+      const wrap = btn.closest('.cmp-takeaway-swap-wrap');
+      if (!wrap) return;
+      const alreadyOpen = !!wrap.querySelector('.cmp-takeaway-menu');
+      cmpCloseTakeawayMenus();
+      if (alreadyOpen) return;
+
+      const slots = compareState.takeawaySlots || ['perf', 'prot', 'clean', 'val'];
+      const currentKey = slots[slotIdx];
+      const used = new Set(slots);
+      const opts = Object.keys(CMP_TAKEAWAY_META).filter(k => k === currentKey || !used.has(k));
+
+      const menu = document.createElement('div');
+      menu.className = 'cmp-takeaway-menu';
+      menu.setAttribute('role', 'menu');
+      menu.innerHTML =
+        '<div class="cmp-takeaway-menu-title">Show in this card</div>' +
+        opts.map(k => {
+          const m = CMP_TAKEAWAY_META[k];
+          const isCur = k === currentKey;
+          return `<button type="button" role="menuitemradio" aria-checked="${isCur}" class="cmp-takeaway-menu-item${isCur ? ' is-active' : ''}" onclick="cmpSetTakeawaySlot(event, ${slotIdx}, '${k}')">` +
+            `<span class="cmp-takeaway-menu-ic material-symbols-outlined">${m.ic}</span>` +
+            `<span class="cmp-takeaway-menu-lbl">${m.lbl}</span>` +
+            (isCur ? '<span class="cmp-takeaway-menu-check material-icons">check</span>' : '') +
+          '</button>';
+        }).join('');
+
+      wrap.appendChild(menu);
+      btn.setAttribute('aria-expanded', 'true');
+      /* Flip the menu to open leftward if it would clip the panel's right edge. */
+      requestAnimationFrame(() => {
+        const r = menu.getBoundingClientRect();
+        if (r.right > window.innerWidth - 8) menu.classList.add('cmp-takeaway-menu--left');
+      });
+    }
+    function cmpCloseTakeawayMenus() {
+      document.querySelectorAll('.cmp-takeaway-menu').forEach(m => m.remove());
+      document.querySelectorAll('.cmp-takeaway-swap[aria-expanded="true"]')
+        .forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+    function cmpSetTakeawaySlot(ev, slotIdx, key) {
+      ev.stopPropagation();
+      cmpCloseTakeawayMenus();
+      const slots = (compareState.takeawaySlots || ['perf', 'prot', 'clean', 'val']).slice();
+      if (slots[slotIdx] === key) return;
+      const dupIdx = slots.indexOf(key);            /* if it's already shown elsewhere, trade places */
+      if (dupIdx !== -1) slots[dupIdx] = slots[slotIdx];
+      slots[slotIdx] = key;
+      compareState.takeawaySlots = slots;
+      renderCompare();
+    }
+    /* Dismiss any open takeaway swap menu when clicking outside of it. */
+    document.addEventListener('click', function (e) {
+      if (!document.querySelector('.cmp-takeaway-menu')) return;
+      if (!e.target.closest('.cmp-takeaway-swap-wrap')) cmpCloseTakeawayMenus();
+    });
 
     /* Continue the conversation about a takeaway card — opened from the chat
        glyph beneath the AI "why" insight. */
@@ -12861,6 +13207,62 @@
       dataVisited = new Set();
       activeSavedViewId = null;
       showWelcomeScreen();
+    }
+
+    /* Build a plain-text transcript of the live chat and copy it to the
+       clipboard. Each turn is labelled by speaker with its timestamp; the
+       grounding chip and feedback controls are stripped so only the spoken
+       lines come through. Gives inline confirmation on the menu item. */
+    function buildTranscriptText() {
+      const box = document.getElementById('chat-messages');
+      if (!box) return '';
+      const lines = [];
+      box.querySelectorAll('.sc-line').forEach(line => {
+        const body = line.querySelector('.sc-line-body');
+        if (!body) return;
+        const clone = body.cloneNode(true);
+        clone.querySelectorAll('.sc-line-meta, .sc-feedback').forEach(n => n.remove());
+        const text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        const who = line.classList.contains('sc-line-you') ? 'You' : 'WISEai';
+        const time = (line.querySelector('.sc-line-time')?.textContent || '').trim();
+        lines.push((time ? `[${time}] ` : '') + who + ': ' + text);
+      });
+      return lines.join('\n\n');
+    }
+    function copyTranscript(btn) {
+      const text = buildTranscriptText();
+      const done = (ok) => {
+        if (!btn) { if (typeof closeAllMoreMenus === 'function') closeAllMoreMenus(); return; }
+        const ic = btn.querySelector('.topbar-menu-icon');
+        const lbl = btn.querySelector('span:not(.topbar-menu-icon)');
+        const prevIc = ic ? ic.textContent : '';
+        const prevLbl = lbl ? lbl.textContent : '';
+        if (ic) ic.textContent = ok ? 'check' : 'error_outline';
+        if (lbl) lbl.textContent = ok ? 'Transcript copied' : 'Nothing to copy';
+        setTimeout(() => {
+          if (ic) ic.textContent = prevIc;
+          if (lbl) lbl.textContent = prevLbl;
+          if (typeof closeAllMoreMenus === 'function') closeAllMoreMenus();
+        }, 1100);
+      };
+      if (!text) { done(false); return; }
+      try {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).then(() => done(true)).catch(() => done(false));
+          return;
+        }
+      } catch (_) {}
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done(true);
+      } catch (_) { done(false); }
     }
 
     function exportConversation() {
