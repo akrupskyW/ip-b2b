@@ -2227,8 +2227,8 @@
     /* Toolbar — metric picker, category filter, category-average, add entity */
     .cmp-toolbar {
       display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-      padding: 10px 12px; border-radius: 12px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      padding: 2px 0; border-radius: 0;
+      background: transparent; border: none;
     }
     .cmp-tool-btn {
       display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -2252,11 +2252,11 @@
     }
     .cmp-tool-spacer { flex: 1; }
 
-    /* Chart-type toggle — bare icon row sitting left of the Add button.
-       Health bars (default) · spider · parallel coordinates. No pill container. */
+    /* Chart-type toggle — segmented pill sitting left of the Add button.
+       Health bars (default) · spider · parallel coordinates. */
     .cmp-chart-toggle {
-      display: inline-flex; align-items: center; gap: 2px; padding: 0;
-      border-radius: 999px; border: none; background: transparent;
+      display: inline-flex; align-items: center; gap: 2px; padding: 2px;
+      border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface);
     }
     .cmp-chart-btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -2276,7 +2276,7 @@
     .cmp-radar-title { font-size: 1.0rem; font-weight: 800; color: var(--text); }
     .cmp-radar-sub { font-size: var(--fs-label); color: var(--text-muted); }
     .cmp-radar-canvas { display: flex; justify-content: center; }
-    .cmp-radar-svg { width: 100%; max-width: none; height: auto; overflow: visible; }
+    .cmp-radar-svg { width: 100%; max-width: 380px; height: auto; overflow: visible; }
     .cmp-radar-ring { fill: none; stroke: var(--border-strong); stroke-width: 1; opacity: 0.7; }
     .cmp-radar-spoke { stroke: var(--border-strong); stroke-width: 1; opacity: 0.6; }
     .cmp-radar-tick { fill: var(--text-subtle); font-size: 9px; font-weight: 700; }
@@ -2296,8 +2296,8 @@
     @keyframes cmpRadarDot { from { opacity: 0; } to { opacity: 1; } }
     .cmp-radar-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin-top: 12px; }
     .cmp-radar-key { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label); font-weight: 600; color: var(--text); }
-    .cmp-radar-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
-    .cmp-radar-swatch--avg { background: transparent; border: 1.5px dashed var(--text); border-radius: 2px; }
+    .cmp-radar-swatch { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .cmp-radar-swatch--avg { background: transparent; border: 1.5px dashed var(--text); border-radius: 50%; }
     .cmp-radar-note {
       display: flex; align-items: center; gap: 8px; justify-content: center; text-align: center;
       padding: 22px 12px; font-size: var(--fs-ui); color: var(--text-muted);
@@ -2306,22 +2306,121 @@
 
     /* Parallel-coordinates chart — one vertical axis per metric, one polyline
        per entity crossing every axis. Reuses the radar wrap/head/legend chrome. */
+    .cmp-par-plot { max-width: 560px; margin: 0 auto; }
     .cmp-par-svg { width: 100%; max-width: none; height: auto; overflow: visible; }
     .cmp-par-axis { stroke: var(--border-strong); stroke-width: 1.25; opacity: 0.85; }
+    .cmp-par-axis-dot { fill: var(--text-subtle); opacity: 0.75; }
     .cmp-par-grid { stroke: var(--border-strong); stroke-width: 1; opacity: 0.35; stroke-dasharray: 3 4; }
     .cmp-par-tick { fill: var(--text-subtle); font-size: 9px; font-weight: 700; }
-    .cmp-par-label { fill: var(--text); font-size: 10px; font-weight: 700; }
+    /* HTML metric labels beneath the plot — one shared top baseline, wrap to
+       multiple lines when crowded, aligned to each axis by fractional left. */
+    .cmp-par-labels { position: relative; min-height: 30px; margin-top: 5px; }
+    .cmp-par-xlabel {
+      position: absolute; top: 0; transform: translateX(-50%); text-align: center;
+      font-size: 9.5px; font-weight: 700; line-height: 1.2; color: var(--text);
+      overflow-wrap: anywhere;
+    }
+    .cmp-par-xlabel.is-start { transform: none; text-align: left; }
+    .cmp-par-xlabel.is-end { transform: none; text-align: right; }
     .cmp-par-avg { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.6; }
+    /* Polylines draw on from left to right using a normalized path length. */
     .cmp-par-series {
       fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
-      opacity: 0; animation: cmpParIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      stroke-dasharray: 1; stroke-dashoffset: 1;
+      animation: cmpParDraw 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       animation-delay: var(--delay, 0ms);
     }
     .cmp-par-series-g circle {
-      opacity: 0; animation: cmpRadarDot 0.4s ease forwards;
-      animation-delay: calc(var(--delay, 0ms) + 220ms);
+      opacity: 0; animation: cmpRadarDot 0.32s ease forwards;
+      animation-delay: calc(var(--delay, 0ms) + var(--dd, 0) * 110ms + 90ms);
     }
-    @keyframes cmpParIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes cmpParDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+    /* Race chart — one horizontal track per metric, each entity a circular
+       brand "bug" positioned by its score with the number tucked on its edge,
+       racing in from the start line. The category average sits inline beside
+       the metric label. Reuses the radar wrap/head/legend chrome. */
+    .cmp-race-row { padding: 6px 0; border-top: 1px solid var(--border); }
+    .cmp-race-metric { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+    .cmp-race-avg-inline {
+      margin-left: 10px; font-size: var(--fs-label); font-weight: 600; color: var(--text-muted);
+      display: inline-flex; align-items: baseline; gap: 4px;
+    }
+    .cmp-race-avg-inline b { font-weight: 800; color: var(--text); }
+    .cmp-race-metric-ic {
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #0B0B0F; border: 1.5px solid #fff;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent);
+    }
+    .cmp-race-metric-ic .material-icons { font-size: 12px !important; color: #fff !important; }
+    .cmp-race-metric-ic--btn { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+    .cmp-race-metric-ic--btn:hover { transform: scale(1.1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent); }
+    .cmp-race-metric-ic--btn:active { transform: scale(0.94); }
+    .cmp-race-metric-ic--btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .cmp-race-metric-name { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+    .cmp-race-track {
+      position: relative; height: 54px; margin-top: 2px; cursor: pointer;
+      border-radius: 999px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--sec-red) 12%, transparent), color-mix(in srgb, var(--ter-amber) 10%, transparent) 55%, color-mix(in srgb, var(--sec-green) 14%, transparent));
+    }
+    .cmp-race-lane { position: absolute; left: 10px; right: 10px; top: 50%; height: 2px; background: var(--border-strong); opacity: 0.45; border-radius: 2px; }
+    .cmp-race-avgmark { position: absolute; top: 4px; bottom: 4px; width: 0; border-left: 1.5px dashed var(--text); opacity: 0.55; transform: translateX(-0.5px); }
+    .cmp-race-runner {
+      position: absolute; top: 50%; left: var(--pos, 0%);
+      transform: translate(-50%, -50%);
+      width: 40px; height: 40px; cursor: pointer;
+      animation: cmpRaceRun 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: var(--delay, 0ms);
+    }
+    .cmp-race-runner.is-primary { z-index: 6; }
+    /* Hovering a runner lifts it above its neighbours and reveals a popover
+       naming the food and its score — vital where circles overlap. */
+    .cmp-race-runner:hover { z-index: 40 !important; }
+    .cmp-race-pop {
+      position: absolute; left: 50%; bottom: calc(100% + 9px); transform: translateX(-50%) translateY(4px);
+      display: flex; align-items: center; gap: 7px; white-space: nowrap;
+      padding: 6px 10px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.30);
+      opacity: 0; pointer-events: none; z-index: 50;
+      transition: opacity 0.14s ease, transform 0.14s ease;
+    }
+    .cmp-race-pop::after {
+      content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: var(--surface);
+      filter: drop-shadow(0 1px 0 var(--border-strong));
+    }
+    .cmp-race-runner:hover .cmp-race-pop { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .cmp-race-pop-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .cmp-race-pop-name { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+    .cmp-race-pop-score {
+      font-size: 10px; font-weight: 800; color: #fff; background: #16202e;
+      border-radius: 999px; padding: 1px 7px; line-height: 1.4; font-variant-numeric: tabular-nums;
+    }
+    .cmp-race-bug {
+      position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--rc, var(--primary)); color: #fff;
+      font-size: 13px; font-weight: 800; line-height: 1;
+      box-shadow: 0 2px 7px rgba(0,0,0,0.30);
+    }
+    .cmp-race-bug img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: var(--rc, var(--primary)); }
+    /* Score badge straddling the bottom edge of the circle — a solid dark pill
+       with a light ring to separate it from the logo, so it stays crisp and
+       legible against any brand colour or artwork. */
+    .cmp-race-num {
+      position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); z-index: 3;
+      font-size: 10.5px; font-weight: 800; color: #fff; letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+      background: #16202e;
+      border: 1.5px solid var(--surface);
+      border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center; line-height: 1.4;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+    }
+    @keyframes cmpRaceRun { from { left: 0%; opacity: 0; } to { left: var(--pos, 0%); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .cmp-race-runner { animation: none; }
+    }
 
     .cmp-tool-select {
       display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px;
@@ -2408,6 +2507,11 @@
     .cmp-rail-metric { display: flex; flex-direction: column; gap: 1px; }
     .cmp-rail-metric-name { display: flex; align-items: center; gap: 6px; font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
     .cmp-rail-metric-name .material-icons { font-size: 15px !important; color: var(--primary); }
+    .cmp-rail-metric-avg {
+      font-size: 10px; font-weight: 700; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 999px; padding: 1px 7px; line-height: 1.4; white-space: nowrap;
+    }
     .cmp-rail-metric-hint { font-size: 9px; color: var(--text-subtle); padding-left: 21px; }
     .cmp-metric-cell { display: flex; align-items: center; gap: 8px; min-width: 0; height: 100%; }
     .cmp-grade {
@@ -2489,16 +2593,19 @@
     .cmp-takeaway-swap:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); transform: scale(1.06); }
     .cmp-takeaway-swap[aria-expanded="true"] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
     .cmp-takeaway-swap:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-    /* Swap menu — compact popover of the takeaways not already on the board. */
+    /* Swap menu — compact popover of the takeaways not already on the board.
+       Rendered as a viewport-fixed popover (appended to <body>) and placed by
+       JS so it's never clipped by the card / scroll container. It defaults to
+       opening upward and flips to whichever side has room. */
     .cmp-takeaway-menu {
-      position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
-      min-width: 190px; padding: 5px; border-radius: 12px;
+      position: fixed; top: 0; left: 0; z-index: 1000;
+      min-width: 190px; max-height: min(70vh, 360px); overflow-y: auto;
+      padding: 5px; border-radius: 12px;
       background: var(--surface); border: 1px solid var(--border);
-      box-shadow: 0 12px 30px -8px rgba(17, 24, 39, 0.28), 0 2px 6px rgba(17, 24, 39, 0.10);
+      box-shadow: 0 18px 44px -10px rgba(17, 24, 39, 0.40), 0 4px 12px rgba(17, 24, 39, 0.16);
       animation: cmpTakeawayMenuIn 0.14s ease;
     }
-    .cmp-takeaway-menu--left { left: auto; right: 0; }
-    @keyframes cmpTakeawayMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes cmpTakeawayMenuIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     .cmp-takeaway-menu-title {
       font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-subtle); padding: 5px 8px 4px;
@@ -8784,9 +8891,7 @@
         <!-- Scope selector — switches the comparison between the four PRD scopes. -->
         <div class="cmp-scopebar shrink-0" id="cmp-scopebar" role="tablist" aria-label="Comparison scope">
           <button type="button" class="cmp-scope-btn" role="tab" data-scope="product_vs_product" onclick="cmpSetScope('product_vs_product')"><span class="material-icons">compare_arrows</span>Product vs Product</button>
-          <button type="button" class="cmp-scope-btn" role="tab" data-scope="product_vs_many" onclick="cmpSetScope('product_vs_many')"><span class="material-icons">grid_view</span>Product vs Many</button>
           <button type="button" class="cmp-scope-btn" role="tab" data-scope="portfolio_vs_portfolio" onclick="cmpSetScope('portfolio_vs_portfolio')"><span class="material-icons">business</span>Portfolio vs Portfolio</button>
-          <button type="button" class="cmp-scope-btn" role="tab" data-scope="portfolio_vs_many" onclick="cmpSetScope('portfolio_vs_many')"><span class="material-icons">store</span>Portfolio vs Many</button>
         </div>
 
         <div class="flex-1 overflow-y-auto side-panel-body cmp-body" id="cmp-body">
@@ -11516,10 +11621,21 @@
       });
     }
 
-    /* ── Chart-type toggle (health bars ⇄ spider ⇄ parallel coords) ────── */
+    /* ── Chart-type toggle (health bars ⇄ spider ⇄ parallel coords ⇄ race) ── */
     function cmpSetChartMode(mode) {
-      const m = (mode === 'radar' || mode === 'parallel') ? mode : 'bars';
+      const m = (mode === 'radar' || mode === 'parallel' || mode === 'race') ? mode : 'bars';
       if (compareState.chartMode === m) return;
+      const prev = compareState.chartMode;
+      /* The race chart shows the category average by default. We stash the
+         user's global setting when entering race and restore it on the way out,
+         so this default applies to the race chart only. */
+      if (m === 'race') {
+        compareState._preRaceAvg = compareState.showAvg;
+        compareState.showAvg = true;
+      } else if (prev === 'race' && compareState._preRaceAvg != null) {
+        compareState.showAvg = compareState._preRaceAvg;
+        compareState._preRaceAvg = null;
+      }
       compareState.chartMode = m;
       renderCompare();
       scrollPanelIntoView('compare-panel');
@@ -11619,8 +11735,8 @@
           '<span class="material-icons">ssid_chart</span>Nothing scored yet — recalculate to plot parallel coordinates.</div></div>';
       }
 
-      const W = 520, H = 250;
-      const padT = 20, padB = 42, padL = 34, padR = 20;
+      const W = 520, H = 212;
+      const padT = 18, padB = 14, padL = 34, padR = 20;
       const plotH = H - padT - padB;
       const axisX = i => (M === 1 ? W / 2 : padL + (W - padL - padR) * i / (M - 1));
       const yFor = v => padT + (1 - Math.max(0, Math.min(100, v)) / 100) * plotH;
@@ -11631,12 +11747,28 @@
         `<line class="cmp-par-grid" x1="${axisX(0).toFixed(1)}" y1="${yFor(rv).toFixed(1)}" x2="${axisX(M - 1).toFixed(1)}" y2="${yFor(rv).toFixed(1)}"></line>` +
         `<text class="cmp-par-tick" x="${(axisX(0) - 6).toFixed(1)}" y="${(yFor(rv) + 3).toFixed(1)}" text-anchor="end">${rv}</text>`).join('');
 
-      /* Vertical axes + metric labels beneath each one. */
+      /* Vertical axes + a cap dot at the top of each. The metric labels are
+         rendered as HTML below the plot (not SVG text) so they can wrap to
+         multiple lines and stay on one shared baseline — never staggered. */
       const axisEls = metrics.map((m, i) => {
         const x = axisX(i);
-        const anchor = i === 0 ? 'start' : (i === M - 1 ? 'end' : 'middle');
         return `<line class="cmp-par-axis" x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}"></line>` +
-          `<text class="cmp-par-label" x="${x.toFixed(1)}" y="${(H - padB + 16).toFixed(1)}" text-anchor="${anchor}">${cmpMetricShort(m)}</text>`;
+          `<circle class="cmp-par-axis-dot" cx="${x.toFixed(1)}" cy="${padT}" r="2.8"></circle>`;
+      }).join('');
+
+      /* HTML label per axis, positioned by the same fractional x as the axis,
+         width-capped to just under the axis spacing so neighbours never touch —
+         extra metrics simply wrap onto more lines rather than colliding. */
+      const stepPct = M > 1 ? ((axisX(1) - axisX(0)) / W * 100) : 60;
+      const maxWPct = (stepPct * 0.94).toFixed(2);
+      const labelEls = metrics.map((m, i) => {
+        const isStart = i === 0, isEnd = i === M - 1;
+        const pctX = axisX(i) / W * 100;
+        const cls = isStart ? ' is-start' : (isEnd ? ' is-end' : '');
+        /* Anchor the last label by `right` so its auto width isn't squeezed by
+           the container's edge (which was forcing "Protein" to wrap). */
+        const posStyle = isEnd ? `right:${(100 - pctX).toFixed(2)}%` : `left:${pctX.toFixed(2)}%`;
+        return `<span class="cmp-par-xlabel${cls}" style="${posStyle};max-width:${maxWPct}%">${cmpMetricShort(m)}</span>`;
       }).join('');
 
       /* Optional dashed category-average line. */
@@ -11654,9 +11786,9 @@
         const color = ent.color || cmpMetricColor('wisescore');
         const coords = metrics.map((m, i) => [axisX(i), yFor(cmpScoreFor(ent, m.id))]);
         const pts = coords.map(c => `${c[0].toFixed(1)},${c[1].toFixed(1)}`).join(' ');
-        const dots = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" style="fill:${color}"></circle>`).join('');
+        const dots = coords.map((c, i) => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" style="fill:${color};--dd:${i}"></circle>`).join('');
         return `<g class="cmp-par-series-g" style="--delay:${ei * 90}ms">` +
-          `<polyline class="cmp-par-series" points="${pts}" style="stroke:${color};--delay:${ei * 90}ms"></polyline>${dots}</g>`;
+          `<polyline class="cmp-par-series" points="${pts}" pathLength="1" style="stroke:${color};--delay:${ei * 90}ms"></polyline>${dots}</g>`;
       }).join('');
 
       const legend = ents.map(ent => {
@@ -11667,13 +11799,95 @@
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">Parallel coordinates</span>' +
         '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
-        '<div class="cmp-radar-canvas">' +
-          `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
-            gridEls + axisEls + avgEls + seriesEls +
-          '</svg>' +
+        '<div class="cmp-par-plot">' +
+          '<div class="cmp-radar-canvas">' +
+            `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
+              gridEls + axisEls + avgEls + seriesEls +
+            '</svg>' +
+          '</div>' +
+          '<div class="cmp-par-labels">' + labelEls + '</div>' +
         '</div>' +
         '<div class="cmp-radar-legend">' + legend + '</div>' +
       '</div>';
+    }
+
+    /* Build the "race" chart: one horizontal 0–100 track per metric with each
+       entity rendered as a circular brand bug (logo or monogram) positioned by
+       its score, the number tucked underneath. Runners slide in from the start
+       line so the metrics read like a race. The right column carries the
+       category average, with an optional dashed avg marker on each track.
+       Returns an HTML string. */
+    function cmpRaceSection(scope, metrics, ents, showAvg) {
+      const M = metrics.length;
+      if (!M) {
+        return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
+          '<span class="material-icons">sports_score</span>' +
+          'Add at least 1 metric from the <strong>Metrics</strong> menu to line up the race.' +
+          '</div></div>';
+      }
+      if (!ents.length) {
+        return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
+          '<span class="material-icons">sports_score</span>Nothing scored yet — recalculate to run the race.</div></div>';
+      }
+
+      /* One track per metric. Runners are stacked so close scores overlap like
+         the reference — the primary/YOU entity always sits on top. The category
+         average sits inline, right of the metric label, as plain text. */
+      const rows = metrics.map((m, mi) => {
+        const avg = cmpAvgFor(scope, m.id, compareState.category);
+        const avgMark = showAvg
+          ? `<span class="cmp-race-avgmark" style="left:${Math.max(0, Math.min(100, avg))}%"></span>`
+          : '';
+        const avgInline = showAvg
+          ? `<span class="cmp-race-avg-inline">Category average <b>${Math.round(avg)}</b></span>`
+          : '';
+        const runners = ents.map((ent, ei) => {
+          const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
+          const pos = Math.round(v);
+          const color = ent.color || cmpMetricColor('wisescore');
+          const imgUrl = cmpImgUrl(ent);
+          const mono = ent.abbr || ent.name[0];
+          const img = imgUrl ? `<img src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.remove()">` : '';
+          const pc = ent.primary ? ' is-primary' : '';
+          return `<div class="cmp-race-runner${pc}" style="--pos:${pos}%;--rc:${color};--delay:${ei * 110}ms;z-index:${ent.primary ? 6 : ei + 1}" aria-label="${ent.name}: ${pos}">` +
+            `<span class="cmp-race-bug">${mono}${img}</span>` +
+            `<span class="cmp-race-num">${pos}</span>` +
+            `<span class="cmp-race-pop"><span class="cmp-race-pop-dot" style="background:${color}"></span>` +
+              `<span class="cmp-race-pop-name">${ent.name}</span><span class="cmp-race-pop-score">${pos}</span></span>` +
+          `</div>`;
+        }).join('');
+        return '<div class="cmp-race-row">' +
+          `<div class="cmp-race-metric"><span class="cmp-race-metric-ic cmp-race-metric-ic--btn" role="button" tabindex="0" title="Replay this race" aria-label="Replay ${cmpMetricShort(m)} race" onclick="cmpRaceReplayRow(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cmpRaceReplayRow(this)}"><span class="material-icons">${m.icon}</span></span>` +
+          `<span class="cmp-race-metric-name">${cmpMetricShort(m)}</span>${avgInline}</div>` +
+          `<div class="cmp-race-track" title="Click to replay" onclick="cmpRaceReplayRow(this)"><span class="cmp-race-lane"></span>${avgMark}${runners}</div>` +
+        '</div>';
+      }).join('');
+
+      const legend = ents.map(ent => {
+        const color = ent.color || cmpMetricColor('wisescore');
+        return `<span class="cmp-radar-key"><span class="cmp-radar-swatch" style="background:${color}"></span>${ent.name}</span>`;
+      }).join('') + (showAvg ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span>Category avg</span>' : '');
+
+      return '<div class="cmp-radar-wrap">' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">Metric race</span>' +
+        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        rows +
+        '<div class="cmp-radar-legend">' + legend + '</div>' +
+      '</div>';
+    }
+
+    /* Re-run the racing animation for a single row — call from either the metric
+       icon or a click anywhere on the track. Restarting the CSS animation is a
+       matter of clearing it, forcing a reflow, then letting it re-apply (the
+       per-runner --delay reinstates the staggered start). */
+    function cmpRaceReplayRow(el) {
+      const row = el.closest('.cmp-race-row');
+      if (!row) return;
+      row.querySelectorAll('.cmp-race-runner').forEach(r => {
+        r.style.animation = 'none';
+        void r.offsetWidth;
+        r.style.animation = '';
+      });
     }
 
     /* ── The render engine — paints #cmp-body from state ───────────────── */
@@ -11748,6 +11962,7 @@
             `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'bars' ? 'is-active' : ''}" onclick="cmpSetChartMode('bars')" title="Health bar view" aria-label="Health bar view" aria-pressed="${compareState.chartMode === 'bars'}"><span class="material-icons">align_horizontal_left</span></button>` +
             `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'radar' ? 'is-active' : ''}" onclick="cmpSetChartMode('radar')" title="Spider chart view" aria-label="Spider chart view" aria-pressed="${compareState.chartMode === 'radar'}"><span class="material-icons">radar</span></button>` +
             `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'parallel' ? 'is-active' : ''}" onclick="cmpSetChartMode('parallel')" title="Parallel coordinates view" aria-label="Parallel coordinates view" aria-pressed="${compareState.chartMode === 'parallel'}"><span class="material-icons">ssid_chart</span></button>` +
+            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'race' ? 'is-active' : ''}" onclick="cmpSetChartMode('race')" title="Race view" aria-label="Race view" aria-pressed="${compareState.chartMode === 'race'}"><span class="material-icons">sports_score</span></button>` +
           '</div>' +
           `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary" onclick="cmpPromptAddEntity()" ${compareState.shown.length >= 5 ? 'disabled' : ''}><span class="material-icons">add</span>${scope.addLabel}</button>` +
         '</div>';
@@ -11815,7 +12030,8 @@
 
       const radarMode = compareState.chartMode === 'radar';
       const parallelMode = compareState.chartMode === 'parallel';
-      const chartOverlay = radarMode || parallelMode;
+      const raceMode = compareState.chartMode === 'race';
+      const chartOverlay = radarMode || parallelMode || raceMode;
 
       /* Metric rows — only in the default health-bar view. In radar/parallel
          mode these per-metric rows collapse into a single overlaid chart below. */
@@ -11823,9 +12039,8 @@
         metrics.forEach((m, mi) => {
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
-            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + '</div>' +
+            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div>' +
             '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-icons">forum</span></a></div>' +
-            (avg != null ? '<div class="cmp-rail-metric-hint">avg ' + Math.round(avg) + '</div>' : '') +
             '</div></div></div>');
           ordered.forEach(ent => {
             const pc = ent.primary ? ' is-primary' : '';
@@ -11862,7 +12077,8 @@
       const chartEnts = ordered.filter(e => !e.na && !pendingSet.has(e.id));
       const chart_html = radarMode
         ? cmpRadarSection(scope, metrics, chartEnts, showAvg)
-        : (parallelMode ? cmpParallelSection(scope, metrics, chartEnts, showAvg) : '');
+        : (parallelMode ? cmpParallelSection(scope, metrics, chartEnts, showAvg)
+        : (raceMode ? cmpRaceSection(scope, metrics, chartEnts, showAvg) : ''));
 
       /* ── Key Takeaways (auto-generated, responsive to what's on the board) ── */
       const live = ordered.filter(e => !e.na && !pendingSet.has(e.id));
@@ -12310,7 +12526,9 @@
       const btn = ev.currentTarget;
       const wrap = btn.closest('.cmp-takeaway-swap-wrap');
       if (!wrap) return;
-      const alreadyOpen = !!wrap.querySelector('.cmp-takeaway-menu');
+      /* The menu is portaled to <body>, so track open state on the button
+         itself rather than looking for the menu inside the wrap. */
+      const alreadyOpen = btn.getAttribute('aria-expanded') === 'true';
       cmpCloseTakeawayMenus();
       if (alreadyOpen) return;
 
@@ -12334,13 +12552,40 @@
           '</button>';
         }).join('');
 
-      wrap.appendChild(menu);
+      /* Append to <body> so the popover escapes the card + the scroll/contain
+         context of #cmp-body — a fixed element inside a `contain: layout`
+         container would otherwise be trapped and clipped. */
+      document.body.appendChild(menu);
       btn.setAttribute('aria-expanded', 'true');
-      /* Flip the menu to open leftward if it would clip the panel's right edge. */
-      requestAnimationFrame(() => {
-        const r = menu.getBoundingClientRect();
-        if (r.right > window.innerWidth - 8) menu.classList.add('cmp-takeaway-menu--left');
-      });
+      requestAnimationFrame(() => cmpPositionTakeawayMenu(menu, btn));
+    }
+    /* Place the swap popover in the viewport relative to its button: opens
+       upward and right-aligned by default, but flips down / re-clamps whenever
+       that edge of the screen is short on room. */
+    function cmpPositionTakeawayMenu(menu, btn) {
+      if (!menu.isConnected || !btn.isConnected) return;
+      const gap = 6, margin = 8;
+      const b = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      const vw = window.innerWidth, vh = window.innerHeight;
+
+      /* Vertical — prefer opening ABOVE the button; only drop below when there
+         isn't room above and there's more room below. */
+      const roomAbove = b.top - margin;
+      const roomBelow = vh - b.bottom - margin;
+      let top = (roomAbove >= mh + gap || roomAbove >= roomBelow)
+        ? b.top - gap - mh
+        : b.bottom + gap;
+      top = Math.max(margin, Math.min(top, vh - mh - margin));
+
+      /* Horizontal — align the menu's right edge to the button (sits up-and-to
+         the-right), then clamp so it never runs off either screen edge. */
+      let left = b.right - mw;
+      if (left < margin) left = b.left;
+      left = Math.max(margin, Math.min(left, vw - mw - margin));
+
+      menu.style.top = top + 'px';
+      menu.style.left = left + 'px';
     }
     function cmpCloseTakeawayMenus() {
       document.querySelectorAll('.cmp-takeaway-menu').forEach(m => m.remove());
@@ -12358,11 +12603,16 @@
       compareState.takeawaySlots = slots;
       renderCompare();
     }
-    /* Dismiss any open takeaway swap menu when clicking outside of it. */
+    /* Dismiss any open takeaway swap menu when clicking outside of it. The
+       menu is portaled to <body>, so treat clicks inside it as "inside" too. */
     document.addEventListener('click', function (e) {
       if (!document.querySelector('.cmp-takeaway-menu')) return;
-      if (!e.target.closest('.cmp-takeaway-swap-wrap')) cmpCloseTakeawayMenus();
+      if (!e.target.closest('.cmp-takeaway-swap-wrap') && !e.target.closest('.cmp-takeaway-menu')) cmpCloseTakeawayMenus();
     });
+    /* The popover is viewport-anchored, so close it if the page scrolls or
+       resizes rather than letting it drift away from its button. */
+    window.addEventListener('scroll', cmpCloseTakeawayMenus, true);
+    window.addEventListener('resize', cmpCloseTakeawayMenus);
 
     /* Continue the conversation about a takeaway card — opened from the chat
        glyph beneath the AI "why" insight. */
