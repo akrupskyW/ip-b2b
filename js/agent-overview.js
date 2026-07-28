@@ -936,6 +936,14 @@ function openAvatarPopover(anchor) {
       openAlertsPanel();
       return;
     }
+    const signoutItem = ev.target.closest('[data-pop-action="signout"]');
+    if (signoutItem && pop.contains(signoutItem)) {
+      ev.stopPropagation();
+      closeAvatarPopover();
+      try { localStorage.removeItem('wise-auth'); } catch (e) {}
+      window.location.href = 'login.html';
+      return;
+    }
     if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) {
       ev.stopPropagation();
       return;

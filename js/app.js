@@ -1936,8 +1936,14 @@ import { setTextSize } from './text-size.js';
             <div class="popover-divider"></div>
             <div class="popover-item danger" data-pop-action="logout"><span class="material-symbols-rounded">logout</span>Sign out</div>
           `, { align:'right', onAction:(a) => {
-            const labels = { profile:'My profile', prefs:'Preferences', api:'API keys', help:'Help & docs', logout:'Signed out' };
-            showToast({ title: labels[a] || 'Opened', sub:'Demo action', icon: a==='logout' ? 'logout' : 'settings', kind: a==='logout'?'warn':'' });
+            if (a === 'logout') {
+              try { localStorage.removeItem('wise-auth'); } catch (e) {}
+              showToast({ title:'Signed out', sub:'Redirecting to sign in…', icon:'logout', kind:'warn' });
+              setTimeout(() => { window.location.href = 'pages/login.html'; }, 350);
+              return;
+            }
+            const labels = { profile:'My profile', prefs:'Preferences', api:'API keys', help:'Help & docs' };
+            showToast({ title: labels[a] || 'Opened', sub:'Demo action', icon:'settings', kind:'' });
           }});
           break;
 

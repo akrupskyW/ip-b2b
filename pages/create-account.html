@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — WISEcode Intelligence</title>
+  <script>
+    try { if (localStorage.getItem('wise-theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { document.documentElement.classList.add('dark'); }
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="scout-chat.css" />
+  <link rel="stylesheet" href="auth-chat.css" />
+  <script src="../js/auth.js"></script>
+</head>
+<body class="auth-chat-page">
+  <div class="ac-shell">
+    <div class="ac-main"><div id="ac-chat"></div></div>
+    <aside id="ac-setup" class="setup-pane" hidden></aside>
+  </div>
+  <script type="module">
+    import { initAuthChat } from '../js/auth-chat.js';
+    initAuthChat({ mode: 'signup' });
+  </script>
+</body>
+</html>

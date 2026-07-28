@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISEai — AI Verification Assistant</title>
+  <!-- Auth: redirect to sign-in if there is no session, then load the auth API. -->
+  <script src="../js/auth-guard.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
@@ -2252,6 +2255,181 @@
     }
     .cmp-tool-spacer { flex: 1; }
 
+    /* Toolbar relocated into the board's top-left header cell. It behaves as a
+       self-contained responsive component: a container query on the cell lets
+       the toolbar reflow to whatever width the rail column happens to be —
+       controls sit inline and wrap into rows as space tightens, rather than
+       being forced into a full-width vertical stack. */
+    .cmp-cell--rail.cmp-hcell.cmp-hcell--tools {
+      justify-content: flex-start; align-items: flex-start;
+      padding: 12px 12px; gap: 0;
+      container-type: inline-size; container-name: cmptools;
+    }
+    .cmp-hcell--tools .cmp-toolbar {
+      flex-direction: column; flex-wrap: nowrap; align-items: stretch;
+      gap: 0; width: 100%; padding: 0;
+    }
+    /* The toolbar now stacks: a main row (metrics · category · Add) sits above a
+       horizontal divider, then the chart-type toggle drops onto its own row. */
+    .cmp-tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; }
+    .cmp-tool-divider {
+      height: 1px; width: 100%; background: var(--border);
+      margin: 12px 0 0;
+    }
+    .cmp-tool-row--chart { margin-top: 12px; }
+    /* Keep the category filter and the category-average toggle glued together
+       so they share a row whenever there's room for the pair. */
+    .cmp-tool-group { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    /* Optional labels on the chart-type buttons — hidden by default (icon-only)
+       and revealed by the container query once the toolbar is wide enough. */
+    .cmp-chart-label { display: none; font-size: var(--fs-label); font-weight: 600; white-space: nowrap; }
+    /* Split "＋ Add" control — ONE pill split into a left face (opens the guided
+       add chat) and a right caret (opens a type dropdown), joined by a divider.
+       The wrapper is the pill: it owns the rounding + shadow and clips the two
+       flush buttons inside it, so they read as a single fused control. */
+    .cmp-add-wrap { display: inline-flex; }
+    .cmp-add-split {
+      display: inline-flex; align-items: stretch;
+      border-radius: 999px; overflow: hidden; background: var(--primary);
+      box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
+    }
+    .cmp-add-split .cmp-tool-btn { border-radius: 0; border: none; box-shadow: none; }
+    .cmp-add-split .cmp-tool-btn:hover:not(:disabled) { transform: none; box-shadow: none; background: #1e4266; }
+    .cmp-add-split .cmp-add-caret {
+      border-left: 1px solid rgba(255, 255, 255, 0.4);
+      padding-left: 9px; padding-right: 9px; gap: 0;
+    }
+    .cmp-add-split .cmp-add-caret .material-icons { font-size: 18px !important; }
+    /* Body-portalled dropdown — fixed + high z-index so it floats above every
+       board element instead of being clipped beneath them. Positioned in JS. */
+    .cmp-add-menu {
+      position: fixed; z-index: 5000;
+      min-width: 190px; padding: 6px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: 0 16px 40px rgba(8, 12, 20, 0.24);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .cmp-add-menu-item {
+      display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+      padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer;
+      background: transparent; color: var(--text); font-size: var(--fs-label); font-weight: 600;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .cmp-add-menu-item .material-icons { font-size: 17px !important; color: var(--text-subtle); }
+    .cmp-add-menu-item:hover { background: var(--surface-2); color: var(--primary); }
+    .cmp-add-menu-item:hover .material-icons { color: var(--primary); }
+
+    /* Trailing "add a competitor" column — shown only in the default state when
+       just YOUR own food is on the board. It's painted as ONE tall cell that
+       spans every row of the grid, so the faint diagonal stripe wash runs
+       unbroken down the whole column (no cell-by-cell seams). The call-to-action
+       lives at the top; the rest of the column is intentionally blank. */
+    /* Soft two-tone packaged-food pattern wash in place of the old diagonal
+       stripes — a monochromatic navy-on-off-white illustration tiled down the
+       column. A translucent surface overlay is layered on top to fade the pattern
+       so the call-to-action copy stays crisp and legible. */
+    .cmp-addcol {
+      background-color: var(--surface);
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--surface) 78%, transparent),
+                        color-mix(in srgb, var(--surface) 78%, transparent)),
+        url("../assets/food-pattern-bg.png");
+      background-repeat: no-repeat, repeat;
+      background-size: auto, 300px auto;
+      border-left: 1px dashed var(--border-strong) !important;
+    }
+    /* Vertically center the CTA within the tall spanning column. */
+    .cmp-addcol-span { display: flex; flex-direction: column; align-items: stretch; justify-content: center; }
+    .cmp-addcol-inner {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; text-align: center; width: 100%;
+      padding: 20px 16px;
+    }
+    .cmp-addcol-plus {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary);
+    }
+    .cmp-addcol-plus .material-icons { font-size: 24px !important; color: var(--primary); }
+    .cmp-addcol-title { font-size: calc(var(--fs-ui) + 3px); font-weight: 800; color: var(--text); line-height: 1.2; }
+    .cmp-addcol-sub { font-size: calc(var(--fs-label) + 1px); color: var(--text-muted); line-height: 1.45; max-width: 210px; }
+    .cmp-addcol-inner .cmp-add-wrap { margin-top: 8px; }
+    /* Enlarged Add split control inside the column so the primary CTA stands out. */
+    .cmp-addcol .cmp-add-split .cmp-tool-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
+    .cmp-addcol .cmp-add-split .cmp-add-main .material-icons { font-size: 22px !important; }
+    .cmp-addcol .cmp-add-split .cmp-add-caret { padding-left: 12px; padding-right: 12px; }
+    .cmp-addcol .cmp-add-split .cmp-add-caret .material-icons { font-size: 22px !important; }
+
+    /* Merged Category control — one pill covering both "which category" and
+       "show its average overlay". The face reflects the active category (plus
+       an AVG badge when the overlay is on); the body-portalled popover holds
+       the average toggle above the category list. */
+    .cmp-cat-wrap { display: inline-flex; }
+    .cmp-cat-btn { gap: 7px; }
+    .cmp-cat-btn.has-avg { border-color: var(--primary); color: var(--primary); }
+    .cmp-cat-btn.has-avg > .material-icons { color: var(--primary) !important; }
+    .cmp-cat-btn-label { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-cat-avg-badge {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      background: var(--primary); color: #fff; border-radius: 999px; padding: 2px 6px; line-height: 1;
+    }
+    .cmp-cat-caret { font-size: 16px !important; color: var(--text-subtle); margin-left: -2px; }
+    .cmp-cat-menu {
+      position: fixed; z-index: 5000; width: 244px; padding: 6px;
+      border-radius: 14px; background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: 0 16px 40px rgba(8, 12, 20, 0.24);
+    }
+    .cmp-cat-menu-hd { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); padding: 6px 8px 4px; }
+    .cmp-cat-avg-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+      padding: 8px 10px; border: none; border-radius: 10px; cursor: pointer; background: transparent;
+      color: var(--text); font-size: var(--fs-label); font-weight: 600;
+    }
+    .cmp-cat-avg-row:hover { background: var(--surface-2); }
+    .cmp-cat-avg-txt { display: inline-flex; align-items: center; gap: 8px; }
+    .cmp-cat-avg-txt .material-icons { font-size: 17px !important; color: var(--text-subtle); }
+    .cmp-cat-avg-row.is-on .cmp-cat-avg-txt .material-icons { color: var(--primary); }
+    .cmp-cat-avg-row .cmp-switch-track { flex: 0 0 auto; }
+    .cmp-cat-avg-row.is-on .cmp-switch-track { background: var(--primary); }
+    .cmp-cat-avg-row.is-on .cmp-switch-track::after { transform: translateX(16px); }
+    .cmp-cat-menu-div { height: 1px; background: var(--border); margin: 6px 4px; }
+    .cmp-cat-menu-list { display: flex; flex-direction: column; gap: 2px; max-height: 258px; overflow-y: auto; }
+    .cmp-cat-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left;
+      padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer; background: transparent;
+      color: var(--text); font-size: var(--fs-label); font-weight: 600;
+    }
+    .cmp-cat-item:hover { background: var(--surface-2); }
+    .cmp-cat-item.is-active { color: var(--primary); }
+    .cmp-cat-check { font-size: 17px !important; color: var(--primary); }
+    .cmp-hcell--tools .cmp-tool-spacer { display: none; }
+    /* If the wrapped controls run taller than the default tile height, let the
+       neighbouring image tiles grow with the row so the header stays flush. */
+    .cmp-grid .cmp-cell--entity.cmp-hcell .cmp-tile { height: 100%; min-height: 196px; }
+
+    /* ≥ 300px: enough room to push the chart toggle + Add over to the right. */
+    @container cmptools (min-width: 300px) {
+      .cmp-hcell--tools .cmp-tool-spacer { display: block; flex: 1; }
+    }
+    /* ≥ 420px: the chart-type buttons gain text labels alongside their icons. */
+    @container cmptools (min-width: 420px) {
+      .cmp-chart-label { display: inline; }
+      .cmp-hcell--tools .cmp-chart-btn { width: auto; gap: 5px; padding: 0 10px; }
+    }
+
+    /* In-board fallback header — only rendered when the real panel header is
+       collapsed by "Header float" appearance mode. Kept out of the way of the
+       ⋯ controls that float over the top-right corner in that mode. */
+    .cmp-board-head { display: none; }
+    html.header-float #compare-panel .cmp-board-head {
+      display: block;
+      padding: 4px 48px 8px 0;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cmp-board-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; }
+    .cmp-board-meta { font-size: var(--fs-label); color: var(--text-muted); margin-top: 1px; }
+
     /* Chart-type toggle — segmented pill sitting left of the Add button.
        Health bars (default) · spider · parallel coordinates. */
     .cmp-chart-toggle {
@@ -2269,14 +2447,17 @@
 
     /* Spider (radar) chart */
     .cmp-radar-wrap {
-      margin-top: 12px; padding: 14px 8px 12px; border-radius: 14px;
+      margin-top: 12px; padding: 14px 15px 13px; border-radius: 14px;
       border: 1px solid var(--border); background: var(--surface-2);
     }
     .cmp-radar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-    .cmp-radar-title { font-size: 1.0rem; font-weight: 800; color: var(--text); }
+    .cmp-radar-title { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 800; color: var(--text); }
     .cmp-radar-sub { font-size: var(--fs-label); color: var(--text-muted); }
     .cmp-radar-canvas { display: flex; justify-content: center; }
-    .cmp-radar-svg { width: 100%; max-width: 380px; height: auto; overflow: visible; }
+    /* Square stage that shrinks to the SVG so the % positioned vertex-bug
+       overlay lands exactly on the polygon nodes. */
+    .cmp-radar-stage { position: relative; width: 100%; max-width: 380px; }
+    .cmp-radar-svg { display: block; width: 100%; max-width: none; height: auto; overflow: visible; }
     .cmp-radar-ring { fill: none; stroke: var(--border-strong); stroke-width: 1; opacity: 0.7; }
     .cmp-radar-spoke { stroke: var(--border-strong); stroke-width: 1; opacity: 0.6; }
     .cmp-radar-tick { fill: var(--text-subtle); font-size: 9px; font-weight: 700; }
@@ -2294,10 +2475,25 @@
     }
     @keyframes cmpRadarIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
     @keyframes cmpRadarDot { from { opacity: 0; } to { opacity: 1; } }
-    .cmp-radar-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin-top: 12px; }
-    .cmp-radar-key { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label); font-weight: 600; color: var(--text); }
+    .cmp-radar-legend { display: flex; flex-wrap: wrap; gap: 7px 16px; justify-content: center; margin-top: 12px; }
+    .cmp-radar-key { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-label); font-weight: 600; color: var(--text); }
+    .cmp-radar-key-name { line-height: 1.2; }
     .cmp-radar-swatch { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
     .cmp-radar-swatch--avg { background: transparent; border: 1.5px dashed var(--text); border-radius: 50%; }
+    /* Circular legend marker matching each entity's KIND: a product photo, a
+       brand logo, or the category icon — the same visual language as the board
+       tiles / race bugs. Sized in em so it scales with the legend font and
+       stays responsive across breakpoints. */
+    .cmp-legend-bug {
+      position: relative; width: 1.7em; height: 1.7em; min-width: 16px; min-height: 16px;
+      border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--lc, var(--primary)); color: #fff;
+      font-size: 0.7em; font-weight: 800; line-height: 1; letter-spacing: 0.01em;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.28); box-sizing: border-box;
+    }
+    .cmp-legend-bug img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: var(--lc, var(--primary)); }
+    .cmp-legend-bug .material-icons { font-size: 1.45em !important; color: #fff; line-height: 1; }
     .cmp-radar-note {
       display: flex; align-items: center; gap: 8px; justify-content: center; text-align: center;
       padding: 22px 12px; font-size: var(--fs-ui); color: var(--text-muted);
@@ -2306,8 +2502,19 @@
 
     /* Parallel-coordinates chart — one vertical axis per metric, one polyline
        per entity crossing every axis. Reuses the radar wrap/head/legend chrome. */
-    .cmp-par-plot { max-width: 560px; margin: 0 auto; }
+    .cmp-par-plot { max-width: 720px; margin: 0 auto; }
     .cmp-par-svg { width: 100%; max-width: none; height: auto; overflow: visible; }
+    /* Overlay layer for the vertex bugs — sized to exactly match the SVG box so
+       percentage-positioned markers land on each polyline node. */
+    .cmp-par-canvas { position: relative; }
+    .cmp-par-bugs { position: absolute; inset: 0; pointer-events: none; }
+    .cmp-par-bug {
+      position: absolute; transform: translate(-50%, -50%);
+      width: 22px; height: 22px; min-width: 22px; min-height: 22px;
+      font-size: 11px; border: 1.5px solid #fff;
+      opacity: 0; animation: cmpRadarDot 0.32s ease forwards;
+    }
+    .cmp-par-bug .material-icons { font-size: 14px !important; }
     .cmp-par-axis { stroke: var(--border-strong); stroke-width: 1.25; opacity: 0.85; }
     .cmp-par-axis-dot { fill: var(--text-subtle); opacity: 0.75; }
     .cmp-par-grid { stroke: var(--border-strong); stroke-width: 1; opacity: 0.35; stroke-dasharray: 3 4; }
@@ -2406,6 +2613,7 @@
       box-shadow: 0 2px 7px rgba(0,0,0,0.30);
     }
     .cmp-race-bug img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: var(--rc, var(--primary)); }
+    .cmp-race-bug .material-icons { font-size: 17px !important; color: #fff; line-height: 1; }
     /* Score badge straddling the bottom edge of the circle — a solid dark pill
        with a light ring to separate it from the logo, so it stays crisp and
        legible against any brand colour or artwork. */
@@ -2565,7 +2773,7 @@
     .cmp-takeaways-sec { display: flex; flex-direction: column; gap: 7px; margin-top: 18px; }
     /* Indent the eyebrow so it lines up with the card labels (which sit inside
        the card's 15px left padding) below it. */
-    .cmp-takeaways-sec .cmp-section-label { padding-left: 15px; }
+    .cmp-takeaways-sec .cmp-section-label { padding-left: 15px; font-family: var(--font-serif); font-size: 14px; text-transform: none; letter-spacing: 0.01em; }
     .cmp-takeaways { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: stretch; }
     /* Stat-block card: eyebrow + stamp icon on top, then a big serif score, the
        winning product, its metric label, a divider, and an AI "why" insight. */
@@ -2794,7 +3002,7 @@
     /* Full-bleed image tile — taller, no drop shadow. The product photo / brand
        logo fills the whole tile; rank + name + label are layered on top. */
     .cmp-tile {
-      width: 100%; height: 150px; border-radius: 0; position: relative; overflow: hidden;
+      width: 100%; height: 196px; border-radius: 0; position: relative; overflow: hidden;
       background: var(--surface-3);
       display: block; box-shadow: none;
     }
@@ -2830,6 +3038,126 @@
       display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 999px;
       font-size: 9px; font-weight: 800; background: var(--primary); color: #fff; vertical-align: middle;
     }
+    /* Category = a first-class peer column. Neutral striped tile + dashed pill
+       so it reads as a benchmark entity, distinct from a real product/brand. */
+    .cmp-cat-pill {
+      display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 999px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.03em; vertical-align: middle;
+      background: rgba(255,255,255,0.16); color: #fff; border: 1px dashed rgba(255,255,255,0.75);
+    }
+    .cmp-cell--entity.is-category .cmp-tile {
+      background: repeating-linear-gradient(135deg, #7C8A99 0, #7C8A99 9px, #6E7C8B 9px, #6E7C8B 18px) !important;
+    }
+
+    /* ── Circular WISEscore gauge on the header tile ────────────────────────
+       Floats large in the dead-centre of the tile: a translucent dark halo
+       keeps the number legible on any photo, and a full-circle track carries
+       the coloured arc that sweeps to the score. The Top-% pill lives up in the
+       top-left, tucked under the kind chip. Clicking replays the sweep +
+       count-up (see cmpAnimateGauge). */
+    .cmp-gauge {
+      position: absolute; z-index: 3; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 122px; height: 122px;
+      border: none; padding: 0; cursor: pointer; border-radius: 50%;
+      background: radial-gradient(circle at center,
+        rgba(8,12,20,0.55) 0%, rgba(8,12,20,0.34) 60%, rgba(8,12,20,0) 100%);
+      transition: transform 0.14s ease;
+    }
+    .cmp-gauge:hover { transform: translate(-50%, -50%) scale(1.05); }
+    .cmp-gauge:active { transform: translate(-50%, -50%) scale(0.95); }
+    .cmp-gauge:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .cmp-gauge-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .cmp-gauge-track { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 6.5; }
+    .cmp-gauge-arc {
+      fill: none; stroke: var(--gauge-color, var(--sec-green)); stroke-width: 6.5; stroke-linecap: round;
+      transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .cmp-gauge-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .cmp-gauge-num { font-size: 2.5rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -0.02em; }
+    .cmp-gauge-lbl {
+      margin-top: 3px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em;
+      text-transform: uppercase; color: rgba(255,255,255,0.85);
+    }
+    /* Top-% pill anchored to the top-left, directly beneath the kind chip. */
+    .cmp-tile-toppill {
+      position: absolute; top: 50px; left: 12px; z-index: 4; margin-top: 0;
+      box-shadow: 0 1px 6px rgba(8,12,20,0.35);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cmp-gauge-arc { transition-duration: 0.01ms; }
+    }
+
+    /* WISEscore copy that now lives in the top-left corner cell, beneath the
+       "Compare Foods" title (moved up from the retired score row's rail). */
+    .cmp-corner-score { width: 100%; }
+    /* Per-slot TYPE TOGGLE chip — sits top-LEFT of each column tile, taking the
+       spot the standalone rank badge used to hold. The rank number now rides
+       inside the chip as its leading badge, so numbering + type selector read as
+       one control. The remove × stays at the tile's top-right. Tap to change the
+       slot between product/portfolio/category. */
+    /* Height + type scale are matched to the left-hand toolbar buttons
+       (.cmp-tool-btn: 6px vertical padding, var(--fs-label)) so the on-tile
+       dropdown reads as the same size as "Metrics" / "All Categories". */
+    .cmp-kind-chip {
+      position: absolute; top: 12px; left: 12px; z-index: 4;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px 6px 6px; border: none; border-radius: 999px; cursor: pointer;
+      background: rgba(8,12,20,0.55); color: #fff; line-height: 1.3;
+      font-size: var(--fs-label); font-weight: 800; letter-spacing: 0.02em;
+    }
+    .cmp-kind-chip:hover { background: rgba(8,12,20,0.78); }
+    .cmp-kind-chip-label { text-transform: capitalize; }
+    /* The rank number as the chip's icon — matches the old white rank badge so
+       the "1, 2, 3…" reads identically now that it lives inside the dropdown. */
+    .cmp-kind-chip .cmp-kind-rank {
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #fff; color: #1A2339; font-size: 11px; font-weight: 800;
+      border: 1px solid rgba(0,0,0,0.06); text-transform: none; letter-spacing: 0;
+    }
+    /* Caret is fenced off with a left divider — mirrors the "＋ Add" split
+       control's border-left between its face and its dropdown caret. */
+    .cmp-kind-chip .cmp-kind-chip-caret {
+      font-size: 16px !important; opacity: 0.9; align-self: stretch;
+      display: inline-flex; align-items: center;
+      border-left: 1px solid rgba(255,255,255,0.4);
+      padding-left: 6px; margin-left: 1px;
+    }
+
+    /* Per-slot type toggle — the proper floating dropdown the kind chip opens.
+       Appended to <body> and fixed-positioned so it never clips inside the
+       grid. Two type tabs + the specific-item list live in the one popover. */
+    .cmp-kind-menu {
+      position: fixed; z-index: 200; width: 246px; max-height: 340px;
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: 8px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-card, 0 12px 40px rgba(0,0,0,0.4));
+    }
+    .cmp-kind-menu-hd { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); padding: 4px 4px 7px; }
+    .cmp-kind-menu-tabs { display: flex; gap: 4px; margin-bottom: 7px; }
+    .cmp-kind-menu-tab {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 4px; border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--surface); color: var(--text); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .cmp-kind-menu-tab .material-icons { font-size: 14px !important; }
+    .cmp-kind-menu-tab:hover { background: var(--surface-2); }
+    .cmp-kind-menu-tab.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .cmp-kind-menu-list { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+    .cmp-kind-menu-item {
+      display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+      padding: 7px 8px; border: none; border-radius: 8px; background: transparent;
+      color: var(--text); font-size: var(--fs-ui); cursor: pointer;
+    }
+    .cmp-kind-menu-item:hover { background: var(--surface-2); }
+    .cmp-kind-menu-item .material-icons { font-size: 15px !important; color: var(--text-subtle); }
+    .cmp-kind-menu-item.is-match .material-icons { color: var(--primary); }
+    .cmp-kind-menu-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-kind-menu-empty { padding: 10px 8px; font-size: var(--fs-ui); color: var(--text-subtle); }
 
     /* WISEscore block — score sits left, the Top-% pill floats to the right.
        Everything is vertically centered within the cell's full height. */
@@ -2946,16 +3274,29 @@
        body becomes a floating card revealed on hover/focus, so the entity
        columns keep a legible width no matter how many are added.
        ════════════════════════════════════════════════════════════════════ */
-    .cmp-rail-metric { display: flex; flex-direction: row; align-items: flex-start; gap: 8px; }
-    .cmp-rail-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-    .cmp-rail-metric > .cmp-rail-body { flex: 1 1 auto; }
-    /* The body already sits in its own column beside the icon, so the old
-       icon-clearing indent on the description / hint is no longer needed. */
-    /* Center the name against its 28px icon on the first line (matches the
-       previous inline icon+label baseline) while desc/hint stack beneath. */
-    .cmp-rail-metric > .cmp-rail-body .cmp-rail-metric-name { font-weight: 700; min-height: 28px; }
+    /* Two-column rail: a vertically-centred LEFT column holds the icon with
+       its (smaller) label stacked directly beneath it; a vertically-centred
+       RIGHT column holds the description. */
+    .cmp-rail-metric { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+    .cmp-rail-metric-lead {
+      flex: 0 0 92px; width: 92px; align-self: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; text-align: center;
+    }
+    .cmp-rail-body { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+    .cmp-rail-metric > .cmp-rail-body { flex: 1 1 auto; align-self: center; }
+    /* The label now sits UNDER the icon: centred, wrapping within the left
+       column, and shrunk (down to a floor) so long names stay compact. */
+    .cmp-rail-metric-lead .cmp-rail-metric-name {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; text-align: center; font-weight: 700; min-height: 0;
+      font-size: clamp(8.5px, 0.74vw, 10px); line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
     .cmp-rail-body .cmp-rail-metric-desc,
     .cmp-rail-body .cmp-rail-metric-hint { padding-left: 0; }
+    /* Desc no longer needs to clear the icon since it lives in its own column. */
+    .cmp-rail-metric > .cmp-rail-body .cmp-rail-metric-desc { margin-top: 0; }
     /* Header rail lead icon only appears in the collapsed layout. */
     .cmp-rail-lead-ic { display: none; }
 
@@ -2967,6 +3308,10 @@
     /* Let the hover flyout escape the rounded grid clip while compact. */
     .cmp-grid-wrap--compact { overflow: visible; }
     .cmp-grid--compact .cmp-rail-metric { justify-content: center; align-items: center; height: 100%; }
+    /* Collapse the left column back to an icon-only strip so the entity
+       columns keep their width; the label rejoins the desc in the flyout. */
+    .cmp-grid--compact .cmp-rail-metric-lead { flex: 0 0 auto; width: auto; max-width: none; gap: 0; }
+    .cmp-grid--compact .cmp-rail-metric-lead .cmp-rail-metric-name { display: none; }
     .cmp-grid--compact .cmp-cell--rail.cmp-hcell { justify-content: center; align-items: center; }
     .cmp-grid--compact .cmp-cell--rail.cmp-hcell .cmp-rail-lead-ic {
       display: inline-flex; align-items: center; justify-content: center;
@@ -4502,8 +4847,14 @@
       font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
     }
     .sc-avatar svg { width: 18px; height: auto; }
-    .sc-avatar-scout { background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(37, 80, 124, 0.4); }
-    .sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
+    .sc-avatar-scout { background: #141414; color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28); }
+    /* "You" avatar reads as a recessed/inset chip; the initials or image come from profile settings. */
+    .sc-avatar-you {
+      background: var(--surface-2); color: var(--text-muted);
+      border: 1px solid var(--border); overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(17, 24, 39, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    }
+    .sc-avatar-you img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .sc-line-scout strong { color: var(--primary); font-weight: 700; }
 
     .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 1px; }
@@ -5991,7 +6342,7 @@
        ===================================================================== */
     .chat-input-rail {
       padding: 12px 40px !important;
-      background: var(--surface) !important;
+      background: var(--bg) !important;
       border-top: 1px solid var(--border) !important;
     }
     @media (min-width: 768px) {
@@ -6017,11 +6368,13 @@
     .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
     .fl-icon-btn { width: 32px; height: 32px; }
     #send-btn {
-      width: 40px !important;
-      height: 40px !important;
+      width: 32px !important;
+      height: 32px !important;
       flex-shrink: 0;
       align-self: center;
     }
+    /* Airplane glyph sized well inside the circle (not touching the edges). */
+    #send-btn .material-icons { font-size: 15px !important; line-height: 1; }
 
     /* =====================================================================
        FONT WEIGHTS — dial back the chunky display weights.
@@ -6056,6 +6409,7 @@
     /* Big stat numerals (portfolio scorecards, WISEscore, takeaway score) */
     body.ai-chat-page .ws-sc-metric,
     body.ai-chat-page .cmp-score-num,
+    body.ai-chat-page .cmp-gauge-num,
     body.ai-chat-page .cmp-metric-val,
     body.ai-chat-page .cmp-takeaway-score {
       font-family: var(--font-serif);
@@ -6471,27 +6825,27 @@
       z-index: 6;
     }
 
-    /* ===== FULL BLEED overrides (Appearance → "Full bleed") =====
-       Full bleed (in agent-page.css) drops the body's top/bottom frame so modules
-       run edge-to-edge, then only re-insets the nav — leaving the Scout chat and
-       the Brand Overview flush to the window top/bottom while the nav kept a 12px
-       frame. On a single-module agent page that's invisible, but this screen shows
-       the nav, chat and brand side by side, so their top/bottom padding no longer
-       matched. Keep the SAME 12px vertical inset for EVERY module here (identical
-       to the Full Bleed OFF state) so the chat and brand always line up with the
-       nav — whether Full Bleed is on or off. */
+    /* ===== FULL BLEED (Appearance → "Full bleed") =====
+       On the WISEai page the chat is the primary workspace (not a docked Scout),
+       so full bleed has to make the whole shell run edge-to-edge and shed the
+       module card frames — otherwise the toggle appears to do nothing here. The
+       shared agent-page.css rules deliberately keep the chat/Scout as an inset
+       floating card (correct where Scout is only a side dock), and its module
+       card-strip list doesn't cover this page's own inner classes (.panel-inner,
+       .scout-inner, .cmp-inner, …). We override both so the toggle behaves like
+       the containerless full bleed on every other shell. */
+
+    /* 1) Collapse the outer window frame so the shell fills the viewport. */
     html.full-bleed body.ai-chat-page {
-      padding-top: var(--modules-bottom-pad) !important;
-      padding-bottom: var(--modules-bottom-pad) !important;
+      padding: 0 !important;
     }
-    /* full bleed adds inner padding to the nav to re-inset it; not needed now that
-       the body frame is back, so drop it to keep the nav box flush with the rest. */
+    /* 2) Nav becomes a flush, full-height sidebar (undo the shared re-inset). */
     html.full-bleed .menu-brand-integrated > #menu-panel {
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
-    /* undo full bleed's shorter/offset Scout card so the chat fills the full module
-       height and shares the exact 12px frame with every other module. */
+    /* 3) Chat + docked Scout fill the full module height (undo the shared shorter
+       / offset card so nothing floats with a top/bottom gap). */
     html.full-bleed #chat-shell,
     html.full-bleed #scout-dock-panel {
       margin-top: 0 !important;
@@ -6499,6 +6853,28 @@
       height: 100% !important;
       max-height: 100% !important;
       align-self: stretch !important;
+    }
+    /* 4) Drop the card container (background, border, shadow, radius) from the
+       chat and every WISEai module so they read as containerless — this is the
+       visible effect of the toggle. Each module's frame lives on its inner
+       element, so we target those directly. */
+    html.full-bleed #chat-shell,
+    html.full-bleed #compare-panel .cmp-inner,
+    html.full-bleed #history-panel .panel-inner,
+    html.full-bleed .util-panel .panel-inner,
+    html.full-bleed #scout-panel .scout-inner,
+    html.full-bleed #upf-panel .upf-inner,
+    html.full-bleed #tier-panel .tier-inner,
+    html.full-bleed #shield-panel .shield-inner,
+    html.full-bleed #lens-panel .lens-inner,
+    html.full-bleed #vault-panel .vault-inner,
+    html.full-bleed #notif-panel .notif-inner,
+    html.full-bleed #settings-screen .ss-inner,
+    html.full-bleed #nfp-panel .nfp-inner {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
     }
 
     /* Panel width expand — doubles the module column when .panel-wide is set */
@@ -8552,7 +8928,7 @@
 
         <!-- Product Hero — image with overlay pills + name -->
         <div class="nfp-hero">
-          <img src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770_590x590.jpg"
+          <img src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770.jpg?width=1000"
                alt="Chipotle Chicken Empanadas"
                onerror="this.style.display='none'" />
           <div class="nfp-hero-overlay"></div>
@@ -8567,7 +8943,7 @@
             <div class="nfp-brand-row">
               <!-- Brand logo if uploaded; falls back to plain text "Nuchas" if image is missing/fails. -->
               <img class="nfp-brand-logo"
-                   src="https://nuchas.com/cdn/shop/files/Nuchas-LOGO-01_88ec9ae8-c005-412c-9c59-1e515199e64b_small.png?v=1670000236"
+                   src="https://nuchas.com/cdn/shop/files/Nuchas-LOGO-01_88ec9ae8-c005-412c-9c59-1e515199e64b.png?width=400"
                    alt="Nuchas"
                    onerror="this.style.display='none'; var fb=this.nextElementSibling; if(fb) fb.style.display='inline';"
                    onload="var fb=this.nextElementSibling; if(fb) fb.style.display='none';" />
@@ -8590,28 +8966,28 @@
           <div class="nfp-fi-thumbs">
             <div class="nfp-fi-thumb active" onclick="selectNfpVariant(this)" title="Single (142g)">
               <img class="nfp-fi-thumb-img"
-                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770_590x590.jpg"
+                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770.jpg?width=200"
                    alt="Single"
                    onerror="this.src='https://placehold.co/36x36/f3f4f6/9ca3af?text=?'" />
               <span class="nfp-fi-thumb-label">Single</span>
             </div>
             <div class="nfp-fi-thumb" onclick="selectNfpVariant(this)" title="4-Pack (568g)">
               <img class="nfp-fi-thumb-img"
-                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770_590x590.jpg"
+                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770.jpg?width=200"
                    alt="4-Pack"
                    onerror="this.src='https://placehold.co/36x36/f3f4f6/9ca3af?text=?'" />
               <span class="nfp-fi-thumb-label">4-Pack</span>
             </div>
             <div class="nfp-fi-thumb" onclick="selectNfpVariant(this)" title="6-Pack (852g)">
               <img class="nfp-fi-thumb-img"
-                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770_590x590.jpg"
+                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770.jpg?width=200"
                    alt="6-Pack"
                    onerror="this.src='https://placehold.co/36x36/f3f4f6/9ca3af?text=?'" />
               <span class="nfp-fi-thumb-label">6-Pack</span>
             </div>
             <div class="nfp-fi-thumb" onclick="selectNfpVariant(this)" title="Club Pack (1.42kg)">
               <img class="nfp-fi-thumb-img"
-                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770_590x590.jpg"
+                   src="https://nuchas.com/cdn/shop/products/chipotle_912ef663-9302-4ab0-9bb9-dd8d0232c770.jpg?width=200"
                    alt="Club Pack"
                    onerror="this.src='https://placehold.co/36x36/f3f4f6/9ca3af?text=?'" />
               <span class="nfp-fi-thumb-label">Club Pack</span>
@@ -8888,11 +9264,8 @@
           </div>
         </div>
 
-        <!-- Scope selector — switches the comparison between the four PRD scopes. -->
-        <div class="cmp-scopebar shrink-0" id="cmp-scopebar" role="tablist" aria-label="Comparison scope">
-          <button type="button" class="cmp-scope-btn" role="tab" data-scope="product_vs_product" onclick="cmpSetScope('product_vs_product')"><span class="material-icons">compare_arrows</span>Product vs Product</button>
-          <button type="button" class="cmp-scope-btn" role="tab" data-scope="portfolio_vs_portfolio" onclick="cmpSetScope('portfolio_vs_portfolio')"><span class="material-icons">business</span>Portfolio vs Portfolio</button>
-        </div>
+        <!-- Scope tabs removed — scope is set via chat intents and the per-column
+             type toggle; the live controls now live inside the board's header cell. -->
 
         <div class="flex-1 overflow-y-auto side-panel-body cmp-body" id="cmp-body">
           <div class="cmp-empty" id="cmp-empty">
@@ -9890,8 +10263,9 @@
     }
     function confirmSignOut() {
       closeSignOutModal();
-      /* Demo session end — return to the WISE home / sign-in screen. */
-      window.location.href = '../index.html';
+      /* Clear the session, then return to the sign-in screen. */
+      if (window.WiseAuth) { WiseAuth.logout(); window.location.href = WiseAuth.loginUrl(); }
+      else { window.location.href = 'login.html'; }
     }
 
     function addTeamMember(memberId) {
@@ -10960,7 +11334,54 @@
     }
     function cmpGradeClass(g) { const c = g[0]; return c === 'A' ? 'g-a' : c === 'B' ? 'g-b' : c === 'C' ? 'g-c' : 'g-d'; }
 
-    /* ── The four scopes, each with its own entities + narrative ────────── */
+    /* ── Entity kinds ──────────────────────────────────────────────────────
+       Every column on the board is one of three KINDS — product, portfolio,
+       or category. Products/portfolios are authored (or pulled from the
+       suggestion pools); a Category is SYNTHESISED: its per-metric scores are
+       the deterministic category-average profile, so a category can occupy a
+       slot and be compared head-to-head as a peer (product↔category,
+       portfolio↔category, category↔category, or any mix). Kind falls back to
+       the scope's default noun so existing single-kind boards are untouched. */
+    function cmpEntKind(ent, scope) { return (ent && ent.kind) || (scope ? scope.noun : 'product'); }
+    function cmpKindLabel(kind) { return kind === 'portfolio' ? 'portfolio' : kind === 'category' ? 'category' : 'product'; }
+    function cmpKindIcon(kind) { return kind === 'portfolio' ? 'business' : kind === 'category' ? 'category' : 'inventory_2'; }
+
+    /* A category's profile is keyed only on its name (not the scope) so it
+       reads identically on every board. Deterministic + bounded, same spirit
+       as cmpAvgFor but stable and slot-fillable. */
+    function cmpCategoryScoreFor(catName, metricId) {
+      const base = 58;
+      return Math.max(24, Math.min(86, base + ((cmpHash('catprofile:' + catName + ':' + metricId) % 21) - 10)));
+    }
+    function cmpBuildCategoryScores(catName) {
+      const s = { wisescore: cmpCategoryScoreFor(catName, 'wisescore') };
+      CMP_METRICS.forEach(m => { s[m.id] = cmpCategoryScoreFor(catName, m.id); });
+      return s;
+    }
+    const CMP_CATEGORY_DEFS = [
+      { name: 'Granola',       abbr: 'GR' },
+      { name: 'Cereal',        abbr: 'CE' },
+      { name: 'Dips & Sauces', abbr: 'DP' },
+      { name: 'Mac & Cheese',  abbr: 'MC' },
+      { name: 'Pasta',         abbr: 'PA' },
+      { name: 'Snacks',        abbr: 'SN' },
+    ];
+    const CMP_CATEGORY_ENTITIES = CMP_CATEGORY_DEFS.map(c => {
+      const scores = cmpBuildCategoryScores(c.name);
+      return {
+        id: 'cat_' + c.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+        name: c.name + ' category', catName: c.name, kind: 'category',
+        abbr: c.abbr, color: '#7C8A99', top: 'Category avg', scores,
+        insight: 'The ' + c.name + ' category average — the typical profile across every product WISEcode has scored in ' + c.name + '. A neutral benchmark peer you can rank any product or portfolio against.'
+      };
+    });
+    const CMP_CATEGORY_BY_ID = Object.fromEntries(CMP_CATEGORY_ENTITIES.map(e => [e.id, e]));
+    function cmpCloneCategory(name) {
+      const src = CMP_CATEGORY_ENTITIES.find(e => e.catName === name);
+      return src ? Object.assign({}, src) : null;
+    }
+
+    /* ── The scopes, each with its own entities + narrative ─────────────── */
     const CMP_SCOPES = {
       product_vs_product: {
         key: 'product_vs_product', label: 'Product vs Product', noun: 'product', many: false,
@@ -10975,11 +11396,11 @@
         ],
         entities: [
           { id: 'bitchin', name: 'Bitchin’ Sauce Original', cat: 'Dips & Sauces', abbr: 'BS', color: '#2E7D74', primary: true, base: 79, top: 'Top 10%',
-            img: 'https://www.kroger.com/product/images/large/front/0085819500301',
+            img: 'https://www.kroger.com/product/images/xlarge/front/0085819500301',
             scores: { upf: 86, gras: 88, ing_overall: 85, nutrient_overall: 74, heart_healthy: 82, clean_label: 88, seed_oils: 90, protein_density: 66, fiber_density: 62 },
             insight: 'Bitchin’ Sauce leads on clean label and heart-health outcomes, built on almonds and cold-pressed oil with no seed oils of concern.' },
           { id: 'goodfoods', name: 'Good Foods Plant-Based Dip', cat: 'Dips & Sauces', abbr: 'GF', color: '#C98A2E', base: 61, top: 'Top 40%',
-            img: 'https://target.scene7.com/is/image/Target/GUEST_2ae16115-bf3c-4890-9cb8-44899d1d9a7c?wid=800&hei=800&qlt=80&fmt=pjpeg',
+            img: 'https://target.scene7.com/is/image/Target/GUEST_2ae16115-bf3c-4890-9cb8-44899d1d9a7c?wid=1200&hei=1200&qlt=90&fmt=pjpeg',
             scores: { upf: 58, gras: 70, ing_overall: 62, nutrient_overall: 60, heart_healthy: 54, clean_label: 55, seed_oils: 48, protein_density: 52, fiber_density: 55 },
             insight: 'Good Foods is a solid everyday dip but carries more refined oils and additives, softening its heart-health and clean-label read.' },
         ],
@@ -10997,7 +11418,7 @@
         ],
         entities: [
           { id: 'brekky', name: 'Brekky Mix Granola', cat: 'Granola', abbr: 'BM', color: '#4E7D5A', primary: true, base: 82, top: 'Top 5%',
-            img: 'https://target.scene7.com/is/image/Target/GUEST_33aa057b-c106-429a-adcd-1c98f5ce3438?wid=800&hei=800&qlt=80&fmt=pjpeg',
+            img: 'https://target.scene7.com/is/image/Target/GUEST_33aa057b-c106-429a-adcd-1c98f5ce3438?wid=1200&hei=1200&qlt=90&fmt=pjpeg',
             scores: { upf: 92, gras: 90, ing_overall: 91, nutrient_overall: 80, protein_density: 75, fiber_density: 65, clean_label: 82, cost_value: 85, seed_oils: 88 },
             insight: 'Brekky Mix delivers the strongest overall balance — excellent ingredient integrity, nutrient density, and low UPF risk at the lowest cost per serving.' },
           { id: 'cascadian', name: 'Cascadian Farm Vanilla Almond', cat: 'Granola', abbr: 'CF', color: '#6B5B95', base: 74, top: 'Top 15%',
@@ -11005,15 +11426,15 @@
             scores: { upf: 76, gras: 80, ing_overall: 80, nutrient_overall: 70, protein_density: 60, fiber_density: 70, clean_label: 70, cost_value: 65, seed_oils: 72 },
             insight: 'Cascadian Farm provides strong ingredient integrity and good fiber content, with a solid overall profile across key metrics.' },
           { id: 'naturespath', name: 'Nature’s Path Heritage Flakes', cat: 'Cereal', abbr: 'NP', color: '#2E5A87', base: 64, top: 'Top 30%',
-            img: 'https://www.kroger.com/product/images/large/front/0005844922101',
+            img: 'https://www.kroger.com/product/images/xlarge/front/0005844922101',
             scores: { upf: 61, gras: 78, ing_overall: 64, nutrient_overall: 60, protein_density: 50, fiber_density: 50, clean_label: 80, cost_value: 50, seed_oils: 66 },
             insight: 'Nature’s Path offers good nutritional value and clean ingredients, though protein and fiber are moderate compared to alternatives.' },
           { id: 'kind', name: 'KIND Oats & Honey', cat: 'Granola', abbr: 'KD', color: '#C0453B', base: 58, top: 'Top 45%',
-            img: 'https://www.kroger.com/product/images/large/front/0060265243336',
+            img: 'https://www.kroger.com/product/images/xlarge/front/0060265243336',
             scores: { upf: 44, gras: 66, ing_overall: 55, nutrient_overall: 55, protein_density: 65, fiber_density: 45, clean_label: 45, cost_value: 35, seed_oils: 40 },
             insight: 'KIND Oats & Honey is higher in protein but carries the highest UPF risk and additive load, impacting overall nutritional quality.' },
           { id: 'w365', name: '365 Organic Almond Granola', cat: 'Granola', abbr: '365', color: '#3A6EA5', base: 62, top: 'Top 35%',
-            img: 'https://images.openfoodfacts.org/images/products/009/948/247/9619/front_en.20.400.jpg',
+            img: 'https://images.openfoodfacts.org/images/products/009/948/247/9619/front_en.20.full.jpg',
             scores: { upf: 58, gras: 72, ing_overall: 62, nutrient_overall: 55, protein_density: 58, fiber_density: 62, clean_label: 62, cost_value: 42, seed_oils: 60 },
             insight: '365 Organic Almond Granola is a middle-of-the-road option with moderate scores across most metrics.' },
         ],
@@ -11031,12 +11452,12 @@
         ],
         entities: [
           { id: 'goodles', name: 'Amy’s Kitchen', cat: 'Portfolio', abbr: 'AM', color: '#4E7D5A', primary: true, base: 78, top: 'Top 12%',
-            img: 'https://www.google.com/s2/favicons?domain=amys.com&sz=128',
+            img: 'https://icon.horse/icon/amys.com',
             cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
             scores: { upf: 80, gras: 84, ing_overall: 82, nutrient_overall: 76, protein_density: 84, fiber_density: 70, clean_label: 80 },
             insight: 'Amy’s Kitchen leads on protein density and clean label across the portfolio — a strong platform for a protein-forward retailer story.' },
           { id: 'annies', name: 'Annie’s', cat: 'Portfolio', abbr: 'AN', color: '#2E5A87', base: 71, top: 'Top 22%',
-            img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Annies_logo.png',
+            img: 'https://icon.horse/icon/annies.com',
             cats: { 'Mac & Cheese': 12, 'Pasta': 10, 'Snacks': 10 },
             scores: { upf: 74, gras: 82, ing_overall: 76, nutrient_overall: 68, protein_density: 62, fiber_density: 66, clean_label: 74 },
             insight: 'Annie’s brings a broad, well-rounded assortment with dependable clean-label scores, but trails Amy’s Kitchen on protein density.' },
@@ -11055,17 +11476,17 @@
         ],
         entities: [
           { id: 'goodles2', name: 'Amy’s Kitchen', cat: 'Portfolio', abbr: 'AM', color: '#4E7D5A', primary: true, base: 78, top: 'Top 12%',
-            img: 'https://www.google.com/s2/favicons?domain=amys.com&sz=128',
+            img: 'https://icon.horse/icon/amys.com',
             cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
             scores: { upf: 80, gras: 84, ing_overall: 82, nutrient_overall: 76, protein_density: 84, fiber_density: 70, clean_label: 80 },
             insight: 'Amy’s Kitchen pairs the strongest protein density with a clean composite — the standout of the shelf set.' },
           { id: 'banza', name: 'Banza', cat: 'Portfolio', abbr: 'BZ', color: '#4E7D5A', base: 74, top: 'Top 16%',
-            img: 'https://www.google.com/s2/favicons?domain=eatbanza.com&sz=128',
+            img: 'https://icon.horse/icon/eatbanza.com',
             cats: { 'Mac & Cheese': 5, 'Pasta': 7, 'Snacks': 3 },
             scores: { upf: 76, gras: 82, ing_overall: 78, nutrient_overall: 74, protein_density: 80, fiber_density: 76, clean_label: 76 },
             insight: 'Banza’s chickpea base drives high protein and fiber density across the assortment, close behind Amy’s Kitchen.' },
           { id: 'annies2', name: 'Annie’s', cat: 'Portfolio', abbr: 'AN', color: '#2E5A87', base: 71, top: 'Top 22%',
-            img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Annies_logo.png',
+            img: 'https://icon.horse/icon/annies.com',
             cats: { 'Mac & Cheese': 12, 'Pasta': 10, 'Snacks': 10 },
             scores: { upf: 74, gras: 82, ing_overall: 76, nutrient_overall: 68, protein_density: 62, fiber_density: 66, clean_label: 74 },
             insight: 'Annie’s brings the broadest assortment with dependable clean-label scores across every category.' },
@@ -11080,6 +11501,22 @@
             scores: { upf: 40, gras: 66, ing_overall: 44, nutrient_overall: 46, protein_density: 42, fiber_density: 40, clean_label: 38 },
             insight: 'Chef Boyardee trails the set on nearly every metric and carries no products in the Snacks category.' },
         ],
+      },
+      /* Category vs Category — both slots start as synthesised category
+         averages (Granola vs Cereal). From here, or any board, each column's
+         type toggle can swap in a product or portfolio, so every combination
+         of the three kinds is reachable. */
+      category_vs_category: {
+        key: 'category_vs_category', label: 'Category vs Category', noun: 'category', many: false,
+        initShown: 2, addLabel: 'Add category', emphasis: null, categories: null,
+        userMsg: 'Compare the Granola category average against the Cereal category.',
+        scoutReply: 'Here’s the <strong>Granola</strong> category average head-to-head with <strong>Cereal</strong> — each column is the typical profile across every product WISEcode has scored in that category. Swap either slot to a product or portfolio anytime to benchmark it against a category.',
+        drill: [
+          { name: 'Whole grains', tag: 'Category norm', cls: 't-green', color: 'var(--sec-green)' },
+          { name: 'Added sugar', tag: 'Common', cls: 't-amber', color: 'var(--ter-amber)' },
+          { name: 'Seed oils', tag: 'Varies', cls: 't-amber', color: 'var(--ter-amber)' },
+        ],
+        entities: [cmpCloneCategory('Granola'), cmpCloneCategory('Cereal')].filter(Boolean),
       },
       /* Hidden scope (reached only via a use-case chip) — the Familia vs Alpen
          fiber-density story. Highlights the Product vs Product tab. */
@@ -11147,43 +11584,43 @@
         cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
         insight: 'Protein-forward mac & cheese line with a clean label and strong nutrient density.' },
       { id: 'sug_barilla',  name: 'Barilla', cat: 'Portfolio', abbr: 'BA', color: '#2E5A87', base: 62, top: 'Top 34%',
-        img: 'https://www.google.com/s2/favicons?domain=barilla.com&sz=128',
+        img: 'https://icon.horse/icon/barilla.com',
         cats: { 'Mac & Cheese': 3, 'Pasta': 14, 'Snacks': 1 },
         insight: 'Deep pasta assortment; strong on classics but average on protein and fiber density.' },
       { id: 'sug_modern',   name: 'Modern Table', cat: 'Portfolio', abbr: 'MT', color: '#6B5B95', base: 72, top: 'Top 19%',
-        img: 'https://www.google.com/s2/favicons?domain=moderntable.com&sz=128',
+        img: 'https://icon.horse/icon/moderntable.com',
         cats: { 'Mac & Cheese': 5, 'Pasta': 6, 'Snacks': 2 },
         insight: 'Lentil-based line delivers high plant protein and fiber with a clean panel.' },
       { id: 'sug_cappellos', name: 'Cappello’s', cat: 'Portfolio', abbr: 'CP', color: '#C98A2E', base: 74, top: 'Top 15%',
-        img: 'https://www.google.com/s2/favicons?domain=cappellos.com&sz=128',
+        img: 'https://icon.horse/icon/cappellos.com',
         cats: { 'Mac & Cheese': 2, 'Pasta': 7, 'Snacks': 1 },
         insight: 'Grain-free, almond-flour base scores well on clean label and UPF avoidance.' },
       { id: 'sug_daiya',    name: 'Daiya', cat: 'Portfolio', abbr: 'DA', color: '#C0453B', base: 55, top: 'Top 48%',
-        img: 'https://www.google.com/s2/favicons?domain=daiyafoods.com&sz=128',
+        img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Daiya_Logo.svg',
         cats: { 'Mac & Cheese': 4, 'Pasta': 2, 'Snacks': 3 },
         insight: 'Plant-based dairy alternatives, but higher processing softens the composite.' },
       { id: 'sug_velveeta', name: 'Velveeta', cat: 'Portfolio', abbr: 'VE', color: '#5A6B7A', base: 46, top: 'Top 58%',
-        img: 'https://www.google.com/s2/favicons?domain=velveeta.com&sz=128',
+        img: 'https://icon.horse/icon/velveeta.com',
         cats: { 'Mac & Cheese': 9, 'Pasta': 2, 'Snacks': 1 },
         insight: 'Value-tier scale with high UPF risk and a lower clean-label read.' },
       { id: 'sug_crackerbarrel', name: 'Cracker Barrel', cat: 'Portfolio', abbr: 'CB', color: '#8E5A3D', base: 50, top: 'Top 54%',
-        img: 'https://www.google.com/s2/favicons?domain=crackerbarrelcheese.com&sz=128',
+        img: 'https://crackerbarrelcheese.com/wp-content/uploads/2021/08/cropped-CB-favicon-192x192.png',
         cats: { 'Mac & Cheese': 7, 'Pasta': 1, 'Snacks': 2 },
         insight: 'Cheese-forward assortment with moderate additive load across the line.' },
       { id: 'sug_365',      name: '365 by Whole Foods', cat: 'Portfolio', abbr: '365', color: '#3A6EA5', base: 66, top: 'Top 30%',
-        img: 'https://www.google.com/s2/favicons?domain=wholefoodsmarket.com&sz=128',
+        img: 'https://commons.wikimedia.org/wiki/Special:FilePath/365%20WFM%20Logo%20(highres).png',
         cats: { 'Mac & Cheese': 5, 'Pasta': 9, 'Snacks': 6 },
         insight: 'Broad private-label range with dependable clean-label scores and fair value.' },
       { id: 'sug_simplytruth', name: 'Simple Truth', cat: 'Portfolio', abbr: 'ST', color: '#4E7D5A', base: 64, top: 'Top 33%',
-        img: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128',
+        img: 'https://icon.horse/icon/simpletruth.com',
         cats: { 'Mac & Cheese': 6, 'Pasta': 7, 'Snacks': 5 },
         insight: 'Kroger’s clean private label — solid ingredient integrity at a value price.' },
       { id: 'sug_pastaria', name: 'Rao’s Homemade', cat: 'Portfolio', abbr: 'RA', color: '#2E7D74', base: 68, top: 'Top 27%',
-        img: 'https://www.google.com/s2/favicons?domain=raos.com&sz=128',
+        img: 'https://www.raos.com/cdn/shop/files/Raos-Homemade.png?width=512',
         cats: { 'Mac & Cheese': 2, 'Pasta': 11, 'Snacks': 0 },
         insight: 'Premium, short-ingredient sauces and pastas with a clean-label lead.' },
       { id: 'sug_banza2',   name: 'Chickapea', cat: 'Portfolio', abbr: 'CK', color: '#6B8E3D', base: 73, top: 'Top 17%',
-        img: 'https://www.google.com/s2/favicons?domain=chickapea.com&sz=128',
+        img: 'https://www.chickapea.com/cdn/shop/files/Chickapea_Logo.png?width=512',
         cats: { 'Mac & Cheese': 3, 'Pasta': 8, 'Snacks': 1 },
         insight: 'Chickpea-and-lentil base gives high protein and fiber with a clean panel.' },
     ];
@@ -11235,6 +11672,7 @@
     function closeComparisonWorkflow() {
       const panel = document.getElementById('compare-panel');
       if (!panel) return;
+      if (typeof cmpCloseKindMenu === 'function') cmpCloseKindMenu();
       panel.classList.remove('cp-open');
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
     }
@@ -11282,6 +11720,177 @@
     }
 
     /* ── Live controls ────────────────────────────────────────────────── */
+    /* Merged Category control — a single pill that owns both axes of "category":
+       WHICH category the board is scoped to, and whether that category's AVERAGE
+       is overlaid as a peer. Picking a category and flipping the average live
+       together in one body-portalled popover instead of two loose controls. */
+    function cmpCatControl() {
+      const cur = compareState.category || 'all';
+      const label = (cur && cur !== 'all') ? cur : 'All Categories';
+      const avg = compareState.showAvg;
+      return '<div id="cmp-cat-wrap" class="cmp-cat-wrap">' +
+        `<button type="button" id="cmp-cat-btn" class="cmp-tool-btn cmp-cat-btn${avg ? ' has-avg' : ''}" onclick="cmpToggleCatMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Category and average">` +
+          '<span class="material-icons">filter_alt</span>' +
+          `<span class="cmp-cat-btn-label">${label}</span>` +
+          (avg ? '<span class="cmp-cat-avg-badge">Avg</span>' : '') +
+          '<span class="material-icons cmp-cat-caret">expand_more</span>' +
+        '</button>' +
+      '</div>';
+    }
+    let cmpCatMenuEl = null;
+    function cmpToggleCatMenu(btn) {
+      if (cmpCatMenuEl) { cmpCloseCatMenu(); return; }
+      const anchor = btn || document.getElementById('cmp-cat-btn');
+      if (!anchor) return;
+      const menu = document.createElement('div');
+      menu.className = 'cmp-cat-menu';
+      menu.setAttribute('role', 'menu');
+      document.body.appendChild(menu);
+      cmpCatMenuEl = menu;
+      cmpRenderCatMenu();
+      cmpPositionCatMenu(anchor);
+      anchor.setAttribute('aria-expanded', 'true');
+      setTimeout(() => document.addEventListener('mousedown', cmpOutsideCat, true), 0);
+      window.addEventListener('scroll', cmpCloseCatMenu, true);
+      window.addEventListener('resize', cmpCloseCatMenu, true);
+    }
+    function cmpRenderCatMenu() {
+      if (!cmpCatMenuEl) return;
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const cats = scope.categories || ['all'];
+      const cur = compareState.category || 'all';
+      const avg = compareState.showAvg;
+      const avgRow =
+        `<button type="button" class="cmp-cat-avg-row${avg ? ' is-on' : ''}" role="menuitemcheckbox" aria-checked="${avg}" onclick="cmpMenuToggleAvg()">` +
+          '<span class="cmp-cat-avg-txt"><span class="material-icons">show_chart</span>Category average</span>' +
+          '<span class="cmp-switch-track" aria-hidden="true"></span>' +
+        '</button>';
+      const list = cats.map(c => {
+        const on = c === cur;
+        const l = c === 'all' ? 'All Categories' : c;
+        const val = String(c).replace(/'/g, "\\'");
+        return `<button type="button" role="menuitemradio" aria-checked="${on}" class="cmp-cat-item${on ? ' is-active' : ''}" onclick="cmpMenuSetCategory('${val}')">` +
+          `<span class="cmp-cat-item-label">${l}</span>` +
+          (on ? '<span class="material-icons cmp-cat-check">check</span>' : '') +
+        '</button>';
+      }).join('');
+      cmpCatMenuEl.innerHTML =
+        '<div class="cmp-cat-menu-hd">Overlay</div>' + avgRow +
+        '<div class="cmp-cat-menu-div"></div>' +
+        '<div class="cmp-cat-menu-hd">Scope to category</div>' +
+        '<div class="cmp-cat-menu-list">' + list + '</div>';
+    }
+    function cmpPositionCatMenu(anchor) {
+      if (!cmpCatMenuEl || !anchor) return;
+      const r = anchor.getBoundingClientRect();
+      const mw = cmpCatMenuEl.offsetWidth || 244;
+      const mh = cmpCatMenuEl.offsetHeight || 260;
+      let left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8));
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      cmpCatMenuEl.style.left = left + 'px';
+      cmpCatMenuEl.style.top = top + 'px';
+    }
+    function cmpCloseCatMenu() {
+      if (cmpCatMenuEl) { cmpCatMenuEl.remove(); cmpCatMenuEl = null; }
+      const btn = document.getElementById('cmp-cat-btn');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('mousedown', cmpOutsideCat, true);
+      window.removeEventListener('scroll', cmpCloseCatMenu, true);
+      window.removeEventListener('resize', cmpCloseCatMenu, true);
+    }
+    function cmpOutsideCat(e) {
+      if (cmpCatMenuEl && cmpCatMenuEl.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.cmp-cat-wrap')) return;
+      cmpCloseCatMenu();
+    }
+    /* Flip the average overlay from inside the popover — keep it open so the
+       user can keep tuning, and refresh both the board and the live menu. */
+    function cmpMenuToggleAvg() {
+      compareState.showAvg = !compareState.showAvg;
+      renderCompare();
+      cmpRenderCatMenu();
+      const btn = document.getElementById('cmp-cat-btn');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+      cmpPositionCatMenu(btn);
+    }
+    function cmpMenuSetCategory(cat) {
+      compareState.category = cat;
+      cmpCloseCatMenu();
+      renderCompare();
+    }
+
+    /* Split "＋ Add" control: the main face opens the guided add chat, while the
+       caret opens a dropdown to jump straight to adding a Product / Portfolio /
+       Category. Rendered inside the toolbar; the menu re-renders with the board
+       so its open state survives a re-render (mirrors the metric menu). */
+    function cmpAddSplit(disabled, caretId) {
+      const dis = disabled ? ' disabled' : '';
+      const cid = caretId || 'cmp-add-caret';
+      return '<div class="cmp-add-wrap">' +
+        '<div class="cmp-add-split">' +
+          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main" onclick="cmpPromptAddEntity()"${dis}><span class="material-icons">add</span>Add</button>` +
+          `<button type="button" id="${cid}" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-caret" onclick="cmpToggleAddMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Choose what to add"${dis}><span class="material-icons">expand_more</span></button>` +
+        '</div>' +
+      '</div>';
+    }
+    /* Body-portalled type dropdown for the split Add button — lives on <body>
+       with fixed positioning so nothing on the board can clip or cover it. */
+    let cmpAddMenuEl = null;
+    function cmpToggleAddMenu(btn) {
+      if (cmpAddMenuEl) { cmpCloseAddMenu(); return; }
+      const anchor = btn || document.getElementById('cmp-add-caret');
+      if (!anchor) return;
+      const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
+      const menu = document.createElement('div');
+      menu.className = 'cmp-add-menu';
+      menu.setAttribute('role', 'menu');
+      menu.innerHTML = kinds.map(([k, l, ic]) =>
+        `<button type="button" role="menuitem" class="cmp-add-menu-item" onclick="cmpAddPickKind('${k}')"><span class="material-icons">${ic}</span>Add ${l}</button>`
+      ).join('');
+      document.body.appendChild(menu);
+      cmpAddMenuEl = menu;
+      cmpPositionAddMenu(anchor);
+      anchor.setAttribute('aria-expanded', 'true');
+      setTimeout(() => document.addEventListener('mousedown', cmpOutsideAdd, true), 0);
+      window.addEventListener('scroll', cmpCloseAddMenu, true);
+      window.addEventListener('resize', cmpCloseAddMenu, true);
+    }
+    function cmpPositionAddMenu(anchor) {
+      if (!cmpAddMenuEl || !anchor) return;
+      const r = anchor.getBoundingClientRect();
+      const mw = cmpAddMenuEl.offsetWidth || 190;
+      const mh = cmpAddMenuEl.offsetHeight || 150;
+      let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+      left = Math.max(8, left);
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      cmpAddMenuEl.style.left = left + 'px';
+      cmpAddMenuEl.style.top = top + 'px';
+    }
+    function cmpCloseAddMenu() {
+      if (cmpAddMenuEl) { cmpAddMenuEl.remove(); cmpAddMenuEl = null; }
+      document.querySelectorAll('.cmp-add-caret[aria-expanded="true"]').forEach(c => c.setAttribute('aria-expanded', 'false'));
+      document.removeEventListener('mousedown', cmpOutsideAdd, true);
+      window.removeEventListener('scroll', cmpCloseAddMenu, true);
+      window.removeEventListener('resize', cmpCloseAddMenu, true);
+    }
+    function cmpOutsideAdd(e) {
+      if (cmpAddMenuEl && cmpAddMenuEl.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.cmp-add-wrap')) return;
+      cmpCloseAddMenu();
+    }
+    function cmpAddPickKind(kind) {
+      cmpCloseAddMenu();
+      if (compareState.shown.length >= 5) {
+        addScoutMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        return;
+      }
+      addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
+      cmpPromptAddOfKind(kind);
+    }
+
     function cmpToggleMetricMenu() {
       compareState.metricMenuOpen = !compareState.metricMenuOpen;
       renderCompare();
@@ -11352,12 +11961,20 @@
        first, then the deep-bench suggestion pool for this scope's noun. Deduped
        by name and capped at 10 so the chat always offers a real menu of
        competitors — even when the current shelf set is fully on the board. */
-    function cmpAddCandidates(scope) {
+    function cmpAddCandidates(scope, kind) {
+      kind = kind || scope.noun;
+      /* Category picks come straight from the synthesised category set — one
+         chip per category not already on the board. */
+      if (kind === 'category') {
+        const shownIds = new Set(compareState.shown);
+        const list = CMP_CATEGORY_ENTITIES.filter(e => !shownIds.has(e.id)).slice(0, 10);
+        return { list, realCount: 0, matchCount: Math.min(3, list.length) };
+      }
       const shownNames = new Set(
         compareState.shown.map(id => (scope.entities.find(e => e.id === id) || {}).name).filter(Boolean)
       );
-      const pool = scope.noun === 'portfolio' ? CMP_BRAND_SUGGESTIONS : CMP_PRODUCT_SUGGESTIONS;
-      const realAvail = scope.entities.filter(e => !compareState.shown.includes(e.id) && !e.primary);
+      const pool = kind === 'portfolio' ? CMP_BRAND_SUGGESTIONS : CMP_PRODUCT_SUGGESTIONS;
+      const realAvail = scope.entities.filter(e => !compareState.shown.includes(e.id) && !e.primary && cmpEntKind(e, scope) === kind);
       const realSet = new Set(realAvail);
       /* Bias suggestions toward what's actually being compared: for products,
          match the primary product's category (so a dip comparison surfaces
@@ -11391,35 +12008,86 @@
       return { list, realCount: realAvail.length, matchCount };
     }
 
+    /* The chat chips that let you choose WHICH kind to add / swap in. Shared
+       by the Add flow and the per-slot type toggle. */
+    function cmpKindChips(onclickFn, current, argPrefix) {
+      const pre = argPrefix || '';
+      const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
+      return kinds.map(([k, l, ic]) => {
+        const cls = k === current ? 'chip chip--match' : 'chip';
+        return `<button type="button" class="${cls}" onclick="${onclickFn}(${pre}'${k}', this)"><span class="material-icons">${ic}</span>${l}</button>`;
+      }).join('');
+    }
+
+    /* Jump straight to picking a specific product / portfolio / category to
+       add, skipping the intermediate "what kind?" step. Backs the dedicated
+       per-kind add chips offered on the follow row (Add a product / Add a
+       category / Add a portfolio). */
+    function cmpPromptAddKind(kind, btn) {
+      if (compareState.shown.length >= 5) {
+        btn?.closest('.sc-reply-chips')?.remove();
+        addScoutMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        return;
+      }
+      addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
+      cmpPromptAddOfKind(kind, btn);
+    }
+
+    /* Add is now KIND-AWARE: first pick product / portfolio / category, then
+       pick the specific one. This is what lets any board become any
+       combination (e.g. drop a category onto a product board). */
     function cmpPromptAddEntity() {
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
       if (compareState.shown.length >= 5) {
-        addScoutMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 competitors). Remove one on the board to add another.', { source: false });
+        addScoutMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
-      const dispNoun = scope.noun === 'portfolio' ? 'brand' : 'product';
-      const { list, matchCount } = cmpAddCandidates(scope);
       document.getElementById('cmp-add-chips')?.remove();
-      addUserMessage('Add a ' + dispNoun + ' to the comparison');
-      const typing = showScoutTyping('WISEai is finding ' + dispNoun + 's you can add');
+      document.getElementById('cmp-add-kind-chips')?.remove();
+      addUserMessage('Add to the comparison');
+      const typing = showScoutTyping('WISEai is getting your options');
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage('What would you like to add? You can compare <strong>products</strong>, whole <strong>portfolios</strong>, or a <strong>category average</strong> as a peer — mix any of them on one board.', { source: false });
+        const box = document.getElementById('chat-messages');
+        if (!box) return;
+        const row = document.createElement('div');
+        row.className = 'sc-reply-chips';
+        row.id = 'cmp-add-kind-chips';
+        row.innerHTML = cmpKindChips('cmpPromptAddOfKind');
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }, 420);
+    }
+
+    /* Show the specific picks for the chosen kind. */
+    function cmpPromptAddOfKind(kind, btn) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      document.getElementById('cmp-add-kind-chips')?.remove();
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const label = cmpKindLabel(kind);
+      const { list, matchCount } = cmpAddCandidates(scope, kind);
+      document.getElementById('cmp-add-chips')?.remove();
+      const typing = showScoutTyping('WISEai is finding ' + label + 's you can add');
       setTimeout(() => {
         typing?.remove();
         if (!list.length) {
-          addScoutMessage('I couldn’t find another ' + dispNoun + ' to suggest here. Remove one on the board first, or pick <strong>Try another comparison</strong> to load a different set.', { source: false });
+          addScoutMessage('I couldn’t find another ' + label + ' to add here. Try a different type, or remove one on the board first.', { source: false });
           return;
         }
-        /* The leading chips are flagged as "likely matches" — category-relevant
-           picks first, then shelf-set members (computed in cmpAddCandidates). */
-        addScoutMessage('Which ' + dispNoun + ' would you like to add? Here are ' + list.length + ' I can pull in — the <strong>starred</strong> ones are the closest matches to your current shelf set. Pick any and I’ll drop it onto the board as a pending column, then you can recalculate to fold it into the ranking.', { source: false });
+        const lead = kind === 'category'
+          ? 'Which <strong>category</strong> would you like to drop in as a peer? Each is the average profile across every product WISEcode scored in it.'
+          : 'Which ' + label + ' would you like to add? The <strong>starred</strong> ones are the closest matches to your current board.';
+        addScoutMessage(lead + ' I’ll drop it onto the board as a pending column, then fold it into the ranking.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const chips = list.map((e, i) => {
           const isMatch = i < matchCount;
           const ic = isMatch ? 'auto_awesome' : 'add_circle';
           const cls = isMatch ? 'chip chip--match' : 'chip';
-          const title = isMatch ? ' title="Likely match for your shelf set"' : '';
-          return `<button type="button" class="${cls}"${title} onclick="cmpConfirmAddEntity('${e.id}', this)"><span class="material-icons">${ic}</span>${e.name}</button>`;
+          return `<button type="button" class="${cls}" onclick="cmpConfirmAddEntity('${e.id}', this)"><span class="material-icons">${ic}</span>${e.name}</button>`;
         }).join('');
         const row = document.createElement('div');
         row.className = 'sc-reply-chips';
@@ -11427,7 +12095,21 @@
         row.innerHTML = chips;
         box.appendChild(row);
         box.scrollTop = box.scrollHeight;
-      }, 520);
+      }, 480);
+    }
+
+    /* Resolve a picked id into the scope's working set, tagging its KIND from
+       the pool it came from so mixed boards resolve every column correctly.
+       Shared by the add and per-slot swap flows. */
+    function cmpResolvePickIntoScope(scope, id) {
+      let ent = scope.entities.find(e => e.id === id);
+      if (ent) return ent;
+      const tagged = [[CMP_CATEGORY_ENTITIES, 'category'], [CMP_BRAND_SUGGESTIONS, 'portfolio'], [CMP_PRODUCT_SUGGESTIONS, 'product']];
+      for (const [pool, kind] of tagged) {
+        const src = pool.find(e => e.id === id);
+        if (src) { const clone = Object.assign({}, src); clone.kind = src.kind || kind; scope.entities.push(clone); return clone; }
+      }
+      return null;
     }
 
     /* Commit the specific pick the user chose from the chat prompt. The new
@@ -11437,20 +12119,9 @@
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
       /* Resolve the pick BEFORE tearing down the prompt chips, so a pick can
-         never silently vanish without adding anything. Look in the scope first,
-         then either suggestion pool (noun-appropriate one first) by id. */
-      let ent = scope.entities.find(e => e.id === id);
-      /* Suggestions from the deep-bench pool aren't in this scope yet — clone
-         the pool record into the scope so every downstream lookup (scores,
-         rendering, ranking) resolves it exactly like an authored entity. */
-      if (!ent) {
-        const pools = scope.noun === 'portfolio'
-          ? [CMP_BRAND_SUGGESTIONS, CMP_PRODUCT_SUGGESTIONS]
-          : [CMP_PRODUCT_SUGGESTIONS, CMP_BRAND_SUGGESTIONS];
-        let src = null;
-        for (const pool of pools) { src = pool.find(e => e.id === id); if (src) break; }
-        if (src) { ent = Object.assign({}, src); scope.entities.push(ent); }
-      }
+         never silently vanish. Looks in the scope, then the product / brand /
+         category pools, cloning + kind-tagging so mixed boards resolve. */
+      const ent = cmpResolvePickIntoScope(scope, id);
       /* Unknown id — leave the chips in place so the user can pick again. */
       if (!ent) return;
       /* Committed to a real pick: now retire the prompt chips. */
@@ -11480,6 +12151,189 @@
            as a shimmering skeleton if that button was never pressed. */
         setTimeout(() => cmpRecalculate({ auto: true }), 520);
       }, 560);
+    }
+
+    /* ── Per-slot type toggle ─────────────────────────────────────────────
+       The column chip calls this: change a single slot between product /
+       portfolio / category. Step 1 — pick the new kind. */
+    function cmpPromptSwapSlot(id) {
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const ent = scope.entities.find(e => e.id === id) || {};
+      const curKind = cmpEntKind(ent, scope);
+      document.getElementById('cmp-swap-chips')?.remove();
+      document.getElementById('cmp-swap-pick-chips')?.remove();
+      addUserMessage('Change a comparison slot to a different type');
+      const typing = showScoutTyping();
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage('Swap <strong>' + (ent.name || 'this slot') + '</strong> to a different type — a <strong>product</strong>, whole <strong>portfolio</strong>, or a <strong>category</strong> average. I’ll replace it and re-rank.', { source: false });
+        const box = document.getElementById('chat-messages');
+        if (!box) return;
+        const row = document.createElement('div');
+        row.className = 'sc-reply-chips';
+        row.id = 'cmp-swap-chips';
+        row.innerHTML = cmpKindChips('cmpPromptSwapPick', curKind, "'" + id + "',");
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }, 360);
+    }
+
+    /* Step 2 — with the kind chosen, pick the specific entity for that slot. */
+    function cmpPromptSwapPick(slotId, kind, btn) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      document.getElementById('cmp-swap-chips')?.remove();
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const label = cmpKindLabel(kind);
+      const { list, matchCount } = cmpAddCandidates(scope, kind);
+      const typing = showScoutTyping('WISEai is finding ' + label + 's');
+      setTimeout(() => {
+        typing?.remove();
+        if (!list.length) {
+          addScoutMessage('No other ' + label + ' is available to place in that slot. Try a different type.', { source: false });
+          return;
+        }
+        addScoutMessage('Pick the ' + label + ' to place in that slot:', { source: false });
+        const box = document.getElementById('chat-messages');
+        if (!box) return;
+        const chips = list.map((e, i) => {
+          const isMatch = i < matchCount;
+          const ic = isMatch ? 'auto_awesome' : 'add_circle';
+          const cls = isMatch ? 'chip chip--match' : 'chip';
+          return `<button type="button" class="${cls}" onclick="cmpConfirmSwapSlot('${slotId}','${e.id}', this)"><span class="material-icons">${ic}</span>${e.name}</button>`;
+        }).join('');
+        const row = document.createElement('div');
+        row.className = 'sc-reply-chips';
+        row.id = 'cmp-swap-pick-chips';
+        row.innerHTML = chips;
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }, 460);
+    }
+
+    /* Step 3 — replace the slot's occupant in place, carry the YOU anchor
+       (unless swapping to a category), then re-rank via the usual recalc. */
+    function cmpConfirmSwapSlot(slotId, pickId, btn) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      document.getElementById('cmp-swap-pick-chips')?.remove();
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const idx = compareState.shown.indexOf(slotId);
+      if (idx < 0) return;
+      if (pickId === slotId) { addScoutMessage('That slot already holds that item.', { source: false }); return; }
+      if (compareState.shown.includes(pickId)) {
+        const dupe = scope.entities.find(e => e.id === pickId) || cmpResolvePickIntoScope(scope, pickId) || {};
+        addScoutMessage('<strong>' + (dupe.name || 'That item') + '</strong> is already on the board.', { source: false });
+        return;
+      }
+      const ent = cmpResolvePickIntoScope(scope, pickId);
+      if (!ent) return;
+      const old = scope.entities.find(e => e.id === slotId) || {};
+      if (old.primary && ent.kind !== 'category') { ent.primary = true; old.primary = false; }
+      addUserMessage('Swap in ' + ent.name);
+      const typing = showScoutTyping('Swapping in ' + ent.name);
+      setTimeout(() => {
+        typing?.remove();
+        compareState.shown[idx] = pickId;
+        (compareState.pending = compareState.pending || []).push(pickId);
+        compareState.stale = true;
+        renderCompare();
+        scrollPanelIntoView('compare-panel');
+        addScoutMessage('Swapped in <strong>' + ent.name + '</strong> — scoring and re-ranking now…', { source: false });
+        setTimeout(() => cmpRecalculate({ auto: true }), 520);
+      }, 520);
+    }
+
+    /* ── Per-slot type toggle — PROPER ON-BOARD DROPDOWN ──────────────────
+       The column's kind chip opens a real floating menu anchored to it — no
+       "copy in the chat". Step 1 (three type tabs) and step 2 (the specific
+       item for that type) both live inside the one dropdown; picking an item
+       swaps the slot in place and re-ranks via the usual recalc. */
+    let cmpKindMenuEl = null;
+    let cmpKindMenuState = null;   /* { slotId, kind, anchor } */
+
+    function cmpCloseKindMenu() {
+      if (cmpKindMenuEl) { cmpKindMenuEl.remove(); cmpKindMenuEl = null; }
+      cmpKindMenuState = null;
+      document.removeEventListener('mousedown', cmpKindMenuOutside, true);
+      document.removeEventListener('keydown', cmpKindMenuKey, true);
+      window.removeEventListener('scroll', cmpCloseKindMenu, true);
+      window.removeEventListener('resize', cmpCloseKindMenu, true);
+    }
+    function cmpKindMenuOutside(e) {
+      if (cmpKindMenuEl && !cmpKindMenuEl.contains(e.target)) cmpCloseKindMenu();
+    }
+    function cmpKindMenuKey(e) { if (e.key === 'Escape') cmpCloseKindMenu(); }
+
+    function cmpToggleKindMenu(slotId, btn) {
+      /* Second click on the same chip closes the menu. */
+      if (cmpKindMenuEl && cmpKindMenuState && cmpKindMenuState.slotId === slotId) { cmpCloseKindMenu(); return; }
+      cmpCloseKindMenu();
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const ent = scope.entities.find(e => e.id === slotId) || {};
+      cmpKindMenuState = { slotId, kind: cmpEntKind(ent, scope), anchor: btn };
+      const menu = document.createElement('div');
+      menu.className = 'cmp-kind-menu';
+      menu.setAttribute('role', 'menu');
+      cmpKindMenuEl = menu;
+      document.body.appendChild(menu);
+      cmpRenderKindMenu();
+      cmpPositionKindMenu(btn);
+      document.addEventListener('mousedown', cmpKindMenuOutside, true);
+      document.addEventListener('keydown', cmpKindMenuKey, true);
+      window.addEventListener('scroll', cmpCloseKindMenu, true);
+      window.addEventListener('resize', cmpCloseKindMenu, true);
+    }
+
+    function cmpPositionKindMenu(btn) {
+      if (!cmpKindMenuEl || !btn) return;
+      const r = btn.getBoundingClientRect();
+      const mw = cmpKindMenuEl.offsetWidth || 244;
+      const mh = cmpKindMenuEl.offsetHeight || 260;
+      let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+      left = Math.max(8, left);
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      cmpKindMenuEl.style.left = left + 'px';
+      cmpKindMenuEl.style.top = top + 'px';
+    }
+
+    function cmpRenderKindMenu() {
+      if (!cmpKindMenuEl || !cmpKindMenuState) return;
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const kind = cmpKindMenuState.kind;
+      const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
+      const tabs = kinds.map(([k, l, ic]) =>
+        `<button type="button" role="menuitemradio" aria-checked="${k === kind}" class="cmp-kind-menu-tab ${k === kind ? 'is-active' : ''}" onclick="cmpKindMenuSetKind('${k}')"><span class="material-icons">${ic}</span>${l}</button>`
+      ).join('');
+      const { list, matchCount } = cmpAddCandidates(scope, kind);
+      const items = list.length
+        ? list.map((e, i) => {
+            const isMatch = i < matchCount;
+            const ic = isMatch ? 'auto_awesome' : 'add_circle';
+            return `<button type="button" role="menuitem" class="cmp-kind-menu-item ${isMatch ? 'is-match' : ''}" onclick="cmpKindMenuPick('${e.id}')"><span class="material-icons">${ic}</span><span class="cmp-kind-menu-item-name">${e.name}</span></button>`;
+          }).join('')
+        : '<div class="cmp-kind-menu-empty">No other ' + cmpKindLabel(kind) + ' is available to place here.</div>';
+      cmpKindMenuEl.innerHTML =
+        '<div class="cmp-kind-menu-hd">Change this slot to…</div>' +
+        '<div class="cmp-kind-menu-tabs">' + tabs + '</div>' +
+        '<div class="cmp-kind-menu-list">' + items + '</div>';
+    }
+
+    function cmpKindMenuSetKind(kind) {
+      if (!cmpKindMenuState) return;
+      cmpKindMenuState.kind = kind;
+      cmpRenderKindMenu();
+      cmpPositionKindMenu(cmpKindMenuState.anchor);
+    }
+
+    function cmpKindMenuPick(pickId) {
+      const st = cmpKindMenuState;
+      cmpCloseKindMenu();
+      if (st) cmpConfirmSwapSlot(st.slotId, pickId, null);
     }
 
     /* Visible recompute: runs a scanning sweep over the board, then folds any
@@ -11547,7 +12401,12 @@
     /* Attach category count / N/A flag for portfolio scopes under a filter. */
     function cmpResolveEntity(scope, ent) {
       const out = Object.assign({}, ent);
-      if (scope.noun === 'portfolio') {
+      const kind = cmpEntKind(ent, scope);
+      out.kind = kind;
+      if (kind === 'category') {
+        out.na = false; out.isCategory = true;
+        out.catLine = (ent.catName || ent.name) + ' · category avg';
+      } else if (kind === 'portfolio') {
         if (compareState.category !== 'all') {
           const n = (ent.cats && ent.cats[compareState.category]) || 0;
           out.count = n; out.na = n === 0; out.catLine = compareState.category + ' · ' + n + ' products';
@@ -11598,6 +12457,52 @@
       });
     }
 
+    /* ── Circular WISEscore gauge (on each header tile) ─────────────────────
+       The overall score is promoted from the old score row onto the entity's
+       image tile as a centred circular gauge: a full-circle track with a
+       coloured arc that sweeps to the score, the number counting up in the
+       middle, and the Top-% pill beneath. */
+    const CMP_GAUGE_R = 42;                          /* SVG circle radius */
+    const CMP_GAUGE_C = 2 * Math.PI * CMP_GAUGE_R;   /* its circumference */
+    function cmpScoreGaugeHtml(ov, pillCls, color, top) {
+      /* Top-% pill rides at the top-left, directly beneath the kind chip; the
+         gauge itself floats large in the centre of the tile. */
+      return '<span class="cmp-tile-toppill cmp-top-pill ' + pillCls + '">' + (top || 'Top 50%') + '</span>' +
+        '<button type="button" class="cmp-gauge" data-score="' + ov + '" style="--gauge-color:' + color + '" ' +
+          'onclick="event.stopPropagation();cmpAnimateGauge(this)" title="Replay WISEscore" aria-label="WISEscore ' + ov + ' — tap to replay">' +
+          '<svg class="cmp-gauge-svg" viewBox="0 0 100 100" aria-hidden="true">' +
+            '<circle class="cmp-gauge-track" cx="50" cy="50" r="' + CMP_GAUGE_R + '"></circle>' +
+            '<circle class="cmp-gauge-arc" cx="50" cy="50" r="' + CMP_GAUGE_R + '" ' +
+              'stroke-dasharray="' + CMP_GAUGE_C.toFixed(1) + '" stroke-dashoffset="' + CMP_GAUGE_C.toFixed(1) + '"></circle>' +
+          '</svg>' +
+          '<span class="cmp-gauge-center"><span class="cmp-gauge-num" data-score="' + ov + '">' + ov + '</span>' +
+            '<span class="cmp-gauge-lbl">WISEscore<span class="title-tm">™</span></span></span>' +
+        '</button>';
+    }
+
+    /* Sweep a single gauge's arc to its score and count the number up. Restarts
+       cleanly each call so clicking the gauge replays it. */
+    function cmpAnimateGauge(el) {
+      if (!el) return;
+      const arc = el.querySelector('.cmp-gauge-arc');
+      const num = el.querySelector('.cmp-gauge-num');
+      const to = parseInt(el.getAttribute('data-score'), 10) || 0;
+      if (arc) {
+        arc.style.transition = 'none';
+        arc.style.strokeDashoffset = CMP_GAUGE_C.toFixed(1);
+        void arc.getBoundingClientRect();          /* flush so the sweep restarts */
+        arc.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+        arc.style.strokeDashoffset = (CMP_GAUGE_C * (1 - to / 100)).toFixed(1);
+      }
+      if (num) { num.textContent = '0'; cmpCountUp(num, to, 850); }
+    }
+
+    /* Replay every header gauge, staggered left-to-right like the bars/scores. */
+    function cmpReplayGauges() {
+      const gauges = document.querySelectorAll('.cmp-gauge[data-score]');
+      gauges.forEach((el, i) => setTimeout(() => cmpAnimateGauge(el), i * 110));
+    }
+
     /* Count the Key Takeaway card scores up, staggered across the cards. */
     function cmpReplayTakeaways() {
       const nums = document.querySelectorAll('.cmp-takeaway-score[data-count]');
@@ -11639,6 +12544,47 @@
       compareState.chartMode = m;
       renderCompare();
       scrollPanelIntoView('compare-panel');
+    }
+
+    /* A circular legend marker that matches each entity's KIND:
+         • product   → the product's photo inside the circle
+         • portfolio → the brand's logo inside the circle
+         • category  → the category icon on the entity's colour
+       Falls back to the brand-colour monogram when no artwork exists. Shared by
+       every comparison chart legend so the spider, parallel, and race charts
+       all read with the same visual language as the board tiles. */
+    /* The inner content of a kind-aware circular bug (shared by the legend and
+       the in-chart vertex markers so both always read identically): a category
+       icon, or a brand/product photo layered over its monogram fallback. */
+    function cmpBugInner(ent) {
+      const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
+      if (kind === 'category') {
+        return `<span class="material-icons">${cmpKindIcon('category')}</span>`;
+      }
+      const imgUrl = cmpImgUrl(ent);
+      const mono = ent.abbr || (ent.name ? ent.name[0] : '?');
+      const img = imgUrl
+        ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.remove()">`
+        : '';
+      return `${mono}${img}`;
+    }
+    function cmpLegendBug(ent) {
+      const color = ent.color || cmpMetricColor('wisescore');
+      const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
+      const catCls = kind === 'category' ? ' cmp-legend-bug--cat' : '';
+      return `<span class="cmp-legend-bug${catCls}" style="--lc:${color}" aria-hidden="true">${cmpBugInner(ent)}</span>`;
+    }
+
+    /* Assemble a full chart legend from the entities on the board, each row
+       carrying a kind-aware circular marker + name, with an optional dashed
+       category-average key appended. */
+    function cmpLegendHTML(ents, showAvg) {
+      const keys = ents.map(ent =>
+        `<span class="cmp-radar-key">${cmpLegendBug(ent)}<span class="cmp-radar-key-name">${ent.name}</span></span>`).join('');
+      const avg = showAvg
+        ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span><span class="cmp-radar-key-name">Category avg</span></span>'
+        : '';
+      return keys + avg;
     }
 
     /* Build the overlaid spider/radar chart: one axis per selected metric,
@@ -11688,7 +12634,8 @@
         avgEls = `<polygon class="cmp-radar-avg" points="${pts}"></polygon>`;
       }
 
-      /* One overlay polygon + vertices per entity, drawn in its brand colour. */
+      /* One outline polygon per entity — stroke only, no opaque centre fill, so
+         overlapping entities never muddy each other. */
       const polyEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
         const coords = metrics.map((m, i) => {
@@ -11696,23 +12643,43 @@
           return pt(i, v / 100);
         });
         const pts = coords.map(c => c.map(n => n.toFixed(1)).join(',')).join(' ');
-        const dots = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.6" style="fill:${color}"></circle>`).join('');
+        const dash = (ent.kind === 'category' || ent.isCategory) ? ';stroke-dasharray:5 4' : '';
         return `<g class="cmp-radar-series" style="--delay:${ei * 90}ms">` +
-          `<polygon class="cmp-radar-area" points="${pts}" style="fill:${color};stroke:${color}"></polygon>${dots}</g>`;
+          `<polygon class="cmp-radar-area" points="${pts}" style="fill:none;stroke:${color}${dash}"></polygon></g>`;
       }).join('');
 
-      const legend = ents.map(ent => {
+      /* Vertex bugs — the same kind-aware circular markers used by the parallel
+         chart and the legend, layered over the SVG as an HTML overlay positioned
+         as a percentage of the (square) plot. Primary/"YOU" sits on top. */
+      const bugEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
-        return `<span class="cmp-radar-key"><span class="cmp-radar-swatch" style="background:${color}"></span>${ent.name}</span>`;
-      }).join('') + (showAvg ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span>Category avg</span>' : '');
+        const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
+        const catCls = kind === 'category' ? ' cmp-legend-bug--cat' : '';
+        const z = ent.primary ? 30 : (10 + ei);
+        return metrics.map((m, i) => {
+          const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
+          const c = pt(i, v / 100);
+          const lx = (c[0] / size * 100).toFixed(2);
+          const ty = (c[1] / size * 100).toFixed(2);
+          const delay = ei * 90 + i * 90 + 90;
+          return `<span class="cmp-legend-bug cmp-par-bug${catCls}" ` +
+            `style="--lc:${color};left:${lx}%;top:${ty}%;z-index:${z};` +
+            `animation-delay:${delay}ms" aria-hidden="true">${cmpBugInner(ent)}</span>`;
+        }).join('');
+      }).join('');
+
+      const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">All metrics overlaid</span>' +
         '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-radar-canvas">' +
-          `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all metrics for each ${scope.noun}">` +
-            gridEls + axisEls + avgEls + polyEls +
-          '</svg>' +
+          '<div class="cmp-radar-stage">' +
+            `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all metrics for each ${scope.noun}">` +
+              gridEls + axisEls + avgEls + polyEls +
+            '</svg>' +
+            '<div class="cmp-par-bugs">' + bugEls + '</div>' +
+          '</div>' +
         '</div>' +
         '<div class="cmp-radar-legend">' + legend + '</div>' +
       '</div>';
@@ -11735,8 +12702,8 @@
           '<span class="material-icons">ssid_chart</span>Nothing scored yet — recalculate to plot parallel coordinates.</div></div>';
       }
 
-      const W = 520, H = 212;
-      const padT = 18, padB = 14, padL = 34, padR = 20;
+      const W = 680, H = 212;
+      const padT = 18, padB = 14, padL = 38, padR = 26;
       const plotH = H - padT - padB;
       const axisX = i => (M === 1 ? W / 2 : padL + (W - padL - padR) * i / (M - 1));
       const yFor = v => padT + (1 - Math.max(0, Math.min(100, v)) / 100) * plotH;
@@ -11781,29 +12748,48 @@
         avgEls = `<polyline class="cmp-par-avg" points="${pts}"></polyline>`;
       }
 
-      /* One polyline + vertices per entity, in its own brand colour. */
+      /* One polyline per entity, in its own brand colour. The vertices are NOT
+         plain dots — they're the same kind-aware circular bugs the legend uses
+         (brand logo / product photo / category icon), rendered as an HTML layer
+         over the SVG so the chart and legend read with one visual language. */
       const seriesEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
         const coords = metrics.map((m, i) => [axisX(i), yFor(cmpScoreFor(ent, m.id))]);
         const pts = coords.map(c => `${c[0].toFixed(1)},${c[1].toFixed(1)}`).join(' ');
-        const dots = coords.map((c, i) => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" style="fill:${color};--dd:${i}"></circle>`).join('');
         return `<g class="cmp-par-series-g" style="--delay:${ei * 90}ms">` +
-          `<polyline class="cmp-par-series" points="${pts}" pathLength="1" style="stroke:${color};--delay:${ei * 90}ms"></polyline>${dots}</g>`;
+          `<polyline class="cmp-par-series" points="${pts}" pathLength="1" style="stroke:${color};--delay:${ei * 90}ms"></polyline></g>`;
       }).join('');
 
-      const legend = ents.map(ent => {
+      /* Vertex bugs, positioned as a percentage of the plot so they land exactly
+         on each polyline node. The primary/"YOU" entity is layered on top so its
+         marker is never hidden when scores bunch together. */
+      const bugEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
-        return `<span class="cmp-radar-key"><span class="cmp-radar-swatch" style="background:${color}"></span>${ent.name}</span>`;
-      }).join('') + (showAvg ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span>Category avg</span>' : '');
+        const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
+        const catCls = kind === 'category' ? ' cmp-legend-bug--cat' : '';
+        const z = ent.primary ? 30 : (10 + ei);
+        return metrics.map((m, i) => {
+          const lx = (axisX(i) / W * 100).toFixed(2);
+          const ty = (yFor(cmpScoreFor(ent, m.id)) / H * 100).toFixed(2);
+          const delay = ei * 90 + i * 90 + 90;
+          return `<span class="cmp-legend-bug cmp-par-bug${catCls}" ` +
+            `style="--lc:${color};left:${lx}%;top:${ty}%;z-index:${z};` +
+            `animation-delay:${delay}ms" aria-hidden="true">` +
+            `${cmpBugInner(ent)}</span>`;
+        }).join('');
+      }).join('');
+
+      const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">Parallel coordinates</span>' +
         '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-par-plot">' +
-          '<div class="cmp-radar-canvas">' +
+          '<div class="cmp-radar-canvas cmp-par-canvas">' +
             `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
               gridEls + axisEls + avgEls + seriesEls +
             '</svg>' +
+            '<div class="cmp-par-bugs">' + bugEls + '</div>' +
           '</div>' +
           '<div class="cmp-par-labels">' + labelEls + '</div>' +
         '</div>' +
@@ -11845,12 +12831,11 @@
           const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
           const pos = Math.round(v);
           const color = ent.color || cmpMetricColor('wisescore');
-          const imgUrl = cmpImgUrl(ent);
-          const mono = ent.abbr || ent.name[0];
-          const img = imgUrl ? `<img src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.remove()">` : '';
+          const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
+          const catCls = kind === 'category' ? ' cmp-race-bug--cat' : '';
           const pc = ent.primary ? ' is-primary' : '';
           return `<div class="cmp-race-runner${pc}" style="--pos:${pos}%;--rc:${color};--delay:${ei * 110}ms;z-index:${ent.primary ? 6 : ei + 1}" aria-label="${ent.name}: ${pos}">` +
-            `<span class="cmp-race-bug">${mono}${img}</span>` +
+            `<span class="cmp-race-bug${catCls}">${cmpBugInner(ent)}</span>` +
             `<span class="cmp-race-num">${pos}</span>` +
             `<span class="cmp-race-pop"><span class="cmp-race-pop-dot" style="background:${color}"></span>` +
               `<span class="cmp-race-pop-name">${ent.name}</span><span class="cmp-race-pop-score">${pos}</span></span>` +
@@ -11863,10 +12848,7 @@
         '</div>';
       }).join('');
 
-      const legend = ents.map(ent => {
-        const color = ent.color || cmpMetricColor('wisescore');
-        return `<span class="cmp-radar-key"><span class="cmp-radar-swatch" style="background:${color}"></span>${ent.name}</span>`;
-      }).join('') + (showAvg ? '<span class="cmp-radar-key"><span class="cmp-radar-swatch cmp-radar-swatch--avg"></span>Category avg</span>' : '');
+      const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">Metric race</span>' +
@@ -11895,6 +12877,9 @@
       const scope = CMP_SCOPES[compareState.scope];
       const body = document.getElementById('cmp-body');
       if (!scope || !body) return;
+      /* A re-render destroys the kind chips — retire any open slot-type menu so
+         it never lingers over a stale anchor. */
+      if (typeof cmpCloseKindMenu === 'function') cmpCloseKindMenu();
 
       const ents = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e));
       const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(Boolean);
@@ -11932,11 +12917,6 @@
       }
 
       /* ── Toolbar ── */
-      const catSelect = scope.categories ? (
-        '<span class="cmp-tool-select"><span class="material-icons">filter_alt</span><select aria-label="Category filter" onchange="cmpSetCategory(this.value)">' +
-        scope.categories.map(c => `<option value="${c}" ${compareState.category === c ? 'selected' : ''}>${c === 'all' ? 'All Categories' : c}</option>`).join('') +
-        '</select></span>'
-      ) : '';
 
       const metricMenu = '<div class="cmp-metric-menu" id="cmp-metric-menu" ' + (compareState.metricMenuOpen ? '' : 'hidden') + '>' +
         ['Composite', 'Nutrient Quality', 'Ingredient Quality', 'Health Outcomes', 'Future'].map(fam => {
@@ -11949,28 +12929,49 @@
           }).join('');
         }).join('') + '</div>';
 
+      const chartBtn = (mode, icon, label, title) =>
+        `<button type="button" class="cmp-chart-btn ${compareState.chartMode === mode ? 'is-active' : ''}" onclick="cmpSetChartMode('${mode}')" title="${title}" aria-label="${title}" aria-pressed="${compareState.chartMode === mode}"><span class="material-icons">${icon}</span><span class="cmp-chart-label">${label}</span></button>`;
+      /* The toolbar is its own full-width row above the grid container (not
+         packed into the grid's corner cell), so it lays out as one horizontal
+         bar: metric picker · category filter · chart-type toggle · (spacer) ·
+         Add. */
       const toolbar =
-        '<div class="cmp-toolbar">' +
-          '<div id="cmp-metric-wrap" style="position:relative">' +
+        '<div class="cmp-toolbar cmp-toolbar--bar">' +
+          '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
             `<button type="button" class="cmp-tool-btn" onclick="cmpToggleMetricMenu()"><span class="material-icons">tune</span>Metrics · ${M}</button>` +
             metricMenu +
           '</div>' +
-          catSelect +
-          `<label class="cmp-switch"><input type="checkbox" ${showAvg ? 'checked' : ''} onchange="cmpToggleCategoryAvg()"><span class="cmp-switch-track"></span>Category avg</label>` +
-          '<span class="cmp-tool-spacer"></span>' +
+          (scope.categories ? cmpCatControl() : '') +
           '<div class="cmp-chart-toggle" role="group" aria-label="Chart type">' +
-            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'bars' ? 'is-active' : ''}" onclick="cmpSetChartMode('bars')" title="Health bar view" aria-label="Health bar view" aria-pressed="${compareState.chartMode === 'bars'}"><span class="material-icons">align_horizontal_left</span></button>` +
-            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'radar' ? 'is-active' : ''}" onclick="cmpSetChartMode('radar')" title="Spider chart view" aria-label="Spider chart view" aria-pressed="${compareState.chartMode === 'radar'}"><span class="material-icons">radar</span></button>` +
-            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'parallel' ? 'is-active' : ''}" onclick="cmpSetChartMode('parallel')" title="Parallel coordinates view" aria-label="Parallel coordinates view" aria-pressed="${compareState.chartMode === 'parallel'}"><span class="material-icons">ssid_chart</span></button>` +
-            `<button type="button" class="cmp-chart-btn ${compareState.chartMode === 'race' ? 'is-active' : ''}" onclick="cmpSetChartMode('race')" title="Race view" aria-label="Race view" aria-pressed="${compareState.chartMode === 'race'}"><span class="material-icons">sports_score</span></button>` +
+            chartBtn('bars', 'align_horizontal_left', 'Bars', 'Health bar view') +
+            chartBtn('radar', 'radar', 'Spider', 'Spider chart view') +
+            chartBtn('parallel', 'ssid_chart', 'Parallel', 'Parallel coordinates view') +
+            chartBtn('race', 'sports_score', 'Race', 'Race view') +
           '</div>' +
-          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary" onclick="cmpPromptAddEntity()" ${compareState.shown.length >= 5 ? 'disabled' : ''}><span class="material-icons">add</span>${scope.addLabel}</button>` +
+          '<span class="cmp-tool-spacer"></span>' +
+          cmpAddSplit(compareState.shown.length >= 5) +
         '</div>';
 
-      /* Counts reused by the grid header rail (summary line removed as it was
-         redundant with the grid's own "Compare Foods" header). */
+      /* The module header (top strip, in line with the ⋯ controls) keeps the
+         "Compare Foods" title; this live meta becomes its subtitle — how many
+         products/portfolios and metrics are in play, plus the active category
+         filter when one is applied. */
       const nounPlural = scope.noun === 'portfolio' ? 'Portfolios' : 'Products';
       const pendMeta = pendingEnts.length ? ` · ${pendingEnts.length} pending` : '';
+      const catMeta = (compareState.category && compareState.category !== 'all') ? ' · ' + compareState.category : '';
+      const metaText = rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics' + catMeta;
+      const cmpSub = document.getElementById('cmp-subtitle');
+      if (cmpSub) cmpSub.textContent = metaText;
+
+      /* Fallback in-board header — shown only when "Header float" appearance
+         mode collapses the real panel header. Without this, float mode would
+         leave the board with no visible "Compare Foods" title at all (the old
+         in-grid rail title was retired when the toolbar moved into that cell). */
+      const boardHead =
+        '<div class="cmp-board-head" aria-hidden="true">' +
+          '<div class="cmp-board-title">Compare Foods</div>' +
+          '<div class="cmp-board-meta">' + metaText + '</div>' +
+        '</div>';
 
       /* ── The aligned grid ── */
       /* Rail keeps a comfortable minimum but can flex; entity columns share
@@ -11979,54 +12980,86 @@
          board carries 4+ entity columns the rail collapses to an icon-only
          strip (compact mode) so the columns keep a legible width — the full
          rail label + description then surface in a hover/focus flyout. */
-      const compact = ordered.length >= 4;
-      const cols = compact
-        ? '48px repeat(' + ordered.length + ', minmax(0, 1fr))'
-        : 'minmax(172px, 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))';
+      /* The header rail cell now hosts the live controls (metrics, category,
+         chart type, add), so the rail column keeps a usable width even with a
+         full shelf set — the old icon-only collapsed rail is retired. */
+      const compact = false;
+      /* Default state — only YOUR own food is on the board (no competitor yet).
+         Trail an empty "add a competitor" column on the right so the head-to-head
+         is one obvious click away, using the same split Add control as the top
+         toolbar. Suppressed once a second entity (or a pending entrant) exists. */
+      const showAddCol = ordered.length === 1;
+      const cols = 'minmax(150px, 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))'
+        + (showAddCol ? ' minmax(0, 0.9fr)' : '');
       const cells = [];
+      /* The trailing "add a competitor" column is painted as ONE continuous cell
+         that spans every row (see the spanning cell pushed after the grid body),
+         so its diagonal stripe texture runs unbroken down the whole column rather
+         than restarting cell-by-cell. Individual rows therefore emit no add-column
+         cell of their own. */
 
-      /* Header row */
-      cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell"><span class="cmp-rail-lead-ic" aria-hidden="true"><span class="material-icons">table_chart</span></span><div class="cmp-rail-body"><div class="cmp-rail-h">Compare Foods</div><div class="cmp-summary-meta">' + rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics</div></div></div>');
+      /* Header row — the top-left corner cell. The toolbar now lives in its own
+         row above the whole grid, so the corner just carries the board title,
+         aligned to the left of the entity image tiles. */
+      /* The WISEscore metric copy that used to sit in the (now retired) score
+         row's rail moves up here, beneath the "Compare Foods" title. The score
+         numerals themselves are promoted onto each entity's image tile as a
+         circular gauge (below). */
+      cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell cmp-hcell--corner">' +
+        '<div class="cmp-corner-score"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayGauges()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayGauges()}"><span class="material-icons">verified</span></span><div class="cmp-rail-metric-name">WISEscore</div></div><div class="cmp-rail-body">' +
+        '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
+        '</div></div></div>' +
+      '</div>');
       ordered.forEach(ent => {
         const isPending = pendingSet.has(ent.id);
         const rank = rankOf.get(ent.id);
-        const pc = ent.primary ? ' is-primary' : (isPending ? ' is-pending' : '');
+        const kind = ent.kind || cmpEntKind(ent, scope);
+        const pc = (ent.primary ? ' is-primary' : (isPending ? ' is-pending' : '')) + (ent.isCategory ? ' is-category' : '');
         const rm = (!ent.primary && compareState.shown.length > 2)
-          ? `<button type="button" title="Remove" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:8px;right:8px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>` : '';
-        const you = ent.primary ? ' <span class="cmp-you-pill">YOU</span>' : '';
+          ? `<button type="button" title="Remove" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>` : '';
+        /* Per-slot TYPE TOGGLE — the control that makes any combination
+           possible: tap to swap this column between product / portfolio /
+           category. The slot's rank number (1, 2, 3…) rides inside the chip as
+           its leading badge, so the numbering and the type selector read as one
+           control aligned to the tile's top-left. Hidden while mid-add. */
+        const kindChip = isPending ? '' : `<button type="button" class="cmp-kind-chip" title="Change this slot’s type" aria-label="Change this slot’s type" aria-haspopup="menu" onclick="event.stopPropagation();cmpToggleKindMenu('${ent.id}', this)"><span class="cmp-kind-rank">${rank}</span><span class="cmp-kind-chip-label">${cmpKindLabel(kind)}</span><span class="material-icons cmp-kind-chip-caret">expand_more</span></button>`;
+        const you = ent.primary ? ' <span class="cmp-you-pill">YOU</span>' : (ent.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '');
         const imgUrl = cmpImgUrl(ent);
         const img = imgUrl ? `<img class="cmp-tile-img" src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.style.display='none'">` : '';
         /* No product/brand photo → paint the tile in the entity's own brand
-           colour so the full-bleed treatment still reads as a real image. */
-        const tileStyle = imgUrl ? '' : ` style="background:${ent.color}"`;
+           colour so the full-bleed treatment still reads as a real image.
+           Category tiles get a striped neutral fill via CSS (.is-category). */
+        const tileStyle = (imgUrl || ent.isCategory) ? '' : ` style="background:${ent.color}"`;
+        /* Non-pending tiles surface their rank inside the type chip (top-left);
+           only the pending placeholder still shows a standalone status badge. */
         const badge = isPending
           ? '<span class="cmp-rank cmp-rank--pending"><span class="material-icons">schedule</span></span>'
-          : `<span class="cmp-rank">${rank}</span>`;
+          : '';
         const sub = isPending
           ? `<div class="cmp-ent-cat"><span class="cmp-pending-badge"><span class="material-icons">schedule</span>Pending</span></div>`
           : `<div class="cmp-ent-cat">${ent.catLine}</div>`;
-        /* Full-bleed tile: the image is the background; rank, name and label are
-           layered on top over a legibility scrim (no drop shadows anywhere). */
+        /* The overall WISEscore is promoted from the (retired) score row onto
+           the tile itself as a centred circular gauge that animates on click.
+           Pending / N-A slots have no score, so they skip the gauge. */
+        let gauge = '';
+        if (!isPending && !ent.na) {
+          const ov = Math.round(cmpScoreFor(ent, 'wisescore'));
+          const pillCls = ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : '');
+          const gaugeColor = ov < 55 ? 'var(--sec-red)' : (ov < 68 ? 'var(--ter-amber)' : 'var(--sec-green)');
+          gauge = cmpScoreGaugeHtml(ov, pillCls, gaugeColor, ent.top);
+        }
+        /* Full-bleed tile: the image is the background; the score gauge, rank,
+           name and label are layered on top over a legibility scrim (no drop
+           shadows anywhere). */
         cells.push(
-          '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm +
-          `<div class="cmp-tile"${tileStyle}>${img}${badge}` +
+          '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm + kindChip +
+          `<div class="cmp-tile"${tileStyle}>${img}${badge}${gauge}` +
             `<div class="cmp-tile-overlay"><div class="cmp-ent-name" title="${ent.name}">${ent.name}${you}</div>${sub}</div>` +
           `</div>` +
           '</div>');
       });
-
-      /* Score row */
-      cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayScores()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayScores()}"><span class="material-icons">verified</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">WISEscore</div>' +
-        '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
-        '</div></div></div>');
-      ordered.forEach(ent => {
-        if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--num"></span><div class="cmp-score-lbl">Pending</div></div>'); return; }
-        if (ent.na) { cells.push('<div class="cmp-cell cmp-cell--entity"><span class="cmp-metric-na">N/A · no products in ' + compareState.category + '</span></div>'); return; }
-        const ov = Math.round(cmpScoreFor(ent, 'wisescore'));
-        const pillCls = ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : '');
-        const pc = ent.primary ? ' is-primary' : '';
-        cells.push('<div class="cmp-cell cmp-cell--entity cmp-score-cell' + pc + '"><div class="cmp-score-main"><div class="cmp-score-num" data-score="' + ov + '">' + ov + '</div><div class="cmp-score-lbl">WISEscore<span class="title-tm">™</span></div></div><span class="cmp-top-pill ' + pillCls + '">' + (ent.top || 'Top 50%') + '</span></div>');
-      });
+      /* Score row retired — the WISEscore numerals now live on the header tiles
+         as circular gauges, and the metric copy moved into the corner cell. */
 
       const radarMode = compareState.chartMode === 'radar';
       const parallelMode = compareState.chartMode === 'parallel';
@@ -12039,7 +13072,7 @@
         metrics.forEach((m, mi) => {
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
-            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div>' +
+            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div></div><div class="cmp-rail-body">' +
             '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-icons">forum</span></a></div>' +
             '</div></div></div>');
           ordered.forEach(ent => {
@@ -12057,8 +13090,13 @@
           });
         });
 
-        /* Insight row */
-        cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><span class="cmp-rail-metric-ic" style="--mic:#C9A227"><span class="material-icons">auto_awesome</span></span><div class="cmp-rail-body"><div class="cmp-rail-metric-name">Insight</div></div></div></div>');
+        /* Insight row — the rail now carries the OVERALL board read (the
+           "what's happening here" summary), mirroring the desc column every
+           metric rail shows. It re-derives on each render, so it stays in sync
+           as entities/metrics/category change. */
+        cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic" style="--mic:#C9A227"><span class="material-icons">auto_awesome</span></span><div class="cmp-rail-metric-name">Insight</div></div><div class="cmp-rail-body">' +
+          '<div class="cmp-rail-metric-desc">' + cmpOverallInsight(scope, metrics, ordered, pendingSet) + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about the overall read" aria-label="Chat with WISEai about the overall comparison" onclick="cmpChatOverall()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatOverall()}"><span class="material-icons">forum</span></a></div>' +
+          '</div></div></div>');
         ordered.forEach(ent => {
           const pc = ent.primary ? ' is-primary' : '';
           if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-pending-badge"><span class="material-icons">schedule</span>Recalculate to generate</span></div>'); return; }
@@ -12067,6 +13105,27 @@
             ' <a class="cmp-insight-chat" role="button" tabindex="0" title="Chat about this insight" aria-label="Chat with WISEai about this insight" onclick="cmpChatInsight(\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatInsight(\'' + ent.id + '\')}"><span class="material-icons">forum</span></a>' +
             '</div></div>');
         });
+      }
+
+      /* ── Continuous "add a competitor" column ──────────────────────────
+         One tall cell explicitly placed in the trailing grid column, spanning
+         every rendered row, so its diagonal stripes read as a single unbroken
+         panel. Row count: header + score, plus (in the health-bar view) one row
+         per metric and the insight row. */
+      if (showAddCol) {
+        const primName = ordered[0] ? ordered[0].name : 'your food';
+        /* Rows: header + (health-bar view) one per metric + insight. The old
+           standalone score row is gone (scores now ride on the header tiles). */
+        const addColRows = chartOverlay ? 1 : (metrics.length + 2);
+        cells.push(
+          '<div class="cmp-cell cmp-addcol cmp-addcol-span" style="grid-column:-2 / -1;grid-row:1 / span ' + addColRows + ';">' +
+            '<div class="cmp-addcol-inner">' +
+              '<div class="cmp-addcol-plus"><span class="material-icons">add</span></div>' +
+              '<div class="cmp-addcol-title">Add a competitor</div>' +
+              '<div class="cmp-addcol-sub">Drop a product, portfolio or category in beside <strong>' + primName + '</strong> to build the head-to-head.</div>' +
+              cmpAddSplit(false, 'cmp-add-caret-col') +
+            '</div>' +
+          '</div>');
       }
 
       const gridWrapCls = 'cmp-grid-wrap' + (compareState.recalcing ? ' is-recalcing' : '') + (compact ? ' cmp-grid-wrap--compact' : '');
@@ -12114,29 +13173,37 @@
         `</div>`).join('') +
         '</div></div>';
 
-      body.innerHTML = recalcBar + toolbar + grid + chart_html + takeaways;
+      body.innerHTML = boardHead + toolbar + recalcBar + grid + chart_html + takeaways;
       body.scrollTop = 0;
       compareState._settle = false;   /* consume the one-shot settle animation flag */
-      /* Count the WISEscores + takeaway scores up on render so they animate
-         in with the bars. */
-      requestAnimationFrame(() => { cmpReplayScores(); cmpReplayTakeaways(); });
+      /* Animate the header WISEscore gauges + count the takeaway scores up on
+         render so they sweep in with the bars. */
+      requestAnimationFrame(() => { cmpReplayGauges(); cmpReplayTakeaways(); });
     }
 
     /* ── Chat-driven guided flow ──────────────────────────────────────── */
     /* You're signed in as a brand (Amy's Kitchen), so a comparison should be live
-       the instant this opens — never a blank "pick a scope" board. We load a
-       populated head-to-head immediately (charts, grades, takeaways all
-       filled) and offer compact refine chips, not the full scenario list. */
+       the instant this opens — never a blank "pick a scope" board. We load YOUR
+       own portfolio first (scores, charts and takeaways all filled) as the
+       default single-column board, then make adding a competitor the obvious
+       next step — both as a prominent "Add" intent chip in the chat and via the
+       always-visible Add button on the board itself. */
     function startComparisonWorkflow() {
       hideWelcomeScreen(() => {
         compareResetState();
         openComparePanel();
-        addUserMessage('Compare against competitors');
-        const typing = showScoutTyping('WISEai is loading your comparison');
+        addUserMessage('Compare my food');
+        const typing = showScoutTyping('WISEai is loading your food');
         setTimeout(() => {
           typing?.remove();
-          cmpSetScope('portfolio_vs_portfolio');   /* populates + renders the board */
-          addScoutMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded a live head-to-head against <strong>Annie’s</strong> on the right — WISEscore, UPF, GRAS, ingredient and protein quality are already populated, with auto takeaways. Refine it below, or ask for a different comparison.', { source: false });
+          cmpSetScope('portfolio_vs_portfolio');   /* populates the scope + metrics */
+          /* Start with only YOUR food on the board — no competitor yet. */
+          const scope = CMP_SCOPES['portfolio_vs_portfolio'];
+          const prim = scope.entities.find(e => e.primary) || scope.entities[0];
+          compareState.shown = [prim.id];
+          renderCompare();
+          scrollPanelIntoView('compare-panel');
+          addScoutMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the right — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
         }, 650);
       });
@@ -12183,6 +13250,14 @@
         scope: 'portfolio_vs_many', metrics: ['upf', 'gras', 'ing_overall', 'nutrient_overall', 'protein_density', 'clean_label'],
         userMsg: 'Auto-generate the takeaways — strongest portfolio, cleanest label — across these brands.',
         scoutReply: 'Generated the <strong>Key Takeaways</strong> automatically — Top Performer, Highest Protein, and Cleanest Label — so you don’t have to interpret raw scores across every metric and brand by hand.' },
+      { id: 'cat_vs_cat',       level: 'Category',  icon: 'category',    label: 'Category vs Category · Granola vs Cereal',
+        scope: 'category_vs_category', metrics: ['upf', 'gras', 'ing_overall', 'nutrient_overall'],
+        userMsg: 'Compare the Granola category average against the Cereal category.',
+        scoutReply: 'Here’s the <strong>Granola</strong> category average head-to-head with <strong>Cereal</strong> — each column is the typical profile across every product WISEcode scored in that category. Use the per-column type toggle to swap either slot to a product or portfolio.' },
+      { id: 'prod_vs_cat',      level: 'Category',  icon: 'insights',    label: 'Your product vs its category',
+        scope: 'product_vs_product', metrics: ['upf', 'gras', 'ing_overall', 'nutrient_overall'], swapSlot: { index: 1, category: 'Dips & Sauces' },
+        userMsg: 'Compare my product against its category average as a peer.',
+        scoutReply: 'Now it’s <strong>Bitchin’ Sauce</strong> head-to-head with the <strong>Dips &amp; Sauces category</strong> as a ranked peer — not just an overlay line. Swap the category slot, add a competitor, or toggle either column’s type anytime.' },
     ];
 
     function cmpApplyScenario(s) {
@@ -12195,6 +13270,17 @@
         const sc = CMP_SCOPES[s.scope];
         const prim = sc.entities.find(e => e.primary) || sc.entities[0];
         compareState.shown = [prim.id];
+      }
+      /* Drop a synthesised category into a specific slot (e.g. "your product
+         vs its category" — the category as a ranked peer, not an overlay). */
+      if (s.swapSlot) {
+        const sc = CMP_SCOPES[s.scope];
+        const clone = cmpCloneCategory(s.swapSlot.category);
+        if (clone) {
+          const catEnt = sc.entities.find(e => e.id === clone.id) || (sc.entities.push(clone), clone);
+          const i = Math.min(s.swapSlot.index, compareState.shown.length - 1);
+          if (i >= 0) compareState.shown[i] = catEnt.id;
+        }
       }
       renderCompare();
       /* Don't re-offer follow actions the scenario already applied. */
@@ -12213,7 +13299,8 @@
       wrap.id = 'cmp-scope-chips';
       wrap.innerHTML =
         '<div class="sc-reply-chips">' + chipHtml('Product') + '</div>' +
-        '<div class="sc-reply-chips">' + chipHtml('Portfolio') + '</div>';
+        '<div class="sc-reply-chips">' + chipHtml('Portfolio') + '</div>' +
+        '<div class="sc-reply-chips">' + chipHtml('Category') + '</div>';
       box.appendChild(wrap);
       box.scrollTop = box.scrollHeight;
     }
@@ -12250,6 +13337,63 @@
       }, 680);
     }
 
+    /* ── Comparison TYPE switch (chat intent chip) ────────────────────────
+       Flips the entire board between comparing products, portfolios, or
+       categories. Offered from the initial follow-chip row on load. */
+    function cmpPromptKind() {
+      document.getElementById('cmp-kind-scope-chips')?.remove();
+      addUserMessage('Change the comparison type');
+      const typing = showScoutTyping();
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage('What do you want to compare — individual <strong>products</strong>, whole <strong>portfolios</strong>, or <strong>categories</strong>? I’ll rebuild the board for that type.', { source: false });
+        const box = document.getElementById('chat-messages');
+        if (!box) return;
+        const cur = CMP_SCOPES[compareState.scope];
+        const curTab = (cur && (cur.tab || cur.key)) || '';
+        const opts = [['product_vs_product', 'Product', 'inventory_2'], ['portfolio_vs_portfolio', 'Portfolio', 'business'], ['category_vs_category', 'Category', 'category']];
+        const chips = opts.map(([k, l, ic]) => {
+          const cls = k === curTab ? 'chip chip--match' : 'chip';
+          return `<button type="button" class="${cls}" onclick="cmpChatKind('${k}', this)"><span class="material-icons">${ic}</span>${l}</button>`;
+        }).join('');
+        const row = document.createElement('div');
+        row.className = 'sc-reply-chips';
+        row.id = 'cmp-kind-scope-chips';
+        row.innerHTML = chips;
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }, 420);
+    }
+
+    function cmpChatKind(key, btn) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      document.getElementById('cmp-kind-scope-chips')?.remove();
+      const scope = CMP_SCOPES[key];
+      if (!scope) return;
+      compareState.followDone = {};
+      const noun = scope.noun;
+      addUserMessage('Compare ' + (noun === 'category' ? 'categories' : noun + 's'));
+      const typing = showScoutTyping('WISEai is rebuilding the board');
+      setTimeout(() => {
+        typing?.remove();
+        cmpSetScope(key);
+        /* Products / portfolios start with only YOUR food, consistent with the
+           default board; category-vs-category has no "yours", so keep its pair. */
+        const prim = scope.entities.find(e => e.primary);
+        let reply;
+        if (prim && noun !== 'category') {
+          compareState.shown = [prim.id];
+          renderCompare();
+          scrollPanelIntoView('compare-panel');
+          reply = 'Switched to a <strong>' + noun + '</strong> comparison, starting with <strong>your</strong> ' + noun + '. Add a competitor to build the head-to-head.';
+        } else {
+          reply = 'Switched to a <strong>category</strong> comparison — each column is the average profile across every product WISEcode scored in that category. Add or swap categories anytime.';
+        }
+        addScoutMessage(reply, { source: false });
+        cmpOfferFollowChips();
+      }, 640);
+    }
+
     /* Chat control surface — mirrors EVERY interactive control on the compare
        module (scope, add/remove entity, metric set, category filter, category
        average, ranking, ingredient drill-down, recalculate) as intent chips.
@@ -12265,10 +13409,17 @@
       const chips = [];
       if (compareState.stale && !compareState.recalcing)
         chips.push(`<button type="button" class="chip chip-primary" onclick="cmpRecalculate(this)"><span class="material-icons">calculate</span>Recalculate</button>`);
-      if (compareState.shown.length < scope.entities.length && compareState.shown.length < 5)
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('add', this)"><span class="material-icons">add_circle</span>Add a ${scope.noun}</button>`);
+      /* Adding an entity is the primary next step. Rather than a single bundled
+         "add" chip plus a separate comparison-type switch, surface a dedicated
+         chip per kind so a product, category, or portfolio can be dropped
+         straight onto the board. Each jumps past the "what kind?" step. */
+      if (compareState.shown.length < 5) {
+        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('product', this)"><span class="material-icons">inventory_2</span>Add a product</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('category', this)"><span class="material-icons">category</span>Add a category</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('portfolio', this)"><span class="material-icons">business</span>Add a portfolio</button>`);
+      }
       if (compareState.shown.length > 2)
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove a ${scope.noun}</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove an item</button>`);
       chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-icons">tune</span>Metrics · ${compareState.metrics.length}</button>`);
       if (scope.categories) {
         const cur = compareState.category === 'all' ? 'All' : compareState.category;
@@ -12296,6 +13447,7 @@
       if (action === 'remove')   { cmpPromptRemoveEntity(); return; }
       if (action === 'metrics')  { cmpPromptMetrics();      return; }
       if (action === 'category') { cmpPromptCategory();     return; }
+      if (action === 'kind')     { cmpPromptKind();         return; }
 
       if (action === 'avg') {
         const on = !compareState.showAvg;
@@ -12495,23 +13647,75 @@
       antiinf: { metric: 'anti_inflammatory', topic: 'most anti-inflammatory', ic: 'healing',           lbl: 'Anti-Inflammatory', subLabel: 'Anti-inflammatory' },
       lowsugar:{ metric: 'sugar_density',     topic: 'lowest sugar',           ic: 'icecream',          lbl: 'Lowest Sugar',      subLabel: 'Sugar density' },
     };
+    /* ── Overall board insight ─────────────────────────────────────────────
+       The single "what's happening here" read that sits beside the Insight
+       rail. It is recomputed from scratch on every renderCompare(), so it
+       automatically re-writes itself whenever a product/portfolio/category is
+       added, removed, swapped, re-scored, filtered by category, or when the
+       metric set changes — no cached copy to fall stale. */
+    function cmpOverallInsight(scope, metrics, ordered, pendingSet) {
+      const live = ordered.filter(e => !e.na && !pendingSet.has(e.id));
+      const pendingCount = ordered.filter(e => pendingSet.has(e.id)).length;
+      const noun = scope.noun === 'portfolio' ? 'portfolio' : (scope.noun === 'category' ? 'category' : 'product');
+      const nounPl = noun === 'category' ? 'categories' : noun + 's';
+      const catFilter = (compareState.category && compareState.category !== 'all') ? compareState.category : null;
+      const catBit = catFilter ? ' in ' + catFilter : '';
+      const pendBit = pendingCount
+        ? ' ' + pendingCount + ' pending ' + (pendingCount > 1 ? nounPl : noun) + ' — recalculate to fold ' + (pendingCount > 1 ? 'them' : 'it') + ' in.'
+        : '';
+
+      if (!live.length) return 'Add ' + nounPl + ' to the board and WISEai will summarize how they stack up here.' + pendBit;
+
+      const byScore = live.slice().sort((a, b) => cmpScoreFor(b, 'wisescore') - cmpScoreFor(a, 'wisescore'));
+      const leader = byScore[0];
+      const leadScore = Math.round(cmpScoreFor(leader, 'wisescore'));
+
+      const primary = live.find(e => e.primary);
+      const youRankBit = (rank) => primary
+        ? (primary.id === leader.id ? ' Your ' + noun + ' leads the set.' : ' Your ' + noun + ' sits #' + rank + ' of ' + live.length + '.')
+        : '';
+
+      if (live.length === 1) {
+        const only = leader.name + ' scores ' + leadScore + ' overall' + catBit + ' — add another ' + noun + ' to see how it stacks up.';
+        return only + pendBit;
+      }
+
+      /* The leader's single biggest edge vs the rest of the field. */
+      let edge = null, edgeGap = -Infinity;
+      const others = live.filter(e => e.id !== leader.id);
+      metrics.forEach(m => {
+        const avgOther = others.reduce((s, e) => s + cmpScoreFor(e, m.id), 0) / others.length;
+        const gap = cmpScoreFor(leader, m.id) - avgOther;
+        if (gap > edgeGap) { edgeGap = gap; edge = m; }
+      });
+      const edgeBit = (edge && edgeGap >= 4) ? ', led by its ' + cmpMetricShort(edge).toLowerCase() : '';
+
+      const gap = leadScore - Math.round(cmpScoreFor(byScore[byScore.length - 1], 'wisescore'));
+      const spread = gap >= 20 ? 'a wide ' + gap + '-point spread'
+        : (gap >= 8 ? 'a ' + gap + '-point spread' : 'a tight ' + gap + '-point spread');
+
+      const rank = byScore.findIndex(e => e.id === (primary ? primary.id : leader.id)) + 1;
+      return leader.name + ' tops ' + live.length + ' ' + nounPl + catBit + ' at ' + leadScore
+        + edgeBit + ', with ' + spread + ' across the board.' + youRankBit(rank) + pendBit;
+    }
+
     function cmpTakeawayWhy(key, ent, score) {
       switch (key) {
-        case 'perf':  return `<strong>${ent.name}</strong> posts the highest composite WISEscore in the set (${score}) — strong nutrient density and a clean ingredient panel outweigh its processing level.`;
-        case 'prot':  return `<strong>${ent.name}</strong> leads on protein density (${score}) — genuinely protein-forward from real sources, not propped up by isolates just to earn a label claim.`;
-        case 'clean': return `<strong>${ent.name}</strong> carries the cleanest label (${score}) — the fewest artificial colors, flavors, sweeteners and preservatives across the compared products.`;
-        case 'val':   return `<strong>${ent.name}</strong> is the best value (${score}) — top-tier composite quality at the lowest cost per serving in the set.`;
-        case 'fiber': return `<strong>${ent.name}</strong> delivers the most fiber (${score}) — the highest fiber density in the set, from whole-food sources rather than added isolates.`;
-        case 'lowupf':return `<strong>${ent.name}</strong> is the least processed (${score}) — the lowest ultra-processing footprint across the compared products.`;
-        case 'gras':  return `<strong>${ent.name}</strong> has the safest additive profile (${score}) — the strongest GRAS standing, with the fewest ingredients of concern in the set.`;
-        case 'gut':   return `<strong>${ent.name}</strong> is best for gut health (${score}) — the most fiber- and ferment-friendly profile, with the fewest emulsifiers of concern.`;
-        case 'heart': return `<strong>${ent.name}</strong> is the most heart-healthy (${score}) — the best fat quality and sodium balance, with no seed oils of concern.`;
-        case 'antiinf':return `<strong>${ent.name}</strong> is the most anti-inflammatory (${score}) — the highest score on inflammation-lowering nutrients and the cleanest additive panel.`;
-        case 'lowsugar':return `<strong>${ent.name}</strong> carries the lowest sugar load (${score}) — the least added sugar per serving across the compared products.`;
+        case 'perf':  return `Strong nutrient density and a clean ingredient panel outweigh its processing level.`;
+        case 'prot':  return `Genuinely protein-forward from real sources, not propped up by isolates just to earn a label claim.`;
+        case 'clean': return `The fewest artificial colors, flavors, sweeteners and preservatives across the compared products.`;
+        case 'val':   return `Top-tier composite quality at the lowest cost per serving in the set.`;
+        case 'fiber': return `The highest fiber density in the set, from whole-food sources rather than added isolates.`;
+        case 'lowupf':return `The lowest ultra-processing footprint across the compared products.`;
+        case 'gras':  return `The strongest GRAS standing, with the fewest ingredients of concern in the set.`;
+        case 'gut':   return `The most fiber- and ferment-friendly profile, with the fewest emulsifiers of concern.`;
+        case 'heart': return `The best fat quality and sodium balance, with no seed oils of concern.`;
+        case 'antiinf':return `The highest score on inflammation-lowering nutrients and the cleanest additive panel.`;
+        case 'lowsugar':return `The least added sugar per serving across the compared products.`;
         default:
           const m = CMP_TAKEAWAY_META[key];
           const lbl = m ? m.subLabel.toLowerCase() : 'this measure';
-          return `<strong>${ent.name}</strong> leads on ${lbl} (${score}) — the strongest result in the compared set on this measure.`;
+          return `The strongest result in the compared set on ${lbl}.`;
       }
     }
 
@@ -12631,6 +13835,26 @@
         typing?.remove();
         addScoutMessage(cmpTakeawayWhy(key, ent, score) +
           ' Want me to show the ingredients behind it, compare it against another product, or flag where it still has room to improve?', { source: false, feedback: true });
+        if (compareState.scope) cmpOfferFollowChips();
+      }, 640);
+    }
+
+    /* Continue the conversation about the WHOLE board — opened from the chat
+       glyph beside the overall Insight read in the rail. */
+    function cmpChatOverall() {
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const ents = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e));
+      const pendingSet = new Set(compareState.pending || []);
+      const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(Boolean);
+      const ordered = ents;
+      document.getElementById('cmp-follow-chips')?.remove();
+      addUserMessage('What’s the overall read on this comparison?');
+      const typing = showScoutTyping('WISEai is summarizing the board');
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage(cmpOverallInsight(scope, metrics, ordered, pendingSet) +
+          ' Want me to break down what’s driving the leader, swap in another ' + (scope.noun || 'product') + ', or focus on a specific metric?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
     }
@@ -14308,7 +15532,7 @@
       function renderAvatarBody(pop) {
         const notifUnread = !document.getElementById('topbar-profile')?.classList.contains('is-read');
         pop.innerHTML = `
-          <div class="wise-popover-header">Maya Chen</div>
+          <div class="wise-popover-header">${(window.WiseAuth && WiseAuth.getUser() && WiseAuth.getUser().name) || 'Maya Chen'}</div>
           <div class="wise-popover-actions">
             <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
               <span class="material-icons">notifications</span>
