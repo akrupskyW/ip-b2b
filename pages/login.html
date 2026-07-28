@@ -8,21 +8,72 @@
     try { if (localStorage.getItem('wise-theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { document.documentElement.classList.add('dark'); }
   </script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="scout-chat.css" />
-  <link rel="stylesheet" href="auth-chat.css" />
+  <link rel="stylesheet" href="auth.css" />
   <script src="../js/auth.js"></script>
 </head>
-<body class="auth-chat-page">
-  <div class="ac-shell">
-    <aside id="ac-nav" class="ac-nav-panel"></aside>
-    <div class="ac-main"><div id="ac-chat"></div></div>
-    <aside id="ac-setup" class="setup-pane" hidden></aside>
-  </div>
-  <script type="module">
-    import { initAuthChat } from '../js/auth-chat.js';
-    initAuthChat({ mode: 'signin' });
-  </script>
+<body class="auth-page">
+  <main class="auth-wrap">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="auth-brand">
+        <span class="auth-brand-mark"><svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg></span>
+        <span class="auth-brand-word">WISE<b>code</b></span>
+      </div>
+
+      <h1 id="auth-title" class="auth-title">Welcome back</h1>
+      <p class="auth-sub">Sign in to your WISEcode account</p>
+
+      <form id="login-form" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="email">Email address <span class="req">*</span></label>
+          <input type="email" id="email" name="email" class="auth-input" autocomplete="email" placeholder="you@company.com" required />
+        </div>
+        <div class="auth-field">
+          <label for="password">Password <span class="req">*</span></label>
+          <div class="auth-input-affix">
+            <input type="password" id="password" name="password" class="auth-input" autocomplete="current-password" placeholder="Your password" required />
+            <button type="button" class="auth-affix-btn" data-toggle-pw aria-label="Show password"><span class="material-icons">visibility</span></button>
+          </div>
+        </div>
+        <div class="auth-row">
+          <label class="auth-check"><input type="checkbox" id="remember" checked /><span>Remember me</span></label>
+          <a class="auth-link" href="forgot-password.html">Forgot password?</a>
+        </div>
+        <p class="auth-banner auth-banner--error" id="login-error" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block"><span class="material-icons">login</span>Sign in</button>
+      </form>
+
+      <button type="button" class="btn btn-ghost btn-block" id="demo-btn" style="margin-top:10px"><span class="material-icons">bolt</span>Use demo account</button>
+
+      <div class="auth-divider"><span>or continue with</span></div>
+      <div class="auth-sso">
+        <button type="button" class="btn btn-secondary" data-sso="Google">
+          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google
+        </button>
+        <button type="button" class="btn btn-secondary" data-sso="Microsoft">
+          <svg viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          Microsoft
+        </button>
+        <button type="button" class="btn btn-secondary" data-sso="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          LinkedIn
+        </button>
+      </div>
+
+      <p class="auth-foot">Don't have an account? <a class="auth-link" href="create-account.html">Create account</a></p>
+
+      <div class="auth-demo">
+        <span class="material-icons">info</span>
+        <div>
+          <div class="auth-demo-title">Demo access</div>
+          <div class="auth-demo-body">Explore instantly with <code>demo@wisealliance.com</code> / <code>demo123</code> — or tap “Use demo account”.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/auth-forms.js"></script>
+  <script>WiseAuthForms.initLogin();</script>
 </body>
 </html>
