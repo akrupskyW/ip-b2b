@@ -5980,14 +5980,14 @@
       align-items: flex-start;
       gap: 14px;
       padding: 20px 20px 16px;
-      background: linear-gradient(135deg, rgba(210, 115, 38, 0.12) 0%, transparent 100%);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 100%);
     }
     .so-header-icon {
       width: 42px;
       height: 42px;
       border-radius: var(--radius-pill);
-      background: rgba(210, 115, 38, 0.12);
-      border: 1px solid rgba(210, 115, 38, 0.3);
+      background: var(--primary-soft);
+      border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -6026,7 +6026,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-radius: var(--radius-pill);
       font-size: var(--fs-ui);
       font-weight: 600;
@@ -6034,6 +6034,7 @@
       font-family: inherit;
       transition: background 0.14s, border-color 0.14s, filter 0.14s, color 0.14s;
     }
+    .so-btn .material-icons { font-size: 16px; }
     .so-btn-cancel {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -6041,8 +6042,8 @@
     }
     .so-btn-cancel:hover { background: var(--surface-3); border-color: var(--border-strong); }
     .so-btn-confirm {
-      background: #D27326;
-      border: 1px solid #D27326;
+      background: var(--primary);
+      border: 1px solid var(--primary);
       color: #fff;
     }
     .so-btn-confirm:hover { filter: brightness(1.06); }
@@ -9324,7 +9325,7 @@
       <div class="so-dialog">
           <div class="so-header">
               <div class="so-header-icon">
-                  <span class="material-icons" style="font-size:22px;color:#D27326">logout</span>
+                  <span class="material-icons" style="font-size:22px;color:var(--primary)">logout</span>
               </div>
               <div class="so-header-text">
                   <div class="so-title" id="so-title-id">Sign out of WISE?</div>

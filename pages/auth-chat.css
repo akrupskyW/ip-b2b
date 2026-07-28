@@ -81,7 +81,6 @@ body.auth-chat-page {
   height: 100dvh;
   height: 100vh;
   overflow: hidden;
-  display: flex;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   color: var(--text);
   background:
@@ -91,27 +90,112 @@ body.auth-chat-page {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Shell: chat card + optional progress pane, centered ── */
+/* ── Shell: left nav | chat | optional progress pane ──
+   12px inset on all sides + 8px gaps mirror ai-chat-3's module frame so the
+   modules read the same height/padding as the other pages. */
 .ac-shell {
-  flex: 1;
-  min-height: 0;
+  height: 100dvh;
+  height: 100vh;
   display: flex;
-  gap: 14px;
+  gap: 8px;
   align-items: stretch;
-  justify-content: center;
-  padding: clamp(12px, 3vh, 30px) clamp(12px, 4vw, 48px);
+  padding: 12px;
+  box-sizing: border-box;
 }
 .ac-main {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-  max-width: 840px;
-  transition: max-width 0.3s ease;
 }
-/* When the setup pane is showing, let the chat breathe a bit wider. */
-.ac-shell.has-pane .ac-main { max-width: 720px; }
 #ac-chat { flex: 1 1 auto; min-width: 0; }
+
+/* ── Left navigation module (ported from the app menu panel) ── */
+.ac-nav-panel {
+  flex: 0 0 280px;
+  width: 280px;
+  align-self: stretch;
+  min-height: 0;
+  display: flex;
+}
+.ac-nav-panel .menu-inner {
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-size: var(--fs-ui);
+}
+html.dark .ac-nav-panel .menu-inner {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border: 1px solid rgba(37, 80, 124, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.ac-nav-panel .menu-brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: var(--panel-header-h);
+  padding: 0 12px 0 18px;
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.ac-brand-mark { width: 30px; height: 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); }
+html.dark .ac-brand-mark { color: var(--primary-bright, #8B9FAF); }
+.ac-brand-mark svg { width: 30px; height: auto; }
+.ac-brand-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
+.ac-brand-word { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.ac-brand-word b { font-weight: 700; color: var(--text-muted); }
+.ac-brand-tag { font-size: 7px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-top: 3px; }
+
+.ac-nav-panel .menu-panel-body { flex: 1; overflow-y: auto; padding: 12px 8px; color: var(--text-muted); }
+.ac-nav-lead {
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-subtle); padding: 4px 10px 8px;
+}
+.ac-nav-panel .menu-nav { display: flex; flex-direction: column; gap: 4px; }
+.ac-nav-panel .menu-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-height: 44px;
+  box-sizing: border-box; border-radius: var(--radius-pill);
+  color: var(--text); text-decoration: none; cursor: pointer; background: transparent; border: none;
+  width: 100%; text-align: left; font-size: var(--fs-ui); font-weight: 600; letter-spacing: 0.01em; font-family: inherit;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.ac-nav-panel .menu-nav-item:hover,
+.ac-nav-panel .menu-nav-item.is-active { background: var(--primary-soft); color: var(--primary); }
+html.dark .ac-nav-panel .menu-nav-item.is-active,
+html.dark .ac-nav-panel .menu-nav-item:hover { color: var(--primary-bright, #8B9FAF); }
+.ac-nav-panel .menu-nav-icon {
+  width: 28px; height: 28px; border-radius: 999px; background: var(--primary-soft);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.ac-nav-panel .menu-nav-icon .material-icons { font-size: 16px; color: var(--primary); }
+html.dark .ac-nav-panel .menu-nav-icon .material-icons { color: var(--primary-bright, #8B9FAF); }
+.ac-nav-panel .menu-nav-item.is-active .menu-nav-icon {
+  background: var(--primary); box-shadow: none;
+}
+.ac-nav-panel .menu-nav-item.is-active .menu-nav-icon .material-icons { color: #fff; }
+.ac-nav-panel .menu-nav-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ac-nav-panel .menu-footer { flex-shrink: 0; margin-top: auto; border-top: 1px solid var(--border); padding: 10px 8px; }
+.ac-nav-panel .menu-footer .menu-nav-item .menu-nav-icon { background: transparent; box-shadow: none; }
+.ac-nav-panel .menu-footer .menu-nav-item .menu-nav-icon .material-icons { color: var(--text-muted); }
+.ac-nav-panel .menu-footer .menu-nav-item:hover .menu-nav-icon { background: var(--primary-soft); }
+.ac-nav-panel .menu-footer .menu-nav-item:hover .menu-nav-icon .material-icons { color: var(--primary); }
+.ac-nav-trust {
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px 2px;
+  font-size: var(--fs-label); color: var(--text-subtle);
+}
+.ac-nav-trust .material-icons { font-size: 14px; color: var(--sec-green); }
 
 /* ── Account setup progress pane (verification-sidebar pattern) ── */
 .setup-pane {
@@ -222,15 +306,35 @@ html.dark .sp-field--active .material-icons { color: var(--primary-bright, #8B9F
 .sp-field--active .sp-field-val { color: var(--primary); font-weight: 600; }
 html.dark .sp-field--active .sp-field-val { color: var(--primary-bright, #8B9FAF); }
 
-/* ── In-chat reply chips (Continue / choices / cross-nav) ── */
-.sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.sc-reply-chips .chip { font-weight: 600; }
-.sc-reply-chips .chip-primary {
-  background: var(--primary); border-color: var(--primary); color: #fff;
+/* ── In-chat reply chips — byte-for-byte the ai-chat-3 .sc-reply-chips spec.
+   They render as their own row after the scout line, left-aligned under the
+   message body (30px avatar + 12px gap = 42px). ── */
+.sc-reply-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: -4px 0 14px 42px;
 }
-.sc-reply-chips .chip-primary:hover { background: color-mix(in srgb, var(--primary) 86%, black); border-color: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
+.sc-reply-chips .chip {
+  font-weight: 500;
+  padding: 5px 11px;
+  font-size: var(--fs-label);
+  line-height: 1.25;
+  text-align: left;
+  max-width: 100%;
+}
+.sc-reply-chips .chip .material-icons { font-size: 15px !important; align-self: center; flex-shrink: 0; }
+/* Solid primary CTA chip — the exact ai-chat-3 .chip.chip-primary look. */
+.chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+.chip.chip-primary:hover { filter: brightness(1.05); color: #fff; }
+.chip.chip-primary .material-icons { color: #fff !important; }
+/* Warm "likely match" outline chip, also from ai-chat-3. */
+.sc-reply-chips .chip--match {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.sc-reply-chips .chip--match .material-icons { color: var(--primary) !important; }
 .sc-reply-chips.is-done { opacity: 0.55; pointer-events: none; }
 .sc-reply-chips.is-done .chip { filter: grayscale(0.2); }
+@media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
 /* Small success flourish on the final scout line */
 .ac-success { display: inline-flex; align-items: center; gap: 6px; color: var(--sec-green-text); font-weight: 700; }
@@ -239,11 +343,12 @@ html.dark .sp-field--active .sp-field-val { color: var(--primary-bright, #8B9FAF
 /* Password / masked answer echo stays legible but subtle */
 .sc-line-you .sc-mask { letter-spacing: 2px; }
 
-/* Responsive: stack the pane under the chat on narrow screens */
+/* Responsive: stack nav + pane around the chat on narrow screens */
 @media (max-width: 900px) {
   body.auth-chat-page { overflow: auto; }
   .ac-shell { flex-direction: column; align-items: stretch; height: auto; min-height: 100dvh; }
-  .ac-main, .ac-shell.has-pane .ac-main { max-width: none; }
+  .ac-nav-panel, .setup-pane { flex-basis: auto; width: auto; }
+  .ac-nav-panel .menu-inner { height: auto; min-height: 0; }
+  .ac-nav-panel .menu-panel-body { overflow: visible; }
   #ac-chat { min-height: 60vh; }
-  .setup-pane { flex-basis: auto; width: auto; }
 }
