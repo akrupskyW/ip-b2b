@@ -2405,7 +2405,7 @@
     .cmp-hcell--tools .cmp-tool-spacer { display: none; }
     /* If the wrapped controls run taller than the default tile height, let the
        neighbouring image tiles grow with the row so the header stays flush. */
-    .cmp-grid .cmp-cell--entity.cmp-hcell .cmp-tile { height: 100%; min-height: 196px; }
+    .cmp-grid .cmp-cell--entity.cmp-hcell .cmp-tile { height: 100%; min-height: 224px; }
 
     /* ≥ 300px: enough room to push the chart toggle + Add over to the right. */
     @container cmptools (min-width: 300px) {
@@ -2557,8 +2557,7 @@
     .cmp-race-metric-ic {
       width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      background: #0B0B0F; border: 1.5px solid #fff;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent);
+      background: #0B0B0F; border: none;
     }
     .cmp-race-metric-ic .material-icons { font-size: 12px !important; color: #fff !important; }
     .cmp-race-metric-ic--btn { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
@@ -2879,6 +2878,8 @@
 
     /* Ingredient drill-down */
     .cmp-drill { border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); padding: 12px; }
+    .cmp-drill-note { font-size: var(--fs-label); color: var(--text-muted); margin: 0 0 8px; padding-left: 15px; line-height: 1.4; }
+    .cmp-drill-note strong { color: var(--text); font-weight: 700; }
     .cmp-drill-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
     .cmp-drill-row + .cmp-drill-row { border-top: 1px solid var(--border); }
     .cmp-drill-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
@@ -3002,7 +3003,7 @@
     /* Full-bleed image tile — taller, no drop shadow. The product photo / brand
        logo fills the whole tile; rank + name + label are layered on top. */
     .cmp-tile {
-      width: 100%; height: 196px; border-radius: 0; position: relative; overflow: hidden;
+      width: 100%; height: 224px; border-radius: 0; position: relative; overflow: hidden;
       background: var(--surface-3);
       display: block; box-shadow: none;
     }
@@ -3045,9 +3046,18 @@
       font-size: 9px; font-weight: 800; letter-spacing: 0.03em; vertical-align: middle;
       background: rgba(255,255,255,0.16); color: #fff; border: 1px dashed rgba(255,255,255,0.75);
     }
+    /* Category tile — a clean slate gradient carrying the category's own icon
+       as a large centred watermark, in place of the old diagonal stripes. */
     .cmp-cell--entity.is-category .cmp-tile {
-      background: repeating-linear-gradient(135deg, #7C8A99 0, #7C8A99 9px, #6E7C8B 9px, #6E7C8B 18px) !important;
+      background: linear-gradient(155deg, #3A4C61 0%, #253546 55%, #1B2836 100%) !important;
     }
+    .cmp-cat-ic {
+      position: absolute; inset: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.30);
+      pointer-events: none;
+    }
+    .cmp-cat-ic .material-icons { font-size: 108px !important; line-height: 1; }
 
     /* ── Circular WISEscore gauge on the header tile ────────────────────────
        Floats large in the dead-centre of the tile: a translucent dark halo
@@ -3119,13 +3129,16 @@
       background: #fff; color: #1A2339; font-size: 11px; font-weight: 800;
       border: 1px solid rgba(0,0,0,0.06); text-transform: none; letter-spacing: 0;
     }
-    /* Caret is fenced off with a left divider — mirrors the "＋ Add" split
-       control's border-left between its face and its dropdown caret. */
+    /* Caret is fenced off with a full-height left divider — matched 1:1 to the
+       "＋ Add" split control: the caret is pulled out past the chip's vertical
+       padding (negative margins) so its border-left runs edge-to-edge like the
+       Add pill's, with the same 9px inset and 18px glyph. */
     .cmp-kind-chip .cmp-kind-chip-caret {
-      font-size: 16px !important; opacity: 0.9; align-self: stretch;
+      font-size: 18px !important; opacity: 0.9; align-self: stretch;
       display: inline-flex; align-items: center;
       border-left: 1px solid rgba(255,255,255,0.4);
-      padding-left: 6px; margin-left: 1px;
+      padding-left: 9px; padding-right: 9px;
+      margin: -6px -10px -6px 0;
     }
 
     /* Per-slot type toggle — the proper floating dropdown the kind chip opens.
@@ -3176,13 +3189,28 @@
     html.dark .cmp-top-pill.tp-mid { color: #F5C877; }
     html.dark .cmp-top-pill.tp-low { color: #F58C86; }
 
-    /* Metric-rail icons — solid black circular badge with a white outline,
-       matching the WISE mobile app iconography (glyph rendered white). */
+    /* On-tile pill overrides — the tile floats over a photo / gradient, so the
+       faint tint variants above are illegible there. These use solid, saturated
+       fills with high-contrast text so the pill reads clearly on any tile, in
+       both themes. `tp-cat` is a neutral slate benchmark chip for categories. */
+    .cmp-tile-toppill { border: 1px solid rgba(255,255,255,0.28); }
+    .cmp-tile-toppill,
+    html.dark .cmp-tile-toppill { background: #2E9E5F; color: #fff; }
+    .cmp-tile-toppill.tp-mid,
+    html.dark .cmp-tile-toppill.tp-mid { background: #E8981F; color: #2A1A00; }
+    .cmp-tile-toppill.tp-low,
+    html.dark .cmp-tile-toppill.tp-low { background: #DC3038; color: #fff; }
+    .cmp-tile-toppill.tp-cat,
+    html.dark .cmp-tile-toppill.tp-cat {
+      background: rgba(20,32,45,0.72); color: #fff; border: 1px dashed rgba(255,255,255,0.7);
+    }
+
+    /* Metric-rail icons — solid black circular badge, glyph rendered white.
+       No outline stroke / outer ring (matches the WISE mobile app glyphs). */
     .cmp-rail-metric-ic {
       width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      background: #0B0B0F; border: 1.5px solid #fff;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent);
+      background: #0B0B0F; border: none;
     }
     .cmp-rail-metric-ic .material-icons { font-size: 15px !important; color: #fff !important; }
     .cmp-rail-metric-ic--btn { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
@@ -5979,8 +6007,7 @@
       display: flex;
       align-items: flex-start;
       gap: 14px;
-      padding: 20px 20px 16px;
-      background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 100%);
+      padding: 22px 20px 16px;
     }
     .so-header-icon {
       width: 42px;
@@ -5996,37 +6023,20 @@
     .so-header-text { flex: 1; min-width: 0; }
     .so-title { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
     .so-subtitle { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 4px; line-height: 1.45; }
-    .so-account {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 0 20px 4px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-    }
-    .so-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: var(--fs-ui); font-weight: 700; flex-shrink: 0;
-      background: var(--primary-soft); color: var(--primary);
-    }
-    .so-account-info { min-width: 0; }
-    .so-account-name { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
-    .so-account-mail { font-size: var(--fs-ui); color: var(--text-muted); }
     .so-footer {
       display: flex;
-      gap: 10px;
-      padding: 16px 20px 20px;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px 20px;
     }
     .so-btn {
-      flex: 1;
+      width: 100%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 9px 12px;
+      padding: 11px 12px;
       border-radius: var(--radius-pill);
       font-size: var(--fs-ui);
       font-weight: 600;
@@ -6035,18 +6045,25 @@
       transition: background 0.14s, border-color 0.14s, filter 0.14s, color 0.14s;
     }
     .so-btn .material-icons { font-size: 16px; }
-    .so-btn-cancel {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    .so-btn-cancel:hover { background: var(--surface-3); border-color: var(--border-strong); }
     .so-btn-confirm {
       background: var(--primary);
       border: 1px solid var(--primary);
       color: #fff;
     }
     .so-btn-confirm:hover { filter: brightness(1.06); }
+    .so-cancel-link {
+      background: transparent;
+      border: 0;
+      padding: 8px 12px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: var(--fs-ui);
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      transition: color 0.14s;
+    }
+    .so-cancel-link:hover { color: var(--text); text-decoration: underline; }
     html:not(.dark) .so-dialog {
       background: var(--surface) !important;
       border-color: var(--border-strong) !important;
@@ -9272,7 +9289,7 @@
           <div class="cmp-empty" id="cmp-empty">
             <span class="material-icons">bar_chart</span>
             <p class="cmp-empty-title">No comparison yet</p>
-            <p class="cmp-empty-sub">Pick a scope above or answer WISEai's prompts in the chat — the comparison assembles here.</p>
+            <p class="cmp-empty-sub">Answer WISEai's prompts in the chat, or use the Add control — the comparison assembles here.</p>
           </div>
         </div>
       </div>
@@ -9332,19 +9349,12 @@
                   <div class="so-subtitle">You’ll need to sign back in to access your workspace, agents, and saved views.</div>
               </div>
           </div>
-          <div class="so-account">
-              <div class="so-avatar">MC</div>
-              <div class="so-account-info">
-                  <div class="so-account-name">Maya Chen</div>
-                  <div class="so-account-mail">maya.chen@wisefoods.com</div>
-              </div>
-          </div>
           <div class="so-footer">
-              <button type="button" class="so-btn so-btn-cancel" onclick="closeSignOutModal()">Cancel</button>
               <button type="button" class="so-btn so-btn-confirm" onclick="confirmSignOut()">
                   <span class="material-icons" style="font-size:15px">logout</span>
                   Sign out
               </button>
+              <button type="button" class="so-cancel-link" onclick="closeSignOutModal()">Cancel</button>
           </div>
       </div>
   </div>
@@ -10254,7 +10264,7 @@
       const modal = document.getElementById('signout-modal');
       if (!modal) return;
       modal.classList.add('so-open');
-      setTimeout(() => modal.querySelector('.so-btn-cancel')?.focus(), 120);
+      setTimeout(() => modal.querySelector('.so-cancel-link')?.focus(), 120);
     }
     function closeSignOutModal() {
       document.getElementById('signout-modal')?.classList.remove('so-open');
@@ -11191,7 +11201,7 @@
        always read as better regardless of the metric's direction. */
     const CMP_METRICS = [
       { id: 'wisescore',                fam: 'Composite',         label: 'WISEscore',                        icon: 'verified',           better: 'higher' },
-      { id: 'upf',                      fam: 'Composite',         label: 'UPF',                              icon: 'blender',            better: 'lower'  },
+      { id: 'upf',                      fam: 'Composite',         label: 'UPF',                              icon: 'science',            better: 'lower'  },
       { id: 'gras',                     fam: 'Composite',         label: 'GRAS',                             icon: 'health_and_safety',  better: 'higher' },
       { id: 'nutrient_overall',         fam: 'Nutrient Quality',  label: 'Nutrient Quality — Overall',       icon: 'restaurant',         better: 'higher' },
       { id: 'protein_density',          fam: 'Nutrient Quality',  label: 'Protein Density',                  icon: 'fitness_center',     better: 'higher' },
@@ -11241,6 +11251,13 @@
       cost_value: '#3E9D6B', ho_overall: '#8A5CC4',
     };
     const cmpMetricShort = (m) => CMP_METRIC_SHORT[m.id] || m.label;
+    /* Rail label: a two-word name breaks onto two lines (e.g. "Nutrient" /
+       "Density"); one-word or 3+-word names are left to wrap naturally. */
+    const cmpMetricRailName = (m) => {
+      const s = cmpMetricShort(m);
+      const parts = s.split(' ');
+      return parts.length === 2 ? parts[0] + '<br>' + parts[1] : s;
+    };
     const cmpMetricColor = (id) => CMP_METRIC_COLOR[id] || 'var(--primary)';
 
     /* Per-metric copy. `desc` is the verbose one-liner shown under each metric
@@ -11360,19 +11377,19 @@
       return s;
     }
     const CMP_CATEGORY_DEFS = [
-      { name: 'Granola',       abbr: 'GR' },
-      { name: 'Cereal',        abbr: 'CE' },
-      { name: 'Dips & Sauces', abbr: 'DP' },
-      { name: 'Mac & Cheese',  abbr: 'MC' },
-      { name: 'Pasta',         abbr: 'PA' },
-      { name: 'Snacks',        abbr: 'SN' },
+      { name: 'Granola',       abbr: 'GR', icon: 'grain' },
+      { name: 'Cereal',        abbr: 'CE', icon: 'breakfast_dining' },
+      { name: 'Dips & Sauces', abbr: 'DP', icon: 'tapas' },
+      { name: 'Mac & Cheese',  abbr: 'MC', icon: 'dinner_dining' },
+      { name: 'Pasta',         abbr: 'PA', icon: 'ramen_dining' },
+      { name: 'Snacks',        abbr: 'SN', icon: 'cookie' },
     ];
     const CMP_CATEGORY_ENTITIES = CMP_CATEGORY_DEFS.map(c => {
       const scores = cmpBuildCategoryScores(c.name);
       return {
         id: 'cat_' + c.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
         name: c.name + ' category', catName: c.name, kind: 'category',
-        abbr: c.abbr, color: '#7C8A99', top: 'Category avg', scores,
+        abbr: c.abbr, icon: c.icon, color: '#7C8A99', top: 'Category avg', scores,
         insight: 'The ' + c.name + ' category average — the typical profile across every product WISEcode has scored in ' + c.name + '. A neutral benchmark peer you can rank any product or portfolio against.'
       };
     });
@@ -11397,11 +11414,11 @@
         ],
         entities: [
           { id: 'bitchin', name: 'Bitchin’ Sauce Original', cat: 'Dips & Sauces', abbr: 'BS', color: '#2E7D74', primary: true, base: 79, top: 'Top 10%',
-            img: 'https://www.kroger.com/product/images/xlarge/front/0085819500301',
+            img: '../assets/compare/bitchin.jpg',
             scores: { upf: 86, gras: 88, ing_overall: 85, nutrient_overall: 74, heart_healthy: 82, clean_label: 88, seed_oils: 90, protein_density: 66, fiber_density: 62 },
             insight: 'Bitchin’ Sauce leads on clean label and heart-health outcomes, built on almonds and cold-pressed oil with no seed oils of concern.' },
           { id: 'goodfoods', name: 'Good Foods Plant-Based Dip', cat: 'Dips & Sauces', abbr: 'GF', color: '#C98A2E', base: 61, top: 'Top 40%',
-            img: 'https://target.scene7.com/is/image/Target/GUEST_2ae16115-bf3c-4890-9cb8-44899d1d9a7c?wid=1200&hei=1200&qlt=90&fmt=pjpeg',
+            img: '../assets/compare/goodfoods.webp',
             scores: { upf: 58, gras: 70, ing_overall: 62, nutrient_overall: 60, heart_healthy: 54, clean_label: 55, seed_oils: 48, protein_density: 52, fiber_density: 55 },
             insight: 'Good Foods is a solid everyday dip but carries more refined oils and additives, softening its heart-health and clean-label read.' },
         ],
@@ -11419,23 +11436,23 @@
         ],
         entities: [
           { id: 'brekky', name: 'Brekky Mix Granola', cat: 'Granola', abbr: 'BM', color: '#4E7D5A', primary: true, base: 82, top: 'Top 5%',
-            img: 'https://target.scene7.com/is/image/Target/GUEST_33aa057b-c106-429a-adcd-1c98f5ce3438?wid=1200&hei=1200&qlt=90&fmt=pjpeg',
+            img: '../assets/compare/brekky.jpg',
             scores: { upf: 92, gras: 90, ing_overall: 91, nutrient_overall: 80, protein_density: 75, fiber_density: 65, clean_label: 82, cost_value: 85, seed_oils: 88 },
             insight: 'Brekky Mix delivers the strongest overall balance — excellent ingredient integrity, nutrient density, and low UPF risk at the lowest cost per serving.' },
           { id: 'cascadian', name: 'Cascadian Farm Vanilla Almond', cat: 'Granola', abbr: 'CF', color: '#6B5B95', base: 74, top: 'Top 15%',
-            img: 'https://images.openfoodfacts.org/images/products/002/190/813/3126/front_en.16.400.jpg',
+            img: '../assets/compare/cascadian.jpg',
             scores: { upf: 76, gras: 80, ing_overall: 80, nutrient_overall: 70, protein_density: 60, fiber_density: 70, clean_label: 70, cost_value: 65, seed_oils: 72 },
             insight: 'Cascadian Farm provides strong ingredient integrity and good fiber content, with a solid overall profile across key metrics.' },
           { id: 'naturespath', name: 'Nature’s Path Heritage Flakes', cat: 'Cereal', abbr: 'NP', color: '#2E5A87', base: 64, top: 'Top 30%',
-            img: 'https://www.kroger.com/product/images/xlarge/front/0005844922101',
+            img: '../assets/compare/naturespath.jpg',
             scores: { upf: 61, gras: 78, ing_overall: 64, nutrient_overall: 60, protein_density: 50, fiber_density: 50, clean_label: 80, cost_value: 50, seed_oils: 66 },
             insight: 'Nature’s Path offers good nutritional value and clean ingredients, though protein and fiber are moderate compared to alternatives.' },
           { id: 'kind', name: 'KIND Oats & Honey', cat: 'Granola', abbr: 'KD', color: '#C0453B', base: 58, top: 'Top 45%',
-            img: 'https://www.kroger.com/product/images/xlarge/front/0060265243336',
+            img: '../assets/compare/kind.jpg',
             scores: { upf: 44, gras: 66, ing_overall: 55, nutrient_overall: 55, protein_density: 65, fiber_density: 45, clean_label: 45, cost_value: 35, seed_oils: 40 },
             insight: 'KIND Oats & Honey is higher in protein but carries the highest UPF risk and additive load, impacting overall nutritional quality.' },
           { id: 'w365', name: '365 Organic Almond Granola', cat: 'Granola', abbr: '365', color: '#3A6EA5', base: 62, top: 'Top 35%',
-            img: 'https://images.openfoodfacts.org/images/products/009/948/247/9619/front_en.20.full.jpg',
+            img: '../assets/compare/w365.jpg',
             scores: { upf: 58, gras: 72, ing_overall: 62, nutrient_overall: 55, protein_density: 58, fiber_density: 62, clean_label: 62, cost_value: 42, seed_oils: 60 },
             insight: '365 Organic Almond Granola is a middle-of-the-road option with moderate scores across most metrics.' },
         ],
@@ -11453,12 +11470,12 @@
         ],
         entities: [
           { id: 'goodles', name: 'Amy’s Kitchen', cat: 'Portfolio', abbr: 'AM', color: '#4E7D5A', primary: true, base: 78, top: 'Top 12%',
-            img: 'https://icon.horse/icon/amys.com',
+            img: '../assets/compare/amys.png',
             cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
             scores: { upf: 80, gras: 84, ing_overall: 82, nutrient_overall: 76, protein_density: 84, fiber_density: 70, clean_label: 80 },
             insight: 'Amy’s Kitchen leads on protein density and clean label across the portfolio — a strong platform for a protein-forward retailer story.' },
           { id: 'annies', name: 'Annie’s', cat: 'Portfolio', abbr: 'AN', color: '#2E5A87', base: 71, top: 'Top 22%',
-            img: 'https://icon.horse/icon/annies.com',
+            img: '../assets/compare/annies.png',
             cats: { 'Mac & Cheese': 12, 'Pasta': 10, 'Snacks': 10 },
             scores: { upf: 74, gras: 82, ing_overall: 76, nutrient_overall: 68, protein_density: 62, fiber_density: 66, clean_label: 74 },
             insight: 'Annie’s brings a broad, well-rounded assortment with dependable clean-label scores, but trails Amy’s Kitchen on protein density.' },
@@ -11477,27 +11494,27 @@
         ],
         entities: [
           { id: 'goodles2', name: 'Amy’s Kitchen', cat: 'Portfolio', abbr: 'AM', color: '#4E7D5A', primary: true, base: 78, top: 'Top 12%',
-            img: 'https://icon.horse/icon/amys.com',
+            img: '../assets/compare/amys.png',
             cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
             scores: { upf: 80, gras: 84, ing_overall: 82, nutrient_overall: 76, protein_density: 84, fiber_density: 70, clean_label: 80 },
             insight: 'Amy’s Kitchen pairs the strongest protein density with a clean composite — the standout of the shelf set.' },
           { id: 'banza', name: 'Banza', cat: 'Portfolio', abbr: 'BZ', color: '#4E7D5A', base: 74, top: 'Top 16%',
-            img: 'https://icon.horse/icon/eatbanza.com',
+            img: '../assets/compare/banza.png',
             cats: { 'Mac & Cheese': 5, 'Pasta': 7, 'Snacks': 3 },
             scores: { upf: 76, gras: 82, ing_overall: 78, nutrient_overall: 74, protein_density: 80, fiber_density: 76, clean_label: 76 },
             insight: 'Banza’s chickpea base drives high protein and fiber density across the assortment, close behind Amy’s Kitchen.' },
           { id: 'annies2', name: 'Annie’s', cat: 'Portfolio', abbr: 'AN', color: '#2E5A87', base: 71, top: 'Top 22%',
-            img: 'https://icon.horse/icon/annies.com',
+            img: '../assets/compare/annies.png',
             cats: { 'Mac & Cheese': 12, 'Pasta': 10, 'Snacks': 10 },
             scores: { upf: 74, gras: 82, ing_overall: 76, nutrient_overall: 68, protein_density: 62, fiber_density: 66, clean_label: 74 },
             insight: 'Annie’s brings the broadest assortment with dependable clean-label scores across every category.' },
           { id: 'kraft', name: 'Kraft', cat: 'Portfolio', abbr: 'KR', color: '#C0453B', base: 52, top: 'Top 55%',
-            img: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Kraft_2024.svg',
+            img: '../assets/compare/kraft.svg',
             cats: { 'Mac & Cheese': 9, 'Pasta': 6, 'Snacks': 4 },
             scores: { upf: 48, gras: 70, ing_overall: 52, nutrient_overall: 50, protein_density: 46, fiber_density: 44, clean_label: 46 },
             insight: 'Kraft anchors the value tier — reliable scale, but higher UPF risk and a lower clean-label read pull the composite down.' },
           { id: 'chefb', name: 'Chef Boyardee', cat: 'Portfolio', abbr: 'CB', color: '#5A6B7A', base: 44, top: 'Top 65%',
-            img: 'https://en.wikipedia.org/wiki/Special:FilePath/New_Chef_Boyardee_Logo.png',
+            img: '../assets/compare/chefboyardee.png',
             cats: { 'Mac & Cheese': 6, 'Pasta': 11, 'Snacks': 0 },
             scores: { upf: 40, gras: 66, ing_overall: 44, nutrient_overall: 46, protein_density: 42, fiber_density: 40, clean_label: 38 },
             insight: 'Chef Boyardee trails the set on nearly every metric and carries no products in the Snacks category.' },
@@ -11534,11 +11551,11 @@
         ],
         entities: [
           { id: 'familia', name: 'Familia Swiss Muesli', cat: 'Cereal', abbr: 'FA', color: '#4E7D5A', primary: true, base: 78, top: 'Top 10%',
-            img: 'https://images.freshop.ncrcloud.com/00072762012164/9ff26dc4cc984c27cd28b75126805271_large.png',
+            img: '../assets/compare/familia.png',
             scores: { wisescore: 78, upf: 80, gras: 84, ing_overall: 80, nutrient_overall: 76, fiber_density: 84, protein_density: 66, sugar_density: 62, clean_label: 78 },
             insight: 'Familia leads on fiber density and overall balance, built on whole oats and wheat flakes with minimal added sugar — a strong value-per-serving story.' },
           { id: 'alpen', name: 'Alpen Original Muesli', cat: 'Cereal', abbr: 'AL', color: '#C98A2E', base: 68, top: 'Top 25%',
-            img: 'https://i5.walmartimages.com/seo/Alpen-Original-Muesli-Swiss-Style-Muesli-Cereal-Whole-Grain-Non-GMO-Project-Verified-Heart-Healthy-Kosher-Vegan-14-Oz-Box-RED19_20609331-b771-4b57-833e-faac9b14de00.3188e2b9f0949025d08c1ea071608b95.jpeg',
+            img: '../assets/compare/alpen.jpg',
             scores: { wisescore: 68, upf: 68, gras: 80, ing_overall: 72, nutrient_overall: 70, fiber_density: 74, protein_density: 60, sugar_density: 56, clean_label: 70 },
             insight: 'Alpen is a dependable everyday muesli but trails on fiber density and carries more added sugar, softening its value read.' },
         ],
@@ -11555,73 +11572,85 @@
        cmpScoreFor) and drops it onto the board as a pending column. */
     const CMP_PRODUCT_SUGGESTIONS = [
       { id: 'sug_purely',   name: 'Purely Elizabeth Ancient Grain Granola', cat: 'Granola', abbr: 'PE', color: '#4E7D5A', base: 77, top: 'Top 12%',
+        img: '../assets/compare/sug_purely.jpg',
         insight: 'Whole-grain oats and coconut sugar keep UPF risk low with a clean-label read.' },
       { id: 'sug_bobs',     name: 'Bob’s Red Mill Honey Oat Granola', cat: 'Granola', abbr: 'BR', color: '#6B5B95', base: 70, top: 'Top 22%',
+        img: '../assets/compare/sug_bobs.jpg',
         insight: 'Simple pantry ingredients and solid fiber, with moderate added sugar.' },
       { id: 'sug_michele',  name: 'Michele’s Original Granola', cat: 'Granola', abbr: 'MG', color: '#2E5A87', base: 66, top: 'Top 30%',
+        img: '../assets/compare/sug_michele.jpg',
         insight: 'Small-batch recipe with good ingredient integrity but a higher sugar load.' },
       { id: 'sug_bearnaked', name: 'Bear Naked Fruit & Nut Granola', cat: 'Granola', abbr: 'BN', color: '#C98A2E', base: 58, top: 'Top 42%',
+        img: '../assets/compare/sug_bearnaked.jpg',
         insight: 'Popular mainstream pick, but carries seed oils and more refined sugar.' },
       { id: 'sug_kodiak',   name: 'Kodiak Cakes Oat Granola', cat: 'Granola', abbr: 'KC', color: '#3A6EA5', base: 68, top: 'Top 26%',
+        img: '../assets/compare/sug_kodiak.png',
         insight: 'Protein-forward with whole grains; a strong high-protein competitor.' },
       { id: 'sug_sabra',    name: 'Sabra Classic Hummus', cat: 'Dips & Sauces', abbr: 'SB', color: '#4E7D5A', base: 64, top: 'Top 32%',
+        img: '../assets/compare/sug_sabra.jpg',
         insight: 'Chickpea base gives clean protein, though it uses some refined oil.' },
       { id: 'sug_wholly',   name: 'Wholly Guacamole Classic', cat: 'Dips & Sauces', abbr: 'WG', color: '#6B8E3D', base: 72, top: 'Top 20%',
+        img: '../assets/compare/sug_wholly.jpg',
         insight: 'Avocado-forward with minimal additives — a clean dip benchmark.' },
       { id: 'sug_chosen',   name: 'Chosen Foods Avocado Dip', cat: 'Dips & Sauces', abbr: 'CH', color: '#2E7D74', base: 74, top: 'Top 16%',
+        img: '../assets/compare/sug_chosen.jpg',
         insight: 'Avocado-oil base scores well on seed-oil and clean-label metrics.' },
       { id: 'sug_siete',    name: 'Siete Cashew Queso', cat: 'Dips & Sauces', abbr: 'SI', color: '#C0453B', base: 69, top: 'Top 24%',
+        img: '../assets/compare/sug_siete.jpg',
         insight: 'Grain-free, dairy-free formulation with a clean ingredient panel.' },
       { id: 'sug_primal',   name: 'Primal Kitchen Ranch Dip', cat: 'Dips & Sauces', abbr: 'PK', color: '#5A6B7A', base: 71, top: 'Top 21%',
+        img: '../assets/compare/sug_primal.jpg',
         insight: 'Avocado-oil dressing with no seed oils of concern and clean label.' },
       { id: 'sug_lara',     name: 'Larabar Fruit & Nut Bar', cat: 'Snacks', abbr: 'LB', color: '#8E5A3D', base: 73, top: 'Top 18%',
+        img: '../assets/compare/sug_lara.jpg',
         insight: 'Two-to-five whole-food ingredients — a clean-label snack standard.' },
       { id: 'sug_rxbar',    name: 'RXBAR Chocolate Sea Salt', cat: 'Snacks', abbr: 'RX', color: '#2E5A87', base: 67, top: 'Top 28%',
+        img: '../assets/compare/sug_rxbar.jpg',
         insight: 'High protein from egg whites and nuts with a short ingredient list.' },
     ];
     const CMP_BRAND_SUGGESTIONS = [
       { id: 'sug_goodles',  name: 'Goodles', cat: 'Portfolio', abbr: 'GO', color: '#C9A227', base: 76, top: 'Top 14%',
-        img: 'https://www.goodles.com/GoodlesFavicon.png',
+        img: '../assets/compare/goodles.png',
         cats: { 'Mac & Cheese': 8, 'Pasta': 4, 'Snacks': 2 },
         insight: 'Protein-forward mac & cheese line with a clean label and strong nutrient density.' },
       { id: 'sug_barilla',  name: 'Barilla', cat: 'Portfolio', abbr: 'BA', color: '#2E5A87', base: 62, top: 'Top 34%',
-        img: 'https://icon.horse/icon/barilla.com',
+        img: '../assets/compare/barilla.png',
         cats: { 'Mac & Cheese': 3, 'Pasta': 14, 'Snacks': 1 },
         insight: 'Deep pasta assortment; strong on classics but average on protein and fiber density.' },
       { id: 'sug_modern',   name: 'Modern Table', cat: 'Portfolio', abbr: 'MT', color: '#6B5B95', base: 72, top: 'Top 19%',
-        img: 'https://icon.horse/icon/moderntable.com',
+        img: '../assets/compare/moderntable.png',
         cats: { 'Mac & Cheese': 5, 'Pasta': 6, 'Snacks': 2 },
         insight: 'Lentil-based line delivers high plant protein and fiber with a clean panel.' },
       { id: 'sug_cappellos', name: 'Cappello’s', cat: 'Portfolio', abbr: 'CP', color: '#C98A2E', base: 74, top: 'Top 15%',
-        img: 'https://icon.horse/icon/cappellos.com',
+        img: '../assets/compare/cappellos.svg',
         cats: { 'Mac & Cheese': 2, 'Pasta': 7, 'Snacks': 1 },
         insight: 'Grain-free, almond-flour base scores well on clean label and UPF avoidance.' },
       { id: 'sug_daiya',    name: 'Daiya', cat: 'Portfolio', abbr: 'DA', color: '#C0453B', base: 55, top: 'Top 48%',
-        img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Daiya_Logo.svg',
+        img: '../assets/compare/daiya.svg',
         cats: { 'Mac & Cheese': 4, 'Pasta': 2, 'Snacks': 3 },
         insight: 'Plant-based dairy alternatives, but higher processing softens the composite.' },
       { id: 'sug_velveeta', name: 'Velveeta', cat: 'Portfolio', abbr: 'VE', color: '#5A6B7A', base: 46, top: 'Top 58%',
-        img: 'https://icon.horse/icon/velveeta.com',
+        img: '../assets/compare/velveeta.png',
         cats: { 'Mac & Cheese': 9, 'Pasta': 2, 'Snacks': 1 },
         insight: 'Value-tier scale with high UPF risk and a lower clean-label read.' },
       { id: 'sug_crackerbarrel', name: 'Cracker Barrel', cat: 'Portfolio', abbr: 'CB', color: '#8E5A3D', base: 50, top: 'Top 54%',
-        img: 'https://crackerbarrelcheese.com/wp-content/uploads/2021/08/cropped-CB-favicon-192x192.png',
+        img: '../assets/compare/crackerbarrel.png',
         cats: { 'Mac & Cheese': 7, 'Pasta': 1, 'Snacks': 2 },
         insight: 'Cheese-forward assortment with moderate additive load across the line.' },
       { id: 'sug_365',      name: '365 by Whole Foods', cat: 'Portfolio', abbr: '365', color: '#3A6EA5', base: 66, top: 'Top 30%',
-        img: 'https://commons.wikimedia.org/wiki/Special:FilePath/365%20WFM%20Logo%20(highres).png',
+        img: '../assets/compare/w365brand.svg',
         cats: { 'Mac & Cheese': 5, 'Pasta': 9, 'Snacks': 6 },
         insight: 'Broad private-label range with dependable clean-label scores and fair value.' },
       { id: 'sug_simplytruth', name: 'Simple Truth', cat: 'Portfolio', abbr: 'ST', color: '#4E7D5A', base: 64, top: 'Top 33%',
-        img: 'https://icon.horse/icon/simpletruth.com',
+        img: '../assets/compare/simpletruth.png',
         cats: { 'Mac & Cheese': 6, 'Pasta': 7, 'Snacks': 5 },
         insight: 'Kroger’s clean private label — solid ingredient integrity at a value price.' },
       { id: 'sug_pastaria', name: 'Rao’s Homemade', cat: 'Portfolio', abbr: 'RA', color: '#2E7D74', base: 68, top: 'Top 27%',
-        img: 'https://www.raos.com/cdn/shop/files/Raos-Homemade.png?width=512',
+        img: '../assets/compare/raos.png',
         cats: { 'Mac & Cheese': 2, 'Pasta': 11, 'Snacks': 0 },
         insight: 'Premium, short-ingredient sauces and pastas with a clean-label lead.' },
       { id: 'sug_banza2',   name: 'Chickapea', cat: 'Portfolio', abbr: 'CK', color: '#6B8E3D', base: 73, top: 'Top 17%',
-        img: 'https://www.chickapea.com/cdn/shop/files/Chickapea_Logo.png?width=512',
+        img: '../assets/compare/chickapea.png',
         cats: { 'Mac & Cheese': 3, 'Pasta': 8, 'Snacks': 1 },
         insight: 'Chickpea-and-lentil base gives high protein and fiber with a clean panel.' },
     ];
@@ -11690,7 +11719,7 @@
         body.innerHTML =
           '<div class="cmp-empty" id="cmp-empty"><span class="material-icons">bar_chart</span>' +
           '<p class="cmp-empty-title">No comparison yet</p>' +
-          '<p class="cmp-empty-sub">Pick a scope above or answer WISEai\'s prompts in the chat — the comparison assembles here.</p></div>';
+          '<p class="cmp-empty-sub">Answer WISEai\'s prompts in the chat, or use the Add control — the comparison assembles here.</p></div>';
       }
       const sub = document.getElementById('cmp-subtitle');
       if (sub) sub.textContent = 'WISEcode Intelligence · Competitive Comparison';
@@ -12560,7 +12589,7 @@
     function cmpBugInner(ent) {
       const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
       if (kind === 'category') {
-        return `<span class="material-icons">${cmpKindIcon('category')}</span>`;
+        return `<span class="material-icons">${ent.icon || cmpKindIcon('category')}</span>`;
       }
       const imgUrl = cmpImgUrl(ent);
       const mono = ent.abbr || (ent.name ? ent.name[0] : '?');
@@ -12883,7 +12912,10 @@
       if (typeof cmpCloseKindMenu === 'function') cmpCloseKindMenu();
 
       const ents = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e));
-      const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(Boolean);
+      /* WISEscore is always present as the header gauge + corner rail, so it is
+         never a selectable comparison metric — filter it out of the metric set
+         so it can't render as a duplicate bar row / chart axis. */
+      const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(m => m && m.id !== 'wisescore');
       const M = metrics.length;
       const showAvg = compareState.showAvg;
 
@@ -12921,7 +12953,7 @@
 
       const metricMenu = '<div class="cmp-metric-menu" id="cmp-metric-menu" ' + (compareState.metricMenuOpen ? '' : 'hidden') + '>' +
         ['Composite', 'Nutrient Quality', 'Ingredient Quality', 'Health Outcomes', 'Future'].map(fam => {
-          const opts = CMP_METRICS.filter(m => m.fam === fam);
+          const opts = CMP_METRICS.filter(m => m.fam === fam && m.id !== 'wisescore');
           if (!opts.length) return '';
           return `<div class="cmp-metric-group">${fam}</div>` + opts.map(m => {
             const on = compareState.metrics.includes(m.id);
@@ -13027,6 +13059,9 @@
         const you = ent.primary ? ' <span class="cmp-you-pill">YOU</span>' : (ent.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '');
         const imgUrl = cmpImgUrl(ent);
         const img = imgUrl ? `<img class="cmp-tile-img" src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.style.display='none'">` : '';
+        /* Category tiles carry the category's own icon as a centred watermark
+           instead of a product photo (and instead of the old diagonal stripes). */
+        const catIc = ent.isCategory ? `<span class="cmp-cat-ic" aria-hidden="true"><span class="material-icons">${ent.icon || 'category'}</span></span>` : '';
         /* No product/brand photo → paint the tile in the entity's own brand
            colour so the full-bleed treatment still reads as a real image.
            Category tiles get a striped neutral fill via CSS (.is-category). */
@@ -13045,7 +13080,7 @@
         let gauge = '';
         if (!isPending && !ent.na) {
           const ov = Math.round(cmpScoreFor(ent, 'wisescore'));
-          const pillCls = ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : '');
+          const pillCls = ent.isCategory ? 'tp-cat' : (ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : ''));
           const gaugeColor = ov < 55 ? 'var(--sec-red)' : (ov < 68 ? 'var(--ter-amber)' : 'var(--sec-green)');
           gauge = cmpScoreGaugeHtml(ov, pillCls, gaugeColor, ent.top);
         }
@@ -13054,7 +13089,7 @@
            shadows anywhere). */
         cells.push(
           '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm + kindChip +
-          `<div class="cmp-tile"${tileStyle}>${img}${badge}${gauge}` +
+          `<div class="cmp-tile"${tileStyle}>${img}${catIc}${badge}${gauge}` +
             `<div class="cmp-tile-overlay"><div class="cmp-ent-name" title="${ent.name}">${ent.name}${you}</div>${sub}</div>` +
           `</div>` +
           '</div>');
@@ -13073,7 +13108,7 @@
         metrics.forEach((m, mi) => {
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
-            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-metric-name">' + cmpMetricShort(m) + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div></div><div class="cmp-rail-body">' +
+            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + m.icon + '</span></span><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-lbl">' + cmpMetricRailName(m) + '</span>' + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div></div><div class="cmp-rail-body">' +
             '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-icons">forum</span></a></div>' +
             '</div></div></div>');
           ordered.forEach(ent => {
@@ -13174,7 +13209,49 @@
         `</div>`).join('') +
         '</div></div>';
 
-      body.innerHTML = boardHead + toolbar + recalcBar + grid + chart_html + takeaways;
+      /* ── Ranked Summary ────────────────────────────────────────────────
+         A compact 1-to-N leaderboard by overall WISEscore. The PRD flags this
+         as best-fit for the "vs. Many" scopes and redundant at 1-vs-1, so it
+         only surfaces once three or more entities are scored. Complements the
+         per-column rank badges the head-to-head already shows. */
+      const rankedLive = ranked.filter(e => !e.na);
+      const rankedSummary = (rankedLive.length >= 3)
+        ? '<div class="cmp-takeaways-sec"><div class="cmp-section-label">Ranked Summary</div>' +
+          '<div class="cmp-ranked">' +
+          rankedLive.map(e => {
+            const sc = Math.round(cmpScoreFor(e, 'wisescore'));
+            const you = e.primary ? ' <span class="cmp-you-pill">YOU</span>' : (e.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '');
+            return '<div class="cmp-rank-row">' +
+              `<span class="cmp-rank-badge">${rankOf.get(e.id)}</span>` +
+              `<span class="cmp-rank-name">${e.name}${you}</span>` +
+              `<span class="cmp-rank-bar"><span style="width:${sc}%"></span></span>` +
+              `<span class="cmp-rank-score">${sc}</span>` +
+            '</div>';
+          }).join('') +
+          '</div></div>'
+        : '';
+
+      /* ── Ingredient-Level Detail ────────────────────────────────────────
+         Not a standalone view: it surfaces only when the metric set includes
+         an Ingredient Quality leaf metric (compareState.drill, set in
+         cmpToggleMetric / scenarios). Lists the ingredients driving the
+         primary entity's score, colour-graded like the report drill-down. */
+      const drillMetric = metrics.find(m => m.fam === 'Ingredient Quality' && m.id !== 'ing_overall');
+      const drillPrimary = rankedLive.find(e => e.primary) || rankedLive[0];
+      const drillDetail = (drillMetric && scope.drill && scope.drill.length && drillPrimary)
+        ? '<div class="cmp-takeaways-sec"><div class="cmp-section-label">Ingredient-Level Detail</div>' +
+          `<div class="cmp-drill-note">Key ingredients shaping <strong>${drillPrimary.name}</strong>’s ingredient profile${drillMetric ? ', graded for <strong>' + cmpMetricShort(drillMetric) + '</strong>' : ''}</div>` +
+          '<div class="cmp-drill">' +
+          scope.drill.map(d =>
+            '<div class="cmp-drill-row">' +
+            `<span class="cmp-drill-dot" style="background:${d.color}"></span>` +
+            `<span class="cmp-drill-name">${d.name}</span>` +
+            `<span class="cmp-drill-tag ${d.cls}">${d.tag}</span>` +
+            '</div>').join('') +
+          '</div></div>'
+        : '';
+
+      body.innerHTML = boardHead + toolbar + recalcBar + grid + chart_html + takeaways + rankedSummary + drillDetail;
       body.scrollTop = 0;
       compareState._settle = false;   /* consume the one-shot settle animation flag */
       /* Animate the header WISEscore gauges + count the takeaway scores up on
@@ -13555,7 +13632,7 @@
     function cmpRenderMetricChips() {
       const row = document.getElementById('cmp-metric-chips');
       if (!row) return;
-      const chips = CMP_METRICS.filter(m => !m.future).map(m => {
+      const chips = CMP_METRICS.filter(m => !m.future && m.id !== 'wisescore').map(m => {
         const on = compareState.metrics.includes(m.id);
         return `<button type="button" class="chip ${on ? 'chip-primary' : ''}" onclick="cmpToggleMetricChat('${m.id}')"><span class="material-icons">${on ? 'check_circle' : 'add_circle'}</span>${cmpMetricShort(m)}</button>`;
       }).join('');
