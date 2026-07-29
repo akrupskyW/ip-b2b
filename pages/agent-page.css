@@ -1723,6 +1723,156 @@ html.dark .menu-nav-subitem.is-active {
 }
 html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-bright); }
 
+/* ===== SECTIONED WORKSPACE NAV (WISE_APP_NAV) =====
+   Muted uppercase group headings, a cleaner (border-less) child indent, the
+   highlighted upgrade CTA card, and the two-line footer identity. Scoped to
+   `.menu-nav-app` (or the footer) so the legacy product nav is untouched. */
+.menu-nav-section {
+  padding: 6px 12px 4px;
+  margin-top: 12px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-subtle, var(--text-muted));
+  user-select: none;
+}
+.menu-nav-app > .menu-nav-section:first-child { margin-top: 0; }
+#menu-panel.mp-rail .menu-nav-section,
+#menu-panel.minimal-ui .menu-nav-section { display: none; }
+
+/* App-nav admin children: drop the dashed rail for a flatter, indented list. */
+.menu-nav-app .menu-nav-children-inner {
+  border-left: none;
+  margin-left: 12px;
+  padding: 2px 0 4px 8px;
+}
+
+/* An expanded-but-inactive group (e.g. WISEcode Admin) stays a plain row — the
+   blue "open" highlight is reserved for the actual active page in this nav. */
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active),
+html.dark .menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) {
+  background: transparent;
+  color: var(--text);
+}
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) .menu-nav-icon,
+html.dark .menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) .menu-nav-icon {
+  background: transparent;
+  box-shadow: none;
+}
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) .menu-nav-icon .material-symbols-outlined,
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) .menu-nav-icon .material-icons {
+  color: var(--text-muted);
+}
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active):hover {
+  background: var(--primary-soft);
+}
+.menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not(.is-active) .menu-nav-chevron {
+  color: var(--text-subtle);
+}
+
+/* Upgrade CTA card — "Studio & AI / Unlock full access". */
+.menu-nav-upgrade {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 10px 2px 2px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  text-decoration: none;
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--primary) 13%, transparent),
+    color-mix(in srgb, #2BB6A3 20%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
+  transition: transform 0.16s ease, box-shadow 0.2s ease;
+}
+.menu-nav-upgrade:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent),
+    0 6px 16px rgba(37, 80, 124, 0.16);
+}
+.menu-nav-upgrade-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary), #2BB6A3);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 80, 124, 0.3);
+}
+.menu-nav-upgrade-icon .material-symbols-outlined,
+.menu-nav-upgrade-icon .material-icons {
+  font-size: 18px !important;
+  color: #fff;
+}
+.menu-nav-upgrade-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.menu-nav-upgrade-title {
+  font-size: var(--fs-ui);
+  font-weight: 700;
+  color: var(--text);
+}
+.menu-nav-upgrade-sub {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+html.dark .menu-nav-upgrade-sub { color: var(--primary-bright); }
+#menu-panel.mp-rail .menu-nav-upgrade { justify-content: center; padding: 8px; }
+#menu-panel.mp-rail .menu-nav-upgrade-text { display: none; }
+
+/* Rich footer identity — avatar + name over email. */
+.menu-footer-profile--rich {
+  align-items: center;
+  gap: 11px;
+  min-height: 54px;
+}
+.menu-footer-profile--rich .menu-nav-icon.menu-footer-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.menu-footer-profile--rich:hover .menu-nav-icon.menu-footer-avatar {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.menu-footer-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+  text-align: left;
+}
+.menu-footer-name {
+  font-size: var(--fs-ui);
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-footer-email {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#menu-panel.mp-rail .menu-footer-identity { display: none; }
+
 /* ===== ACTIVE-ONLY ICON DISC =====
    The blue disc behind a product/agent icon belongs to the HIGHLIGHTED row
    only — the current page (.is-active), an open group, or the hovered row.

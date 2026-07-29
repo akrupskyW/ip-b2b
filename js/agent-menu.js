@@ -342,6 +342,53 @@ export const TOP_LEVEL_PRODUCT_IDS = [
   'wisecode-ai',
 ];
 
+/**
+ * WISE workspace navigation model — the sectioned dashboard nav.
+ *
+ * This is the new information architecture (Overview / Portfolio / Studio /
+ * Organization / Admin). It is rendered by `mountAgentMenu` only when the
+ * caller opts in with `{ appNav: true }`, so the legacy product/agent nav on
+ * every other page keeps working untouched until those pages migrate.
+ *
+ * Node shapes:
+ *   { type: 'section', label }            — a muted uppercase group heading
+ *   { type: 'item',    id, label, icon, slug }
+ *   { type: 'group',   id, label, icon, defaultOpen?, children:[{id,label,icon,slug}] }
+ *   { type: 'upgrade', id, title, sub, icon, slug }  — the highlighted CTA card
+ *
+ * Every glyph is a Material Symbol (the modern set is force-loaded via
+ * ensureSymbolsFont) so nothing renders as a tofu box.
+ */
+export const WISE_APP_NAV = [
+  { type: 'item', id: 'overview', label: 'Overview', icon: 'space_dashboard', slug: 'overview.html' },
+
+  { type: 'section', label: 'Portfolio' },
+  { type: 'item', id: 'product-portfolio', label: 'Product Portfolio', icon: 'handyman', slug: 'product-portfolio.html' },
+  { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
+
+  { type: 'section', label: 'Studio' },
+  { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
+
+  { type: 'section', label: 'Organization' },
+  { type: 'item', id: 'profile', label: 'Profile', icon: 'account_circle', slug: 'profile.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
+
+  { type: 'section', label: 'Admin' },
+  {
+    type: 'group',
+    id: 'wisecode-admin',
+    label: 'WISEcode Admin',
+    icon: 'shield',
+    defaultOpen: true,
+    children: [
+      { id: 'organizations', label: 'Organizations', icon: 'apartment', slug: 'organizations.html' },
+      { id: 'quick-invite', label: 'Quick Invite', icon: 'bolt', slug: 'quick-invite.html' },
+      { id: 'user-management', label: 'User Management', icon: 'group', slug: 'user-management.html' },
+    ],
+  },
+  { type: 'upgrade', id: 'studio-ai', title: 'Studio & AI', sub: 'Unlock full access', icon: 'auto_awesome', slug: 'upgrade.html' },
+];
+
 /** href for an agent — top-level agents resolve to a real page; child agents
  *  scroll the parent overview to their card via a hash anchor. */
 export function hrefForProduct(id, opts = {}) {
@@ -394,7 +441,13 @@ function formatProductNavLabel(label) {
 /* The legacy "Material Icons" font lacks some newer glyphs that only ship in
    "Material Symbols Outlined" (e.g. `cadence`). Render those with the symbols
    class so they resolve instead of showing a tofu box. */
-const SYMBOLS_ONLY_ICONS = new Set(['cadence']);
+const SYMBOLS_ONLY_ICONS = new Set([
+  'cadence',
+  /* Sectioned workspace-nav glyphs — render from the modern Symbols set so
+     none fall back to a tofu box on pages that only link legacy Material Icons. */
+  'space_dashboard', 'handyman', 'photo_library', 'description', 'account_circle',
+  'receipt_long', 'shield', 'apartment', 'bolt', 'group', 'auto_awesome',
+]);
 export function iconClassFor(name) {
   return SYMBOLS_ONLY_ICONS.has(name) ? 'material-symbols-outlined' : 'material-icons';
 }
@@ -428,6 +481,17 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   ensureSymbolsFont();
   const fromAgentPage = options.fromAgentPage !== false;
   const prefix = fromAgentPage ? '' : 'pages/';
+
+  /* New sectioned workspace nav — opt-in per page. Keeps the legacy product
+     nav (below) intact for pages that haven't migrated yet. */
+  if (options.appNav) {
+    navEl.classList.add('menu-nav-app');
+    navEl.setAttribute('aria-label', 'WISE platform navigation');
+    navEl.innerHTML = renderAppNav(prefix, options.activeNavId || null);
+    finalizeMenu(navEl);
+    return;
+  }
+
   const activeProduct =
     options.activeProductId || 'wisecode-ai';
   const activeSection = options.activeSectionId || null;
@@ -581,33 +645,118 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   navEl.setAttribute('aria-label', 'WISE platform navigation');
   navEl.innerHTML = TOP_LEVEL_PRODUCT_IDS.map(renderProduct).join('');
 
+  finalizeMenu(navEl);
+}
+
+/* Wire the rail-collapse + pivot behaviours and the expand/collapse toggle
+   delegation. Shared by both the legacy product nav and the sectioned app
+   nav so a group opens/closes identically in either. */
+function finalizeMenu(navEl) {
   setupMenuRail(navEl);
   setupMenuPivot(navEl);
 
   navEl.addEventListener('click', (e) => {
     const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');
-    if (chevron) {
-      e.preventDefault();
-      e.stopPropagation();
-      const groupId = chevron.dataset.toggleGroup;
-      const group = navEl.querySelector(`.menu-nav-group[data-group="${groupId}"]`);
-      if (!group) return;
-      const willOpen = group.dataset.open !== 'true';
-      group.dataset.open = willOpen ? 'true' : 'false';
-      const toggleEl = group.querySelector('.menu-nav-toggle');
-      if (toggleEl) toggleEl.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-      const childrenEl = group.querySelector('.menu-nav-children');
-      if (childrenEl) {
-        if (willOpen) {
-          childrenEl.removeAttribute('inert');
-          childrenEl.removeAttribute('aria-hidden');
-        } else {
-          childrenEl.setAttribute('inert', '');
-          childrenEl.setAttribute('aria-hidden', 'true');
-        }
+    /* Rows flagged `data-toggle-only` (e.g. the WISEcode Admin header) expand
+       their group when the row itself — not just the chevron — is clicked. */
+    const rowToggle = !chevron && e.target.closest('.menu-nav-toggle[data-toggle-only]');
+    const trigger = chevron || rowToggle;
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const groupId = trigger.dataset.toggleGroup;
+    const group = navEl.querySelector(`.menu-nav-group[data-group="${groupId}"]`);
+    if (!group) return;
+    const willOpen = group.dataset.open !== 'true';
+    group.dataset.open = willOpen ? 'true' : 'false';
+    const toggleEl = group.querySelector('.menu-nav-toggle');
+    if (toggleEl) toggleEl.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    const childrenEl = group.querySelector('.menu-nav-children');
+    if (childrenEl) {
+      if (willOpen) {
+        childrenEl.removeAttribute('inert');
+        childrenEl.removeAttribute('aria-hidden');
+      } else {
+        childrenEl.setAttribute('inert', '');
+        childrenEl.setAttribute('aria-hidden', 'true');
       }
     }
   });
+}
+
+/* ====================================================================
+   Sectioned workspace nav renderers (driven by WISE_APP_NAV).
+==================================================================== */
+function renderAppNav(prefix, activeId) {
+  return WISE_APP_NAV.map((node) => {
+    switch (node.type) {
+      case 'section':
+        return `<div class="menu-nav-section">${escAttr(node.label)}</div>`;
+      case 'group':
+        return renderAppGroup(prefix, node, activeId);
+      case 'upgrade':
+        return renderAppUpgrade(prefix, node);
+      case 'item':
+      default:
+        return renderAppItem(prefix, node, activeId);
+    }
+  }).join('');
+}
+
+function renderAppItem(prefix, node, activeId) {
+  const href = node.slug ? `${prefix}${node.slug}` : '#';
+  const isActive = node.id === activeId ? ' is-active' : '';
+  return `
+    <a class="menu-nav-item${isActive}" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}">
+      <span class="menu-nav-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+      <span class="menu-nav-label">${escAttr(node.label)}</span>
+    </a>`;
+}
+
+function renderAppSubitem(prefix, node, activeId) {
+  const href = node.slug ? `${prefix}${node.slug}` : '#';
+  const isActive = node.id === activeId ? ' is-active' : '';
+  return `
+    <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}" data-depth="1">
+      <span class="menu-nav-subicon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+      <span class="menu-nav-label">${escAttr(node.label)}</span>
+    </a>`;
+}
+
+function renderAppGroup(prefix, node, activeId) {
+  const children = node.children || [];
+  const childActive = children.some((c) => c.id === activeId);
+  const isOpen = node.defaultOpen === true || childActive;
+  const isActive = node.id === activeId ? ' is-active' : '';
+  const childrenHtml = children.map((c) => renderAppSubitem(prefix, c, activeId)).join('');
+  const collapsedAttrs = isOpen ? '' : ' inert aria-hidden="true"';
+  return `
+    <div class="menu-nav-group" data-tier="admin" data-group="${escAttr(node.id)}" data-open="${isOpen ? 'true' : 'false'}">
+      <a class="menu-nav-item menu-nav-toggle${isActive}" href="#" data-nav-id="${escAttr(node.id)}" data-toggle-group="${escAttr(node.id)}" data-toggle-only="true" role="button" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(node.id)}">
+        <span class="menu-nav-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+        <span class="menu-nav-label">${escAttr(node.label)}</span>
+        <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(node.id)}" aria-label="Toggle ${escAttr(node.label)}">
+          <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+        </button>
+      </a>
+      <div class="menu-nav-children" id="menu-nav-${escAttr(node.id)}" role="region" aria-label="${escAttr(node.label)}"${collapsedAttrs}>
+        <div class="menu-nav-children-inner">
+          ${childrenHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderAppUpgrade(prefix, node) {
+  const href = node.slug ? `${prefix}${node.slug}` : '#';
+  return `
+    <a class="menu-nav-upgrade" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}">
+      <span class="menu-nav-upgrade-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+      <span class="menu-nav-upgrade-text">
+        <span class="menu-nav-upgrade-title">${escAttr(node.title)}</span>
+        <span class="menu-nav-upgrade-sub">${escAttr(node.sub)}</span>
+      </span>
+    </a>`;
 }
 
 /* ====================================================================

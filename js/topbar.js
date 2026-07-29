@@ -134,6 +134,10 @@ export function syncMenuTogglePlacement() {
 export function mountMenuBrand({
   logoHref = 'ai-chat.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileName,
+  profileEmail,
+  avatarText,
+  showAppearance,
 } = {}) {
   const shell = document.getElementById('agent-shell-wrap') || document.getElementById('chat-shell-wrap');
   const inner = document.querySelector('#menu-panel .menu-inner');
@@ -152,8 +156,16 @@ export function mountMenuBrand({
 
   shell?.classList.add('menu-brand-integrated');
   syncMenuTogglePlacement();
-  mountMenuFooter({ profileTitle });
+  mountMenuFooter({ profileTitle, profileName, profileEmail, avatarText, showAppearance });
   return brand;
+}
+
+/** Derive up-to-two-letter initials from a display name (e.g. "Arthur Krupsky" → "AK"). */
+function deriveInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 /*
@@ -163,13 +175,20 @@ export function mountMenuBrand({
  */
 export function mountMenuFooter({
   profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileName,
+  profileEmail,
+  avatarText,
+  showAppearance = true,
 } = {}) {
   const inner = document.querySelector('#menu-panel .menu-inner');
   if (!inner) return null;
 
-  const safeTitle = String(profileTitle).replace(/"/g, '&quot;');
-  const profileLabel = String(profileTitle).split(' · ')[0].trim() || 'Account';
-  const safeLabel = profileLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escQ = (s) => String(s ?? '').replace(/"/g, '&quot;');
+
+  const name = profileName || String(profileTitle).split(' · ')[0].trim() || 'Account';
+  const initials = avatarText || deriveInitials(name);
+  const safeTitle = escQ(profileEmail ? `${name} · ${profileEmail}` : profileTitle);
 
   let footer = inner.querySelector('.menu-footer');
   if (!footer) {
@@ -178,16 +197,35 @@ export function mountMenuFooter({
     inner.appendChild(footer);
   }
 
-  footer.innerHTML = `
-    <div class="menu-footer-actions">
+  /* Rich profile (name + email over two lines) matches the sectioned app nav;
+     the legacy single-line label is used when no email is supplied. */
+  const profileHtml = profileEmail
+    ? `
+      <button type="button" class="menu-nav-item menu-footer-profile menu-footer-profile--rich" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
+        <span class="menu-nav-icon menu-footer-avatar">${esc(initials)}</span>
+        <span class="menu-footer-identity">
+          <span class="menu-footer-name">${esc(name)}</span>
+          <span class="menu-footer-email">${esc(profileEmail)}</span>
+        </span>
+      </button>`
+    : `
+      <button type="button" class="menu-nav-item menu-footer-profile has-dot" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
+        <span class="menu-nav-icon menu-footer-avatar">${esc(initials)}</span>
+        <span class="menu-nav-label">${esc(name)}</span>
+      </button>`;
+
+  const appearanceHtml = showAppearance
+    ? `
       <button type="button" class="menu-nav-item menu-footer-layout" id="menu-footer-layout-btn" title="Appearance" aria-label="Appearance settings">
         <span class="menu-nav-icon"><span class="material-symbols-outlined">crossword</span></span>
         <span class="menu-nav-label">Appearance</span>
-      </button>
-      <button type="button" class="menu-nav-item menu-footer-profile has-dot" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
-        <span class="menu-nav-icon menu-footer-avatar">MC</span>
-        <span class="menu-nav-label">${safeLabel}</span>
-      </button>
+      </button>`
+    : '';
+
+  footer.innerHTML = `
+    <div class="menu-footer-actions">
+      ${appearanceHtml}
+      ${profileHtml}
     </div>`;
 
   wireMenuFooter();

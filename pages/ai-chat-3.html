@@ -7564,12 +7564,19 @@
          IMPORTANT: this must run BEFORE mountAgentMenu, because mountAgentMenu's
          setupMenuRail looks for `.menu-brand-bar` to wire the rail-hover
          tooltips and bails if the brand strip doesn't exist yet. */
-      mountMenuBrand({ logoHref: 'aha.html' });
+      mountMenuBrand({
+        logoHref: 'aha.html',
+        profileName: 'Arthur Krupsky',
+        profileEmail: 'akrupsky@wisecode.ai',
+        avatarText: 'AK',
+        showAppearance: false,
+      });
       const navEl = document.getElementById('agent-menu-nav');
       if (navEl) {
         mountAgentMenu(navEl, null, {
           fromAgentPage: true,
-          activeProductId: 'wisecode-ai',
+          appNav: true,
+          activeNavId: 'product-portfolio',
         });
       }
       mountNotificationsPanel({
