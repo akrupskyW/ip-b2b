@@ -41,6 +41,9 @@
   --r-xl: 32px;
   --radius-pill: 9999px;
 
+  /* Display face for large headlines — matches the shared WISE system. */
+  --font-serif: 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+
   --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
   --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
   --shadow-card: var(--shadow-2);
@@ -74,14 +77,16 @@ html.dark {
 
 * { box-sizing: border-box; }
 
+/* ── Shell: left nav module + centered form area (mirrors the app) ── */
 body.auth-page {
   margin: 0;
   min-height: 100dvh;
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px 16px;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  box-sizing: border-box;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   color: var(--text);
   letter-spacing: 0;
@@ -91,35 +96,214 @@ body.auth-page {
     var(--bg);
   -webkit-font-smoothing: antialiased;
 }
+/* Main area splits into two modules: the form (left, in the chat-module slot)
+   and a large hero image (right, fills the remaining space). */
+.auth-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+}
+.auth-form-col {
+  flex: 0 0 auto;
+  width: 480px;
+  max-width: 100%;
+  display: flex;
+  box-sizing: border-box;
+}
+.auth-form-col:has(.auth-wrap--wide) { width: 620px; }
 
-/* ── Panel card — module surface language (r-md, shadow-card) ── */
-.auth-wrap { width: 100%; max-width: 430px; }
-.auth-wrap--wide { max-width: 560px; }
+/* Right module — large image with a soft brand overlay. */
+.auth-hero {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  background: var(--primary) center/cover no-repeat;
+  background-image:
+    linear-gradient(180deg, rgba(17,24,39,0) 40%, rgba(17,24,39,0.55) 100%),
+    url('../assets/auth-hero.png');
+}
+.auth-hero-caption {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 26px;
+  color: #fff;
+  z-index: 1;
+}
+.auth-hero-caption h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.35);
+}
+.auth-hero-caption p {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.88);
+  max-width: 34ch;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 980px) {
+  .auth-hero { display: none; }
+  .auth-form-col,
+  .auth-form-col:has(.auth-wrap--wide) { width: 100%; }
+}
+
+/* ── Left navigation module — mirrors the app's #menu-panel (brand strip,
+   icon-rail collapse, bottom-anchored account actions where sign-out sits). ── */
+.auth-nav { flex: 0 0 280px; width: 280px; align-self: stretch; min-height: 0; display: flex; }
+.auth-nav, .auth-nav .menu-inner {
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), flex-basis 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.auth-nav .menu-inner {
+  width: 100%; min-height: 100%; height: 100%;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: var(--r-md);
+  background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+html.dark .auth-nav .menu-inner {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.18);
+}
+
+/* Brand strip — full wordmark + collapse toggle (owl bug shows when railed). */
+.auth-nav .menu-brand-bar {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  min-height: 60px; padding: 0 10px 0 20px; box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+}
+.auth-nav .menu-brand-logo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; color: var(--text); }
+.auth-nav .menu-brand-logo a { display: inline-flex; flex-direction: column; align-items: flex-end; width: fit-content; max-width: 100%; color: inherit; text-decoration: none; }
+.auth-nav .menu-brand-logo svg.tl-full { display: block; width: 138px; height: auto; color: var(--text); }
+.auth-nav .menu-brand-logo svg.tl-bug { display: none; color: var(--text); }
+.auth-nav .menu-brand-logo .topbar-tagline {
+  font-size: 7px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-muted); line-height: 1; margin-top: 3px; text-align: right; align-self: flex-end; white-space: nowrap;
+}
+.auth-nav .menu-brand-logo .topbar-tagline .tagline-tm { font-size: 0.65em; vertical-align: super; margin-left: 1px; letter-spacing: 0; }
+
+.auth-nav .topbar-menu-toggle {
+  flex-shrink: 0; margin-left: auto; width: 40px; min-height: 40px; border-radius: 8px;
+  background: transparent; color: var(--text-muted); border: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+.auth-nav .topbar-menu-toggle:hover { color: var(--primary); background: var(--primary-soft); }
+.auth-nav .topbar-menu-toggle .material-icons { font-size: 22px; line-height: 1; }
+
+/* Empty body pushes the account actions to the bottom (footer). */
+.auth-nav .menu-panel-body { flex: 1 1 auto; min-height: 0; }
+
+.auth-nav .menu-nav { display: flex; flex-direction: column; gap: 4px; }
+.auth-nav .menu-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-height: 44px;
+  box-sizing: border-box; border-radius: var(--radius-pill);
+  color: var(--text); text-decoration: none; cursor: pointer; background: transparent; border: none;
+  width: 100%; text-align: left; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.01em; font-family: inherit;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.auth-nav .menu-nav-item:hover,
+.auth-nav .menu-nav-item.is-active { background: var(--primary-soft); color: var(--primary); }
+html.dark .auth-nav .menu-nav-item:hover,
+html.dark .auth-nav .menu-nav-item.is-active { color: var(--primary-bright); }
+.auth-nav .menu-nav-icon {
+  width: 28px; height: 28px; border-radius: 999px; background: var(--primary-soft);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  transition: background-color 0.18s ease;
+}
+.auth-nav .menu-nav-icon .material-icons { font-size: 16px; color: var(--primary); }
+html.dark .auth-nav .menu-nav-icon .material-icons { color: var(--primary-bright); }
+.auth-nav .menu-nav-item.is-active .menu-nav-icon { background: var(--primary); box-shadow: none; }
+.auth-nav .menu-nav-item.is-active .menu-nav-icon .material-icons { color: #fff; }
+.auth-nav .menu-nav-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Footer — account actions pinned to the bottom (where sign-out lives). */
+.auth-nav .menu-footer { flex-shrink: 0; margin-top: auto; border-top: 1px solid var(--border); padding: 10px 8px; }
+
+/* ── Icon-rail collapse (.mp-rail) — identical behaviour to #menu-panel.mp-rail ── */
+.auth-nav.mp-rail { flex-basis: 66px; width: 66px; }
+.auth-nav.mp-rail .menu-inner { width: 66px; }
+.auth-nav.mp-rail .menu-brand-bar {
+  flex-direction: row; justify-content: center; align-items: center;
+  padding: 0 !important; gap: 0; position: relative; overflow: visible;
+}
+.auth-nav.mp-rail .menu-brand-logo { flex: 0 0 auto; width: 100%; align-items: center; justify-content: center; display: flex; }
+.auth-nav.mp-rail .menu-brand-logo a { align-items: center !important; margin: 0 auto; }
+.auth-nav.mp-rail .menu-brand-logo svg.tl-full,
+.auth-nav.mp-rail .menu-brand-logo .topbar-tagline { display: none !important; }
+.auth-nav.mp-rail .menu-brand-logo svg.tl-bug { display: block !important; width: 30px; height: auto; margin-inline: auto; }
+.auth-nav.mp-rail .topbar-menu-toggle {
+  position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  margin-left: 0; min-height: 28px; width: 32px; padding: 2px 0;
+}
+.auth-nav.mp-rail .menu-footer { padding: 14px 8px 10px; }
+.auth-nav.mp-rail .menu-nav-label { display: none; }
+.auth-nav.mp-rail .menu-nav-item { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
+
+/* Floating label tooltip for collapsed rail rows (ported from the app). */
+#menu-rail-tip {
+  position: fixed; z-index: 10000; background: var(--surface); color: var(--text);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.01em; white-space: nowrap;
+  padding: 5px 10px; border-radius: 8px; pointer-events: none;
+  border: 1px solid var(--border); box-shadow: var(--shadow-card); font-family: inherit;
+  opacity: 0; transform: translateY(-50%) translateX(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+#menu-rail-tip.menu-rail-tip-visible { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+@media (max-width: 760px) {
+  body.auth-page { flex-direction: column; }
+  .auth-nav { flex-basis: auto; width: auto; }
+  .auth-nav .menu-inner { height: auto; min-height: 0; }
+  .auth-nav .menu-panel-body { display: none; }
+  .auth-nav .menu-footer { border-top: 0; }
+  .auth-nav .menu-nav { flex-direction: row; flex-wrap: wrap; }
+  .auth-nav .menu-nav-item { width: auto; flex: 1 1 auto; justify-content: center; }
+  .auth-nav .topbar-menu-toggle { display: none; }
+  .auth-main { padding: 12px 4px 4px; }
+}
+
+/* ── Panel card — full-height module (matches the nav + hero modules) ── */
+.auth-wrap { width: 100%; max-width: none; display: flex; }
 
 .auth-card {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-card);
-  padding: 30px 30px 26px;
+  padding: 44px 40px;
+  box-sizing: border-box;
 }
+/* Content block is vertically centered when there's room and scrolls from the
+   top (no clipping) when the form is taller than the module. */
+.auth-card-inner { margin: auto 0; width: 100%; }
 html.dark .auth-card {
   background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
   border-color: rgba(37, 80, 124, 0.18);
 }
 
-/* Brand lockup */
-.auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
-.auth-brand-mark {
-  width: 34px; height: 24px; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center; color: var(--primary);
-}
-html.dark .auth-brand-mark { color: var(--primary-bright); }
-.auth-brand-mark svg { width: 34px; height: auto; }
-.auth-brand-word { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
-.auth-brand-word b { font-weight: 700; color: var(--text-muted); }
-
-.auth-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; color: var(--text); }
+.auth-title { font-family: var(--font-serif); font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; color: var(--text); }
 .auth-sub { font-size: 0.8125rem; font-weight: 400; color: var(--text-muted); margin: 0 0 22px; line-height: 1.5; }
 
 /* ── Form fields ── */
@@ -191,11 +375,9 @@ html.dark .auth-affix-btn:hover { color: var(--primary-bright); }
 
 /* Attestation block */
 .auth-attest {
-  display: flex; gap: 10px; padding: 13px 15px;
-  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+  display: flex; gap: 10px; padding: 2px 0;
   font-size: 0.8125rem; line-height: 1.5; color: var(--text-muted);
 }
-html.dark .auth-attest { background: rgba(255,255,255,0.03); }
 .auth-attest input { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; }
 
 /* ── Buttons — pill CTA language (chips / send button) ── */
