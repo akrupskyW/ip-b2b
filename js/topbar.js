@@ -94,22 +94,29 @@ const AGENT_TRAILING_HTML = `
  */
 export function mountTopbar({
   variant = 'agent',
-  logoHref = 'ai-chat.html',
+  logoHref = 'ai-chat-3.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileName,
+  profileEmail,
+  avatarText,
 } = {}) {
   const row = document.getElementById('topbar-row');
   if (!row) return null;
 
   const center = variant === 'portfolio' ? PORTFOLIO_RAIL_HTML : AGENT_TRAILING_HTML;
   const logo = TOPBAR_LOGO_HTML.replace('LOGO_HREF', logoHref);
+  const avatar = (avatarText || (profileName ? deriveInitials(profileName) : 'MC'))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const title = String(profileEmail && profileName ? `${profileName} · ${profileEmail}` : profileTitle)
+    .replace(/"/g, '&quot;');
 
   row.innerHTML = `
     ${MENU_TOGGLE_HTML}
     <div class="topbar-logo" aria-hidden="true">${logo}</div>
     ${center}
-    <div class="topbar-profile has-dot" title="${profileTitle}">MC</div>`;
+    <div class="topbar-profile has-dot" title="${title}">${avatar}</div>`;
 
-  mountMenuBrand({ logoHref, profileTitle });
+  mountMenuBrand({ logoHref, profileTitle, profileName, profileEmail, avatarText });
 
   row.hidden = true;
   row.setAttribute('aria-hidden', 'true');
@@ -132,12 +139,11 @@ export function syncMenuTogglePlacement() {
  * rail (.mp-rail). When collapsed only the owl bug mark shows.
  */
 export function mountMenuBrand({
-  logoHref = 'ai-chat.html',
+  logoHref = 'ai-chat-3.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
   profileName,
   profileEmail,
   avatarText,
-  showAppearance,
 } = {}) {
   const shell = document.getElementById('agent-shell-wrap') || document.getElementById('chat-shell-wrap');
   const inner = document.querySelector('#menu-panel .menu-inner');
@@ -156,7 +162,7 @@ export function mountMenuBrand({
 
   shell?.classList.add('menu-brand-integrated');
   syncMenuTogglePlacement();
-  mountMenuFooter({ profileTitle, profileName, profileEmail, avatarText, showAppearance });
+  mountMenuFooter({ profileTitle, profileName, profileEmail, avatarText });
   return brand;
 }
 
@@ -178,7 +184,6 @@ export function mountMenuFooter({
   profileName,
   profileEmail,
   avatarText,
-  showAppearance = true,
 } = {}) {
   const inner = document.querySelector('#menu-panel .menu-inner');
   if (!inner) return null;
@@ -214,13 +219,14 @@ export function mountMenuFooter({
         <span class="menu-nav-label">${esc(name)}</span>
       </button>`;
 
-  const appearanceHtml = showAppearance
-    ? `
+  /* Appearance is a permanent fixture of the nav module — it's how users
+     modify, guide, and individuate the main modules and panes app-wide, so it
+     is always rendered regardless of caller options. */
+  const appearanceHtml = `
       <button type="button" class="menu-nav-item menu-footer-layout" id="menu-footer-layout-btn" title="Appearance" aria-label="Appearance settings">
         <span class="menu-nav-icon"><span class="material-symbols-outlined">crossword</span></span>
         <span class="menu-nav-label">Appearance</span>
-      </button>`
-    : '';
+      </button>`;
 
   footer.innerHTML = `
     <div class="menu-footer-actions">

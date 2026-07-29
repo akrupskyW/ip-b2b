@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<!--
+  WISE · Overview
+
+  The workspace home — a "best of the best" compilation that surfaces the
+  strongest moments from across every WISE surface (Portfolio, Reports,
+  WISEcode AI agents, Trends, Marketing) on one page.
+
+  Wiring follows the module template: `<body data-nav-id="overview">` drives the
+  active nav item, page title, and header icon/label. Everything else — the
+  sectioned navigation, Appearance controls, profile menu, Scout dock, alerts,
+  rail collapse, and the main-panel header cluster — is wired automatically by
+  js/agent-overview.js. The content below lives in #agent-main-scroll.
+-->
+<html lang="en" class="dark">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Overview</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint so the page
+       never flashes dark→light (or vice versa). */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="scout-chat.css" />
+  <style>
+    /* ===================================================================
+       Overview-only components. Everything reuses the shared design tokens
+       (--surface, --primary, --sec-green …) defined in agent-page.css, and
+       is prefixed `ov-` so it can't collide with shell/module styles.
+    =================================================================== */
+
+    .ov-wrap { display: flex; flex-direction: column; gap: 30px; padding-bottom: 8px; }
+
+    /* ---- Hero ---- */
+    .ov-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--r-lg, 24px);
+      border: 1px solid var(--border);
+      padding: 30px 34px;
+      background:
+        radial-gradient(120% 160% at 88% -10%, color-mix(in srgb, var(--primary) 26%, transparent), transparent 60%),
+        linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--surface)), var(--surface) 62%);
+      box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.08));
+    }
+    .ov-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary);
+    }
+    .ov-hero-eyebrow .material-icons { font-size: 15px !important; }
+    .ov-hero-title {
+      margin: 12px 0 8px;
+      font-size: clamp(1.6rem, 2.6vw, 2.15rem);
+      font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; color: var(--text);
+    }
+    .ov-hero-title .ov-hero-brand { color: var(--primary); }
+    .ov-hero-desc { max-width: 60ch; font-size: 0.9375rem; line-height: 1.6; color: var(--text-muted); margin: 0; }
+    .ov-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .ov-hero-bug {
+      position: absolute; right: -34px; top: 50%; transform: translateY(-50%);
+      width: 320px; height: auto; color: var(--primary);
+      opacity: 0.06; pointer-events: none;
+    }
+    @media (max-width: 720px) { .ov-hero-bug { display: none; } }
+
+    /* ---- Section heading with a trailing "see all" link ---- */
+    .ov-section-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+      margin-bottom: 14px;
+    }
+    .ov-section-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+    .ov-section-sub { font-size: 0.8125rem; color: var(--text-muted); margin-top: 3px; }
+    .ov-see-all {
+      display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+      font-size: 0.8125rem; font-weight: 700; color: var(--primary); text-decoration: none;
+    }
+    .ov-see-all .material-icons { font-size: 16px !important; }
+    .ov-see-all:hover { text-decoration: underline; }
+
+    /* ---- Stat band (WISEscore / Non-UPF / GRAS / Claimed) ---- */
+    .ov-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 1024px) { .ov-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .ov-stat-grid { grid-template-columns: 1fr; } }
+    .ov-stat {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 18px 18px 16px;
+      border-radius: var(--r-md, 16px);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      text-decoration: none; color: inherit;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .ov-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.08)); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+    .ov-stat-top { display: flex; align-items: center; justify-content: space-between; }
+    .ov-stat-label { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-subtle); }
+    .ov-stat-ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+    .ov-stat-ico .material-icons { font-size: 18px !important; }
+    .ov-stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text); line-height: 1; }
+    .ov-stat-value .ov-unit { font-size: 1rem; font-weight: 700; color: var(--text-muted); margin-left: 2px; }
+    .ov-stat-note { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+    .ov-stat-track { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin-top: 2px; }
+    .ov-stat-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--sec-green)); }
+    .ov-stat.tone-green .ov-stat-ico { background: var(--sec-green-10); color: var(--sec-green); }
+    .ov-stat.tone-green .ov-stat-fill { background: linear-gradient(90deg, var(--sec-green), color-mix(in srgb, var(--sec-green) 60%, var(--primary))); }
+    .ov-stat.tone-amber .ov-stat-ico { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .ov-stat.tone-amber .ov-stat-fill { background: linear-gradient(90deg, var(--ter-amber), #B8860B); }
+
+    /* ---- Quick-jump cards (workspace destinations) ---- */
+    .ov-jump-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 1024px) { .ov-jump-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .ov-jump-grid { grid-template-columns: 1fr; } }
+    .ov-jump {
+      position: relative; display: flex; flex-direction: column; gap: 10px;
+      padding: 18px; border-radius: var(--r-md, 16px);
+      border: 1px solid var(--border); background: var(--surface);
+      text-decoration: none; color: inherit; min-height: 148px;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .ov-jump:hover { transform: translateY(-2px); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.08)); border-color: color-mix(in srgb, var(--primary) 32%, var(--border)); }
+    .ov-jump-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), #1A2339); color: #fff; }
+    .ov-jump-ico .material-icons { font-size: 22px !important; }
+    .ov-jump-title { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .ov-jump-desc { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.45; }
+    .ov-jump-arrow { position: absolute; top: 16px; right: 16px; color: var(--text-subtle); opacity: 0; transform: translate(-4px, 4px); transition: opacity 0.16s ease, transform 0.16s ease; }
+    .ov-jump-arrow .material-icons { font-size: 18px !important; }
+    .ov-jump:hover .ov-jump-arrow { opacity: 1; transform: translate(0, 0); color: var(--primary); }
+
+    /* ---- Agent grid ---- */
+    .ov-agent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 1024px) { .ov-agent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .ov-agent-grid { grid-template-columns: 1fr; } }
+    .ov-agent {
+      display: flex; gap: 13px; padding: 16px; border-radius: var(--r-md, 16px);
+      border: 1px solid var(--border); background: var(--surface);
+      text-decoration: none; color: inherit;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .ov-agent:hover { transform: translateY(-2px); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.08)); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+    .ov-agent-ico { width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+    .ov-agent-ico .material-icons { font-size: 22px !important; }
+    .ov-agent-body { min-width: 0; }
+    .ov-agent-name { font-size: 0.875rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .ov-agent-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; }
+
+    /* ---- Split row: reports (left) + signal spotlight (right) ---- */
+    .ov-split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    @media (max-width: 900px) { .ov-split { grid-template-columns: 1fr; } }
+
+    .ov-report-list { display: flex; flex-direction: column; gap: 10px; }
+    .ov-report {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border-radius: var(--r-md, 16px); border: 1px solid var(--border); background: var(--surface);
+      text-decoration: none; color: inherit;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .ov-report:hover { transform: translateX(2px); box-shadow: var(--shadow-2, 0 8px 24px rgba(0,0,0,0.08)); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+    .ov-report-thumb { width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--surface-2); color: var(--primary); }
+    .ov-report-thumb .material-icons { font-size: 22px !important; }
+    .ov-report-body { flex: 1; min-width: 0; }
+    .ov-report-title { font-size: 0.875rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .ov-report-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .ov-report-badge {
+      flex-shrink: 0; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em;
+      padding: 4px 9px; border-radius: 999px; background: var(--sec-green-10); color: var(--sec-green-text);
+    }
+    .ov-report-badge.is-amber { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .ov-report-badge.is-blue { background: var(--primary-soft); color: var(--primary); }
+
+    .ov-spotlight {
+      position: relative; overflow: hidden;
+      border-radius: var(--r-lg, 24px); border: 1px solid var(--border);
+      padding: 22px; height: 100%;
+      background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 16%, var(--surface)), var(--surface) 70%);
+    }
+    .ov-spotlight-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); }
+    .ov-spotlight-eyebrow .material-icons { font-size: 15px !important; }
+    .ov-spotlight-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); margin: 12px 0 8px; }
+    .ov-spotlight-text { font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); margin: 0 0 16px; }
+    .ov-signal-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+    .ov-signal { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--text); }
+    .ov-signal .ov-signal-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--sec-green); flex-shrink: 0; }
+    .ov-signal .ov-signal-up { margin-left: auto; font-weight: 800; color: var(--sec-green-text); font-size: 0.75rem; }
+
+    /* Reuse the shared .agent-cta styling for buttons/links across the page. */
+    .ov-wrap .agent-cta { text-decoration: none; }
+  </style>
+</head>
+<body data-nav-id="overview">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
+    <div id="topbar-row" hidden aria-hidden="true"></div>
+
+    <div id="modules-row">
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll">
+            <div class="ov-wrap">
+
+              <!-- ============ HERO ============ -->
+              <section class="ov-hero">
+                <svg class="ov-hero-bug" viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="currentColor"/>
+                  <path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="currentColor"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="currentColor"/>
+                  <path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="currentColor"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="currentColor"/>
+                </svg>
+                <span class="ov-hero-eyebrow"><span class="material-icons">auto_awesome</span>Workspace overview</span>
+                <h1 class="ov-hero-title">Welcome back — here's the best of <span class="ov-hero-brand">Date Better Snacks</span></h1>
+                <p class="ov-hero-desc">Your whole WISEcode footprint on one page: portfolio health, verification-ready wins, the reports worth sharing, live category signals, and every AI agent — pulled together and ready to act on.</p>
+                <div class="ov-hero-actions">
+                  <a class="agent-cta agent-cta--primary" href="ai-chat.html"><span class="material-icons">chat</span>Ask WISEowl</a>
+                  <a class="agent-cta" href="product-portfolio.html"><span class="material-icons">handyman</span>Open portfolio</a>
+                  <a class="agent-cta agent-cta--ghost" href="report-ultra-processed-foods.html"><span class="material-icons">description</span>Latest report</a>
+                </div>
+              </section>
+
+              <!-- ============ STAT BAND ============ -->
+              <section>
+                <div class="ov-section-head">
+                  <div>
+                    <div class="ov-section-title">Portfolio at a glance</div>
+                    <div class="ov-section-sub">Headline scores across your 24 analyzed products</div>
+                  </div>
+                  <a class="ov-see-all" href="product-portfolio.html">Open portfolio<span class="material-icons">arrow_forward</span></a>
+                </div>
+                <div class="ov-stat-grid">
+                  <a class="ov-stat" href="product-portfolio.html">
+                    <div class="ov-stat-top">
+                      <span class="ov-stat-label">WISEscore™</span>
+                      <span class="ov-stat-ico"><span class="material-icons">shield</span></span>
+                    </div>
+                    <div class="ov-stat-value">79</div>
+                    <div class="ov-stat-track"><span class="ov-stat-fill" style="width:79%"></span></div>
+                    <div class="ov-stat-note">Fair-range average across all pillars</div>
+                  </a>
+                  <a class="ov-stat tone-green" href="report-ultra-processed-foods.html">
+                    <div class="ov-stat-top">
+                      <span class="ov-stat-label">Non-UPF</span>
+                      <span class="ov-stat-ico"><span class="material-icons">eco</span></span>
+                    </div>
+                    <div class="ov-stat-value">92<span class="ov-unit">%</span></div>
+                    <div class="ov-stat-track"><span class="ov-stat-fill" style="width:92%"></span></div>
+                    <div class="ov-stat-note">22 of 24 products are Non-UPF</div>
+                  </a>
+                  <a class="ov-stat tone-green" href="report-upc-insights.html">
+                    <div class="ov-stat-top">
+                      <span class="ov-stat-label">GRAS</span>
+                      <span class="ov-stat-ico"><span class="material-icons">verified</span></span>
+                    </div>
+                    <div class="ov-stat-value">88<span class="ov-unit">%</span></div>
+                    <div class="ov-stat-track"><span class="ov-stat-fill" style="width:88%"></span></div>
+                    <div class="ov-stat-note">21 of 24 products fully GRAS</div>
+                  </a>
+                  <a class="ov-stat tone-amber" href="portfolio.html">
+                    <div class="ov-stat-top">
+                      <span class="ov-stat-label">Claimed</span>
+                      <span class="ov-stat-ico"><span class="material-icons">inventory_2</span></span>
+                    </div>
+                    <div class="ov-stat-value">3<span class="ov-unit">/ 47</span></div>
+                    <div class="ov-stat-track"><span class="ov-stat-fill" style="width:6%"></span></div>
+                    <div class="ov-stat-note">44 discovered products still unclaimed</div>
+                  </a>
+                </div>
+              </section>
+
+              <!-- ============ JUMP BACK IN ============ -->
+              <section>
+                <div class="ov-section-head">
+                  <div>
+                    <div class="ov-section-title">Jump back in</div>
+                    <div class="ov-section-sub">The surfaces you use most, one click away</div>
+                  </div>
+                </div>
+                <div class="ov-jump-grid">
+                  <a class="ov-jump" href="product-portfolio.html">
+                    <span class="ov-jump-arrow"><span class="material-icons">arrow_outward</span></span>
+                    <span class="ov-jump-ico"><span class="material-icons">handyman</span></span>
+                    <span class="ov-jump-title">Product Portfolio</span>
+                    <span class="ov-jump-desc">Manage every food you own — filter, sort, and bulk-act on the full list.</span>
+                  </a>
+                  <a class="ov-jump" href="report-ultra-processed-foods.html">
+                    <span class="ov-jump-arrow"><span class="material-icons">arrow_outward</span></span>
+                    <span class="ov-jump-ico"><span class="material-icons">description</span></span>
+                    <span class="ov-jump-title">Reports</span>
+                    <span class="ov-jump-desc">UPF, GRAS, and WISEcode insights at the brand and UPC level.</span>
+                  </a>
+                  <a class="ov-jump" href="marketing-agent.html">
+                    <span class="ov-jump-arrow"><span class="material-icons">arrow_outward</span></span>
+                    <span class="ov-jump-ico"><span class="material-icons">photo_library</span></span>
+                    <span class="ov-jump-title">Marketing Assets</span>
+                    <span class="ov-jump-desc">Retail sheets, verified shields, and social-ready deliverables.</span>
+                  </a>
+                  <a class="ov-jump" href="ai-chat.html">
+                    <span class="ov-jump-arrow"><span class="material-icons">arrow_outward</span></span>
+                    <span class="ov-jump-ico"><span class="material-icons">hub</span></span>
+                    <span class="ov-jump-title">WISEcode AI</span>
+                    <span class="ov-jump-desc">Chat with WISEowl and route work to any agent in the orchestra.</span>
+                  </a>
+                </div>
+              </section>
+
+              <!-- ============ AI AGENTS ============ -->
+              <section>
+                <div class="ov-section-head">
+                  <div>
+                    <div class="ov-section-title">WISEcode AI agents</div>
+                    <div class="ov-section-sub">The full orchestra — each agent, ready to open</div>
+                  </div>
+                  <a class="ov-see-all" href="ai-chat.html">Open chat<span class="material-icons">arrow_forward</span></a>
+                </div>
+                <div class="ov-agent-grid">
+                  <a class="ov-agent" href="portfolio-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">business_center</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Portfolio Agent</span>
+                      <span class="ov-agent-desc">Manages the brand's truth — data, identity, eligibility, verification, and recipes.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="code-studio-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">terminal</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Code Studio Agent</span>
+                      <span class="ov-agent-desc">Orchestrates the logic layer for proprietary code authoring and publishing.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="analytics-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">analytics</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Analytics Agent</span>
+                      <span class="ov-agent-desc">Conversational analytics across your portfolio and the public registry.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="audit-reformulation-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">fact_check</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Audit &amp; Reformulation Agent</span>
+                      <span class="ov-agent-desc">What's-Next optimization, impact simulation, and formulation alternatives.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="marketing-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">campaign</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Marketing Agent</span>
+                      <span class="ov-agent-desc">Brand-ready deliverable generation for retail, social, and presentation.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="trends-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">trending_up</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Trends Agent</span>
+                      <span class="ov-agent-desc">Hot-topic intelligence, category signals, and contextual market shifts.</span>
+                    </span>
+                  </a>
+                  <a class="ov-agent" href="brand-engagement-agent.html">
+                    <span class="ov-agent-ico"><span class="material-icons">handshake</span></span>
+                    <span class="ov-agent-body">
+                      <span class="ov-agent-name">Brand Engagement Agent</span>
+                      <span class="ov-agent-desc">Calls for Innovation, partner matching, intros, and deal flow.</span>
+                    </span>
+                  </a>
+                </div>
+              </section>
+
+              <!-- ============ REPORTS + SIGNAL SPOTLIGHT ============ -->
+              <section>
+                <div class="ov-section-head">
+                  <div>
+                    <div class="ov-section-title">Worth your attention</div>
+                    <div class="ov-section-sub">The reports and signals moving your portfolio right now</div>
+                  </div>
+                </div>
+                <div class="ov-split">
+                  <div class="ov-report-list">
+                    <a class="ov-report" href="report-ultra-processed-foods.html">
+                      <span class="ov-report-thumb"><span class="material-icons">eco</span></span>
+                      <span class="ov-report-body">
+                        <span class="ov-report-title">Brand Ultra-Processed Foods Report</span>
+                        <span class="ov-report-meta">Brand level · 92% Non-UPF · refreshed 2 min ago</span>
+                      </span>
+                      <span class="ov-report-badge">Ready</span>
+                    </a>
+                    <a class="ov-report" href="report-upc-insights.html">
+                      <span class="ov-report-thumb"><span class="material-icons">insights</span></span>
+                      <span class="ov-report-body">
+                        <span class="ov-report-title">UPC WISEcode Insights Report</span>
+                        <span class="ov-report-meta">UPC level · 61 unique ingredients analyzed</span>
+                      </span>
+                      <span class="ov-report-badge is-blue">New</span>
+                    </a>
+                    <a class="ov-report" href="report-ultra-processed-foods.html">
+                      <span class="ov-report-thumb"><span class="material-icons">verified</span></span>
+                      <span class="ov-report-body">
+                        <span class="ov-report-title">Brand GRAS Report</span>
+                        <span class="ov-report-meta">Brand level · 21 of 24 products fully GRAS</span>
+                      </span>
+                      <span class="ov-report-badge is-amber">3 flags</span>
+                    </a>
+                    <a class="ov-report" href="analytics-agent.html">
+                      <span class="ov-report-thumb"><span class="material-icons">query_stats</span></span>
+                      <span class="ov-report-body">
+                        <span class="ov-report-title">Ask a question of your data</span>
+                        <span class="ov-report-meta">Analytics Agent · conversational, instant answers</span>
+                      </span>
+                      <span class="ov-report-badge is-blue">AI</span>
+                    </a>
+                  </div>
+
+                  <aside class="ov-spotlight">
+                    <span class="ov-spotlight-eyebrow"><span class="material-icons">trending_up</span>Signal spotlight</span>
+                    <div class="ov-spotlight-title">Better-for-you snacking keeps climbing</div>
+                    <p class="ov-spotlight-text">The Trends Agent is tracking rising category demand that maps directly to your Non-UPF strengths. These are the shifts worth building into your next campaign.</p>
+                    <div class="ov-signal-list">
+                      <div class="ov-signal"><span class="ov-signal-dot"></span>Low-FODMAP snacking<span class="ov-signal-up">+18%</span></div>
+                      <div class="ov-signal"><span class="ov-signal-dot"></span>Date-sweetened treats<span class="ov-signal-up">+12%</span></div>
+                      <div class="ov-signal"><span class="ov-signal-dot"></span>Clean-label verification<span class="ov-signal-up">+9%</span></div>
+                    </div>
+                    <a class="agent-cta agent-cta--primary" href="trends-agent.html"><span class="material-icons">trending_up</span>Explore trends</a>
+                  </aside>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="../js/agent-overview.js"></script>
+</body>
+</html>

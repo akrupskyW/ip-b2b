@@ -335,6 +335,23 @@ export function getPortfolioSection(id) {
   return PORTFOLIO_SECTIONS[id] || null;
 }
 
+/** Look up a node in the sectioned workspace nav (WISE_APP_NAV) by id —
+ *  matches top-level items, expandable groups, their children, and the upgrade
+ *  card. Used by shells to derive a page's title/icon from its `data-nav-id`. */
+export function getAppNavNode(id) {
+  if (!id) return null;
+  for (const node of WISE_APP_NAV) {
+    if ((node.type === 'item' || node.type === 'group' || node.type === 'upgrade') && node.id === id) {
+      return node;
+    }
+    if (node.type === 'group') {
+      const child = (node.children || []).find((c) => c.id === id);
+      if (child) return { ...child, parent: node.id };
+    }
+  }
+  return null;
+}
+
 export const TOP_LEVEL_PRODUCT_IDS = [
   'dashboard',
   'wisecode-portfolio',

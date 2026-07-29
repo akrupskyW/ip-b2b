@@ -11,6 +11,7 @@
 import {
   getAgent,
   getDirectChildren,
+  getAppNavNode,
   mountAgentMenu,
   toggleMenuPivot,
   isMenuPivoted,
@@ -313,7 +314,7 @@ function applyBodyAppearanceDefaults() {
 }
 
 function bootstrapBlankPage(productId) {
-  mountTopbar({ variant: 'agent', logoHref: 'ai-chat.html' });
+  mountTopbar({ variant: 'agent', logoHref: 'ai-chat-3.html' });
 
   const isDashboard = productId === 'dashboard';
   const headerEl = document.getElementById('agent-main-header');
@@ -351,7 +352,84 @@ function bootstrapBlankPage(productId) {
   setupScoutDock();
 }
 
+/* ====================================================================
+   Sectioned workspace-nav page shell.
+     Any page can opt into the new dashboard nav (Overview / Portfolio /
+     Studio / Organization / Admin) by setting `<body data-nav-id="…">` to a
+     WISE_APP_NAV id (e.g. "product-portfolio"). It gets the full working
+     shell — the new nav with the right active item, the rich profile card,
+     and every appearance/profile/theme control — with zero per-page wiring.
+==================================================================== */
+
+/** Signed-in identity for the profile card / avatar menu. Reads the shared
+ *  WiseAuth session when present, else falls back to the design default. */
+function resolveIdentity() {
+  let user = null;
+  try { user = window.WiseAuth?.getUser?.() || null; } catch (_) { user = null; }
+  const name = (user && user.name) || 'Arthur Krupsky';
+  const email = (user && user.email) || 'akrupsky@wisecode.ai';
+  const initials = (user && user.initials)
+    || name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+    || 'AK';
+  return { name, email, initials, title: (user && user.title) || 'Product Intelligence Lead' };
+}
+
+let APP_IDENTITY = null;
+
+function bootstrapAppNavPage(navId) {
+  APP_IDENTITY = resolveIdentity();
+  const node = getAppNavNode(navId);
+
+  mountTopbar({
+    variant: 'agent',
+    logoHref: 'ai-chat-3.html',
+    profileName: APP_IDENTITY.name,
+    profileEmail: APP_IDENTITY.email,
+    avatarText: APP_IDENTITY.initials,
+  });
+
+  document.title = node ? `WISE · ${node.label}` : 'WISE';
+
+  const headerEl = document.getElementById('agent-main-header');
+  if (headerEl && node) {
+    headerEl.innerHTML = `
+      <span class="agent-main-icon"><span class="material-symbols-outlined">${escHtml(node.icon || 'space_dashboard')}</span></span>
+      <div class="agent-main-titles">
+        <div class="agent-main-title">${escHtml(node.label)}</div>
+        <div class="agent-main-sub">WISEcode</div>
+      </div>`;
+  }
+
+  /* Blank content slot — each page fills #agent-main-scroll with its own
+     module content. The shell (nav + appearance + profile) is fully wired. */
+  const mainEl = document.getElementById('agent-main-scroll');
+  if (mainEl && !mainEl.innerHTML.trim()) {
+    mainEl.innerHTML = `
+      <div class="agent-empty" data-module-placeholder>
+        ${escHtml(node ? node.label : 'Module')} — content coming soon.
+      </div>`;
+  }
+
+  const navEl = document.getElementById('agent-menu-nav');
+  if (navEl) {
+    mountAgentMenu(navEl, null, {
+      fromAgentPage: true,
+      appNav: true,
+      activeNavId: navId,
+    });
+  }
+
+  applyBodyAppearanceDefaults();
+  setupTrailingRail();
+  setupMainPanelControls();
+  setupScoutDock();
+}
+
 export function bootstrapAgentPage() {
+  /* New sectioned workspace nav — opt-in per page via `data-nav-id`. */
+  const navId = document.body.dataset.navId;
+  if (navId) { bootstrapAppNavPage(navId); return; }
+
   const agentId = document.body.dataset.agentId;
   const agent = getAgent(agentId);
   if (!agent) {
@@ -369,7 +447,7 @@ export function bootstrapAgentPage() {
 
   /* Build the shared top bar (menu toggle, WISE logo, Alerts/More, profile).
      The agent variant has no center rail — just the trailing actions. */
-  mountTopbar({ variant: 'agent', logoHref: 'ai-chat.html' });
+  mountTopbar({ variant: 'agent', logoHref: 'ai-chat-3.html' });
   /* Logo lives in the nav panel brand strip (mountTopbar → mountMenuBrand). */
 
   const headerEl = document.getElementById('agent-main-header');
@@ -894,8 +972,9 @@ function closeAvatarPopover() {
 
 function renderAvatarBody(pop) {
   const notifUnread = !document.querySelector('.topbar-profile')?.classList.contains('is-read');
+  const who = APP_IDENTITY?.name || 'Maya Chen';
   pop.innerHTML = `
-    <div class="wise-popover-header">Maya Chen</div>
+    <div class="wise-popover-header">${escHtml(who)}</div>
     <div class="wise-popover-actions">
       <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
         <span class="material-icons">notifications</span>

@@ -1,15 +1,31 @@
 <!DOCTYPE html>
+<!--
+  WISE module page template.
+
+  Copy this file to create a new workspace module page (Overview, Product
+  Portfolio, Marketing Assets, Reports, Profile, Invoices & Downloads, …).
+
+  To wire a page up, you only need to:
+    1. Set `<body data-nav-id="…">` to the matching WISE_APP_NAV id
+       (see WISE_APP_NAV in js/agent-menu.js). This drives the active nav item,
+       the page title, and the header icon/label.
+    2. Fill `#agent-main-scroll` with the page's content.
+
+  Everything else — the sectioned navigation, the always-present Appearance
+  controls (Minimal UI, Header, Full bleed, Colorblind, Pivot, Text size,
+  Theme), the profile menu, the Scout dock, alerts, rail collapse, and the
+  main-panel header cluster — is wired automatically by js/agent-overview.js.
+-->
 <html lang="en" class="dark">
 <head>
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISE · Portfolio — The Truth Layer</title>
+  <title>WISE · Module</title>
   <script src="../js/text-size-fouc.js"></script>
-  <script src="../js/sortable-tables.js" defer></script>
   <script>
     /* FOUC guard — apply the persisted theme before first paint so the page
-       never flashes dark→light (or vice versa). Mirrors ai-chat.html storage. */
+       never flashes dark→light (or vice versa). */
     (function () {
       try {
         var t = localStorage.getItem('wise-theme');
@@ -23,15 +39,14 @@
     })();
   </script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="portfolio.css?v=noheader-scout3" />
+  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="scout-chat.css" />
 </head>
-<body data-product-id="wisecode-portfolio">
+<!-- Change data-nav-id to the WISE_APP_NAV id for this page. -->
+<body data-nav-id="overview">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
@@ -40,22 +55,20 @@
         </div>
       </div>
     </div>
-    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar).
-         The 'portfolio' variant adds the section-module rail + layout switcher;
-         #pf-module-rail is populated by portfolio-module.js. -->
+    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
     <div id="topbar-row" hidden aria-hidden="true"></div>
 
     <div id="modules-row">
-      <!-- Section modules are injected here by portfolio-module.js, between the
-           sticky menu rail and the persistent Scout chat. -->
-
-      <aside id="pf-chat-panel" class="scout-dock scout-dock-open" aria-label="Scout™ chat"></aside>
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <!-- Fill #agent-main-scroll with this page's content. -->
+          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+        </div>
+      </main>
     </div>
   </div>
 
-  <!-- Chart.js powers the Analytics section's charts and graphs. -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="../js/portfolio-module.js?v=appearance-shared"></script>
-  <script src="/livereload.js?snipver=1"></script>
+  <script type="module" src="../js/agent-overview.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISEai — AI Verification Assistant</title>
+  <title>WISE · Product Portfolio</title>
   <!-- Auth: redirect to sign-in if there is no session, then load the auth API. -->
   <script src="../js/auth-guard.js"></script>
   <script src="../js/auth.js"></script>
@@ -596,6 +596,7 @@
        viewport — never forcing a horizontal scrollbar on the row. */
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #compare-panel.cp-open,
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #workflow-panel.wf-open,
+    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #portfolio-panel.pf-open,
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #verify-flow-panel.vf-open {
       /* Report boards dock as direct children of #modules-row; force them past
          the chat (order 2) so the chat ALWAYS stays left and the board right. */
@@ -605,8 +606,19 @@
       min-width: 0 !important;
       max-width: none !important;
     }
+    /* Width control: with fixed pixel widths overridden in report-mode, the
+       module's width toggle drives its flex-grow instead so the board still
+       visibly widens (single → 2, double → 3, triple → 4 share of the row),
+       always keeping the board at least as wide as the chat. */
+    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #portfolio-panel.pf-open.panel-wide {
+      flex-grow: 3 !important;
+    }
+    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #portfolio-panel.pf-open.panel-triple {
+      flex-grow: 4 !important;
+    }
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #compare-panel.cp-open .cmp-inner,
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #workflow-panel.wf-open .wf-inner,
+    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #portfolio-panel.pf-open .pf-inner,
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #verify-flow-panel.vf-open .vf-inner {
       width: 100% !important;
       min-width: 0 !important;
@@ -7504,6 +7516,385 @@
       padding-left: 24px !important;
       padding-right: 24px !important;
     }
+
+    /* ── Product Portfolio module ────────────────────────────────────────
+       The "portfolio module": a report board that docks to the right of the
+       chat, combining Claimed / Discovered / Needs Info into tabbed views.
+       Structural mechanics mirror #compare-panel (display:none → flex on open,
+       three width tiers, dark gradient inner in dark mode, light surface in
+       light mode). */
+    #portfolio-panel { display: none; flex-shrink: 0; }
+    #portfolio-panel.pf-open { display: flex; width: 720px; }
+    #portfolio-panel.panel-wide.pf-open { width: 900px; }
+    #portfolio-panel.panel-wide.panel-triple.pf-open { width: 1120px; }
+    #portfolio-panel .pf-inner {
+      width: 720px;
+      min-height: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 16px;
+      background: linear-gradient(155deg, #1A2339 0%, #0d1b27 60%, #1A2339 100%);
+      box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(37, 80, 124, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transform-origin: right center;
+      font-size: var(--fs-ui);
+    }
+    #portfolio-panel.panel-wide .pf-inner { width: 900px; }
+    #portfolio-panel.panel-wide.panel-triple .pf-inner { width: 1120px; }
+    #portfolio-panel.pf-open .pf-inner { animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    @media (prefers-reduced-motion: reduce) { #portfolio-panel.pf-open .pf-inner { animation: none !important; } }
+    html:not(.dark) #portfolio-panel .pf-inner {
+      background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Tab bar */
+    .pf-tabbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    .pf-tabs {
+      display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+      height: 38px; box-sizing: border-box;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .pf-tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px; border: none; cursor: pointer;
+      background: transparent; color: var(--text-muted);
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .pf-tab:hover { color: var(--text); }
+    .pf-tab.is-active { background: var(--primary); color: #fff; }
+    .pf-tab-count {
+      font-size: 11px; font-weight: 700; opacity: 0.85;
+    }
+    .pf-add-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 38px; box-sizing: border-box; padding: 0 16px;
+      border-radius: 999px; border: none; cursor: pointer;
+      background: var(--primary); color: #fff;
+      font-family: inherit; font-size: 12px; font-weight: 700;
+      transition: filter 0.2s ease;
+    }
+    .pf-add-btn:hover { filter: brightness(1.08); }
+    .pf-add-btn .material-icons { font-size: 16px; }
+
+    /* Board header — serif title + a line of details, mirroring the Compare
+       module's .cmp-board-title / .cmp-board-meta so the two modules read
+       identically. */
+    .pf-head { padding: 2px 2px 0; }
+    .pf-head-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
+    .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 3px 0 0; }
+
+    /* Body + views — matches the Compare module's body (14px gutter + gap,
+       flex column, children never squeezed so the board scrolls vertically). */
+    .pf-body { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+    .pf-body > *:not(.pf-empty) { flex-shrink: 0; }
+    .pf-view { display: flex; flex-direction: column; gap: 14px; }
+    .pf-view.is-hidden { display: none; }
+
+    /* Settings toolbar — transparent controls bar above the score cards,
+       mirroring .cmp-toolbar--bar. */
+    .pf-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      padding: 2px 0; background: transparent; border: none;
+    }
+    .pf-tool-spacer { display: none; }
+    /* Search field — the canonical app input (matches .auth-input on the
+       Login / Create Account screens): surface-2 fill, strong border, primary
+       focus ring, italic placeholder. A leading search glyph is affixed inside
+       on the left. It fills all empty space between the tabs and the Add
+       button, and shares the toolbar control height. */
+    .pf-search-inline {
+      position: relative; display: inline-flex; align-items: center;
+      flex: 1 1 auto; min-width: 200px;
+    }
+    .pf-search-inline .material-icons {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      font-size: 18px; color: var(--text-subtle); pointer-events: none;
+    }
+    .pf-search-inline .pf-search {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px 0 42px;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill); outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    html.dark .pf-search-inline .pf-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pf-search-inline .pf-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .pf-search-inline .pf-search:focus {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+
+    /* At-a-glance — compact, non-actionable stat tiles (numbers + labels).
+       Flat surface + border + subtle shadow so they read consistently with
+       the module's other cards (no hover-lift, no CTA). Wrap onto multiple
+       rows instead of a horizontal scroll rail. */
+    /* The score cards now live at the top of the board card and act as toggle
+       filters for the rows below (segment + status), so they're buttons with
+       hover / focus / active states rather than static tiles. */
+    .pf-board { padding: 14px; overflow: visible; }
+    .pf-stats-bar { padding: 0 2px 10px; }
+    .pf-stats-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+    .pf-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pf-stat {
+      flex: 1 1 120px; min-width: 108px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      box-shadow: var(--shadow-1);
+      font-family: inherit; text-align: center; cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    /* Rectangular tiles, not pills — override the app-wide pill radius forced
+       on every button inside #chat-shell-wrap. */
+    #chat-shell-wrap .pf-stat { border-radius: 6px !important; }
+    html.dark .pf-stat { background: rgba(255,255,255,0.04); }
+    .pf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
+    .pf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .pf-stat.is-active {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
+    }
+    html.dark .pf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .pf-stat-num { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .pf-stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .pf-stat--alert .pf-stat-num { color: var(--sec-red); }
+    .pf-stat--warn .pf-stat-num { color: #8a6400; }
+    html.dark .pf-stat--warn .pf-stat-num { color: #FFD98A; }
+    .pf-stat--muted .pf-stat-num { color: var(--text-muted); }
+    /* Divider between the filter row and the table, and the rows a status
+       filter has hidden. */
+    .pf-board-divider { height: 1px; background: var(--border); margin: 14px 0 6px; }
+    .pf-row-hidden { display: none !important; }
+
+    /* Cards — same elevation / radius / surface as the Compare module's
+       .cmp-grid-wrap so the two modules read identically. */
+    .pf-card {
+      position: relative; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px;
+      box-shadow: var(--shadow-1);
+    }
+    /* Board card holds the score-card filters + the tables. Keep overflow
+       visible (overriding .pf-card) so row action menus aren't clipped. */
+    .pf-board { padding: 14px; overflow: visible; }
+    .pf-card-title { font-family: 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+    .pf-card-sub { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.5; }
+
+    /* Claimed summary card */
+    .pf-summary-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .pf-progress-track { height: 6px; border-radius: 999px; background: var(--surface-3); margin: 14px 0; overflow: hidden; }
+    html.dark .pf-progress-track { background: rgba(255,255,255,0.08); }
+    .pf-progress-fill { height: 100%; border-radius: 999px; background: var(--sec-red); }
+    .pf-state-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pf-state-card {
+      display: flex; flex-direction: column; gap: 8px; min-width: 130px;
+      padding: 12px 14px; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface-2);
+      font-family: inherit; text-align: left; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .pf-state-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+    .pf-state-card--alert { border-top: 3px solid var(--sec-red); }
+    .pf-state-num { font-family: 'Noto Serif', serif; font-size: 24px; font-weight: 800; color: var(--sec-red); line-height: 1; }
+    .pf-state-label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--sec-red); }
+    .pf-state-label .material-icons { font-size: 15px; }
+    .pf-shield-row {
+      display: flex; align-items: center; gap: 12px; margin-top: 14px;
+      padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .pf-shield-badge {
+      width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--sec-green-10); color: var(--sec-green);
+    }
+    .pf-shield-badge .material-icons { font-size: 18px; }
+    .pf-shield-text { flex: 1; min-width: 0; }
+    .pf-shield-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .pf-shield-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .pf-shield-pills { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* Pills */
+    .pf-pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .pf-pill--amber { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .pf-pill--amber { color: #FFD98A; }
+    .pf-pill--gray { background: var(--surface-3); color: var(--text-muted); }
+    html.dark .pf-pill--gray { background: rgba(255,255,255,0.08); }
+
+    /* Intro headlines — plain title + description that sit directly on the
+       module background (no card/banner container), aligned to the body gutter. */
+    .pf-note { background: transparent; border: none; box-shadow: none; padding: 2px 2px 0; }
+    .pf-note--warn { background: transparent; border: none; }
+    .pf-note-flag { font-size: 12px; font-weight: 600; color: #8a6400; margin: 8px 0 0; }
+    html.dark .pf-note-flag { color: #FFD98A; }
+
+    /* Search */
+    .pf-search-card { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+    .pf-search-icon { color: var(--text-subtle); font-size: 18px; }
+    .pf-search { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 13px; }
+    .pf-search::placeholder { color: var(--text-subtle); }
+
+    /* Table */
+    .pf-table-card { padding: 6px 4px; overflow: visible; }
+    .pf-table { width: 100%; }
+    .pf-thead, .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
+    /* Unified columns across every tab: leading ⋮ actions menu · product
+       (name + UPC) · data · Non-UPF Shield. */
+    .pf-table--claimed .pf-thead, .pf-table--claimed .pf-trow,
+    .pf-table--discovered .pf-thead, .pf-table--discovered .pf-trow,
+    .pf-table--needsinfo .pf-thead, .pf-table--needsinfo .pf-trow { grid-template-columns: 34px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
+    /* Updated column — the row's update history is always visible here (never
+       dropped): the Updated date and the Last edited date, each with its
+       status label. */
+    /* Side by side by default; wraps to stacked only when the column is too
+       narrow to fit both (responsive). */
+    .pf-col-updated { display: flex; flex-flow: row wrap; gap: 5px 16px; }
+    .pf-date { display: flex; flex-direction: column; line-height: 1.2; }
+    .pf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
+    .pf-date-val { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .pf-thead { border-bottom: 1px solid var(--border); }
+    .pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+    .pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
+    .pf-trow:last-child { border-bottom: none; }
+    .pf-trow:hover { background: var(--surface-2); }
+    html.dark .pf-trow:hover { background: rgba(255,255,255,0.04); }
+    .pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+    .pf-col-product { display: flex; align-items: center; gap: 10px; }
+    /* Product thumbnail — always a circle holding the real product photo. The
+       icon is only a fallback (e.g. a broken/missing image); the <img> is
+       swapped in and covers the circle. */
+    .pf-thumb {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+      overflow: hidden; position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface-2); color: var(--primary);
+      border: 1px solid var(--border);
+    }
+    html.dark .pf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+    .pf-thumb-img {
+      width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;
+    }
+    .pf-thumb .material-icons { font-size: 20px; }
+    /* Product cell — thumbnail + a name/UPC stack (UPC sits directly under the
+       name). */
+    .pf-pcell-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .pf-pname { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .pf-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+    /* Leading ⋮ actions menu column — buries edit / view (or claim) actions
+       plus the updated / last-edited dates behind a single dot menu. */
+    .pf-col-menu { display: flex; align-items: center; justify-content: center; }
+    .pf-rowmenu { position: relative; }
+    .pf-rowmenu-btn {
+      width: 30px; height: 30px; max-width: 44px; max-height: 44px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+      cursor: pointer; overflow: hidden; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pf-rowmenu-btn:hover, .pf-rowmenu.is-open .pf-rowmenu-btn { background: var(--surface-2); color: var(--text); }
+    html.dark .pf-rowmenu-btn:hover, html.dark .pf-rowmenu.is-open .pf-rowmenu-btn { background: rgba(255,255,255,0.06); }
+    .pf-rowmenu-btn .material-icons { font-size: 18px !important; line-height: 1; }
+    .pf-rowmenu-pop {
+      position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 208px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px;
+    }
+    .pf-rowmenu-pop[hidden] { display: none; }
+    .pf-rowmenu-item {
+      width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border: none; background: transparent; cursor: pointer; border-radius: 8px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); text-align: left;
+    }
+    .pf-rowmenu-item:hover { background: var(--surface-2); }
+    html.dark .pf-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
+    /* Menu glyphs sit inside a small, invisible circular slot (a "pretend
+       circle" for alignment — no background/border) and are sized down with
+       !important to beat the app-wide 24px .material-icons rule. */
+    .pf-rowmenu-item .material-icons {
+      font-size: 16px !important; line-height: 1 !important; color: var(--text-subtle);
+      width: 18px; height: 18px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pf-rowmenu-item:hover .material-icons { color: var(--primary); }
+    .pf-rowmenu-item--danger:hover { background: var(--sec-red-10); color: var(--sec-red); }
+    .pf-rowmenu-item--danger:hover .material-icons { color: var(--sec-red); }
+    .pf-rowmenu-sep { height: 1px; margin: 5px 4px; background: var(--border); }
+    .pf-rowmenu-info { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 11px; color: var(--text-muted); }
+    .pf-rowmenu-info .material-icons {
+      font-size: 14px !important; line-height: 1 !important; color: var(--text-subtle);
+      width: 16px; height: 16px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* In-table chips — small pills consistent with chips elsewhere in the app. */
+    .pf-chip {
+      display: inline-flex; align-items: center; gap: 1px;
+      padding: 2px 6px 2px 9px; border-radius: 999px; cursor: pointer;
+      border: none; font-family: inherit; font-size: 10px; font-weight: 700; white-space: nowrap;
+      line-height: 1.5; transition: filter 0.15s ease;
+    }
+    .pf-chip:hover { filter: brightness(1.05); }
+    /* Chip glyph — sized down with !important to beat the app-wide 24px
+       .material-icons rule so the icon fits the chip's spacing. */
+    .pf-chip .material-icons {
+      font-size: 13px !important; line-height: 1 !important;
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pf-chip--verify { background: var(--sec-red-10); color: var(--sec-red); }
+    html.dark .pf-chip--verify { color: #FF9E96; }
+    .pf-chip--pay { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .pf-chip--pay { color: #FFD98A; }
+    .pf-chip--inelig { background: var(--surface-3); color: var(--text-muted); padding: 2px 9px; cursor: default; }
+    html.dark .pf-chip--inelig { background: rgba(255,255,255,0.08); }
+    .pf-chip--claim { background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary); }
+    .pf-chip--add { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .pf-chip--add { color: #FFD98A; }
+    .pf-chip--muted { background: var(--surface-3); color: var(--text-subtle); padding: 2px 9px; cursor: default; }
+    html.dark .pf-chip--muted { background: rgba(255,255,255,0.08); }
+
+    /* Row action buttons — compact circular icon buttons (≤44px). overflow is
+       clipped and the glyph is size-locked so an icon can never balloon. */
+    .pf-ico {
+      width: 32px; height: 32px; max-width: 44px; max-height: 44px; flex-shrink: 0;
+      border-radius: 50%; overflow: hidden; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pf-ico:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .pf-ico:hover { background: rgba(255,255,255,0.06); }
+    .pf-ico .material-icons { font-size: 18px !important; line-height: 1; }
+    .pf-ico--x:hover { color: var(--sec-red); }
+    .pf-claim-btn {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 14px; border-radius: 999px; border: none; cursor: pointer;
+      background: var(--primary); color: #fff;
+      font-family: inherit; font-size: 11.5px; font-weight: 700;
+      transition: filter 0.15s ease;
+    }
+    .pf-claim-btn:hover { filter: brightness(1.08); }
+    .pf-claim-btn .material-icons { font-size: 14px; }
+
+    /* Table footer */
+    .pf-table-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px 6px; font-size: 12px; color: var(--text-subtle);
+    }
+    .pf-loadmore {
+      display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+      background: transparent; border: none; color: var(--primary);
+      font-family: inherit; font-size: 12px; font-weight: 700;
+    }
+    .pf-loadmore .material-icons { font-size: 16px; }
+
   </style>
 </head>
 <body class="ai-chat-page">
@@ -7570,6 +7961,7 @@
         profileName: 'Arthur Krupsky',
         profileEmail: 'akrupsky@wisecode.ai',
         avatarText: 'AK',
+        showAppearance: false,
       });
       const navEl = document.getElementById('agent-menu-nav');
       if (navEl) {
@@ -8147,90 +8539,83 @@
                 </div>
                 <div class="ws-scorecards-wrap">
                     <div class="ws-scorecards" id="ws-scorecards" role="list" aria-label="Your portfolio at a glance">
-                        <button class="ws-scorecard is-locked" role="listitem" data-order="0" data-urgent="5" data-impact="5" data-recent="5" onclick="startReformulationWorkflow()">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
+                        <button class="ws-scorecard" role="listitem" data-order="0" data-urgent="5" data-impact="5" data-recent="5" onclick="startVerifyIngredients()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">science</span></span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">fact_check</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">priority_high</span>Do next</span>
                             </div>
-                            <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> UPCs</span></div>
-                            <div class="ws-sc-title">Reformulate CA targets</div>
-                            <div class="ws-sc-desc">18 UPCs miss California Assembly UPF — surgical swaps lock in cross-standard leadership.</div>
-                            <div class="ws-sc-action">Plan reformulation<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-metric">10<span class="ws-sc-metric-unit"> claimed</span></div>
+                            <div class="ws-sc-title">Verify ingredients</div>
+                            <div class="ws-sc-desc">All 10 claimed products still need ingredients verified before their reports unlock.</div>
+                            <div class="ws-sc-action">Verify ingredients<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="0.5" data-urgent="5" data-impact="5" data-recent="5" onclick="startComparisonWorkflow()">
+                        <button class="ws-scorecard" role="listitem" data-order="1" data-urgent="5" data-impact="5" data-recent="4" onclick="startActivateShields()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">insights</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">compare_arrows</span>Compare</span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">verified_user</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">shield</span>Attest</span>
                             </div>
-                            <div class="ws-sc-metric">4<span class="ws-sc-metric-unit"> scopes</span></div>
-                            <div class="ws-sc-title">Compare vs Competitors</div>
-                            <div class="ws-sc-desc">Benchmark a product or your whole portfolio against named competitors on any metric.</div>
-                            <div class="ws-sc-action">Open Compare Foods<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-metric">9<span class="ws-sc-metric-unit"> pending</span></div>
+                            <div class="ws-sc-title">Activate Non-UPF Shields</div>
+                            <div class="ws-sc-desc">9 claimed products are eligible and pending payment — attest and switch their shields on.</div>
+                            <div class="ws-sc-action">Activate shields<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard ws-scorecard--intro is-locked" role="listitem" data-order="1" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('registry_home','Give me a quick tour of my portfolio','explore')">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
+                        <button class="ws-scorecard" role="listitem" data-order="2" data-urgent="4" data-impact="5" data-recent="5" onclick="startReviewDiscovered()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">travel_explore</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">bookmark_add</span>Claim</span>
+                            </div>
+                            <div class="ws-sc-metric">47<span class="ws-sc-metric-unit"> found</span></div>
+                            <div class="ws-sc-title">Review discovered matches</div>
+                            <div class="ws-sc-desc">47 products from public retail data look like Flax4Life's — claim yours, remove the rest.</div>
+                            <div class="ws-sc-action">Review &amp; claim<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="4" data-impact="4" data-recent="4" onclick="startCompleteNeedsInfo()">
+                            <div class="ws-sc-top">
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">pending_actions</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">rule</span>Complete</span>
+                            </div>
+                            <div class="ws-sc-metric">13<span class="ws-sc-metric-unit"> to finish</span></div>
+                            <div class="ws-sc-title">Complete Needs Info products</div>
+                            <div class="ws-sc-desc">13 products are missing details — add them and they move into your portfolio.</div>
+                            <div class="ws-sc-action">Add missing info<span class="material-icons">arrow_outward</span></div>
+                        </button>
+                        <button class="ws-scorecard ws-scorecard--intro" role="listitem" data-order="4" data-urgent="0" data-impact="0" data-recent="0" onclick="portfolioTour()">
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--intro"><span class="material-icons">space_dashboard</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--intro"><span class="material-icons">auto_awesome</span>Start here</span>
                             </div>
                             <div class="ws-sc-intro-title">Your whole portfolio, decoded</div>
-                            <div class="ws-sc-desc">UPF status, compliance, and ingredient health — every UPC, one view.</div>
+                            <div class="ws-sc-desc">Claimed, Discovered, and Needs Info — every product, one view.</div>
                             <div class="ws-sc-action">Take the tour<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--scout is-locked" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can WISEai help me work through my portfolio?','auto_awesome')">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
+                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--scout" role="listitem" data-order="5" data-urgent="0" data-impact="0" data-recent="0" onclick="askWiseAiPortfolio()">
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--scout"><span class="material-icons">smart_toy</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--scout"><span class="material-icons">bolt</span>WISEai</span>
                             </div>
                             <div class="ws-sc-intro-title">Let WISEai do the heavy lifting</div>
-                            <div class="ws-sc-desc">Ask, verify, or reformulate — WISEai drafts it, you decide.</div>
+                            <div class="ws-sc-desc">Claim, verify, or complete products — WISEai tees it up, you decide.</div>
                             <div class="ws-sc-action">Ask WISEai anything<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard is-locked" role="listitem" data-order="3" data-urgent="4" data-impact="5" data-recent="3" onclick="startVerificationWorkflow()">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
+                        <button class="ws-scorecard" role="listitem" data-order="6" data-urgent="3" data-impact="3" data-recent="2" onclick="startResolveIneligible()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">gavel</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">verified</span>Verify</span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">gpp_maybe</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">error_outline</span>Resolve</span>
                             </div>
-                            <div class="ws-sc-metric">100<span class="ws-sc-metric-unit">% pass</span></div>
-                            <div class="ws-sc-title">Publish your SB25 claim</div>
-                            <div class="ws-sc-desc">All 192 UPCs clear Texas SB25 — get it verified and live on retail listings.</div>
-                            <div class="ws-sc-action">Start verification<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-metric">1<span class="ws-sc-metric-unit"> ineligible</span></div>
+                            <div class="ws-sc-title">Resolve ineligible product</div>
+                            <div class="ws-sc-desc">Vegan Blueberry Mini Muffins can't earn a Non-UPF Shield yet — see why and fix it.</div>
+                            <div class="ws-sc-action">Review product<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard is-locked" role="listitem" data-order="5" data-urgent="4" data-impact="4" data-recent="3" onclick="startVerificationWorkflow()">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
+                        <button class="ws-scorecard" role="listitem" data-order="7" data-urgent="2" data-impact="3" data-recent="2" onclick="startAddProduct()">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">verified_user</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">shield</span>Attest</span>
+                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">add_box</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">add</span>Add</span>
                             </div>
-                            <div class="ws-sc-metric">174<span class="ws-sc-metric-unit"> ready</span></div>
-                            <div class="ws-sc-title">Activate Non-UPF Shields</div>
-                            <div class="ws-sc-desc">174 of 192 UPCs qualify as Not-Ultra-Processed — attest and switch the shields on.</div>
-                            <div class="ws-sc-action">Run verification<span class="material-icons">arrow_outward</span></div>
-                        </button>
-                        <button class="ws-scorecard is-locked" role="listitem" data-order="5" data-urgent="3" data-impact="3" data-recent="2" onclick="startDataExploration()">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
-                            <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">filter_alt</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">rule</span>Review</span>
-                            </div>
-                            <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> UPCs</span></div>
-                            <div class="ws-sc-title">Trim the UPF tail</div>
-                            <div class="ws-sc-desc">9.4% of UPCs are ultra or super-ultra processed — target the worst offenders next.</div>
-                            <div class="ws-sc-action">Explore data<span class="material-icons">arrow_outward</span></div>
-                        </button>
-                        <button class="ws-scorecard is-locked" role="listitem" data-order="6" data-urgent="2" data-impact="4" data-recent="2" onclick="startDataExploration()">
-                            <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-icons">lock</span></span>
-                            <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-icons">campaign</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--up"><span class="material-icons">trending_up</span>Promote</span>
-                            </div>
-                            <div class="ws-sc-metric">12<span class="ws-sc-metric-unit">% seed oil</span></div>
-                            <div class="ws-sc-title">Promote your clean wins</div>
-                            <div class="ws-sc-desc">Cleanest seed-oil profile in the channel (12% vs peers 17–24%) — push the claim to buyers.</div>
-                            <div class="ws-sc-action">Open data &amp; trends<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-metric">70<span class="ws-sc-metric-unit"> total</span></div>
+                            <div class="ws-sc-title">Add a product manually</div>
+                            <div class="ws-sc-desc">Missing a UPC we didn't discover? Add it by hand and WISEai will build out its data.</div>
+                            <div class="ws-sc-action">Add product<span class="material-icons">arrow_outward</span></div>
                         </button>
                     </div>
                     <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-sc-prev" aria-label="Scroll to previous cards" onclick="scrollScorecards(-1)" hidden><span class="material-icons">chevron_left</span></button>
@@ -8242,52 +8627,38 @@
                  score-card scroller above). -->
             <div class="ws-chips-wrap">
             <div class="ws-chips" id="ws-chips" role="list" aria-label="Quick actions">
-                <button class="chip ws-intent-chip" onclick="startComparisonWorkflow()">
-                    <span class="material-icons" style="font-size:16px">compare_arrows</span>Compare Against Competitors
+                <button class="chip ws-intent-chip" onclick="startReviewDiscovered()">
+                    <span class="material-icons" style="font-size:16px">travel_explore</span>Review Discovered (47)
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('customer_profile','Start New Verification','add_circle')">
-                    <span class="material-icons" style="font-size:16px">add_circle</span>Start New Verification
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startVerifyIngredients()">
+                    <span class="material-icons" style="font-size:16px">fact_check</span>Verify Ingredients
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('resume_prompt','Continue Existing','play_circle')">
-                    <span class="material-icons" style="font-size:16px">play_circle</span>Continue Existing
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startActivateShields()">
+                    <span class="material-icons" style="font-size:16px">verified_user</span>Activate Non-UPF Shields
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('faq_intro','Ask a Question','help_outline')">
-                    <span class="material-icons" style="font-size:16px">help_outline</span>Ask a Question
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startCompleteNeedsInfo()">
+                    <span class="material-icons" style="font-size:16px">pending_actions</span>Complete Needs Info (13)
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="openSettings()">
-                    <span class="material-icons" style="font-size:16px">smart_toy</span>Choose Agents
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startViewClaimed()">
+                    <span class="material-icons" style="font-size:16px">inventory_2</span>View Claimed Portfolio
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('registry_home','WISE Foods','restaurant_menu')">
-                    <span class="material-icons" style="font-size:16px">restaurant_menu</span>WISE Foods
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startClaimProducts()">
+                    <span class="material-icons" style="font-size:16px">bookmark_add</span>Claim a Product
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('add_food_intro','Add a New Food','add_circle_outline')">
-                    <span class="material-icons" style="font-size:16px">add_circle_outline</span>Add a New Food
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startResolveIneligible()">
+                    <span class="material-icons" style="font-size:16px">gpp_maybe</span>Resolve Ineligible
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('edit_food_select','Edit an Existing Food','edit_note')">
-                    <span class="material-icons" style="font-size:16px">edit_note</span>Edit Existing Food
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startAddProduct()">
+                    <span class="material-icons" style="font-size:16px">add_box</span>Add a Product
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startReformulationWorkflow()">
-                    <span class="material-icons" style="font-size:16px">science</span>Build a Reformulation Plan
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="startSearchPortfolio()">
+                    <span class="material-icons" style="font-size:16px">search</span>Search Portfolio
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startVerificationWorkflow()">
-                    <span class="material-icons" style="font-size:16px">verified</span>Run a Live Verification
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="portfolioTour()">
+                    <span class="material-icons" style="font-size:16px">explore</span>Tour My Portfolio
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startLaunchReadinessFlow()">
-                    <span class="material-icons" style="font-size:16px">rocket_launch</span>Prep Launch Readiness
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
-                </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startDataExploration()">
-                    <span class="material-icons" style="font-size:16px">query_stats</span>Explore My Data &amp; Charts
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-icons">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="askWiseAiPortfolio()">
+                    <span class="material-icons" style="font-size:16px">help_outline</span>Ask WISEai a Question
                 </button>
             </div>
                 <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-chips-prev" aria-label="Scroll to previous actions" onclick="scrollChips(-1)" hidden><span class="material-icons">chevron_left</span></button>
@@ -9316,6 +9687,329 @@
         </div>
       </div>
     </aside>
+    <!-- Product Portfolio — the "portfolio module". Combines the three portfolio
+         surfaces (Claimed / Discovered / Needs Info) into one report board that
+         opens beside the chat when a welcome score card or intent chip is clicked.
+         Mirrors the other right-side modules' shell (panel-inner, side-panel-header
+         with flip/width/close, scrollable side-panel-body). -->
+    <aside id="portfolio-panel" aria-label="Product Portfolio">
+      <div class="panel-inner pf-inner">
+        <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
+          <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+            <span class="material-icons text-[15px]" style="color:var(--primary)">inventory_2</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-bold text-oyster-100">Product Portfolio</div>
+            <p class="text-xs text-oyster-600 mt-0.5" id="pf-subtitle">Flax4Life · Claimed, Discovered &amp; Needs Info</p>
+          </div>
+          <div class="panel-controls">
+            <div class="panel-flip" data-panel="portfolio" role="group" aria-label="Dock Product Portfolio panel">
+              <button type="button" class="panel-flip-btn" onclick="flipPanel('portfolio')" title="Move to the other side of chat" aria-label="Move Product Portfolio to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-panel="portfolio" onclick="togglePanelWidth('portfolio')" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Product Portfolio module width"><span class="material-symbols-outlined">width_normal</span></button>
+            <button type="button" class="panel-close-btn" onclick="closePortfolioModule()" title="Close" aria-label="Close Product Portfolio"><span class="material-icons">close</span></button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto side-panel-body pf-body" id="pf-body">
+
+          <!-- Board header — serif title + a few details, mirroring the
+               Compare module's .cmp-board-title / .cmp-board-meta. -->
+          <header class="pf-head">
+            <h2 class="pf-head-title">Product Portfolio</h2>
+            <p class="pf-head-meta" id="pf-head-meta">Flax4Life · 10 claimed · 47 discovered · 13 needs info</p>
+          </header>
+
+          <!-- Settings row — the module's controls sit in their own bar above
+               the score cards, mirroring the Compare module's toolbar. -->
+          <div class="pf-toolbar">
+            <div class="pf-search-inline">
+              <span class="material-icons">search</span>
+              <input type="text" class="pf-search" placeholder="Search by product name or UPC" aria-label="Search portfolio" />
+            </div>
+            <span class="pf-tool-spacer"></span>
+            <button type="button" class="pf-add-btn" onclick="startAddProduct()"><span class="material-icons">add</span>Add Product</button>
+          </div>
+
+          <!-- At-a-glance + tables — ONE component. The score cards are
+               toggle filters: segment cards (Claimed / Discovered / Needs Info)
+               switch which list shows; status cards (To verify / Shields
+               pending / Ineligible) filter the rows within the Claimed list. -->
+          <div class="pf-card pf-board">
+            <div class="pf-stats-bar">
+              <span class="pf-stats-label">Your portfolio at a glance</span>
+            </div>
+            <div class="pf-stats" role="group" aria-label="Filter portfolio by segment and status">
+              <button type="button" class="pf-stat is-active" id="pf-seg-claimed" data-seg="claimed" aria-pressed="true" onclick="pfFilterClick('claimed', null)">
+                <span class="pf-stat-num">10</span>
+                <span class="pf-stat-label">Claimed</span>
+              </button>
+              <button type="button" class="pf-stat pf-stat--alert" data-status="verify" aria-pressed="false" onclick="pfFilterClick('claimed', 'verify')">
+                <span class="pf-stat-num">10</span>
+                <span class="pf-stat-label">To verify</span>
+              </button>
+              <button type="button" class="pf-stat pf-stat--warn" data-status="pending" aria-pressed="false" onclick="pfFilterClick('claimed', 'pending')">
+                <span class="pf-stat-num">9</span>
+                <span class="pf-stat-label">Shields pending</span>
+              </button>
+              <button type="button" class="pf-stat pf-stat--muted" data-status="ineligible" aria-pressed="false" onclick="pfFilterClick('claimed', 'ineligible')">
+                <span class="pf-stat-num">1</span>
+                <span class="pf-stat-label">Ineligible</span>
+              </button>
+              <button type="button" class="pf-stat" id="pf-seg-discovered" data-seg="discovered" aria-pressed="false" onclick="pfFilterClick('discovered', null)">
+                <span class="pf-stat-num">47</span>
+                <span class="pf-stat-label">Discovered</span>
+              </button>
+              <button type="button" class="pf-stat pf-stat--warn" id="pf-seg-needsinfo" data-seg="needsinfo" aria-pressed="false" onclick="pfFilterClick('needsinfo', null)">
+                <span class="pf-stat-num">13</span>
+                <span class="pf-stat-label">Needs Info</span>
+              </button>
+            </div>
+            <div class="pf-board-divider"></div>
+            <div class="pf-board-views">
+
+          <!-- ── CLAIMED ─────────────────────────────────────────────── -->
+          <section class="pf-view" id="pf-view-claimed" role="tabpanel" aria-labelledby="pf-seg-claimed">
+            <div class="pf-table-card">
+              <div class="pf-table pf-table--claimed">
+                <div class="pf-thead">
+                  <span class="pf-th pf-col-menu"></span>
+                  <span class="pf-th pf-col-product">Product</span>
+                  <span class="pf-th pf-col-data">Data</span>
+                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-updated">Updated</span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Toasted Coconut Brownies-12 ct</span><span class="pf-upc">UPC · 8 57287 00420 3</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Chocolate Chip Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname">Chocolate Chip Muffins-4 ct</span><span class="pf-upc">UPC · 0 65776 63152 0</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffins- 4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Carrot Raisin Muffins- 4 ct</span><span class="pf-upc">UPC · 0 65776 63151 3</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Chocolate Brownies-12 ct</span><span class="pf-upc">UPC · 0 65776 63550 4</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/vegan_carrot_raisin_mini.png" alt="Vegan Carrot Raisin Mini Muffins" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Vegan Carrot Raisin Mini Muffins</span><span class="pf-upc">UPC · 8 57287 00482 1</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Chunky Chocolate Granola" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Chunky Chocolate Granola</span><span class="pf-upc">UPC · 8 57287 00427 2</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/oatmeal_raisin_cookies.png" alt="Oatmeal Raisin Cookies-5 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname">Oatmeal Raisin Cookies-5 ct</span><span class="pf-upc">UPC · 8 57287 00456 2</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · May 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · May 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/vegan_blueberry_mini.png" alt="Vegan Blueberry Mini Muffins" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Vegan Blueberry Mini Muffins</span><span class="pf-upc">UPC · 8 57287 00481 4</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--inelig">Ineligible</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/vegan_chocolate_brownies.png" alt="Vegan Chocolate Brownies" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Vegan Chocolate Brownies</span><span class="pf-upc">UPC · 8 57287 00483 8</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Apple Cinnamon Granola" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Apple Cinnamon Granola</span><span class="pf-upc">UPC · 8 57287 00426 5</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-icons">arrow_outward</span></button></span>
+                </div>
+                <div class="pf-table-foot"><span>Showing 10 of 10 products</span></div>
+            </div>
+          </section>
+
+          <!-- ── DISCOVERED ──────────────────────────────────────────── -->
+          <section class="pf-view is-hidden" id="pf-view-discovered" role="tabpanel" aria-labelledby="pf-seg-discovered">
+            <div class="pf-note">
+              <h3 class="pf-card-title">We found 47 products that look like Flax4Life's</h3>
+              <p class="pf-card-sub">Pulled from public retail data and matched by brand name. Review each product's details to claim it into your portfolio, and remove the ones that are not yours. Claiming is free and unlimited; reports unlock as each product's data is completed.</p>
+            </div>
+
+            <div class="pf-table-card">
+              <div class="pf-table pf-table--discovered">
+                <div class="pf-thead">
+                  <span class="pf-th pf-col-menu"></span>
+                  <span class="pf-th pf-col-product">Product</span>
+                  <span class="pf-th pf-col-data">Data</span>
+                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-updated">Updated</span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/apple_cinnamon_muffins.png" alt="Apple Cinnamon Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Apple Cinnamon Muffins-4 ct</span><span class="pf-upc">UPC · 0 65776 63517 7</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Banana Coconut Granola" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Banana Coconut Granola</span><span class="pf-upc">UPC · 8 57287 00425 8</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/vegan_blueberry_mini.png" alt="Blueberry Mini-Muffins-6 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Blueberry Mini-Muffins-6 ct</span><span class="pf-upc">UPC · 8 57287 00468 5</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/blueberry_muffins.png" alt="Blueberry Muffin-Single Serve" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Blueberry Muffin-Single Serve</span><span class="pf-upc">UPC · 8 57287 00412 8</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/blueberry_muffins.png" alt="Blueberry Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Blueberry Muffins-4 ct</span><span class="pf-upc">UPC · 0 65776 63153 7</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Cappuccino Brownie Gluten-Free Flax Mini Muffins, Cappuccino Brownie" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Cappuccino Brownie Gluten-Free Flax Mini Muffins, Cappuccino Brownie</span><span class="pf-upc">UPC · 8 57287 00422 7</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Jun 9, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Jun 5, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Cake Flax, Carrot Cake" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Carrot Cake Flax, Carrot Cake</span><span class="pf-upc">UPC · 8 57287 00433 3</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/vegan_carrot_raisin_mini.png" alt="Carrot Raisin Mini-Muffins-6 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Carrot Raisin Mini-Muffins-6 ct</span><span class="pf-upc">UPC · 8 57287 00469 2</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffin – Single Serve" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Carrot Raisin Muffin – Single Serve</span><span class="pf-upc">UPC · 8 57287 00413 5</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies- Single Serve" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Chocolate Brownies- Single Serve</span><span class="pf-upc">UPC · 8 57287 00411 1</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Not claimed</span></span>
+                </div>
+                <div class="pf-table-foot"><span>Showing 10 of 47 products</span><button type="button" class="pf-loadmore">Load more <span class="material-icons">expand_more</span></button></div>
+            </div>
+          </section>
+
+          <!-- ── NEEDS INFO ──────────────────────────────────────────── -->
+          <section class="pf-view is-hidden" id="pf-view-needsinfo" role="tabpanel" aria-labelledby="pf-seg-needsinfo">
+            <div class="pf-note pf-note--warn">
+              <h3 class="pf-card-title">Needs Info products</h3>
+              <p class="pf-card-sub">We've identified these products but do not have all the information needed yet. Review and add the missing details, once complete the products will move into your portfolio.</p>
+              <p class="pf-note-flag">Needs Info products aren't included in any reports or stats until they're complete.</p>
+            </div>
+
+            <div class="pf-table-card">
+              <div class="pf-table pf-table--needsinfo">
+                <div class="pf-thead">
+                  <span class="pf-th pf-col-menu"></span>
+                  <span class="pf-th pf-col-product">Product</span>
+                  <span class="pf-th pf-col-data">Data</span>
+                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-updated">Updated</span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Aug 29, 2024</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Aug 25, 2024</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><span class="material-icons">lunch_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Dell Alpe Italian Style Sweet Red Peppers, 24 Oz (Pack Of 12)</span><span class="pf-upc">UPC · 7 10051 49796 3</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/nsa_carrot_raisin_mini.png" alt="Flax4life Carrot Raisin No Sugar Added Mini Flax Muffins 6 Pack" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Carrot Raisin No Sugar Added Mini Flax Muffins 6 Pack</span><span class="pf-upc">UPC · 8 57287 00474 6</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 10, 2025</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 6, 2025</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Flax4life Fz Chocolate Chip Muffin, 14 Ounce (Pack Of 6)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Fz Chocolate Chip Muffin, 14 Ounce (Pack Of 6)</span><span class="pf-upc">UPC · 4 61272 47591 8</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Flax4life Gluten Free Flax Chunky Chocolate Snacking Granola, 11 Oz, (Pack Of 6)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Gluten Free Flax Chunky Chocolate Snacking Granola, 11 Oz, (Pack Of 6)</span><span class="pf-upc">UPC · 0 30650 84678 9</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 10, 2025</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 6, 2025</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Flax4life Gran Hawaiian ( 6 X 11 Oz )" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Gran Hawaiian ( 6 X 11 Oz )</span><span class="pf-upc">UPC · 7 46988 97334 8</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2025</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2025</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/granola.jpg" alt="Flax4life Granola Chnky Choc 11 Oz – Pack Of 6" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">grain</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Granola Chnky Choc 11 Oz – Pack Of 6</span><span class="pf-upc">UPC · 7 59425 53184 1</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Sep 26, 2024</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Sep 22, 2024</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/dark_cherry_brownies.png" alt="Flax4life Mini Dark Cherry Brownie Flax Muffins, 14 Oz (Pack Of 6)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Mini Dark Cherry Brownie Flax Muffins, 14 Oz (Pack Of 6)</span><span class="pf-upc">UPC · 7 10051 50976 5</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 29, 2024</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 25, 2024</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Flax4life Muffins, Carrot Raisin, 14 Ounce (Pack Of 6)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname">Flax4life Muffins, Carrot Raisin, 14 Ounce (Pack Of 6)</span><span class="pf-upc">UPC · 7 10051 50970 3</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 29, 2024</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 25, 2024</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><span class="material-icons">water_drop</span></span><span class="pf-pcell-text"><span class="pf-pname">Mezzetta Delicate California Extra Virgin Olive Oil, 16.9 Fo (Pack Of 6)</span><span class="pf-upc">UPC · 7 10051 54839 9</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-trow">
+                  <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-icons">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Feb 27, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Feb 23, 2026</div></div></div></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Mint Chocolate Brownie Flax Mini Muffins, Mint Chocolate Brownie" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cake</span></span><span class="pf-pcell-text"><span class="pf-pname">Mint Chocolate Brownie Flax Mini Muffins, Mint Chocolate Brownie</span><span class="pf-upc">UPC · 8 57287 00448 7</span></span></span>
+                  <span class="pf-td pf-col-data"><button type="button" class="pf-chip pf-chip--add">Add details <span class="material-icons">chevron_right</span></button></span>
+                  <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--muted">Locked</span></span>
+                </div>
+                <div class="pf-table-foot"><span>Showing 10 of 13 products</span><button type="button" class="pf-loadmore">Load more <span class="material-icons">expand_more</span></button></div>
+            </div>
+          </section>
+
+            </div><!-- /pf-board-views -->
+          </div><!-- /pf-board -->
+
+        </div>
+      </div>
+    </aside>
     </div><!-- /modules-row -->
   </div><!-- /chat-shell-wrap -->
 
@@ -10195,6 +10889,7 @@
       const open =
         !!document.getElementById('compare-panel')?.classList.contains('cp-open') ||
         !!document.getElementById('workflow-panel')?.classList.contains('wf-open') ||
+        !!document.getElementById('portfolio-panel')?.classList.contains('pf-open') ||
         !!document.getElementById('verify-flow-panel')?.classList.contains('vf-open');
       row.classList.toggle('report-mode', open);
     }
@@ -10485,27 +11180,104 @@
       edit_food_select: 'Which product would you like to edit? I’ll open it so you can update NFP+, ingredients, images, and visibility.',
     };
 
-    /* Canned, intent-aware reply — mirrors defaultReply() in scout-chat.js. An
-       intent id (from a clicked chip) wins over the label keyword regex. */
-    function scoutReply(text, intent) {
-      if (intent && INTENT_REPLIES[intent]) return INTENT_REPLIES[intent];
+    /* Portfolio-aware free-text routing. A typed question is matched to the
+       portfolio task it describes and opens the board on the right segment with
+       the SAME reply + follow-up chips its quick-action chip would — so the chat
+       input and the intent chips always "do the same thing" for the same intent.
+       Each route mirrors its start*() opener (numbers, tab, chips) so the two
+       entry points stay in lockstep. */
+    const PF_ROUTES = {
+      ineligible: {
+        test: /(ineligib|not eligible|blocked|blueberry|why.*(shield|eligib)|can.?t\s*(earn|get|activate).*(shield|badge))/,
+        tab: 'claimed',
+        reply: '<strong>Vegan Blueberry Mini Muffins</strong> is currently <strong>Ineligible</strong> for a Non-UPF Shield — its formulation includes an ingredient that doesn’t meet the Not-Ultra-Processed criteria yet. Verify its ingredients so I can pinpoint the blocker, then we can plan a swap or an exception.',
+        chips: ['verify', 'shields', 'claimed'],
+      },
+      shields: {
+        test: /(shield|non-?upf|attest|activate|badge)/,
+        tab: 'claimed',
+        reply: '<strong>9 of your 10</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and are pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. Attest and pay and the shields switch on across all nine. Want me to start the attestation, or review the ineligible one first?',
+        chips: ['verify', 'ineligible', 'claimed'],
+      },
+      verify: {
+        test: /(verif|ingredient|confirm.*label|check.*label|label.*(check|verif))/,
+        tab: 'claimed',
+        reply: 'All <strong>10 claimed products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened your <strong>Claimed</strong> list on the right; tap <strong>Verify Ingredients</strong> on any row and I’ll walk the label through, or I can batch all ten in one pass.',
+        chips: ['shields', 'claimed', 'discovered'],
+      },
+      discovered: {
+        test: /(discover|public retail|retail data|matches|found.*(product|match)|\b47\b)/,
+        tab: 'discovered',
+        reply: 'I found <strong>47 products</strong> in public retail data that match the Flax4Life brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.',
+        chips: ['claim', 'needsinfo', 'claimed'],
+      },
+      needsinfo: {
+        test: /(needs?\s*info|missing (info|detail|data|field)|incomplete|\bcomplete\b|\b13\b)/,
+        tab: 'needsinfo',
+        reply: '<strong>13 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>Needs Info</strong> on the right and <strong>Review &amp; claim</strong> to add what’s missing; I’ll flag exactly which fields each one needs.',
+        chips: ['discovered', 'claimed', 'add'],
+      },
+      claim: {
+        test: /\bclaim(?!ed)/,
+        tab: 'discovered',
+        reply: 'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>Needs Info</strong> until you complete it.',
+        chips: ['discovered', 'needsinfo', 'verify'],
+      },
+      add: {
+        test: /(add (a |an )?(new )?product|add.*upc|manually|create.*product|paste.*(label|spec|url))/,
+        tab: 'claimed',
+        reply: 'If a UPC didn’t turn up in Discovered, you can add it by hand. Use <strong>Add Product</strong> at the top of the board — paste a label, spec sheet, or product URL and I’ll parse it into your portfolio, then queue ingredient verification.',
+        chips: ['discovered', 'needsinfo', 'verify'],
+      },
+      search: {
+        test: /(search|find|look\s*up|where\s*is|filter by|locate)/,
+        tab: 'claimed',
+        reply: 'Every view has a search box — filter by product name or UPC across <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Needs Info</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
+        chips: ['claimed', 'discovered', 'needsinfo'],
+      },
+      claimed: {
+        test: /(claimed|my portfolio|my products|all (my )?products|portfolio overview|10 product)/,
+        tab: 'claimed',
+        reply: 'Here’s your <strong>Claimed</strong> portfolio — all 10 products, with their data status and Non-UPF Shield eligibility. <strong>0 of 10</strong> are complete: every one still needs ingredients verified, 9 are pending payment for their shield, and 1 is ineligible. Where do you want to start?',
+        chips: ['verify', 'shields', 'ineligible'],
+      },
+      tour: {
+        test: /(tour|get\s*started|walk\s*through|overview|guide me|show me around|how does|how do i|what can you)/,
+        tab: 'claimed',
+        reply: 'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (10 products you own — verify ingredients, then activate shields), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Needs Info</strong> (13 products missing details). Switch tabs on the right anytime — where would you like to begin?',
+        chips: ['verify', 'discovered', 'needsinfo'],
+      },
+    };
+    /* Priority order — most specific intent first so, e.g., "why is this
+       ineligible for a shield?" resolves to `ineligible`, not `shields`. */
+    const PF_ROUTE_ORDER = ['ineligible', 'shields', 'verify', 'discovered', 'needsinfo', 'claim', 'add', 'search', 'claimed', 'tour'];
+
+    function pfMatchRoute(text, intent) {
+      if (intent && PF_ROUTES[intent]) return PF_ROUTES[intent];
       const q = String(text).toLowerCase();
-      if (/(verif|shield|non-upf|clean label|attest)/.test(q))
-        return 'I can run the verification flow — <strong>Confirm → Attest → Activate</strong>. Want me to start with your eligible UPCs?';
-      if (/(food|registry|upc|product|search)/.test(q))
-        return 'Searching the WISE Foods registry now. I’ll match UPCs and pull nutritional metadata for you.';
-      if (/(add|new food|ingest|upload|parse)/.test(q))
-        return 'Let’s add it. Paste a label, spec sheet, or URL and I’ll parse it toward the Brand Verified standard.';
-      if (/(edit|update|change)/.test(q))
-        return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
-      if (/(agent|choose)/.test(q))
-        return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEai layout and controls.';
+      for (let i = 0; i < PF_ROUTE_ORDER.length; i++) {
+        const r = PF_ROUTES[PF_ROUTE_ORDER[i]];
+        if (r.test.test(q)) return r;
+      }
+      return null;
     }
 
+    /* Free-text send handler. A recognised portfolio intent opens the board on
+       the matching segment (no duplicate user bubble — the user's own line is
+       already shown) and offers the same next-step chips its intent chip would;
+       anything else gets a grounded portfolio summary plus the core next steps. */
     function scoutRespond(text, intent) {
-      const typing = showScoutTyping();
-      setTimeout(() => { typing?.remove(); addScoutMessage(scoutReply(text, intent)); }, 600);
+      const route = pfMatchRoute(text, intent);
+      if (route) {
+        openPortfolioModule(route.tab, null, route.reply, route.chips);
+        return;
+      }
+      const typing = showScoutTyping('WISEai is checking your portfolio');
+      setTimeout(() => {
+        typing?.remove();
+        addScoutMessage('I’m your portfolio copilot. Right now you have <strong>10 claimed products</strong> (all still pending ingredient verification), <strong>47 discovered matches</strong> to review &amp; claim, and <strong>13 products in Needs Info</strong>. Tell me what you’d like to do, or pick a task below.');
+        pfOfferChips(['verify', 'discovered', 'needsinfo', 'claimed']);
+      }, 600);
     }
 
     /* Each intent chip on the Scout welcome screen pairs with the side
@@ -11727,6 +12499,330 @@
       if (typeof cmpCloseKindMenu === 'function') cmpCloseKindMenu();
       panel.classList.remove('cp-open');
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
+    }
+
+    /* ── Product Portfolio module ─────────────────────────────────────────
+       The tabbed portfolio board (Claimed / Discovered / Needs Info) docks to
+       the right of the chat, mirroring openComparePanel's mechanics. Every
+       welcome score card and quick-action chip routes here through
+       openPortfolioModule(), which also drives the chat conversation. */
+    function openPortfolioPanel() {
+      const panel = document.getElementById('portfolio-panel');
+      if (!panel) return;
+      dockReportRight('portfolio-panel', 'portfolio');
+      panel.classList.add('pf-open');
+      try {
+        const w = JSON.parse(localStorage.getItem('wise-panel-wide-v1') || '{}') || {};
+        if (w.portfolio === undefined && typeof window.setPanelWide === 'function') window.setPanelWide('portfolio', 1);
+      } catch (_) {}
+      if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
+      scrollPanelIntoView('portfolio-panel');
+    }
+    function closePortfolioModule() {
+      const panel = document.getElementById('portfolio-panel');
+      if (!panel) return;
+      panel.classList.remove('pf-open');
+      if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
+    }
+    const PF_TABS = ['claimed', 'discovered', 'needsinfo'];
+    /* Board state: which segment (list) is showing and, within Claimed, which
+       status filter (if any) is active. The score cards drive both. */
+    let pfSeg = 'claimed';
+    let pfStatus = null;
+
+    /* A claimed row's status tags are read off the chips it renders, so the
+       filters need no per-row bookkeeping. */
+    function pfRowTags(row) {
+      const tags = [];
+      if (row.querySelector('.pf-chip--verify')) tags.push('verify');
+      if (row.querySelector('.pf-chip--pay')) tags.push('pending');
+      if (row.querySelector('.pf-chip--inelig')) tags.push('ineligible');
+      return tags;
+    }
+
+    function pfApplyRowFilter() {
+      const view = document.getElementById('pf-view-claimed');
+      if (!view) return;
+      let shown = 0, total = 0;
+      view.querySelectorAll('.pf-trow').forEach((row) => {
+        total++;
+        const match = !pfStatus || pfRowTags(row).indexOf(pfStatus) !== -1;
+        row.classList.toggle('pf-row-hidden', !match);
+        if (match) shown++;
+      });
+      const foot = view.querySelector('.pf-table-foot span');
+      if (foot) foot.textContent = 'Showing ' + shown + ' of ' + total + ' products';
+    }
+
+    function pfRender() {
+      PF_TABS.forEach((t) => {
+        const btn = document.getElementById('pf-tab-' + t);
+        const view = document.getElementById('pf-view-' + t);
+        const on = t === pfSeg;
+        if (btn) { btn.classList.toggle('is-active', on); btn.setAttribute('aria-selected', on ? 'true' : 'false'); }
+        if (view) view.classList.toggle('is-hidden', !on);
+      });
+      document.querySelectorAll('.pf-stat').forEach((b) => {
+        const status = b.dataset.status;
+        const seg = b.dataset.seg;
+        const active = status ? (pfSeg === 'claimed' && pfStatus === status)
+                              : (pfSeg === seg && !pfStatus);
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      pfApplyRowFilter();
+    }
+
+    function pfSwitchTab(tab) {
+      if (PF_TABS.indexOf(tab) === -1) tab = 'claimed';
+      pfSeg = tab;
+      pfStatus = null;
+      pfRender();
+      const body = document.getElementById('pf-body');
+      if (body) body.scrollTop = 0;
+    }
+
+    /* Score-card toggle. Segment cards (Claimed / Discovered / Needs Info)
+       switch the visible list; status cards (verify / pending / ineligible)
+       jump to Claimed and toggle a row filter on and off. */
+    function pfFilterClick(seg, status) {
+      if (status) {
+        pfSeg = 'claimed';
+        pfStatus = (pfStatus === status) ? null : status;
+      } else {
+        pfSeg = seg;
+        pfStatus = null;
+      }
+      pfRender();
+      const body = document.getElementById('pf-body');
+      const board = document.querySelector('.pf-board');
+      if (body && board) {
+        requestAnimationFrame(() => {
+          const b = body.getBoundingClientRect();
+          const t = board.getBoundingClientRect();
+          body.scrollTo({ top: Math.max(0, body.scrollTop + (t.top - b.top) - 12), behavior: 'smooth' });
+        });
+      }
+    }
+    window.pfFilterClick = pfFilterClick;
+
+    /* Surface each row's update history — the Updated date and the Last edited
+       date, each with its status label — into the always-visible "Updated"
+       column. Read from the row's ⋮ menu so the dates can never be dropped.
+       Idempotent, so it can safely run more than once. */
+    function pfPopulateDates() {
+      document.querySelectorAll('#portfolio-panel .pf-trow').forEach((row) => {
+        const html = Array.from(row.querySelectorAll('.pf-rowmenu-info')).map((info) => {
+          const clone = info.cloneNode(true);
+          clone.querySelectorAll('.material-icons').forEach((n) => n.remove());
+          const txt = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+          const i = txt.indexOf('\u00B7');
+          const status = i === -1 ? txt : txt.slice(0, i).trim();
+          const val = i === -1 ? '' : txt.slice(i + 1).trim();
+          return '<span class="pf-date"><span class="pf-date-status">' + status +
+                 '</span><span class="pf-date-val">' + val + '</span></span>';
+        }).join('');
+        let cell = row.querySelector('.pf-col-updated');
+        if (!cell) {
+          cell = document.createElement('span');
+          cell.className = 'pf-td pf-col-updated';
+          row.appendChild(cell);
+        }
+        cell.innerHTML = html;
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', pfPopulateDates);
+    } else {
+      pfPopulateDates();
+    }
+
+    /* Per-row ⋮ actions menu (edit / view / claim + updated & last-edited
+       dates). One delegated handler drives every row, closing on outside
+       click or Escape. */
+    (function pfRowMenuInit() {
+      function closeAll(except) {
+        document.querySelectorAll('.pf-rowmenu.is-open').forEach((m) => {
+          if (m === except) return;
+          m.classList.remove('is-open');
+          const b = m.querySelector('.pf-rowmenu-btn');
+          const p = m.querySelector('.pf-rowmenu-pop');
+          if (b) b.setAttribute('aria-expanded', 'false');
+          if (p) p.setAttribute('hidden', '');
+        });
+      }
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pf-rowmenu-btn');
+        if (btn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const menu = btn.closest('.pf-rowmenu');
+          const wasOpen = menu.classList.contains('is-open');
+          closeAll(menu);
+          const pop = menu.querySelector('.pf-rowmenu-pop');
+          if (wasOpen) {
+            menu.classList.remove('is-open');
+            btn.setAttribute('aria-expanded', 'false');
+            if (pop) pop.setAttribute('hidden', '');
+          } else {
+            menu.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            if (pop) pop.removeAttribute('hidden');
+          }
+          return;
+        }
+        const item = e.target.closest('.pf-rowmenu-item');
+        if (item) { closeAll(null); pfRowItemAction(item); return; }
+        if (!e.target.closest('.pf-rowmenu-pop')) closeAll(null);
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(null); });
+    })();
+
+    /* Each row menu item drives a contextual WISEai action for that product.
+       The (icon-stripped) label picks the intent; the product name is read
+       from the row, so Edit / View / Review & claim / Preview / Add details /
+       Not mine all do something real. */
+    function pfRowItemAction(item) {
+      const row = item.closest('.pf-trow');
+      const nameEl = row && row.querySelector('.pf-pname');
+      const name = nameEl ? nameEl.textContent.trim() : 'this product';
+      const clone = item.cloneNode(true);
+      clone.querySelectorAll('.material-icons').forEach((n) => n.remove());
+      const label = (clone.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const M = {
+        'edit':           ['Edit ' + name, 'Opening <strong>' + name + '</strong> to edit. Update its ingredients, packaging, or details and I’ll re-run verification the moment you save.'],
+        'view':           ['View ' + name, 'Here’s <strong>' + name + '</strong>. Its full report unlocks once ingredients are verified — want me to start verification now?'],
+        'review & claim': ['Review & claim ' + name, 'Let’s claim <strong>' + name + '</strong>. I’ll pull it into your portfolio; if any required data is missing it’ll wait in <strong>Needs Info</strong> until it’s complete.'],
+        'preview':        ['Preview ' + name, 'Previewing <strong>' + name + '</strong> — this is the public listing we matched. Claim it to manage its data and Non-UPF Shield.'],
+        'add details':    ['Add details for ' + name, '<strong>' + name + '</strong> is missing key fields. I’ll walk you through exactly what’s needed so it can move into your portfolio.'],
+        'not mine':       ['That’s not my product: ' + name, 'Got it — I’ll remove <strong>' + name + '</strong> from your list so it won’t resurface.'],
+      };
+      const msg = M[label];
+      if (!msg) return;
+      if (typeof addUserMessage === 'function') addUserMessage(msg[0]);
+      const typing = (typeof showScoutTyping === 'function') ? showScoutTyping('WISEai') : null;
+      setTimeout(() => {
+        if (typing) typing.remove();
+        if (typeof addScoutMessage === 'function') addScoutMessage(msg[1]);
+      }, 520);
+    }
+    window.pfRowItemAction = pfRowItemAction;
+
+    /* In-board score card → switch to its segment and scroll its table up
+       under the score cards (a silent control, no chat side-effects). */
+    function pfGoto(tab) {
+      pfSwitchTab(tab);
+      const body = document.getElementById('pf-body');
+      const view = document.getElementById('pf-view-' + tab);
+      if (!body || !view) return;
+      requestAnimationFrame(() => {
+        const b = body.getBoundingClientRect();
+        const v = view.getBoundingClientRect();
+        body.scrollTo({ top: Math.max(0, body.scrollTop + (v.top - b.top) - 12), behavior: 'smooth' });
+      });
+    }
+    /* Shared opener: hide the welcome screen, dock the board on the given tab,
+       then drive the chat with a user line + a WISEai reply and follow chips. */
+    function openPortfolioModule(tab, userMsg, scoutMsg, chips) {
+      hideWelcomeScreen(() => {
+        openPortfolioPanel();
+        pfSwitchTab(tab);
+        if (userMsg) addUserMessage(userMsg);
+        const typing = showScoutTyping('WISEai is opening your portfolio');
+        setTimeout(() => {
+          typing?.remove();
+          addScoutMessage(scoutMsg);
+          pfOfferChips(chips);
+        }, 620);
+      });
+    }
+
+    /* In-chat intent chips offered after the board opens — every next step the
+       three portfolio surfaces support is one tap away. */
+    const PF_CHIPS = {
+      verify:     { fn: 'startVerifyIngredients', icon: 'fact_check',      label: 'Verify ingredients' },
+      shields:    { fn: 'startActivateShields',   icon: 'verified_user',   label: 'Activate Non-UPF Shields' },
+      discovered: { fn: 'startReviewDiscovered',  icon: 'travel_explore',  label: 'Review discovered (47)' },
+      needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: 'Complete Needs Info (13)' },
+      claimed:    { fn: 'startViewClaimed',       icon: 'inventory_2',     label: 'View claimed portfolio' },
+      claim:      { fn: 'startClaimProducts',     icon: 'bookmark_add',    label: 'Claim a product' },
+      ineligible: { fn: 'startResolveIneligible', icon: 'gpp_maybe',       label: 'Resolve ineligible' },
+      add:        { fn: 'startAddProduct',        icon: 'add_box',         label: 'Add a product' },
+    };
+    function pfOfferChips(keys) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const list = (keys && keys.length ? keys : ['verify', 'shields', 'discovered', 'needsinfo'])
+        .map((k) => PF_CHIPS[k]).filter(Boolean);
+      if (!list.length) return;
+      const row = document.createElement('div');
+      row.className = 'sc-reply-chips';
+      row.innerHTML = list.map((c) =>
+        `<button type="button" class="chip" onclick="pfChipGo(this,'${c.fn}')"><span class="material-icons">${c.icon}</span>${c.label}</button>`).join('');
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+    }
+    function pfChipGo(btn, fnName) {
+      btn?.closest('.sc-reply-chips')?.remove();
+      const fn = window[fnName];
+      if (typeof fn === 'function') fn();
+    }
+
+    /* Welcome score cards + quick actions → concrete portfolio tasks. */
+    function startVerifyIngredients() {
+      openPortfolioModule('claimed', 'Verify ingredients on my claimed products',
+        'All <strong>10 claimed products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened your <strong>Claimed</strong> list on the right; tap <strong>Verify Ingredients</strong> on any row and I’ll walk the label through, or I can batch all ten in one pass.',
+        ['shields', 'claimed', 'discovered']);
+    }
+    function startActivateShields() {
+      openPortfolioModule('claimed', 'Activate the Non-UPF Shields I’m eligible for',
+        '<strong>9 of your 10</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and are pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. Attest and pay and the shields switch on across all nine. Want me to start the attestation, or review the ineligible one first?',
+        ['verify', 'ineligible', 'claimed']);
+    }
+    function startReviewDiscovered() {
+      openPortfolioModule('discovered', 'Review the products you discovered for me',
+        'I found <strong>47 products</strong> in public retail data that match the Flax4Life brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.',
+        ['claim', 'needsinfo', 'claimed']);
+    }
+    function startCompleteNeedsInfo() {
+      openPortfolioModule('needsinfo', 'Help me complete my Needs Info products',
+        '<strong>13 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>Needs Info</strong> on the right and <strong>Review &amp; claim</strong> to add what’s missing; I’ll flag exactly which fields each one needs.',
+        ['discovered', 'claimed', 'add']);
+    }
+    function startViewClaimed() {
+      openPortfolioModule('claimed', 'Show me my claimed portfolio',
+        'Here’s your <strong>Claimed</strong> portfolio — all 10 products, with their data status and Non-UPF Shield eligibility. <strong>0 of 10</strong> are complete: every one still needs ingredients verified, 9 are pending payment for their shield, and 1 is ineligible. Where do you want to start?',
+        ['verify', 'shields', 'ineligible']);
+    }
+    function startClaimProducts() {
+      openPortfolioModule('discovered', 'I want to claim a product',
+        'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>Needs Info</strong> until you complete it.',
+        ['discovered', 'needsinfo', 'verify']);
+    }
+    function startResolveIneligible() {
+      openPortfolioModule('claimed', 'Why is a product ineligible for a shield?',
+        '<strong>Vegan Blueberry Mini Muffins</strong> is currently <strong>Ineligible</strong> for a Non-UPF Shield — its formulation includes an ingredient that doesn’t meet the Not-Ultra-Processed criteria yet. Verify its ingredients so I can pinpoint the blocker, then we can plan a swap or an exception.',
+        ['verify', 'shields', 'claimed']);
+    }
+    function startAddProduct() {
+      openPortfolioModule('claimed', 'Add a product manually',
+        'If a UPC didn’t turn up in Discovered, you can add it by hand. Use <strong>Add Product</strong> at the top of the board — paste a label, spec sheet, or product URL and I’ll parse it into your portfolio, then queue ingredient verification.',
+        ['discovered', 'needsinfo', 'verify']);
+    }
+    function startSearchPortfolio() {
+      openPortfolioModule('claimed', 'Search my portfolio',
+        'Every view has a search box — filter by product name or UPC across <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Needs Info</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
+        ['claimed', 'discovered', 'needsinfo']);
+    }
+    function portfolioTour() {
+      openPortfolioModule('claimed', 'Give me a quick tour of my portfolio',
+        'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (10 products you own — verify ingredients, then activate shields), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Needs Info</strong> (13 products missing details). Switch tabs on the right anytime — where would you like to begin?',
+        ['verify', 'discovered', 'needsinfo']);
+    }
+    function askWiseAiPortfolio() {
+      openPortfolioModule('claimed', 'How can WISEai help me work through my portfolio?',
+        'I can do the heavy lifting across your whole portfolio — batch-verify ingredients, attest and activate Non-UPF Shields, claim the right discovered products, and complete the ones missing info. Your board is on the right; pick a task below and I’ll drive it.',
+        ['verify', 'shields', 'discovered', 'needsinfo']);
     }
 
     function compareResetState() {
@@ -15252,6 +16348,7 @@
         settings: { id: 'settings-screen',btnId: 'lir-settings-btn', defaultRight: true  },
         nfp:      { id: 'nfp-panel',      btnId: 'lir-nfp-btn',      defaultRight: true  },
         workflow: { id: 'workflow-panel', btnId: '',                 defaultRight: true  },
+        portfolio: { id: 'portfolio-panel', btnId: '',               defaultRight: true  },
         verifyflow: { id: 'verify-flow-panel', btnId: '',            defaultRight: true  },
         intentstack: { id: 'intent-stack-column', btnId: '',          defaultRight: true  },
         notif:    { id: 'notif-panel',    btnId: 'lir-notif-btn',    defaultRight: true  },
@@ -15377,6 +16474,7 @@
         settings: 'settings-screen',
         nfp:      'nfp-panel',
         workflow: 'workflow-panel',
+        portfolio: 'portfolio-panel',
         verifyflow: 'verify-flow-panel',
         launchclaims: 'launch-claims-panel',
         launchpackaging: 'launch-packaging-panel',
