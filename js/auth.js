@@ -20,6 +20,8 @@
   var REG_KEY  = 'wc_registration';
   /* After sign-in / sign-up the user lands here (per project request). */
   var LANDING  = 'ai-chat-3.html';
+  /* "Dive right into the product" during signup lands on the workspace overview. */
+  var OVERVIEW = 'overview.html';
   var AUTH_PAGES = ['login.html', 'create-account.html', 'forgot-password.html'];
   var DEMO_EMAIL = 'demo@wisealliance.com';
 
@@ -108,8 +110,9 @@
 
   function isAuthPage() { return AUTH_PAGES.indexOf(currentPage()) !== -1; }
 
-  function loginUrl()   { return inPages() ? 'login.html'  : 'pages/login.html'; }
-  function landingUrl() { return inPages() ? LANDING       : 'pages/' + LANDING; }
+  function loginUrl()    { return inPages() ? 'login.html'  : 'pages/login.html'; }
+  function landingUrl()  { return inPages() ? LANDING       : 'pages/' + LANDING; }
+  function overviewUrl() { return inPages() ? OVERVIEW      : 'pages/' + OVERVIEW; }
 
   /* Guard: send unauthenticated users to the sign-in screen. Auth pages
      themselves are always allowed. Returns true when the page may render. */
@@ -123,6 +126,7 @@
     AUTH_KEY: AUTH_KEY,
     REG_KEY: REG_KEY,
     LANDING: LANDING,
+    OVERVIEW: OVERVIEW,
     DEMO_EMAIL: DEMO_EMAIL,
     getUser: getUser,
     isAuthed: isAuthed,
@@ -133,6 +137,7 @@
     isAuthPage: isAuthPage,
     loginUrl: loginUrl,
     landingUrl: landingUrl,
+    overviewUrl: overviewUrl,
     initialsFrom: initialsFrom
   };
 })();

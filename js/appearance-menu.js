@@ -4,7 +4,7 @@
 /*
  * One source of truth for the markup inside the "Appearance" (crossword)
  * popover. Every shell — the agent overview pages (js/agent-overview.js), the
- * Portfolio workspace (js/portfolio-module.js), the Scout chat (pages/ai-chat.html
+ * Portfolio workspace (js/portfolio-module.js), the WISEai chat (pages/ai-chat.html
  * inline), and the application sidebar (js/app.js) — renders the SAME menu by
  * calling buildAppearanceBody(). This keeps the toggles (Minimal UI, Header,
  * Full bleed, Jam strip, Text size, Theme …) identical everywhere; before this
@@ -13,12 +13,12 @@
  *
  * Shell-agnostic state is read straight from the shared modules below. The bits
  * that genuinely differ per shell (the module-layout list, whether the nav can
- * pivot, the active theme, the Scout dock side) are passed in as options, so a
+ * pivot, the active theme, the WISEai dock side) are passed in as options, so a
  * shell simply omits the capabilities it doesn't have.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
  * attribute (data-layout / data-pivot / data-minimal / data-headerfloat /
- * data-fullbleed / data-jam / data-scout-dock / data-fz / data-pop-action),
+ * data-fullbleed / data-jam / data-wiseai-dock / data-fz / data-pop-action),
  * so the existing per-shell listeners keep working unchanged.
  */
 
@@ -62,14 +62,14 @@ function pivotSection(showPivot, isPivoted) {
   return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation');
 }
 
-/** "Dock Chat" segmented control (left / center / right) for the Scout dock. */
-function scoutDockSection(mode) {
+/** "Dock Chat" segmented control (left / center / right) for the WISEai dock. */
+function wiseaiDockSection(mode) {
   const btn = (m, icon, label) =>
-    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-scout-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
+    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-wiseai-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
   return `
     <div class="fz-row">
       <span class="fz-row-label">Dock Chat</span>
-      <div class="fz-btns scout-seg" role="group" aria-label="Dock Chat position">
+      <div class="fz-btns wiseai-seg" role="group" aria-label="Dock Chat position">
         ${btn('left', 'align_justify_flex_start', 'Dock chat left')}
         ${btn('center', 'align_justify_center', 'Center chat')}
         ${btn('right', 'align_justify_flex_end', 'Dock chat right')}
@@ -87,8 +87,8 @@ function scoutDockSection(mode) {
  * @param {boolean} [opts.showPivot]      Show the "Pivot Navigation" row.
  * @param {boolean} [opts.isPivoted]      Whether the nav is currently pivoted.
  * @param {boolean} [opts.isDark]         Whether dark mode is active (shells compute this differently).
- * @param {boolean} [opts.showScoutDock]  Show the Scout "Dock Chat" control (default true).
- * @param {string}  [opts.scoutDockMode]  Active Scout dock side ('left'|'center'|'right'|'off').
+ * @param {boolean} [opts.showWISEaiDock]  Show the WISEai "Dock Chat" control (default true).
+ * @param {string}  [opts.wiseaiDockMode]  Active WISEai dock side ('left'|'center'|'right'|'off').
  * @returns {string} popover innerHTML
  */
 export function buildAppearanceBody({
@@ -97,8 +97,8 @@ export function buildAppearanceBody({
   showPivot = false,
   isPivoted = false,
   isDark = false,
-  showScoutDock = true,
-  scoutDockMode = 'off',
+  showWISEaiDock = true,
+  wiseaiDockMode = 'off',
 } = {}) {
   const fz = getStoredFontSize();
   const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
@@ -112,7 +112,7 @@ export function buildAppearanceBody({
     ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip')}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Colorblind mode')}
     <div class="wise-popover-divider"></div>
-    ${showScoutDock ? scoutDockSection(scoutDockMode) : ''}
+    ${showWISEaiDock ? wiseaiDockSection(wiseaiDockMode) : ''}
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>
       <div class="fz-btns">

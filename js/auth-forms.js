@@ -57,7 +57,7 @@
         '</div>' +
       '</div>';
 
-    setupRail(el);
+    setupRail(el, true);
   }
 
   /* Right-hand image module. Wraps the form in a left column and appends a large
@@ -101,7 +101,7 @@
 
   /* Icon-rail collapse — same mechanism as the app (toggle `.mp-rail`, persist
      the preference under `wise-menu-rail`, swap chevron + owl bug). */
-  function setupRail(navEl) {
+  function setupRail(navEl, defaultCollapsed) {
     var btn = navEl.querySelector('#auth-menu-toggle');
     if (!btn) return;
 
@@ -115,8 +115,12 @@
       if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
     };
 
-    var railed = false;
-    try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
+    /* Pages that request it (sign up / account creation) start collapsed by
+       default; otherwise honor the saved rail preference. */
+    var railed = defaultCollapsed === true;
+    if (!defaultCollapsed) {
+      try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
+    }
     apply(railed);
 
     btn.addEventListener('click', function (e) {

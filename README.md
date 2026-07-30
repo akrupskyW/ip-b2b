@@ -1,15 +1,15 @@
 # WISE — Food Intelligence Dashboard
 
 A front-end prototype for the WISE brand/food-intelligence platform: an interactive
-dashboard, Scout AI chat surfaces, analytics views, and report prototypes built as
+dashboard, WISEai AI chat surfaces, analytics views, and report prototypes built as
 static HTML/CSS/JS.
 
 ## Structure
 
 - `index.html` — app hub / entry point
-- `pages/` — individual screens (dashboard `aha.html`, `analytics-types.html`,
+- `pages/` — individual screens (dashboard `overview.html`, `analytics-types.html`,
   `ai-chat.html`, accessibility review, report prototypes in `_reports/`, etc.)
-- `js/` — UI modules (dashboard rendering, Scout chat/dock, topbar, appearance menu,
+- `js/` — UI modules (dashboard rendering, WISEai chat/dock, topbar, appearance menu,
   navigation, charts/animations)
 - `assets/` — brand art, product imagery, banners
 - `dev_server.py` — optional local dev server with live reload
@@ -22,7 +22,7 @@ Any static file server works. For example:
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000/pages/aha.html
+Then open http://localhost:8000/pages/overview.html
 
 For live reload during development:
 

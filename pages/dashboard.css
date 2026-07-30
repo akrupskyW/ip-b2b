@@ -13,7 +13,7 @@
   max-width: none;
   margin: 0 auto;
   transition: max-width 0.2s ease;
-  /* The dashboard lives in a resizable middle column (the Scout panel can
+  /* The dashboard lives in a resizable middle column (the WISEai panel can
      occupy ~40% of the window), so its multi-column grids must respond to the
      column width — not the viewport. Establish a query container for that. */
   container-type: inline-size;
@@ -40,7 +40,7 @@ html.dark .dash-card {
   border-color: rgba(255, 255, 255, 0.06);
 }
 /* Donut "circular health gauge" cards (UPF / GRAS). Corner radius matches the
-   Scout module (--r-md) so the cards and the CTA banner read as one family.
+   WISEai module (--r-md) so the cards and the CTA banner read as one family.
    Each card is its own query container so donut + legend respond to the card
    width (e.g. two-up halves) — not only the full dashboard column. */
 .dash-donut-card {

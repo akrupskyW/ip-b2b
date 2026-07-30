@@ -8,164 +8,66 @@
     try { if (localStorage.getItem('wise-theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { document.documentElement.classList.add('dark'); }
   </script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wiseai-chat.css" />
   <link rel="stylesheet" href="auth.css" />
   <script src="../js/auth.js"></script>
 </head>
-<body class="auth-page">
+<body class="auth-page auth-chat">
   <aside id="auth-nav" class="auth-nav" aria-label="Primary"></aside>
   <main class="auth-main">
-    <div class="auth-wrap auth-wrap--wide">
-    <section class="auth-card" aria-labelledby="auth-title">
-
-      <h1 id="auth-title" class="auth-title">Create your account</h1>
-      <p class="auth-sub">Set up your WISEcode workspace in three quick steps.</p>
-
-      <div class="auth-steps" aria-hidden="true">
-        <div class="auth-step-dot is-active"><span class="auth-step-num">1</span><span class="auth-step-label">Your info</span></div>
-        <span class="auth-step-line"></span>
-        <div class="auth-step-dot"><span class="auth-step-num">2</span><span class="auth-step-label">Organization</span></div>
-        <span class="auth-step-line"></span>
-        <div class="auth-step-dot"><span class="auth-step-num">3</span><span class="auth-step-label">Verify</span></div>
+    <div id="ac-chat"></div>
+    <aside id="ac-setup" class="auth-setup-pane" hidden></aside>
+    <aside class="auth-hero auth-hero--cpg" role="img" aria-label="WISEcode">
+      <svg class="auth-hero-net" viewBox="0 0 400 520" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+        <g class="ahn-lines">
+          <line x1="40" y1="300" x2="120" y2="292"/>
+          <line x1="120" y1="292" x2="200" y2="330"/>
+          <line x1="200" y1="330" x2="262" y2="300"/>
+          <line x1="262" y1="300" x2="340" y2="298"/>
+          <line x1="40" y1="300" x2="110" y2="352"/>
+          <line x1="110" y1="352" x2="70" y2="430"/>
+          <line x1="70" y1="430" x2="150" y2="470"/>
+          <line x1="110" y1="352" x2="185" y2="410"/>
+          <line x1="185" y1="410" x2="150" y2="470"/>
+          <line x1="185" y1="410" x2="252" y2="400"/>
+          <line x1="200" y1="330" x2="185" y2="410"/>
+          <line x1="252" y1="400" x2="322" y2="360"/>
+          <line x1="322" y1="360" x2="340" y2="298"/>
+          <line x1="322" y1="360" x2="362" y2="300"/>
+          <line x1="252" y1="400" x2="300" y2="470"/>
+          <line x1="300" y1="470" x2="372" y2="448"/>
+          <line x1="322" y1="360" x2="372" y2="448"/>
+          <line x1="150" y1="470" x2="300" y2="470"/>
+        </g>
+        <g class="ahn-dots">
+          <circle cx="40" cy="300" r="3"/>
+          <circle cx="120" cy="292" r="2.5"/>
+          <circle cx="200" cy="330" r="4" class="ahn-dot--bright"/>
+          <circle cx="262" cy="300" r="2.5"/>
+          <circle cx="340" cy="298" r="3"/>
+          <circle cx="362" cy="300" r="2"/>
+          <circle cx="110" cy="352" r="3"/>
+          <circle cx="70" cy="430" r="2.5"/>
+          <circle cx="150" cy="470" r="3.5" class="ahn-dot--bright"/>
+          <circle cx="185" cy="410" r="3"/>
+          <circle cx="252" cy="400" r="4" class="ahn-dot--bright"/>
+          <circle cx="322" cy="360" r="3"/>
+          <circle cx="300" cy="470" r="2.5"/>
+          <circle cx="372" cy="448" r="3"/>
+        </g>
+      </svg>
+      <div class="auth-hero-caption">
+        <h2>Join the WISEcode platform.</h2>
+        <p>Set up your workspace to benchmark products, surface risks, and guide better formulations.</p>
       </div>
-
-      <form id="signup-form" novalidate>
-        <!-- Step 1 — Your Info -->
-        <div class="auth-panel is-active">
-          <div class="auth-field">
-            <label for="brand">Brand(s) you represent <span class="req">*</span></label>
-            <input type="text" id="brand" class="auth-input" placeholder="e.g. Nature Valley, Clif Bar" data-required />
-            <span class="auth-hint">Separate multiple brands with commas.</span>
-          </div>
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label for="name">Full name <span class="req">*</span></label>
-              <input type="text" id="name" class="auth-input" autocomplete="name" placeholder="Jane Doe" data-required />
-            </div>
-            <div class="auth-field">
-              <label for="title">Professional title <span class="req">*</span></label>
-              <select id="title" class="auth-select" data-required>
-                <option value="">Select a title…</option>
-                <option>CEO</option>
-                <option>Brand Manager</option>
-                <option>Product Manager</option>
-                <option>Owner / Founder</option>
-                <option>Regulatory Affairs Manager</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label for="email">Business email <span class="req">*</span></label>
-              <input type="email" id="email" class="auth-input" autocomplete="email" placeholder="jane@company.com" data-required />
-            </div>
-            <div class="auth-field">
-              <label for="phone">Phone <span class="req">*</span></label>
-              <input type="tel" id="phone" class="auth-input" autocomplete="tel" placeholder="(555) 123-4567" data-required />
-            </div>
-          </div>
-          <label class="auth-attest">
-            <input type="checkbox" id="attest" />
-            <span>I certify that this information is accurate and that I am authorized to represent this organization on the WISEcode platform.</span>
-          </label>
-          <div class="auth-field">
-            <label for="sig">Signature — type your full name <span class="req">*</span></label>
-            <input type="text" id="sig" class="auth-input" placeholder="Type your full name to sign" data-required />
-          </div>
-          <div class="auth-actions">
-            <button type="button" class="btn btn-primary" data-next>Continue<span class="material-icons">arrow_forward</span></button>
-          </div>
-        </div>
-
-        <!-- Step 2 — Organization -->
-        <div class="auth-panel">
-          <div class="auth-field">
-            <label for="orgname">Organization legal name <span class="req">*</span></label>
-            <input type="text" id="orgname" class="auth-input" placeholder="Acme Foods, Inc." data-required />
-          </div>
-          <div class="auth-field">
-            <label for="website">Website <span class="req">*</span></label>
-            <input type="url" id="website" class="auth-input" placeholder="https://acmefoods.com" data-required />
-          </div>
-          <div class="auth-field">
-            <label for="addr1">Street address <span class="req">*</span></label>
-            <input type="text" id="addr1" class="auth-input" autocomplete="address-line1" placeholder="123 Market Street" data-required />
-          </div>
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label for="city">City <span class="req">*</span></label>
-              <input type="text" id="city" class="auth-input" autocomplete="address-level2" placeholder="San Francisco" data-required />
-            </div>
-            <div class="auth-field">
-              <label for="state">State <span class="req">*</span></label>
-              <input type="text" id="state" class="auth-input" autocomplete="address-level1" placeholder="California" data-required />
-            </div>
-          </div>
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label for="zip">ZIP code <span class="req">*</span></label>
-              <input type="text" id="zip" class="auth-input" inputmode="numeric" autocomplete="postal-code" placeholder="94103" data-required />
-            </div>
-            <div class="auth-field">
-              <label for="entitytype">Entity type <span class="req">*</span></label>
-              <select id="entitytype" class="auth-select" data-required>
-                <option value="">Select entity type…</option>
-                <option>Independent Brand</option>
-                <option>CPG / Manufacturer</option>
-                <option>Retailer</option>
-                <option>Foodservice</option>
-                <option>Distributor</option>
-                <option>R&amp;D / Lab</option>
-                <option>Regulatory / Compliance</option>
-              </select>
-            </div>
-          </div>
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label for="sid">Secondary business ID <span class="req">*</span></label>
-              <input type="text" id="sid" class="auth-input" placeholder="D-U-N-S number (or W-9 / TIN)" data-required />
-            </div>
-            <div class="auth-field">
-              <label for="ein">EIN <span class="req">*</span></label>
-              <input type="text" id="ein" class="auth-input" inputmode="numeric" placeholder="12-3456789" data-required />
-              <span class="auth-hint">Format: XX-XXXXXXX</span>
-            </div>
-          </div>
-          <div class="auth-actions">
-            <button type="button" class="btn btn-ghost" data-prev><span class="material-icons">arrow_back</span>Back</button>
-            <button type="button" class="btn btn-primary" data-next>Continue<span class="material-icons">arrow_forward</span></button>
-          </div>
-        </div>
-
-        <!-- Step 3 — Verify -->
-        <div class="auth-panel">
-          <h2 class="auth-section-title">Verify your phone</h2>
-          <p class="auth-section-sub">Enter the 6-digit code we sent to your phone to secure your account.</p>
-          <div class="auth-otp" role="group" aria-label="6-digit verification code">
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 1" />
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 2" />
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 3" />
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 4" />
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 5" />
-            <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 6" />
-          </div>
-          <p class="auth-banner auth-banner--error" id="otp-error" hidden></p>
-          <p class="auth-hint">Didn't get it? <a href="#" class="auth-link" id="otp-resend">Resend code</a></p>
-          <div class="auth-actions">
-            <button type="button" class="btn btn-ghost" data-prev><span class="material-icons">arrow_back</span>Back</button>
-            <button type="submit" class="btn btn-primary"><span class="material-icons">verified</span>Create account</button>
-          </div>
-        </div>
-      </form>
-
-      <p class="auth-foot">Already have an account? <a class="auth-link" href="login.html">Sign in</a></p>
-    </section>
-    </div>
+    </aside>
   </main>
 
   <script src="../js/auth-forms.js"></script>
-  <script>WiseAuthForms.initSignup();</script>
+  <script src="../js/auth-signup-chat.js"></script>
+  <script>WiseAuthChat.initSignup();</script>
 </body>
 </html>

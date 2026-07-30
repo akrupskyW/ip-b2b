@@ -1,7 +1,7 @@
 /**
- * Scout™ Flows — the conversational-tree engine for pages/scout-flows.html.
+ * WISEai™ Flows — the conversational-tree engine for pages/wiseai-flows.html.
  *
- * Each rectangle scorecard on the Scout welcome screen launches a full
+ * Each rectangle scorecard on the WISEai welcome screen launches a full
  * conversational tree (a graph of nodes). As the user walks the tree, the
  * relevant modules pop up in the stage on the right and fill in step by step.
  * When a flow reaches an `end` node, a dedicated result module appears that
@@ -12,7 +12,7 @@
  *   { launch, intro, start, nodes:{ id: node } }
  * A node is:
  *   {
- *     say:    'Scout reply (HTML)',
+ *     say:    'WISEai reply (HTML)',
  *     status: 'typing label',
  *     run:    (S) => {...}            // optional module side-effects
  *     choices:[{ label, icon, say, next, primary }]   // branch chips
@@ -22,12 +22,12 @@
  * S is the stage API: { open, section, progress, step, get }.
  */
 
-/* ── WISE-owl marks (verbatim from js/scout-chat.js) ──────────────────── */
+/* ── WISE-owl marks (verbatim from js/wiseai-chat.js) ──────────────────── */
 const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>`;
 const OWL_MARK = `<svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="white"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="white"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="white"/></svg>`;
 
 const stage = document.getElementById('flow-stage');
-const card = document.getElementById('scout-card');
+const card = document.getElementById('wiseai-card');
 const messages = document.getElementById('chat-messages');
 const welcome = document.getElementById('welcome');
 
@@ -54,21 +54,21 @@ function addUser(text) {
     `<div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${nowLabel()}</span></div></div></div>`);
   scrollDown();
 }
-function addScout(html, source = 'Grounded in WISE data') {
+function addWISEai(html, source = 'Grounded in WISE data') {
   const meta = `<div class="sc-line-meta">${source
     ? `<span class="sc-trust-chip"><span class="material-icons">verified_user</span>${esc(source)}</span>` : ''
     }<span class="sc-line-time">${nowLabel()}</span></div>`;
   messages.insertAdjacentHTML('beforeend',
-    `<div class="sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout">${OWL_BUG}</span>` +
+    `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL_BUG}</span>` +
     `<div class="sc-line-body">${html}${meta}</div></div>`);
   scrollDown();
 }
 function showTyping(label) {
   const el = document.createElement('div');
-  el.className = 'sc-line sc-line-scout sc-line-typing';
-  el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout">${OWL_BUG}</span>` +
+  el.className = 'sc-line sc-line-wiseai sc-line-typing';
+  el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL_BUG}</span>` +
     `<div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span>` +
-    `<span class="sc-typing-label">${esc(label || 'Scout™ is thinking')}…</span></span></div>`;
+    `<span class="sc-typing-label">${esc(label || 'WISEai™ is thinking')}…</span></span></div>`;
   messages.appendChild(el);
   scrollDown();
   return el;
@@ -114,7 +114,7 @@ function openModule(id, { title, icon = 'dashboard', sub = '', wide = false } = 
       `<div class="wf-body" id="mod-${id}-body">` +
         `<div class="wf-empty" id="mod-${id}-empty"><span class="material-icons">${esc(icon)}</span>` +
         `<p class="wf-empty-title">Building…</p>` +
-        `<p class="wf-empty-sub">Scout™ fills this in as the conversation advances.</p></div>` +
+        `<p class="wf-empty-sub">WISEai™ fills this in as the conversation advances.</p></div>` +
       `</div>` +
     `</div>`;
   stage.appendChild(el);
@@ -320,7 +320,7 @@ const FLOWS = {
         },
         end: {
           title: 'Portfolio reviewed',
-          sub: 'Scout™ scored your catalog and found the single highest-leverage fix.',
+          sub: 'WISEai™ scored your catalog and found the single highest-leverage fix.',
           icon: 'insights',
           recap: [
             'Scored all <strong>14 products</strong> (11 verified, 3 not)',
@@ -523,7 +523,7 @@ const FLOWS = {
     launch: 'Build a reformulation plan',
     intro: 'Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it one step at a time. First, which product are we reformulating?',
     introStatus: 'Opening a plan board…',
-    introRun: (s) => { s.open('plan', { title: 'Reformulation Plan', icon: 'auto_fix_high', sub: 'Guided by Scout™' }); s.progress('plan', 0, 4); },
+    introRun: (s) => { s.open('plan', { title: 'Reformulation Plan', icon: 'auto_fix_high', sub: 'Guided by WISEai™' }); s.progress('plan', 0, 4); },
     start: 'n1',
     nodes: {
       n1: {
@@ -582,7 +582,7 @@ const FLOWS = {
         },
         end: {
           title: 'Reformulation plan ready',
-          sub: 'Scout™ assembled a swap-by-swap plan that takes the granola to verifiable.',
+          sub: 'WISEai™ assembled a swap-by-swap plan that takes the granola to verifiable.',
           icon: 'auto_fix_high',
           recap: [
             'Targeted <strong>Mixed Berry Granola</strong> (54/100)',
@@ -685,7 +685,7 @@ const FLOWS = {
     launch: 'Explore my data & charts',
     intro: 'Let’s explore your catalog data. I’ve opened an insights board — pick a question and I’ll chart it inline, then we can keep building on it.',
     introStatus: 'Spinning up insights…',
-    introRun: (s) => { s.open('insights', { title: 'Insights', icon: 'query_stats', sub: '14 products · live data' }); s.section('insights', 1, 'Pick a view', `<p class="wf-note">Scout™ renders each answer as a chart below.</p>`); },
+    introRun: (s) => { s.open('insights', { title: 'Insights', icon: 'query_stats', sub: '14 products · live data' }); s.section('insights', 1, 'Pick a view', `<p class="wf-note">WISEai™ renders each answer as a chart below.</p>`); },
     start: 'n1',
     nodes: {
       n1: {
@@ -748,7 +748,7 @@ const FLOWS = {
         },
         end: {
           title: 'Exploration complete',
-          sub: 'Scout™ charted your trends and surfaced the highest-leverage insight.',
+          sub: 'WISEai™ charted your trends and surfaced the highest-leverage insight.',
           icon: 'query_stats',
           recap: [
             'Charted the <strong>6-month score trend</strong> (+9 pts)',
@@ -787,7 +787,7 @@ function startFlow(flowId) {
   const typing = showTyping(flow.introStatus);
   setTimeout(() => {
     typing.remove();
-    addScout(flow.intro, false);
+    addWISEai(flow.intro, false);
     try { flow.introRun && flow.introRun(S); } catch (_) {}
     renderNode(flow.start);
   }, TYPING_MS);
@@ -813,9 +813,9 @@ function renderNode(nodeId) {
 
   if (node.say) {
     const typing = showTyping(node.status);
-    setTimeout(() => { typing.remove(); addScout(node.say, node.source); finish(); }, TYPING_MS);
+    setTimeout(() => { typing.remove(); addWISEai(node.say, node.source); finish(); }, TYPING_MS);
   } else {
-    /* Pure branch node (no Scout line) — just offer the choices. */
+    /* Pure branch node (no WISEai line) — just offer the choices. */
     finish();
   }
 }
@@ -874,10 +874,10 @@ function routeMessage(text) {
   if (hit) { startFlow(hit[1]); return; }
   hideWelcome();
   addUser(text);
-  const typing = showTyping('Scout™ is thinking');
+  const typing = showTyping('WISEai™ is thinking');
   setTimeout(() => {
     typing.remove();
-    addScout('Pick one of the cards on the welcome screen, or try a keyword like <strong>“reformulation”</strong>, <strong>“renew”</strong>, <strong>“flags”</strong>, <strong>“launch”</strong>, or <strong>“trends”</strong> — each opens a full guided flow.', false);
+    addWISEai('Pick one of the cards on the welcome screen, or try a keyword like <strong>“reformulation”</strong>, <strong>“renew”</strong>, <strong>“flags”</strong>, <strong>“launch”</strong>, or <strong>“trends”</strong> — each opens a full guided flow.', false);
   }, TYPING_MS);
 }
 const input = document.getElementById('chat-input');

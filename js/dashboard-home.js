@@ -2236,8 +2236,8 @@ export function renderDashboardHome(host) {
     ${renderHero(d, isAlt)}
     <div class="dash">
       ${renderClaim(d)}
-      ${document.body.dataset.hideScout ? renderTopPerformers(d) : ''}
-      ${document.body.dataset.hideScout ? renderTopPerformersHero(d) : ''}
+      ${document.body.dataset.hideWISEai ? renderTopPerformers(d) : ''}
+      ${document.body.dataset.hideWISEai ? renderTopPerformersHero(d) : ''}
       <section class="dash-two-up" id="dash-charts">
         ${renderUpf(d)}
         ${renderGras(d)}
@@ -2250,7 +2250,7 @@ export function renderDashboardHome(host) {
       ${renderMetricSpotlight(d)}
       ${renderIngredientFlags(d)}
       ${renderScoreDistribution(d)}
-      ${document.body.dataset.hideScout ? renderFocusScatter(d) : ''}
+      ${document.body.dataset.hideWISEai ? renderFocusScatter(d) : ''}
     </div>`;
 
   /* Wire interactions only once per host element. On re-renders triggered by
@@ -2399,7 +2399,7 @@ export function renderDashboardHome(host) {
         'add-food': 'portfolio.html',
         'dispute-upc': 'portfolio.html',
         'claim-upcs': 'portfolio.html',
-        'verify-upf': 'portfolio.html',
+        'verify-upf': 'verification.html',
         'topproduct-report': 'portfolio.html',
         'ask-ai': 'ai-chat.html',
       }[a];

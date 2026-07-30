@@ -1,5 +1,5 @@
 /**
- * Scout™ acronym tooltip — shows what each letter stands for on hover/focus,
+ * WISEai™ acronym tooltip — shows what each letter stands for on hover/focus,
  * matching the floating tooltip pattern used by the nav rail (#lir-tooltip).
  *
  *   S — Seeking
@@ -9,9 +9,9 @@
  *   T — Transparency
  */
 
-export const SCOUT_NAME = 'Scout™';
+export const WISEAI_NAME = 'WISEai™';
 
-export const SCOUT_ACRONYM = [
+export const WISEAI_ACRONYM = [
   ['S', 'Seeking'],
   ['C', 'Clarity'],
   ['O', 'through Open'],
@@ -19,22 +19,22 @@ export const SCOUT_ACRONYM = [
   ['T', 'Transparency'],
 ];
 
-const SCOUT_RE = /Scout™/g;
+const WISEAI_RE = /WISEai™/g;
 /* Capturing group keeps the matched name in the split array (odd indices). */
-const SCOUT_SPLIT = /(Scout™)/g;
+const WISEAI_SPLIT = /(WISEai™)/g;
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TITLE', 'TEXTAREA', 'INPUT']);
 const SKIP_SELECTOR =
-  '.topbar-title, [data-scout-tip], #scout-tip, .scout-mark';
+  '.topbar-title, [data-wiseai-tip], #wiseai-tip, .wiseai-mark';
 
 const STANDALONE_STYLES = `
-.scout-mark {
+.wiseai-mark {
   cursor: help;
   text-decoration: underline dotted;
   text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
   text-underline-offset: 2px;
 }
-.scout-mark--bound { text-decoration: none; }
-#scout-tip {
+.wiseai-mark--bound { text-decoration: none; }
+#wiseai-tip {
   position: fixed;
   z-index: 10001;
   background: var(--surface, #0d1b24);
@@ -52,11 +52,11 @@ const STANDALONE_STYLES = `
   transition: opacity 0.12s ease, transform 0.12s ease;
   max-width: 260px;
 }
-#scout-tip.scout-tip-visible {
+#wiseai-tip.wiseai-tip-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
-.scout-tip-title {
+.wiseai-tip-title {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -64,13 +64,13 @@ const STANDALONE_STYLES = `
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
   letter-spacing: 0.02em;
 }
-.scout-tip-line {
+.wiseai-tip-line {
   display: block;
   line-height: 1.45;
   font-weight: 500;
   color: var(--text-muted, #C5CFD7);
 }
-.scout-tip-letter {
+.wiseai-tip-letter {
   display: inline-block;
   width: 1.1em;
   font-weight: 700;
@@ -79,18 +79,18 @@ const STANDALONE_STYLES = `
 `;
 
 function acronymTipHtml() {
-  const lines = SCOUT_ACRONYM.map(
+  const lines = WISEAI_ACRONYM.map(
     ([letter, word]) =>
-      `<span class="scout-tip-line"><span class="scout-tip-letter">${letter}</span> ${word}</span>`,
+      `<span class="wiseai-tip-line"><span class="wiseai-tip-letter">${letter}</span> ${word}</span>`,
   ).join('');
-  return `<div class="scout-tip-title">${SCOUT_NAME}</div>${lines}`;
+  return `<div class="wiseai-tip-title">${WISEAI_NAME}</div>${lines}`;
 }
 
 function ensureStyles() {
-  if (document.getElementById('scout-tip-styles')) return;
+  if (document.getElementById('wiseai-tip-styles')) return;
   if (document.querySelector('link[href*="agent-page.css"]')) return;
   const style = document.createElement('style');
-  style.id = 'scout-tip-styles';
+  style.id = 'wiseai-tip-styles';
   style.textContent = STANDALONE_STYLES;
   document.head.appendChild(style);
 }
@@ -105,28 +105,28 @@ function shouldSkipTextNode(node) {
   return false;
 }
 
-function bindScoutTip(el) {
-  if (!el || el.dataset.scoutTipBound) return;
-  el.dataset.scoutTipBound = '1';
+function bindWISEaiTip(el) {
+  if (!el || el.dataset.wiseaiTipBound) return;
+  el.dataset.wiseaiTipBound = '1';
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
-  el.classList.add('scout-mark', 'scout-mark--bound');
+  el.classList.add('wiseai-mark', 'wiseai-mark--bound');
 }
 
-function bindScoutTipTargets(root = document.body) {
-  root.querySelectorAll('[data-scout-tip]').forEach(bindScoutTip);
+function bindWISEaiTipTargets(root = document.body) {
+  root.querySelectorAll('[data-wiseai-tip]').forEach(bindWISEaiTip);
 }
 
-/** Wrap visible "Scout™" text nodes under `root` with `.scout-mark` spans. */
-export function decorateScout(root = document.body) {
+/** Wrap visible "WISEai™" text nodes under `root` with `.wiseai-mark` spans. */
+export function decorateWISEai(root = document.body) {
   if (!root || typeof document.createTreeWalker !== 'function') return;
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!SCOUT_RE.test(node.textContent)) {
-        SCOUT_RE.lastIndex = 0;
+      if (!WISEAI_RE.test(node.textContent)) {
+        WISEAI_RE.lastIndex = 0;
         return NodeFilter.FILTER_REJECT;
       }
-      SCOUT_RE.lastIndex = 0;
+      WISEAI_RE.lastIndex = 0;
       if (shouldSkipTextNode(node)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
@@ -136,19 +136,19 @@ export function decorateScout(root = document.body) {
   while (walker.nextNode()) nodes.push(walker.currentNode);
 
   for (const node of nodes) {
-    const parts = node.textContent.split(SCOUT_SPLIT);
+    const parts = node.textContent.split(WISEAI_SPLIT);
     if (parts.length < 2) continue;
 
     const frag = document.createDocumentFragment();
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!part) continue;
-      if (part === SCOUT_NAME) {
+      if (part === WISEAI_NAME) {
         const span = document.createElement('span');
-        span.className = 'scout-mark';
+        span.className = 'wiseai-mark';
         span.setAttribute('tabindex', '0');
         span.setAttribute('role', 'term');
-        span.textContent = SCOUT_NAME;
+        span.textContent = WISEAI_NAME;
         frag.appendChild(span);
       } else {
         frag.appendChild(document.createTextNode(part));
@@ -158,7 +158,7 @@ export function decorateScout(root = document.body) {
     node.parentNode.replaceChild(frag, node);
   }
 
-  bindScoutTipTargets(root);
+  bindWISEaiTipTargets(root);
 }
 
 let tipEl = null;
@@ -167,10 +167,10 @@ let decorateTimer = null;
 
 function getTip() {
   if (tipEl) return tipEl;
-  tipEl = document.getElementById('scout-tip');
+  tipEl = document.getElementById('wiseai-tip');
   if (!tipEl) {
     tipEl = document.createElement('div');
-    tipEl.id = 'scout-tip';
+    tipEl.id = 'wiseai-tip';
     tipEl.setAttribute('role', 'tooltip');
     tipEl.setAttribute('aria-hidden', 'true');
     tipEl.innerHTML = acronymTipHtml();
@@ -186,44 +186,44 @@ function showTip(mark) {
   tip.style.top = `${Math.round(r.bottom + 8)}px`;
   tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
   tip.offsetWidth;
-  tip.classList.add('scout-tip-visible');
+  tip.classList.add('wiseai-tip-visible');
   tip.setAttribute('aria-hidden', 'false');
 }
 
 function hideTip() {
   currentMark = null;
-  tipEl?.classList.remove('scout-tip-visible');
+  tipEl?.classList.remove('wiseai-tip-visible');
   tipEl?.setAttribute('aria-hidden', 'true');
 }
 
 function scheduleDecorate(root) {
   clearTimeout(decorateTimer);
-  decorateTimer = setTimeout(() => decorateScout(root || document.body), 16);
+  decorateTimer = setTimeout(() => decorateWISEai(root || document.body), 16);
 }
 
 /** One-time init: styles, DOM decoration, hover/focus tooltips, dynamic updates. */
-export function initScoutTooltips(root = document.body) {
+export function initWISEaiTooltips(root = document.body) {
   ensureStyles();
   getTip();
-  decorateScout(root);
+  decorateWISEai(root);
 
-  if (!window.__scoutTipReady) {
-    window.__scoutTipReady = true;
+  if (!window.__wiseaiTipReady) {
+    window.__wiseaiTipReady = true;
 
     document.addEventListener('mouseover', (e) => {
-      const mark = e.target.closest('.scout-mark');
+      const mark = e.target.closest('.wiseai-mark');
       if (mark && mark !== currentMark) showTip(mark);
     });
     document.addEventListener('mouseout', (e) => {
-      const mark = e.target.closest('.scout-mark');
+      const mark = e.target.closest('.wiseai-mark');
       if (mark && !mark.contains(e.relatedTarget)) hideTip();
     });
     document.addEventListener('focusin', (e) => {
-      const mark = e.target.closest('.scout-mark');
+      const mark = e.target.closest('.wiseai-mark');
       if (mark) showTip(mark);
     });
     document.addEventListener('focusout', (e) => {
-      if (e.target.closest('.scout-mark')) hideTip();
+      if (e.target.closest('.wiseai-mark')) hideTip();
     });
     window.addEventListener('scroll', hideTip, true);
     window.addEventListener('resize', hideTip);

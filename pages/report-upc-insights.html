@@ -27,16 +27,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css?v=noheader-scout3" />
-  <link rel="stylesheet" href="scout-chat.css?v=noheader-scout3" />
+  <link rel="stylesheet" href="agent-page.css?v=noheader-wiseai3" />
+  <link rel="stylesheet" href="wiseai-chat.css?v=noheader-wiseai3" />
   <link rel="stylesheet" href="dashboard.css?v=gut-health-portfolio-11" />
   <style>
     /* =====================================================================
        Typography lock-in (aha.html only) — Noto Serif is the display face for
        H1/H2-level headings, the big stat numerals, and CTAs across the
-       dashboard + Scout welcome. Body copy, labels, eyebrows, pills and
+       dashboard + WISEai welcome. Body copy, labels, eyebrows, pills and
        descriptions stay in DM Sans. Scoped to body[data-product-id="dashboard"]
-       so the shared agent-page.css / scout-chat.css aren't touched elsewhere.
+       so the shared agent-page.css / wiseai-chat.css aren't touched elsewhere.
     ===================================================================== */
     body[data-product-id="dashboard"] {
       --font-serif: 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
@@ -88,8 +88,8 @@
     ===================================================================== */
     /* Navigation rail */
     #menu-panel { display: none !important; }
-    /* Scout dock module */
-    #scout-dock-panel { display: none !important; }
+    /* WISEai dock module */
+    #wiseai-dock-panel { display: none !important; }
     /* Top welcome hero (brand banner image) */
     .dash-hero { display: none !important; }
     /* Bottom CTA hero (owl watermark + headline) */
@@ -450,7 +450,7 @@
     /* =====================================================================
        Matrix responsiveness — keyed to the dashboard column width via the
        shared `dash` query container (.dash on this page). The module resize
-       toggle (full → wide → reading) and the Scout panel both change that
+       toggle (full → wide → reading) and the WISEai panel both change that
        width; as it tightens we trade horizontal scroll for graceful shrink:
        the name column and heat cells get narrower. Default (roomy): the grid
        keeps an 860px min and scrolls if the column is narrower still.
@@ -1367,7 +1367,7 @@
     }
   </style>
 </head>
-<body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="1" data-default-header="1" data-hide-nav="1" data-hide-scout="1">
+<body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="1" data-default-header="1" data-hide-nav="1" data-hide-wiseai="1">
   <!-- Page header — WISEcode brand lock-up (left) + report meta / export (right).
        Mirrors the shared navigation brand mark; rendered inline so it shows with
        the nav rail + top bar suppressed on this page. -->
@@ -1484,6 +1484,15 @@
       var MIN = 12;
       function clamp(el) {
         if (el.nodeType !== 1 || el.dataset.wiseMinFs === '1') return;
+        /* Never touch the navigation chrome — the brand wordmark + its 7px
+           "INTELLIGENCE" tagline (and the nav labels) are authored at
+           deliberate sub-12px sizes; bumping them to 12px blows out the logo
+           (why it looked wrong here but correct on product-portfolio.html,
+           which runs no floor). The floor is only for injected content. */
+        if (el.closest && (el.closest('#menu-panel') || el.closest('#topbar-row'))) {
+          el.dataset.wiseMinFs = '1';
+          return;
+        }
         /* The scatter axis tick numbers and quadrant chip labels are
            intentionally sub-12px (decorative, like the em-based glyphs noted
            above) — leave them at their CSS size. */

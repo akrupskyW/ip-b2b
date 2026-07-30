@@ -1,17 +1,17 @@
 /* =============================================================
-   Scout Chat Module — the ONE shared chat surface for WISE.
+   WISEai Chat Module — the ONE shared chat surface for WISE.
    A framework-free extraction of the chat module in
    pages/ai-chat.html (welcome screen + WISE-owl, intent chips,
    plain message lines, floating-label input rail) so the exact
-   same component can be mounted on any page via mountScoutChat().
+   same component can be mounted on any page via mountWISEaiChat().
 
    Depends only on the design tokens declared in agent-page.css
    (--primary, --surface, --border, etc.). Adds the few extra
    tokens the chat needs as scoped fallbacks below.
 ============================================================= */
 
-/* Sized right-rail dock that any module can drop the Scout card into. */
-.scout-dock {
+/* Sized right-rail dock that any module can drop the WISEai card into. */
+.wiseai-dock {
   display: none;
   flex-shrink: 0;
   flex-direction: column;
@@ -20,13 +20,13 @@
   max-height: 100%;
   order: 99;
 }
-/* Stay pinned during horizontal scroll, like the #menu-panel rail, so Scout
+/* Stay pinned during horizontal scroll, like the #menu-panel rail, so WISEai
    never scrolls off-screen — it sticks to the edge it's docked to. A sticky
    element only pins when it has a SINGLE inline inset; setting both left:0 and
    right:0 makes the constraint rect span the whole scrollport, so a narrower
    box never reaches a stick threshold and just scrolls away. So the default
    (right) dock pins right, and the left-flipped variant below pins left.
-   The position lives on the higher-specificity .scout-dock-open selector
+   The position lives on the higher-specificity .wiseai-dock-open selector
    because the dock element is also a .sc-card (position: relative), which
    would otherwise win on source order and cancel the stickiness. */
 /* Single (default) tier — a fixed-width docked rail. The dock element is also a
@@ -34,45 +34,45 @@
    would balloon the single tier up to its max-width, making single + double look
    identical. Pinning `flex: 0 0 380px` keeps single a true single (matches the
    portfolio #pf-chat-panel dock). */
-.scout-dock.scout-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
-@media (max-width: 1100px) { .scout-dock.scout-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
-/* Scout width cycles through three tiers: single (380/330px), double
+.wiseai-dock.wiseai-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
+@media (max-width: 1100px) { .wiseai-dock.wiseai-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
+/* WISEai width cycles through three tiers: single (380/330px), double
    (680/560px), and triple (980/800px). The header width icon reflects the tier;
    the base max-width above is overridden per-tier so triple can grow past
    double, while min-width keeps it from shrinking below single. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). The width
    is a DEFINITE length (so the sticky-clamp still works) but viewport-capped —
-   exactly like ai-chat.html's #chat-shell — so widening Scout never overflows
+   exactly like ai-chat.html's #chat-shell — so widening WISEai never overflows
    the modules row on a narrow screen. */
-.scout-dock.scout-dock-open.panel-wide {
-  --scout-w: min(680px, 90vw);
-  flex: 0 0 var(--scout-w);
-  width: var(--scout-w);
-  min-width: var(--scout-w);
-  max-width: var(--scout-w);
+.wiseai-dock.wiseai-dock-open.panel-wide {
+  --wiseai-w: min(680px, 90vw);
+  flex: 0 0 var(--wiseai-w);
+  width: var(--wiseai-w);
+  min-width: var(--wiseai-w);
+  max-width: var(--wiseai-w);
 }
 @media (max-width: 1100px) {
-  .scout-dock.scout-dock-open.panel-wide { --scout-w: min(560px, 90vw); }
+  .wiseai-dock.wiseai-dock-open.panel-wide { --wiseai-w: min(560px, 90vw); }
 }
-/* Triple-width (third tier) — lifts the double cap so Scout can grow further. */
-.scout-dock.scout-dock-open.panel-wide.panel-triple {
-  --scout-w: min(980px, 96vw);
-  flex: 0 0 var(--scout-w);
-  width: var(--scout-w);
-  min-width: var(--scout-w);
-  max-width: var(--scout-w);
+/* Triple-width (third tier) — lifts the double cap so WISEai can grow further. */
+.wiseai-dock.wiseai-dock-open.panel-wide.panel-triple {
+  --wiseai-w: min(980px, 96vw);
+  flex: 0 0 var(--wiseai-w);
+  width: var(--wiseai-w);
+  min-width: var(--wiseai-w);
+  max-width: var(--wiseai-w);
 }
 @media (max-width: 1100px) {
-  .scout-dock.scout-dock-open.panel-wide.panel-triple { --scout-w: min(800px, 96vw); }
+  .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple { --wiseai-w: min(800px, 96vw); }
 }
-/* Solo state — when Scout is the ONLY module left in the row it must not
+/* Solo state — when WISEai is the ONLY module left in the row it must not
    stretch to fill the empty space. It stays capped at (at most) double width
    (above) and is centre-docked, overriding any left/right preference. Auto
-   margins centre the lone flex item; js/scout-dock.js also forces the
-   scout-dock-center class so it stays sticky-clamped. */
-.scout-dock.scout-dock-open.scout-dock-solo {
-  /* Alone in the row, Scout may grow to fill the empty space, but stays capped
+   margins centre the lone flex item; js/wiseai-dock.js also forces the
+   wiseai-dock-center class so it stays sticky-clamped. */
+.wiseai-dock.wiseai-dock-open.wiseai-dock-solo {
+  /* Alone in the row, WISEai may grow to fill the empty space, but stays capped
      at (at most) double width. Overrides the fixed single-tier flex above. */
   flex: 1 1 auto;
   max-width: 680px;
@@ -81,13 +81,13 @@
 }
 /* Side flip — the dock defaults to the far-right of the modules row (order
    99), pinned to the right edge. Flipping it left re-orders it to the front
-   and pins it to the LEFT edge instead. Persisted via js/scout-dock.js so the
+   and pins it to the LEFT edge instead. Persisted via js/wiseai-dock.js so the
    side carries across page switches. */
-.scout-dock.scout-dock-open.scout-dock-left { order: -1; left: 0; right: auto; }
-/* When the sticky menu rail is open, pin the LEFT-docked Scout just to the
+.wiseai-dock.wiseai-dock-open.wiseai-dock-left { order: -1; left: 0; right: auto; }
+/* When the sticky menu rail is open, pin the LEFT-docked WISEai just to the
    RIGHT of it (260px rail + 8px row gap) so the two sit side-by-side as frozen
-   columns instead of Scout disappearing behind the higher-z menu. */
-#menu-panel.mp-open ~ .scout-dock.scout-dock-open.scout-dock-left { left: 268px; }
+   columns instead of WISEai disappearing behind the higher-z menu. */
+#menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open.wiseai-dock-left { left: 268px; }
 /* Center mode = the DEFAULT "floating in the middle" state. Unlike left/right
    (which lock to one edge with a SINGLE inset), center keeps BOTH insets
    (left:0 + right:0). With a fixed-width dock (see portfolio.css) that two-inset
@@ -97,7 +97,7 @@
    the dock is a fixed width now; the old flex-grown full-width box could never
    satisfy both insets and so drifted away — that's why earlier it "scrolled
    off".) */
-.scout-dock.scout-dock-open.scout-dock-center {
+.wiseai-dock.wiseai-dock-open.wiseai-dock-center {
   position: sticky;
   left: 0;
   right: 0;
@@ -105,19 +105,19 @@
 }
 /* Keep the centered dock clear of the sticky menu rail when it's open, exactly
    like the left dock — pin its left clamp just to the right of the rail. */
-#menu-panel.mp-open ~ .scout-dock.scout-dock-open.scout-dock-center {
+#menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open.wiseai-dock-center {
   left: 268px;
   right: 0;
 }
 /* Collapsed = "Close conversation" folded the whole module into the floating
    circle below. Pull the dock out of the modules row entirely (display:none
-   beats the .scout-dock-open flex rule via the extra class) so the remaining
+   beats the .wiseai-dock-open flex rule via the extra class) so the remaining
    modules re-flow and resize across their single/double/triple widths. */
-.scout-dock.scout-dock-open.scout-dock-collapsed { display: none; }
+.wiseai-dock.wiseai-dock-open.wiseai-dock-collapsed { display: none; }
 
-/* Floating circle — the collapsed Scout module. A fixed FAB carrying the
+/* Floating circle — the collapsed WISEai module. A fixed FAB carrying the
    WISE-owl bug; click it to reopen the module. Hidden until `is-shown`. */
-.scout-dock-fab {
+.wiseai-dock-fab {
   position: fixed;
   right: 24px;
   bottom: 24px;
@@ -136,36 +136,36 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.22);
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.18s ease;
 }
-.scout-dock-fab.is-shown {
+.wiseai-dock-fab.is-shown {
   display: inline-flex;
-  animation: scoutFabPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: wiseaiFabPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-.scout-dock-fab:hover {
+.wiseai-dock-fab:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), 0 3px 10px rgba(0, 0, 0, 0.26);
 }
-.scout-dock-fab:active { transform: scale(0.96); }
-.scout-dock-fab:focus-visible {
+.wiseai-dock-fab:active { transform: scale(0.96); }
+.wiseai-dock-fab:focus-visible {
   outline: 2px solid color-mix(in srgb, #fff 70%, var(--primary));
   outline-offset: 2px;
 }
-.scout-dock-fab-bug {
+.wiseai-dock-fab-bug {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 16px;
 }
-.scout-dock-fab-bug svg { width: 28px; height: 16px; color: #fff; }
-@keyframes scoutFabPop {
+.wiseai-dock-fab-bug svg { width: 28px; height: 16px; color: #fff; }
+@keyframes wiseaiFabPop {
   from { opacity: 0; transform: scale(0.4) translateY(10px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 @media (max-width: 767px) {
-  .scout-dock-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; }
+  .wiseai-dock-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; }
 }
 
-.scout-dock .sc-card {
+.wiseai-dock .sc-card {
   transform-origin: right center;
   animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   animation-delay: 0.05s;
@@ -222,7 +222,7 @@ html.dark .chat-topbar {
 
 .sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
-.sc-topbar-titles .topbar-title[data-scout-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
+.sc-topbar-titles .topbar-title[data-wiseai-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
 html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 
 .topbar-agents-btn {
@@ -274,7 +274,7 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 
 /* Wide state — legacy hook when panel-wide is applied to an inner card; the
-   dock itself now carries panel-wide (see .scout-dock.scout-dock-open.panel-wide). */
+   dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
 .sc-card.panel-wide {
   flex-grow: 2;
   min-width: min(760px, 92vw);
@@ -296,7 +296,7 @@ html.dark .chat-messages-area { background: transparent; }
    readability; the meta row (timestamp + grounding) stays small below. */
 /* gap (12px) + avatar (30px) match the header's icon→title spacing so the
    avatar column lines up under the topbar owl and the body text lines up under
-   the "Scout™" title. */
+   the "WISEai™" title. */
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
   margin-bottom: 1.1rem; color: var(--text);
@@ -307,8 +307,8 @@ html.dark .chat-messages-area { background: transparent; }
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
 }
-/* Per-line profile avatars in place of the old "You" / "Scout™" labels.
-   Scout = the WISE-owl bug (same mark as the header) in a brand-blue circle.
+/* Per-line profile avatars in place of the old "You" / "WISEai™" labels.
+   WISEai = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */
 .sc-avatar {
   flex-shrink: 0;
@@ -319,9 +319,12 @@ html.dark .chat-messages-area { background: transparent; }
   user-select: none;
 }
 .sc-avatar svg { width: 18px; height: auto; }
-.sc-avatar-scout {
-  background: var(--primary); color: #fff;
-  box-shadow: 0 1px 4px rgba(37, 80, 124, 0.4);
+/* The WISEai owl bug rides on a black chip in every chat module app-wide (the
+   canonical ai-chat-3 / product-portfolio pages set this explicitly). Kept as the
+   shared default so any page using the base classes matches without a local override. */
+.sc-avatar-wiseai {
+  background: #141414; color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
 /* Mirror of .topbar-profile: transparent fill, strong ring, muted initials. */
 .sc-avatar-you {
@@ -392,7 +395,7 @@ html.dark .sc-welcome { background: transparent; }
 .ws-chips-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
-/* Inside the Scout dock the card surface is the navy gradient (#1A2339), not
+/* Inside the WISEai dock the card surface is the navy gradient (#1A2339), not
    --surface — so the edge fades must blend into that, otherwise they read as a
    darker band beside the chips in dark mode. */
 html.dark .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
@@ -401,10 +404,10 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-wrap.has-next::after { opacity: 1; }
 .ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
 
-/* ===== Welcome score cards (opt-in via mountScoutChat({ scorecards })) =====
+/* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
    The "Your portfolio at a glance" rail, ported into the shared dock: a
    horizontal, snap-scrolling row of cards with floating scroll controls and
-   soft edge fades. Two variants (intro / scout) carry a sleeker tinted backdrop
+   soft edge fades. Two variants (intro / wiseai) carry a sleeker tinted backdrop
    so they read as orientation rather than data. */
 .sc-welcome--cards { justify-content: flex-start; overflow-y: auto; padding-top: 1.75rem; }
 .ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
@@ -458,13 +461,13 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 /* Bare glyphs — no chip behind them — sized up a touch for presence. */
 .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ws-sc-icon .material-icons { font-size: 24px !important; }
-/* Metric cards: neutral (foreground) icon — intro/Scout keep the brand accent. */
+/* Metric cards: neutral (foreground) icon — intro/WISEai keep the brand accent. */
 .ws-sc-icon--brand,
 .ws-sc-icon--warn,
 .ws-sc-icon--alert { color: var(--text); }
 .ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
 .ws-sc-pill .material-icons { font-size: 12px !important; }
-/* Metric-card pills: neutral grey "shades of black" (intro/Scout keep accent). */
+/* Metric-card pills: neutral grey "shades of black" (intro/WISEai keep accent). */
 .ws-sc-pill--up,
 .ws-sc-pill--warn,
 .ws-sc-pill--alert { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
@@ -478,18 +481,18 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 /* Intro / orientation variants — same surface as the metric cards, set apart
    only by an accent stroke + a matching accent headline. */
 .ws-scorecard--intro,
-.ws-scorecard--scout { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+.ws-scorecard--wiseai { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
 .ws-scorecard--intro:hover,
-.ws-scorecard--scout:hover { border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent); }
+.ws-scorecard--wiseai:hover { border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent); }
 .ws-sc-icon--intro,
-.ws-sc-icon--scout { color: var(--primary); }
+.ws-sc-icon--wiseai { color: var(--primary); }
 .ws-sc-pill--intro,
-.ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.ws-sc-pill--wiseai { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
 html.dark .ws-sc-icon--intro,
-html.dark .ws-sc-icon--scout { color: var(--primary-bright, #8B9FAF); }
+html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 .ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); margin-top: 6px; }
 .ws-scorecard--intro .ws-sc-intro-title,
-.ws-scorecard--scout .ws-sc-intro-title { color: var(--primary); }
+.ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
@@ -567,7 +570,7 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 
 /* =============================================================
    Microcopy & trust
-   Small, low-contrast signals that tell the user how Scout treats
+   Small, low-contrast signals that tell the user how WISEai treats
    their data, time-stamp every line, ground each reply in a source,
    and keep a standing "verify before you act" reminder in view.
 ============================================================= */
@@ -585,7 +588,7 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 .sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
 html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF); }
 
-/* Per-line meta row — timestamp (both speakers) + grounding caption (Scout). */
+/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEai). */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
   margin-top: 4px;
@@ -600,7 +603,7 @@ html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF
 .sc-trust-chip .material-icons { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 
-/* Typing indicator now carries a status label ("Scout is checking…"). */
+/* Typing indicator now carries a status label ("WISEai is checking…"). */
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
 .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
 
@@ -619,7 +622,7 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
    pages/ai-chat.html. Slides over the message area (like the
    welcome screen) when the user clicks the "N agents running"
    pill / "Choose Agents" chip — so the same roster control is
-   available wherever the shared Scout chat is mounted.
+   available wherever the shared WISEai chat is mounted.
 ============================================================= */
 .sc-settings {
   position: absolute; inset: 0; z-index: 11;

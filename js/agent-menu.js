@@ -308,7 +308,7 @@ export const NAV_PRODUCTS = {
     id: 'dashboard',
     label: 'Dashboard',
     icon: 'dashboard',
-    slug: 'aha.html',
+    slug: 'overview.html',
   },
   'wisecode-ai': {
     id: 'wisecode-ai',
@@ -385,6 +385,7 @@ export const WISE_APP_NAV = [
 
   { type: 'section', label: 'Studio' },
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
+  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
 
   { type: 'section', label: 'Organization' },
   { type: 'item', id: 'profile', label: 'Profile', icon: 'account_circle', slug: 'profile.html' },
@@ -836,9 +837,10 @@ function setupMenuRail(navEl) {
     }
   };
 
-  let railed = false;
-  try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
-  apply(railed);
+  /* The leftmost navigation module always opens collapsed to its icon rail —
+     on every page and every load. The toggle still expands it within the
+     session; the expanded state simply isn't restored on the next load. */
+  apply(true);
   refreshToggleSkin();
 
   if (!btn.dataset.railBound) {

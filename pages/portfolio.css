@@ -496,7 +496,7 @@ html.dark #left-icon-rail .lir-layout-btn.lir-layout-active { color: var(--prima
 /* ===== Section module panel =====
    A self-contained, openable card in #modules-row — the visual twin of the
    shared #agent-main module, but fixed-width so multiple can sit side by side.
-   Scout fills the remaining space and Alerts always docks to its right. */
+   WISEai fills the remaining space and Alerts always docks to its right. */
 .pf-module {
   display: none;
   /* Open modules grow to share the available row width, so toggling them on/off
@@ -553,7 +553,7 @@ html.dark .pf-module-header {
   background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%);
 }
 html.dark .pf-module-scroll { background: transparent; }
-/* In-header side switcher — moves the module to the other side of Scout.
+/* In-header side switcher — moves the module to the other side of WISEai.
    Mirrors flipPanel() / .panel-flip in ai-chat.html (the side_navigation glyph
    rotates 180° to point at the side the module currently sits on). */
 .panel-controls {
@@ -743,23 +743,23 @@ html.dark .pf-module-scroll { background: transparent; }
 }
 
 /* ===== Module row ordering =====
-   menu (sticky, -9999) → section modules (10–16) → Scout (99) → Alerts (200).
-   The section modules grow to fill the row; Scout keeps its fixed docked size
-   and Alerts always opens to the right of Scout. */
-#pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+   menu (sticky, -9999) → section modules (10–16) → WISEai (99) → Alerts (200).
+   The section modules grow to fill the row; WISEai keeps its fixed docked size
+   and Alerts always opens to the right of WISEai. */
+#pf-chat-panel.wiseai-dock.wiseai-dock-open.panel-wide {
   flex: 0 0 680px;
   width: 680px;
   min-width: 680px;
 }
-/* Scout stays at its normal docked size in every position (left/right/center)
-   so the section modules — not Scout — are what grow to fill the screen. */
-#pf-chat-panel.scout-dock.scout-dock-open {
+/* WISEai stays at its normal docked size in every position (left/right/center)
+   so the section modules — not WISEai — are what grow to fill the screen. */
+#pf-chat-panel.wiseai-dock.wiseai-dock-open {
   flex: 0 0 380px;
   width: 380px;
   min-width: 380px;
 }
 @media (max-width: 1100px) {
-  #pf-chat-panel.scout-dock.scout-dock-open {
+  #pf-chat-panel.wiseai-dock.wiseai-dock-open {
     flex-basis: 330px;
     width: 330px;
     min-width: 330px;
@@ -769,25 +769,25 @@ html.dark .pf-module-scroll { background: transparent; }
    growing to fill the rail gap or being squeezed to nothing by the other
    modules. flex-shrink: 0 stops it collapsing; it simply flows + scrolls with
    the row (the width toggle still doubles it to 680px). */
-#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center {
+#pf-chat-panel.wiseai-dock.wiseai-dock-open.wiseai-dock-center {
   flex: 0 0 380px;
   width: 380px;
   min-width: 380px;
 }
-#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center.panel-wide {
+#pf-chat-panel.wiseai-dock.wiseai-dock-open.wiseai-dock-center.panel-wide {
   flex: 0 0 680px;
   width: 680px;
   min-width: 680px;
 }
-/* Scout triple width (third tier). */
-#pf-chat-panel.scout-dock.scout-dock-open.panel-wide.panel-triple,
-#pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center.panel-wide.panel-triple {
+/* WISEai triple width (third tier). */
+#pf-chat-panel.wiseai-dock.wiseai-dock-open.panel-wide.panel-triple,
+#pf-chat-panel.wiseai-dock.wiseai-dock-open.wiseai-dock-center.panel-wide.panel-triple {
   flex: 0 0 980px;
   width: 980px;
   min-width: 980px;
 }
 @media (max-width: 1100px) {
-  #pf-chat-panel.scout-dock.scout-dock-open.scout-dock-center {
+  #pf-chat-panel.wiseai-dock.wiseai-dock-open.wiseai-dock-center {
     flex-basis: 330px;
     width: 330px;
     min-width: 330px;
@@ -796,7 +796,7 @@ html.dark .pf-module-scroll { background: transparent; }
 #alerts-panel { order: 200; }
 
 /* ===== History & Projects module =====
-   Opened from the Scout dock's "History & Projects" menu item. Rides the
+   Opened from the WISEai dock's "History & Projects" menu item. Rides the
    shared .pf-module chrome but its inner content is a 1:1 port of the
    ai-chat.html #history-panel: compact circular-icon header, centered
    History/Projects tabs, a pinned "New conversation" pill, and a scrolling
@@ -990,7 +990,7 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
 
 /* ===== Grid layout =====
    Column view (default) lays modules out left-to-right with horizontal scroll.
-   Grid view tiles every OPEN module — including Scout and Alerts — into uniform
+   Grid view tiles every OPEN module — including WISEai and Alerts — into uniform
    cards that wrap and scroll vertically, mirroring ai-chat.html's grid mode. */
 #modules-row.modules-grid {
   display: grid;
@@ -1003,9 +1003,9 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
 @media (max-width: 1180px) { #modules-row.modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px)  { #modules-row.modules-grid { grid-template-columns: minmax(0, 1fr); } }
 
-/* Scout dock un-pins from sticky when in grid/stack — menu stays in shell grid. */
-#modules-row.modules-grid .scout-dock.scout-dock-open,
-#modules-row.modules-grid #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
+/* WISEai dock un-pins from sticky when in grid/stack — menu stays in shell grid. */
+#modules-row.modules-grid .wiseai-dock.wiseai-dock-open,
+#modules-row.modules-grid #menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open {
   position: relative;
   left: auto;
   right: auto;
@@ -1019,20 +1019,20 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   height: auto !important;
   max-height: 100% !important;
 }
-#modules-row.modules-grid > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+#modules-row.modules-grid > #pf-chat-panel.wiseai-dock.wiseai-dock-open.panel-wide {
   grid-column: span 2;
 }
 @media (max-width: 720px) {
-  #modules-row.modules-grid > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+  #modules-row.modules-grid > #pf-chat-panel.wiseai-dock.wiseai-dock-open.panel-wide {
     grid-column: span 1;
   }
 }
 
 /* ===== Split layout =====
-   The toggle's third mode. setModuleLayout() wraps every non-Scout child in
+   The toggle's third mode. setModuleLayout() wraps every non-WISEai child in
    #modules-top, so the row becomes two stacked regions: a shorter strip of
    modules on top that behaves exactly like column view (horizontal scroll, each
-   module keeps its own internal scroll), and Scout pinned across the full width
+   module keeps its own internal scroll), and WISEai pinned across the full width
    of the bottom half of the screen so it is always present. */
 #modules-row.modules-split {
   display: flex;
@@ -1066,8 +1066,8 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   max-height: 100%;
   align-self: stretch;
 }
-/* Scout un-pins from its sticky right-rail slot and spans the bottom half. */
-#modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open {
+/* WISEai un-pins from its sticky right-rail slot and spans the bottom half. */
+#modules-row.modules-split > #pf-chat-panel.wiseai-dock.wiseai-dock-open {
   order: 1;
   position: static !important;
   left: auto !important;
@@ -1079,12 +1079,12 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   min-width: 0 !important;
   max-width: 100% !important;
 }
-#modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open.panel-wide {
+#modules-row.modules-split > #pf-chat-panel.wiseai-dock.wiseai-dock-open.panel-wide {
   flex: 0 0 70vh !important;
   height: 70vh !important;
 }
 @media (max-width: 720px) {
-  #modules-row.modules-split > #pf-chat-panel.scout-dock.scout-dock-open {
+  #modules-row.modules-split > #pf-chat-panel.wiseai-dock.wiseai-dock-open {
     flex-basis: 50vh !important;
     height: 50vh !important;
   }
@@ -1104,9 +1104,9 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   overflow-x: hidden;
   overflow-y: auto;
 }
-/* Scout dock un-pins from sticky when stacked — menu stays in shell grid. */
-#modules-row.modules-stack .scout-dock.scout-dock-open,
-#modules-row.modules-stack #menu-panel.mp-open ~ .scout-dock.scout-dock-open {
+/* WISEai dock un-pins from sticky when stacked — menu stays in shell grid. */
+#modules-row.modules-stack .wiseai-dock.wiseai-dock-open,
+#modules-row.modules-stack #menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open {
   position: relative;
   left: auto;
   right: auto;
@@ -1122,11 +1122,11 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
   max-height: none !important;
   align-self: stretch;
 }
-/* Scout stays docked at the bottom of the stack: ordered last and pinned with
+/* WISEai stays docked at the bottom of the stack: ordered last and pinned with
    position: sticky so the modules scroll behind it while the chat stays visible
    and reachable across the bottom. An opaque surface fill masks the content
    scrolling underneath. */
-#modules-row.modules-stack > #pf-chat-panel.scout-dock.scout-dock-open {
+#modules-row.modules-stack > #pf-chat-panel.wiseai-dock.wiseai-dock-open {
   order: 999;
   position: sticky !important;
   top: auto !important;
@@ -1147,11 +1147,11 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
 }
 
 /* ===== Tabbed layout =====
-   The toggle's fifth mode. setModuleLayout() gathers every non-Scout module
+   The toggle's fifth mode. setModuleLayout() gathers every non-WISEai module
    into a #modules-tabbed wrapper; only the selected module's body is shown and
    the tabs are injected straight into that module's own header bar (so the tab
    bar IS the header — no double-stacked strip). Each module keeps its own
-   three-dot menu, so move-side / width / off all stay wired. Scout keeps its
+   three-dot menu, so move-side / width / off all stay wired. WISEai keeps its
    own docked slot beside the tabbed container so the chat is always present. */
 #modules-row.modules-tab {
   display: flex;
@@ -1164,7 +1164,7 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
 }
 #modules-tabbed {
   order: 10;
-  /* Fills the space Scout leaves, exactly like a normal module — so Scout keeps
+  /* Fills the space WISEai leaves, exactly like a normal module — so WISEai keeps
      its own fixed width + dock-position + width controls untouched. The "Width"
      control caps the pane to a centred reading width (tabbed-wide / -narrow). */
   flex: 1 1 0%;
@@ -1229,10 +1229,10 @@ html.dark .menu-brand-integrated #menu-panel.mp-open .menu-inner {
 }
 html.dark .pf-tab.is-active { color: var(--primary-bright, var(--primary)); background: rgba(37, 80, 124, 0.28); }
 
-/* Scout is left fully intact in tab mode (fixed width, sticky dock, and its own
+/* WISEai is left fully intact in tab mode (fixed width, sticky dock, and its own
    dock-position + width controls), so the tabbed pane just fills the rest. The
    pane sits left by default; "Move to other side" reorders it to the right of
-   Scout (order 150 keeps it left of Alerts at 200). */
+   WISEai (order 150 keeps it left of Alerts at 200). */
 @media (max-width: 560px) {
   #modules-row.modules-tab { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
   #modules-tabbed { flex: 0 0 auto; height: auto; max-height: none; min-height: 60vh; margin: 0; max-width: none; }

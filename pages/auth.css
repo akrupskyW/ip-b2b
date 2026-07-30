@@ -2,7 +2,7 @@
    WISE — standard auth panels (sign in / create account / reset)
 
    Plain, form-based authentication screens that follow the shared
-   WISE design system verbatim (agent-page.css / scout-chat.css):
+   WISE design system verbatim (agent-page.css / wiseai-chat.css):
    DM Sans, #25507C primary, pill inputs + buttons, 16px module
    cards, and the --shadow-1/2 elevations.
 
@@ -128,6 +128,35 @@ body.auth-page {
   background-image:
     linear-gradient(180deg, rgba(17,24,39,0) 40%, rgba(17,24,39,0.55) 100%),
     url('../assets/auth-hero.png');
+}
+/* Account creation uses a distinct, CPG-focused image with a deeper base gradient
+   so the constellation overlay + caption read clearly. */
+.auth-hero--cpg {
+  background-image:
+    linear-gradient(180deg, rgba(17,24,39,0) 34%, rgba(17,24,39,0.35) 62%, rgba(13,22,44,0.82) 100%),
+    url('../assets/auth-hero-signup.png');
+}
+/* Subtle SVG "data network" motif tucked into the bottom-right corner — echoes
+   the faint constellation in the sign-in hero without dominating the image. */
+.auth-hero-net {
+  position: absolute;
+  right: -12%;
+  bottom: -12%;
+  width: 92%;
+  height: 80%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.auth-hero-net .ahn-lines line {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 0.6;
+}
+.auth-hero-net .ahn-dots circle {
+  fill: rgba(255, 255, 255, 0.3);
+}
+.auth-hero-net .ahn-dot--bright {
+  fill: rgba(255, 255, 255, 0.45);
 }
 .auth-hero-caption {
   position: absolute;
@@ -479,4 +508,169 @@ html.dark .auth-otp input { background: rgba(255,255,255,0.05); border-color: rg
   outline: none;
   border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* =============================================================
+   Conversational account creation — chat module (wiseai-chat.css)
+   in the middle + an "Account setup" progress pane on the right.
+============================================================= */
+/* Chat page fills the viewport so the message area scrolls internally. */
+body.auth-chat { height: 100dvh; height: 100vh; overflow: hidden; }
+/* Layout: nav | chat (single-pane width, against the nav) | account-setup pane |
+   hero image (fills the rest). */
+#ac-chat { flex: 0 0 auto; width: clamp(400px, 40vw, 560px); max-width: 100%; min-width: 0; display: flex; }
+
+/* Transcript grows from the bottom (just above the input) and scrolls upward as
+   more messages/chips are added. margin-top:auto on the first row pins content to
+   the bottom while still allowing normal scroll once it overflows. */
+#ac-messages { display: flex; flex-direction: column; }
+#ac-messages > :first-child { margin-top: auto; }
+
+.auth-setup-pane {
+  flex: 0 0 320px; width: 320px; align-self: stretch; min-height: 0; display: flex;
+  animation: authPaneIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.auth-setup-pane[hidden] { display: none; }
+@keyframes authPaneIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+
+.sp-inner {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
+  border-radius: var(--r-md); border: 1px solid var(--border);
+  background: var(--surface); overflow: hidden; font-size: var(--fs-ui);
+  box-shadow: var(--shadow-card);
+}
+html.dark .sp-inner {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.18);
+}
+.sp-header {
+  display: flex; align-items: center; gap: 10px; padding: 14px; flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+}
+html.dark .sp-header {
+  background: linear-gradient(135deg, rgba(37,80,124,0.20) 0%, rgba(37,80,124,0.08) 60%, transparent 100%), var(--surface);
+  border-bottom-color: rgba(37,80,124,0.20);
+}
+.sp-header-icon {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary-soft); color: var(--primary);
+}
+html.dark .sp-header-icon { color: var(--primary-bright); }
+.sp-header-icon .material-icons { font-size: 18px; }
+.sp-header-text { flex: 1; min-width: 0; }
+/* Three-dot menu in the pane header (remove-module control). */
+.sp-header-menu { position: relative; flex-shrink: 0; margin-left: 6px; }
+.sp-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px; z-index: 60;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: 12px; box-shadow: var(--shadow-card); padding: 6px;
+}
+.sp-menu.hidden { display: none; }
+html.dark .sp-menu {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.sp-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+  border-radius: 9px; font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted);
+  background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sp-menu-item:hover { background: var(--surface-3); color: var(--text); }
+html.dark .sp-menu-item:hover { background: rgba(255,255,255,0.06); }
+.sp-menu-item .material-icons { font-size: 18px; color: var(--text-subtle); }
+.sp-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); line-height: 1.2; }
+.sp-subtitle { font-size: var(--fs-label); color: var(--text-muted); margin-top: 2px; }
+
+.sp-progress { padding: 12px 14px 8px; flex-shrink: 0; }
+.sp-progress-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); margin-bottom: 6px;
+}
+.sp-progress-pct { color: var(--primary); font-weight: 700; }
+html.dark .sp-progress-pct { color: var(--primary-bright); }
+.sp-progress-track { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.sp-progress-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--sec-green)));
+  width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sp-steps { padding: 10px 14px 14px; display: flex; flex-direction: column; overflow-y: auto; flex: 1; }
+.vs-step { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; }
+.vs-step-track { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 28px; }
+.vs-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+  background: var(--surface-3); color: var(--text-subtle); position: relative; z-index: 1;
+}
+.vs-step-num .material-icons { font-size: 16px; }
+.vs-step--active .vs-step-num { background: var(--primary); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.vs-step--done .vs-step-num { background: var(--sec-green); color: #fff; }
+.vs-step-line { width: 2px; flex: 1; min-height: 16px; background: var(--border-strong); margin: 3px 0; border-radius: 1px; }
+.vs-step--done .vs-step-line { background: color-mix(in srgb, var(--sec-green) 55%, var(--border-strong)); }
+.vs-step:last-child .vs-step-line { display: none; }
+.vs-step-body { padding: 4px 0 16px; min-width: 0; flex: 1; }
+.vs-step:last-child .vs-step-body { padding-bottom: 4px; }
+.vs-step-title { font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); line-height: 1.3; }
+.vs-step--active .vs-step-title { font-weight: 700; color: var(--text); }
+.vs-step-sub { font-size: var(--fs-label); color: var(--primary); font-weight: 600; margin-top: 2px; }
+html.dark .vs-step--active .vs-step-sub { color: var(--primary-bright); }
+.vs-step--done .vs-step-sub { color: var(--sec-green-text); }
+
+.sp-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+.sp-field { display: flex; align-items: center; gap: 6px; font-size: var(--fs-label); line-height: 1.35; }
+.sp-field .material-icons { font-size: 14px; flex-shrink: 0; }
+.sp-field--done .material-icons { color: var(--sec-green); }
+.sp-field--active { color: var(--text); font-weight: 600; }
+.sp-field--active .material-icons { color: var(--primary); }
+html.dark .sp-field--active .material-icons { color: var(--primary-bright); }
+.sp-field-label { color: var(--text-muted); flex-shrink: 0; }
+.sp-field--active .sp-field-label { color: var(--text); }
+.sp-field-val {
+  color: var(--text); font-weight: 600; margin-left: auto; max-width: 55%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;
+}
+.sp-field--active .sp-field-val { color: var(--primary); font-weight: 600; }
+html.dark .sp-field--active .sp-field-val { color: var(--primary-bright); }
+
+/* In-chat reply chips — the ai-chat-3 .sc-reply-chips spec (own row after the
+   wiseai line, indented past the 30px avatar + 12px gap). */
+.sc-reply-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px 42px; }
+.sc-reply-chips .chip { font-weight: 500; padding: 5px 11px; font-size: var(--fs-label); line-height: 1.25; text-align: left; max-width: 100%; }
+.sc-reply-chips .chip .material-icons { font-size: 15px !important; align-self: center; flex-shrink: 0; }
+.chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+.chip.chip-primary:hover { filter: brightness(1.05); color: #fff; }
+.chip.chip-primary .material-icons { color: #fff !important; }
+.sc-reply-chips .chip--match {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.sc-reply-chips .chip--match .material-icons { color: var(--primary) !important; }
+.sc-reply-chips.is-done { opacity: 0.55; pointer-events: none; }
+.sc-reply-chips.is-done .chip { filter: grayscale(0.2); }
+
+/* Multi-select toggle chips — selected state reads like a solid pick. */
+.sc-reply-chips.ms-suggest { margin-bottom: 6px; }
+.sc-reply-chips.ms-controls { margin-top: 0; }
+.sc-reply-chips .chip.ms-chip.is-selected {
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+}
+.sc-reply-chips .chip.ms-chip.is-selected .material-icons { color: #fff !important; }
+
+.ac-success { display: inline-flex; align-items: center; gap: 6px; color: var(--sec-green-text); font-weight: 700; }
+.ac-success .material-icons { font-size: 18px; color: var(--sec-green); }
+.sc-line-you .sc-mask { letter-spacing: 2px; }
+
+@media (max-width: 980px) {
+  .auth-setup-pane { flex-basis: auto; width: auto; }
+  body.auth-chat { height: auto; overflow: auto; }
+  body.auth-chat .auth-main { flex-direction: column; }
+  #ac-chat { width: 100%; min-height: 60vh; }
+}
+@media (max-width: 760px) {
+  .sc-reply-chips { margin-left: 0; }
 }

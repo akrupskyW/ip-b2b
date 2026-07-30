@@ -377,24 +377,24 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Scout™ acronym tooltip — multi-line expansion on hover/focus (see scout-tooltip.js). */
-.scout-mark {
+/* WISEai™ acronym tooltip — multi-line expansion on hover/focus (see wiseai-tooltip.js). */
+.wiseai-mark {
   cursor: help;
   text-decoration: underline dotted;
   text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
   text-underline-offset: 2px;
 }
-.scout-mark--bound { text-decoration: none; }
-.sc-topbar-titles .topbar-title[data-scout-tip] {
+.wiseai-mark--bound { text-decoration: none; }
+.sc-topbar-titles .topbar-title[data-wiseai-tip] {
   flex-shrink: 0;
   white-space: nowrap;
 }
-.scout-mark:focus-visible {
+.wiseai-mark:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 2px;
 }
-#scout-tip {
+#wiseai-tip {
   position: fixed;
   z-index: 10001;
   background: var(--surface);
@@ -412,11 +412,11 @@ body {
   transition: opacity 0.12s ease, transform 0.12s ease;
   max-width: 260px;
 }
-#scout-tip.scout-tip-visible {
+#wiseai-tip.wiseai-tip-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
-.scout-tip-title {
+.wiseai-tip-title {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -424,13 +424,13 @@ body {
   border-bottom: 1px solid var(--border);
   letter-spacing: 0.02em;
 }
-.scout-tip-line {
+.wiseai-tip-line {
   display: block;
   line-height: 1.45;
   font-weight: 500;
   color: var(--text-muted);
 }
-.scout-tip-letter {
+.wiseai-tip-letter {
   display: inline-block;
   width: 1.1em;
   font-weight: 700;
@@ -820,16 +820,16 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   color: #fff;
 }
 
-/* Icon variant of the segmented row, used by the Scout dock off/left/right
+/* Icon variant of the segmented row, used by the WISEai dock off/left/right
    control in the Appearance popover. Widen the pill so the symbol breathes. */
-.fz-btns.scout-seg .fz-btn {
+.fz-btns.wiseai-seg .fz-btn {
   width: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
 }
-.fz-btns.scout-seg .fz-btn .material-symbols-outlined {
+.fz-btns.wiseai-seg .fz-btn .material-symbols-outlined {
   font-size: 18px;
   line-height: 1;
 }
@@ -838,13 +838,13 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
    Chrome (top bar, menu nav, module headers) stays at authored size.
 
    Header note: module headers must NOT scale, or they stop matching the shared
-   --panel-header-h contract. That bit Scout before; notifications follow the
+   --panel-header-h contract. That bit WISEai before; notifications follow the
    same rule now. We zoom only readable bodies/composers, never the chrome:
      - ai-chat inline shell: every #chat-shell child EXCEPT .chat-topbar
      - shared dock card:      .sc-body + .chat-input-rail (the old
-                              `.scout-dock .sc-card` rule never matched because the
+                              `.wiseai-dock .sc-card` rule never matched because the
                               dock element is itself the .sc-card, so portfolio
-                              Scout text never scaled at all — fixed here). */
+                              WISEai text never scaled at all — fixed here). */
 .wise-text-scale,
 .agent-main-scroll,
 .pf-module-scroll,
@@ -862,8 +862,8 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
    stayed locked at 60px. */
 #verification-sidebar .vs-inner > :not(.vs-header),
 #chat-shell > div:not(.chat-topbar),
-.scout-dock .sc-body,
-.scout-dock .chat-input-rail {
+.wiseai-dock .sc-body,
+.wiseai-dock .chat-input-rail {
   zoom: var(--wise-text-scale);
 }
 
@@ -996,7 +996,7 @@ html.dark .topbar-trailing .lir-btn.lir-active {
     overflow-y: auto;
   }
   #modules-row > #agent-main,
-  #modules-row > #scout-dock-panel,
+  #modules-row > #wiseai-dock-panel,
   #modules-row > #alerts-panel {
     width: 100% !important;
     max-width: 100% !important;
@@ -1006,10 +1006,10 @@ html.dark .topbar-trailing .lir-btn.lir-active {
     flex: 0 0 auto !important;
     align-self: stretch;
   }
-  /* Agent main is the protagonist; Scout + alerts get a bounded,
+  /* Agent main is the protagonist; WISEai + alerts get a bounded,
      scannable stacked height rather than dominating the page. */
   #modules-row > #agent-main { min-height: 70dvh; }
-  #scout-dock-panel.scout-dock-open {
+  #wiseai-dock-panel.wiseai-dock-open {
     min-height: 60dvh;
     max-height: 70dvh;
   }
@@ -2289,7 +2289,7 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
 #menu-panel.mp-pivot .menu-footer .menu-nav-label { display: none !important; }
 
 /* ===== MAIN MODULE (overview content) =====
-   Mirrors the chat-shell / scout-panel module pattern from ai-chat.html:
+   Mirrors the chat-shell / wiseai-panel module pattern from ai-chat.html:
      #agent-main           — outer flex slot inside #modules-row
      .agent-main-inner     — visual card (gradient, border, shadow, animation)
      .agent-main-header    — colored module header with icon + title
@@ -2307,7 +2307,7 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
    bordered card + body), not just the inner content. The module keeps growing
    to fill the row (flex-grow) but stops at the tier cap. Tier 0 = full (no
    class, fills the row) · 1 = wide · 2 = reading. Each cap is also a % of the
-   row so the three steps stay visibly distinct even when Scout + the menu rail
+   row so the three steps stay visibly distinct even when WISEai + the menu rail
    leave the row narrow (a fixed-px cap alone would exceed the available width
    and collapse the tiers into one identical size). The module sits left in the
    row, so narrowing it frees space on its trailing edge. */
@@ -2339,7 +2339,7 @@ html.dark .agent-main-inner {
 }
 
 /* The overview's main module header is the *exact* visual twin of the
-   .side-panel-header used in pages/ai-chat.html (HISTORY / Scout / PULSE /
+   .side-panel-header used in pages/ai-chat.html (HISTORY / WISEai / PULSE /
    TIER / SHIELD / LENS / VAULT / NFP+ / Alerts). Everything below — the
    gap, padding, fixed height, plain surface-2 strip, the 30×30 round icon
    chip, and the title/subtitle scale — is copied 1:1 from the chat shell
@@ -2401,7 +2401,7 @@ html.dark .agent-main-scroll { background: transparent; }
 /* Main-panel header control cluster (⋯ menu + width toggle) — floats right in
    the normal header and is pinned top-right by the header-float rules above, so
    every pane carries the same functions whether the header is shown or hidden.
-   The button + popover visuals come from scout-chat.css / the .topbar-popover
+   The button + popover visuals come from wiseai-chat.css / the .topbar-popover
    rules, both shared. */
 .agent-main-header .panel-controls {
   margin-left: auto;
@@ -2470,7 +2470,7 @@ html.header-float .notif-panel-header .panel-controls {
   z-index: 6;
 }
 /* Headers whose actions are bare buttons (no .panel-controls wrapper) —
-   the Scout module (.chat-topbar) and the verification summary (.vs-header).
+   the WISEai module (.chat-topbar) and the verification summary (.vs-header).
    Their control cluster / buttons are the trailing element(s), so drop the
    title block and float whatever interactive controls remain. */
 html.header-float .chat-topbar > *:not(:last-child) {
@@ -2483,7 +2483,7 @@ html.header-float .chat-topbar > *:last-child {
   margin: 0 !important;
   z-index: 6;
 }
-/* Scout keeps BOTH its resize (width) toggle AND its more-options menu in the
+/* WISEai keeps BOTH its resize (width) toggle AND its more-options menu in the
    headerless view — exactly like every other module's floated controls. The
    control cluster is the topbar's trailing element, so the float rule above
    already lifts it into the top-right corner; these rules just guarantee the
@@ -2509,20 +2509,20 @@ html.header-float .chat-topbar > .sc-topbar-controls .panel-more-wrap,
 html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn {
   display: inline-flex !important;
 }
-/* Portfolio's docked Scout (#pf-chat-panel) AND the agent-overview / dashboard
-   Scout dock (#scout-dock-panel) get the SAME guarantees at id-level
-   specificity that ai-chat's #chat-shell scout enjoys, so no page- or
+/* Portfolio's docked WISEai (#pf-chat-panel) AND the agent-overview / dashboard
+   WISEai dock (#wiseai-dock-panel) get the SAME guarantees at id-level
+   specificity that ai-chat's #chat-shell wiseai enjoys, so no page- or
    layout-specific rule can out-rank them and leave the resize + more buttons
    reading as "missing" when the header is dropped. Drops the title/owl block,
    floats the control cluster top-right, and force-renders every icon in it. */
 html.header-float #pf-chat-panel .chat-topbar > *:not(:last-child),
-html.header-float #scout-dock-panel .chat-topbar > *:not(:last-child) {
+html.header-float #wiseai-dock-panel .chat-topbar > *:not(:last-child) {
   display: none !important;
 }
 html.header-float #pf-chat-panel .chat-topbar > *:last-child,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls,
-html.header-float #scout-dock-panel .chat-topbar > *:last-child,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls {
+html.header-float #wiseai-dock-panel .chat-topbar > *:last-child,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -2537,30 +2537,30 @@ html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls *,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls *,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls *,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
   visibility: visible !important;
 }
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
 html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
-html.header-float #scout-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-wrap,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
   display: inline-flex !important;
 }
-/* The Scout welcome screen is an opaque overlay (z-index 10, background
+/* The WISEai welcome screen is an opaque overlay (z-index 10, background
    var(--bg)) that covers the whole card — in LIGHT mode it would paint right
    over the header-float controls and hide them (in dark mode the overlay is
    transparent, so they showed through). Lift the (height-0) topbar above that
    overlay in headerless mode so the floated ⋯ + width controls stay visible
    AND clickable on top of the welcome screen, in every theme. */
-html.header-float .scout-dock .chat-topbar,
+html.header-float .wiseai-dock .chat-topbar,
 html.header-float #pf-chat-panel .chat-topbar,
-html.header-float #scout-dock-panel .chat-topbar {
+html.header-float #wiseai-dock-panel .chat-topbar {
   z-index: 12 !important;
 }
 html.header-float .vs-header > *:not(button) {
@@ -2576,8 +2576,8 @@ html.header-float .vs-header > button {
 
 /* Full bleed — strip every module's card container (background, border, shadow,
    radius, bounce-in) so the module body fills the full height of the screen with
-   no chrome around it. Scout (.sc-card / #chat-shell / #pf-chat-panel /
-   #scout-dock-panel) is deliberately left untouched: it keeps its container.
+   no chrome around it. WISEai (.sc-card / #chat-shell / #pf-chat-panel /
+   #wiseai-dock-panel) is deliberately left untouched: it keeps its container.
    Loaded on every page (agent-page.css is shared), so it reaches the portfolio
    modules, the agent-overview / dashboard module, the verification + settings
    panels, the alerts rail, and the ai-chat side panels alike. The modules stay
@@ -2613,9 +2613,9 @@ html.full-bleed .menu-brand-integrated #modules-row {
   margin-top: 0 !important;
   padding-bottom: 0 !important;
 }
-/* …but full bleed must NOT swallow the navigation or Scout. The two rules above
+/* …but full bleed must NOT swallow the navigation or WISEai. The two rules above
    opened the whole shell to the window edges; re-inset the nav panel and the
-   Scout dock so they stay contained, floating cards exactly like normal — only
+   WISEai dock so they stay contained, floating cards exactly like normal — only
    every OTHER module runs edge-to-edge. */
 html.full-bleed .menu-brand-integrated #menu-panel {
   box-sizing: border-box !important;
@@ -2627,7 +2627,7 @@ html.full-bleed .menu-brand-integrated #menu-panel {
 }
 html.full-bleed #chat-shell,
 html.full-bleed #pf-chat-panel,
-html.full-bleed #scout-dock-panel {
+html.full-bleed #wiseai-dock-panel {
   margin-top: 8px !important;
   margin-bottom: var(--modules-bottom-pad) !important;
   height: calc(100% - 8px - var(--modules-bottom-pad)) !important;

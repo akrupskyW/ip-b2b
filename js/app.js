@@ -22,7 +22,7 @@ import { setTextSize } from './text-size.js';
       activeTop: 'dashboard',
       activeRail: 'portfolio',
       sidebarOpen: true,
-      sidebarCollapsed: false,
+      sidebarCollapsed: true,
       aiOpen: true,
       charts: {},
     };
@@ -1702,7 +1702,7 @@ import { setTextSize } from './text-size.js';
        The same Appearance menu the agent / portfolio / chat shells show, built
        from the shared js/appearance-menu.js so this dashboard's nav stays in step
        (Full bleed, Header, Minimal UI, Jam strip, Text size, Theme). This shell
-       has no module layouts, nav pivot, or Scout dock, so those are omitted. The
+       has no module layouts, nav pivot, or WISEai dock, so those are omitted. The
        toggles write the same persisted state, so flipping one here carries over
        to every other page. */
     let activeAppearancePop = null;
@@ -1720,7 +1720,7 @@ import { setTextSize } from './text-size.js';
     function renderAppearancePop(pop){
       pop.innerHTML = buildAppearanceBody({
         isDark: document.documentElement.classList.contains('dark'),
-        showScoutDock: false,
+        showWISEaiDock: false,
       });
     }
     function openAppearancePop(anchor){

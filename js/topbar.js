@@ -356,7 +356,7 @@ export function restoreHeaderFloat() {
 }
 
 /* Full bleed — strip the card container (background, border, shadow, radius) from
-   every module EXCEPT Scout, so those modules fill the full height of the screen
+   every module EXCEPT WISEai, so those modules fill the full height of the screen
    while staying switchable from the rail. Driven by a `full-bleed` class on <html>
    so it reaches every module on every page; persisted so it survives navigation. */
 const FULL_BLEED_KEY = 'wise-full-bleed';

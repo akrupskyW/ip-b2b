@@ -25,11 +25,11 @@ import {
   toggleMenuPivot,
   isMenuPivoted,
 } from './agent-menu.js';
-import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
+import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode } from './wiseai-dock.js';
 import { buildAppearanceBody } from './appearance-menu.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { initScoutTooltips } from './scout-tooltip.js';
+import { initWISEaiTooltips } from './wiseai-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
@@ -123,7 +123,7 @@ const VAULT_ASSETS = [
 /* Section header + agent-bar context                                  */
 /* ------------------------------------------------------------------ */
 
-/* Suggested Scout intent chips for the Portfolio context (Truth Layer flows).
+/* Suggested WISEai intent chips for the Portfolio context (Truth Layer flows).
    Each maps to a section so the chat ties back into the module. */
 const PORTFOLIO_INTENTS = [
   { intent: 'go-ledger', label: 'Open My Foods Portfolio', icon: 'inventory_2', go: 'ledger' },
@@ -144,11 +144,11 @@ const PORTFOLIO_INTENT_REPLIES = {
   'go-vault': 'Opening your Assets — <strong>10 new “Back-to-School” tiles</strong> plus refreshed retail sheets are waiting in the Non-UPF folder. Want the latest badges?',
   /* Openers for the two "at a glance" intro cards — orientation, not data. */
   scorecard_tour: 'Quick tour: the rail up top is your portfolio at a glance — UPF status, state compliance, ingredient quality, and seed-oil exposure, each card one click from the detail. Want to start with where you lead, or where you need to act?',
-  scorecard_scout: 'Think of me as your portfolio analyst. Ask a question in plain English, kick off a verification, or model a reformulation — I draft the work, cite it back to your own data, and never publish without your go-ahead. What should we tackle first?',
+  scorecard_wiseai: 'Think of me as your portfolio analyst. Ask a question in plain English, kick off a verification, or model a reformulation — I draft the work, cite it back to your own data, and never publish without your go-ahead. What should we tackle first?',
 };
 
 /* "Your portfolio at a glance" score cards for the dock welcome. Card 1 is a
-   headline metric; cards 2–3 are sleeker intro cards (orientation + how Scout
+   headline metric; cards 2–3 are sleeker intro cards (orientation + how WISEai
    helps); the rest are actionable signals. Each card routes a chat turn via its
    {intent, ask} — intents with a `go` also drive module navigation (onIntent). */
 const PORTFOLIO_SCORECARDS = {
@@ -170,11 +170,11 @@ const PORTFOLIO_SCORECARDS = {
       action: 'Take the tour', intent: 'scorecard_tour', ask: 'Give me a quick tour of my portfolio',
     },
     {
-      variant: 'scout', icon: 'smart_toy', iconTone: 'scout',
-      pill: { tone: 'scout', icon: 'bolt', text: 'AI Scout' },
-      title: 'Let Scout do the heavy lifting',
-      desc: 'Ask, verify, or reformulate — Scout drafts it, you decide.',
-      action: 'Ask Scout anything', intent: 'scorecard_scout', ask: 'How can Scout help me work through my portfolio?',
+      variant: 'wiseai', icon: 'smart_toy', iconTone: 'wiseai',
+      pill: { tone: 'wiseai', icon: 'bolt', text: 'AI WISEai' },
+      title: 'Let WISEai do the heavy lifting',
+      desc: 'Ask, verify, or reformulate — WISEai drafts it, you decide.',
+      action: 'Ask WISEai anything', intent: 'scorecard_wiseai', ask: 'How can WISEai help me work through my portfolio?',
     },
     {
       icon: 'gavel', iconTone: 'brand',
@@ -232,7 +232,7 @@ function portfolioReply(text, intent) {
 
 /* Header strip for a section module — mirrors the .agent-main-header used by
    the shared shell. The trailing control is a left/right SWITCHER that moves
-   the module to the other side of the Scout chat (mirrors flipPanel() in
+   the module to the other side of the WISEai chat (mirrors flipPanel() in
    ai-chat.html). Opening/closing a module is done only from the top-bar rail. */
 function moduleHeaderHTML(sectionId) {
   const sec = getPortfolioSection(sectionId);
@@ -1457,11 +1457,11 @@ function askAgentAboutProduct(idx) {
   const p = PRODUCTS[idx];
   closeDeepDive();
   const q = p ? `Tell me about “${p.name}” — what should I do next?` : 'Tell me about this product.';
-  if (scout && typeof scout.ask === 'function') {
+  if (wiseai && typeof wiseai.ask === 'function') {
     document.getElementById('pf-chat-panel')?.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
-    scout.ask(q);
+    wiseai.ask(q);
   } else {
-    toast('Ask Scout™ in the chat dock.', 'chat');
+    toast('Ask WISEai™ in the chat dock.', 'chat');
   }
 }
 
@@ -1682,10 +1682,10 @@ const WIDE_KEY = 'pf-module-wide';
    `order`, set when each module element is built). */
 let openModules = new Set();
 
-/* Which side of the Scout chat each module sits on. Modules open to the LEFT
-   of Scout by default (the always-visible frozen zone between the menu rail and
-   Scout); the in-header switcher can move one to the right. Alerts always docks
-   to the right of Scout regardless. */
+/* Which side of the WISEai chat each module sits on. Modules open to the LEFT
+   of WISEai by default (the always-visible frozen zone between the menu rail and
+   WISEai); the in-header switcher can move one to the right. Alerts always docks
+   to the right of WISEai regardless. */
 let moduleSide = {};
 let moduleWide = {};
 
@@ -1763,17 +1763,17 @@ function persistWide() {
   try { localStorage.setItem(WIDE_KEY, JSON.stringify(moduleWide)); } catch (_) {}
 }
 
-/* Default side is LEFT (modules open to the left of Scout, in the always-visible
-   frozen zone between the menu rail and Scout); only an explicit flip to the
+/* Default side is LEFT (modules open to the left of WISEai, in the always-visible
+   frozen zone between the menu rail and WISEai); only an explicit flip to the
    right is stored as 'right'. Right-side modules get tucked under the sticky,
-   space-filling Scout panel when the row scrolls, so left is the safe default. */
+   space-filling WISEai panel when the row scrolls, so left is the safe default. */
 function sideOf(sectionId) {
   return moduleSide[sectionId] === 'right' ? 'right' : 'left';
 }
 
 /* Flex order keeps the row laid out as:
-     menu (sticky, -9999) → LEFT modules (10–16) → Scout (99)
-       → RIGHT modules (100–106) → Alerts (200, always right of Scout). */
+     menu (sticky, -9999) → LEFT modules (10–16) → WISEai (99)
+       → RIGHT modules (100–106) → Alerts (200, always right of WISEai). */
 function applySide(sectionId) {
   const el = moduleEl(sectionId);
   if (!el) return;
@@ -1818,7 +1818,7 @@ function railBtn(sectionId) {
 }
 
 /* Build all section module shells once (hidden) and inject them into the
-   modules row, immediately before the persistent Scout chat. */
+   modules row, immediately before the persistent WISEai chat. */
 function buildModules() {
   const row = document.getElementById('modules-row');
   const chat = document.getElementById('pf-chat-panel');
@@ -2005,24 +2005,24 @@ function currentModuleLayout() {
   return mode;
 }
 
-/* Split view docks Scout across the bottom half of the screen. Because Scout is
+/* Split view docks WISEai across the bottom half of the screen. Because WISEai is
    a mid-row sibling of the other modules, the only way to pin it full-width
    below them (while the rest keep their normal horizontal-scroll behaviour) is
-   to gather every non-Scout child into a #modules-top wrapper. This toggles that
+   to gather every non-WISEai child into a #modules-top wrapper. This toggles that
    wrapper in/out without disturbing the modules' DOM order when it's removed. */
 function applySplitWrap(on) {
   const row = document.getElementById('modules-row');
-  const scout = document.getElementById('pf-chat-panel');
-  if (!row || !scout) return;
+  const wiseai = document.getElementById('pf-chat-panel');
+  if (!row || !wiseai) return;
   const wrapped = row.classList.contains('modules-split');
   if (on && !wrapped) {
     const top = document.createElement('div');
     top.id = 'modules-top';
     Array.from(row.children).forEach((child) => {
-      if (child !== scout) top.appendChild(child);
+      if (child !== wiseai) top.appendChild(child);
     });
     row.appendChild(top);
-    row.appendChild(scout);
+    row.appendChild(wiseai);
     row.classList.add('modules-split');
   } else if (!on && wrapped) {
     const top = document.getElementById('modules-top');
@@ -2053,10 +2053,10 @@ function setModuleLayout(mode) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Tabbed layout — every OPEN module (except the always-docked Scout    */
+/* Tabbed layout — every OPEN module (except the always-docked WISEai    */
 /* chat) is collapsed into a single container with a tab strip across   */
 /* the top; only the selected module's body is shown. Turning on a new  */
-/* module from the rail adds a tab and brings it to the front. Scout     */
+/* module from the rail adds a tab and brings it to the front. WISEai     */
 /* keeps its own docked slot beside the tabbed container.               */
 /* ------------------------------------------------------------------ */
 
@@ -2075,20 +2075,20 @@ function tabMetaFor(el) {
   };
 }
 
-/* Gather every non-Scout module into a #modules-tabbed wrapper (mirrors the
+/* Gather every non-WISEai module into a #modules-tabbed wrapper (mirrors the
    split layout's #modules-top wrapper) and restore them in place when off. The
    tab strip itself is not a separate bar — it's injected into the active
    module's own header (see rebuildTabStrip), so the tabs ARE the header bar. */
 function applyTabWrap(on) {
   const row = document.getElementById('modules-row');
-  const scout = document.getElementById('pf-chat-panel');
+  const wiseai = document.getElementById('pf-chat-panel');
   if (!row) return;
   const wrapped = !!document.getElementById('modules-tabbed');
   if (on && !wrapped) {
     const wrap = document.createElement('div');
     wrap.id = 'modules-tabbed';
     Array.from(row.querySelectorAll('.pf-module')).forEach((mod) => wrap.appendChild(mod));
-    if (scout) row.insertBefore(wrap, scout);
+    if (wiseai) row.insertBefore(wrap, wiseai);
     else row.appendChild(wrap);
     applyTabbedLayout();
   } else if (!on && wrapped) {
@@ -2097,7 +2097,7 @@ function applyTabWrap(on) {
       mod.classList.remove('tab-active');
       mod.querySelector('.pf-module-header')?.classList.remove('pf-tab-host');
       mod.querySelector('.pf-module-header .pf-tabs')?.remove();
-      if (scout) row.insertBefore(mod, scout);
+      if (wiseai) row.insertBefore(mod, wiseai);
       else row.appendChild(mod);
     });
     wrap.remove();
@@ -2181,8 +2181,8 @@ function inTabbedLayout() { return !!document.getElementById('modules-tabbed'); 
 /* ----- Tabbed container side + width -----
    In tab mode only one module shows at a time, so the per-module "Move to other
    side" and "Width" controls in the three-dot act on the whole tabbed container
-   instead — flip drops it to the other side of Scout, width cycles the pane
-   single → double → triple while Scout fills the remainder. Persisted on their
+   instead — flip drops it to the other side of WISEai, width cycles the pane
+   single → double → triple while WISEai fills the remainder. Persisted on their
    own keys so the tabbed view remembers its shape. */
 const TABBED_SIDE_KEY = 'pf-tabbed-side';
 const TABBED_WIDE_KEY = 'pf-tabbed-wide';
@@ -2190,7 +2190,7 @@ let tabbedSide = 'left';
 let tabbedWide = 0;
 
 /* Tab-pane width tiers: full (fills the row) → wide (1100px) → reading (820px),
-   centred. The pane caps its own width so Scout keeps its fixed dock untouched. */
+   centred. The pane caps its own width so WISEai keeps its fixed dock untouched. */
 const TAB_WIDTH_ICONS = ['width_full', 'width_wide', 'width_normal'];
 const TAB_WIDTH_TITLES = [
   'Width (full) — tap to narrow',
@@ -2210,8 +2210,8 @@ function applyTabbedLayout() {
   const wrap = document.getElementById('modules-tabbed');
   if (!wrap) return;
   const right = tabbedSide === 'right';
-  /* Scout sits at order 99, Alerts at 200 — so 10 = left of Scout, 150 = right
-     of Scout but left of Alerts. */
+  /* WISEai sits at order 99, Alerts at 200 — so 10 = left of WISEai, 150 = right
+     of WISEai but left of Alerts. */
   wrap.style.order = right ? '150' : '10';
   wrap.classList.toggle('tabbed-right', right);
   const tier = pfTierOf(tabbedWide);
@@ -2307,25 +2307,25 @@ function wireLedger() {
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
-/* Scout chat module (right rail) — the ONE shared chat component       */
+/* WISEai chat module (right rail) — the ONE shared chat component       */
 /* ------------------------------------------------------------------ */
 
-let scout = null;
+let wiseai = null;
 
 function setupChat() {
   const panel = document.getElementById('pf-chat-panel');
   if (!panel) return;
-  scout = mountScoutDock(panel, {
-    title: 'Scout™',
+  wiseai = mountWISEaiDock(panel, {
+    title: 'WISEai™',
     agentCount: 1,
-    heading: 'What can Scout™ help with?',
+    heading: 'What can WISEai™ help with?',
     sub: 'Your Portfolio agent — the Truth Layer for data, trust & identity',
     scorecards: PORTFOLIO_SCORECARDS,
     intents: PORTFOLIO_INTENTS,
     reply: portfolioReply,
     disclaimer: '',
     sourceLabel: 'Grounded in your portfolio',
-    statusLabel: 'Scout™ is checking your portfolio',
+    statusLabel: 'WISEai™ is checking your portfolio',
     /* Intent chips that map to a surface also drive the module navigation,
        tying the shared chat back into the Portfolio. */
     /* 'choose_agents' is handled inside the shared chat (it opens the in-chat
@@ -2333,9 +2333,9 @@ function setupChat() {
     onIntent: (intent) => {
       const def = PORTFOLIO_INTENTS.find((d) => d.intent === intent);
       if (def && def.go) { navigateTo(def.go); }
-      return false; /* let Scout also reply */
+      return false; /* let WISEai also reply */
     },
-    /* "History & Projects" in the Scout dock's more-menu opens the History
+    /* "History & Projects" in the WISEai dock's more-menu opens the History
        module in the row, the same way the other portfolio modules turn on. */
     onHistory: openHistoryModule,
   });
@@ -2343,7 +2343,7 @@ function setupChat() {
 
 /* ------------------------------------------------------------------ */
 /* History & Projects module                                          */
-/*   Opened from the Scout dock's "History & Projects" menu item. It is a    */
+/*   Opened from the WISEai dock's "History & Projects" menu item. It is a    */
 /*   standalone .pf-module (not a Portfolio section) so it inherits the       */
 /*   section-module chrome, grid/split layout, and scroll behaviour without   */
 /*   appearing in the top-bar rail or the left menu.                          */
@@ -2451,7 +2451,7 @@ function buildHistoryModule() {
     if (tab) { switchHistoryTab(tab.dataset.historyTab); return; }
     if (e.target.closest('[data-history-new]')) {
       closeHistoryModule();
-      scout?.reset?.();
+      wiseai?.reset?.();
       const chatEl = document.getElementById('pf-chat-panel');
       if (chatEl) requestAnimationFrame(() => chatEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }));
     }
@@ -2490,7 +2490,7 @@ function closeHistoryModule() {
 /* Self-contained dock-side + width state for the History module. It lives
    outside PORTFOLIO_SECTION_IDS, so it can't ride flipModule()/toggleModuleWidth();
    these mirror that behaviour (flex order + .panel-wide) and persist on their
-   own keys. Order 90 keeps it left of Scout (99); 150 tucks it right of Scout
+   own keys. Order 90 keeps it left of WISEai (99); 150 tucks it right of WISEai
    but left of Alerts (200). */
 const HISTORY_SIDE_KEY = 'pf-history-side';
 const HISTORY_WIDE_KEY = 'pf-history-wide';
@@ -2709,7 +2709,7 @@ function renderAppearanceBody(pop) {
     showPivot: true,
     isPivoted: isMenuPivoted(),
     isDark: isDark(),
-    scoutDockMode: scoutDockMode(),
+    wiseaiDockMode: wiseaiDockMode(),
   });
 }
 
@@ -2834,10 +2834,10 @@ function openAppearance(anchor) {
       renderAppearanceBody(pop);
       return;
     }
-    const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
-    if (scoutBtn) {
+    const wiseaiBtn = ev.target.closest('.fz-btn[data-wiseai-dock]');
+    if (wiseaiBtn) {
       ev.stopPropagation();
-      setScoutDockPosition(scoutBtn.dataset.scoutDock);
+      setWISEaiDockPosition(wiseaiBtn.dataset.wiseaiDock);
       renderAppearanceBody(pop);
       return;
     }
@@ -2912,7 +2912,7 @@ function bootstrap() {
     if (off) { e.preventDefault(); closeModule(off.dataset.off || off.closest('.pf-module')?.dataset.section); return; }
 
     /* Progress-driven action flows (open a bottom sheet). "ask-agent" is a
-       special case that hands the question to the Scout dock instead. */
+       special case that hands the question to the WISEai dock instead. */
     const flow = e.target.closest('[data-flow]');
     if (flow) {
       e.preventDefault();
@@ -2985,7 +2985,7 @@ function bootstrap() {
   setupAvatar();
   setupAppearancePopover();
   initLirTooltip();
-  initScoutTooltips();
+  initWISEaiTooltips();
   syncModules();
   openFromHash();
   /* If Analytics was restored open from a previous session, build its charts

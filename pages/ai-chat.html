@@ -4,7 +4,7 @@
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scout™ — AI Verification Assistant</title>
+  <title>WISEai™ — AI Verification Assistant</title>
   <script src="../js/text-size-fouc.js"></script>
   <script src="../js/sortable-tables.js" defer></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -533,7 +533,7 @@
       --chat-line-height: 1.6;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    /* Scout "double width": the chat normally grows to fill the centre of the
+    /* WISEai "double width": the chat normally grows to fill the centre of the
        modules row, so wide means it claims more of the row and refuses to
        shrink — neighbouring panels compress and the row scrolls. Most visible
        when side modules are open beside the chat. */
@@ -565,15 +565,15 @@
       box-sizing: border-box;
     }
     .side-panel-header,
-    .scout-panel-header,
+    .wiseai-panel-header,
     .upf-panel-header,
     #verification-sidebar .vs-header {
       height: var(--panel-header-h);
       min-height: var(--panel-header-h);
       box-sizing: border-box;
     }
-    /* Scout header title — MUST be pixel-identical to the canonical Scout module
-       on every other page (scout-chat.css `.sc-topbar-titles .topbar-title`):
+    /* WISEai header title — MUST be pixel-identical to the canonical WISEai module
+       on every other page (wiseai-chat.css `.sc-topbar-titles .topbar-title`):
        var(--fs-ui) / weight 700 / line-height 1.2 to match the other module
        header titles. Two ai-chat-only rules fight this and
        both need beating with HIGHER specificity + !important:
@@ -582,7 +582,7 @@
          2. `.chat-topbar .topbar-title { font-weight: 600 !important }` (the
             font-weight dial-back block) was thinning it to 600.
        `#chat-shell-wrap .chat-topbar .topbar-title` (id+2 classes) outranks both,
-       so the Scout header now matches Portfolio exactly. */
+       so the WISEai header now matches Portfolio exactly. */
     #chat-shell-wrap .chat-topbar .topbar-title {
       color: var(--text);
       font-weight: 700 !important;
@@ -662,7 +662,7 @@
        Per-agent panels (#tier-panel etc) are also reset to transparent here so
        the inner card is the only visible surface. */
     #history-panel,
-    #scout-panel,
+    #wiseai-panel,
     #upf-panel,
     #notif-panel,
     #tier-panel,
@@ -686,7 +686,7 @@
            of the visible viewport. Other panels scroll behind it.
          • `z-index: 50` → renders above scrolling siblings.
          • `mp-open` in HTML → visible from page load.
-       Toggling any other module (History / Scout / PULSE / Settings / NFP+ /
+       Toggling any other module (History / WISEai / PULSE / Settings / NFP+ /
        Notifications) cannot move this card. It is anchored. */
     #menu-panel {
       display: none;
@@ -762,7 +762,7 @@
     #topbar-row > .topbar-logo { display: none !important; }
 
     /* Chat-shell ONLY (layout, not component visuals): the menu panel sits in
-       #modules-row directly beside the History / Scout panels, whose headers
+       #modules-row directly beside the History / WISEai panels, whose headers
        are --panel-header-h (60px) tall. The shared brand strip is sized to the
        (hidden) 54px app top-bar, so here we re-pin its height to the panel
        header height and center the owl, so the collapsed logo lines up exactly
@@ -829,7 +829,7 @@
        they live in #panels-row / #panels-row-right, toggle on a `.open` class,
        flip left↔right, and expand to double width. One shared `.util-panel`
        class drives all five so each opens from the avatar menu the same way the
-       History / Scout / VAULT modules open from the rail. */
+       History / WISEai / VAULT modules open from the rail. */
     #profile-panel,
     #prefs-panel,
     #apikeys-panel,
@@ -1232,15 +1232,15 @@
     }
     .history-view-pin .material-icons { font-size: 13px; opacity: 0.85; }
 
-    /* Scout + UPF */
-    #scout-panel,
+    /* WISEai + UPF */
+    #wiseai-panel,
     #upf-panel {
       display: none;
       flex-shrink: 0;
       flex-direction: column;
       position: relative;
     }
-    #scout-panel.sp-open {
+    #wiseai-panel.sp-open {
       display: flex;
       width: 268px;
     }
@@ -1248,7 +1248,7 @@
       display: flex;
       width: 272px;
     }
-    #scout-panel .scout-inner {
+    #wiseai-panel .wiseai-inner {
       width: 268px;
       min-height: 100%;
       height: 100%;
@@ -1274,7 +1274,7 @@
       transform-origin: left center;
       font-size: var(--fs-ui);
     }
-    #scout-panel.sp-open .scout-inner,
+    #wiseai-panel.sp-open .wiseai-inner,
     #upf-panel.up-open .upf-inner {
       animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
@@ -1407,7 +1407,7 @@
       background: transparent;
     }
 
-    .scout-panel-header, .upf-panel-header {
+    .wiseai-panel-header, .upf-panel-header {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1609,7 +1609,7 @@
       color: var(--primary);
       background: transparent;
     }
-    .lir-btn.lir-active.lir-scout {
+    .lir-btn.lir-active.lir-wiseai {
       color: #FFC434;
       background: transparent;
     }
@@ -1724,7 +1724,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       #history-panel.open .panel-inner,
-      #scout-panel.sp-open .scout-inner,
+      #wiseai-panel.sp-open .wiseai-inner,
       #upf-panel.up-open .upf-inner,
       #notif-panel.notif-open .notif-inner,
       #tier-panel.tp-open .tier-inner,
@@ -1798,8 +1798,8 @@
     /* When any flippable panel sits inside #panels-row-right, mirror its
        entrance animation so it bounces in from the right edge instead of
        the left. This applies to the per-agent modules AND to the original
-       scout / upf panels — so the animation always matches the side. */
-    #panels-row-right > #scout-panel.sp-open .scout-inner,
+       wiseai / upf panels — so the animation always matches the side. */
+    #panels-row-right > #wiseai-panel.sp-open .wiseai-inner,
     #panels-row-right > #upf-panel.up-open .upf-inner,
     #panels-row-right > #tier-panel.tp-open .tier-inner,
     #panels-row-right > #shield-panel.sd-open .shield-inner,
@@ -1895,7 +1895,7 @@
     }
 
     /* ── Reformulation Plan workflow module ─────────────────────────────
-       A right-side module Scout™ builds out step by step. Shares the
+       A right-side module WISEai™ builds out step by step. Shares the
        neutral surface, radius, shadow, bounce and width-toggle behaviour of
        the History / account modules so it reads as a first-class module. */
     #workflow-panel {
@@ -2133,7 +2133,7 @@
     }
 
     /* ── WISE Verification workflow module ──────────────────────────────
-       A richer, "live" sibling to the Reformulation Plan: Scout™ runs an
+       A richer, "live" sibling to the Reformulation Plan: WISEai™ runs an
        end-to-end verification (Profile → Audit → Select → Analyze → Attest →
        Pay → Verified Shield) and assembles the module stage by stage. Opens
        double-width by default. Shares the neutral module surface + controls. */
@@ -2936,7 +2936,7 @@
       color: #fff;
     }
 
-    /* Settings — its own side panel (lives in #panels-row alongside history/scout/upf). */
+    /* Settings — its own side panel (lives in #panels-row alongside history/wiseai/upf). */
     #settings-screen {
       display: none;
       flex-shrink: 0;
@@ -3140,7 +3140,7 @@
 
     /* Light: side rails + verification use index tokens (no dark “oyster” chrome on cream). */
     html:not(.dark) .side-panel-header,
-    html:not(.dark) .scout-panel-header,
+    html:not(.dark) .wiseai-panel-header,
     html:not(.dark) .upf-panel-header,
     html:not(.dark) .tier-panel-header,
     html:not(.dark) .shield-panel-header,
@@ -3551,7 +3551,7 @@
       flex-shrink: 0;
     }
     .ws-sc-icon .material-icons { font-size: 24px !important; }
-    /* Metric cards: neutral (foreground) icon — the intro/Scout cards keep the
+    /* Metric cards: neutral (foreground) icon — the intro/WISEai cards keep the
        brand accent below. */
     .ws-sc-icon--brand,
     .ws-sc-icon--warn,
@@ -3568,7 +3568,7 @@
       white-space: nowrap;
     }
     .ws-sc-pill .material-icons { font-size: 12px !important; }
-    /* Metric-card pills: neutral grey "shades of black" (intro/Scout pills keep
+    /* Metric-card pills: neutral grey "shades of black" (intro/WISEai pills keep
        the brand accent below). */
     .ws-sc-pill--up,
     .ws-sc-pill--warn,
@@ -3622,22 +3622,22 @@
        by an accent stroke (brand blue vs. a cooler cyan) and a matching accent
        headline, so they read as "start here" while staying fully minimal. */
     #chat-shell-wrap .ws-scorecard--intro,
-    #chat-shell-wrap .ws-scorecard--scout,
+    #chat-shell-wrap .ws-scorecard--wiseai,
     .ws-scorecard--intro,
-    .ws-scorecard--scout {
+    .ws-scorecard--wiseai {
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong));
     }
     .ws-scorecard--intro:hover,
-    .ws-scorecard--scout:hover {
+    .ws-scorecard--wiseai:hover {
       border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
       box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent);
     }
     .ws-sc-icon--intro,
-    .ws-sc-icon--scout { color: var(--primary); }
+    .ws-sc-icon--wiseai { color: var(--primary); }
     .ws-sc-pill--intro,
-    .ws-sc-pill--scout { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+    .ws-sc-pill--wiseai { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
     html.dark .ws-sc-icon--intro,
-    html.dark .ws-sc-icon--scout { color: var(--primary-bright, #8B9FAF); }
+    html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
     /* Intro cards lead with a headline instead of a metric — give it presence
        and tint it to match the card's accent stroke. */
     .ws-sc-intro-title {
@@ -3649,7 +3649,7 @@
       margin-top: 6px;
     }
     .ws-scorecard--intro .ws-sc-intro-title,
-    .ws-scorecard--scout .ws-sc-intro-title { color: var(--primary); }
+    .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary); }
 
     /* Narrow panels / phones: cards shrink a touch but keep scrolling sideways
        (still ~1.5 visible, so the scroll-right affordance still reads). */
@@ -3664,8 +3664,8 @@
     }
 
     /* ===== Microcopy & trust =====
-       Kept byte-for-byte in step with pages/scout-chat.css so the inline chat
-       on this page and the shared mountScoutChat() surface read identically:
+       Kept byte-for-byte in step with pages/wiseai-chat.css so the inline chat
+       on this page and the shared mountWISEaiChat() surface read identically:
        welcome trust badges, per-line timestamps + grounding caption, a
        descriptive typing status, and the standing AI-limitations disclaimer. */
     .ws-trust {
@@ -3682,11 +3682,11 @@
     html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF); }
 
     /* Message lines: profile-avatar column + larger, high-contrast body copy
-       (the timestamp / grounding meta row stays small). Mirrors scout-chat.css.
-       Scout's avatar is the WISE-owl bug; "You" is the member's initials,
+       (the timestamp / grounding meta row stays small). Mirrors wiseai-chat.css.
+       WISEai's avatar is the WISE-owl bug; "You" is the member's initials,
        matching the top-bar .topbar-profile chip. */
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
-       avatar lines up under the topbar owl and body text under "Scout™". */
+       avatar lines up under the topbar owl and body text under "WISEai™". */
     .sc-line { display: flex; align-items: flex-start; gap: 12px; }
     .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
     .sc-avatar {
@@ -3695,9 +3695,9 @@
       font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
     }
     .sc-avatar svg { width: 18px; height: auto; }
-    .sc-avatar-scout { background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(37, 80, 124, 0.4); }
+    .sc-avatar-wiseai { background: #141414; color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28); }
     .sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
-    .sc-line-scout strong { color: var(--primary); font-weight: 700; }
+    .sc-line-wiseai strong { color: var(--primary); font-weight: 700; }
 
     .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
     .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
@@ -3756,7 +3756,7 @@
       filter: brightness(1.05);
       color: #fff;
     }
-    /* Scout welcome-screen intent chips must read with equal visual weight —
+    /* WISEai welcome-screen intent chips must read with equal visual weight —
        no chip should look pre-selected. This locks them to the neutral
        `.chip` look even if `chip-primary` (or similar) is added downstream. */
     .ws-intent-chip,
@@ -4197,7 +4197,7 @@
       /* Closed panels remain hidden (don't take a row in the stack). */
       #menu-panel:not(.mp-open),
       #history-panel:not(.open),
-      #scout-panel:not(.sp-open),
+      #wiseai-panel:not(.sp-open),
       #upf-panel:not(.up-open),
       #tier-panel:not(.tp-open),
       #shield-panel:not(.sd-open),
@@ -4213,7 +4213,7 @@
          that used to apply below 768px. */
       #menu-panel.mp-open,
       #history-panel.open,
-      #scout-panel.sp-open,
+      #wiseai-panel.sp-open,
       #upf-panel.up-open,
       #tier-panel.tp-open,
       #shield-panel.sd-open,
@@ -4245,7 +4245,7 @@
       /* Inner cards stretch to fill the parent module width. */
       #menu-panel .menu-inner,
       #history-panel .panel-inner,
-      #scout-panel .scout-inner,
+      #wiseai-panel .wiseai-inner,
       #upf-panel .upf-inner,
       #tier-panel .tier-inner,
       #shield-panel .shield-inner,
@@ -4268,7 +4268,7 @@
          scannable without dominating the page. */
       #menu-panel.mp-open,
       #history-panel.open,
-      #scout-panel.sp-open,
+      #wiseai-panel.sp-open,
       #upf-panel.up-open,
       #tier-panel.tp-open,
       #shield-panel.sd-open,
@@ -4330,7 +4330,7 @@
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
     }
-    html:not(.dark) #scout-panel .scout-inner {
+    html:not(.dark) #wiseai-panel .wiseai-inner {
       background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
@@ -4784,7 +4784,7 @@
     }
     .lir-btn.lir-active,
     .lir-btn.lir-active.lir-history,
-    .lir-btn.lir-active.lir-scout,
+    .lir-btn.lir-active.lir-wiseai,
     .lir-btn.lir-active.lir-upf,
     .lir-btn.lir-active.lir-settings {
       background: transparent;
@@ -4793,7 +4793,7 @@
     html.dark .lir-btn { color: var(--text-muted); }
     html.dark .lir-btn.lir-active,
     html.dark .lir-btn.lir-active.lir-history,
-    html.dark .lir-btn.lir-active.lir-scout,
+    html.dark .lir-btn.lir-active.lir-wiseai,
     html.dark .lir-btn.lir-active.lir-upf,
     html.dark .lir-btn.lir-active.lir-settings,
     html.dark .lir-btn.lir-active.lir-nfp,
@@ -4825,11 +4825,11 @@
       box-shadow: var(--shadow-2);
     }
 
-    /* History / Scout / UPF panels — same card surface as chat.
+    /* History / WISEai / UPF panels — same card surface as chat.
        Per-agent panels (TIER / SHIELD / LENS / VAULT) ride the same tokens so
        they look at home in both dark and light themes. */
     #history-panel .panel-inner,
-    #scout-panel .scout-inner,
+    #wiseai-panel .wiseai-inner,
     #upf-panel .upf-inner,
     #tier-panel .tier-inner,
     #shield-panel .shield-inner,
@@ -4842,7 +4842,7 @@
     }
     html.dark #chat-shell,
     html.dark #history-panel .panel-inner,
-    html.dark #scout-panel .scout-inner,
+    html.dark #wiseai-panel .wiseai-inner,
     html.dark #upf-panel .upf-inner,
     html.dark #tier-panel .tier-inner,
     html.dark #shield-panel .shield-inner,
@@ -4856,7 +4856,7 @@
 
     /* Panel headers — soft surface-2 strip; override inline Tailwind gradients. */
     .side-panel-header,
-    .scout-panel-header,
+    .wiseai-panel-header,
     .upf-panel-header,
     .tier-panel-header,
     .shield-panel-header,
@@ -4867,7 +4867,7 @@
       border-bottom: 1px solid var(--border) !important;
     }
     html.dark .side-panel-header,
-    html.dark .scout-panel-header,
+    html.dark .wiseai-panel-header,
     html.dark .upf-panel-header,
     html.dark .tier-panel-header,
     html.dark .shield-panel-header,
@@ -5013,7 +5013,7 @@
     }
     html:not(.dark) #ssr-wise   .w-10 .material-icons { color: var(--primary) !important; }
     html:not(.dark) #ssr-nova   .w-10 .material-icons { color: var(--sec-green) !important; }
-    html:not(.dark) #ssr-scout  .w-10 .material-icons { color: var(--ter-amber) !important; }
+    html:not(.dark) #ssr-wiseai  .w-10 .material-icons { color: var(--ter-amber) !important; }
     html:not(.dark) #ssr-shield .w-10 .material-icons { color: var(--ter-violet) !important; }
     html:not(.dark) #ssr-lens   .w-10 .material-icons { color: var(--ter-cyan) !important; }
     html:not(.dark) #ssr-pulse  .w-10 .material-icons { color: #25507C !important; }
@@ -5026,7 +5026,7 @@
     }
     html.dark #ssr-wise   .w-10 .material-icons { color: var(--primary) !important; }
     html.dark #ssr-nova   .w-10 .material-icons { color: var(--sec-green) !important; }
-    html.dark #ssr-scout  .w-10 .material-icons { color: var(--ter-amber) !important; }
+    html.dark #ssr-wiseai  .w-10 .material-icons { color: var(--ter-amber) !important; }
     html.dark #ssr-shield .w-10 .material-icons { color: var(--primary) !important; }
     html.dark #ssr-lens   .w-10 .material-icons { color: var(--ter-cyan) !important; }
     html.dark #ssr-pulse  .w-10 .material-icons { color: #25507C !important; }
@@ -5243,7 +5243,7 @@
        One horizontal-dots (more_horiz) trigger that gathers every per-module
        control — move side, width toggle, and an Off / On switch — into a single
        dropdown. Built by consolidatePanelControls() so every module header on
-       the page reads the same (Scout excepted). */
+       the page reads the same (WISEai excepted). */
     .panel-controls.pf-menuized { flex-direction: row; min-width: 0; gap: 0; }
     .pf-module-menu { position: relative; display: inline-flex; flex-shrink: 0; }
     .pf-module-menu-btn {
@@ -5430,7 +5430,7 @@
        special-cased `height: auto` (originally for tall stacked controls).
        Now that consolidatePanelControls() collapses every header's controls
        into a single more_horiz menu, they must read at the exact same
-       --panel-header-h rhythm as History / Scout / PULSE / TIER / etc. The
+       --panel-header-h rhythm as History / WISEai / PULSE / TIER / etc. The
        #id + !important guarantees the lock survives every runtime state
        (stacked, menuized, or mid-consolidation) so the strip can never render
        short again. */
@@ -5741,7 +5741,7 @@
       height: 100%;
       max-height: 100%;
     }
-    /* Split mode — Scout (#chat-shell) docks full-width across the bottom half.
+    /* Split mode — WISEai (#chat-shell) docks full-width across the bottom half.
        setModuleLayout() wraps every other module in #modules-top, which becomes
        a shorter horizontally-scrolling strip on top (column-view behaviour),
        while #chat-shell pins below it taking at least half the screen height. */
@@ -5800,7 +5800,7 @@
     /* Hide panels that are closed so they don't take a grid slot */
     #modules-row.modules-grid #menu-panel:not(.mp-open),
     #modules-row.modules-grid #history-panel:not(.open),
-    #modules-row.modules-grid #scout-panel:not(.sp-open),
+    #modules-row.modules-grid #wiseai-panel:not(.sp-open),
     #modules-row.modules-grid #upf-panel:not(.up-open),
     #modules-row.modules-grid #tier-panel:not(.tp-open),
     #modules-row.modules-grid #shield-panel:not(.sd-open),
@@ -5814,7 +5814,7 @@
     /* Every visible module — uniform card sizing */
     #modules-row.modules-grid #menu-panel.mp-open,
     #modules-row.modules-grid #history-panel.open,
-    #modules-row.modules-grid #scout-panel.sp-open,
+    #modules-row.modules-grid #wiseai-panel.sp-open,
     #modules-row.modules-grid #upf-panel.up-open,
     #modules-row.modules-grid #tier-panel.tp-open,
     #modules-row.modules-grid #shield-panel.sd-open,
@@ -5842,7 +5842,7 @@
     /* Inner panel containers fill their card height */
     #modules-row.modules-grid .menu-inner,
     #modules-row.modules-grid .panel-inner,
-    #modules-row.modules-grid .scout-inner,
+    #modules-row.modules-grid .wiseai-inner,
     #modules-row.modules-grid .upf-inner,
     #modules-row.modules-grid .tier-inner,
     #modules-row.modules-grid .shield-inner,
@@ -5876,7 +5876,7 @@
     }
     #modules-row.modules-stack #menu-panel:not(.mp-open),
     #modules-row.modules-stack #history-panel:not(.open),
-    #modules-row.modules-stack #scout-panel:not(.sp-open),
+    #modules-row.modules-stack #wiseai-panel:not(.sp-open),
     #modules-row.modules-stack #upf-panel:not(.up-open),
     #modules-row.modules-stack #tier-panel:not(.tp-open),
     #modules-row.modules-stack #shield-panel:not(.sd-open),
@@ -5889,7 +5889,7 @@
     }
     #modules-row.modules-stack #menu-panel.mp-open,
     #modules-row.modules-stack #history-panel.open,
-    #modules-row.modules-stack #scout-panel.sp-open,
+    #modules-row.modules-stack #wiseai-panel.sp-open,
     #modules-row.modules-stack #upf-panel.up-open,
     #modules-row.modules-stack #tier-panel.tp-open,
     #modules-row.modules-stack #shield-panel.sd-open,
@@ -5916,7 +5916,7 @@
     }
     #modules-row.modules-stack .menu-inner,
     #modules-row.modules-stack .panel-inner,
-    #modules-row.modules-stack .scout-inner,
+    #modules-row.modules-stack .wiseai-inner,
     #modules-row.modules-stack .upf-inner,
     #modules-row.modules-stack .tier-inner,
     #modules-row.modules-stack .shield-inner,
@@ -5928,7 +5928,7 @@
       min-height: 0 !important;
       flex: 1 1 0%;
     }
-    /* Scout (#chat-shell) stays docked at the bottom of the stack: it's ordered
+    /* WISEai (#chat-shell) stays docked at the bottom of the stack: it's ordered
        last and made position:sticky so the modules scroll behind it while the
        chat remains visible and reachable across the bottom of the surface. Its
        opaque surface background masks the content scrolling underneath. */
@@ -6036,7 +6036,7 @@
     /* Flat modules — no shadows on any module card inside the carousel/grid. */
     #menu-panel .menu-inner,
     #history-panel .panel-inner,
-    #scout-panel .scout-inner,
+    #wiseai-panel .wiseai-inner,
     #upf-panel .upf-inner,
     #tier-panel .tier-inner,
     #shield-panel .shield-inner,
@@ -6063,7 +6063,7 @@
     }
 
     /* ── Doubled module gutters ──────────────────────────────────────────────
-       Every side-panel module (History, Scout, UPF, Tier, Shield, Lens, Vault,
+       Every side-panel module (History, WISEai, UPF, Tier, Shield, Lens, Vault,
        Notifications, Profile, Preferences, Workflow, Verify Flow, etc.) draws its
        left/right content padding from a Tailwind px-3 / p-3 utility (12px) on the
        shared .side-panel-body, and a `padding: 12px` on the header family. This
@@ -6075,7 +6075,7 @@
       padding-right: 24px !important;
     }
     .side-panel-header,
-    .scout-panel-header,
+    .wiseai-panel-header,
     .upf-panel-header,
     .tier-panel-header,
     .shield-panel-header,
@@ -6109,7 +6109,7 @@
       import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
-      import { initScoutTooltips } from '../js/scout-tooltip.js';
+      import { initWISEaiTooltips } from '../js/wiseai-tooltip.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody } from '../js/appearance-menu.js';
       Object.assign(window, {
@@ -6208,9 +6208,9 @@
       });
       applyStoredTextSize();
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => initScoutTooltips());
+        document.addEventListener('DOMContentLoaded', () => initWISEaiTooltips());
       } else {
-        initScoutTooltips();
+        initWISEaiTooltips();
       }
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
@@ -6251,11 +6251,11 @@
       <!-- Panel buttons: click the icon to toggle panel on/off.
            The thin bars on the LEFT and RIGHT of the icon show which side the panel is on
            (bright = active side). Click either bar to flip the panel to the other side. -->
-      <button type="button" class="lir-btn lir-panel-btn lir-scout" id="lir-scout-btn" data-tip="WISE Foods" onclick="revealPanel('scout')" title="WISE Foods" aria-label="Toggle WISE Foods panel">
-        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
+      <button type="button" class="lir-btn lir-panel-btn lir-wiseai" id="lir-wiseai-btn" data-tip="WISE Foods" onclick="revealPanel('wiseai')" title="WISE Foods" aria-label="Toggle WISE Foods panel">
+        <span class="lir-pip-l" onclick="event.stopPropagation(); flipPanel('wiseai')" title="On left — tap to move right"></span>
         <span class="material-icons">search</span>
         <span class="lir-dot" style="background:#FFC434"></span>
-        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('scout')" title="On left — tap to move right"></span>
+        <span class="lir-pip-r" onclick="event.stopPropagation(); flipPanel('wiseai')" title="On left — tap to move right"></span>
         <span class="lir-label">Foods</span>
       </button>
       <button type="button" class="lir-btn lir-panel-btn lir-upf lir-active" id="lir-upf-btn" data-tip="UPF Analyzer" onclick="revealPanel('pulse')" title="UPF Analyzer" aria-label="Toggle UPF Analyzer panel">
@@ -6371,15 +6371,15 @@
     </div>
 
     <!-- WISE Foods -->
-    <div id="scout-panel">
-      <div class="scout-inner">
-        <div class="side-panel-header scout-panel-header border-b border-[#1A2339]">
+    <div id="wiseai-panel">
+      <div class="wiseai-inner">
+        <div class="side-panel-header wiseai-panel-header border-b border-[#1A2339]">
           <div class="flex items-center gap-2 flex-1 min-w-0">
             <div class="panel-header-icon w-[30px] h-[30px] rounded-full bg-[#4D1007] flex items-center justify-center shrink-0 ring-1 ring-amber-400/25">
               <span class="material-icons text-[15px] text-amber-400">search</span>
             </div>
             <div>
-              <div class="text-xs font-bold text-oyster-100">Scout™</div>
+              <div class="text-xs font-bold text-oyster-100">WISEai™</div>
               <p class="text-xs text-oyster-600">WISE Foods</p>
             </div>
           </div>
@@ -6625,7 +6625,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
-            <span class="topbar-title" data-scout-tip tabindex="0">Scout™</span>
+            <span class="topbar-title" data-wiseai-tip tabindex="0">WISEai™</span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -6634,11 +6634,11 @@
           </div>
         </div>
         <div class="flex items-center gap-1" style="margin-left:auto;">
-        <div class="panel-more-wrap" id="scout-menu-wrap" style="margin-left:0;">
-          <button id="scout-menu-btn" type="button" class="panel-more-btn" onclick="toggleScoutMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="scout-menu" aria-label="More options">
+        <div class="panel-more-wrap" id="wiseai-menu-wrap" style="margin-left:0;">
+          <button id="wiseai-menu-btn" type="button" class="panel-more-btn" onclick="toggleWISEaiMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="wiseai-menu" aria-label="More options">
             <span class="material-icons">more_vert</span>
           </button>
-          <div id="scout-menu" class="topbar-popover hidden" role="menu">
+          <div id="wiseai-menu" class="topbar-popover hidden" role="menu">
             <button type="button" class="topbar-menu-item" onclick="openAddMemberModal(); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">person_add</span>
               <span>Add team member to chat</span>
@@ -6668,7 +6668,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="scout-width-btn" data-panel="scout" onclick="toggleScoutWidth(this)" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand Scout™ module width"><span class="material-symbols-outlined">width_normal</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="wiseai-width-btn" data-panel="wiseai" onclick="toggleWISEaiWidth(this)" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand WISEai™ module width"><span class="material-symbols-outlined">width_normal</span></button>
         </div>
       </div>
 
@@ -6692,7 +6692,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can Scout™ help with?</h1>
+            <h1 class="ws-heading">What can WISEai™ help with?</h1>
             <!-- Portfolio score cards — richer, actionable signals above the intent chips.
                  They scroll horizontally (there are always more than fit on screen), with a
                  prioritisation filter pinned to the far right of the section bar and a
@@ -6735,14 +6735,14 @@
                             <div class="ws-sc-desc">UPF status, compliance, and ingredient health — every UPC, one view.</div>
                             <div class="ws-sc-action">Take the tour<span class="material-icons">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--scout" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can Scout help me work through my portfolio?','auto_awesome')">
+                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--wiseai" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can WISEai help me work through my portfolio?','auto_awesome')">
                             <div class="ws-sc-top">
-                                <span class="ws-sc-icon ws-sc-icon--scout"><span class="material-icons">smart_toy</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--scout"><span class="material-icons">bolt</span>AI Scout</span>
+                                <span class="ws-sc-icon ws-sc-icon--wiseai"><span class="material-icons">smart_toy</span></span>
+                                <span class="ws-sc-pill ws-sc-pill--wiseai"><span class="material-icons">bolt</span>AI WISEai</span>
                             </div>
-                            <div class="ws-sc-intro-title">Let Scout do the heavy lifting</div>
-                            <div class="ws-sc-desc">Ask, verify, or reformulate — Scout drafts it, you decide.</div>
-                            <div class="ws-sc-action">Ask Scout anything<span class="material-icons">arrow_outward</span></div>
+                            <div class="ws-sc-intro-title">Let WISEai do the heavy lifting</div>
+                            <div class="ws-sc-desc">Ask, verify, or reformulate — WISEai drafts it, you decide.</div>
+                            <div class="ws-sc-action">Ask WISEai anything<span class="material-icons">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="4" data-impact="5" data-recent="3" onclick="startVerificationWorkflow()">
                             <div class="ws-sc-top">
@@ -6871,7 +6871,7 @@
                     </div>
                     <div>
                         <p class="ss-info-title">How agents work together</p>
-                        <p class="ss-info-desc">Scout™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. Scout™ is always required.</p>
+                        <p class="ss-info-desc">WISEai™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEai™ is always required.</p>
                     </div>
                 </div>
 
@@ -6885,11 +6885,11 @@
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
-                            Scout™
+                            WISEai™
                             <span class="ss-version-badge">v3.2</span>
                         </div>
                         <p class="ss-agent-tagline">Verification Orchestrator</p>
-                        <p class="ss-agent-desc">The core Scout™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.</p>
+                        <p class="ss-agent-desc">The core WISEai™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.</p>
                         <div>
                             <span class="ss-capability-tag">Verification</span>
                             <span class="ss-capability-tag">Routing</span>
@@ -6928,13 +6928,13 @@
                     </label>
                 </div>
 
-                    <!-- Scout WISE Foods (settings) -->
-                    <div class="ss-agent-row" id="ssr-scout">
+                    <!-- WISEai WISE Foods (settings) -->
+                    <div class="ss-agent-row" id="ssr-wiseai">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#4D1007;">
                         <span class="material-icons" style="font-size:20px;color:#FFC434">search</span>
                     </div>
                     <div class="ss-agent-body">
-                            <div class="ss-agent-name ssa-off" id="ssn-scout">
+                            <div class="ss-agent-name ssa-off" id="ssn-wiseai">
                                 WISE Foods
                                 <span class="ss-version-badge">v1.8</span>
                             </div>
@@ -6948,7 +6948,7 @@
                         </div>
                     </div>
                     <label class="agent-toggle-wrap flex-shrink-0" style="margin-top:4px;" onclick="event.stopPropagation()" title="Toggle WISE Foods">
-                            <input type="checkbox" id="ss-at-scout" onchange="toggleAgent('scout', this.checked); syncAgentToggle('scout', this.checked)">
+                            <input type="checkbox" id="ss-at-wiseai" onchange="toggleAgent('wiseai', this.checked); syncAgentToggle('wiseai', this.checked)">
                         <span class="agent-toggle-track"></span>
                     </label>
                 </div>
@@ -7072,7 +7072,7 @@
                     <div class="ss-pref-row">
                         <div>
                             <p class="ss-pref-title">Response style</p>
-                            <p class="ss-pref-desc">How detailed Scout™'s responses should be</p>
+                            <p class="ss-pref-desc">How detailed WISEai™'s responses should be</p>
                         </div>
                         <select class="font-semibold">
                             <option>Concise</option>
@@ -7112,7 +7112,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
-                            <span>Scout™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
+                            <span>WISEai™ <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
                         </div>
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-icons" style="font-size:14px">circle</span>
@@ -7624,7 +7624,7 @@
               <div class="wf-empty" id="lr-claims-empty">
                 <span class="material-icons">campaign</span>
                 <p class="wf-empty-title">No claims loaded</p>
-                <p class="wf-empty-sub">Answer Scout™'s prompts in the chat and each claims section will appear here.</p>
+                <p class="wf-empty-sub">Answer WISEai™'s prompts in the chat and each claims section will appear here.</p>
               </div>
             </div>
           </div>
@@ -7656,7 +7656,7 @@
               <div class="wf-empty" id="lr-packaging-empty">
                 <span class="material-icons">inventory_2</span>
                 <p class="wf-empty-title">Not opened yet</p>
-                <p class="wf-empty-sub">If Scout™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
+                <p class="wf-empty-sub">If WISEai™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
               </div>
             </div>
           </div>
@@ -7911,7 +7911,7 @@
       </div>
     </aside>
 
-    <!-- Reformulation Plan — a workflow module that Scout™ builds out, one
+    <!-- Reformulation Plan — a workflow module that WISEai™ builds out, one
          conversational step at a time. Opens empty when the workflow starts
          (startReformulationWorkflow) and fills in as the user clicks through
          the in-chat intent chips. Mirrors the other right-side modules' shell:
@@ -7926,7 +7926,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Reformulation Plan</div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by Scout™</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by WISEai™</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="workflow" role="group" aria-label="Dock Reformulation Plan panel">
@@ -7950,13 +7950,13 @@
           <div class="wf-empty" id="wf-empty">
             <span class="material-icons">auto_fix_high</span>
             <p class="wf-empty-title">Your plan is empty</p>
-            <p class="wf-empty-sub">Answer Scout™'s prompts in the chat and each step will appear here.</p>
+            <p class="wf-empty-sub">Answer WISEai™'s prompts in the chat and each step will appear here.</p>
           </div>
         </div>
       </div>
     </aside>
 
-    <!-- WISE Verification — a live, in-the-moment workflow module. Scout™
+    <!-- WISE Verification — a live, in-the-moment workflow module. WISEai™
          runs an end-to-end verification and assembles this board stage by
          stage as the user clicks through the in-chat intent chips. Opens
          double-width by default. Mirrors the reference verification-flow
@@ -7969,7 +7969,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100 flex items-center gap-2">WISE Verification <span class="vf-live"><span class="vf-live-dot"></span>LIVE</span></div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">Scout™ is running your verification</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">WISEai™ is running your verification</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="verifyflow" role="group" aria-label="Dock WISE Verification panel">
@@ -7996,7 +7996,7 @@
           <div class="vf-empty" id="vf-empty">
             <span class="material-icons">verified_user</span>
             <p class="vf-empty-title">Verification not started</p>
-            <p class="vf-empty-sub">Click through Scout™'s prompts in the chat — each stage of the verification will assemble here in real time.</p>
+            <p class="vf-empty-sub">Click through WISEai™'s prompts in the chat — each stage of the verification will assemble here in real time.</p>
           </div>
         </div>
       </div>
@@ -8075,9 +8075,9 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'Scout™', color: '#25507C', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'WISEai™', color: '#25507C', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#6D947C', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
-      scout:  { name: 'WISE Foods', color: '#FFC434', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
+      wiseai:  { name: 'WISE Foods', color: '#FFC434', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
       shield: { name: 'SHIELD',     color: '#25507C', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
       lens:   { name: 'LENS',       color: '#687896', icon: 'analytics',    required: false, on: false, announce: { on: 'LENS analytics active — I’ll surface trends, UPC-level breakdowns, and risk scoring beside the chat.', off: 'LENS paused — analytics mode disabled.' } },
       vault:  { name: 'VAULT',      color: '#D7BE91', icon: 'lock',         required: false, on: false, announce: { on: 'VAULT document mode enabled — I’ll track attestation records, audit trails, and signing-ready documents.', off: 'VAULT paused — document tracking disabled.' } },
@@ -8088,7 +8088,7 @@
        togglePanel() and toggleAgent() drive both sides of the relationship
        through this table — adding a new agent only needs an entry here. */
     const AGENT_PANEL_CFG = {
-      scout:  { panelId: 'scout-panel',  openClass: 'sp-open', btnId: 'lir-scout-btn'  },
+      wiseai:  { panelId: 'wiseai-panel',  openClass: 'sp-open', btnId: 'lir-wiseai-btn'  },
       pulse:  { panelId: 'upf-panel',    openClass: 'up-open', btnId: 'lir-upf-btn'    },
       nova:   { panelId: 'tier-panel',   openClass: 'tp-open', btnId: 'lir-tier-btn'   },
       shield: { panelId: 'shield-panel', openClass: 'sd-open', btnId: 'lir-shield-btn' },
@@ -8155,7 +8155,7 @@
       const pop = document.getElementById('topbar-menu');
       const btn = document.getElementById('topbar-menu-btn');
       if (!pop) return;
-      closeScoutMenu();
+      closeWISEaiMenu();
       const opening = pop.classList.contains('hidden');
       pop.classList.toggle('hidden', !opening);
       if (btn) {
@@ -8173,12 +8173,12 @@
       }
     }
 
-    /* Scout panel header's mirror of the global "More" menu — same items,
-       anchored to the scout-panel-header's right edge. */
-    function toggleScoutMenu(e) {
+    /* WISEai panel header's mirror of the global "More" menu — same items,
+       anchored to the wiseai-panel-header's right edge. */
+    function toggleWISEaiMenu(e) {
       if (e) e.stopPropagation();
-      const pop = document.getElementById('scout-menu');
-      const btn = document.getElementById('scout-menu-btn');
+      const pop = document.getElementById('wiseai-menu');
+      const btn = document.getElementById('wiseai-menu-btn');
       if (!pop) return;
       closeTopbarMenu();
       const opening = pop.classList.contains('hidden');
@@ -8188,9 +8188,9 @@
         btn.classList.toggle('is-open', opening);
       }
     }
-    function closeScoutMenu() {
-      const pop = document.getElementById('scout-menu');
-      const btn = document.getElementById('scout-menu-btn');
+    function closeWISEaiMenu() {
+      const pop = document.getElementById('wiseai-menu');
+      const btn = document.getElementById('wiseai-menu-btn');
       if (pop) pop.classList.add('hidden');
       if (btn) {
         btn.setAttribute('aria-expanded', 'false');
@@ -8199,7 +8199,7 @@
     }
     function closeAllMoreMenus() {
       closeTopbarMenu();
-      closeScoutMenu();
+      closeWISEaiMenu();
     }
 
     function applyChatTheme(theme) {
@@ -8321,7 +8321,7 @@
         agents,
         panels: {
           history: document.getElementById('history-panel')?.classList.contains('open'),
-          scout: document.getElementById('scout-panel')?.classList.contains('sp-open'),
+          wiseai: document.getElementById('wiseai-panel')?.classList.contains('sp-open'),
           upf: document.getElementById('upf-panel')?.classList.contains('up-open'),
           tier: document.getElementById('tier-panel')?.classList.contains('tp-open'),
           shield: document.getElementById('shield-panel')?.classList.contains('sd-open'),
@@ -8439,7 +8439,7 @@
       const historyPanel = document.getElementById('history-panel');
       if (historyPanel && !historyPanel.classList.contains('open')) toggleHistoryPanel();
       syncLirBtn('lir-history-btn', true);
-      togglePanel('scout', !!p.scout);
+      togglePanel('wiseai', !!p.wiseai);
       togglePanel('pulse', !!p.upf);
       togglePanel('nova', !!p.tier);
       togglePanel('shield', !!p.shield);
@@ -8482,10 +8482,10 @@
       restoreViewSnapshot(view.snapshot);
       switchHistoryTab('views');
       renderViewsTab();
-      const typing = showScoutTyping('Restoring your saved view…');
+      const typing = showWISEaiTyping('Restoring your saved view…');
       setTimeout(() => {
         typing?.remove();
-        addScoutMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
+        addWISEaiMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
       }, 500);
     }
 
@@ -8541,12 +8541,12 @@
       resetModules();
       chat.innerHTML = '';
       hideWS();
-      addScoutMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation.', { source: false });
+      addWISEaiMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation.', { source: false });
       ['scoreTrend', 'flags', 'projectFix'].forEach((id) => {
         const n = DATA_NODES[id];
         if (!n) return;
         addUserMessage(n.user);
-        addScoutMessage(n.reply + (n.viz ? n.viz() : ''));
+        addWISEaiMessage(n.reply + (n.viz ? n.viz() : ''));
       });
       SAVED_VIEWS.push({
         id: 'data-portfolio-deepdive',
@@ -8567,9 +8567,9 @@
       const wfSub = document.getElementById('wf-subtitle');
       if (wfSub) wfSub.textContent = 'Plan ready · 4 of 4 steps';
       document.getElementById('workflow-panel')?.classList.add('wf-open');
-      addScoutMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — we’ll fill it in one step at a time.', { source: false });
-      WF_STEPS.forEach((s) => { addUserMessage(s.user); addScoutMessage(s.reply); });
-      addScoutMessage('Your reformulation plan is ready — I exported it as a shareable brief, projected <strong>88/100</strong> after the swaps.', { source: false });
+      addWISEaiMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — we’ll fill it in one step at a time.', { source: false });
+      WF_STEPS.forEach((s) => { addUserMessage(s.user); addWISEaiMessage(s.reply); });
+      addWISEaiMessage('Your reformulation plan is ready — I exported it as a shareable brief, projected <strong>88/100</strong> after the swaps.', { source: false });
       SAVED_VIEWS.push({
         id: 'reformulation-granola',
         title: 'Reformulation — Mixed Berry Granola',
@@ -8603,8 +8603,8 @@
         live.style.background = 'var(--sec-green-10)';
         live.innerHTML = '<span class="material-icons" style="font-size:12px">check_circle</span>DONE';
       }
-      addScoutMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
-      VF_STAGES.forEach((s) => { addUserMessage(s.user); addScoutMessage(s.reply); });
+      addWISEaiMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
+      VF_STAGES.forEach((s) => { addUserMessage(s.user); addWISEaiMessage(s.reply); });
       SAVED_VIEWS.push({
         id: 'verification-nutrient-survival',
         title: 'Live Verification — Nutrient Survival',
@@ -8645,7 +8645,7 @@
     /* Thin aliases — HTML onclick handlers stay readable, and existing call
        sites (welcome shims, boot, keyboard handler) keep working unchanged. */
     function toggleUpfPanel(force)    { togglePanel('pulse',  force); }
-    function toggleScoutPanel(force)  { togglePanel('scout',  force); }
+    function toggleWISEaiPanel(force)  { togglePanel('wiseai',  force); }
     function toggleTierPanel(force)   { togglePanel('nova',   force); }
     function toggleShieldPanel(force) { togglePanel('shield', force); }
     function toggleLensPanel(force)   { togglePanel('lens',   force); }
@@ -8863,7 +8863,7 @@
         if (el.id === 'intent-stack-column') return el.classList.contains('is-active');
         return el.classList.contains('open')      || /* history */
         el.classList.contains('up-open')   || /* UPF / PULSE */
-        el.classList.contains('sp-open')   || /* scout / WISE Foods */
+        el.classList.contains('sp-open')   || /* wiseai / WISE Foods */
         el.classList.contains('tp-open')   || /* TIER */
         el.classList.contains('sd-open')   || /* SHIELD */
         el.classList.contains('ln-open')   || /* LENS */
@@ -9014,29 +9014,29 @@
     }
 
     /* ── Microcopy & trust helpers ──────────────────────────────────────
-       Kept in lockstep with js/scout-chat.js so the inline chat here and the
-       shared mountScoutChat() surface behave identically: every line is
-       time-stamped, every Scout reply is grounded in a cited source, and the
-       typing indicator says what Scout is actually doing. */
-    const SCOUT_SOURCE_LABEL = 'Grounded in WISE data';
-    const SCOUT_STATUS_LABEL = 'Scout™ is checking the registry';
+       Kept in lockstep with js/wiseai-chat.js so the inline chat here and the
+       shared mountWISEaiChat() surface behave identically: every line is
+       time-stamped, every WISEai reply is grounded in a cited source, and the
+       typing indicator says what WISEai is actually doing. */
+    const WISEAI_SOURCE_LABEL = 'Grounded in WISE data';
+    const WISEAI_STATUS_LABEL = 'WISEai™ is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
-       avatar in place of the "You" / "Scout™" name labels. Inherits
+       avatar in place of the "You" / "WISEai™" name labels. Inherits
        currentColor so the avatar circle's color drives the mark. */
     /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). */
-    const SCOUT_USER_AVATAR = 'MC';
-    const SCOUT_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
+    const WISEAI_USER_AVATAR = 'MC';
+    const WISEAI_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
 
-    function scoutNowLabel() {
+    function wiseaiNowLabel() {
       try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
       catch (_) { return ''; }
     }
-    function scoutMetaRow(withSource) {
-      const src = withSource && SCOUT_SOURCE_LABEL
-        ? `<span class="sc-trust-chip" title="Scout™ cites where its answer comes from"><span class="material-icons">verified_user</span>${SCOUT_SOURCE_LABEL}</span>`
+    function wiseaiMetaRow(withSource) {
+      const src = withSource && WISEAI_SOURCE_LABEL
+        ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-icons">verified_user</span>${WISEAI_SOURCE_LABEL}</span>`
         : '';
-      return `<div class="sc-line-meta">${src}<span class="sc-line-time">${scoutNowLabel()}</span></div>`;
+      return `<div class="sc-line-meta">${src}<span class="sc-line-time">${wiseaiNowLabel()}</span></div>`;
     }
 
     function addUserMessage(text) {
@@ -9045,31 +9045,31 @@
       const safe = String(text).replace(/</g, '&lt;');
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${SCOUT_USER_AVATAR}</span><div class="sc-line-body">${safe}${scoutMetaRow(false)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
 
-    /* Drop a Scout reply with a grounding caption + timestamp. Pass
+    /* Drop a WISEai reply with a grounding caption + timestamp. Pass
        { source: false } for a plain acknowledgement that shouldn't claim a source. */
-    function addScoutMessage(html, opts = {}) {
+    function addWISEaiMessage(html, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
       const withSource = opts.source !== false;
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-scout"><span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout™">${SCOUT_OWL_BUG}</span><div class="sc-line-body">${html}${scoutMetaRow(withSource)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai™">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
 
-    function showScoutTyping(statusLabel) {
+    function showWISEaiTyping(statusLabel) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
-      const label = statusLabel || SCOUT_STATUS_LABEL;
+      const label = statusLabel || WISEAI_STATUS_LABEL;
       const el = document.createElement('div');
-      el.className = 'mb-3 sc-line sc-line-scout sc-line-typing';
-      el.innerHTML = `<span class="sc-avatar sc-avatar-scout" role="img" aria-label="Scout™">${SCOUT_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${label}…</span></span></div>`;
+      el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
+      el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai™">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${label}…</span></span></div>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -9077,7 +9077,7 @@
 
     /* Intent-keyed openers so a clicked welcome chip ALWAYS continues the
        conversation on its own feature — mirrors DEFAULT_INTENT_REPLIES in
-       scout-chat.js. */
+       wiseai-chat.js. */
     const INTENT_REPLIES = {
       customer_profile: 'Let’s start a new verification. I’ll set up the customer profile, then walk you through <strong>Confirm → Attest → Activate</strong> on your eligible UPCs. Who are we verifying first?',
       resume_prompt: 'Picking up where you left off — you have verifications in progress. Want me to reopen your most recent draft, or list them all so you can choose which to continue?',
@@ -9087,9 +9087,9 @@
       edit_food_select: 'Which product would you like to edit? I’ll open it so you can update NFP+, ingredients, images, and visibility.',
     };
 
-    /* Canned, intent-aware reply — mirrors defaultReply() in scout-chat.js. An
+    /* Canned, intent-aware reply — mirrors defaultReply() in wiseai-chat.js. An
        intent id (from a clicked chip) wins over the label keyword regex. */
-    function scoutReply(text, intent) {
+    function wiseaiReply(text, intent) {
       if (intent && INTENT_REPLIES[intent]) return INTENT_REPLIES[intent];
       const q = String(text).toLowerCase();
       if (/(verif|shield|non-upf|clean label|attest)/.test(q))
@@ -9102,15 +9102,15 @@
         return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
       if (/(agent|choose)/.test(q))
         return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real Scout™ layout and controls.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEai™ layout and controls.';
     }
 
-    function scoutRespond(text, intent) {
-      const typing = showScoutTyping();
-      setTimeout(() => { typing?.remove(); addScoutMessage(scoutReply(text, intent)); }, 600);
+    function wiseaiRespond(text, intent) {
+      const typing = showWISEaiTyping();
+      setTimeout(() => { typing?.remove(); addWISEaiMessage(wiseaiReply(text, intent)); }, 600);
     }
 
-    /* Each intent chip on the Scout welcome screen pairs with the side
+    /* Each intent chip on the WISEai welcome screen pairs with the side
        module that becomes its "summary" beside the chat. The verification
        summary is reserved for "Start New Verification" only — every other
        intent either opens its own paired panel or leaves the summary slot
@@ -9119,7 +9119,7 @@
       customer_profile: 'verification',
       add_food_intro:   'nfp',
       edit_food_select: 'nfp',
-      registry_home:    'scout',
+      registry_home:    'wiseai',
     };
 
     function applyIntentSummary(intent) {
@@ -9127,13 +9127,13 @@
       const vs = document.getElementById('verification-sidebar');
       if (vs) vs.classList.toggle('vs-hidden', target !== 'verification');
       toggleNfpPanel(target === 'nfp');
-      togglePanel('scout', target === 'scout');
+      togglePanel('wiseai', target === 'wiseai');
     }
 
     function clearIntentSummary() {
       document.getElementById('verification-sidebar')?.classList.add('vs-hidden');
       toggleNfpPanel(false);
-      togglePanel('scout', false);
+      togglePanel('wiseai', false);
     }
 
     function welcomeChipClick(nextStage, label) {
@@ -9141,7 +9141,7 @@
       hideWelcomeScreen(() => {
         addUserMessage(label);
         /* Continue the conversation on the chip's own intent, not its label. */
-        scoutRespond(label, nextStage);
+        wiseaiRespond(label, nextStage);
       });
     }
 
@@ -9332,7 +9332,7 @@
        EXPLORE MY DATA & CHARTS  (fully inline)
        Unlike the Reformulation / Verification flows, this intent never opens
        a side module. Every answer — stats, bars, donuts, trends — renders
-       INLINE inside Scout's chat reply, and each result offers "build on
+       INLINE inside WISEai's chat reply, and each result offers "build on
        this" chips so the user keeps a single, growing conversation about
        their portfolio data. Each node = one query the user can run.
        ════════════════════════════════════════════════════════════════════ */
@@ -9527,10 +9527,10 @@
         dataVisited = new Set();
         dataStarted = true;
         addUserMessage('Explore My Data & Charts');
-        const typing = showScoutTyping('Scout™ is pulling your portfolio data');
+        const typing = showWISEaiTyping('WISEai™ is pulling your portfolio data');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
+          addWISEaiMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
           dataOfferChips(DATA_STARTERS);
         }, 600);
       });
@@ -9592,11 +9592,11 @@
       if (!node) return;
       btn?.closest('.sc-reply-chips')?.remove();
       addUserMessage(node.user);
-      const typing = showScoutTyping(node.status);
+      const typing = showWISEaiTyping(node.status);
       setTimeout(() => {
         typing?.remove();
         const viz = node.viz ? node.viz() : '';
-        addScoutMessage(node.reply + viz);
+        addWISEaiMessage(node.reply + viz);
         dataVisited.add(id);
         let follow = (node.follow || []).filter(f => !dataVisited.has(f));
         if (!follow.length) follow = DATA_STARTERS.filter(f => !dataVisited.has(f));
@@ -9608,16 +9608,16 @@
     /* ════════════════════════════════════════════════════════════════════
        REFORMULATION PLAN WORKFLOW
        A chip on the welcome screen kicks off a guided, multi-step workflow.
-       Scout™ opens an (empty) Reformulation Plan module on the right, then
+       WISEai™ opens an (empty) Reformulation Plan module on the right, then
        offers the next step as an in-chat intent chip. Each chip the user
-       clicks posts their choice, draws Scout's reply, and BUILDS OUT one
+       clicks posts their choice, draws WISEai's reply, and BUILDS OUT one
        more section of the module — so the artifact assembles itself as the
        conversation advances. The module reuses the shared module shell, so it
        looks and behaves like every other panel on the page.
        ════════════════════════════════════════════════════════════════════ */
 
     /* Ordered steps. Each step's `chip` is what the user clicks to trigger it;
-       `user` is the message that posts on their behalf; `reply` is Scout's
+       `user` is the message that posts on their behalf; `reply` is WISEai's
        answer; `build` paints the matching section into the module. */
     const WF_STEPS = [
       {
@@ -9659,10 +9659,10 @@
         wfResetModule();
         openWorkflowPanel();
         addUserMessage('Build a Reformulation Plan');
-        const typing = showScoutTyping();
+        const typing = showWISEaiTyping();
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
+          addWISEaiMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
           wfOfferStep(0);
         }, 600);
       });
@@ -9691,10 +9691,10 @@
       if (!step) return;
       document.getElementById('wf-chips-' + step.id)?.remove();
       addUserMessage(step.user);
-      const typing = showScoutTyping();
+      const typing = showWISEaiTyping();
       setTimeout(() => {
         typing?.remove();
-        addScoutMessage(step.reply);
+        addWISEaiMessage(step.reply);
         try { step.build(); } catch (_) {}
         wfStepIndex = Math.max(wfStepIndex, index + 1);
         wfUpdateProgress();
@@ -9725,17 +9725,17 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'export') {
         addUserMessage('Export the plan');
-        const typing = showScoutTyping();
+        const typing = showWISEaiTyping();
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Exported your <strong>Reformulation Plan</strong> as a shareable brief — target product, flagged additives, clean-label swaps, and the projected <strong>88/100</strong> score are all included.', { source: false });
+          addWISEaiMessage('Exported your <strong>Reformulation Plan</strong> as a shareable brief — target product, flagged additives, clean-label swaps, and the projected <strong>88/100</strong> score are all included.', { source: false });
         }, 600);
       } else {
         addUserMessage('Start verification on the reformulated product');
-        const typing = showScoutTyping();
+        const typing = showWISEaiTyping();
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Handing this to the verification flow — I’ll carry the reformulated recipe into <strong>Confirm → Attest → Activate</strong> so the NON-UPF claim is backed end-to-end.');
+          addWISEaiMessage('Handing this to the verification flow — I’ll carry the reformulated recipe into <strong>Confirm → Attest → Activate</strong> so the NON-UPF claim is backed end-to-end.');
         }, 600);
       }
     }
@@ -9765,11 +9765,11 @@
           '<div class="wf-empty" id="wf-empty">' +
           '<span class="material-icons">auto_fix_high</span>' +
           '<p class="wf-empty-title">Your plan is empty</p>' +
-          '<p class="wf-empty-sub">Answer Scout™\'s prompts in the chat and each step will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer WISEai™\'s prompts in the chat and each step will appear here.</p>' +
           '</div>';
       }
       const sub = document.getElementById('wf-subtitle');
-      if (sub) sub.textContent = 'Guided by Scout™';
+      if (sub) sub.textContent = 'Guided by WISEai™';
       wfUpdateProgress();
     }
 
@@ -9831,7 +9831,7 @@
 
     /* ════════════════════════════════════════════════════════════════════
        LIVE WISE VERIFICATION WORKFLOW
-       A deeper, "live and in-the-moment" workflow. Scout™ runs an
+       A deeper, "live and in-the-moment" workflow. WISEai™ runs an
        end-to-end verification for the Nutrient Survival portfolio and
        assembles a double-width module stage by stage as the user clicks
        through the in-chat intent chips — Profile → Portfolio Audit →
@@ -9925,10 +9925,10 @@
         vfResetModule();
         openVerificationPanel();
         addUserMessage('Run a Live Verification');
-        const typing = showScoutTyping('Spinning up the verification workspace…');
+        const typing = showWISEaiTyping('Spinning up the verification workspace…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Let’s run a <strong>live WISE Verification</strong>. I’ve opened a verification board on the right — it’ll fill in stage by stage as we go: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>. First, which portfolio are we verifying?', { source: false });
+          addWISEaiMessage('Let’s run a <strong>live WISE Verification</strong>. I’ve opened a verification board on the right — it’ll fill in stage by stage as we go: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>. First, which portfolio are we verifying?', { source: false });
           vfOfferStage(0);
         }, 650);
       });
@@ -9956,10 +9956,10 @@
       addUserMessage(stage.user);
       /* Mark the stepper's current stage as actively working. */
       vfSetStepActive(index);
-      const typing = showScoutTyping(stage.status);
+      const typing = showWISEaiTyping(stage.status);
       setTimeout(() => {
         typing?.remove();
-        addScoutMessage(stage.reply);
+        addWISEaiMessage(stage.reply);
         try { stage.build(); } catch (_) {}
         vfStageIndex = Math.max(vfStageIndex, index + 1);
         vfMarkStepDone(index);
@@ -9993,12 +9993,12 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'toolkit') {
         addUserMessage('Download the marketing toolkit');
-        const t = showScoutTyping('Packaging your NON-UPF toolkit…');
-        setTimeout(() => { t?.remove(); addScoutMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); }, 600);
+        const t = showWISEaiTyping('Packaging your NON-UPF toolkit…');
+        setTimeout(() => { t?.remove(); addWISEaiMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); }, 600);
       } else {
         addUserMessage('Show the verification certificate');
-        const t = showScoutTyping('Retrieving certificate…');
-        setTimeout(() => { t?.remove(); addScoutMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); }, 600);
+        const t = showWISEaiTyping('Retrieving certificate…');
+        setTimeout(() => { t?.remove(); addWISEaiMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); }, 600);
       }
     }
 
@@ -10030,11 +10030,11 @@
           '<div class="vf-empty" id="vf-empty">' +
           '<span class="material-icons">verified_user</span>' +
           '<p class="vf-empty-title">Verification not started</p>' +
-          '<p class="vf-empty-sub">Click through Scout™\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
+          '<p class="vf-empty-sub">Click through WISEai™\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
           '</div>';
       }
       const sub = document.getElementById('vf-subtitle');
-      if (sub) sub.textContent = 'Scout™ is running your verification';
+      if (sub) sub.textContent = 'WISEai™ is running your verification';
       vfRenderStepper();
       vfUpdateProgress();
     }
@@ -10308,7 +10308,7 @@
         else if (key === 'shield') { toggleAgent('shield', true); revealPanel('shield'); }
         else if (key === 'nova') { toggleAgent('nova', true); revealPanel('nova'); }
         else if (key === 'pulse') revealPanel('pulse');
-        else if (key === 'scout') revealPanel('scout');
+        else if (key === 'wiseai') revealPanel('wiseai');
       });
     }
 
@@ -10317,10 +10317,10 @@
         lrResetModules();
         lrOpenClaimsPanel();
         addUserMessage('Prep Launch Readiness');
-        const typing = showScoutTyping('Setting up launch boards…');
+        const typing = showWISEaiTyping('Setting up launch boards…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
+          addWISEaiMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
           lrOfferStep(0);
         }, 600);
       });
@@ -10348,10 +10348,10 @@
       addUserMessage(step.user);
       if (step.intentShift) lrOpenPackagingPanel();
       if (step.openNav) lrOpenNavPanels(step.openNav);
-      const typing = showScoutTyping(step.status || 'Working…');
+      const typing = showWISEaiTyping(step.status || 'Working…');
       setTimeout(() => {
         typing?.remove();
-        addScoutMessage(step.reply);
+        addWISEaiMessage(step.reply);
         try { step.build(); } catch (_) {}
         lrStepIndex = Math.max(lrStepIndex, index + 1);
         if (step.module === 'claims') {
@@ -10386,27 +10386,27 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'brief') {
         addUserMessage('Export the launch brief');
-        const typing = showScoutTyping('Compiling launch brief…');
+        const typing = showWISEaiTyping('Compiling launch brief…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
+          addWISEaiMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
         }, 600);
       } else if (kind === 'view') {
         addUserMessage('Open the saved view');
         switchHistoryTab('views');
         renderViewsTab();
         scrollPanelIntoView('history-panel');
-        const typing = showScoutTyping('Opening saved view…');
+        const typing = showWISEaiTyping('Opening saved view…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
+          addWISEaiMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
         }, 500);
       } else {
         addUserMessage('Start verification for the launch UPC');
-        const typing = showScoutTyping('Handing off to verification…');
+        const typing = showWISEaiTyping('Handing off to verification…');
         setTimeout(() => {
           typing?.remove();
-          addScoutMessage('Routing Chipotle Chicken Empanadas into <strong>Confirm → Attest → Activate</strong> — the reconciled claims and label copy will carry forward automatically.');
+          addWISEaiMessage('Routing Chipotle Chicken Empanadas into <strong>Confirm → Attest → Activate</strong> — the reconciled claims and label copy will carry forward automatically.');
         }, 600);
       }
     }
@@ -10470,7 +10470,7 @@
           '<div class="wf-empty" id="lr-claims-empty">' +
           '<span class="material-icons">campaign</span>' +
           '<p class="wf-empty-title">No claims loaded</p>' +
-          '<p class="wf-empty-sub">Answer Scout™\'s prompts in the chat and each claims section will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer WISEai™\'s prompts in the chat and each claims section will appear here.</p>' +
           '</div>';
       }
       const pkgBody = document.getElementById('lr-packaging-body');
@@ -10479,7 +10479,7 @@
           '<div class="wf-empty" id="lr-packaging-empty">' +
           '<span class="material-icons">inventory_2</span>' +
           '<p class="wf-empty-title">Not opened yet</p>' +
-          '<p class="wf-empty-sub">If Scout™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
+          '<p class="wf-empty-sub">If WISEai™ spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
           '</div>';
       }
       document.getElementById('launch-claims-panel')?.classList.remove('lr-open', 'panel-wide');
@@ -10631,7 +10631,7 @@
     }
 
     function exportConversation() {
-      const blob = new Blob(['Scout™ export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['WISEai™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseowl-chat.txt';
@@ -10639,7 +10639,7 @@
     }
     function shareConversation() {
       const url = window.location.href;
-      if (navigator.share) navigator.share({ title: 'Scout™', url });
+      if (navigator.share) navigator.share({ title: 'WISEai™', url });
       else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Link copied'));
       else alert(url);
     }
@@ -10677,7 +10677,7 @@
 
     document.addEventListener('click', (e) => {
       if (!document.getElementById('topbar-menu-wrap')?.contains(e.target)) closeTopbarMenu();
-      if (!document.getElementById('scout-menu-wrap')?.contains(e.target)) closeScoutMenu();
+      if (!document.getElementById('wiseai-menu-wrap')?.contains(e.target)) closeWISEaiMenu();
       const lirWrap = document.getElementById('lir-more-wrap');
       if (lirWrap && !lirWrap.contains(e.target)) closeLirMorePopover();
     });
@@ -10717,7 +10717,7 @@
           toggleHistoryPanel();
           return;
         }
-        /* Close the right-most open agent panel — handles original scout/upf
+        /* Close the right-most open agent panel — handles original wiseai/upf
            AND the new TIER / SHIELD / LENS / VAULT modules. */
         const openAgentId = Object.keys(AGENT_PANEL_CFG).find((aid) => {
           const cfg = AGENT_PANEL_CFG[aid];
@@ -10752,7 +10752,7 @@
       hideWelcomeScreen(() => {
         addUserMessage(v);
         if (input) input.value = '';
-        scoutRespond(v);
+        wiseaiRespond(v);
       });
     });
     document.getElementById('chat-input')?.addEventListener('keydown', (e) => {
@@ -10811,25 +10811,25 @@
     })();
 
     /* ── Layout toggle: column view vs grid view vs split view ──────────
-       Split docks Scout (#chat-shell) full-width across the bottom half of the
+       Split docks WISEai (#chat-shell) full-width across the bottom half of the
        screen. Since the chat sits mid-row between sibling panels, every
        non-chat child is gathered into a #modules-top wrapper so the row can
-       become two stacked regions (modules on top, Scout below). Removing the
+       become two stacked regions (modules on top, WISEai below). Removing the
        wrapper restores the panels; visual order is driven by CSS `order`, so
        the chat's DOM position landing last is harmless. */
     function applySplitWrap(on) {
       const row = document.getElementById('modules-row');
-      const scout = document.getElementById('chat-shell');
-      if (!row || !scout) return;
+      const wiseai = document.getElementById('chat-shell');
+      if (!row || !wiseai) return;
       const wrapped = row.classList.contains('modules-split');
       if (on && !wrapped) {
         const top = document.createElement('div');
         top.id = 'modules-top';
         Array.from(row.children).forEach((child) => {
-          if (child !== scout) top.appendChild(child);
+          if (child !== wiseai) top.appendChild(child);
         });
         row.appendChild(top);
-        row.appendChild(scout);
+        row.appendChild(wiseai);
         row.classList.add('modules-split');
       } else if (!on && wrapped) {
         const top = document.getElementById('modules-top');
@@ -10855,7 +10855,7 @@
     /* ── Tabbed layout ───────────────────────────────────────────────
        Mirrors the Portfolio workspace: every OPEN side module is collapsed
        into a single #modules-tabbed container with a tab strip across the top;
-       only the selected module shows. The main Scout chat (#chat-shell) and the
+       only the selected module shows. The main WISEai chat (#chat-shell) and the
        navigation (#menu-panel) stay docked beside it. Opening a module from the
        rail adds a tab and brings it to the front; closing it drops the tab and
        returns the module to its home column. */
@@ -10863,10 +10863,10 @@
       /* Modules eligible to become tabs, each with the class that marks it
          "open". The persistent chat (#chat-shell) and nav (#menu-panel) are
          intentionally excluded so they stay docked, exactly like Portfolio
-         keeps Scout docked beside the tabbed pane. */
+         keeps WISEai docked beside the tabbed pane. */
       const TAB_MODULES = [
         { id: 'history-panel',       open: 'open' },
-        { id: 'scout-panel',         open: 'sp-open' },
+        { id: 'wiseai-panel',         open: 'sp-open' },
         { id: 'upf-panel',           open: 'up-open' },
         { id: 'tier-panel',          open: 'tp-open' },
         { id: 'shield-panel',        open: 'sd-open' },
@@ -10896,7 +10896,7 @@
       /* Short label + icon for a module's tab, read from its own header so the
          tabs stay in sync with the module chrome (with a safe fallback). */
       function tabMetaFor(el) {
-        const head = el.querySelector('.side-panel-header, .scout-panel-header, .panel-header, .ss-inner .side-panel-header');
+        const head = el.querySelector('.side-panel-header, .wiseai-panel-header, .panel-header, .ss-inner .side-panel-header');
         const iconEl = (head || el).querySelector('.panel-header-icon .material-icons, .panel-header-icon .material-symbols-outlined, .material-symbols-outlined, .material-icons');
         const labelEl = (head || el).querySelector('.font-bold, .panel-title, h1, h2, h3');
         const sym = iconEl ? iconEl.classList.contains('material-symbols-outlined') : true;
@@ -11009,7 +11009,7 @@
     })();
 
     /* Relocate #settings-screen out of #chat-shell and into #panels-row so it
-       behaves as a sibling panel (history / scout / upf), not a chat overlay.
+       behaves as a sibling panel (history / wiseai / upf), not a chat overlay.
        Wraps existing children in a .ss-inner card so the bounce animation works. */
     (function relocateSettingsPanel() {
       const settings = document.getElementById('settings-screen');
@@ -11034,7 +11034,7 @@
         menu:     { id: 'menu-panel',     btnId: 'topbar-menu-toggle', defaultRight: false, staticInRow: true },
         history:  { id: 'history-panel',  btnId: 'lir-history-btn',  defaultRight: false },
         brand:    { id: 'brand-panel',    btnId: '',                 defaultRight: true  },
-        scout:    { id: 'scout-panel',    btnId: 'lir-scout-btn',    defaultRight: true  },
+        wiseai:    { id: 'wiseai-panel',    btnId: 'lir-wiseai-btn',    defaultRight: true  },
         upf:      { id: 'upf-panel',      btnId: 'lir-upf-btn',      defaultRight: true  },
         tier:     { id: 'tier-panel',     btnId: 'lir-tier-btn',     defaultRight: true  },
         shield:   { id: 'shield-panel',   btnId: 'lir-shield-btn',   defaultRight: true  },
@@ -11283,39 +11283,39 @@
       }
     })();
 
-    /* Scout chat width toggle — mirrors the .panel-width-toggle-btn on the
-       side modules. Scout is the flexible centre column, so "wide" flags the
+    /* WISEai chat width toggle — mirrors the .panel-width-toggle-btn on the
+       side modules. WISEai is the flexible centre column, so "wide" flags the
        shell (#chat-shell.panel-wide) and reflects the pressed state. */
-    /* Scout's size is shared across the whole app via the `wise-scout-dock`
-       localStorage key (see js/scout-dock.js). Persisting it here means the
-       width you set on this page carries to the Scout dock on the portfolio
-       and agent pages — and back — so Scout is always the same size. */
-    /* Scout width is also a three-tier cycle (0 single · 1 double · 2 triple),
+    /* WISEai's size is shared across the whole app via the `wise-wiseai-dock`
+       localStorage key (see js/wiseai-dock.js). Persisting it here means the
+       width you set on this page carries to the WISEai dock on the portfolio
+       and agent pages — and back — so WISEai is always the same size. */
+    /* WISEai width is also a three-tier cycle (0 single · 1 double · 2 triple),
        persisted as a number under `wide`. Legacy booleans map true→1, false→0. */
-    const SCOUT_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-    const SCOUT_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
-    function scoutTierOf(v) {
+    const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+    const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+    function wiseaiTierOf(v) {
       if (v === true) return 1;
       if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
       return 0;
     }
-    function persistScoutWide(tier) {
+    function persistWISEaiWide(tier) {
       try {
-        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        raw.wide = scoutTierOf(tier);
-        localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
+        const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
+        raw.wide = wiseaiTierOf(tier);
+        localStorage.setItem('wise-wiseai-dock', JSON.stringify(raw));
       } catch (_) {}
     }
 
     /* The Doc chat's position (left / center / right) is shared via the same
-       `wise-scout-dock` key. On THIS page the chat IS the centre column, so it
+       `wise-wiseai-dock` key. On THIS page the chat IS the centre column, so it
        is already centered — the 'center' button is the active, do-nothing
        default here, while 'left'/'right' just persist the choice so it takes
        effect on the portfolio and agent pages where the chat rides as a side
-       rail. See setScoutDockPosition() in js/scout-dock.js. */
-    function scoutDockMode() {
+       rail. See setWISEaiDockPosition() in js/wiseai-dock.js. */
+    function wiseaiDockMode() {
       try {
-        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
+        const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
         if (raw.visible === false || raw.side === 'center') return 'center';
         if (raw.side === 'left') return 'left';
         if (raw.side === 'right') return 'right';
@@ -11323,56 +11323,56 @@
         return 'center';
       } catch (_) { return 'center'; }
     }
-    function setScoutDockPosition(mode) {
+    function setWISEaiDockPosition(mode) {
       try {
-        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
+        const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
         raw.side = mode === 'left' || mode === 'center' ? mode : 'right';
         delete raw.visible;
-        localStorage.setItem('wise-scout-dock', JSON.stringify(raw));
+        localStorage.setItem('wise-wiseai-dock', JSON.stringify(raw));
       } catch (_) {}
     }
-    function applyScoutWide(tier) {
-      tier = scoutTierOf(tier);
+    function applyWISEaiWide(tier) {
+      tier = wiseaiTierOf(tier);
       const shell = document.getElementById('chat-shell');
-      const btn = document.getElementById('scout-width-btn');
+      const btn = document.getElementById('wiseai-width-btn');
       if (!shell) return;
       shell.classList.toggle('panel-wide', tier >= 1);
       shell.classList.toggle('panel-triple', tier >= 2);
       if (btn) {
         btn.classList.toggle('is-on', tier >= 1);
         btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-        btn.title = SCOUT_WIDTH_TITLES[tier];
+        btn.title = WISEAI_WIDTH_TITLES[tier];
         const icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = SCOUT_WIDTH_ICONS[tier];
+        if (icon) icon.textContent = WISEAI_WIDTH_ICONS[tier];
       }
     }
-    function scoutCurrentTier() {
+    function wiseaiCurrentTier() {
       const shell = document.getElementById('chat-shell');
       if (!shell) return 0;
       if (shell.classList.contains('panel-triple')) return 2;
       if (shell.classList.contains('panel-wide')) return 1;
       return 0;
     }
-    window.toggleScoutWidth = function(btn) {
+    window.toggleWISEaiWidth = function(btn) {
       const shell = document.getElementById('chat-shell');
       if (!shell) return;
-      const next = (scoutCurrentTier() + 1) % 3;
-      applyScoutWide(next);
-      persistScoutWide(next);
+      const next = (wiseaiCurrentTier() + 1) % 3;
+      applyWISEaiWide(next);
+      persistWISEaiWide(next);
     };
-    /* Restore the shared Scout size on load, and keep it in sync if another
+    /* Restore the shared WISEai size on load, and keep it in sync if another
        page/tab changes it. */
-    (function initScoutWidth() {
+    (function initWISEaiWidth() {
       try {
-        const raw = JSON.parse(localStorage.getItem('wise-scout-dock') || '{}') || {};
-        applyScoutWide(scoutTierOf(raw.wide));
+        const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
+        applyWISEaiWide(wiseaiTierOf(raw.wide));
       } catch (_) {}
     })();
     window.addEventListener('storage', function(e) {
-      if (e.key !== 'wise-scout-dock') return;
+      if (e.key !== 'wise-wiseai-dock') return;
       try {
         const raw = JSON.parse(e.newValue || '{}') || {};
-        applyScoutWide(scoutTierOf(raw.wide));
+        applyWISEaiWide(wiseaiTierOf(raw.wide));
       } catch (_) {}
     });
 
@@ -11380,7 +11380,7 @@
     syncLirBtn('topbar-menu-toggle', !document.getElementById('menu-panel')?.classList.contains('mp-rail'));
     syncLirBtn('lir-history-btn',  document.getElementById('history-panel')?.classList.contains('open'));
     syncLirBtn('lir-upf-btn',      document.getElementById('upf-panel')?.classList.contains('up-open'));
-    syncLirBtn('lir-scout-btn',    document.getElementById('scout-panel')?.classList.contains('sp-open'));
+    syncLirBtn('lir-wiseai-btn',    document.getElementById('wiseai-panel')?.classList.contains('sp-open'));
     syncLirBtn('lir-tier-btn',     document.getElementById('tier-panel')?.classList.contains('tp-open'));
     syncLirBtn('lir-shield-btn',   document.getElementById('shield-panel')?.classList.contains('sd-open'));
     syncLirBtn('lir-lens-btn',     document.getElementById('lens-panel')?.classList.contains('ln-open'));
@@ -11482,7 +11482,7 @@
           showPivot: true,
           isPivoted: !!window.isMenuPivoted?.(),
           isDark: document.documentElement.classList.contains('dark'),
-          scoutDockMode: scoutDockMode(),
+          wiseaiDockMode: wiseaiDockMode(),
         });
       }
 
@@ -11630,10 +11630,10 @@
             renderAppearanceBody(pop);
             return;
           }
-          const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
-          if (scoutBtn && pop.contains(scoutBtn)) {
+          const wiseaiBtn = ev.target.closest('.fz-btn[data-wiseai-dock]');
+          if (wiseaiBtn && pop.contains(wiseaiBtn)) {
             ev.stopPropagation();
-            setScoutDockPosition(scoutBtn.dataset.scoutDock);
+            setWISEaiDockPosition(wiseaiBtn.dataset.wiseaiDock);
             renderAppearanceBody(pop);
             return;
           }
@@ -11712,7 +11712,7 @@
 
   <!-- Consolidates every module header's flip / width / close icons into a
        single horizontal-dots (more_horiz) dropdown, plus an Off / On switch.
-       Scout is intentionally left untouched. The original control buttons are
+       WISEai is intentionally left untouched. The original control buttons are
        kept (hidden) in the DOM so the existing per-panel state-sync keeps
        working; the menu rows simply delegate clicks to them. -->
   <script>
@@ -11754,7 +11754,7 @@
 
       function consolidate(controls) {
         if (controls.dataset.menuized) return;
-        if (controls.querySelector('[data-panel="scout"]')) return; // never Scout
+        if (controls.querySelector('[data-panel="wiseai"]')) return; // never WISEai
 
         const flipBtn  = controls.querySelector('.panel-flip-btn');
         const widthBtn = controls.querySelector('.panel-width-toggle-btn');

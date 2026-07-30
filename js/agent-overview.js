@@ -18,14 +18,15 @@ import {
   setMenuPivot,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { initScoutTooltips } from './scout-tooltip.js';
+import { initWISEaiTooltips } from './wiseai-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
-import { mountScoutDock, setScoutDockPosition, scoutDockMode } from './scout-dock.js';
+import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState } from './wiseai-dock.js';
 import { buildAppearanceBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { renderDashboardHome, editBrandBanner } from './dashboard-home.js';
+import { renderVerificationFlow, VERIFICATION_WISEAI } from './verification-flow.js';
 
 function escHtml(s) {
   return String(s)
@@ -299,9 +300,27 @@ function renderMain(agent) {
     ${cards}`;
 }
 
-/* A blank shell page (menu + top bar + Scout dock, empty main) used for
+/* A blank shell page (menu + top bar + WISEai dock, empty main) used for
    product destinations that don't yet have bespoke content — e.g. the
    top-level Dashboard. Driven by `<body data-product-id="…">` (no agent id). */
+
+/* Force the navigation panel into its collapsed icon rail on load. Mirrors the
+   Reports shell: the collapsed look is forced without writing the shared rail
+   preference (no localStorage), so other pages keep whatever the user set and
+   the menu toggle still expands it here within the session. */
+function collapseNavRail() {
+  const panel = document.getElementById('menu-panel');
+  if (!panel || panel.classList.contains('mp-rail')) return;
+  panel.classList.add('mp-rail');
+  const btn = document.getElementById('topbar-menu-toggle');
+  if (btn) {
+    btn.setAttribute('aria-pressed', 'true');
+    btn.setAttribute('aria-label', 'Expand menu');
+    btn.setAttribute('title', 'Expand menu');
+    const icon = btn.querySelector('.material-icons');
+    if (icon) icon.textContent = 'chevron_right';
+  }
+}
 
 /** Apply `<body data-default-…>` appearance overrides declared by the host page. */
 function applyBodyAppearanceDefaults() {
@@ -311,12 +330,31 @@ function applyBodyAppearanceDefaults() {
   if (fullBleed !== null) applyFullBleed(fullBleed);
   const header = pageAppearanceDefault('defaultHeader');
   if (header !== null) applyHeaderFloat(header);
+  /* Pages can open with the nav collapsed to its icon rail by default via
+     `<body data-default-nav-collapsed>` — forced on every load so the nav
+     always starts collapsed here. */
+  if (pageAppearanceDefault('defaultNavCollapsed')) collapseNavRail();
 }
 
 function bootstrapBlankPage(productId) {
-  mountTopbar({ variant: 'agent', logoHref: 'ai-chat-3.html' });
-
   const isDashboard = productId === 'dashboard';
+
+  /* The top-level Dashboard is the "Overview" entry in the sectioned workspace
+     nav, so it gets the same identity-aware topbar as the other app-nav pages
+     (e.g. product-portfolio) rather than the bare logo-only topbar. */
+  if (isDashboard) {
+    APP_IDENTITY = resolveIdentity();
+    mountTopbar({
+      variant: 'agent',
+      logoHref: 'ai-chat-3.html',
+      profileName: APP_IDENTITY.name,
+      profileEmail: APP_IDENTITY.email,
+      avatarText: APP_IDENTITY.initials,
+    });
+  } else {
+    mountTopbar({ variant: 'agent', logoHref: 'ai-chat-3.html' });
+  }
+
   const headerEl = document.getElementById('agent-main-header');
   if (headerEl) {
     headerEl.innerHTML = isDashboard
@@ -337,10 +375,13 @@ function bootstrapBlankPage(productId) {
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) {
-    mountAgentMenu(navEl, null, {
-      fromAgentPage: true,
-      activeProductId: productId || null,
-    });
+    /* Dashboard = the "Overview" item in the sectioned workspace nav, so it
+       uses the same nav (Overview / Portfolio / Studio / Organization / Admin)
+       as product-portfolio and the other app-nav pages. Other blank product
+       shells keep the legacy product nav. */
+    mountAgentMenu(navEl, null, isDashboard
+      ? { fromAgentPage: true, appNav: true, activeNavId: 'overview' }
+      : { fromAgentPage: true, activeProductId: productId || null });
   }
 
   applyBodyAppearanceDefaults();
@@ -349,7 +390,7 @@ function bootstrapBlankPage(productId) {
   /* Give the dashboard's main panel the same header cluster (⋯ menu + width
      toggle) every other pane has, so the functions survive header-float. */
   if (isDashboard) setupMainPanelControls();
-  setupScoutDock();
+  setupWISEaiDock();
 }
 
 /* ====================================================================
@@ -403,7 +444,12 @@ function bootstrapAppNavPage(navId) {
   /* Blank content slot — each page fills #agent-main-scroll with its own
      module content. The shell (nav + appearance + profile) is fully wired. */
   const mainEl = document.getElementById('agent-main-scroll');
-  if (mainEl && !mainEl.innerHTML.trim()) {
+  if (navId === 'verification') {
+    /* Non-UPF Verification flow (the first of several verification types).
+       Renders the Select → Attest → Payment wizard beside the WISEai dock. */
+    document.title = 'WISE · Non-UPF Verification';
+    if (mainEl) renderVerificationFlow(mainEl);
+  } else if (mainEl && !mainEl.innerHTML.trim()) {
     mainEl.innerHTML = `
       <div class="agent-empty" data-module-placeholder>
         ${escHtml(node ? node.label : 'Module')} — content coming soon.
@@ -419,10 +465,14 @@ function bootstrapAppNavPage(navId) {
     });
   }
 
+  /* The Reports page opens with the nav collapsed to its icon rail by default so
+     the chat + reports modules get the full width. */
+  if (navId === 'reports') collapseNavRail();
+
   applyBodyAppearanceDefaults();
   setupTrailingRail();
   setupMainPanelControls();
-  setupScoutDock();
+  setupWISEaiDock();
 }
 
 export function bootstrapAgentPage() {
@@ -486,7 +536,7 @@ export function bootstrapAgentPage() {
   setupTrailingRail();
   /* Same header cluster (⋯ menu + width toggle) as every other pane. */
   setupMainPanelControls();
-  setupScoutDock();
+  setupWISEaiDock();
 
   if (location.hash) {
     requestAnimationFrame(() => {
@@ -497,19 +547,19 @@ export function bootstrapAgentPage() {
 }
 
 /* ====================================================================
-   Persistent Scout dock.
-     The shared Scout chat lives in the modules row on every agent page,
+   Persistent WISEai dock.
+     The shared WISEai chat lives in the modules row on every agent page,
      in the exact same place + size as the portfolio and chat pages — its
-     width and side are restored from localStorage via mountScoutDock, so
-     Scout stays uniform as you move between pages.
+     width and side are restored from localStorage via mountWISEaiDock, so
+     WISEai stays uniform as you move between pages.
 ==================================================================== */
 
-/* Intent chips surfaced in the Scout dock on the Dashboard page — each one
+/* Intent chips surfaced in the WISEai dock on the Dashboard page — each one
    maps to an action available from aha.html, laid out as a plain wrapped grid
    (no carousel) so every chip is always visible. The action chips navigate to
    where the task is performed; the "discuss" chips continue the conversation
    inside the dock. */
-const DASHBOARD_SCOUT_INTENTS = [
+const DASHBOARD_WISEAI_INTENTS = [
   { intent: 'start_verification',  label: 'Start verification',        icon: 'verified' },
   { intent: 'claim_products',      label: 'Claim your products',       icon: 'verified_user' },
   { intent: 'discuss_portfolio',   label: 'Discuss your food portfolio', icon: 'inventory_2' },
@@ -518,58 +568,116 @@ const DASHBOARD_SCOUT_INTENTS = [
   { intent: 'discuss_gras_report', label: 'Discuss the GRAS report',   icon: 'description' },
 ];
 
-/* On-topic replies for the "discuss" chips so a click continues the Scout
+/* On-topic replies for the "discuss" chips so a click continues the WISEai
    conversation with a relevant answer rather than a generic fallback. */
-const DASHBOARD_SCOUT_REPLIES = {
+const DASHBOARD_WISEAI_REPLIES = {
   discuss_portfolio: 'Let’s dig into your food portfolio. I can break down how many products are claimed, which are Non‑UPF, and where the gaps are. Want a quick summary, or should we focus on a specific product?',
   discuss_upf_report: 'Happy to walk you through the Brand UPF report — the Non‑UPF split, processing‑level distribution, and which products qualify for the verification shield. What would you like to start with?',
   discuss_gras_report: 'Let’s go through the Brand GRAS report — flagged additives, ingredient risk, and what it means for your products. Which part should I unpack first?',
 };
 
-function setupScoutDock() {
-  /* Pages can opt out of the persistent Scout dock with
-     `<body data-hide-scout>` (e.g. analytics-types.html). */
-  if (document.body.dataset.hideScout) return;
+/* Intent chips for the Reports page WISEai dock — every chip is something you
+   can actually DO with the reports next to it. "Open …" chips jump straight to
+   the live report; the rest continue the conversation with an on-topic answer. */
+const REPORTS_WISEAI_INTENTS = [
+  { intent: 'open_upf_report',   label: 'Open the UPF report',      icon: 'description' },
+  { intent: 'explain_score',     label: 'Explain my UPF score',     icon: 'help_outline' },
+  { intent: 'improve_score',     label: 'How do I improve it?',     icon: 'trending_up' },
+  { intent: 'ingredient_quality',label: 'Ingredient quality',       icon: 'science' },
+  { intent: 'compare_products',  label: 'Compare two products',     icon: 'compare_arrows' },
+  { intent: 'unlock_studio',     label: 'Unlock the full Studio',   icon: 'lock_open' },
+];
+
+const REPORTS_WISEAI_REPLIES = {
+  explain_score: 'Your Portfolio UPF score comes from how each product is classified against the NOVA scale — 92% of your line-up lands as Non‑UPF. Want me to break the score down by product, or explain what pushes a product into the ultra‑processed tier?',
+  improve_score: 'The fastest wins are usually swapping a single flagged ingredient (emulsifiers, artificial colours, or certain seed oils). Open the UPF report and I can point to the exact products and ingredients that, if reformulated, would flip them to Non‑UPF.',
+  ingredient_quality: 'The Ingredient Quality deep‑dive scores artificial additives, clean‑label share, seed oils, and more — one metric at a time. Want the portfolio‑wide view, or should we focus on a single product?',
+  compare_products: 'Tell me two products from your portfolio and I’ll line them up side‑by‑side across UPF classification, ingredient quality, and flagged additives.',
+  unlock_studio: 'The full Studio unlocks the GRAS, Insights, Nutrient‑Quality and Health‑Outcomes reports across your whole portfolio and per product. Want me to add you to the beta waitlist?',
+};
+
+function setupWISEaiDock() {
+  /* Pages can opt out of the persistent WISEai dock with
+     `<body data-hide-wiseai>` (e.g. analytics-types.html). */
+  if (document.body.dataset.hideWISEai) return;
   const row = document.getElementById('modules-row');
-  if (!row || document.getElementById('scout-dock-panel')) return;
+  if (!row || document.getElementById('wiseai-dock-panel')) return;
   const dock = document.createElement('aside');
-  dock.id = 'scout-dock-panel';
-  dock.className = 'scout-dock scout-dock-open';
-  dock.setAttribute('aria-label', 'Scout™ chat');
+  dock.id = 'wiseai-dock-panel';
+  dock.className = 'wiseai-dock wiseai-dock-open';
+  dock.setAttribute('aria-label', 'WISEai™ chat');
   row.appendChild(dock);
 
   const isDashboard = document.body.dataset.productId === 'dashboard';
+  const isReports = document.body.dataset.navId === 'reports';
+  const isVerification = document.body.dataset.navId === 'verification';
 
-  mountScoutDock(dock, isDashboard
-    ? {
-        sub: '',
-        chipsFlow: 'wrap',
-        intents: DASHBOARD_SCOUT_INTENTS,
-        intentReplies: DASHBOARD_SCOUT_REPLIES,
-        /* Action chips jump to where the task is done; "discuss" chips fall
-           through (return false) to continue the Scout conversation. */
-        onIntent: (intent) => {
-          const go = {
-            start_verification: 'portfolio.html',
-            claim_products: 'portfolio.html',
-            add_food: 'portfolio.html',
-          }[intent];
-          if (go) { window.location.href = go; return true; }
-          return false;
-        },
-      }
-    : {
-        sub: '',
-        onIntent: (intent) => {
-          const go = {
-            customer_profile: 'ai-chat.html',
-            resume_prompt: 'ai-chat.html',
-            registry_home: 'ai-chat.html',
-          }[intent];
-          if (go) { window.location.href = go; return true; }
-          return false;
-        },
-      });
+  /* The Verification page is a chat + wizard pairing, so WISEai must always be
+     showing here — clear any persisted "collapsed" state from another page. */
+  if (isVerification) writeWISEaiDockState({ collapsed: false });
+
+  /* The Reports page IS the chat + report pairing, so WISEai must always be
+     showing here — clear any persisted "collapsed" state from another page. */
+  if (isReports) writeWISEaiDockState({ collapsed: false });
+
+  /* Pages can pin the WISEai dock to a fixed side via `<body data-default-dock>`
+     (left | center | right) so the chat always sits there regardless of the
+     persisted preference — e.g. the Dashboard keeps the chat docked right of the
+     nav. Written before mount so applyWISEaiDockState() picks it up on restore. */
+  const dockDefault = document.body.dataset.defaultDock;
+  if (dockDefault === 'left' || dockDefault === 'center' || dockDefault === 'right') {
+    writeWISEaiDockState({ side: dockDefault });
+  }
+
+  let cfg;
+  if (isVerification) {
+    cfg = { ...VERIFICATION_WISEAI };
+  } else if (isReports) {
+    cfg = {
+      sub: 'Ask anything about your reports.',
+      chipsFlow: 'wrap',
+      intents: REPORTS_WISEAI_INTENTS,
+      intentReplies: REPORTS_WISEAI_REPLIES,
+      onIntent: (intent) => {
+        const go = { open_upf_report: 'report-ultra-processed-foods.html' }[intent];
+        if (go) { window.location.href = go; return true; }
+        return false;
+      },
+    };
+  } else if (isDashboard) {
+    cfg = {
+      sub: '',
+      chipsFlow: 'wrap',
+      intents: DASHBOARD_WISEAI_INTENTS,
+      intentReplies: DASHBOARD_WISEAI_REPLIES,
+      /* Action chips jump to where the task is done; "discuss" chips fall
+         through (return false) to continue the WISEai conversation. */
+      onIntent: (intent) => {
+        const go = {
+          start_verification: 'verification.html',
+          claim_products: 'portfolio.html',
+          add_food: 'portfolio.html',
+        }[intent];
+        if (go) { window.location.href = go; return true; }
+        return false;
+      },
+    };
+  } else {
+    cfg = {
+      sub: '',
+      onIntent: (intent) => {
+        const go = {
+          customer_profile: 'ai-chat.html',
+          resume_prompt: 'ai-chat.html',
+          registry_home: 'ai-chat.html',
+        }[intent];
+        if (go) { window.location.href = go; return true; }
+        return false;
+      },
+    };
+  }
+
+  mountWISEaiDock(dock, cfg);
 }
 
 /* ====================================================================
@@ -766,16 +874,16 @@ function runMoreAction(action) {
      more-options (⋯) menu + a width/resize toggle. The central agent /
      dashboard panel was the only one missing it, so its header (and the
      pinned controls kept in headerless "header-float" mode) had no
-     functions. This mirrors the Scout dock / portfolio module clusters
+     functions. This mirrors the WISEai dock / portfolio module clusters
      so the main panel reads + behaves like every other pane.
 ==================================================================== */
 
 const MAIN_WIDTH_KEY = 'wise-main-width';
 /* Mirror the portfolio tab-pane width control (#modules-tabbed): the panel
-   shares the row with the fixed Scout dock, so it defaults to FILLING the
+   shares the row with the fixed WISEai dock, so it defaults to FILLING the
    available space and the toggle NARROWS it to centred reading widths. This
    keeps the toggle visibly functional at any panel width (unlike a high cap
-   that a Scout-constrained panel can never reach). */
+   that a WISEai-constrained panel can never reach). */
 const MAIN_WIDTH_ICONS = ['width_full', 'width_wide', 'width_normal'];
 const MAIN_WIDTH_TITLES = [
   'Width (full) — tap to narrow',
@@ -821,7 +929,7 @@ function cycleMainWidth() {
 }
 
 /* Markup for the main-panel control cluster — same classes (so the same
-   shared styles apply) as the Scout dock's `.sc-topbar-controls`. */
+   shared styles apply) as the WISEai dock's `.sc-topbar-controls`. */
 function mainPanelControlsHTML() {
   return `
     <div class="panel-controls">
@@ -1059,7 +1167,7 @@ function renderAppearanceBody(pop) {
     showPivot: true,
     isPivoted: isMenuPivoted(),
     isDark: isDarkMode(),
-    scoutDockMode: scoutDockMode(),
+    wiseaiDockMode: wiseaiDockMode(),
   });
 }
 
@@ -1080,10 +1188,10 @@ function openAppearancePopover(anchor) {
   anchor.setAttribute('aria-expanded', 'true');
 
   pop.addEventListener('click', (ev) => {
-    const scoutBtn = ev.target.closest('.fz-btn[data-scout-dock]');
-    if (scoutBtn && pop.contains(scoutBtn)) {
+    const wiseaiBtn = ev.target.closest('.fz-btn[data-wiseai-dock]');
+    if (wiseaiBtn && pop.contains(wiseaiBtn)) {
       ev.stopPropagation();
-      setScoutDockPosition(scoutBtn.dataset.scoutDock);
+      setWISEaiDockPosition(wiseaiBtn.dataset.wiseaiDock);
       renderAppearanceBody(pop);
       return;
     }
@@ -1193,5 +1301,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAvatarPopover();
   applyStoredTextSize();
   initLirTooltip();
-  initScoutTooltips();
+  initWISEaiTooltips();
 });
