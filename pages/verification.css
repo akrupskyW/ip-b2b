@@ -532,9 +532,9 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 18px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-pill, 999px);
   background: var(--surface-2);
   min-height: 44px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -560,9 +560,9 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 .vf-coupon .vf-input {
   flex: 1;
   border: 1px solid var(--border-strong);
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-pill, 999px);
   background: var(--surface-2);
-  padding: 0 14px;
+  padding: 0 18px;
   min-height: 44px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -622,9 +622,9 @@ html.dark .vf-select-el {
 .vf-admin-field span { font-size: 0.68rem; color: var(--ter-amber-text); font-weight: 600; }
 .vf-admin-field .vf-input {
   border: 1px solid color-mix(in srgb, var(--ter-amber) 55%, var(--border));
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-pill, 999px);
   background: var(--surface);
-  padding: 9px 12px;
+  padding: 9px 16px;
   font-size: 0.85rem;
 }
 

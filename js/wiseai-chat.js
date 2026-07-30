@@ -825,5 +825,5 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   decorateWISEai(rootEl);
 
-  return { addUser, addWISEai, ask, reset, openAgents, closeAgents, root: rootEl };
+  return { addUser, addWISEai, ask, reset, openAgents, closeAgents, hideWelcome, root: rootEl };
 }

@@ -27,6 +27,7 @@ import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { renderDashboardHome, editBrandBanner } from './dashboard-home.js';
 import { renderVerificationFlow, VERIFICATION_WISEAI } from './verification-flow.js';
+import { renderGrasVerificationFlow, GRAS_WISEAI, setGrasChat } from './gras-verification-flow.js';
 
 function escHtml(s) {
   return String(s)
@@ -449,6 +450,11 @@ function bootstrapAppNavPage(navId) {
        Renders the Select → Attest → Payment wizard beside the WISEai dock. */
     document.title = 'WISE · Non-UPF Verification';
     if (mainEl) renderVerificationFlow(mainEl);
+  } else if (navId === 'gras-verification') {
+    /* GRAS Verification flow (the ingredient-level verification type).
+       Renders the 5-step documentation wizard beside the WISEai dock. */
+    document.title = 'WISE · GRAS Verification';
+    if (mainEl) renderGrasVerificationFlow(mainEl);
   } else if (mainEl && !mainEl.innerHTML.trim()) {
     mainEl.innerHTML = `
       <div class="agent-empty" data-module-placeholder>
@@ -611,10 +617,11 @@ function setupWISEaiDock() {
   const isDashboard = document.body.dataset.productId === 'dashboard';
   const isReports = document.body.dataset.navId === 'reports';
   const isVerification = document.body.dataset.navId === 'verification';
+  const isGras = document.body.dataset.navId === 'gras-verification';
 
-  /* The Verification page is a chat + wizard pairing, so WISEai must always be
+  /* The Verification pages are a chat + wizard pairing, so WISEai must always be
      showing here — clear any persisted "collapsed" state from another page. */
-  if (isVerification) writeWISEaiDockState({ collapsed: false });
+  if (isVerification || isGras) writeWISEaiDockState({ collapsed: false });
 
   /* The Reports page IS the chat + report pairing, so WISEai must always be
      showing here — clear any persisted "collapsed" state from another page. */
@@ -632,6 +639,8 @@ function setupWISEaiDock() {
   let cfg;
   if (isVerification) {
     cfg = { ...VERIFICATION_WISEAI };
+  } else if (isGras) {
+    cfg = { ...GRAS_WISEAI };
   } else if (isReports) {
     cfg = {
       sub: 'Ask anything about your reports.',
@@ -677,7 +686,11 @@ function setupWISEaiDock() {
     };
   }
 
-  mountWISEaiDock(dock, cfg);
+  const wiseai = mountWISEaiDock(dock, cfg);
+
+  /* Hand the live chat to the GRAS flow so UI interactions mirror into the
+     conversation (and vice-versa) for one shared, mirrored surface. */
+  if (isGras) setGrasChat(wiseai);
 }
 
 /* ====================================================================

@@ -362,7 +362,6 @@ function headCtaHTML() {
 
 function headerHTML() {
   const idx = stepIndex(state.step);
-  const step = STEPS[idx];
   const back = idx > 0
     ? `<button class="vf-back" type="button" data-vf="go-back" aria-label="Back to ${esc(STEPS[idx - 1].label)}" title="Back to ${esc(STEPS[idx - 1].label)}"><span class="material-icons">arrow_back</span></button>`
     : '';
@@ -370,7 +369,7 @@ function headerHTML() {
     <header class="vf-head">
       ${back}
       <h1 class="vf-head-title">Non-UPF Verification</h1>
-      <p class="vf-head-meta">Nutrient Survival · Step ${idx + 1} of ${STEPS.length}: ${esc(step.label)}</p>
+      <p class="vf-head-meta">Nutrient Survival · Non-UPF verification</p>
     </header>`;
 }
 
