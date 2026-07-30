@@ -307,6 +307,25 @@ function progressPaneHTML() {
       </div>`;
   }).join('');
 
+  /* On the Payment step the selected foods become billable line items, so they
+     live inside this progress module (not a separate card) — each with its
+     per-SKU cost, above the running total in the footer. */
+  const itemsHtml = state.step === 'payment' && selectedCount()
+    ? `
+      <div class="vfp-items">
+        <div class="vfp-items-head">
+          <span class="vfp-items-title">Foods submitting for verification</span>
+          <span class="vfp-items-count">${selectedCount()} ready</span>
+        </div>
+        ${selectedFoods().map((f) => `
+          <div class="vfp-item">
+            ${thumb(f)}
+            <span class="vfp-item-text"><span class="vfp-item-name">${esc(f.name)}</span><span class="vfp-item-brand">${esc(f.brand)}</span></span>
+            <span class="vfp-item-cost">${money(PRICE_PER_ITEM)}</span>
+          </div>`).join('')}
+      </div>`
+    : '';
+
   return `
     <div class="vfp-inner">
       <div class="vfp-header">
@@ -320,6 +339,7 @@ function progressPaneHTML() {
         <div class="vfp-progress-track"><div class="vfp-progress-fill" style="width:${pct}%"></div></div>
       </div>
       <div class="vfp-steps">${stepsHtml}</div>
+      ${itemsHtml}
       <div class="vfp-foot">
         <div class="vfp-foot-row"><span>Foods selected</span><span>${selectedCount()}</span></div>
         <div class="vfp-foot-row vfp-foot-total"><span>Estimated total</span><span class="vfp-foot-amt">${money(total())}</span></div>
@@ -343,8 +363,12 @@ function headCtaHTML() {
 function headerHTML() {
   const idx = stepIndex(state.step);
   const step = STEPS[idx];
+  const back = idx > 0
+    ? `<button class="vf-back" type="button" data-vf="go-back" aria-label="Back to ${esc(STEPS[idx - 1].label)}" title="Back to ${esc(STEPS[idx - 1].label)}"><span class="material-icons">arrow_back</span></button>`
+    : '';
   return `
     <header class="vf-head">
+      ${back}
       <h1 class="vf-head-title">Non-UPF Verification</h1>
       <p class="vf-head-meta">Nutrient Survival · Step ${idx + 1} of ${STEPS.length}: ${esc(step.label)}</p>
     </header>`;
@@ -482,12 +506,6 @@ function selectStepHTML() {
 function attestStepHTML() {
   const rows = selectedFoods().filter(matchesSearch);
   return `
-    <label class="vf-attest ${state.attested ? 'is-checked' : ''}">
-      <button class="vf-check vf-check--attest" type="button" data-vf="toggle-attest" role="checkbox" aria-checked="${state.attested}">
-        <span class="material-icons">${state.attested ? 'check_box' : 'check_box_outline_blank'}</span>
-      </button>
-      <span class="vf-attest-text">I attest to the accuracy of the data for the above selected foods and that it matches the physical product packaging and the actual formulation of each SKU.</span>
-    </label>
     ${toolbarHTML(headCtaHTML())}
     <div class="vf-board">
       ${glanceHTML('Review & attest your selections')}
@@ -495,6 +513,7 @@ function attestStepHTML() {
       <table class="vf-table vf-table--attest">
         <thead>
           <tr>
+            <th class="vf-col-expand"></th>
             <th class="vf-col-check"><span class="material-icons vf-head-glyph">check_box</span></th>
             <th>Product</th>
             <th class="vf-col-status">Non-UPF Shield</th>
@@ -507,17 +526,18 @@ function attestStepHTML() {
             const expandBtn = `<button class="vf-expand ${open ? 'is-open' : ''}" type="button" data-vf="toggle-expand" data-food="${f.id}" aria-label="Toggle ingredients" aria-expanded="${open}"><span class="material-icons">expand_more</span></button>`;
             return `
             <tr class="vf-row is-selected" data-food="${f.id}">
+              <td class="vf-col-expand">${expandBtn}</td>
               <td class="vf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Deselect ${esc(f.name)}" aria-pressed="true">
                   <span class="material-icons">check_box</span>
                 </button>
               </td>
-              <td>${productCell(f, expandBtn)}</td>
+              <td>${productCell(f)}</td>
               <td class="vf-col-status">${statusPill(f)}</td>
               <td class="vf-col-updated">${datesCell(f)}</td>
             </tr>
             <tr class="vf-detail-row ${open ? 'is-open' : ''}" data-detail="${f.id}">
-              <td colspan="4">
+              <td colspan="5">
                 <div class="vf-detail">
                   <div class="vf-detail-label">Ingredients</div>
                   <p class="vf-detail-text">${esc(f.ingredients)}</p>
@@ -525,10 +545,17 @@ function attestStepHTML() {
               </td>
             </tr>`;
           }).join('')}
-          ${rows.length ? '' : '<tr><td colspan="4" class="vf-empty">No selected foods match your search.</td></tr>'}
+          ${rows.length ? '' : '<tr><td colspan="5" class="vf-empty">No selected foods match your search.</td></tr>'}
         </tbody>
       </table>
-    </div>`;
+    </div>
+
+    <label class="vf-attest vf-attest--sticky ${state.attested ? 'is-checked' : ''}">
+      <button class="vf-check vf-check--attest" type="button" data-vf="toggle-attest" role="checkbox" aria-checked="${state.attested}">
+        <span class="material-icons">${state.attested ? 'check_box' : 'check_box_outline_blank'}</span>
+      </button>
+      <span class="vf-attest-text">I attest to the accuracy of the data for the above selected foods and that it matches the physical product packaging and the actual formulation of each SKU.</span>
+    </label>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -570,7 +597,6 @@ function paymentStepHTML() {
         <div class="vf-card-input">
           <span class="material-icons vf-card-glyph">credit_card</span>
           <input class="vf-input" type="text" inputmode="numeric" placeholder="Card number" aria-label="Card number" />
-          <button type="button" class="vf-autofill" data-vf="autofill">Autofill <span class="material-icons">chevron_right</span></button>
         </div>
         <div class="vf-note">
           <span class="material-icons">info</span>
@@ -603,21 +629,11 @@ function paymentStepHTML() {
           </div>
         </div>
 
-        <div class="vf-summary">
-          <div class="vf-summary-title">Payment Summary</div>
-          <div class="vf-summary-row"><span>Food Items to Verify:</span><span>${selectedCount()} items</span></div>
-          <div class="vf-summary-row"><span>Price per Item:</span><span>${money(PRICE_PER_ITEM)}</span></div>
-          <div class="vf-summary-row"><span>Subtotal:</span><span>${money(subtotal())}</span></div>
-          ${state.discount > 0 ? `<div class="vf-summary-row"><span>Discount:</span><span>-${money(state.discount)}</span></div>` : ''}
-          <div class="vf-summary-total"><span>Total Amount:</span><span class="vf-total-amt">${money(total())}</span></div>
-          <div class="vf-summary-fine">* Billed yearly. Cancel anytime.</div>
-        </div>
-
-        <label class="vf-vsa ${state.vsa ? 'is-checked' : ''}">
-          <button class="vf-check" type="button" data-vf="toggle-vsa" role="checkbox" aria-checked="${state.vsa}">
+        <label class="vf-attest ${state.vsa ? 'is-checked' : ''}">
+          <button class="vf-check vf-check--attest" type="button" data-vf="toggle-vsa" role="checkbox" aria-checked="${state.vsa}">
             <span class="material-icons">${state.vsa ? 'check_box' : 'check_box_outline_blank'}</span>
           </button>
-          <span>I have read and agree to the <a href="#" data-vf="noop">Verification Service Agreement (VSA)</a>, the legally binding terms for this verification.</span>
+          <span class="vf-attest-text">I have read and agree to the <a href="#" data-vf="noop">Verification Service Agreement (VSA)</a>, the legally binding terms for this verification.</span>
         </label>
 
         <button class="vf-pay-btn" type="button" data-vf="process-payment" ${state.vsa ? '' : 'disabled'}>
@@ -625,29 +641,6 @@ function paymentStepHTML() {
         </button>
         <div class="vf-secure"><span class="material-icons">lock</span> Your payment information is secure and encrypted</div>
       </section>
-
-      <aside class="vf-pay-side">
-        <div class="vf-side-head">
-          <h2 class="vf-pay-title">Foods Submitting for Verification</h2>
-          <span class="vf-side-ready">${selectedCount()} foods ready</span>
-        </div>
-        <table class="vf-side-table">
-          <thead>
-            <tr><th>Product Name</th><th>Brand</th><th class="vf-side-cost">Cost per Item</th></tr>
-          </thead>
-          <tbody>
-            ${selectedFoods().map((f) => `
-              <tr>
-                <td class="vf-side-name"><span class="vf-side-prod">${thumb(f)}<span>${esc(f.name)}</span></span></td>
-                <td class="vf-side-brand">${esc(f.brand)}</td>
-                <td class="vf-side-cost vf-mono">${money(PRICE_PER_ITEM)}</td>
-              </tr>`).join('')}
-          </tbody>
-          <tfoot>
-            <tr><td colspan="2" class="vf-side-total-label">Total Verification Cost:</td><td class="vf-side-cost vf-side-total-val">${money(subtotal())}</td></tr>
-          </tfoot>
-        </table>
-      </aside>
     </div>`;
 }
 
@@ -779,9 +772,11 @@ function onAction(action, el) {
     case 'to-payment':
       if (state.attested) goStep('payment');
       break;
-    case 'autofill':
-      vfToast('Card details autofilled.', 'bolt');
+    case 'go-back': {
+      const i = stepIndex(state.step);
+      if (i > 0) goStep(STEPS[i - 1].id);
       break;
+    }
     case 'apply-coupon':
       vfToast('No valid coupon entered.', 'info');
       break;

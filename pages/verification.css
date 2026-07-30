@@ -38,7 +38,31 @@ body[data-nav-id="verification"] #modules-row {
 }
 
 /* ---------- Header (serif title + meta line, product-portfolio style) ---------- */
-.vf-head { padding: 26px 40px 0; }
+.vf-head { padding: 26px 40px 0; position: relative; }
+/* Back control — a simple icon button pinned to the very top-left, aligned with
+   the shell's top controls. Absolutely positioned so showing/hiding it between
+   steps never shifts the headline. */
+.vf-back {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.vf-back .material-icons { font-size: 20px; }
+.vf-back:hover { background: var(--surface-2); color: var(--text); }
+html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
+.vf-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .vf-head-title {
   font-family: 'Noto Serif', Georgia, serif;
   font-size: 1.2rem;
@@ -281,6 +305,7 @@ html.dark .vf-stat--verified .vf-stat-label .material-icons { color: var(--vf-in
 }
 .vf-sort { font-size: 15px !important; color: color-mix(in srgb, var(--text-subtle) 65%, transparent); vertical-align: middle; }
 .vf-head-glyph { font-size: 18px !important; color: color-mix(in srgb, var(--text-subtle) 55%, transparent); }
+.vf-col-expand { width: 40px; text-align: center; }
 .vf-col-check { width: 44px; }
 .vf-col-status { width: 168px; }
 .vf-col-updated { width: 196px; }
@@ -413,25 +438,35 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 .vf-detail-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
 .vf-detail-text { margin: 0; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted); }
 
-/* Attestation bar — pinned to the top of the Attest step, above the toolbar. */
+/* Attestation / agreement bar — one shared look, reused for the Attest step's
+   attestation AND the Payment step's VSA agreement (no bespoke variants). */
 .vf-attest {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin: 0 0 18px;
-  padding: 4px 2px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
   cursor: pointer;
 }
 .vf-attest-text { font-size: 0.86rem; color: var(--text); line-height: 1.5; max-width: 900px; padding-top: 3px; }
+.vf-attest-text a { color: var(--primary); font-weight: 600; text-decoration: underline; }
+/* Sticky variant — only the Attest step pins its bar so the table scrolls
+   behind it; it settles into place at the end of the flow. */
+.vf-attest--sticky {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  box-shadow: 0 -6px 18px color-mix(in srgb, var(--text) 10%, transparent), var(--shadow-1);
+}
 
 /* ---------- Payment ---------- */
-.vf-pay-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 40px;
-  align-items: start;
-}
-@media (max-width: 1080px) { .vf-pay-grid { grid-template-columns: minmax(0, 1fr); } }
+/* The foods list + summary now live in the right-hand progress module, so the
+   payment step is a single full-width column: just the payment form. */
+.vf-pay-grid { display: block; }
+.vf-pay-form { width: 100%; }
 
 .vf-pay-title {
   font-family: 'Noto Serif', Georgia, serif;
@@ -497,29 +532,14 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px 0 12px;
+  padding: 0 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   background: var(--surface-2);
   min-height: 44px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .vf-card-glyph { color: var(--text-subtle); font-size: 19px; }
-.vf-autofill {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: var(--sec-green);
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.vf-autofill .material-icons { font-size: 15px; }
 
 .vf-note {
   display: flex;
@@ -542,20 +562,42 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   background: var(--surface-2);
-  padding: 11px 14px;
+  padding: 0 14px;
+  min-height: 44px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .vf-apply {
-  padding: 10px 22px;
+  padding: 0 22px;
+  min-height: 44px;
   border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text-subtle) 45%, var(--surface-3));
+  border-radius: var(--radius-pill, 999px);
+  background: var(--primary);
   color: #fff;
   font-family: inherit;
   font-weight: 700;
   font-size: 0.82rem;
   cursor: pointer;
+  box-shadow: var(--shadow-1);
+  transition: filter 0.15s ease;
 }
-.vf-apply:hover { filter: brightness(1.05); }
+.vf-apply:hover { filter: brightness(1.07); }
+
+/* Shared input treatment — matches the app's search/field styling: surface-2
+   fill, strong border, and a brand focus ring. Dark mode lightens the fill. */
+html.dark .vf-card-input,
+html.dark .vf-coupon .vf-input,
+html.dark .vf-select-el {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.vf-card-input:focus-within,
+.vf-coupon .vf-input:focus,
+.vf-select-el:focus {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+  outline: none;
+}
+.vf-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 60%, transparent); }
 
 .vf-admin {
   margin-top: 18px;
@@ -585,50 +627,6 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
   padding: 9px 12px;
   font-size: 0.85rem;
 }
-
-.vf-summary {
-  margin-top: 22px;
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-}
-.vf-summary-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
-.vf-summary-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.84rem;
-  color: var(--text-muted);
-  padding: 6px 0;
-}
-.vf-summary-row span:last-child { color: var(--text); font-weight: 600; }
-.vf-summary-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-top: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-.vf-total-amt { font-family: 'Noto Serif', Georgia, serif; font-size: 1.35rem; color: var(--primary); }
-.vf-summary-fine { margin-top: 6px; font-size: 0.7rem; color: var(--text-subtle); }
-
-.vf-vsa {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 18px 0;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-  cursor: pointer;
-}
-.vf-vsa a { color: var(--primary); font-weight: 600; text-decoration: underline; }
 
 .vf-pay-btn {
   width: 100%;
@@ -662,37 +660,34 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 }
 .vf-secure .material-icons { font-size: 14px; }
 
-/* Payment right column */
-.vf-pay-side {
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  padding: 20px 22px;
+/* Foods line items inside the progress module (Payment step). Sits between the
+   step list and the running-total footer; each row is a billable SKU. */
+.vfp-items {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 12px 14px 4px;
 }
-.vf-side-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.vf-side-ready { font-size: 0.78rem; font-weight: 600; color: var(--vf-ink); white-space: nowrap; }
-.vf-side-table { width: 100%; border-collapse: collapse; }
-.vf-side-table th {
-  text-align: left;
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-  padding: 8px 8px;
-  border-bottom: 1px solid var(--border);
+.vfp-items-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px;
 }
-.vf-side-cost { text-align: right; }
-.vf-side-table td { padding: 14px 8px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
-.vf-side-name { font-weight: 600; color: var(--text); max-width: 240px; }
-.vf-side-prod { display: flex; align-items: center; gap: 9px; }
-.vf-side-prod .vf-thumb { width: 30px; height: 30px; }
-.vf-side-prod .vf-thumb .material-icons { font-size: 16px; }
-.vf-side-brand { color: var(--text-muted); }
-.vf-side-total-label { text-align: right; font-weight: 700; color: var(--text); padding-top: 16px; }
-.vf-side-total-val { font-weight: 700; color: var(--primary); padding-top: 16px; }
-.vf-side-table tfoot td { border-bottom: 0; }
+.vfp-items-title {
+  font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle);
+}
+.vfp-items-count { font-size: 0.68rem; font-weight: 600; color: var(--vf-ink); white-space: nowrap; }
+.vfp-item {
+  display: flex; align-items: center; gap: 9px; padding: 7px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.vfp-item:first-of-type { border-top: 0; }
+.vfp-item .vf-thumb { width: 30px; height: 30px; }
+.vfp-item .vf-thumb .material-icons { font-size: 15px; }
+.vfp-item-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.vfp-item-name {
+  font-size: 0.76rem; font-weight: 600; color: var(--text); line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vfp-item-brand { font-size: 0.66rem; color: var(--text-subtle); }
+.vfp-item-cost { font-size: 0.78rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---------- Confirmation modal ---------- */
 .vf-modal-overlay {
