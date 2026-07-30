@@ -252,6 +252,49 @@
     html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
     .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
     html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
+    /* Alerts / Agents quick-actions docked at the top of the avatar menu,
+       split by a thin vertical rule (mirrors the product-portfolio shell). */
+    .wise-popover-actions { display: flex; align-items: stretch; gap: 4px; padding: 8px; }
+    .wise-pop-action {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-pill, 10px);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .wise-pop-action:hover { background: var(--primary-soft); color: var(--primary); }
+    html.dark .wise-pop-action:hover { background: rgba(37, 80, 124, 0.18); color: var(--primary-bright, var(--primary)); }
+    .wise-pop-action .material-icons,
+    .wise-pop-action .material-symbols-outlined { font-size: 20px; color: var(--text-subtle); }
+    .wise-pop-action:hover .material-icons,
+    .wise-pop-action:hover .material-symbols-outlined { color: var(--primary); }
+    html.dark .wise-pop-action:hover .material-icons,
+    html.dark .wise-pop-action:hover .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
+    .wise-pop-action.has-dot { position: relative; }
+    .wise-pop-action.has-dot::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      margin-left: 4px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sec-red, #DC3038);
+    }
+    .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
+    html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
     .fz-row {
       display: flex;
       align-items: center;

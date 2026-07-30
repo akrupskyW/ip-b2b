@@ -2693,11 +2693,18 @@ function renderAvatarBody(pop) {
         <span class="material-icons">notifications</span>
         <span>Alerts</span>
       </button>
+      <span class="wise-pop-vline" aria-hidden="true"></span>
+      <button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings">
+        <span class="material-icons">tune</span>
+        <span>Agents</span>
+      </button>
     </div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
     <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
-    <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help &amp; docs</div>
+    <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
+    <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
+    <div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
 }
@@ -2877,7 +2884,7 @@ function bootstrap() {
   /* Build the shared top bar (menu toggle, WISE logo, profile + trailing
      Alerts/More). The portfolio variant also renders the section-module
      rail + layout switcher; #pf-module-rail is populated by buildModuleRail. */
-  mountTopbar({ variant: 'portfolio', logoHref: 'ai-chat-3.html' });
+  mountTopbar({ variant: 'portfolio', logoHref: 'product-comparison.html' });
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) {

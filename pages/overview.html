@@ -91,6 +91,16 @@
       margin-top: 8px;
       margin-bottom: var(--modules-bottom-pad);
     }
+
+    /* Left page inset — the shared agent-page.css sets the body padding to
+       `0.375rem 0 …` (zero horizontal), which glues the nav column to the
+       window's left edge on this page. The right side already carries a 16px
+       inset from #modules-row (`padding: 0 16px`), so mirror that on the left
+       to frame the shell evenly (matches the four-sided inset other pages get
+       via `body.ai-chat-page`). */
+    body[data-product-id="dashboard"] {
+      padding-left: 16px;
+    }
   </style>
 </head>
 <body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="0" data-default-header="1" data-default-nav-collapsed="1" data-default-dock="left">

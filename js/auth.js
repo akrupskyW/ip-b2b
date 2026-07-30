@@ -19,7 +19,7 @@
   var AUTH_KEY = 'wise-auth';
   var REG_KEY  = 'wc_registration';
   /* After sign-in / sign-up the user lands here (per project request). */
-  var LANDING  = 'ai-chat-3.html';
+  var LANDING  = 'product-comparison.html';
   /* "Dive right into the product" during signup lands on the workspace overview. */
   var OVERVIEW = 'overview.html';
   var AUTH_PAGES = ['login.html', 'create-account.html', 'forgot-password.html'];

@@ -320,7 +320,7 @@ html.dark .chat-messages-area { background: transparent; }
 }
 .sc-avatar svg { width: 18px; height: auto; }
 /* The WISEai owl bug rides on a black chip in every chat module app-wide (the
-   canonical ai-chat-3 / product-portfolio pages set this explicitly). Kept as the
+   canonical product-comparison / product-portfolio pages set this explicitly). Kept as the
    shared default so any page using the base classes matches without a local override. */
 .sc-avatar-wiseai {
   background: #141414; color: #fff;
@@ -403,6 +403,16 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-wrap.has-prev::before { opacity: 1; }
 .ws-chips-wrap.has-next::after { opacity: 1; }
 .ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
+
+/* Persistent intent-chip rail (opt-in via mountWISEaiChat({ persistChips:true }))
+   — a single horizontal, snap-scrolling row of every conversational route,
+   docked just above the input for the whole conversation. Hidden while the
+   welcome screen is up (which already shows the chips); revealed once the
+   conversation begins (root gets `.sc-conversing`). */
+.ws-chips-bar { display: none; width: 100%; max-width: 100%; margin: 0; padding: 8px 14px 4px; border-top: 1px solid var(--border); }
+.sc-conversing .ws-chips-bar { display: block; }
+.ws-chips-bar .ws-chips { margin-bottom: 0; padding: 2px 2px; }
+.ws-chips-bar::before, .ws-chips-bar::after { width: 20px; }
 
 /* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
    The "Your portfolio at a glance" rail, ported into the shared dock: a

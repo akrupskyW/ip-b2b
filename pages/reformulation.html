@@ -60,6 +60,34 @@
       padding: 0;
     }
 
+    /* ── Nav brand strip height (chat-shell) ──
+       The shared `--shell-topbar-h` variable is defined only on #agent-shell-wrap,
+       so on this #chat-shell-wrap page the rail brand bar had no height and
+       collapsed to the bare owl glyph (~16px) — the logo jumped up and overlapped
+       the collapse toggle. Re-pin the strip to the 60px panel-header height (the
+       exact fix product-comparison.html / product-portfolio.html apply) so the collapsed
+       rail logo sits centered and lines up with every other WISE page. */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar {
+      min-height: var(--panel-header-h);
+      margin-bottom: 0;
+    }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar {
+      height: var(--panel-header-h);
+      min-height: var(--panel-header-h);
+      max-height: var(--panel-header-h);
+      margin-bottom: 0;
+    }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
+      transform: translateY(7px);
+    }
+
     /* ── Center chat column (single pane, fixed width, carded) ── */
     .rf-chat {
       flex: 0 0 460px;
@@ -96,7 +124,7 @@
 
     /* In-chat reply / intent chips. The shared .chip pill lives in wiseai-chat.css,
        but the ROW that lays them out (.sc-reply-chips) is defined per page — every
-       other WISE chat page (ai-chat-3.html, product-portfolio.html) styles it in
+       other WISE chat page (product-comparison.html, product-portfolio.html) styles it in
        its own <style>, and this studio was missing it entirely. Without it the chips
        fell back to full --fs-ui size + default pill padding, and the row had no gap,
        no bottom spacing, and no indent — so they rendered huge and jammed together.
@@ -104,18 +132,15 @@
        left-aligned row indented under the message body (30px avatar + 12px gap) with
        compact --fs-label chips. */
     .sc-reply-chips {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      margin: -4px 0 14px 42px;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: -2px 0 14px 42px;
     }
-    .sc-reply-chips .chip {
-      font-weight: 500;
-      padding: 5px 11px;
-      font-size: var(--fs-label);
-      line-height: 1.25;
-      text-align: left;
-      max-width: 100%;
-    }
-    .sc-reply-chips .chip .material-icons { font-size: 15px !important; align-self: center; flex-shrink: 0; }
+    /* Match the app-standard chat intent chip exactly (the shared .chip pill in
+       wiseai-chat.css: 7px/14px pad, --fs-ui label, 16px glyph). The reply row
+       used to shrink these to --fs-label with tighter padding, so they read
+       shorter than the intent chips used everywhere else in the chat module. */
+    .sc-reply-chips .chip { text-align: left; max-width: 100%; }
+    .sc-reply-chips .chip .material-icons { align-self: center; flex-shrink: 0; }
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
     /* ── Right STARS module — fills all remaining space, carded ── */
@@ -163,7 +188,7 @@
 
     /* Scope breadcrumb. The leading scope label reads as a Noto Serif headline —
        the shared display face used for titles on product-portfolio.html and
-       ai-chat-3.html — so it presents as the ⭐ panel's headline rather than a
+       product-comparison.html — so it presents as the ⭐ panel's headline rather than a
        weak second header strip. Deeper drill-down crumbs trail it in muted UI text. */
     .rf-scope-bar {
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -195,9 +220,10 @@
        timestamp so past states stay scannable when you scroll back up. */
     .rf-block { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
     .rf-block:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 2px; }
-    .rf-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 12px; }
-    .rf-block-eyebrow { font-family: 'Noto Serif', serif; font-size: 13px; font-weight: 700; color: var(--text); }
-    .rf-block-time { font-size: 10px; color: var(--text-subtle); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    .rf-block-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 12px; }
+    /* Block headline reads at the same weight/size as the other WISE module
+       titles (Noto Serif display face, 15px) — no far-right timestamp. */
+    .rf-block-eyebrow { font-family: 'Noto Serif', serif; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.25; }
 
     /* View primitives */
     .rf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: var(--shadow-1); }
@@ -223,15 +249,25 @@
       .rf-bar-fill { transition: none !important; }
     }
 
-    /* KPI grid */
-    .rf-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 14px; }
-    .rf-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px; }
-    .rf-kpi .v { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -.02em; }
-    .rf-kpi .l { font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
-    .rf-kpi .s { font-size: 10px; color: var(--text-subtle); margin-top: 1px; }
-    .rf-kpi.k-red .v { color: var(--sec-red-text); }
+    /* ── KPI scorecards ──
+       Modeled 1:1 on the product-portfolio "Your portfolio at a glance" score
+       cards (.pf-stat): centered column tiles on a surface-2 fill, Noto Serif
+       numeral at 22px, compact muted label beneath. Same component language so
+       these read as the same scorecards used across the app. */
+    .rf-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .rf-kpi {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: var(--shadow-1); text-align: center;
+    }
+    html.dark .rf-kpi { background: rgba(255,255,255,0.04); }
+    .rf-kpi .v { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.05; }
+    .rf-kpi .l { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .rf-kpi .s { font-size: 10px; color: var(--text-subtle); }
+    .rf-kpi.k-red .v { color: var(--sec-red); }
     .rf-kpi.k-green { cursor: pointer; }
-    .rf-kpi.k-green .v { color: var(--sec-green-text); }
+    .rf-kpi.k-green .v { color: var(--sec-green); }
     .rf-kpi.k-gold .v { color: var(--ter-amber-text); }
 
     /* ── Star-distribution donut ──
@@ -397,7 +433,18 @@
           </div>
         </div>
         <div class="sc-topbar-controls">
-          <button type="button" class="panel-more-btn" onclick="rfReExplore()" title="Start over" aria-label="Start over"><span class="material-icons">restart_alt</span></button>
+          <!-- Standard chat-module control: a single more_vert three-dot that
+               gathers per-module actions into one popover (matches product-comparison /
+               product-portfolio chat headers). "Start over" now lives inside it
+               instead of being a bare restart button. -->
+          <div class="panel-more-wrap" id="rf-chat-menu-wrap">
+            <button type="button" id="rf-chat-menu-btn" class="panel-more-btn" onclick="rfToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+            <div id="rf-chat-menu" class="topbar-popover hidden" role="menu">
+              <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+              <div class="topbar-menu-divider"></div>
+              <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfReExplore(); rfCloseChatMenu()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Start over</span></button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -413,8 +460,8 @@
               <svg viewBox="0 0 193 100" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
             </div>
           </div>
-          <h1 class="ws-heading">Let's move some stars.</h1>
-          <p class="ws-sub">I'm your reformulation copilot for the Guiding Stars portfolio. Ask at the <b>portfolio level</b> — where the biggest reachable star gains are — or drill down to a <b>single product</b> and model the exact recipe change. Everything renders live in the ⭐ panel.</p>
+          <h1 class="ws-heading">Let's reformulate your products.</h1>
+          <p class="ws-sub">I'm your product reformulation copilot. Ask at the <b>portfolio level</b> — where the biggest, cheapest reformulation wins are — or drill into a <b>single product</b> and model the exact recipe change. Everything renders live in the panel on the right.</p>
           <div class="rf-ws-eyebrow">Portfolio &amp; brand level</div>
           <div class="ws-chips" id="ws-chips-portfolio"></div>
           <div class="rf-ws-eyebrow">Product level</div>
@@ -439,8 +486,8 @@
       <header class="agent-main-header">
         <span class="agent-main-icon"><span class="material-icons">star</span></span>
         <div class="agent-main-titles">
-          <div class="agent-main-title">Guiding Stars</div>
-          <div class="agent-main-sub">WISEcode · Reformulation</div>
+          <div class="agent-main-title">Product Reformulation</div>
+          <div class="agent-main-sub">WISEcode · Guiding Stars</div>
         </div>
         <div class="panel-controls">
           <button type="button" class="panel-width-toggle-btn" title="Toggle module width" aria-label="Toggle module width" aria-pressed="false" onclick="rfToggleWidth()"><span class="material-symbols-outlined">width_normal</span></button>
@@ -492,7 +539,7 @@
       }
     } catch (_) {}
     /* Honor the user's Appearance choices (Header / Full bleed) exactly like every
-       other WISE page (ai-chat-3.html, product-portfolio.html) — never force a
+       other WISE page (product-comparison.html, product-portfolio.html) — never force a
        state, just replay the stored (or now-restored default) one. */
     restoreHeaderFloat();
     restoreFullBleed();
@@ -500,7 +547,7 @@
     /* mountMenuBrand must run BEFORE mountAgentMenu: setupMenuRail looks for the
        .menu-brand-bar to dock the collapse toggle and wire rail tooltips. */
     mountMenuBrand({
-      logoHref: 'ai-chat-3.html',
+      logoHref: 'product-comparison.html',
       profileName: 'Arthur Krupsky',
       profileEmail: 'akrupsky@wisecode.ai',
       avatarText: 'AK',
@@ -513,7 +560,7 @@
 
     /* The navigation rail is left in the shared default state (setupMenuRail honors
        the app-wide `wise-menu-rail` preference), so it renders identically to
-       ai-chat-3.html and product-portfolio.html. Force-collapsing it here made this
+       product-comparison.html and product-portfolio.html. Force-collapsing it here made this
        studio's nav the odd one out; the collapse/expand toggle beside the logo is
        still available for anyone who wants the extra canvas width. */
 
@@ -600,19 +647,27 @@
         document.body.appendChild(pop);
         pop.innerHTML =
           '<div class="wise-popover-header">Arthur Krupsky</div>' +
-          '<div class="wise-popover-item" data-nav="profile.html"><span class="material-icons">person</span>My profile</div>' +
-          '<div class="wise-popover-item" data-nav="invoices.html"><span class="material-icons">receipt_long</span>Invoices &amp; downloads</div>' +
-          '<div class="wise-popover-item" data-nav="overview.html"><span class="material-icons">space_dashboard</span>Overview</div>' +
+          '<div class="wise-popover-actions">' +
+            '<button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications"><span class="material-icons">notifications</span><span>Alerts</span></button>' +
+            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
+            '<button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings"><span class="material-icons">tune</span><span>Agents</span></button>' +
+          '</div>' +
           '<div class="wise-popover-divider"></div>' +
-          '<div class="wise-popover-item danger" data-nav="ai-chat-3.html"><span class="material-icons">logout</span>Sign out</div>';
+          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
+          '<div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>' +
+          '<div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>' +
+          '<div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>' +
+          '<div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
         positionWisePopover(pop, anchor);
         requestAnimationFrame(() => pop.classList.add('open'));
         activePopover = pop; activeAnchor = anchor;
         anchor.classList.add('is-open');
         pop.addEventListener('click', (ev) => {
-          const item = ev.target.closest('[data-nav]');
-          if (item && pop.contains(item)) { ev.stopPropagation(); location.href = item.dataset.nav; return; }
-          if (ev.target.closest('.wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'product-comparison.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
           closePopover();
         });
       }

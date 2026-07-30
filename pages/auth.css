@@ -637,7 +637,7 @@ html.dark .sp-field--active .material-icons { color: var(--primary-bright); }
 .sp-field--active .sp-field-val { color: var(--primary); font-weight: 600; }
 html.dark .sp-field--active .sp-field-val { color: var(--primary-bright); }
 
-/* In-chat reply chips — the ai-chat-3 .sc-reply-chips spec (own row after the
+/* In-chat reply chips — the product-comparison .sc-reply-chips spec (own row after the
    wiseai line, indented past the 30px avatar + 12px gap). */
 .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px 42px; }
 .sc-reply-chips .chip { font-weight: 500; padding: 5px 11px; font-size: var(--fs-label); line-height: 1.25; text-align: left; max-width: 100%; }

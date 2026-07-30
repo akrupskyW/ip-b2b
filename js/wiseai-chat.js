@@ -330,6 +330,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
       </div>`;
 
+  /* Persistent intent-chip rail — an opt-in (`persistChips: true`) horizontal
+     rail that stays docked above the input for the whole conversation, so every
+     possible conversational route is always one tap away (not just on the
+     welcome screen). Rendered here, revealed once the welcome is dismissed. */
+  const persistChips = opts.persistChips === true;
+  const persistChipsHtml = persistChips
+    ? `<div class="ws-chips-bar ws-chips-wrap" id="${id}-pchips-wrap" aria-label="Quick actions">
+        <div class="ws-chips" id="${id}-pchips" role="list">${chipsHtml}</div>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-pchip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-icons">chevron_left</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-pchip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
+      </div>`
+    : '';
+
   rootEl.classList.add('sc-card');
   rootEl.innerHTML = `
     <div class="chat-topbar">
@@ -379,6 +392,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       </div>
       <div class="sc-settings sc-hidden" id="${id}-settings">${buildAgentsPanelHtml(agents, id)}</div>
     </div>
+
+    ${persistChipsHtml}
 
     <div class="chat-input-rail">
       <div class="sc-input-row">
@@ -516,11 +531,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     recognition.start();
   }
 
-  function hideWelcome() { welcome?.classList.add('sc-hidden'); }
+  /* Assigned by the persistent-chip carousel wiring below; recalculates the
+     rail's scroll arrows once it becomes visible (it starts display:none, so its
+     scroll metrics are zero until the welcome is dismissed). */
+  let refreshPersistChips = () => {};
+  function hideWelcome() {
+    welcome?.classList.add('sc-hidden');
+    if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
+  }
   function reset() {
     if (messages) messages.innerHTML = '';
     closeAgents();
     welcome?.classList.remove('sc-hidden');
+    rootEl.classList.remove('sc-conversing');
   }
   function submit() {
     if (!input) return;
@@ -570,6 +593,23 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     addUser(def.label);
     /* Route the reply by the chip's intent id (not just its label) so the
        conversation always continues on the feature the chip represents. */
+    if (!handled) wiseaiRespond(def.label, def.intent);
+  });
+
+  /* Persistent intent chips — same routing as the welcome chips, but always
+     available beneath the thread so any conversational route stays one tap
+     away for the whole conversation. */
+  const pchipsWrap = rootEl.querySelector(`#${id}-pchips-wrap`);
+  pchipsWrap?.addEventListener('click', (e) => {
+    if (e.target.closest('.ws-sc-scroll')) return;
+    const chip = e.target.closest('.ws-intent-chip[data-intent]');
+    if (!chip) return;
+    const def = intents[Number(chip.dataset.intent)];
+    if (!def) return;
+    if (def.intent === 'choose_agents') { openAgents(); return; }
+    const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    hideWelcome();
+    addUser(def.label);
     if (!handled) wiseaiRespond(def.label, def.intent);
   });
 
@@ -631,6 +671,34 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       window.addEventListener('resize', updateArrows);
       requestAnimationFrame(updateArrows);
     }
+  }
+
+  /* Persistent intent-chip rail — same horizontal scroll controls + edge fades
+     as the welcome carousel. `refreshPersistChips` is exposed so hideWelcome can
+     recompute the arrows the moment the rail is revealed. */
+  if (persistChips && pchipsWrap) {
+    const rail = pchipsWrap.querySelector('.ws-chips');
+    const prev = pchipsWrap.querySelector('.ws-sc-scroll--prev');
+    const next = pchipsWrap.querySelector('.ws-sc-scroll--next');
+    const updateArrows = () => {
+      const max = rail.scrollWidth - rail.clientWidth - 1;
+      const hasPrev = rail.scrollLeft > 1;
+      const hasNext = rail.scrollLeft < max && rail.scrollWidth > rail.clientWidth + 1;
+      if (prev) prev.hidden = !hasPrev;
+      if (next) next.hidden = !hasNext;
+      pchipsWrap.classList.toggle('has-prev', hasPrev);
+      pchipsWrap.classList.toggle('has-next', hasNext);
+    };
+    pchipsWrap.querySelectorAll('.ws-sc-scroll').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dir = Number(btn.dataset.pchipScroll) || 1;
+        rail.scrollBy({ left: dir * Math.max(rail.clientWidth * 0.8, 200), behavior: 'smooth' });
+      });
+    });
+    rail.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+    refreshPersistChips = updateArrows;
   }
 
   /* Send */

@@ -176,7 +176,7 @@
   var digits = function (v) { return String(v == null ? '' : v).replace(/\D/g, ''); };
   var validEmail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim()); };
 
-  function landing() { return (Auth && Auth.landingUrl && Auth.landingUrl()) || 'ai-chat-3.html'; }
+  function landing() { return (Auth && Auth.landingUrl && Auth.landingUrl()) || 'product-comparison.html'; }
   function goLanding() { window.location.href = landing(); }
 
   /* If already signed in, don't sit on an auth page. */

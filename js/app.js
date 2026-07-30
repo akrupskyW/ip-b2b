@@ -1757,6 +1757,86 @@ import { setTextSize } from './text-size.js';
       });
     }
 
+    /* ===== Avatar / user popover =====
+       Mirrors the product-portfolio shell: an Alerts | Agents quick-action row
+       above My profile / Preferences / API keys / Help / Docs and Sign out, using
+       the shared .wise-popover markup this dashboard already styles. */
+    let activeUserPop = null;
+    let activeUserAnchor = null;
+    function closeUserPop(){
+      if (!activeUserPop) return;
+      activeUserAnchor?.classList.remove('is-open');
+      activeUserAnchor?.setAttribute('aria-expanded', 'false');
+      activeUserPop.classList.remove('open');
+      const p = activeUserPop;
+      setTimeout(() => p.remove(), 220);
+      activeUserPop = null;
+      activeUserAnchor = null;
+    }
+    function openUserPopover(anchor){
+      if (activeUserAnchor === anchor) { closeUserPop(); return; }
+      closeUserPop();
+      closeAppearancePop();
+      closePopover();
+      const who = (window.WiseAuth && WiseAuth.getUser && WiseAuth.getUser()?.name) || 'Maya Chen';
+      const pop = document.createElement('div');
+      pop.className = 'wise-popover';
+      pop.innerHTML = `
+        <div class="wise-popover-header">${who}</div>
+        <div class="wise-popover-actions">
+          <button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications">
+            <span class="material-icons">notifications</span>
+            <span>Alerts</span>
+          </button>
+          <span class="wise-pop-vline" aria-hidden="true"></span>
+          <button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings">
+            <span class="material-icons">tune</span>
+            <span>Agents</span>
+          </button>
+        </div>
+        <div class="wise-popover-divider"></div>
+        <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
+        <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
+        <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
+        <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
+        <div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>
+        <div class="wise-popover-divider"></div>
+        <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
+      document.body.appendChild(pop);
+      positionPopoverForTopbar(pop, anchor);
+      requestAnimationFrame(() => pop.classList.add('open'));
+      activeUserPop = pop;
+      activeUserAnchor = anchor;
+      anchor.classList.add('is-open');
+      anchor.setAttribute('aria-expanded', 'true');
+      pop.addEventListener('click', (ev) => {
+        const notif = ev.target.closest('[data-pop-action="notifications"]');
+        if (notif && pop.contains(notif)) { ev.stopPropagation(); closeUserPop(); handleAction('notifications', anchor); return; }
+        const agents = ev.target.closest('[data-pop-action="agents"]');
+        if (agents && pop.contains(agents)) { ev.stopPropagation(); closeUserPop(); showToast({ title:'Agent settings', sub:'Demo action', icon:'tune' }); return; }
+        const signout = ev.target.closest('[data-pop-action="signout"]');
+        if (signout && pop.contains(signout)) {
+          ev.stopPropagation();
+          closeUserPop();
+          try { localStorage.removeItem('wise-auth'); } catch (e) {}
+          showToast({ title:'Signed out', sub:'Redirecting to sign in…', icon:'logout', kind:'warn' });
+          setTimeout(() => { window.location.href = 'pages/login.html'; }, 350);
+          return;
+        }
+        const item = ev.target.closest('.wise-popover-item[data-pop-action]');
+        if (item && pop.contains(item)) {
+          ev.stopPropagation();
+          const labels = { profile:'My profile', prefs:'Preferences', apikeys:'API keys', help:'Help', docs:'Docs' };
+          const a = item.dataset.popAction;
+          closeUserPop();
+          showToast({ title: labels[a] || 'Opened', sub:'Demo action', icon:'settings', kind:'' });
+          return;
+        }
+        if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+        closeUserPop();
+      });
+    }
+
     // ========== DETAIL DRAWER ==========
     function openDetail({ eyebrow, title, sub, icon, accent, body }){
       $('#detailEyebrow').textContent = eyebrow || '';
@@ -1927,24 +2007,7 @@ import { setTextSize } from './text-size.js';
           break;
 
         case 'user-menu':
-          openPopover(el, `
-            <div class="popover-header">Maya Chen</div>
-            <div class="popover-item" data-pop-action="profile"><span class="material-symbols-rounded">person</span>My profile</div>
-            <div class="popover-item" data-pop-action="prefs"><span class="material-symbols-rounded">tune</span>Preferences</div>
-            <div class="popover-item" data-pop-action="api"><span class="material-symbols-rounded">key</span>API keys</div>
-            <div class="popover-item" data-pop-action="help"><span class="material-symbols-rounded">help</span>Help &amp; docs</div>
-            <div class="popover-divider"></div>
-            <div class="popover-item danger" data-pop-action="logout"><span class="material-symbols-rounded">logout</span>Sign out</div>
-          `, { align:'right', onAction:(a) => {
-            if (a === 'logout') {
-              try { localStorage.removeItem('wise-auth'); } catch (e) {}
-              showToast({ title:'Signed out', sub:'Redirecting to sign in…', icon:'logout', kind:'warn' });
-              setTimeout(() => { window.location.href = 'pages/login.html'; }, 350);
-              return;
-            }
-            const labels = { profile:'My profile', prefs:'Preferences', api:'API keys', help:'Help & docs' };
-            showToast({ title: labels[a] || 'Opened', sub:'Demo action', icon:'settings', kind:'' });
-          }});
+          openUserPopover(el);
           break;
 
         case 'ai-settings':

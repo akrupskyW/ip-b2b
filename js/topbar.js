@@ -94,7 +94,7 @@ const AGENT_TRAILING_HTML = `
  */
 export function mountTopbar({
   variant = 'agent',
-  logoHref = 'ai-chat-3.html',
+  logoHref = 'product-comparison.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
   profileName,
   profileEmail,
@@ -139,7 +139,7 @@ export function syncMenuTogglePlacement() {
  * rail (.mp-rail). When collapsed only the owl bug mark shows.
  */
 export function mountMenuBrand({
-  logoHref = 'ai-chat-3.html',
+  logoHref = 'product-comparison.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
   profileName,
   profileEmail,

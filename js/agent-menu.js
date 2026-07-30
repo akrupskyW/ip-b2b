@@ -381,6 +381,7 @@ export const WISE_APP_NAV = [
 
   { type: 'section', label: 'Portfolio' },
   { type: 'item', id: 'product-portfolio', label: 'Product Portfolio', icon: 'handyman', slug: 'product-portfolio.html' },
+  { type: 'item', id: 'comparison', label: 'Comparison', icon: 'compare', slug: 'product-comparison.html' },
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },
@@ -464,7 +465,7 @@ const SYMBOLS_ONLY_ICONS = new Set([
   /* Sectioned workspace-nav glyphs — render from the modern Symbols set so
      none fall back to a tofu box on pages that only link legacy Material Icons. */
   'space_dashboard', 'handyman', 'photo_library', 'description', 'account_circle',
-  'receipt_long', 'shield', 'apartment', 'bolt', 'group', 'auto_awesome',
+  'receipt_long', 'shield', 'apartment', 'bolt', 'group', 'auto_awesome', 'compare',
 ]);
 export function iconClassFor(name) {
   return SYMBOLS_ONLY_ICONS.has(name) ? 'material-symbols-outlined' : 'material-icons';

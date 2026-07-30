@@ -562,8 +562,7 @@ function setView(name, html, sub, bid) {
   block.id = bid;
   block.dataset.view = name;
   block.innerHTML =
-    '<div class="rf-block-head"><span class="rf-block-eyebrow">' + esc(sub || 'Live visualization') + '</span>' +
-    '<span class="rf-block-time">' + nowLabel() + '</span></div>' + html;
+    '<div class="rf-block-head"><span class="rf-block-eyebrow">' + esc(sub || 'Live visualization') + '</span></div>' + html;
   view.appendChild(block);
   const subEl = document.getElementById('rf-panel-sub');
   if (subEl) subEl.textContent = sub || 'Live visualization';
@@ -980,6 +979,41 @@ window.rfToggleWidth = function () {
   const btn = document.querySelector('.rf-panel .panel-width-toggle-btn');
   if (btn) { btn.classList.toggle('is-on', on); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
 };
+
+/* ── Chat header three-dot menu ──
+   The chat module carries a single more_vert control (like every other WISE chat
+   module) whose popover holds the per-module actions — copy transcript + start
+   over — instead of a bare restart button in the header. */
+window.rfToggleChatMenu = function (ev) {
+  if (ev) ev.stopPropagation();
+  const menu = document.getElementById('rf-chat-menu');
+  const btn = document.getElementById('rf-chat-menu-btn');
+  if (!menu || !btn) return;
+  const willOpen = menu.classList.contains('hidden');
+  menu.classList.toggle('hidden', !willOpen);
+  btn.classList.toggle('is-open', willOpen);
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+};
+window.rfCloseChatMenu = function () {
+  const menu = document.getElementById('rf-chat-menu');
+  const btn = document.getElementById('rf-chat-menu-btn');
+  if (menu) menu.classList.add('hidden');
+  if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+};
+window.rfCopyTranscript = function (btn) {
+  const msgs = document.getElementById('chat-messages');
+  const text = msgs ? msgs.innerText.trim() : '';
+  const label = btn && btn.querySelector('span:last-child');
+  const flash = () => {
+    if (label) { const orig = label.textContent; label.textContent = 'Copied!'; setTimeout(() => { label.textContent = orig; rfCloseChatMenu(); }, 900); }
+    else rfCloseChatMenu();
+  };
+  try { navigator.clipboard.writeText(text).then(flash, flash); } catch (_) { flash(); }
+};
+document.addEventListener('click', function (e) {
+  const wrap = document.getElementById('rf-chat-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) rfCloseChatMenu();
+});
 
 // chips-only input: nudge to pick an option
 function inputNudge() {
