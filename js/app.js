@@ -1796,6 +1796,7 @@ import { setTextSize } from './text-size.js';
         </div>
         <div class="wise-popover-divider"></div>
         <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
+        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
         <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
         <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
         <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
@@ -1826,10 +1827,12 @@ import { setTextSize } from './text-size.js';
         const item = ev.target.closest('.wise-popover-item[data-pop-action]');
         if (item && pop.contains(item)) {
           ev.stopPropagation();
-          const labels = { profile:'My profile', prefs:'Preferences', apikeys:'API keys', help:'Help', docs:'Docs' };
+          /* Each menu row now opens its own module page (under pages/). */
+          const dest = { profile:'pages/profile.html', prefs:'pages/preferences.html', apikeys:'pages/api-keys.html', help:'pages/help.html', docs:'pages/docs.html' };
           const a = item.dataset.popAction;
           closeUserPop();
-          showToast({ title: labels[a] || 'Opened', sub:'Demo action', icon:'settings', kind:'' });
+          if (dest[a]) { window.location.href = dest[a]; return; }
+          showToast({ title:'Opened', sub:'Demo action', icon:'settings', kind:'' });
           return;
         }
         if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }

@@ -8,12 +8,23 @@
  * equalizer and a row of branded tracks you can play right in the bar.
  *
  * The tunes are synthesized live with the Web Audio API (no audio files /
- * licensing needed) so the riffs ship as a few lines of note data:
- *   - "Axel F"        the Axel Foley / Beverly Hills Cop theme
- *   - "Ode to Joy"    Beethoven
- *   - "Sonic"         Sonic the Hedgehog · Green Hill Zone melody
- *   - "Mario"         Super Mario Bros · the overworld theme
- *   - "Tetris"        Korobeiniki · the Tetris Type-A theme
+ * licensing needed) so each riff ships as a few lines of note data. The
+ * library is a crate of certified bangers — recognizable hooks that read
+ * instantly even as a bare monophonic chiptune:
+ *   - "Pump Up the Jam"  Technotronic
+ *   - "Axel F"           the Axel Foley / Beverly Hills Cop theme
+ *   - "Ode to Joy"       Beethoven
+ *   - "Sonic"            Sonic the Hedgehog · Green Hill Zone melody
+ *   - "Mario"            Super Mario Bros · the overworld theme
+ *   - "Tetris"           Korobeiniki · the Tetris Type-A theme
+ *   - "Imperial March"   Star Wars · the Darth Vader theme
+ *   - "7 Nation Army"    The White Stripes · the stadium riff
+ *   - "Smoke/Water"      Deep Purple · Smoke on the Water riff
+ *   - "Megalovania"      Undertale
+ *   - "Nokia"            Gran Vals · the Nokia ringtone
+ *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
+ *   - "Take On Me"       a-ha · the synth hook
+ *   - "Never Gonna…"     Rick Astley · Never Gonna Give You Up
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
  * only shows when the panel is BOTH pivoted (horizontal top bar) and in
@@ -114,9 +125,102 @@ const SONGS = {
       ['C5', 1.0], ['A4', 1.0], ['A4', 2.0], [null, 0.5],
     ],
   },
+  imperial: {
+    label: 'Imperial March',
+    bpm: 104,
+    type: 'square',
+    notes: [
+      // Star Wars — the Imperial (Darth Vader) march (John Williams), key Gm.
+      ['G4', 0.75], ['G4', 0.75], ['G4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25],
+      ['G4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25], ['G4', 1.5], [null, 0.5],
+      ['D5', 0.75], ['D5', 0.75], ['D5', 0.75], ['Eb5', 0.5], ['Bb4', 0.25],
+      ['Gb4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25], ['G4', 1.5], [null, 0.5],
+    ],
+  },
+  seven: {
+    label: '7 Nation Army',
+    bpm: 124,
+    type: 'sawtooth',
+    notes: [
+      // The White Stripes — Seven Nation Army, the stadium bass riff, key Em.
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.5], ['B3', 1.5],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.0], ['B3', 1.0],
+      [null, 0.5],
+    ],
+  },
+  smoke: {
+    label: 'Smoke/Water',
+    bpm: 112,
+    type: 'sawtooth',
+    notes: [
+      // Deep Purple — Smoke on the Water, the four-note riff, key Gm.
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], ['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 1.0], [null, 0.25],
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], ['Bb4', 0.5], ['G4', 1.0], [null, 0.5],
+    ],
+  },
+  megalovania: {
+    label: 'Megalovania',
+    bpm: 120,
+    type: 'square',
+    notes: [
+      // Undertale — Megalovania (Toby Fox), the intro riff, key Dm.
+      ['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
+      ['C4', 0.25], ['C4', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
+      [null, 0.5],
+    ],
+  },
+  nokia: {
+    label: 'Nokia',
+    bpm: 150,
+    type: 'square',
+    notes: [
+      // Gran Vals (Tárrega) — the Nokia ringtone.
+      ['E5', 0.25], ['D5', 0.25], ['F#4', 0.5], ['G#4', 0.5],
+      ['C#5', 0.25], ['B4', 0.25], ['D4', 0.5], ['E4', 0.5],
+      ['B4', 0.25], ['A4', 0.25], ['C#4', 0.5], ['E4', 0.5], ['A4', 1.0], [null, 0.5],
+    ],
+  },
+  pirates: {
+    label: 'Pirates',
+    bpm: 140,
+    type: 'square',
+    notes: [
+      // Pirates of the Caribbean — He's a Pirate (Zimmer/Badelt), key Dm.
+      ['A4', 0.5], ['A4', 0.25], ['A4', 0.25], ['A4', 0.5], ['C5', 0.25], ['D5', 0.5], ['D5', 0.25], ['D5', 0.25], ['D5', 0.5], ['E5', 0.25],
+      ['F5', 0.5], ['F5', 0.25], ['F5', 0.25], ['F5', 0.5], ['E5', 0.25], ['E5', 0.25], ['D5', 0.25], ['C5', 0.25], ['C5', 0.5], ['B4', 0.25], ['A4', 0.5], ['A4', 0.5],
+      [null, 0.5],
+    ],
+  },
+  takeonme: {
+    label: 'Take On Me',
+    bpm: 170,
+    type: 'square',
+    notes: [
+      // a-ha — Take On Me, the synth hook, key A.
+      ['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5], ['B4', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5],
+      ['G#5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['B5', 0.5], ['A5', 0.5], ['A5', 0.5], ['A5', 0.5], ['E5', 0.5],
+      ['D5', 0.5], ['F#5', 0.5], ['F#5', 0.5], ['F#5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 0.5],
+      [null, 0.5],
+    ],
+  },
+  rickroll: {
+    label: 'Never Gonna…',
+    bpm: 113,
+    type: 'square',
+    notes: [
+      // Rick Astley — Never Gonna Give You Up, the chorus hook.
+      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['E5', 0.75], ['E5', 0.75], ['D5', 1.0], [null, 0.25],
+      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['D5', 0.75], ['D5', 0.75], ['C5', 0.5], ['B4', 0.25], ['A4', 0.5], [null, 0.25],
+      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['C5', 0.5], ['D5', 0.5], ['B4', 0.25], ['A4', 0.25], ['G4', 0.5], ['G4', 0.25], ['D5', 0.5], ['C5', 1.0],
+      [null, 0.5],
+    ],
+  },
 };
 
-const SONG_ORDER = ['pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris'];
+const SONG_ORDER = [
+  'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
+  'imperial', 'seven', 'smoke', 'megalovania', 'nokia', 'pirates', 'takeonme', 'rickroll',
+];
 
 /* ---- Tiny synth ----------------------------------------------------- */
 

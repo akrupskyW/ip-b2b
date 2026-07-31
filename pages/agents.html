@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Agents</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) { document.documentElement.classList.add('dark'); }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* Agents — account-level agent manager rendered by js/agents-flow.js. */
+    body[data-nav-id="agents"] #agent-main-header { display: none; }
+    body[data-nav-id="agents"] .agent-main-scroll { padding: 0; }
+    body[data-nav-id="agents"] #modules-row { margin-top: 0; padding-bottom: 0; }
+
+    .ag-wrap { padding: 26px 40px 56px; max-width: 1040px; }
+    .ag-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; }
+    .ag-breadcrumb .material-icons { font-size: 16px; opacity: 0.6; }
+    .ag-breadcrumb-here { color: var(--text); }
+    .ag-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .ag-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.9rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; }
+    .ag-lede { font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
+    .ag-head-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .ag-summary { font-size: 0.82rem; color: var(--text-muted); margin: 20px 0 14px; }
+    .ag-summary-num { font-weight: 800; color: var(--text); font-size: 0.95rem; }
+
+    .ag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .ag-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); padding: 18px; transition: border-color 0.15s ease, opacity 0.2s ease; }
+    .ag-card.is-child { border-left: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+    .ag-card.is-off { opacity: 0.62; }
+    .ag-card-top { display: flex; align-items: center; gap: 12px; }
+    .ag-card-ic { width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .ag-card-ic .material-icons { font-size: 22px; }
+    .ag-card-titles { flex: 1; min-width: 0; }
+    .ag-card-name { font-size: 0.94rem; font-weight: 700; color: var(--text); }
+    .ag-card-status { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; }
+    .ag-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .ag-dot--on { background: var(--sec-green, #2e7d32); }
+    .ag-dot--off { background: var(--text-subtle); }
+    .ag-card-desc { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); margin: 12px 0 14px; }
+
+    .ag-switch { position: relative; width: 44px; height: 25px; flex-shrink: 0; border: 0; border-radius: 999px; cursor: pointer; background: var(--border-strong); transition: background 0.2s ease; padding: 0; }
+    .ag-switch.is-on { background: var(--primary); }
+    .ag-knob { position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-1); transition: transform 0.2s ease; }
+    .ag-switch.is-on .ag-knob { transform: translateX(19px); }
+
+    .ag-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .ag-foot-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-subtle); }
+    .ag-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; }
+    html.dark .ag-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .ag-seg-btn { border: 0; border-radius: 999px; padding: 5px 12px; height: 27px; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.72rem; font-weight: 600; transition: background 0.2s ease, color 0.2s ease; }
+    .ag-seg-btn:hover:not(.is-active):not(:disabled) { color: var(--text); }
+    .ag-seg-btn.is-active { background: var(--primary); color: #fff; }
+    .ag-seg-btn:disabled { opacity: 0.5; cursor: default; }
+
+    /* Buttons */
+    .ag-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
+    .ag-btn .material-icons { font-size: 18px; }
+    .ag-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+    .ag-btn--primary:hover { filter: brightness(1.08); }
+    .ag-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+    .ag-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
+    html.dark .ag-btn--ghost:hover { background: rgba(255,255,255,0.05); }
+
+    #ag-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .ag-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
+    .ag-toast.is-in { opacity: 1; transform: none; }
+    .ag-toast .material-icons { font-size: 17px; }
+
+    @media (max-width: 820px) {
+      .ag-wrap { padding: 20px 20px 48px; }
+      .ag-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-nav-id="agents" data-default-dock="left" data-default-nav-collapsed="1">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <div id="topbar-row" hidden aria-hidden="true"></div>
+    <div id="modules-row">
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module" src="../js/agent-overview.js"></script>
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

@@ -526,6 +526,156 @@ body.auth-chat { height: 100dvh; height: 100vh; overflow: hidden; }
 #ac-messages { display: flex; flex-direction: column; }
 #ac-messages > :first-child { margin-top: auto; }
 
+/* ── Core chat primitives — the shared WISEai chat surface, self-contained here
+   so the signup page needs only auth.css (the app build keeps these in wise.css). ── */
+.sc-card {
+  --fs-welcome-title: 1.0625rem;
+  --fs-chat: 0.9375rem;
+  --chat-line-height: 1.6;
+  flex: 1 1 0%; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: var(--r-md); box-shadow: var(--shadow-card);
+  background: var(--surface); border: 1px solid var(--border);
+  position: relative; font-size: var(--fs-ui);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.dark .sc-card {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden; }
+.chat-messages-area {
+  flex: 1 1 0%; overflow-y: auto; padding: 1.5rem 2rem;
+  background: var(--bg); color: var(--text-muted);
+  font-size: var(--fs-ui); line-height: var(--chat-line-height);
+}
+html.dark .chat-messages-area { background: transparent; }
+.chat-messages-area .material-icons { vertical-align: middle; }
+
+/* Message lines: avatar column + body (mirrors the app chat module). */
+.sc-line { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.1rem; color: var(--text); }
+.sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
+.sc-line strong { color: var(--primary); font-weight: 700; }
+html.dark .sc-line strong { color: var(--primary-bright); }
+/* The actual question for each step — pulled onto its own line, bold, and in the
+   brand blue so it stands apart from the conversational preamble around it. */
+.sc-question { display: block; font-weight: 700; color: var(--primary); }
+.sc-question:not(:first-child) { margin-top: 0.45rem; }
+.sc-question strong { color: inherit; font-weight: 700; }
+html.dark .sc-question { color: var(--primary-bright); }
+.sc-line-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+html.dark .sc-line-body a { color: var(--primary-bright); }
+/* Large welcome-style heading inside a chat line — mirrors the product-comparison
+   WISEai header (.ws-heading): big, tight, and bold. */
+.sc-line-heading {
+  display: block;
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.875rem, 1rem + 2.2vw, 2.75rem);
+  font-weight: 700; line-height: 1.12; letter-spacing: -0.01em;
+  color: var(--text); margin: 0.1rem 0 0.25rem;
+}
+.sc-avatar {
+  flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
+}
+.sc-avatar svg { width: 18px; height: auto; }
+.sc-avatar-wiseai { background: #141414; color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28); }
+.sc-avatar-you { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border-strong); }
+
+/* Per-line meta row + timestamp. */
+.sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+.sc-line-you .sc-line-meta { justify-content: flex-start; }
+.sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+
+/* Typing indicator + status label. */
+.sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
+.sc-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-subtle); animation: scBlink 1.2s infinite; }
+.sc-typing span:nth-child(2) { animation-delay: 0.2s; }
+.sc-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes scBlink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+.sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+.sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
+
+/* Welcome overlay (logo + heading), fades out once the conversation starts. */
+.sc-welcome {
+  position: absolute; inset: 0; z-index: 10; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: safe center; overflow-y: auto;
+  padding: 2rem; font-size: var(--fs-ui);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+html.dark .sc-welcome { background: transparent; }
+.sc-welcome.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+.ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ws-pulse-ring {
+  position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin-left: -36px; margin-top: -36px;
+  border-radius: 50%; border: 1px solid rgba(37, 80, 124, 0.55);
+  box-shadow: 0 0 18px rgba(37, 80, 124, 0.35), 0 0 36px rgba(37, 80, 124, 0.2);
+  pointer-events: none; animation: wsRingBloom 5s cubic-bezier(0.2, 0.85, 0.25, 1) infinite;
+}
+.ws-pulse-ring:nth-child(2) { animation-delay: -1.66s; }
+.ws-pulse-ring:nth-child(3) { animation-delay: -3.33s; }
+@keyframes wsRingBloom { 0% { transform: scale(1); opacity: 0.5; } 55% { opacity: 0.18; } 100% { transform: scale(3.2); opacity: 0; } }
+.ws-logo {
+  position: relative; z-index: 1; width: 72px; height: 72px; background: var(--primary); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; padding: 14px;
+  box-shadow: 0 0 28px rgba(37, 80, 124, 0.55), 0 0 52px rgba(37, 80, 124, 0.22);
+  animation: wsLogoBreath 6.5s ease-in-out infinite;
+}
+.ws-logo svg { width: 100%; height: 100%; }
+@keyframes wsLogoBreath {
+  0%, 100% { box-shadow: 0 0 24px rgba(37, 80, 124, 0.45), 0 0 48px rgba(37, 80, 124, 0.18); transform: scale(1); }
+  50% { box-shadow: 0 0 36px rgba(37, 80, 124, 0.55), 0 0 72px rgba(37, 80, 124, 0.28); transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
+  .ws-logo { animation: none; transform: none; }
+}
+.ws-heading { font-size: var(--fs-welcome-title, 1.0625rem); font-weight: 600; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
+.ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }
+
+/* Input rail — pill field + circular send button. */
+.chat-input-rail {
+  border-top: 1px solid var(--border); background: var(--surface-2);
+  padding: 12px 20px; flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+html.dark .chat-input-rail { background: var(--surface); border-top-color: var(--border); }
+.sc-input-row { display: flex; gap: 8px; align-items: center; }
+.fl-input-wrap {
+  position: relative; flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
+  display: flex; align-items: center; gap: 4px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+.fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; padding: 8px 0; color: var(--text); font-family: inherit; }
+.fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
+.sc-send {
+  width: 40px; height: 40px; flex-shrink: 0; align-self: center;
+  border-radius: 9999px; border: 0; cursor: pointer;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
+.sc-send .material-icons { font-size: 20px !important; }
+
+/* Base chip pill (the .sc-reply-chips / chip-primary rules below extend this). */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+.chip .material-icons { font-size: 16px !important; }
+html.dark .chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+
 .auth-setup-pane {
   flex: 0 0 320px; width: 320px; align-self: stretch; min-height: 0; display: flex;
   animation: authPaneIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -562,6 +712,15 @@ html.dark .sp-header-icon { color: var(--primary-bright); }
 .sp-header-text { flex: 1; min-width: 0; }
 /* Three-dot menu in the pane header (remove-module control). */
 .sp-header-menu { position: relative; flex-shrink: 0; margin-left: 6px; }
+.panel-more-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.panel-more-btn .material-icons { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
+.panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .sp-menu {
   position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px; z-index: 60;
   background: var(--surface-2); border: 1px solid var(--border-strong);
@@ -645,6 +804,12 @@ html.dark .sp-field--active .sp-field-val { color: var(--primary-bright); }
 .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
 .chip.chip-primary:hover { filter: brightness(1.05); color: #fff; }
 .chip.chip-primary .material-icons { color: #fff !important; }
+/* "Dive right into the product" — outlined (stroke only), not a solid fill. */
+.chip.chip-dive { background: transparent; border-color: var(--primary); color: var(--primary); font-weight: 600; }
+.chip.chip-dive:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); border-color: var(--primary); color: var(--primary); }
+.chip.chip-dive .material-icons { color: var(--primary) !important; }
+html.dark .chip.chip-dive { background: transparent; border-color: var(--primary-bright); color: var(--primary-bright); }
+html.dark .chip.chip-dive .material-icons { color: var(--primary-bright) !important; }
 .sc-reply-chips .chip--match {
   border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
   background: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -664,6 +829,23 @@ html.dark .sp-field--active .sp-field-val { color: var(--primary-bright); }
 .ac-success { display: inline-flex; align-items: center; gap: 6px; color: var(--sec-green-text); font-weight: 700; }
 .ac-success .material-icons { font-size: 18px; color: var(--sec-green); }
 .sc-line-you .sc-mask { letter-spacing: 2px; }
+
+/* Intent-route chips — large pill "chips" for the fork right after verification. */
+.sc-reply-chips.ac-routes { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 16px; }
+.ac-route {
+  display: flex; align-items: center; gap: 13px; text-align: left; width: 100%;
+  padding: 13px 22px; border-radius: 999px; cursor: pointer; font-family: inherit;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.ac-route:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--surface-3); transform: translateY(-1px); }
+html.dark .ac-route { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+.ac-route-ico { flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+html.dark .ac-route-ico { color: var(--primary-bright); }
+.ac-route-ico .material-icons { font-size: 24px !important; }
+.ac-route-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ac-route-title { font-weight: 700; color: var(--text); font-size: var(--fs-ui); line-height: 1.25; }
+.ac-route-desc { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.4; }
 
 @media (max-width: 980px) {
   .auth-setup-pane { flex-basis: auto; width: auto; }

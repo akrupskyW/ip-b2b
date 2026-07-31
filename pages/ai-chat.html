@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="wise.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -4745,11 +4745,12 @@
     }
     .so-btn-cancel:hover { background: var(--surface-3); border-color: var(--border-strong); }
     .so-btn-confirm {
-      background: #D27326;
-      border: 1px solid #D27326;
+      background: var(--primary);
+      border: 1px solid var(--primary);
       color: #fff;
     }
     .so-btn-confirm:hover { filter: brightness(1.06); }
+    .so-dialog:focus, .so-dialog:focus-visible { outline: none; }
     html:not(.dark) .so-dialog {
       background: var(--surface) !important;
       border-color: var(--border-strong) !important;
@@ -6144,7 +6145,7 @@
          IMPORTANT: this must run BEFORE mountAgentMenu, because mountAgentMenu's
          setupMenuRail looks for `.menu-brand-bar` to wire the rail-hover
          tooltips and bails if the brand strip doesn't exist yet. */
-      mountMenuBrand({ logoHref: 'product-comparison.html' });
+      mountMenuBrand({ logoHref: 'overview.html' });
       const navEl = document.getElementById('agent-menu-nav');
       if (navEl) {
         mountAgentMenu(navEl, null, {
@@ -8046,10 +8047,10 @@
 
   <!-- ── Sign out confirmation modal ───────────────────────────────────── -->
   <div id="signout-modal" role="dialog" aria-modal="true" aria-labelledby="so-title-id" onclick="handleSignOutBackdrop(event)">
-      <div class="so-dialog">
+      <div class="so-dialog" tabindex="-1">
           <div class="so-header">
               <div class="so-header-icon">
-                  <span class="material-icons" style="font-size:22px;color:#D27326">logout</span>
+                  <span class="material-icons" style="font-size:22px;color:var(--primary)">logout</span>
               </div>
               <div class="so-header-text">
                   <div class="so-title" id="so-title-id">Sign out of WISE?</div>
@@ -8962,7 +8963,7 @@
       const modal = document.getElementById('signout-modal');
       if (!modal) return;
       modal.classList.add('so-open');
-      setTimeout(() => modal.querySelector('.so-btn-cancel')?.focus(), 120);
+      setTimeout(() => modal.querySelector('.so-dialog')?.focus(), 120);
     }
     function closeSignOutModal() {
       document.getElementById('signout-modal')?.classList.remove('so-open');
@@ -9018,7 +9019,7 @@
        shared mountWISEaiChat() surface behave identically: every line is
        time-stamped, every WISEai reply is grounded in a cited source, and the
        typing indicator says what WISEai is actually doing. */
-    const WISEAI_SOURCE_LABEL = 'Grounded in WISE data';
+    const WISEAI_SOURCE_LABEL = '';
     const WISEAI_STATUS_LABEL = 'WISEai™ is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile

@@ -296,8 +296,8 @@ function requiredFilled() {
 
 function canProceed() {
   const st = state.wizardStep;
-  /* Step 1 now combines pathway choice + document upload/fields. */
-  if (st === 1) return !!state.docType && requiredFilled();
+  /* Prototype: the Documentation step's Continue is always enabled (we don't
+     gate on a real upload here). Attestation still requires the sign-offs. */
   if (st === 2) return state.attest.a && state.attest.b && state.attest.c;
   return true;
 }
@@ -326,17 +326,19 @@ function startVerify(id) {
   state.docType = ing.rec;
   state.fields = prefillFor(ing);
   state.attest = { a: false, b: false, c: false };
+  animateStep = true;
   render();
   scrollTop();
 }
 
 function goto(screen) {
   state.screen = screen;
+  animateStep = true;
   render();
   scrollTop();
 }
 
-function setStep(n) { state.wizardStep = n; render(); }
+function setStep(n) { state.wizardStep = n; animateStep = true; render(); }
 function pickDoc(id) { state.docType = id; render(); }
 function setField(k, v) { state.fields = { ...state.fields, [k]: v }; render(true); }
 function toggleAttest(k) { state.attest = { ...state.attest, [k]: !state.attest[k] }; render(); }
@@ -590,7 +592,7 @@ function stepImpactHTML() {
       <span class="gv-prod-status">${esc(ing.blocks)}</span>
     </div>`).join('');
   return `
-    <div class="gv-step-anim">
+    <div class="${stepAnim()}">
       <h2 class="gv-step-title">What this verification unlocks</h2>
       <p class="gv-step-desc">“${esc(ing.name)}” currently has no established GRAS basis in WISEcode, so every product containing it is flagged. Provide documentation once and the status applies portfolio-wide.</p>
 
@@ -638,13 +640,13 @@ function stepDocsHTML() {
     const recommended = ing && ing.rec === d.id;
     return `
       <button type="button" class="gv-doc-card ${active ? 'is-active' : ''}" data-gv="pick-doc" data-doc="${d.id}">
+        ${recommended ? '<span class="gv-doc-rec">Recommended</span>' : ''}
         <span class="gv-doc-ic"><span class="material-icons">${d.icon}</span></span>
         <span class="gv-doc-text">
-          <span class="gv-doc-name">${esc(d.name)}${recommended ? '<span class="gv-doc-rec">Recommended</span>' : ''}</span>
+          <span class="gv-doc-name">${esc(d.name)}</span>
           <span class="gv-doc-for">For: ${esc(d.forText)}</span>
           <span class="gv-doc-desc">${esc(d.desc)}</span>
         </span>
-        <span class="gv-doc-check"><span class="material-icons">${active ? 'radio_button_checked' : 'radio_button_unchecked'}</span></span>
       </button>`;
   }).join('');
 
@@ -684,7 +686,7 @@ function stepDocsHTML() {
        </button>`;
 
   return `
-    <div class="gv-step-anim">
+    <div class="${stepAnim()}">
       <h2 class="gv-step-title">Choose a pathway &amp; provide your documentation</h2>
       <p class="gv-step-desc">Pick the GRAS pathway for “${esc(ing ? ing.name : '')}” — we've pre-selected the recommended route — then attach the document and confirm its key details.</p>
       <div class="gv-doc-grid">${cards}</div>
@@ -712,7 +714,7 @@ function stepAttestHTML() {
       </label>`;
   }).join('');
   return `
-    <div class="gv-step-anim">
+    <div class="${stepAnim()}">
       <h2 class="gv-step-title">Attestation</h2>
       <p class="gv-step-desc">Confirm the following before this GRAS submission enters review.</p>
       <div class="gv-attest-list">${rows}</div>
@@ -731,7 +733,7 @@ function stepReviewHTML() {
     { label: 'Attestation', val: 'Signed · 3 of 3 confirmed' },
   ];
   return `
-    <div class="gv-step-anim">
+    <div class="${stepAnim()}">
       <h2 class="gv-step-title">Review &amp; submit</h2>
       <p class="gv-step-desc">Confirm the packet below. On submit it enters the WISEcode review queue; once cleared, “${esc(ing ? ing.name : '')}” flips to GRAS across all ${ing ? ing.products : 0} products.</p>
       <div class="gv-review">
@@ -863,11 +865,11 @@ function resultHTML() {
 /* Progress module (right-hand pane)                                   */
 /* ------------------------------------------------------------------ */
 
-/* On the wizard the pane is a 5-step vertical stepper (mirrors the Non-UPF
-   progress module); everywhere else it's a portfolio GRAS coverage summary. */
+/* The pane tracks a single in-flight verification, so it's only ever rendered
+   while the wizard is open (renderProgress hides it otherwise): a 5-step
+   vertical stepper mirroring the Non-UPF progress module. */
 function progressPaneHTML() {
-  if (state.screen === 'wizard') return progressWizardHTML();
-  return progressPortfolioHTML();
+  return progressWizardHTML();
 }
 
 function stepFields(idx) {
@@ -945,51 +947,18 @@ function progressWizardHTML() {
     </div>`;
 }
 
-function progressPortfolioHTML() {
-  const m = metrics();
-  const ingList = INGREDIENTS.map((ing) => {
-    const status = statusOf(ing.id);
-    const meta = STATUS_META[status];
-    return `
-      <div class="gvp-ing" role="button" tabindex="0" data-gv-ing="${ing.id}">
-        <span class="gvp-ing-dot gvp-ing-dot--${status}"><span class="material-icons">${meta.icon}</span></span>
-        <span class="gvp-ing-name">${esc(ing.name)}</span>
-        <span class="gvp-ing-count">${ing.products}</span>
-      </div>`;
-  }).join('');
-
-  return `
-    <div class="gvp-inner">
-      <div class="gvp-header">
-        <div class="gvp-header-text">
-          <div class="gvp-title">GRAS coverage</div>
-          <div class="gvp-subtitle">Nutrient Survival · portfolio</div>
-        </div>
-      </div>
-      <div class="gvp-progress">
-        <div class="gvp-progress-head"><span>${m.grasProducts} of ${PORTFOLIO_TOTAL} products</span><span class="gvp-progress-pct">${m.grasPct}%</span></div>
-        <div class="gvp-progress-track"><div class="gvp-progress-fill" style="width:${m.grasPct}%"></div></div>
-      </div>
-      <div class="gvp-mini-stats">
-        <div class="gvp-mini"><span class="gvp-mini-num gvp-mini-num--warn">${m.flaggedRemaining}</span><span class="gvp-mini-cap">Flagged</span></div>
-        <div class="gvp-mini"><span class="gvp-mini-num gvp-mini-num--info">${m.inReview}</span><span class="gvp-mini-cap">In review</span></div>
-        <div class="gvp-mini"><span class="gvp-mini-num gvp-mini-num--ok">${m.verifiedCount}</span><span class="gvp-mini-cap">Verified</span></div>
-      </div>
-      <div class="gvp-ing-head">Flagged ingredients</div>
-      <div class="gvp-ing-list">${ingList}</div>
-      <div class="gvp-foot">
-        <div class="gvp-foot-row"><span>Ingredients to clear</span><span>${m.flaggedRemaining}</span></div>
-        <div class="gvp-foot-row gvp-foot-total"><span>GRAS coverage</span><span class="gvp-foot-amt">${m.grasPct}%</span></div>
-      </div>
-    </div>`;
-}
-
 /* ------------------------------------------------------------------ */
 /* Render + wiring                                                     */
 /* ------------------------------------------------------------------ */
 
 let rootEl = null;
 let progressEl = null;
+/* The entrance "pop" animation should only play when the step/screen actually
+   CHANGES — not on in-step re-renders (doc pick, field input, attest toggle),
+   otherwise every click replays the animation and the panel appears to blink.
+   setStep / goto / startVerify flip this on; render() consumes it. */
+let animateStep = false;
+function stepAnim() { return animateStep ? 'gv-step-anim' : ''; }
 
 function bodyHTML() {
   switch (state.screen) {
@@ -1002,7 +971,13 @@ function bodyHTML() {
 }
 
 function renderProgress() {
-  if (progressEl) progressEl.innerHTML = progressPaneHTML();
+  if (!progressEl) return;
+  /* The pane tracks a single in-flight verification, so it only exists while the
+     wizard is open — off the wizard it's hidden entirely (not just emptied), so
+     the flow surface gets the full width until Verify is clicked. */
+  const show = state.screen === 'wizard';
+  progressEl.hidden = !show;
+  progressEl.innerHTML = show ? progressPaneHTML() : '';
 }
 
 function render(preserveFocus) {
@@ -1024,6 +999,9 @@ function render(preserveFocus) {
     if (inp) { inp.focus(); if (caret != null && inp.setSelectionRange) { try { inp.setSelectionRange(caret, caret); } catch (_) {} } }
   }
   renderProgress();
+  /* Consume the one-shot entrance-animation flag so the next in-step re-render
+     (doc pick, field input, attest toggle) doesn't replay it. */
+  animateStep = false;
 }
 
 function mountProgressPane() {
@@ -1255,6 +1233,10 @@ function mirrorUIAction(action, el) {
 export const GRAS_WISEAI = {
   sub: 'Your GRAS verification assistant — I can run the whole documentation flow for you.',
   chipsFlow: 'wrap',
+  /* Render the intent chips INLINE in the transcript (like a regular chat's
+     suggested replies) — trailing the latest WISEai turn — instead of a docked
+     rail, so every route stays one tap away without a weird bottom carousel. */
+  inlineChips: true,
   sourceLabel: '',
   /* A chip for every route the flow can take: start → each wizard step → submit
      → review → navigate → repeat, plus the three explainers. */

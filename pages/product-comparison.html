@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <!-- Noto Serif — display face for headings, big stat numerals, and primary CTAs (mirrors aha.html). -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="wise.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -2304,6 +2304,9 @@
        The wrapper is the pill: it owns the rounding + shadow and clips the two
        flush buttons inside it, so they read as a single fused control. */
     .cmp-add-wrap { display: inline-flex; }
+    /* Solo "＋ Add <kind>" pill — the comparison is locked to one kind, so the
+       old split control (face + type-caret) is gone; this is a single CTA. */
+    .cmp-add-solo { border-radius: 999px; }
     .cmp-add-split {
       display: inline-flex; align-items: stretch;
       border-radius: 999px; overflow: hidden; background: var(--primary);
@@ -2373,6 +2376,9 @@
     /* Enlarged Add split control inside the column so the primary CTA stands out. */
     .cmp-addcol .cmp-add-split .cmp-tool-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
     .cmp-addcol .cmp-add-split .cmp-add-main .material-icons { font-size: 22px !important; }
+    /* Same enlargement for the solo (locked-kind) Add button. */
+    .cmp-addcol .cmp-add-solo { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
+    .cmp-addcol .cmp-add-solo .material-icons { font-size: 22px !important; }
     .cmp-addcol .cmp-add-split .cmp-add-caret { padding-left: 12px; padding-right: 12px; }
     .cmp-addcol .cmp-add-split .cmp-add-caret .material-icons { font-size: 22px !important; }
 
@@ -6080,6 +6086,7 @@
       transition: color 0.14s;
     }
     .so-cancel-link:hover { color: var(--text); text-decoration: underline; }
+    .so-dialog:focus, .so-dialog:focus-visible { outline: none; }
     html:not(.dark) .so-dialog {
       background: var(--surface) !important;
       border-color: var(--border-strong) !important;
@@ -7566,7 +7573,7 @@
          setupMenuRail looks for `.menu-brand-bar` to wire the rail-hover
          tooltips and bails if the brand strip doesn't exist yet. */
       mountMenuBrand({
-        logoHref: 'product-comparison.html',
+        logoHref: 'overview.html',
         profileName: 'Arthur Krupsky',
         profileEmail: 'akrupsky@wisecode.ai',
         avatarText: 'AK',
@@ -9361,7 +9368,7 @@
 
   <!-- ── Sign out confirmation modal ───────────────────────────────────── -->
   <div id="signout-modal" role="dialog" aria-modal="true" aria-labelledby="so-title-id" onclick="handleSignOutBackdrop(event)">
-      <div class="so-dialog">
+      <div class="so-dialog" tabindex="-1">
           <div class="so-header">
               <div class="so-header-icon">
                   <span class="material-icons" style="font-size:22px;color:var(--primary)">logout</span>
@@ -10286,7 +10293,7 @@
       const modal = document.getElementById('signout-modal');
       if (!modal) return;
       modal.classList.add('so-open');
-      setTimeout(() => modal.querySelector('.so-cancel-link')?.focus(), 120);
+      setTimeout(() => modal.querySelector('.so-dialog')?.focus(), 120);
     }
     function closeSignOutModal() {
       document.getElementById('signout-modal')?.classList.remove('so-open');
@@ -10343,7 +10350,7 @@
        shared mountWISEaiChat() surface behave identically: every line is
        time-stamped, every WISEai reply is grounded in a cited source, and the
        typing indicator says what WISEai is actually doing. */
-    const WISEAI_SOURCE_LABEL = 'Grounded in WISE data';
+    const WISEAI_SOURCE_LABEL = '';
     const WISEAI_STATUS_LABEL = 'WISEai is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
@@ -11385,6 +11392,29 @@
     function cmpEntKind(ent, scope) { return (ent && ent.kind) || (scope ? scope.noun : 'product'); }
     function cmpKindLabel(kind) { return kind === 'portfolio' ? 'portfolio' : kind === 'category' ? 'category' : 'product'; }
     function cmpKindIcon(kind) { return kind === 'portfolio' ? 'business' : kind === 'category' ? 'category' : 'inventory_2'; }
+    /* The SEED column is the comparison's first/anchor column — the primary
+       "YOU" entity when one exists, otherwise the first column on the board.
+       Its KIND drives the whole board: it's the only column whose type you can
+       change (product / portfolio / category), and everything else must match
+       it. */
+    function cmpSeedId() {
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return null;
+      const primary = scope.entities.find(e => e.primary && compareState.shown.includes(e.id));
+      if (primary) return primary.id;
+      return compareState.shown[0] || null;
+    }
+    /* A comparison is LOCKED to a single kind: the seed column's kind. You can
+       only add or swap in that same kind — no mixing product / portfolio /
+       category on one board. Change the seed column's type to re-key the board
+       to a different kind. */
+    function cmpLockedKind() {
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return 'product';
+      const seedId = cmpSeedId();
+      const seed = seedId && scope.entities.find(e => e.id === seedId);
+      return (seed ? cmpEntKind(seed, scope) : scope.noun) || 'product';
+    }
 
     /* A category's profile is keyed only on its name (not the scope) so it
        reads identically on every board. Deterministic + bounded, same spirit
@@ -11877,14 +11907,14 @@
        caret opens a dropdown to jump straight to adding a Product / Portfolio /
        Category. Rendered inside the toolbar; the menu re-renders with the board
        so its open state survives a re-render (mirrors the metric menu). */
-    function cmpAddSplit(disabled, caretId) {
+    /* Add is locked to the board's kind, so there's no "what kind?" chooser —
+       just one button that adds another of the same kind (product / portfolio
+       / category) the comparison started as. */
+    function cmpAddSplit(disabled) {
       const dis = disabled ? ' disabled' : '';
-      const cid = caretId || 'cmp-add-caret';
+      const label = cmpKindLabel(cmpLockedKind());
       return '<div class="cmp-add-wrap">' +
-        '<div class="cmp-add-split">' +
-          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main" onclick="cmpPromptAddEntity()"${dis}><span class="material-icons">add</span>Add</button>` +
-          `<button type="button" id="${cid}" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-caret" onclick="cmpToggleAddMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Choose what to add"${dis}><span class="material-icons">expand_more</span></button>` +
-        '</div>' +
+        `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main cmp-add-solo" onclick="cmpPromptAddEntity()"${dis}><span class="material-icons">add</span>Add ${label}</button>` +
       '</div>';
     }
     /* Body-portalled type dropdown for the split Add button — lives on <body>
@@ -11939,6 +11969,8 @@
         addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
+      /* Locked to the board's kind so a comparison can never become mixed. */
+      kind = cmpLockedKind();
       addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
       cmpPromptAddOfKind(kind);
     }
@@ -12081,13 +12113,16 @@
         addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
+      /* Locked to the board's kind — the requested kind is ignored if it
+         doesn't match, so a comparison can never become mixed. */
+      kind = cmpLockedKind();
       addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
       cmpPromptAddOfKind(kind, btn);
     }
 
-    /* Add is now KIND-AWARE: first pick product / portfolio / category, then
-       pick the specific one. This is what lets any board become any
-       combination (e.g. drop a category onto a product board). */
+    /* Add is LOCKED to the board's kind: there's no "what kind?" step. Whatever
+       the comparison started as (product / portfolio / category) is the only
+       kind you can add, so we jump straight to picking the specific one. */
     function cmpPromptAddEntity() {
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
@@ -12097,20 +12132,9 @@
       }
       document.getElementById('cmp-add-chips')?.remove();
       document.getElementById('cmp-add-kind-chips')?.remove();
-      addUserMessage('Add to the comparison');
-      const typing = showWISEaiTyping('WISEai is getting your options');
-      setTimeout(() => {
-        typing?.remove();
-        addWISEaiMessage('What would you like to add? You can compare <strong>products</strong>, whole <strong>portfolios</strong>, or a <strong>category average</strong> as a peer — mix any of them on one board.', { source: false });
-        const box = document.getElementById('chat-messages');
-        if (!box) return;
-        const row = document.createElement('div');
-        row.className = 'sc-reply-chips';
-        row.id = 'cmp-add-kind-chips';
-        row.innerHTML = cmpKindChips('cmpPromptAddOfKind');
-        box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
-      }, 420);
+      const kind = cmpLockedKind();
+      addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
+      cmpPromptAddOfKind(kind);
     }
 
     /* Show the specific picks for the chosen kind. */
@@ -12126,7 +12150,7 @@
       setTimeout(() => {
         typing?.remove();
         if (!list.length) {
-          addWISEaiMessage('I couldn’t find another ' + label + ' to add here. Try a different type, or remove one on the board first.', { source: false });
+          addWISEaiMessage('I couldn’t find another ' + label + ' to add here. Remove one on the board first, then try again.', { source: false });
           return;
         }
         const lead = kind === 'category'
@@ -12243,7 +12267,7 @@
       setTimeout(() => {
         typing?.remove();
         if (!list.length) {
-          addWISEaiMessage('No other ' + label + ' is available to place in that slot. Try a different type.', { source: false });
+          addWISEaiMessage('No other ' + label + ' is available to place in that slot.', { source: false });
           return;
         }
         addWISEaiMessage('Pick the ' + label + ' to place in that slot:', { source: false });
@@ -12282,17 +12306,43 @@
       const ent = cmpResolvePickIntoScope(scope, pickId);
       if (!ent) return;
       const old = scope.entities.find(e => e.id === slotId) || {};
-      if (old.primary && ent.kind !== 'category') { ent.primary = true; old.primary = false; }
-      addUserMessage('Swap in ' + ent.name);
-      const typing = showWISEaiTyping('Swapping in ' + ent.name);
+      const oldKind = cmpEntKind(old, scope);
+      const newKind = ent.kind || cmpEntKind(ent, scope);
+      /* Is this the seed (first/anchor) column changing to a DIFFERENT kind?
+         If so, we re-key the whole board to the new kind: the seed becomes the
+         only column (competitors of the old kind are cleared), then the user
+         builds the comparison back up by adding the new kind. This keeps a board
+         from ever holding a mix of kinds. */
+      const isSeed = slotId === cmpSeedId();
+      const reKey = isSeed && newKind !== oldKind;
+      /* Carry the YOU anchor to the new seed for product/portfolio; a category
+         seed can't be "YOU", so clear the primary flag instead. Only touch
+         primary flags when the seed itself is being swapped. */
+      if (isSeed) {
+        scope.entities.forEach(e => { if (e.primary) e.primary = false; });
+        if (newKind !== 'category') ent.primary = true;
+      } else if (old.primary && newKind !== 'category') {
+        ent.primary = true; old.primary = false;
+      }
+      addUserMessage(reKey ? ('Compare ' + cmpKindLabel(newKind) + 's instead') : ('Swap in ' + ent.name));
+      const typing = showWISEaiTyping(reKey ? ('Rebuilding as a ' + cmpKindLabel(newKind) + ' comparison') : ('Swapping in ' + ent.name));
       setTimeout(() => {
         typing?.remove();
-        compareState.shown[idx] = pickId;
-        (compareState.pending = compareState.pending || []).push(pickId);
+        if (reKey) {
+          /* Reset to just the new seed; drop every other column so nothing of
+             the old kind lingers. */
+          compareState.shown = [pickId];
+          compareState.pending = [pickId];
+        } else {
+          compareState.shown[idx] = pickId;
+          (compareState.pending = compareState.pending || []).push(pickId);
+        }
         compareState.stale = true;
         renderCompare();
         scrollPanelIntoView('compare-panel');
-        addWISEaiMessage('Swapped in <strong>' + ent.name + '</strong> — scoring and re-ranking now…', { source: false });
+        addWISEaiMessage(reKey
+          ? ('Switched the anchor to <strong>' + ent.name + '</strong> — this is now a <strong>' + cmpKindLabel(newKind) + '</strong> comparison. Add more ' + cmpKindLabel(newKind) + 's on the right to build it out.')
+          : ('Swapped in <strong>' + ent.name + '</strong> — scoring and re-ranking now…'), { source: false });
         setTimeout(() => cmpRecalculate({ auto: true }), 520);
       }, 520);
     }
@@ -12325,7 +12375,8 @@
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
       const ent = scope.entities.find(e => e.id === slotId) || {};
-      cmpKindMenuState = { slotId, kind: cmpEntKind(ent, scope), anchor: btn };
+      const isSeed = slotId === cmpSeedId();
+      cmpKindMenuState = { slotId, kind: cmpEntKind(ent, scope), anchor: btn, isSeed };
       const menu = document.createElement('div');
       menu.className = 'cmp-kind-menu';
       menu.setAttribute('role', 'menu');
@@ -12356,11 +12407,24 @@
       if (!cmpKindMenuEl || !cmpKindMenuState) return;
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
-      const kind = cmpKindMenuState.kind;
-      const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
-      const tabs = kinds.map(([k, l, ic]) =>
-        `<button type="button" role="menuitemradio" aria-checked="${k === kind}" class="cmp-kind-menu-tab ${k === kind ? 'is-active' : ''}" onclick="cmpKindMenuSetKind('${k}')"><span class="material-icons">${ic}</span>${l}</button>`
-      ).join('');
+      const isSeed = !!cmpKindMenuState.isSeed;
+      /* The SEED (first/anchor) column can change TYPE — product / portfolio /
+         category — which re-keys the whole board. Every other column is locked
+         to the board's kind and can only be swapped for another of that kind
+         (no type tabs). */
+      let kind, tabs = '', hd;
+      if (isSeed) {
+        kind = cmpKindMenuState.kind || cmpLockedKind();
+        const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
+        tabs = '<div class="cmp-kind-menu-tabs">' + kinds.map(([k, l, ic]) =>
+          `<button type="button" role="menuitemradio" aria-checked="${k === kind}" class="cmp-kind-menu-tab ${k === kind ? 'is-active' : ''}" onclick="cmpKindMenuSetKind('${k}')"><span class="material-icons">${ic}</span>${l}</button>`
+        ).join('') + '</div>';
+        hd = 'Change this comparison to…';
+      } else {
+        kind = cmpLockedKind();
+        cmpKindMenuState.kind = kind;
+        hd = 'Swap in another ' + cmpKindLabel(kind);
+      }
       const { list, matchCount } = cmpAddCandidates(scope, kind);
       const items = list.length
         ? list.map((e, i) => {
@@ -12370,8 +12434,8 @@
           }).join('')
         : '<div class="cmp-kind-menu-empty">No other ' + cmpKindLabel(kind) + ' is available to place here.</div>';
       cmpKindMenuEl.innerHTML =
-        '<div class="cmp-kind-menu-hd">Change this slot to…</div>' +
-        '<div class="cmp-kind-menu-tabs">' + tabs + '</div>' +
+        '<div class="cmp-kind-menu-hd">' + hd + '</div>' +
+        tabs +
         '<div class="cmp-kind-menu-list">' + items + '</div>';
     }
 
@@ -13065,19 +13129,22 @@
         '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
         '</div></div></div>' +
       '</div>');
+      const seedId = cmpSeedId();
       ordered.forEach(ent => {
         const isPending = pendingSet.has(ent.id);
         const rank = rankOf.get(ent.id);
         const kind = ent.kind || cmpEntKind(ent, scope);
+        const isSeed = ent.id === seedId;
         const pc = (ent.primary ? ' is-primary' : (isPending ? ' is-pending' : '')) + (ent.isCategory ? ' is-category' : '');
         const rm = (!ent.primary && compareState.shown.length > 2)
           ? `<button type="button" title="Remove" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>` : '';
-        /* Per-slot TYPE TOGGLE — the control that makes any combination
-           possible: tap to swap this column between product / portfolio /
-           category. The slot's rank number (1, 2, 3…) rides inside the chip as
-           its leading badge, so the numbering and the type selector read as one
-           control aligned to the tile's top-left. Hidden while mid-add. */
-        const kindChip = isPending ? '' : `<button type="button" class="cmp-kind-chip" title="Change this slot’s type" aria-label="Change this slot’s type" aria-haspopup="menu" onclick="event.stopPropagation();cmpToggleKindMenu('${ent.id}', this)"><span class="cmp-kind-rank">${rank}</span><span class="cmp-kind-chip-label">${cmpKindLabel(kind)}</span><span class="material-icons cmp-kind-chip-caret">expand_more</span></button>`;
+        /* Per-slot control. The SEED (first/anchor) column can change TYPE
+           (product / portfolio / category), which re-keys the whole board.
+           Every other column is locked to the board's kind and can only be
+           swapped for another of that same kind. The slot's rank number rides
+           inside the chip as its leading badge. Hidden while mid-add. */
+        const chipTitle = isSeed ? 'Change comparison type — product, portfolio or category' : ('Swap in another ' + cmpKindLabel(kind));
+        const kindChip = isPending ? '' : `<button type="button" class="cmp-kind-chip${isSeed ? ' is-seed' : ''}" title="${chipTitle}" aria-label="${chipTitle}" aria-haspopup="menu" onclick="event.stopPropagation();cmpToggleKindMenu('${ent.id}', this)"><span class="cmp-kind-rank">${rank}</span><span class="cmp-kind-chip-label">${cmpKindLabel(kind)}</span><span class="material-icons cmp-kind-chip-caret">expand_more</span></button>`;
         const you = ent.primary ? ' <span class="cmp-you-pill">YOU</span>' : (ent.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '');
         const imgUrl = cmpImgUrl(ent);
         const img = imgUrl ? `<img class="cmp-tile-img" src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.style.display='none'">` : '';
@@ -13172,6 +13239,7 @@
          per metric and the insight row. */
       if (showAddCol) {
         const primName = ordered[0] ? ordered[0].name : 'your food';
+        const lockedLabel = cmpKindLabel(cmpLockedKind());
         /* Rows: header + (health-bar view) one per metric + insight. The old
            standalone score row is gone (scores now ride on the header tiles). */
         const addColRows = chartOverlay ? 1 : (metrics.length + 2);
@@ -13179,9 +13247,9 @@
           '<div class="cmp-cell cmp-addcol cmp-addcol-span" style="grid-column:-2 / -1;grid-row:1 / span ' + addColRows + ';">' +
             '<div class="cmp-addcol-inner">' +
               '<div class="cmp-addcol-plus"><span class="material-icons">add</span></div>' +
-              '<div class="cmp-addcol-title">Add a competitor</div>' +
-              '<div class="cmp-addcol-sub">Drop a product, portfolio or category in beside <strong>' + primName + '</strong> to build the head-to-head.</div>' +
-              cmpAddSplit(false, 'cmp-add-caret-col') +
+              '<div class="cmp-addcol-title">Add a ' + lockedLabel + '</div>' +
+              '<div class="cmp-addcol-sub">Drop another ' + lockedLabel + ' in beside <strong>' + primName + '</strong> to build the head-to-head.</div>' +
+              cmpAddSplit(false) +
             '</div>' +
           '</div>');
       }
@@ -13509,14 +13577,12 @@
       const chips = [];
       if (compareState.stale && !compareState.recalcing)
         chips.push(`<button type="button" class="chip chip-primary" onclick="cmpRecalculate(this)"><span class="material-icons">calculate</span>Recalculate</button>`);
-      /* Adding an entity is the primary next step. Rather than a single bundled
-         "add" chip plus a separate comparison-type switch, surface a dedicated
-         chip per kind so a product, category, or portfolio can be dropped
-         straight onto the board. Each jumps past the "what kind?" step. */
+      /* Adding an entity is the primary next step. The comparison is LOCKED to
+         its own kind, so there's just one Add chip — of the same kind the board
+         started as. No cross-type mixing. */
       if (compareState.shown.length < 5) {
-        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('product', this)"><span class="material-icons">inventory_2</span>Add a product</button>`);
-        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('category', this)"><span class="material-icons">category</span>Add a category</button>`);
-        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('portfolio', this)"><span class="material-icons">business</span>Add a portfolio</button>`);
+        const lk = cmpLockedKind();
+        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('${lk}', this)"><span class="material-icons">${cmpKindIcon(lk)}</span>Add a ${cmpKindLabel(lk)}</button>`);
       }
       if (compareState.shown.length > 2)
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove an item</button>`);

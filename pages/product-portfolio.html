@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <!-- Noto Serif — display face for headings, big stat numerals, and primary CTAs (mirrors aha.html). -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css" />
+  <link rel="stylesheet" href="wise.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -6092,6 +6092,7 @@
       transition: color 0.14s;
     }
     .so-cancel-link:hover { color: var(--text); text-decoration: underline; }
+    .so-dialog:focus, .so-dialog:focus-visible { outline: none; }
     html:not(.dark) .so-dialog {
       background: var(--surface) !important;
       border-color: var(--border-strong) !important;
@@ -7993,7 +7994,7 @@
          setupMenuRail looks for `.menu-brand-bar` to wire the rail-hover
          tooltips and bails if the brand strip doesn't exist yet. */
       mountMenuBrand({
-        logoHref: 'product-comparison.html',
+        logoHref: 'overview.html',
         profileName: 'Arthur Krupsky',
         profileEmail: 'akrupsky@wisecode.ai',
         avatarText: 'AK',
@@ -10114,7 +10115,7 @@
 
   <!-- ── Sign out confirmation modal ───────────────────────────────────── -->
   <div id="signout-modal" role="dialog" aria-modal="true" aria-labelledby="so-title-id" onclick="handleSignOutBackdrop(event)">
-      <div class="so-dialog">
+      <div class="so-dialog" tabindex="-1">
           <div class="so-header">
               <div class="so-header-icon">
                   <span class="material-icons" style="font-size:22px;color:var(--primary)">logout</span>
@@ -11040,7 +11041,7 @@
       const modal = document.getElementById('signout-modal');
       if (!modal) return;
       modal.classList.add('so-open');
-      setTimeout(() => modal.querySelector('.so-cancel-link')?.focus(), 120);
+      setTimeout(() => modal.querySelector('.so-dialog')?.focus(), 120);
     }
     function closeSignOutModal() {
       document.getElementById('signout-modal')?.classList.remove('so-open');
@@ -11097,7 +11098,7 @@
        shared mountWISEaiChat() surface behave identically: every line is
        time-stamped, every WISEai reply is grounded in a cited source, and the
        typing indicator says what WISEai is actually doing. */
-    const WISEAI_SOURCE_LABEL = 'Grounded in WISE data';
+    const WISEAI_SOURCE_LABEL = '';
     const WISEAI_STATUS_LABEL = 'WISEai is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
@@ -17245,6 +17246,30 @@
       else run();
       /* Settings is relocated into #panels-row after boot; re-run once more. */
       setTimeout(run, 0);
+    })();
+  </script>
+  <script>
+    /* Deep link: the dashboard "Add food" button routes here with ?add=food and
+       expects the Add Product flow to open automatically on arrival. */
+    (function () {
+      function autoStartAdd() {
+        try {
+          if (new URLSearchParams(window.location.search).get('add') !== 'food') return;
+        } catch (e) { return; }
+        function fire() {
+          if (typeof window.startAddProduct === 'function') {
+            window.startAddProduct();
+          } else {
+            setTimeout(fire, 60);
+          }
+        }
+        fire();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoStartAdd);
+      } else {
+        autoStartAdd();
+      }
     })();
   </script>
 </body>

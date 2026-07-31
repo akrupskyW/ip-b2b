@@ -154,6 +154,28 @@ export function setWISEaiCollapsed(collapsed) {
   return state;
 }
 
+/* Is the WISEai chat currently closed (folded away)? "Close conversation" folds
+   the module to the floating circle; from the app's point of view that's the
+   chat being off. The Appearance → "WISEai chat" toggle reads this to render
+   its on/off state. */
+export function isWISEaiClosed(state = readWISEaiDockState()) {
+  return state.collapsed === true;
+}
+
+/* Turn the WISEai chat back ON with a clean slate. Reopens every dock on the
+   page AND wipes its transcript back to the welcome screen, so flipping the
+   Appearance toggle "restarts" the conversation fresh rather than restoring the
+   old, closed thread. */
+export function restartWISEaiChat() {
+  const state = writeWISEaiDockState({ collapsed: false });
+  document.querySelectorAll('.wiseai-dock').forEach((dock) => {
+    const chat = dock.__wiseaiChat;
+    if (chat && typeof chat.reset === 'function') chat.reset();
+    applyWISEaiDockState(dock, state);
+  });
+  return state;
+}
+
 /* The floating circle shown when WISEai is collapsed — a fixed FAB carrying the
    WISE-owl bug. One per dock, created lazily and reused. Clicking it reopens
    the module. We keep it in the DOM (just hidden) when expanded so the
@@ -204,6 +226,10 @@ export function mountWISEaiDock(dock, opts = {}) {
        the row. A caller can still override with its own onClose. */
     onClose: typeof opts.onClose === 'function' ? opts.onClose : () => setWISEaiCollapsed(true),
   });
+
+  /* Keep the live chat handle on the dock so restartWISEaiChat() (the Appearance
+     → "WISEai chat" toggle) can wipe the transcript back to a fresh welcome. */
+  dock.__wiseaiChat = wiseai;
 
   /* WISEai is the fixed anchor that modules flip around — it never flips sides
      itself, so no side-flip control is added to its dock. */

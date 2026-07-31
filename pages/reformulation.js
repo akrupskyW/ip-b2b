@@ -396,8 +396,7 @@ function rankedBars(items, max, color) {
 const OWL = document.querySelector('.sc-bug svg').outerHTML;
 function nowLabel() { try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch (_) { return ''; } }
 function metaRow(src) {
-  const s = src !== false ? '<span class="sc-trust-chip"><span class="material-icons">verified_user</span>Grounded in Guiding Stars data</span>' : '';
-  return '<div class="sc-line-meta">' + s + '<span class="sc-line-time">' + nowLabel() + '</span></div>';
+  return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>';
 }
 function addUser(text) {
   const box = document.getElementById('chat-messages');
@@ -435,12 +434,24 @@ function hideWelcome() {
 /* ═══════════ Scope breadcrumb ═══════════ */
 function renderScopeBar() {
   const el = document.getElementById('rf-scope-bar');
-  const crumbs = ['<span class="rf-scope-crumb rf-scope-title"><span class="material-icons">public</span> Portfolio</span>'];
-  if (scope.type === 'owner') crumbs.push('<span class="rf-scope-sep">›</span><span class="rf-scope-crumb"><b>' + esc(scope.name) + '</b></span>');
-  if (scope.type === 'brand') crumbs.push('<span class="rf-scope-sep">›</span><span class="rf-scope-crumb"><b>' + esc(scope.name) + '</b></span>');
-  if (currentProduct) crumbs.push('<span class="rf-scope-sep">›</span><span class="rf-scope-crumb"><span class="material-icons" style="font-size:14px">inventory_2</span> ' + esc(rName(currentProduct).slice(0, 34)) + '</span>');
+  if (!el) return;
+  let title, meta;
+  const count = scopeRows().length;
+  if (currentProduct) {
+    title = rName(currentProduct);
+    meta = '<b>' + esc(rBrand(currentProduct)) + '</b> · ' + esc(ALGO_NAMES[rAlgo(currentProduct)] || rAlgo(currentProduct)) + (rSv(currentProduct) ? ' · ' + esc(rSv(currentProduct)) : '');
+  } else if (scope.type === 'owner') {
+    title = scope.name;
+    meta = 'Brand owner · <b>' + fmt(count) + '</b> products';
+  } else if (scope.type === 'brand') {
+    title = scope.name;
+    meta = 'Brand · <b>' + fmt(count) + '</b> products';
+  } else {
+    title = 'Product Reformulation';
+    meta = 'Guiding Stars · <b>' + fmt(count) + '</b> products';
+  }
   const reset = (scope.type !== 'portfolio' || currentProduct) ? '<button class="rf-scope-reset" onclick="rfResetScope()">Reset scope</button>' : '';
-  el.innerHTML = crumbs.join('') + reset;
+  el.innerHTML = '<div class="rf-head-titles"><h2 class="rf-head-title">' + esc(title) + '</h2><p class="rf-head-meta">' + meta + '</p></div>' + reset;
 }
 function setScope(type, name) { scope.type = type; scope.name = name || null; currentProduct = null; renderScopeBar(); }
 window.rfResetScope = function () { setScope('portfolio', null); runIntent(currentView === 'product' ? 'overview' : currentView, null, true); };
@@ -556,6 +567,12 @@ function rfNewBlockId() { return 'rf-block-' + (++_blockSeq); }
 function setView(name, html, sub, bid) {
   currentView = name;
   const view = document.getElementById('rf-view');
+  // Clear the blank-slate start state on the first real analysis block so the
+  // panel switches cleanly from "pick a starting point" to the transcript feed.
+  const start = view.querySelector('.rf-start');
+  if (start) view.innerHTML = '';
+  // Keep the module headline honest: only a product view owns the product title.
+  if (name !== 'product') currentProduct = null;
   bid = bid || rfNewBlockId();
   const block = document.createElement('section');
   block.className = 'rf-block';
@@ -575,6 +592,34 @@ function setView(name, html, sub, bid) {
     catch (_) { view.scrollTop = view.scrollHeight; }
   });
   return block;
+}
+
+/* ── Blank-slate start state ──
+   The studio opens on a clean slate: the ⭐ panel shows two starter cards for the
+   two minimum jobs — run a Guiding Stars portfolio analysis, or reformulate a
+   single product. Either card fires the same intent as its chat welcome chip,
+   so the panel + chat stay in lockstep. The first real analysis clears this. */
+function renderStartState() {
+  currentView = 'start';
+  currentProduct = null;
+  const view = document.getElementById('rf-view');
+  view.innerHTML =
+    '<div class="rf-start">' +
+      '<p class="rf-start-sub">Pick a starting point here or in the chat — everything you choose renders in this panel.</p>' +
+      '<div class="rf-start-cards">' +
+        '<button type="button" class="rf-start-card" onclick="runIntent(\'overview\')">' +
+          '<span class="material-icons rf-start-card-ic">insights</span>' +
+          '<span class="rf-start-card-t">Guiding Stars analysis</span>' +
+          '<span class="rf-start-card-d">Score the whole portfolio and surface the fastest star gains.</span>' +
+        '</button>' +
+        '<button type="button" class="rf-start-card" onclick="runIntent(\'pick_product\',\'nmany\')">' +
+          '<span class="material-icons rf-start-card-ic">science</span>' +
+          '<span class="rf-start-card-t">Reformulate a product</span>' +
+          '<span class="rf-start-card-d">Open a product and model recipe changes with live star scoring.</span>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  renderScopeBar();
 }
 
 function viewOverview() {
@@ -835,6 +880,24 @@ window.rfRecalc = function (bid) {
   document.getElementById(bid + '-rf-result').innerHTML = '<div class="rs-stars">' + starsHTML(ns) + '</div><div class="rs-score">New score: ' + np + ' ' + deltaStr + '</div><div class="rs-note">' + note + '</div>';
 };
 
+/* ── Panel picker view (PARALLEL to the chat's reply chips) ──
+   Picker intents (pick a product / brand / owner) used to render ONLY as chat
+   chips, so triggering them from the ⭐ panel appeared to do nothing — the result
+   showed up only in the chat. This renders the same choices as a selectable list
+   IN the panel, keeping the two modules in lockstep: each row fires the exact same
+   intent as its chat-chip twin. */
+function viewPicker(name, meta, items) {
+  const rows = items.length ? items.map(i =>
+    '<button type="button" class="rf-pick-item" onclick="' + i.onclick + '">' +
+      '<span class="material-icons">' + (i.icon || 'inventory_2') + '</span>' +
+      '<span class="rf-pick-lab">' + esc(i.label) + '</span>' +
+      '<span class="material-icons rf-pick-go">chevron_right</span>' +
+    '</button>'
+  ).join('') : '<div class="rf-empty">Nothing to pick in this scope.</div>';
+  const html = '<div class="rf-card"><h4>' + esc(meta.title) + '</h4><div class="rf-card-sub">' + meta.desc + '</div><div class="rf-pick">' + rows + '</div></div>';
+  setView(name, html, meta.eyebrow);
+}
+
 /* ═══════════ INTENT REGISTRY ═══════════ */
 function respond(o) {
   hideWelcome();
@@ -868,11 +931,13 @@ const INTENTS = {
   action_plan: () => respond({ user: 'Build a reformulation action plan.', status: 'WISEai is drafting the action plan', reply: 'Here\'s a prioritized, phased action plan for <b>' + esc(scopeLabel()) + '</b> — quick wins first, then the biggest reachable impact, then DQ unlocks. You can export it as an HTML handout.', view: viewActionPlan, follow: [chip('search', 'Reformulate a product', "runIntent('pick_product','nmany')"), chip('storefront', 'Change scope', "runIntent('choose_owner')"), chip('donut_large', 'Overview', "runIntent('overview')")] }),
   choose_owner: () => {
     const owners = ownersList().slice(0, 12);
-    respond({ user: 'Narrow to a brand owner.', status: 'WISEai is listing brand owners', reply: 'Which brand owner should we focus on? (Top 12 by size)', follow: owners.map(o => chip('business', o.name + ' (' + fmt(o.n) + ')', "runIntent('scope_owner'," + JSON.stringify(o.name).replace(/"/g, '&quot;') + ')')).concat([chip('public', 'Back to whole portfolio', "runIntent('scope_reset')")]) });
+    const pickItems = owners.map(o => ({ icon: 'business', label: o.name + ' (' + fmt(o.n) + ')', onclick: "runIntent('scope_owner'," + JSON.stringify(o.name).replace(/"/g, '&quot;') + ')' }));
+    respond({ user: 'Narrow to a brand owner.', status: 'WISEai is listing brand owners', reply: 'Which brand owner should we focus on? (Top 12 by size)', view: () => viewPicker('owner_pick', { title: 'Choose a brand owner', desc: 'Top 12 brand owners by portfolio size — pick one to scope the studio.', eyebrow: 'Brand owners' }, pickItems), follow: owners.map(o => chip('business', o.name + ' (' + fmt(o.n) + ')', "runIntent('scope_owner'," + JSON.stringify(o.name).replace(/"/g, '&quot;') + ')')).concat([chip('public', 'Back to whole portfolio', "runIntent('scope_reset')")]) });
   },
   choose_brand: () => {
     const brands = brandsList().slice(0, 12);
-    respond({ user: 'Pick a brand.', status: 'WISEai is listing brands', reply: 'Which brand? (Top 12 by size)', follow: brands.map(b => chip('storefront', b.name + ' (' + fmt(b.n) + ')', "runIntent('scope_brand'," + JSON.stringify(b.name).replace(/"/g, '&quot;') + ')')).concat([chip('public', 'Back to whole portfolio', "runIntent('scope_reset')")]) });
+    const pickItems = brands.map(b => ({ icon: 'storefront', label: b.name + ' (' + fmt(b.n) + ')', onclick: "runIntent('scope_brand'," + JSON.stringify(b.name).replace(/"/g, '&quot;') + ')' }));
+    respond({ user: 'Pick a brand.', status: 'WISEai is listing brands', reply: 'Which brand? (Top 12 by size)', view: () => viewPicker('brand_pick', { title: 'Choose a brand', desc: 'Top 12 brands by portfolio size — pick one to scope the studio.', eyebrow: 'Brands' }, pickItems), follow: brands.map(b => chip('storefront', b.name + ' (' + fmt(b.n) + ')', "runIntent('scope_brand'," + JSON.stringify(b.name).replace(/"/g, '&quot;') + ')')).concat([chip('public', 'Back to whole portfolio', "runIntent('scope_reset')")]) });
   },
   scope_owner: (name) => { setScope('owner', name); respond({ user: 'Focus on ' + name + '.', status: 'WISEai is scoping to ' + name, reply: scopeSetReply(), view: viewOverview, follow: FOLLOW_PORTFOLIO() }); },
   scope_brand: (name) => { setScope('brand', name); respond({ user: 'Focus on ' + name + '.', status: 'WISEai is scoping to ' + name, reply: scopeSetReply(), view: viewOverview, follow: [chip('trending_up', 'Star movers', "runIntent('movers')"), chip('bolt', 'Top levers', "runIntent('top_levers')"), chip('auto_graph', 'Impact projection', "runIntent('reform_projection')"), chip('search', 'Reformulate a product', "runIntent('pick_product','nmany')"), chip('assignment', 'Action plan', "runIntent('action_plan')")] }); },
@@ -885,9 +950,10 @@ const INTENTS = {
     else if (kind === 'nm2') pool = a.nmProducts.filter(r => rStars(r) === 2);
     else if (kind === 'dqunlock') pool = a.dqProducts;
     pool = pool.slice(0, 10);
-    if (!pool.length) { respond({ user: 'Show me products to reformulate.', status: 'WISEai is finding candidates', reply: 'No near-miss products in this scope for that filter. Try a broader scope or another star tier.', follow: [chip('trending_up', 'Star movers', "runIntent('movers')"), chip('public', 'Whole portfolio', "runIntent('scope_reset')")] }); return; }
+    if (!pool.length) { respond({ user: 'Show me products to reformulate.', status: 'WISEai is finding candidates', reply: 'No near-miss products in this scope for that filter. Try a broader scope or another star tier.', view: () => viewPicker('picker', { title: 'Reformulate a product', desc: 'No near-miss products in ' + esc(scopeLabel()) + ' for this filter — try a broader scope or another star tier.', eyebrow: 'Reformulation candidates · ' + scopeLabel() }, []), follow: [chip('trending_up', 'Star movers', "runIntent('movers')"), chip('public', 'Whole portfolio', "runIntent('scope_reset')")] }); return; }
     const chips = pool.map(r => chip('inventory_2', rName(r).slice(0, 32) + ' — ' + rBrand(r), "runIntent('open_product'," + ROWS.indexOf(r) + ')'));
-    respond({ user: 'Pick a product to reformulate.', status: 'WISEai is finding reformulation candidates', reply: 'Here are near-miss products in <b>' + esc(scopeLabel()) + '</b> — each is one reachable change from the next star. Pick one to open its reformulation calculator.', follow: chips });
+    const pickItems = pool.map(r => ({ icon: 'inventory_2', label: rName(r).slice(0, 40) + ' — ' + rBrand(r), onclick: "runIntent('open_product'," + ROWS.indexOf(r) + ')' }));
+    respond({ user: 'Pick a product to reformulate.', status: 'WISEai is finding reformulation candidates', reply: 'Here are near-miss products in <b>' + esc(scopeLabel()) + '</b> — each is one reachable change from the next star. Pick one to open its reformulation calculator.', view: () => viewPicker('picker', { title: 'Reformulate a product', desc: 'Near-miss products in ' + esc(scopeLabel()) + ' — each is one reachable change from the next star. Pick one to open its calculator.', eyebrow: 'Reformulation candidates · ' + scopeLabel() }, pickItems), follow: chips });
   },
   open_product: (idx) => { const r = ROWS[idx]; if (!r) return; respond({ user: 'Reformulate ' + rName(r) + '.', status: 'WISEai is scoring ' + rName(r).slice(0, 30), reply: productReply(r), view: () => viewProduct(r), follow: [chip('trending_up', 'Back to star movers', "runIntent('movers')"), chip('search', 'Another product', "runIntent('pick_product','nmany')"), chip('assignment', 'Action plan', "runIntent('action_plan')")] }); },
 };
@@ -965,13 +1031,14 @@ window.rfReExplore = function () {
   document.getElementById('chat-messages').innerHTML = '';
   const ws = document.getElementById('welcome-screen');
   ws.style.display = ''; ws.classList.remove('sc-hidden');
-  // Explicit "start over" also clears the ⭐ transcript feed and reseeds a fresh
-  // portfolio overview so the panel isn't left showing a stale history.
+  // Explicit "start over" also clears the ⭐ transcript feed and returns the
+  // panel to the clean blank-slate start state (no stale history, no auto-loaded
+  // portfolio) so it matches a fresh page load.
   document.getElementById('rf-view').innerHTML = '';
   _blockSeq = 0;
   Object.keys(_wiRegistry).forEach(k => delete _wiRegistry[k]);
   setScope('portfolio', null);
-  viewOverview();
+  renderStartState();
 };
 window.rfToggleWidth = function () {
   const row = document.getElementById('modules-row');
@@ -1049,6 +1116,6 @@ window.addEventListener('hashchange', routeHash);
 document.getElementById('rf-total-count').textContent = fmt(S.total || ROWS.length);
 renderScopeBar();
 renderWelcomeChips();
-if (!routeHash()) viewOverview();  // honor a deep link, else seed the overview panel
+if (!routeHash()) renderStartState();  // honor a deep link, else open on a blank slate
 
 })();

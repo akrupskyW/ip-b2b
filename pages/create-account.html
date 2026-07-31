@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — WISEcode Intelligence</title>
+  <script>
+    try { if (localStorage.getItem('wise-theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { document.documentElement.classList.add('dark'); }
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="auth.css" />
+  <script src="../js/auth.js"></script>
+</head>
+<body class="auth-page auth-chat">
+  <aside id="auth-nav" class="auth-nav" aria-label="Primary"></aside>
+  <main class="auth-main">
+    <div id="ac-chat"></div>
+    <aside id="ac-setup" class="auth-setup-pane" hidden></aside>
+    <aside class="auth-hero auth-hero--cpg" role="img" aria-label="WISEcode">
+      <svg class="auth-hero-net" viewBox="0 0 400 520" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+        <g class="ahn-lines">
+          <line x1="40" y1="300" x2="120" y2="292"/>
+          <line x1="120" y1="292" x2="200" y2="330"/>
+          <line x1="200" y1="330" x2="262" y2="300"/>
+          <line x1="262" y1="300" x2="340" y2="298"/>
+          <line x1="40" y1="300" x2="110" y2="352"/>
+          <line x1="110" y1="352" x2="70" y2="430"/>
+          <line x1="70" y1="430" x2="150" y2="470"/>
+          <line x1="110" y1="352" x2="185" y2="410"/>
+          <line x1="185" y1="410" x2="150" y2="470"/>
+          <line x1="185" y1="410" x2="252" y2="400"/>
+          <line x1="200" y1="330" x2="185" y2="410"/>
+          <line x1="252" y1="400" x2="322" y2="360"/>
+          <line x1="322" y1="360" x2="340" y2="298"/>
+          <line x1="322" y1="360" x2="362" y2="300"/>
+          <line x1="252" y1="400" x2="300" y2="470"/>
+          <line x1="300" y1="470" x2="372" y2="448"/>
+          <line x1="322" y1="360" x2="372" y2="448"/>
+          <line x1="150" y1="470" x2="300" y2="470"/>
+        </g>
+        <g class="ahn-dots">
+          <circle cx="40" cy="300" r="3"/>
+          <circle cx="120" cy="292" r="2.5"/>
+          <circle cx="200" cy="330" r="4" class="ahn-dot--bright"/>
+          <circle cx="262" cy="300" r="2.5"/>
+          <circle cx="340" cy="298" r="3"/>
+          <circle cx="362" cy="300" r="2"/>
+          <circle cx="110" cy="352" r="3"/>
+          <circle cx="70" cy="430" r="2.5"/>
+          <circle cx="150" cy="470" r="3.5" class="ahn-dot--bright"/>
+          <circle cx="185" cy="410" r="3"/>
+          <circle cx="252" cy="400" r="4" class="ahn-dot--bright"/>
+          <circle cx="322" cy="360" r="3"/>
+          <circle cx="300" cy="470" r="2.5"/>
+          <circle cx="372" cy="448" r="3"/>
+        </g>
+      </svg>
+      <div class="auth-hero-caption">
+        <h2>Join the WISEcode platform.</h2>
+        <p>Set up your workspace to benchmark products, surface risks, and guide better formulations.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="../js/auth-forms.js"></script>
+  <script src="../js/auth-signup-chat.js"></script>
+  <script>WiseAuthChat.initSignup();</script>
+</body>
+</html>

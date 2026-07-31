@@ -305,7 +305,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      data-handling reassurances now live in the input placeholder, so the
      welcome no longer renders a separate trust-badge row. */
   const disclaimer = opts.disclaimer !== undefined ? opts.disclaimer : DEFAULT_DISCLAIMER;
-  const sourceLabel = opts.sourceLabel !== undefined ? opts.sourceLabel : 'Grounded in WISE data';
+  const sourceLabel = opts.sourceLabel !== undefined ? opts.sourceLabel : '';
   const statusLabel = opts.statusLabel || `${title} is thinking`;
 
   /* Optional "at a glance" score-card rail for this surface (opt-in). */
@@ -422,6 +422,29 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   const scrollDown = () => { if (messages) messages.scrollTop = messages.scrollHeight; };
 
+  /* Inline intent chips — an opt-in (`inlineChips: true`) block of suggested
+     actions that lives IN the transcript, trailing the latest WISEai turn, just
+     like a normal chat's suggested replies (NOT a docked bottom carousel). We
+     keep a single element and re-park it at the end of the thread after every
+     reply, and detach it while the user is typing / WISEai is thinking. */
+  const inlineChips = opts.inlineChips === true;
+  let ichipsEl = null;
+  function parkInlineChips() {
+    if (!inlineChips || !messages) return;
+    if (!ichipsEl) {
+      ichipsEl = document.createElement('div');
+      ichipsEl.className = 'sc-inline-chips ws-chips';
+      ichipsEl.setAttribute('role', 'list');
+      ichipsEl.setAttribute('aria-label', 'Suggested actions');
+      ichipsEl.innerHTML = chipsHtml;
+    }
+    messages.appendChild(ichipsEl); /* move to the very end of the thread */
+    scrollDown();
+  }
+  function detachInlineChips() {
+    if (ichipsEl && ichipsEl.parentNode) ichipsEl.parentNode.removeChild(ichipsEl);
+  }
+
   /* Reflect the live agent roster into the topbar pill + panel header. */
   function updateAgentCount() {
     const n = onCount();
@@ -449,6 +472,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   function addUser(text) {
     if (!messages) return;
+    detachInlineChips(); /* chips reappear after WISEai's next reply */
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span><div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown();
@@ -464,10 +488,12 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }<span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+    parkInlineChips(); /* trail the latest reply with suggested actions */
     scrollDown();
   }
   function showTyping() {
     if (!messages) return null;
+    detachInlineChips();
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing';
     el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${esc(statusLabel)}…</span></span></div>`;
@@ -593,6 +619,21 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     addUser(def.label);
     /* Route the reply by the chip's intent id (not just its label) so the
        conversation always continues on the feature the chip represents. */
+    if (!handled) wiseaiRespond(def.label, def.intent);
+  });
+
+  /* Inline intent chips — same routing as the welcome chips, but the block
+     lives inside the transcript (trailing the latest reply). Delegated on the
+     messages area since the element is re-parked as the thread grows. */
+  messages?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sc-inline-chips .ws-intent-chip[data-intent]');
+    if (!chip) return;
+    const def = intents[Number(chip.dataset.intent)];
+    if (!def) return;
+    if (def.intent === 'choose_agents') { openAgents(); return; }
+    const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    hideWelcome();
+    addUser(def.label);
     if (!handled) wiseaiRespond(def.label, def.intent);
   });
 

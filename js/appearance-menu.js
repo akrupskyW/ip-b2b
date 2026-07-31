@@ -22,7 +22,14 @@
  * so the existing per-shell listeners keep working unchanged.
  */
 
-import { isMinimalUiOn, isHeaderFloatOn, isFullBleedOn, isColorblindOn } from './topbar.js';
+import {
+  isMinimalUiOn,
+  isHeaderFloatOn,
+  isFullBleedOn,
+  isColorblindOn,
+  getColorblindMode,
+  COLORBLIND_MODES,
+} from './topbar.js';
 import { isJamStripOn } from './jam-strip.js';
 import { getStoredFontSize } from './text-size.js';
 
@@ -62,6 +69,25 @@ function pivotSection(showPivot, isPivoted) {
   return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation');
 }
 
+/** "Colorblind type" segmented control — only revealed once the colorblind
+    palette is switched on, so the picker never clutters the menu when unused.
+    Each button carries a `data-cbtype` id that topbar.js's capture-phase handler
+    turns into the matching cb-<type> palette on <html>. */
+function colorblindTypeSection() {
+  if (!isColorblindOn()) return '';
+  const active = getColorblindMode();
+  const btns = COLORBLIND_MODES.map(
+    (m) =>
+      `<button type="button" class="fz-btn${m.id === active ? ' fz-active' : ''}" data-cbtype="${m.id}" title="${m.label}" aria-label="${m.label}" aria-pressed="${m.id === active ? 'true' : 'false'}">${m.short}</button>`
+  ).join('');
+  return `
+    <div class="fz-row cb-type-row">
+      <span class="fz-row-label">CVD type</span>
+      <div class="fz-btns" role="group" aria-label="Color-vision deficiency type">${btns}</div>
+    </div>
+    <div class="wise-popover-divider"></div>`;
+}
+
 /** "Dock Chat" segmented control (left / center / right) for the WISEai dock. */
 function wiseaiDockSection(mode) {
   const btn = (m, icon, label) =>
@@ -89,6 +115,9 @@ function wiseaiDockSection(mode) {
  * @param {boolean} [opts.isDark]         Whether dark mode is active (shells compute this differently).
  * @param {boolean} [opts.showWISEaiDock]  Show the WISEai "Dock Chat" control (default true).
  * @param {string}  [opts.wiseaiDockMode]  Active WISEai dock side ('left'|'center'|'right'|'off').
+ * @param {boolean} [opts.showWISEaiChat]  Show the "WISEai chat" on/off toggle (default false).
+ *                                          Only shells that mount the shared dock pass this.
+ * @param {boolean} [opts.wiseaiChatOn]    Whether the WISEai chat is currently open (not closed).
  * @returns {string} popover innerHTML
  */
 export function buildAppearanceBody({
@@ -99,6 +128,8 @@ export function buildAppearanceBody({
   isDark = false,
   showWISEaiDock = true,
   wiseaiDockMode = 'off',
+  showWISEaiChat = false,
+  wiseaiChatOn = true,
 } = {}) {
   const fz = getStoredFontSize();
   const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
@@ -111,7 +142,9 @@ export function buildAppearanceBody({
     ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
     ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip')}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Colorblind mode')}
+    ${showWISEaiChat ? toggleRow('data-wiseai-chat="1"', wiseaiChatOn, 'WISEai™ chat') : ''}
     <div class="wise-popover-divider"></div>
+    ${colorblindTypeSection()}
     ${showWISEaiDock ? wiseaiDockSection(wiseaiDockMode) : ''}
     <div class="fz-row">
       <span class="fz-row-label">Text size</span>

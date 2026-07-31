@@ -474,6 +474,30 @@ const DATA_ALT = {
 let _altBrandActive = false;
 let _dashboardHost  = null;
 
+/* Product-discovery intro (first load only). The dashboard opens with a thin
+   progress line under the hero banner — the rest of the surface stays hidden
+   while WISEcode "discovers" the portfolio. Only once the bar reaches 100% is
+   the content revealed and every count-up + chart allowed to animate in. A
+   brand toggle re-render or a reduced-motion preference skips straight to the
+   revealed state (no second discovery run). Counts also tick up slower during
+   the reveal via COUNTUP_DURATION_SCALE, so the numbers feel like they're being
+   found rather than snapping into place. */
+let _discoveryDone = false;
+const COUNTUP_DURATION_SCALE = 1.8;
+/* How long the simulated discovery takes + how many tokens it "spends". */
+const DISCOVERY_DURATION_MS = 7200;
+const DISCOVERY_TOKENS = 2840;
+/* Rotating status messages shown while discovery runs — each maps to a slice of
+   the progress bar so the label reads like a live ingest job working through
+   products, imagery, barcodes, ingredients, then a final validation pass. */
+const DISCOVERY_STAGES = [
+  'Searching for products…',
+  'Scanning product images…',
+  'Reading barcodes…',
+  'Matching ingredients…',
+  'Validating results…',
+];
+
 /* The currently active dataset. */
 function getActiveData() {
   return _altBrandActive ? DATA_ALT : DATA;
@@ -862,37 +886,57 @@ const REPORTS = {
       { title: 'GRAS levels', parts: d.gras.distribution },
     ],
   },
+  insights: {
+    eyebrow: 'Brand report',
+    title: 'WISEcode Insights Report',
+    accent: 'is-teal',
+    summary: (d) => `Your WISEscore is ${d.wisescore.average} across ${d.claim.discovered} discovered products — every metric, distribution and flagged product across all 3 pillars.`,
+    stats: (d) => [
+      { label: 'WISEscore', value: `${d.wisescore.average}` },
+      { label: 'Non-UPF score', value: `${d.upf.pct}%` },
+      { label: 'GRAS score', value: `${d.gras.pct}%` },
+    ],
+    groups: (d) => [
+      { title: 'Processing levels', parts: d.upf.distribution },
+      { title: 'GRAS levels', parts: d.gras.distribution },
+    ],
+  },
 };
 
-let reportModalEls = null;
+/* The live WISEai chat, handed over by agent-overview once the dock is up, so a
+   report opened on the surface mirrors into the conversation (and vice-versa) —
+   the exact chat ↔ surface pairing the verification flows use. */
+let dashChatApi = null;
+export function setDashChat(api) { dashChatApi = api; }
 
-function ensureReportModal() {
-  if (reportModalEls) return reportModalEls;
-  const scrim = document.createElement('div');
-  scrim.className = 'dash-modal-scrim';
-  const modal = document.createElement('div');
-  modal.className = 'dash-modal dash-modal--report';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  scrim.appendChild(modal);
-  document.body.appendChild(scrim);
-  scrim.addEventListener('click', (e) => { if (e.target === scrim) closeReportModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReportModal(); });
-  reportModalEls = { scrim, modal };
-  return reportModalEls;
+/* Post a mirrored turn into the chat — the action as a "you" line + WISEai's
+   narration — so opening a report on the surface reads like asking for it. Pass
+   an empty userLabel to add only the reply (the intent-chip path already added
+   the "you" line). */
+function pushDashChat(userLabel, replyHtml) {
+  if (!dashChatApi) return;
+  dashChatApi.hideWelcome?.();
+  if (userLabel) dashChatApi.addUser(userLabel);
+  if (replyHtml) dashChatApi.addWISEai(replyHtml);
 }
 
-function closeReportModal() {
-  if (!reportModalEls) return;
-  reportModalEls.scrim.classList.remove('is-open');
+/* Compact narration for the chat when a report opens on the surface. */
+function reportChatReply(cfg, d) {
+  const stats = cfg.stats(d)
+    .map((s) => `<strong>${esc(String(s.value))}</strong> ${esc(s.label)}`)
+    .join(' &nbsp;·&nbsp; ');
+  return `${esc(cfg.summary(d))}<br><br>${stats}<br><br>I\u2019ve opened the full <strong>${esc(cfg.title)}</strong> on the right — per-product breakdowns and exportable tables will land there as the report is finalized.`;
 }
 
-function openReportModal(card, d) {
+/* Chat reply HTML for a report, read off the live (brand-aware) dataset. Used
+   by the intent chips so the docked reply matches the surface. */
+export function dashReportChatReply(card) {
   const cfg = REPORTS[card];
-  if (!cfg) return;
-  const { scrim, modal } = ensureReportModal();
-  modal.setAttribute('aria-label', cfg.title);
+  if (!cfg) return '';
+  return reportChatReply(cfg, getActiveData());
+}
 
+function reportSurfaceHTML(cfg, d) {
   const stats = cfg.stats(d)
     .map((s) => `
       <div class="dash-report-stat">
@@ -905,39 +949,47 @@ function openReportModal(card, d) {
     .map((g) => legendGroup(g.title, g.parts))
     .join('');
 
-  modal.innerHTML = `
-    <header class="dash-modal-head">
-      <div class="dash-modal-titles">
-        <span class="dash-modal-eyebrow">${esc(cfg.eyebrow)}</span>
-        <h2 class="dash-modal-title">${esc(cfg.title)}</h2>
-      </div>
-      <button class="dash-modal-close" type="button" data-report-close aria-label="Close"><span class="material-icons">close</span></button>
-    </header>
-    <div class="dash-modal-body">
-      <p class="dash-report-summary ${cfg.accent}">${esc(cfg.summary(d))}</p>
-      <div class="dash-report-stats">${stats}</div>
-      <div class="dash-report-groups">${groups}</div>
-      <div class="dash-report-pending">
-        <span class="material-icons">hourglass_top</span>
-        <div>
-          <div class="dash-report-pending-title">The full report is on its way</div>
-          <div class="dash-report-pending-sub">Per-product breakdowns, ingredient-level detail and exportable tables will appear here once the report is finalized.</div>
+  return `
+    <section class="dash-report-view" aria-label="${esc(cfg.title)}">
+      <header class="dash-report-view-head">
+        <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-dash-action="report-back">
+          <span class="material-icons">arrow_back</span>Back to dashboard
+        </button>
+        <div class="dash-report-view-titles">
+          <span class="dash-modal-eyebrow">${esc(cfg.eyebrow)}</span>
+          <h2 class="dash-modal-title">${esc(cfg.title)}</h2>
+        </div>
+        <button class="dash-btn dash-btn--primary dash-report-view-export" type="button" data-dash-action="report-export">
+          <span class="material-icons">download</span>Export
+        </button>
+      </header>
+      <div class="dash-report-view-body">
+        <p class="dash-report-summary ${cfg.accent}">${esc(cfg.summary(d))}</p>
+        <div class="dash-report-stats">${stats}</div>
+        <div class="dash-report-groups">${groups}</div>
+        <div class="dash-report-pending">
+          <span class="material-icons">hourglass_top</span>
+          <div>
+            <div class="dash-report-pending-title">The full report is on its way</div>
+            <div class="dash-report-pending-sub">Per-product breakdowns, ingredient-level detail and exportable tables will appear here once the report is finalized.</div>
+          </div>
         </div>
       </div>
-    </div>
-    <footer class="dash-modal-foot">
-      <div class="dash-modal-foot-right" style="margin-left:auto;">
-        <button class="dash-btn dash-btn--ghost" type="button" data-report-close>Close</button>
-        <button class="dash-btn dash-btn--primary" type="button" data-report-export><span class="material-icons">download</span>Export</button>
-      </div>
-    </footer>`;
+    </section>`;
+}
 
-  modal.querySelectorAll('[data-report-close]').forEach((b) => b.addEventListener('click', closeReportModal));
-  const exportBtn = modal.querySelector('[data-report-export]');
-  if (exportBtn) exportBtn.addEventListener('click', () => { window.location.href = 'portfolio.html'; });
-
-  modal.scrollTop = 0;
-  requestAnimationFrame(() => scrim.classList.add('is-open'));
+/* Open a report INLINE in the main panel (the interface on the right of the
+   WISEai chat), replacing the dashboard — never a modal overlay. `mirror` posts
+   the you + WISEai turn into the chat; pass { mirror: false } on the intent-chip
+   path where the dock already added the "you" line + reply. */
+export function openDashReport(card, { mirror = true } = {}) {
+  const cfg = REPORTS[card];
+  const host = _dashboardHost;
+  if (!cfg || !host) return;
+  const d = getActiveData();
+  host.innerHTML = reportSurfaceHTML(cfg, d);
+  host.scrollTop = 0;
+  if (mirror) pushDashChat(`Open the ${cfg.title}`, reportChatReply(cfg, d));
 }
 
 function renderHero(d, isAlt = false) {
@@ -977,6 +1029,91 @@ function renderHero(d, isAlt = false) {
         <p class="dash-hero-desc">${heroDesc}</p>
       </div>
     </section>`;
+}
+
+/* Whether the first-load discovery intro should run: only on the initial
+   primary-brand render, and never when the user prefers reduced motion. */
+function shouldRunDiscovery(isAlt) {
+  return !_discoveryDone && !isAlt && !prefersReducedMotion();
+}
+
+/* The thin discovery progress line that sits directly beneath the hero banner
+   while WISEcode "discovers" the portfolio. A hairline track fills left→right
+   with a live percentage, an estimated time remaining, and a running token
+   count — the same language as a real ingest job. Rendered only for the first
+   load (see shouldRunDiscovery). */
+function renderDiscovery() {
+  return `
+    <div class="dash-discovery" id="dash-discovery" role="status" aria-live="polite" aria-label="Discovering your products">
+      <div class="dash-discovery-track"><span class="dash-discovery-fill" id="dash-discovery-fill"></span></div>
+      <div class="dash-discovery-meta">
+        <span class="dash-discovery-label">
+          <span class="material-icons dash-discovery-spin" aria-hidden="true">autorenew</span>
+          <span id="dash-discovery-status">${DISCOVERY_STAGES[0]}</span>
+        </span>
+        <span class="dash-discovery-stats">
+          <span class="dash-discovery-pct" id="dash-discovery-pct">0%</span>
+          <span class="dash-discovery-dot" aria-hidden="true">·</span>
+          <span class="dash-discovery-eta" id="dash-discovery-eta">~${Math.ceil(DISCOVERY_DURATION_MS / 1000)}s left</span>
+          <span class="dash-discovery-dot" aria-hidden="true">·</span>
+          <span class="dash-discovery-tokens" id="dash-discovery-tokens">0 tokens</span>
+        </span>
+      </div>
+    </div>`;
+}
+
+/* Drive the discovery line from 0→100% over DISCOVERY_DURATION_MS, updating the
+   percentage, the estimated time remaining, and the token spend as it goes.
+   Resolves once the bar completes (and briefly shows a "complete" state) so the
+   caller can reveal the dashboard and kick off the count-ups. */
+function runDiscovery(host, { onFirstFound } = {}) {
+  const bar = host.querySelector('#dash-discovery');
+  const fill = host.querySelector('#dash-discovery-fill');
+  const pctEl = host.querySelector('#dash-discovery-pct');
+  const etaEl = host.querySelector('#dash-discovery-eta');
+  const tokEl = host.querySelector('#dash-discovery-tokens');
+  const statusEl = host.querySelector('#dash-discovery-status');
+  const fmt = (n) => Math.round(n).toLocaleString('en-US');
+  let firstFound = false;
+  return new Promise((resolve) => {
+    if (!bar || !fill) { resolve(); return; }
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / DISCOVERY_DURATION_MS);
+      /* Ease the progress so it surges early then settles into the last few
+         percent — the way a real job front-loads the easy finds. */
+      const eased = easeOutCubic(t);
+      const pct = Math.round(eased * 100);
+      fill.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = pct + '%';
+      if (etaEl) {
+        const remain = Math.max(0, Math.ceil((DISCOVERY_DURATION_MS * (1 - t)) / 1000));
+        etaEl.textContent = remain > 0 ? `~${remain}s left` : 'finishing…';
+      }
+      if (tokEl) tokEl.textContent = `${fmt(eased * DISCOVERY_TOKENS)} tokens`;
+      if (statusEl) {
+        const stage = Math.min(DISCOVERY_STAGES.length - 1, Math.floor(t * DISCOVERY_STAGES.length));
+        const msg = DISCOVERY_STAGES[stage];
+        if (statusEl.textContent !== msg) statusEl.textContent = msg;
+      }
+      /* The first products have surfaced — let the dashboard paint in behind the
+         bar (loading state) so charts fill and numbers climb as more arrive. */
+      if (!firstFound && pct >= 2) { firstFound = true; onFirstFound?.(); }
+      if (t < 1) { requestAnimationFrame(tick); return; }
+      /* Land on the exact totals, flip to the completed state, then resolve a
+         beat later so the check reads before the surface reveals. */
+      fill.style.width = '100%';
+      if (pctEl) pctEl.textContent = '100%';
+      if (etaEl) etaEl.textContent = 'done';
+      if (tokEl) tokEl.textContent = `${fmt(DISCOVERY_TOKENS)} tokens`;
+      bar.classList.add('is-complete');
+      if (statusEl) statusEl.textContent = 'Discovery complete';
+      const spin = bar.querySelector('.dash-discovery-spin');
+      if (spin) spin.textContent = 'check_circle';
+      setTimeout(resolve, 520);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 /* Compact summary band beneath the hero: three top-line scores
@@ -1123,7 +1260,7 @@ function renderClaim(d) {
           <div class="dash-score-toast-body">
             <div class="dash-score-toast-title">${u.nonCount} products are ready to verify</div>
             <p class="dash-score-toast-text">Earn the Non&#8209;UPF verification shield on these products so they stand out on retail listings — it only takes a moment to start.</p>
-            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start Non&#8209;UPF Verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
           </div>
           <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
         </div>` : ''}
@@ -1133,7 +1270,28 @@ function renderClaim(d) {
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start verification</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start Non&#8209;UPF Verification</button>
+        </div>
+      </div>
+      <div class="dash-claim-divider"></div>
+      <div class="dash-claim-col dash-claim-col--nudge">
+        ${d.gras.grasCount > 0 ? `
+        <div class="dash-score-toast" role="status">
+          <span class="dash-score-toast-icon"><span class="material-icons">verified</span></span>
+          <div class="dash-score-toast-body">
+            <div class="dash-score-toast-title">${d.gras.grasCount} products are ready to verify</div>
+            <p class="dash-score-toast-text">Earn the GRAS verification shield on these products so their ingredient safety stands out on retail listings — it only takes a moment to start.</p>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-gras">Start GRAS Verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+          </div>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
+        </div>` : ''}
+        <div class="dash-bignum-row">
+          ${countUpMarkup(d.gras.grasCount, { className: 'dash-bignum' })}
+          <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for GRAS verification shield</span>
+          ${stampIcon('Products Qualify')}
+        </div>
+        <div class="dash-btn-row">
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-icons">verified</span>Start GRAS Verification</button>
         </div>
       </div>
     </section>`;
@@ -2232,9 +2390,11 @@ export function renderDashboardHome(host) {
   _dashboardHost = host;
   const d = getActiveData();
   const isAlt = _altBrandActive;
+  const discovering = shouldRunDiscovery(isAlt);
   host.innerHTML = `
     ${renderHero(d, isAlt)}
-    <div class="dash">
+    ${discovering ? renderDiscovery() : ''}
+    <div class="dash${discovering ? ' is-discovering' : ''}">
       ${renderClaim(d)}
       ${document.body.dataset.hideWISEai ? renderTopPerformers(d) : ''}
       ${document.body.dataset.hideWISEai ? renderTopPerformersHero(d) : ''}
@@ -2355,11 +2515,31 @@ export function renderDashboardHome(host) {
         return;
       }
 
-      /* Full report modal — from the card kebab and the in-card report links.
-         The GRAS bar chart ("grasbars") shares the GRAS report. */
+      /* Report surface — from the card kebab and the in-card report links. The
+         report opens INLINE in this panel (right of the WISEai chat) and mirrors
+         into the chat; no modal overlay. The GRAS bar chart ("grasbars") shares
+         the GRAS report. */
       const rep = a.match(/^(upf|gras|grasbars)-report$/);
       if (rep) {
-        openReportModal(rep[1] === 'grasbars' ? 'gras' : rep[1], d);
+        openDashReport(rep[1] === 'grasbars' ? 'gras' : rep[1]);
+        return;
+      }
+
+      /* The pillars CTA opens the portfolio-wide insights report on the same
+         inline surface. */
+      if (a === 'insights-report') {
+        openDashReport('insights');
+        return;
+      }
+
+      /* Inline report surface controls: return to the dashboard, or export. */
+      if (a === 'report-back') {
+        renderDashboardHome(host);
+        pushDashChat('Back to the dashboard', 'Back to your dashboard overview. Ask me to open any report and I\u2019ll bring it up here on the right.');
+        return;
+      }
+      if (a === 'report-export') {
+        window.location.href = 'portfolio.html';
         return;
       }
 
@@ -2395,11 +2575,12 @@ export function renderDashboardHome(host) {
       }
 
       const route = {
-        'review-portfolio': 'portfolio.html',
-        'add-food': 'portfolio.html',
+        'review-portfolio': 'product-portfolio.html',
+        'add-food': 'product-portfolio.html?add=food',
         'dispute-upc': 'portfolio.html',
         'claim-upcs': 'portfolio.html',
         'verify-upf': 'verification.html',
+        'verify-gras': 'gras-verification.html',
         'topproduct-report': 'portfolio.html',
         'ask-ai': 'ai-chat.html',
       }[a];
@@ -2414,7 +2595,39 @@ export function renderDashboardHome(host) {
 
   setupChartReplay(host);
   setupDonutPopover(host);
-  setupChartAnimations(host);
+
+  /* First load: the dashboard paints in as soon as the first product is found
+     (not at 100%). Until then `.dash` is hidden (is-discovering); on the first
+     "found" tick we reveal it, wire the scroll-triggered chart/count-up
+     animations so numbers climb + bars fill, and hold a live `is-loading` state
+     while the bar keeps running — the charts read as updating as more items
+     arrive. When discovery completes we drop the loading state and dismiss the
+     bar. Any later render (brand toggle) or reduced-motion animates at once. */
+  if (discovering) {
+    const dash = host.querySelector('.dash');
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      if (dash) {
+        dash.classList.remove('is-discovering');
+        dash.classList.add('is-revealed', 'is-loading');
+      }
+      setupChartAnimations(host);
+    };
+    runDiscovery(host, { onFirstFound: reveal }).then(() => {
+      _discoveryDone = true;
+      reveal();
+      if (dash) dash.classList.remove('is-loading');
+      /* Let "Discovery complete" read for a beat, then FADE the bar out — but
+         keep it in the layout (opacity only, never removed/collapsed) so its
+         footprint stays reserved and the scorecards below never jump upward. */
+      const bar = host.querySelector('#dash-discovery');
+      if (bar) setTimeout(() => bar.classList.add('is-faded'), 900);
+    });
+  } else {
+    setupChartAnimations(host);
+  }
 }
 
 /* Easing helper for count-up and bar animations. */
@@ -2432,6 +2645,9 @@ function countUpEl(el, duration = 1800) {
   if (!Number.isFinite(to)) return;
   el.classList.add('is-counted');
   const suffix = el.getAttribute('data-count-suffix') || '';
+  /* Slow every count-up down uniformly so the numbers tick up gradually — they
+     read as products being discovered rather than snapping to their totals. */
+  duration *= COUNTUP_DURATION_SCALE;
   const start = performance.now();
   const tick = (now) => {
     const t = Math.min(1, (now - start) / duration);

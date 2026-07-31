@@ -88,7 +88,7 @@ function acronymTipHtml() {
 
 function ensureStyles() {
   if (document.getElementById('wiseai-tip-styles')) return;
-  if (document.querySelector('link[href*="agent-page.css"]')) return;
+  if (document.querySelector('link[href*="wise.css"], link[href*="agent-page.css"]')) return;
   const style = document.createElement('style');
   style.id = 'wiseai-tip-styles';
   style.textContent = STANDALONE_STYLES;

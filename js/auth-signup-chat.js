@@ -91,39 +91,56 @@
     if (name) res.orgname = name;
     return res;
   }
-  /* Priority product + a teammate to loop in, answered together. The segment
-     that carries an email is the teammate; whatever's left is the product. */
-  function parseProdTeam(text) {
-    var s = String(text || '').trim();
+  /* A teammate to loop in, parsed from one line (name + email). */
+  function parseTeam(text) {
+    var c = parseContact(text);
     var res = {};
-    if (!s) return res;
-    var parts = s.split(/\s+[–—|]\s+|\n|;/).map(function (p) { return p.trim(); }).filter(Boolean);
-    if (parts.length >= 2) {
-      var teamIdx = parts.findIndex(function (p) { return p.indexOf('@') !== -1; });
-      if (teamIdx !== -1) {
-        res.team = parts[teamIdx];
-        var rest = parts.filter(function (_p, i) { return i !== teamIdx; }).join(' ').trim();
-        if (rest) res.priorityProduct = rest;
-      } else {
-        res.priorityProduct = parts[0];
-        res.team = parts.slice(1).join(' ').trim();
-      }
-    } else if (s.indexOf('@') !== -1) {
-      res.team = s;
-    } else {
-      res.priorityProduct = s;
-    }
+    if (c.name) res.teamName = c.name;
+    if (c.email) res.teamEmail = c.email;
     return res;
   }
 
-  /* ── Flow definition — grouped into 4 macro steps ── */
+  /* ── The fork in the road — intent routes ──
+     Picking a route decides which business questions we ask (a tiny universal
+     spine + a route-specific extension) and, downstream, which view the overview
+     leads with. Mirrors the "hub" in the organic-registration prototype. */
+  var ROUTES = {
+    aisle:     { icon: 'storefront',      title: 'Win in the aisle',           desc: 'Get onto more shelves, and grow where you already are.',      lead: 'shelf readiness',       ext: ['retailersTarget', 'distributors'] },
+    standing:  { icon: 'leaderboard',     title: 'Know where I stand',         desc: 'See how you compare against your category and competitors.',   lead: 'competitive comparison', ext: ['retailersIn'] },
+    improve:   { icon: 'verified',        title: 'Prove & improve my product', desc: 'Verify Non-UPF status and find reformulation opportunities.',  lead: 'product quality',       ext: ['mfgmodel', 'certs'] },
+    brandData: { icon: 'manage_accounts', title: 'Own my brand data',          desc: 'Make sure what\u2019s published about you is correct.',        lead: 'your brand record',     ext: ['team'] }
+  };
+
+  /* Route can be picked from the chips OR typed in free text — these keywords map
+     a typed phrase (e.g. "compare me to competitors") back to an intent. */
+  var ROUTE_KEYWORDS = {
+    aisle: ['aisle', 'shelf', 'shelves', 'shelf space', 'win', 'grow', 'distribution', 'get on', 'more shelves', 'retail', 'retailer', 'listing'],
+    standing: ['stand', 'where i stand', 'compare', 'comparison', 'compete', 'competitor', 'benchmark', 'how i compare', 'rank'],
+    improve: ['prove', 'improve', 'product', 'upf', 'non-upf', 'nonupf', 'non upf', 'reformulat', 'verify', 'verification', 'quality', 'shield'],
+    brandData: ['brand data', 'own my brand', 'own', 'data', 'publish', 'correct', 'accurate', 'accuracy', 'record', 'control', 'manage']
+  };
+  function matchRoute(text) {
+    var s = String(text == null ? '' : text).trim().toLowerCase();
+    if (!s) return null;
+    if (s.length >= 4) { for (var k in ROUTES) { if (ROUTES[k].title.toLowerCase().indexOf(s) !== -1) return k; } }
+    var best = null, score = 0;
+    Object.keys(ROUTE_KEYWORDS).forEach(function (rk) {
+      var c = 0; ROUTE_KEYWORDS[rk].forEach(function (w) { if (s.indexOf(w) !== -1) c++; });
+      if (c > score) { score = c; best = rk; }
+    });
+    return score > 0 ? best : null;
+  }
+
+  /* ── Flow definition — grouped into 5 macro steps ──
+     Every question owns its key, renderer hints, and validation, so the flow is
+     assembled by key list (about → verify → goal → spine + route ext → org). */
   var TITLE_OPTIONS = ['CEO', 'Brand Manager', 'Product Manager', 'Owner / Founder', 'Regulatory Affairs Manager', 'Other'];
   var ENTITY_OPTIONS = ['Independent Brand', 'CPG / Manufacturer', 'Retailer', 'Foodservice', 'Distributor', 'R&D / Lab', 'Regulatory / Compliance'];
 
-  var SIGNUP_QUESTIONS = [
+  var Q = {
     // Macro 0 — About you (contact fields combined so they can be typed together)
-    { step: 0, key: 'brand', label: 'Brand(s)', prompt: 'Which brand(s) do you represent? <span style="opacity:.7">(separate multiple with commas)</span>', placeholder: 'e.g. Nature Valley, Clif Bar' },
-    { step: 0, key: 'contact', combo: true, parse: parseContact,
+    brand: { step: 0, key: 'brand', label: 'Brand(s)', prompt: 'Which brand(s) do you represent? <span style="opacity:.7">(separate multiple with commas)</span>', placeholder: 'e.g. Nature Valley, Clif Bar' },
+    contact: { step: 0, key: 'contact', combo: true, parse: parseContact,
       prompt: 'Now the essentials — what\u2019s your <strong>name</strong>, <strong>business email</strong>, and <strong>phone</strong>? <span style="opacity:.7">You can type them all on one line.</span>',
       placeholder: 'e.g. Jane Doe, jane@company.com, (555) 123-4567',
       parts: [
@@ -133,50 +150,53 @@
         { key: 'phone', label: 'Phone', kind: 'phone', prompt: 'Best phone number to reach you?', placeholder: '(555) 123-4567',
           validate: function (v) { return digits(v).length >= 10 ? null : 'I need a 10-digit phone number.'; }, transform: maskPhone }
       ] },
-    { step: 0, key: 'title', label: 'Title', optional: true, prompt: 'And your professional title?', placeholder: 'Type or pick a title', type: 'choice', options: TITLE_OPTIONS },
+    title: { step: 2, key: 'title', label: 'Title', optional: true, prompt: 'And your professional title?', placeholder: 'Type or pick a title', type: 'choice', options: TITLE_OPTIONS },
 
-    // Macro 1 — Your business (chip-assisted; all skippable)
-    { step: 1, key: 'category', label: 'Category', type: 'multiselect', optional: true,
-      prompt: 'What category are your products in? <span style="opacity:.7">(pick any that apply, or add your own)</span>', placeholder: 'Type to add a category…',
-      options: ['Snacks', 'Bars', 'Beverages', 'Pantry & Grocery', 'Frozen', 'Dairy & Alternatives', 'Bakery', 'Condiments & Sauces', 'Confectionery', 'Breakfast & Cereal', 'Baby & Kids', 'Supplements', 'Pet'] },
-    { step: 1, key: 'competitors', label: 'Top competitors', type: 'multiselect', optional: true, max: 5,
-      prompt: 'Who are your top competitors? <span style="opacity:.7">(up to 5 — we\u2019ve suggested a few; add or remove any)</span>', placeholder: 'Type a competitor and press Enter…',
+    // Macro 1 — Verify (verifying is t=0: it kicks off the brand forage in the background)
+    otp: { step: 1, key: 'otp', label: 'Verification', prompt: function (a) { return "I've sent a 6-digit code to <strong>" + esc(a.phone || 'your phone') + '</strong>. What is it?'; }, placeholder: '6-digit code', type: 'otp',
+      options: [{ label: 'Resend code', value: '__resend', icon: 'refresh', action: 'resend' }],
+      validate: function (v) { return /^\d{6}$/.test(digits(v)) ? null : 'The verification code is 6 digits.'; }, transform: function (v) { return digits(v).slice(0, 6); } },
+
+    // Macro 2 — Your goal (the fork). Selecting a route branches the rest of the flow.
+    goal: { step: 2, key: 'goal', label: 'Goal', type: 'route',
+      prompt: '<strong>What brings you to WISEcode?</strong> Pick the one closest to why you signed up — it changes what we ask now and what we put in front of you first. You can run any of the others whenever you like.',
+      options: Object.keys(ROUTES).map(function (k) { return { value: k, label: ROUTES[k].title, desc: ROUTES[k].desc, icon: ROUTES[k].icon }; }) },
+
+    // Macro 3 — Your business : universal spine (asked on every route)
+    competitors: { step: 3, key: 'competitors', label: 'Top competitors', type: 'multiselect', optional: true, max: 5,
+      prompt: 'Who are your top competitors? <span style="opacity:.7">(up to 5 — these power every comparison you\u2019ll see; add or remove any)</span>', placeholder: 'Type a competitor and press Enter…',
       options: ['Clif Bar', 'KIND', 'RXBAR', 'GoMacro', 'Larabar'] },
-    { step: 1, key: 'diststage', label: 'Distribution stage', type: 'choice', optional: true,
-      prompt: 'Where are you in distribution today?', options: ['Direct / Local', 'Local Retail', 'Regional Chain', 'National', 'Multi-National'] },
-    { step: 1, key: 'retailersIn', label: 'Current retailers', type: 'multiselect', optional: true,
-      prompt: 'Which retailers are you already in?', placeholder: 'Type a retailer and press Enter…',
-      options: ['Sprouts', 'Erewhon', 'Whole Foods', "Mother's", 'Thrive Market', 'Central Market', 'Wegmans', 'None yet'] },
-    { step: 1, key: 'retailersTarget', label: 'Target retailers', type: 'multiselect', optional: true,
-      prompt: 'Which retailers are you targeting?', placeholder: 'Type a retailer and press Enter…',
-      options: ['Whole Foods', 'Sprouts', 'Target', 'Kroger', 'Costco', 'Wegmans', 'Erewhon'] },
-    { step: 1, key: 'revenue', label: 'Annual revenue', type: 'choice', optional: true,
-      prompt: "What is your brand / holding co\u2019s approximate annual revenue? <span style=\"opacity:.7\">(optional)</span>",
-      options: ['<$1M', '$1–2.5M', '$2.5–5M', '$5–10M', '$10–25M', '$25–50M', '$50M+'] },
-    { step: 1, key: 'goals', label: 'Goals', type: 'multiselect', optional: true,
-      prompt: 'What are you hoping to get out of WISEcode?', placeholder: 'Type your own…',
-      options: ['Claim data', 'Win shelf space', 'Accelerate existing sales', 'Non-UPF verification', 'Reformulation', 'Competitive insight', 'Consumer-app brand control'] },
-    { step: 1, key: 'prodteam', combo: true, optional: true, parse: parseProdTeam,
-      prompt: 'Which of your products is the priority right now — and is there a teammate we should loop in? <span style="opacity:.7">(add their name + email; both optional — type them on one line)</span>',
-      placeholder: 'e.g. Trail Mix Bar — Sam Lee, sam@company.com',
-      parts: [
-        { key: 'priorityProduct', label: 'Priority product', prompt: 'Which of your products is your business prioritizing right now?', placeholder: 'Name the product' },
-        { key: 'team', label: 'Team contacts', prompt: 'Who on your team should we loop in? <span style="opacity:.7">(name + email)</span>', placeholder: 'e.g. Sam Lee, sam@company.com' }
-      ] },
-    { step: 1, key: 'distributors', label: 'Distributors', type: 'multiselect', optional: true,
-      prompt: 'Which distributors carry your products today, if any?', placeholder: 'Type a distributor…',
-      options: ['None yet', 'UNFI', 'KeHE', 'DPI', 'Rainforest', 'Regional / specialty', 'DSD / self-distribute'] },
-    { step: 1, key: 'mfgmodel', label: 'Manufacturing', type: 'choice', optional: true,
-      prompt: 'Who makes your products?', options: ['Self-manufacture', 'Co-manufacturer', 'Both'] },
-    { step: 1, key: 'certs', label: 'Facility certifications', type: 'multiselect', optional: true,
-      prompt: 'What food-safety certifications does that facility hold?', placeholder: 'Type a certification…',
-      options: ['SQF', 'BRCGS', 'FSSC 22000', 'Other GFSI', 'Organic', 'None yet', 'Not sure'] },
-    { step: 1, key: 'scalespeed', label: 'Scale readiness', type: 'choice', optional: true,
-      prompt: 'If a major retailer said yes tomorrow, how quickly could you scale production?',
-      options: ['Ready now — 3x in 90 days', 'Could scale with 3–6 months lead', 'Would need new capacity or co-man', 'Not sure'] },
+    priorityProduct: { step: 3, key: 'priorityProduct', label: 'Priority product', optional: true,
+      prompt: 'Which product should we focus on first? <span style="opacity:.7">(just the name is fine — we\u2019ll match it once your catalogue lands)</span>', placeholder: 'e.g. Sea Salt Almond Clusters' },
+    diststage: { step: 3, key: 'diststage', label: 'Distribution stage', type: 'choice', optional: true,
+      prompt: 'Where are you in distribution today? <span style="opacity:.7">(one tap — it shapes almost everything else we show you)</span>', options: ['Direct / Local', 'Local Retail', 'Regional Chain', 'National', 'Multi-National'] },
 
-    // Macro 2 — Organization (name+site and the address block are each combined)
-    { step: 2, key: 'org', combo: true, parse: parseOrg,
+    // Macro 3 — Your business : route-specific extensions
+    retailersTarget: { step: 3, key: 'retailersTarget', label: 'Target retailers', type: 'multiselect', optional: true,
+      prompt: 'Which retailers are you targeting? <span style="opacity:.7">(this is what we aim your readiness against)</span>', placeholder: 'Type a retailer and press Enter…',
+      options: ['Whole Foods', 'Sprouts', 'Target', 'Kroger', 'Costco', 'Wegmans', 'Erewhon'] },
+    distributors: { step: 3, key: 'distributors', label: 'Distributors', type: 'multiselect', optional: true,
+      prompt: 'Which distributors carry your products today, if any? <span style="opacity:.7">(\u201cNone yet\u201d is a useful answer, not a gap)</span>', placeholder: 'Type a distributor…',
+      options: ['None yet', 'UNFI', 'KeHE', 'DPI', 'Rainforest', 'Regional / specialty', 'DSD / self-distribute'] },
+    retailersIn: { step: 3, key: 'retailersIn', label: 'Current retailers', type: 'multiselect', optional: true,
+      prompt: 'Which retailers are you already in? <span style="opacity:.7">(so we compare you against brands on the same shelves)</span>', placeholder: 'Type a retailer and press Enter…',
+      options: ['Sprouts', 'Erewhon', 'Whole Foods', "Mother's", 'Thrive Market', 'Central Market', 'Wegmans', 'Direct to consumer only'] },
+    mfgmodel: { step: 3, key: 'mfgmodel', label: 'Manufacturing', type: 'choice', optional: true,
+      prompt: 'Who makes your products?', options: ['Self-manufacture', 'Co-manufacturer', 'Both'] },
+    certs: { step: 3, key: 'certs', label: 'Facility certifications', type: 'multiselect', optional: true,
+      prompt: 'What food-safety certifications does that facility hold? <span style="opacity:.7">(\u201cNot sure\u201d is a real answer — we\u2019d rather know that than guess)</span>', placeholder: 'Type a certification…',
+      options: ['SQF', 'BRCGS', 'FSSC 22000', 'Other GFSI', 'Organic', 'None yet', 'Not sure'] },
+    team: { step: 3, key: 'team', combo: true, optional: true, parse: parseTeam,
+      prompt: 'Who on your team should we loop in? <span style="opacity:.7">(add their name + email; we\u2019ll show you the invite before it sends — type both on one line)</span>',
+      placeholder: 'e.g. Sam Lee, sam@company.com',
+      parts: [
+        { key: 'teamName', label: 'Teammate', prompt: 'What\u2019s their name?', placeholder: 'Sam Lee' },
+        { key: 'teamEmail', label: 'Teammate email', kind: 'email', prompt: 'And their email?', placeholder: 'sam@company.com',
+          validate: function (v) { return validEmail(v) ? null : 'That doesn\u2019t look like a valid email — mind trying again?'; } }
+      ] },
+
+    // Macro 4 — Organization (name+site and the address block are each combined)
+    org: { step: 4, key: 'org', combo: true, parse: parseOrg,
       prompt: 'Now your organization — what\u2019s its <strong>legal name</strong> and <strong>website</strong>? <span style="opacity:.7">Type both on one line.</span>',
       placeholder: 'e.g. Acme Foods, Inc., https://acmefoods.com',
       parts: [
@@ -184,7 +204,7 @@
         { key: 'website', label: 'Website', prompt: 'Your primary website URL?', placeholder: 'https://acmefoods.com',
           validate: function (v) { return v && v.trim().length > 2 ? null : 'Please enter your website URL.'; } }
       ] },
-    { step: 2, key: 'address', combo: true, parse: parseAddress,
+    address: { step: 4, key: 'address', combo: true, parse: parseAddress,
       prompt: 'What\u2019s your headquarters <strong>address</strong>? <span style="opacity:.7">Street, city, state, and ZIP — separate with commas.</span>',
       placeholder: 'e.g. 123 Market St, San Francisco, CA, 94103',
       parts: [
@@ -195,45 +215,66 @@
           validate: function (v) { return digits(v).length === 5 ? null : 'ZIP should be 5 digits.'; },
           transform: function (v) { return digits(v).slice(0, 5); } }
       ] },
-    { step: 2, key: 'entitytype', label: 'Entity type', prompt: 'What type of entity is this?', type: 'choice', options: ENTITY_OPTIONS },
-    { step: 2, key: 'sid', label: 'Secondary ID', prompt: 'Provide a secondary business identifier — your D-U-N-S number (or a W-9 / TIN).', placeholder: '9-digit D-U-N-S or TIN',
+    entitytype: { step: 4, key: 'entitytype', label: 'Entity type', prompt: 'What type of entity is this?', type: 'choice', options: ENTITY_OPTIONS },
+    sid: { step: 4, key: 'sid', label: 'Secondary ID', prompt: 'Provide a secondary business identifier — your D-U-N-S number (or a W-9 / TIN).', placeholder: '9-digit D-U-N-S or TIN',
       validate: function (v) { return v && v.trim() ? null : 'Please provide a D-U-N-S number or W-9 / TIN.'; } },
-    { step: 2, key: 'ein', label: 'EIN', prompt: 'Your EIN <span style="opacity:.7">(format XX-XXXXXXX)</span>?', placeholder: '12-3456789', type: 'ein',
+    ein: { step: 4, key: 'ein', label: 'EIN', prompt: 'Your EIN <span style="opacity:.7">(format XX-XXXXXXX)</span>?', placeholder: '12-3456789', type: 'ein',
       validate: function (v) { return /^\d{2}-?\d{7}$/.test(String(v).replace(/\s/g, '')) ? null : 'EIN should look like 12-3456789.'; }, transform: maskEin },
-    { step: 2, key: 'attest', label: 'Attestation', prompt: 'Do you certify that the information is accurate and that you are authorized to represent this organization on the WISEcode platform?', type: 'consent',
+    // Macro 5 — Review & create (credentials, attestation, agreements, signature)
+    password: { step: 5, key: 'password', label: 'Password', prompt: 'Create a <strong>password</strong> for your account.', placeholder: 'At least 8 characters', type: 'password',
+      validate: function (v) { return String(v == null ? '' : v).length >= 8 ? null : 'Use at least 8 characters.'; } },
+    attest: { step: 5, key: 'attest', label: 'Attestation', prompt: 'Do you certify that the information is accurate and that you are authorized to represent this organization on the WISEcode platform?', type: 'consent',
       options: [{ label: 'I Agree', value: 'Agreed', icon: 'verified', primary: true }],
       validate: function (v) { return /^(y|yes|agree|i agree|ok|okay|confirm|agreed)/i.test(String(v).trim()) ? null : 'Please confirm to continue (or tap “I Agree”).'; },
       transform: function () { return 'Agreed'; } },
-    { step: 2, key: 'sig', label: 'Signature', prompt: 'Please type your full name to sign this attestation.', placeholder: 'Type your full name',
-      validate: function (v) { return v && v.trim() ? null : 'Please type your full name to sign.'; } },
+    terms: { step: 5, key: 'terms', label: 'Agreements', type: 'consent',
+      prompt: 'Do you agree to the <a href="#" target="_blank" rel="noopener">Terms of Service</a>, <a href="#" target="_blank" rel="noopener">End-User License Agreement</a>, and <a href="#" target="_blank" rel="noopener">Privacy Policy</a>?',
+      options: [{ label: 'I Agree', value: 'Agreed', icon: 'verified', primary: true }],
+      validate: function (v) { return /^(y|yes|agree|i agree|ok|okay|confirm|agreed)/i.test(String(v).trim()) ? null : 'Please agree to continue (or tap “I Agree”).'; },
+      transform: function () { return 'Agreed'; } },
+    sig: { step: 5, key: 'sig', label: 'Signature', prompt: 'Please type your full name to sign this attestation.', placeholder: 'Type your full name',
+      validate: function (v) { return v && v.trim() ? null : 'Please type your full name to sign.'; } }
+  };
 
-    // Macro 3 — Verify
-    { step: 3, key: 'otp', label: 'Verification', prompt: function (a) { return "I've sent a 6-digit code to <strong>" + esc(a.phone || 'your phone') + '</strong>. What is it?'; }, placeholder: '6-digit code', type: 'otp',
-      options: [{ label: 'Resend code', value: '__resend', icon: 'refresh', action: 'resend' }],
-      validate: function (v) { return /^\d{6}$/.test(digits(v)) ? null : 'The verification code is 6 digits.'; }, transform: function (v) { return digits(v).slice(0, 6); } }
-  ];
+  /* Key lists → assembled into the live question list. The route extension is the
+     only piece that varies; everything else is route-independent. */
+  var ABOUT_KEYS = ['brand', 'contact'];
+  var VERIFY_KEYS = ['otp'];
+  var GOAL_KEYS = ['title', 'goal'];
+  var SPINE_KEYS = ['competitors', 'priorityProduct', 'diststage'];
+  var ORG_KEYS = ['org', 'address', 'entitytype', 'sid', 'ein'];
+  var FINAL_KEYS = ['password', 'attest', 'terms', 'sig'];
+  function qList(keys) { return keys.map(function (k) { return Q[k]; }); }
+  /* Spine + org are asked on every route, so they live in the flow from the start
+     (keeps the progress denominator stable). Only the route extension is injected
+     once a goal is chosen — slotted between the spine and the organization block. */
+  function baseQuestions() { return qList(ABOUT_KEYS.concat(VERIFY_KEYS, GOAL_KEYS, SPINE_KEYS, ORG_KEYS, FINAL_KEYS)); }
 
   var MACROS = [
-    { title: 'About you', keys: ['brand', 'name', 'email', 'phone', 'title'] },
-    { title: 'Your business', keys: ['category', 'competitors', 'diststage', 'retailersIn', 'retailersTarget', 'revenue', 'goals', 'priorityProduct', 'team', 'distributors', 'mfgmodel', 'certs', 'scalespeed'] },
-    { title: 'Organization', keys: ['orgname', 'website', 'addr1', 'city', 'state', 'zip', 'entitytype', 'sid', 'ein', 'attest', 'sig'] },
-    { title: 'Verify', keys: ['otp'] }
+    { title: 'About you', keys: ['brand', 'name', 'email', 'phone'] },
+    { title: 'Verify', keys: ['otp'] },
+    { title: 'Your goal', keys: ['title', 'goal'] },
+    { title: 'Your business', keys: ['competitors', 'priorityProduct', 'diststage', 'retailersTarget', 'distributors', 'retailersIn', 'mfgmodel', 'certs', 'teamName', 'teamEmail'] },
+    { title: 'Organization', keys: ['orgname', 'website', 'addr1', 'city', 'state', 'zip', 'entitytype', 'sid', 'ein'] },
+    { title: 'Review & create', keys: ['password', 'attest', 'terms', 'sig'] }
   ];
 
   /* Per-field metadata (label + macro step), expanded from combos so the progress
      pane can render each underlying field even when several are asked together. */
   var FIELD_META = {};
-  SIGNUP_QUESTIONS.forEach(function (q) {
+  Object.keys(Q).forEach(function (k) {
+    var q = Q[k];
     if (q.combo) { q.parts.forEach(function (p) { FIELD_META[p.key] = { label: p.label, step: q.step }; }); }
-    else { FIELD_META[q.key] = { label: q.label, step: q.step }; }
+    else { FIELD_META[k] = { label: q.label, step: q.step }; }
   });
-  var TOTAL_FIELDS = Object.keys(FIELD_META).length;
 
   var STEP_INTROS = {
     0: '',
-    1: "Great — that's the basics. Now a bit about your business so WISEcode can tailor everything to you. Tap the chips that fit, add your own, or skip any question. ",
-    2: "Thanks! Let's get your organization details for verification. ",
-    3: 'Almost done. One last step to secure your account. '
+    1: "Great — first let's make sure it's really you. ",
+    2: 'You\u2019re verified \u2713 ',
+    3: 'Now a few things about your business so we can tailor what you see. Tap the chips, add your own, hand a question to a colleague, or skip anything. ',
+    4: "Almost done — your organization's details so we can verify and publish on your behalf. ",
+    5: 'Last step — set up your login and confirm the agreements. '
   };
 
   function initSignup() {
@@ -253,7 +294,8 @@
     var input = root.querySelector('#ac-input');
     var sendBtn = root.querySelector('#ac-send');
 
-    var flow = { qi: 0, answers: {}, done: false, questions: SIGNUP_QUESTIONS };
+    var flow = { qi: 0, answers: {}, done: false, questions: baseQuestions(), invite: null, delegatedFields: {},
+      route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false };
 
     var scrollDown = function () { messages.scrollTop = messages.scrollHeight; };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
@@ -273,7 +315,7 @@
     function chipsHtml(options) {
       if (!options || !options.length) return '';
       var btns = options.map(function (o) {
-        return '<button type="button" class="chip' + (o.primary ? ' chip-primary' : '') + '" data-ac="' + esc(o.action || 'answer') + '" data-value="' + esc(o.value != null ? o.value : o.label) + '" data-label="' + esc(o.label) + '">' + (o.icon ? '<span class="material-icons">' + esc(o.icon) + '</span>' : '') + esc(o.label) + '</button>';
+        return '<button type="button" class="chip' + (o.primary ? ' chip-primary' : '') + (o.cls ? ' ' + o.cls : '') + '" data-ac="' + esc(o.action || 'answer') + '" data-value="' + esc(o.value != null ? o.value : o.label) + '" data-label="' + esc(o.label) + '">' + (o.icon ? '<span class="material-icons">' + esc(o.icon) + '</span>' : '') + esc(o.label) + '</button>';
       }).join('');
       return '<div class="sc-reply-chips">' + btns + '</div>';
     }
@@ -309,6 +351,11 @@
 
     function currentQuestion() { return flow.questions[flow.qi]; }
     function promptFor(q) { return typeof q.prompt === 'function' ? q.prompt(flow.answers) : q.prompt; }
+    /* Renders the step-intro preamble as normal text, then drops the actual
+       question onto its own line — bold and in the brand blue (.sc-question). */
+    function askBody(prefix, q) {
+      return (prefix || '') + '<span class="sc-question">' + promptFor(q) + '</span>';
+    }
 
     /* The essentials we need before offering the "dive right in" shortcut:
        the user's name, their business (brand), and a phone number. */
@@ -317,7 +364,19 @@
       var a = flow.answers;
       return hasValue(a.name) && hasValue(a.brand) && hasValue(a.phone);
     }
-    var DIVE_CHIP = { label: 'Dive right into the product', action: 'diveIn', icon: 'rocket_launch', primary: true };
+    var DIVE_CHIP = { label: 'Dive right into the product', action: 'diveIn', icon: 'rocket_launch', cls: 'chip-dive' };
+    var DELEGATE_CHIP = { label: 'Someone else should answer', action: 'delegate', icon: 'group_add' };
+
+    /* A question can be handed to a colleague when it belongs to the business or
+       organization steps — the details a teammate often owns. The signer's own
+       basics (contact, brand), the attestation/signature, and the final code are
+       always answered by the person creating the account. */
+    function isDelegatable(q) {
+      if (!q) return false;
+      if (q.type === 'consent' || q.type === 'otp' || q.type === 'route' || q.type === 'password') return false;
+      if (q.key === 'contact' || q.key === 'brand' || q.key === 'title' || q.key === 'sig' || q.key === 'goal' || q.key === 'password' || q.key === 'terms') return false;
+      return q.step >= 3 && q.step < 5;
+    }
 
     /* Single-select / consent / otp chips, with a Skip appended for optional Qs.
        Once the essentials are in, optional questions also offer a shortcut that
@@ -331,26 +390,82 @@
         opts = (opts || []).concat([{ label: 'Skip', action: 'skip', icon: 'skip_next' }]);
         if (bareMinimumMet()) opts = opts.concat([DIVE_CHIP]);
       }
+      if (isDelegatable(q)) opts = (opts || []).concat([DELEGATE_CHIP]);
       return opts;
     }
     function askCurrent(prefix) {
       var q = currentQuestion();
       if (!q) return;
+      if (q.type === 'route') { askRoute(prefix, q); return; }
       if (q.type === 'multiselect') { askMultiselect(prefix, q); return; }
-      wiseaiSay((prefix || '') + promptFor(q), optionChips(q), function () { setInputEnabled(true, q.placeholder || 'Type your answer'); });
+      wiseaiSay(askBody(prefix, q), optionChips(q), function () { setInputEnabled(true, q.placeholder || 'Type your answer'); });
       renderPane();
+    }
+
+    /* The fork in the road: four intent chips. You can tap one OR type your goal in
+       your own words — either records the goal and injects the route's extension. */
+    function routeCardsHtml(q) {
+      return '<div class="sc-reply-chips ac-routes">' + (q.options || []).map(function (o) {
+        return '<button type="button" class="ac-route" data-ac="route" data-value="' + esc(o.value) + '" data-label="' + esc(o.label) + '">' +
+          '<span class="ac-route-ico"><span class="material-icons">' + esc(o.icon) + '</span></span>' +
+          '<span class="ac-route-txt"><span class="ac-route-title">' + esc(o.label) + '</span>' +
+          '<span class="ac-route-desc">' + esc(o.desc) + '</span></span></button>';
+      }).join('') + '</div>';
+    }
+    function askRoute(prefix, q) {
+      wiseaiSay(askBody(prefix, q), null, function () {
+        messages.insertAdjacentHTML('beforeend', routeCardsHtml(q));
+        scrollDown();
+        setInputEnabled(true, 'Tap a goal above, or just type it…');
+      });
+      renderPane();
+    }
+    /* Typed intent — match it to a route, or re-offer the chips if it's unclear. */
+    function handleRouteText(raw) {
+      var val = String(raw == null ? '' : raw).trim();
+      if (!val) return;
+      var key = matchRoute(val);
+      if (key) { selectRoute(key, val); return; }
+      var q = currentQuestion();
+      disablePriorChips();
+      addUser(val);
+      input.value = '';
+      setInputEnabled(false);
+      wiseaiSay('I want to point you the right way — which of these is closest? Tap one, or tell me in a few words (for example, \u201ccompare me to competitors\u201d or \u201cget on more shelves\u201d).', null, function () {
+        messages.insertAdjacentHTML('beforeend', routeCardsHtml(q));
+        scrollDown();
+        setInputEnabled(true, 'Tap a goal above, or type it…');
+      });
+    }
+    function selectRoute(value, label) {
+      var q = currentQuestion();
+      if (!q || q.type !== 'route' || flow.done || !ROUTES[value]) return;
+      disablePriorChips();
+      addUser(label || ROUTES[value].title);
+      flow.answers.goal = ROUTES[value].title;
+      flow.route = value;
+      setInputEnabled(false);
+      input.value = '';
+      /* Slot the route extension between the spine (which follows goal) and the
+         organization block, so questions read spine → extension → organization. */
+      var insertAt = flow.qi + 1 + SPINE_KEYS.length;
+      var ext = qList(ROUTES[value].ext);
+      Array.prototype.splice.apply(flow.questions, [insertAt, 0].concat(ext));
+      var intro = 'Perfect — locking in <strong>' + esc(ROUTES[value].title) + '</strong>. ' + STEP_INTROS[3];
+      advanceAfterAnswer(q.step, intro);
     }
 
     /* Multi-select — toggle chips + free-text tokens + Continue / Skip. */
     function askMultiselect(prefix, q) {
       flow.multi = { set: [], q: q };
-      wiseaiSay((prefix || '') + promptFor(q), null, function () {
+      wiseaiSay(askBody(prefix, q), null, function () {
         var suggest = (q.options || []).map(function (o) {
           return '<button type="button" class="chip ms-chip" data-ac="toggle" data-value="' + esc(o) + '">' + esc(o) + '</button>';
         }).join('');
         var controls = '<button type="button" class="chip chip-primary" data-ac="msdone"><span class="material-icons">check</span>Continue</button>' +
           (q.optional ? '<button type="button" class="chip" data-ac="skip"><span class="material-icons">skip_next</span>Skip</button>' : '') +
-          (q.optional && bareMinimumMet() ? '<button type="button" class="chip chip-primary" data-ac="diveIn"><span class="material-icons">rocket_launch</span>Dive right into the product</button>' : '');
+          (isDelegatable(q) ? '<button type="button" class="chip" data-ac="delegate"><span class="material-icons">group_add</span>Someone else should answer</button>' : '') +
+          (q.optional && bareMinimumMet() ? '<button type="button" class="chip chip-dive" data-ac="diveIn"><span class="material-icons">rocket_launch</span>Dive right into the product</button>' : '');
         messages.insertAdjacentHTML('beforeend',
           (suggest ? '<div class="sc-reply-chips ms-suggest">' + suggest + '</div>' : '<div class="sc-reply-chips ms-suggest"></div>') +
           '<div class="sc-reply-chips ms-controls">' + controls + '</div>');
@@ -385,6 +500,7 @@
       disablePriorChips();
       addUser(arr.length ? arr.join(', ') : 'Skipped');
       flow.answers[q.key] = arr;
+      afterStore(q);
       var wasStep = q.step;
       flow.multi = null;
       setInputEnabled(false);
@@ -392,10 +508,86 @@
       advanceAfterAnswer(wasStep);
     }
 
+    /* ── Background forage (simulated) ──
+       Verifying is t=0: we begin "reading the labels" on the brand's catalogue
+       while the user keeps answering. Submitting competitors fires a second,
+       per-competitor forage. Both surface in the setup pane, and the brand
+       forage gates the release step at the end. Compressed for demo purposes. */
+    function firstBrand() { return String(flow.answers.brand || '').split(',')[0].trim() || 'your brand'; }
+    function compReadyNote() {
+      var comps = Object.keys(flow.forage.comps);
+      if (!comps.length) return '';
+      var ready = comps.filter(function (c) { return flow.forage.comps[c] >= 100; }).length;
+      return ' and started comparing you against ' + comps.length + ' competitor' + (comps.length > 1 ? 's' : '') + ' (' + ready + ' ready)';
+    }
+    function stopForage() {
+      if (flow.forageTimer) { clearInterval(flow.forageTimer); flow.forageTimer = null; }
+      if (flow.compTimer) { clearInterval(flow.compTimer); flow.compTimer = null; }
+    }
+    /* Deliberately paced so the catalogue is usually still landing when the
+       questions run out — that's what surfaces the release-step fork, exactly as
+       in the prototype (questions finish well before the ~8-min forage does). */
+    function startBrandForage() {
+      if (flow.forageTimer || flow.forage.brand >= 100) return;
+      flow.forageTimer = setInterval(function () {
+        flow.forage.brand = Math.min(100, flow.forage.brand + 2);
+        if (flow.forage.brand >= 100) { clearInterval(flow.forageTimer); flow.forageTimer = null; }
+        if (flow.forage.brand >= 100 && flow.releasing && flow.releaseWait) proceedFromRelease();
+      }, 1300);
+    }
+    function startCompForage(list) {
+      (list || []).forEach(function (c) { if (flow.forage.comps[c] == null) flow.forage.comps[c] = 0; });
+      if (flow.compTimer) return;
+      flow.compTimer = setInterval(function () {
+        var pending = Object.keys(flow.forage.comps).filter(function (c) { return flow.forage.comps[c] < 100; });
+        if (!pending.length) { clearInterval(flow.compTimer); flow.compTimer = null; return; }
+        flow.forage.comps[pending[0]] = Math.min(100, flow.forage.comps[pending[0]] + 12);
+      }, 700);
+    }
+    /* Called after any answer lands, to trigger the right background work. */
+    function afterStore(q) {
+      if (!q) return;
+      if (q.key === 'otp') startBrandForage();
+      if (q.key === 'competitors') { var arr = flow.answers.competitors || []; if (arr.length) startCompForage(arr); }
+    }
+
+    /* ── The release step ──
+       Questions finish before the forage does. If the catalogue isn't ready yet,
+       offer the same fork the prototype does: get emailed when it lands, or wait
+       and watch it fill in. If it's already ready, go straight through. */
+    function maybeRelease() {
+      if (flow.forage.brand >= 100) {
+        setInputEnabled(false);
+        wiseaiSay('<span class="ac-success"><span class="material-icons">insights</span>Your brand view is ready</span> — we found ' + esc(firstBrand()) + '\u2019s catalogue' + compReadyNote() + '.',
+          null, function () { finishFlow({ dest: 'overview' }); });
+        return;
+      }
+      showRelease();
+    }
+    function showRelease() {
+      flow.releasing = true;
+      setInputEnabled(false);
+      renderPane();
+      wiseaiSay(
+        '<span class="sc-line-heading">Almost there — we\u2019re still reading your labels</span>' +
+        'We\u2019re pulling the full data on everything ' + esc(firstBrand()) + ' sells. This usually takes a few minutes, and you don\u2019t need to wait around for it.',
+        [ { label: 'Email me when it\u2019s ready', value: '__email', icon: 'mail', action: 'releaseEmail', primary: true },
+          { label: 'I\u2019ll wait', value: '__wait', icon: 'schedule', action: 'releaseWait' } ],
+        null);
+    }
+    function proceedFromRelease() {
+      if (!flow.releasing || flow.done) return;
+      flow.releasing = false;
+      if (flow.waitTyping) { flow.waitTyping.remove(); flow.waitTyping = null; }
+      disablePriorChips();
+      wiseaiSay('<span class="ac-success"><span class="material-icons">insights</span>Your brand view is ready.</span>', null,
+        function () { finishFlow({ dest: 'overview' }); });
+    }
+
     function advanceAfterAnswer(wasStep, prefixOverride) {
       flow.qi++;
       renderPane();
-      if (flow.qi >= flow.questions.length) { finishFlow(); return; }
+      if (flow.qi >= flow.questions.length) { maybeRelease(); return; }
       var nextQ = currentQuestion();
       var prefix = prefixOverride != null ? prefixOverride
         : ((nextQ.step !== wasStep) ? (STEP_INTROS[nextQ.step] || '') : '');
@@ -473,11 +665,12 @@
 
       var err = q.validate ? q.validate(value, flow.answers) : null;
       if (err) {
-        wiseaiSay(err + '<br>' + promptFor(q), optionChips(q), function () { setInputEnabled(true, q.placeholder || 'Type your answer'); });
+        wiseaiSay(err + '<span class="sc-question">' + promptFor(q) + '</span>', optionChips(q), function () { setInputEnabled(true, q.placeholder || 'Type your answer'); });
         return;
       }
 
       flow.answers[q.key] = q.transform ? q.transform(value, flow.answers) : value;
+      afterStore(q);
       advanceAfterAnswer(q.step);
     }
 
@@ -494,6 +687,116 @@
       advanceAfterAnswer(q.step);
     }
 
+    /* ── Delegate to a colleague ──
+       Any business / organization question can be handed off. We collect the
+       colleague's first name, last name, and email in-chat, queue an invite to
+       join the organization, then continue the flow with this field marked as
+       delegated (so it reads "Invited" in the setup pane, not "Skipped"). */
+    function firstOrgName() {
+      var a = flow.answers;
+      var name = a.orgname || String(a.brand || '').split(',')[0].trim();
+      return name || 'your organization';
+    }
+    function parseInvite(text) {
+      var s = ' ' + String(text || '') + ' ';
+      var res = {};
+      var em = s.match(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/);
+      if (em) { res.email = em[0]; s = s.replace(em[0], ' '); }
+      var tokens = s.split(/[\s,;]+/).filter(Boolean).filter(function (t) {
+        return t.indexOf('@') === -1 && digits(t).length < 5 && /[^\W\d_]/.test(t) &&
+          !/^(first|last|full|name|email|e\-?mail)[:\-]?$/i.test(t);
+      });
+      if (tokens.length) { res.first = tokens[0].replace(/[,;:]+$/, ''); }
+      if (tokens.length > 1) { res.last = tokens.slice(1).join(' ').replace(/[,;:]+$/, ''); }
+      return res;
+    }
+    function startInvite(forKey) {
+      if (!forKey || flow.done) return;
+      disablePriorChips();
+      addUser('Someone else should answer');
+      flow.multi = null;
+      flow.invite = { forKey: forKey, data: {}, ask: 'combo' };
+      setInputEnabled(false);
+      input.value = '';
+      wiseaiSay(
+        'No problem — I can invite a colleague to join <strong>' + esc(firstOrgName()) + '</strong> and answer this. ' +
+        'What\u2019s their <strong>first name</strong>, <strong>last name</strong>, and <strong>email</strong>? ' +
+        '<span style="opacity:.7">You can type them on one line.</span>',
+        null,
+        function () { setInputEnabled(true, 'e.g. Sam Lee, sam@company.com'); }
+      );
+    }
+    /* Next missing piece of the invite, or null when we have all three. */
+    function inviteNeeds() {
+      var d = flow.invite.data;
+      if (!d.first) return { field: 'first', msg: 'What is their first name?', ph: 'First name' };
+      if (!d.last) return { field: 'last', msg: 'And their last name?', ph: 'Last name' };
+      if (!d.email || !validEmail(d.email)) {
+        return { field: 'email', msg: (d.email ? 'That email doesn\u2019t look right — what\u2019s their email?' : 'What\u2019s their email address?'), ph: 'name@company.com' };
+      }
+      return null;
+    }
+    function submitInvite(rawValue) {
+      if (!flow.invite) return;
+      var value = String(rawValue == null ? '' : rawValue).trim();
+      if (!value) return;
+      disablePriorChips();
+      addUser(value);
+      setInputEnabled(false);
+      input.value = '';
+
+      var d = flow.invite.data;
+      var ask = flow.invite.ask;
+      var emailMatch = value.match(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/);
+      var nameOnly = value.replace(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/, '').replace(/[,;]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (emailMatch) d.email = emailMatch[0];
+
+      if (ask === 'first') {
+        if (nameOnly) { var tf = nameOnly.split(' '); d.first = tf[0]; if (tf.length > 1 && !d.last) d.last = tf.slice(1).join(' '); }
+      } else if (ask === 'last') {
+        if (nameOnly) d.last = nameOnly;
+      } else if (ask === 'email') {
+        /* email already captured above; ignore any stray name text */
+      } else {
+        /* combined first line — split names, keep the email we already pulled */
+        var parsed = parseInvite(value);
+        if (parsed.first && !d.first) d.first = parsed.first;
+        if (parsed.last && !d.last) d.last = parsed.last;
+      }
+
+      var need = inviteNeeds();
+      if (need) {
+        flow.invite.ask = need.field;
+        wiseaiSay(need.msg, null, function () { setInputEnabled(true, need.ph); });
+        return;
+      }
+      finalizeInvite();
+    }
+    function finalizeInvite() {
+      var forKey = flow.invite.forKey;
+      var d = flow.invite.data;
+      var q = currentQuestion();
+      (flow.answers.invites = flow.answers.invites || []).push({
+        firstName: d.first, lastName: d.last, email: d.email, forField: forKey
+      });
+      /* Mark the delegated field(s) answered (empty value) + flag them so the
+         pane shows "Invited" rather than "Skipped". */
+      var markDelegated = function (k) { flow.delegatedFields[k] = (d.first + ' ' + (d.last || '')).trim(); };
+      if (q && q.combo && q.parts) { q.parts.forEach(function (p) { flow.answers[p.key] = ''; markDelegated(p.key); }); }
+      else if (q) { flow.answers[q.key] = (q.type === 'multiselect') ? [] : ''; markDelegated(q.key); }
+      flow.multi = null;
+      flow.invite = null;
+
+      var fullName = (d.first + ' ' + (d.last || '')).trim();
+      var wasStep = q ? q.step : 0;
+      wiseaiSay(
+        '<span class="ac-success"><span class="material-icons">mail</span>Invite ready for ' + esc(fullName) + '</span> — ' +
+        'we\u2019ll email <strong>' + esc(d.email) + '</strong> a link to join <strong>' + esc(firstOrgName()) + '</strong> and answer this. Let\u2019s keep going.',
+        null,
+        function () { advanceAfterAnswer(wasStep); }
+      );
+    }
+
     /* opts.dest === 'overview' skips the remaining/optional questions, creates the
        account, and drops the user straight onto the workspace overview. Otherwise
        the flow finishes normally and lands on the default (WISEai) surface. */
@@ -503,21 +806,28 @@
       var destUrl = toOverview ? auth.overviewUrl() : auth.landingUrl();
       flow.done = true;
       flow.multi = null;
+      flow.releasing = false;
+      stopForage();
       setInputEnabled(false, 'Creating your account…');
       renderPane(true);
-      var lead = opts.quick ? 'Perfect — setting up your account so you can dive right in…' : 'Verifying and creating your account…';
+      var lead = opts.emailed ? 'Done — I\u2019ll email you the moment your brand view is ready. Setting up your account…'
+        : opts.quick ? 'Perfect — setting up your account so you can dive right in…'
+        : 'Verifying and creating your account…';
       wiseaiSay(lead, null, function () {
         var a = flow.answers;
         var reg = {
           name: a.name, title: a.title, email: a.email, phone: a.phone,
           brands: String(a.brand || '').split(',').map(function (s) { return { name: s.trim() }; }).filter(function (b) { return b.name; }),
-          category: a.category, competitors: a.competitors, distributionStage: a.diststage,
-          retailersCurrent: a.retailersIn, retailersTarget: a.retailersTarget, revenueRange: a.revenue,
-          goals: a.goals, priorityProduct: a.priorityProduct, teamContacts: a.team,
-          distributors: a.distributors, manufacturingModel: a.mfgmodel, facilityCerts: a.certs, scaleReadiness: a.scalespeed,
+          goal: a.goal, route: flow.route,
+          competitors: a.competitors, priorityProduct: a.priorityProduct, distributionStage: a.diststage,
+          retailersCurrent: a.retailersIn, retailersTarget: a.retailersTarget,
+          distributors: a.distributors, manufacturingModel: a.mfgmodel, facilityCerts: a.certs,
+          teamContact: a.teamEmail ? { name: a.teamName, email: a.teamEmail } : null,
+          password: a.password, termsAccepted: a.terms === 'Agreed', termsAcceptedAt: a.terms === 'Agreed' ? new Date().toISOString() : null,
           attestSig: a.sig, attestedAt: new Date().toISOString(),
           orgname: a.orgname, website: a.website, addr1: a.addr1, city: a.city, state: a.state, zip: a.zip,
-          entitytype: a.entitytype, ein: a.ein, sidType: 'duns', sidValue: a.sid
+          entitytype: a.entitytype, ein: a.ein, sidType: 'duns', sidValue: a.sid,
+          invites: a.invites || []
         };
         auth.signup(reg);
         var tail = toOverview ? 'taking you to your overview…' : 'taking you to WISEai…';
@@ -540,29 +850,42 @@
 
     /* ── Progress pane ── */
     function fieldValueDisplay(key) {
+      if (flow.delegatedFields[key]) return 'Invited';
       var v = flow.answers[key];
       if (v == null) return '';
       if (Array.isArray(v)) return v.length ? (v[0] + (v.length > 1 ? ' +' + (v.length - 1) : '')) : 'Skipped';
       if (v === '') return 'Skipped';
-      if (key === 'attest') return 'Agreed';
+      if (key === 'password') return '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+      if (key === 'attest' || key === 'terms') return 'Agreed';
       if (key === 'otp') return 'Verified';
       if (key === 'brand') return String(v).split(',')[0].trim() + (String(v).split(',').length > 1 ? '…' : '');
       return String(v);
+    }
+    /* Field keys currently in the live flow (combos expanded) — the denominator is
+       route-aware, so gated-out extension questions never count against progress. */
+    function activeFieldKeys() {
+      var keys = [];
+      flow.questions.forEach(function (q) {
+        if (q.combo && q.parts) { q.parts.forEach(function (p) { keys.push(p.key); }); }
+        else keys.push(q.key);
+      });
+      return keys;
     }
     function renderPane(allDone) {
       if (!pane) return;
       if (flow.paneHidden) { pane.hidden = true; return; }
       pane.hidden = false;
       var a = flow.answers;
-      var total = TOTAL_FIELDS;
-      var answered = allDone ? total : Object.keys(FIELD_META).filter(function (k) { return a[k] != null; }).length;
-      var pct = Math.round((answered / total) * 100);
+      var actKeys = activeFieldKeys();
+      var total = actKeys.length;
+      var answered = allDone ? total : actKeys.filter(function (k) { return a[k] != null; }).length;
+      var pct = total ? Math.round((answered / total) * 100) : 0;
       var cq = allDone ? null : currentQuestion();
       var activeKeys = (!allDone && cq) ? (cq.combo ? cq.parts.map(function (p) { return p.key; }) : [cq.key]) : [];
       var curMacro = allDone ? MACROS.length : (cq ? cq.step : 0);
 
       var stepsHtml = MACROS.map(function (m, i) {
-        var done = allDone || m.keys.every(function (k) { return a[k] != null; });
+        var done = allDone || i < curMacro;
         var active = !done && i === curMacro;
         var cls = done ? 'vs-step--done' : (active ? 'vs-step--active' : '');
         var numHtml = done ? '<span class="material-icons">check</span>' : String(i + 1);
@@ -573,9 +896,10 @@
         var fieldsHtml = '';
         if (done || active) {
           var rows = m.keys.map(function (k) {
+            var inFlow = actKeys.indexOf(k) >= 0;
             var isDone = a[k] != null;
             var isActive = activeKeys.indexOf(k) >= 0;
-            if (!isDone && !isActive) return '';
+            if ((!isDone && !isActive) || (!inFlow && !isDone)) return '';
             var meta = FIELD_META[k] || { label: k };
             var icon = isDone ? 'check_circle' : 'radio_button_unchecked';
             var stateCls = isDone ? 'sp-field--done' : 'sp-field--active';
@@ -618,10 +942,15 @@
     var RESTART_RE = /^(start over|start again|restart|reset)$/i;
     function handleSend() {
       if (input.disabled) return;
-      if (RESTART_RE.test((input.value || '').trim())) { restartFlow(); return; }
+      /* "Start over" is only possible before verification — once the code is in,
+         the account is being created and there's no going back. */
+      if (RESTART_RE.test((input.value || '').trim()) && flow.answers.otp == null) { restartFlow(); return; }
+      if (flow.releasing) return;
+      if (flow.invite) { submitInvite(input.value); return; }
       if (flow.multi) { addMultiToken(input.value); return; }
       var q = currentQuestion();
       if (!q || flow.done) return;
+      if (q.type === 'route') { handleRouteText(input.value); return; }
       if (q.combo) { submitCombo(input.value); return; }
       submitAnswer(input.value, false);
     }
@@ -633,6 +962,20 @@
       if (!btn || !root.contains(btn)) return;
       var action = btn.dataset.ac;
       if (action === 'answer') { submitAnswer(btn.dataset.value, true, btn.dataset.label); return; }
+      if (action === 'route') { selectRoute(btn.dataset.value, btn.dataset.label); return; }
+      if (action === 'releaseEmail') {
+        if (flow.done) return;
+        disablePriorChips(); addUser('Email me when it\u2019s ready'); flow.releasing = false;
+        finishFlow({ dest: 'overview', emailed: true }); return;
+      }
+      if (action === 'releaseWait') {
+        if (flow.done) return;
+        disablePriorChips(); addUser('I\u2019ll wait'); flow.releaseWait = true;
+        setInputEnabled(false);
+        if (flow.forage.brand >= 100) { proceedFromRelease(); return; }
+        flow.waitTyping = showTyping();
+        return;
+      }
       if (action === 'toggle') {
         if (!flow.multi) return;
         var val = btn.dataset.value;
@@ -647,6 +990,7 @@
       if (action === 'msdone') { finalizeMultiselect(); return; }
       if (action === 'diveIn') { diveInNow(); return; }
       if (action === 'skip') { skipCurrent(); return; }
+      if (action === 'delegate') { var dq = currentQuestion(); startInvite(dq ? dq.key : null); return; }
       if (action === 'resend') {
         disablePriorChips();
         addUser('Resend code');
@@ -688,13 +1032,21 @@
       hideWelcome();
       renderPane();
       wiseaiSay(
-        "<strong>Let's create your WISEcode account.</strong> Tap the suggested chips, add your own, or skip anything optional — and when I ask for a few details at once, feel free to type them together. Made a mistake? Just type <strong>“start over”</strong> anytime to begin again.",
+        '<span class="sc-line-heading">Let\u2019s create your WISEcode account</span>',
         null,
-        function () { askCurrent(); }
+        function () {
+          wiseaiSay(
+            "Tap the suggested chips, add your own, or skip anything optional — and feel free to answer a few at once when I ask.",
+            null,
+            function () { askCurrent(); }
+          );
+        }
       );
     }
     function restartFlow() {
-      flow = { qi: 0, answers: {}, done: false, questions: SIGNUP_QUESTIONS };
+      stopForage();
+      flow = { qi: 0, answers: {}, done: false, questions: baseQuestions(), invite: null, delegatedFields: {},
+        route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false };
       if (messages) messages.innerHTML = '';
       setInputEnabled(false);
       input.value = '';

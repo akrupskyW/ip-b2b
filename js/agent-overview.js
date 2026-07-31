@@ -21,13 +21,22 @@ import { initLirTooltip } from './lir-tooltip.js';
 import { initWISEaiTooltips } from './wiseai-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
-import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState } from './wiseai-dock.js';
+import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState, isWISEaiClosed, restartWISEaiChat, setWISEaiCollapsed } from './wiseai-dock.js';
 import { buildAppearanceBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
-import { renderDashboardHome, editBrandBanner } from './dashboard-home.js';
+import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply } from './dashboard-home.js';
 import { renderVerificationFlow, VERIFICATION_WISEAI } from './verification-flow.js';
 import { renderGrasVerificationFlow, GRAS_WISEAI, setGrasChat } from './gras-verification-flow.js';
+import { renderMarketingAssets } from './marketing-assets-flow.js';
+import { renderProfile, PROFILE_WISEAI, setProfileChat } from './profile-flow.js';
+import { renderPreferences, PREFERENCES_WISEAI } from './preferences-flow.js';
+import { renderApiKeys, API_KEYS_WISEAI } from './api-keys-flow.js';
+import { renderInvoices, INVOICES_WISEAI, setInvoicesChat } from './invoices-flow.js';
+import { renderHelp, HELP_WISEAI } from './help-flow.js';
+import { renderDocs, DOCS_WISEAI } from './docs-flow.js';
+import { renderAgents, AGENTS_WISEAI } from './agents-flow.js';
+import { renderAlerts, ALERTS_WISEAI } from './alerts-flow.js';
 
 function escHtml(s) {
   return String(s)
@@ -347,13 +356,13 @@ function bootstrapBlankPage(productId) {
     APP_IDENTITY = resolveIdentity();
     mountTopbar({
       variant: 'agent',
-      logoHref: 'product-comparison.html',
+      logoHref: 'overview.html',
       profileName: APP_IDENTITY.name,
       profileEmail: APP_IDENTITY.email,
       avatarText: APP_IDENTITY.initials,
     });
   } else {
-    mountTopbar({ variant: 'agent', logoHref: 'product-comparison.html' });
+    mountTopbar({ variant: 'agent', logoHref: 'overview.html' });
   }
 
   const headerEl = document.getElementById('agent-main-header');
@@ -424,7 +433,7 @@ function bootstrapAppNavPage(navId) {
 
   mountTopbar({
     variant: 'agent',
-    logoHref: 'product-comparison.html',
+    logoHref: 'overview.html',
     profileName: APP_IDENTITY.name,
     profileEmail: APP_IDENTITY.email,
     avatarText: APP_IDENTITY.initials,
@@ -455,6 +464,43 @@ function bootstrapAppNavPage(navId) {
        Renders the 5-step documentation wizard beside the WISEai dock. */
     document.title = 'WISE · GRAS Verification';
     if (mainEl) renderGrasVerificationFlow(mainEl);
+  } else if (navId === 'marketing-assets') {
+    /* Marketing Assets — a nested-table browser of the co-branding toolkit
+       (one-sheets, packaging, social, email/SMS, and the Non-UPF shield). */
+    document.title = 'WISE · Marketing Assets';
+    if (mainEl) renderMarketingAssets(mainEl);
+  } else if (navId === 'profile') {
+    /* My Profile — editable identity card + Activity/Security tabs. */
+    document.title = 'WISE · My Profile';
+    if (mainEl) renderProfile(mainEl);
+  } else if (navId === 'preferences') {
+    /* Preferences — appearance, notifications, workspace, accessibility. */
+    document.title = 'WISE · Preferences';
+    if (mainEl) renderPreferences(mainEl);
+  } else if (navId === 'api-keys') {
+    /* API keys — create / reveal / revoke keys, usage, and docs. */
+    document.title = 'WISE · API Keys';
+    if (mainEl) renderApiKeys(mainEl);
+  } else if (navId === 'invoices') {
+    /* Invoices & Downloads — filterable billing board + downloads. */
+    document.title = 'WISE · Invoices & Downloads';
+    if (mainEl) renderInvoices(mainEl);
+  } else if (navId === 'help') {
+    /* Help — search, browse-by-topic, FAQs, and contact support. */
+    document.title = 'WISE · Help';
+    if (mainEl) renderHelp(mainEl);
+  } else if (navId === 'docs') {
+    /* Docs — a sidebar + reading-pane documentation browser. */
+    document.title = 'WISE · Docs';
+    if (mainEl) renderDocs(mainEl);
+  } else if (navId === 'agents') {
+    /* Agents — account-level manager for every WISE agent. */
+    document.title = 'WISE · Agents';
+    if (mainEl) renderAgents(mainEl);
+  } else if (navId === 'alerts') {
+    /* Alerts — a full-page, filterable inbox of agent notifications. */
+    document.title = 'WISE · Alerts';
+    if (mainEl) renderAlerts(mainEl);
   } else if (mainEl && !mainEl.innerHTML.trim()) {
     mainEl.innerHTML = `
       <div class="agent-empty" data-module-placeholder>
@@ -503,7 +549,7 @@ export function bootstrapAgentPage() {
 
   /* Build the shared top bar (menu toggle, WISE logo, Alerts/More, profile).
      The agent variant has no center rail — just the trailing actions. */
-  mountTopbar({ variant: 'agent', logoHref: 'product-comparison.html' });
+  mountTopbar({ variant: 'agent', logoHref: 'overview.html' });
   /* Logo lives in the nav panel brand strip (mountTopbar → mountMenuBrand). */
 
   const headerEl = document.getElementById('agent-main-header');
@@ -560,26 +606,48 @@ export function bootstrapAgentPage() {
      WISEai stays uniform as you move between pages.
 ==================================================================== */
 
-/* Intent chips surfaced in the WISEai dock on the Dashboard page — each one
-   maps to an action available from aha.html, laid out as a plain wrapped grid
-   (no carousel) so every chip is always visible. The action chips navigate to
-   where the task is performed; the "discuss" chips continue the conversation
-   inside the dock. */
+/* Intent chips surfaced in the WISEai dock on the Dashboard page. There is one
+   chip for EVERY action the Dashboard (overview.html) exposes, so anything you
+   can do on the page is also one tap away from WISEai. Each chip maps 1:1 to an
+   on-page control via DASHBOARD_WISEAI_ACTIONS below — clicking a chip triggers
+   that exact control, so the chip does precisely what the button does (navigate,
+   open a report, compare brands, or edit the logo). Laid out as a plain wrapped
+   grid (no carousel) so every chip is always visible. */
 const DASHBOARD_WISEAI_INTENTS = [
-  { intent: 'start_verification',  label: 'Start verification',        icon: 'verified' },
-  { intent: 'claim_products',      label: 'Claim your products',       icon: 'verified_user' },
-  { intent: 'discuss_portfolio',   label: 'Discuss your food portfolio', icon: 'inventory_2' },
-  { intent: 'add_food',            label: 'Add a food',                icon: 'add' },
-  { intent: 'discuss_upf_report',  label: 'Discuss the UPF report',    icon: 'description' },
-  { intent: 'discuss_gras_report', label: 'Discuss the GRAS report',   icon: 'description' },
+  { intent: 'claim_products',       label: 'Claim your products',         icon: 'verified_user' },
+  { intent: 'review_portfolio',     label: 'Review your food portfolio',  icon: 'inventory_2' },
+  { intent: 'add_food',             label: 'Add a food',                  icon: 'add' },
+  { intent: 'verify_upf',           label: 'Verify your Non-UPF products', icon: 'verified' },
+  { intent: 'verify_gras',          label: 'Verify your GRAS products',   icon: 'shield' },
+  { intent: 'open_upf_report',      label: 'Open the UPF report',         icon: 'description' },
+  { intent: 'open_gras_report',     label: 'Open the GRAS report',        icon: 'description' },
+  { intent: 'open_insights_report', label: 'Open the insights report',    icon: 'insights' },
+  { intent: 'compare_brand',        label: 'Compare against Great Value', icon: 'compare_arrows' },
+  { intent: 'update_logo',          label: 'Update your brand logo',      icon: 'image' },
 ];
 
-/* On-topic replies for the "discuss" chips so a click continues the WISEai
-   conversation with a relevant answer rather than a generic fallback. */
-const DASHBOARD_WISEAI_REPLIES = {
-  discuss_portfolio: 'Let’s dig into your food portfolio. I can break down how many products are claimed, which are Non‑UPF, and where the gaps are. Want a quick summary, or should we focus on a specific product?',
-  discuss_upf_report: 'Happy to walk you through the Brand UPF report — the Non‑UPF split, processing‑level distribution, and which products qualify for the verification shield. What would you like to start with?',
-  discuss_gras_report: 'Let’s go through the Brand GRAS report — flagged additives, ingredient risk, and what it means for your products. Which part should I unpack first?',
+/* Chip intent → the `data-dash-action` of the matching control rendered by
+   dashboard-home.js. onIntent (below) clicks that element so the chip performs
+   the real page action. Keep this in lock-step with the actions in
+   dashboard-home.js: every actionable control on overview.html must appear here
+   so no page action is left without a chip. */
+const DASHBOARD_WISEAI_ACTIONS = {
+  claim_products:       'claim-upcs',
+  review_portfolio:     'review-portfolio',
+  add_food:             'add-food',
+  verify_upf:           'verify-upf',
+  verify_gras:          'verify-gras',
+  compare_brand:        'switch-brand',
+  update_logo:          'edit-logo',
+};
+
+/* Report chips are handled separately from the on-page controls: they open the
+   report INLINE on the dashboard surface (right of the chat) and let the dock
+   supply the narration, so nothing opens a modal. Chip intent → report key. */
+const DASHBOARD_WISEAI_REPORTS = {
+  open_upf_report:      'upf',
+  open_gras_report:     'gras',
+  open_insights_report: 'insights',
 };
 
 /* Intent chips for the Reports page WISEai dock — every chip is something you
@@ -594,6 +662,32 @@ const REPORTS_WISEAI_INTENTS = [
   { intent: 'unlock_studio',     label: 'Unlock the full Studio',   icon: 'lock_open' },
 ];
 
+/* Intent chips for the Marketing Assets page WISEai dock. Every chip maps 1:1
+   to something you can actually do in the module beside it — open a specific
+   toolkit, pull the Non-UPF shield, grab the brand standards, or expand the
+   whole library. Rendered as a stacked/wrapped grid (chipsFlow: 'wrap'), not a
+   carousel, so all actions are visible at once. onIntent drives the on-page
+   action; the matching reply below narrates it in the thread. */
+const MARKETING_WISEAI_INTENTS = [
+  { intent: 'onesheet',        label: 'Open the co-branded one-sheets', icon: 'description' },
+  { intent: 'shield',          label: 'Get the Non-UPF Verified™ shield', icon: 'verified_user' },
+  { intent: 'brand_standards', label: 'Download the brand standards guide', icon: 'menu_book' },
+  { intent: 'social',          label: 'Grab the social media toolkit', icon: 'share' },
+  { intent: 'email_sms',       label: 'Get email & SMS assets', icon: 'mail' },
+  { intent: 'packaging',       label: 'Packaging resources', icon: 'inventory_2' },
+  { intent: 'expand_all',      label: 'Expand all folders', icon: 'unfold_more' },
+];
+
+const MARKETING_WISEAI_REPLIES = {
+  onesheet: 'Opened the <strong>One-Sheet Toolkit</strong> — you\u2019ll find the co-branded Non-UPF one-sheet in Templates A, B and C (editable PSDs plus print-ready PNGs), and the instructions PDF for setup. Want me to point you to a specific template?',
+  shield: 'Opened the <strong>WISEcode Non-UPF Verified\u2122 Shield</strong> folder. The <strong>Digital</strong> set has web PNGs and the <strong>Print</strong> set has vector AI/EPS/SVG files — black and white lockups live under \u201cUse with permission only.\u201d Need a particular format?',
+  brand_standards: 'Fetching the <strong>Trademark Use Guide and Brand Standards</strong> from Packaging Resources — it covers clear space, color, and approved shield usage. The shield examples PDF is in the same folder if you need reference art.',
+  social: 'Opened the <strong>Social Media Toolkit</strong> — post packs plus the instructions PDF. Tell me the platform or campaign and I\u2019ll help you pick the right post.',
+  email_sms: 'Opened the <strong>WISEcode Email-SMS Toolkit</strong> — ready-made <strong>banners</strong> and <strong>headers</strong> in multiple sizes, with the setup instructions PDF. Want the 1080\u00d71080 or the 1920\u00d71080 banner?',
+  packaging: 'Opened <strong>Packaging Resources</strong> — the shield examples and the trademark/brand-standards guide for getting the mark onto your packaging correctly.',
+  expand_all: 'Expanded the whole library so you can see every toolkit, folder and file at once. Use the Sort control to reorder by name, size, or date.',
+};
+
 const REPORTS_WISEAI_REPLIES = {
   explain_score: 'Your Portfolio UPF score comes from how each product is classified against the NOVA scale — 92% of your line-up lands as Non‑UPF. Want me to break the score down by product, or explain what pushes a product into the ultra‑processed tier?',
   improve_score: 'The fastest wins are usually swapping a single flagged ingredient (emulsifiers, artificial colours, or certain seed oils). Open the UPF report and I can point to the exact products and ingredients that, if reformulated, would flip them to Non‑UPF.',
@@ -601,6 +695,24 @@ const REPORTS_WISEAI_REPLIES = {
   compare_products: 'Tell me two products from your portfolio and I’ll line them up side‑by‑side across UPF classification, ingredient quality, and flagged additives.',
   unlock_studio: 'The full Studio unlocks the GRAS, Insights, Nutrient‑Quality and Health‑Outcomes reports across your whole portfolio and per product. Want me to add you to the beta waitlist?',
 };
+
+/* True only when the page was reached by a real navigation (clicking a link /
+   typing the URL), not a reload or back/forward. Used so pages that force the
+   WISEai chat open on arrival don't fight an explicit "Close conversation" the
+   user made moments earlier — a reload (e.g. livereload on file save) then keeps
+   the chat closed. Falls back to `true` if the timing API is unavailable, so the
+   default stays "show the chat". */
+function arrivedByNavigation() {
+  try {
+    const nav = performance.getEntriesByType?.('navigation')?.[0];
+    if (nav && typeof nav.type === 'string') return nav.type === 'navigate';
+    /* Legacy fallback: performance.navigation.type === 0 is TYPE_NAVIGATE. */
+    const legacy = performance.navigation && performance.navigation.type;
+    return legacy === undefined || legacy === 0;
+  } catch (_) {
+    return true;
+  }
+}
 
 function setupWISEaiDock() {
   /* Pages can opt out of the persistent WISEai dock with
@@ -618,14 +730,32 @@ function setupWISEaiDock() {
   const isReports = document.body.dataset.navId === 'reports';
   const isVerification = document.body.dataset.navId === 'verification';
   const isGras = document.body.dataset.navId === 'gras-verification';
+  const isMarketing = document.body.dataset.navId === 'marketing-assets';
 
-  /* The Verification pages are a chat + wizard pairing, so WISEai must always be
-     showing here — clear any persisted "collapsed" state from another page. */
-  if (isVerification || isGras) writeWISEaiDockState({ collapsed: false });
+  /* Account-level modules (opened from the profile menu) — each pairs its own
+     surface with the WISEai dock and its own intent chips. Keyed by navId so a
+     single map wires the render, the dock config, and the force-open behavior. */
+  const ACCOUNT_WISEAI = {
+    profile: PROFILE_WISEAI,
+    preferences: PREFERENCES_WISEAI,
+    'api-keys': API_KEYS_WISEAI,
+    invoices: INVOICES_WISEAI,
+    help: HELP_WISEAI,
+    docs: DOCS_WISEAI,
+    agents: AGENTS_WISEAI,
+    alerts: ALERTS_WISEAI,
+  };
+  const accountWiseai = ACCOUNT_WISEAI[document.body.dataset.navId];
 
-  /* The Reports page IS the chat + report pairing, so WISEai must always be
-     showing here — clear any persisted "collapsed" state from another page. */
-  if (isReports) writeWISEaiDockState({ collapsed: false });
+  /* The Verification and Reports pages are a chat + surface pairing, so WISEai
+     should be showing when you first NAVIGATE here — we clear any "collapsed"
+     state carried over from another page. But if you explicitly close the chat
+     ON this page, that must stick: a reload (incl. livereload during editing) or
+     a back/forward must NOT re-open it, otherwise "Close conversation" looks like
+     it just restarts the chat. So only force-open on a genuine navigation. */
+  if ((isVerification || isGras || isReports || isMarketing || accountWiseai) && arrivedByNavigation()) {
+    writeWISEaiDockState({ collapsed: false });
+  }
 
   /* Pages can pin the WISEai dock to a fixed side via `<body data-default-dock>`
      (left | center | right) so the chat always sits there regardless of the
@@ -637,10 +767,33 @@ function setupWISEaiDock() {
   }
 
   let cfg;
-  if (isVerification) {
+  if (accountWiseai) {
+    /* Account modules ship a complete WISEai config (sub + intents + replies +
+       onIntent that drives the module's own surface), so use it as-is. */
+    cfg = { ...accountWiseai };
+  } else if (isVerification) {
     cfg = { ...VERIFICATION_WISEAI };
   } else if (isGras) {
     cfg = { ...GRAS_WISEAI };
+  } else if (isMarketing) {
+    cfg = {
+      sub: 'Find and pull any co-branding asset — one tap.',
+      chipsFlow: 'wrap',
+      intents: MARKETING_WISEAI_INTENTS,
+      /* Each reply is built by the marketing module so it can carry contextual
+         download/open chips (the exact files just discussed) inside the thread —
+         falls back to the static narration if the module hook isn't up yet. */
+      intentReplies: Object.fromEntries(MARKETING_WISEAI_INTENTS.map(({ intent }) => [intent, () => {
+        const rich = typeof window.__wiseMarketingReply === 'function' ? window.__wiseMarketingReply(intent) : '';
+        return rich || MARKETING_WISEAI_REPLIES[intent];
+      }])),
+      /* Each chip performs the real on-page action (opens the toolkit, grabs
+         the shield, expands the library) and still narrates it in the thread. */
+      onIntent: (intent) => {
+        if (typeof window.__wiseMarketingIntent === 'function') window.__wiseMarketingIntent(intent);
+        return false;
+      },
+    };
   } else if (isReports) {
     cfg = {
       sub: 'Ask anything about your reports.',
@@ -658,16 +811,26 @@ function setupWISEaiDock() {
       sub: '',
       chipsFlow: 'wrap',
       intents: DASHBOARD_WISEAI_INTENTS,
-      intentReplies: DASHBOARD_WISEAI_REPLIES,
-      /* Action chips jump to where the task is done; "discuss" chips fall
-         through (return false) to continue the WISEai conversation. */
+      /* Report chips get a state-aware narration in the thread while the report
+         opens on the surface to the right (see onIntent) — no modal. */
+      intentReplies: {
+        open_upf_report:      () => dashReportChatReply('upf'),
+        open_gras_report:     () => dashReportChatReply('gras'),
+        open_insights_report: () => dashReportChatReply('insights'),
+      },
+      /* Report chips open the report INLINE on the dashboard surface (right of
+         the chat) and return false so the dock adds the "you" line + the reply
+         above — matching the verification flows' chat ↔ surface pairing. Every
+         other chip fires the matching on-page control (a `[data-dash-action]`
+         button in #agent-main-scroll) — navigate, toggle brand, or edit logo —
+         and returns true to suppress the generic reply. Nothing opens a modal. */
       onIntent: (intent) => {
-        const go = {
-          start_verification: 'verification.html',
-          claim_products: 'portfolio.html',
-          add_food: 'portfolio.html',
-        }[intent];
-        if (go) { window.location.href = go; return true; }
+        const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
+        if (reportCard) { openDashReport(reportCard, { mirror: false }); return false; }
+        const action = DASHBOARD_WISEAI_ACTIONS[intent];
+        if (!action) return false;
+        const el = document.querySelector(`#agent-main-scroll [data-dash-action="${action}"]`);
+        if (el) { el.click(); return true; }
         return false;
       },
     };
@@ -691,6 +854,19 @@ function setupWISEaiDock() {
   /* Hand the live chat to the GRAS flow so UI interactions mirror into the
      conversation (and vice-versa) for one shared, mirrored surface. */
   if (isGras) setGrasChat(wiseai);
+
+  /* Same for the Dashboard: opening a report on the surface (or via a chip)
+     mirrors into the conversation instead of popping a modal. */
+  if (isDashboard) setDashChat(wiseai);
+
+  /* Organization Profile: hand it the live chat so on-form edits (field
+     changes, logo/banner uploads, Save) narrate back into the conversation,
+     matching the chip-driven flow in the other direction. */
+  if (document.body.dataset.navId === 'profile') setProfileChat(wiseai);
+
+  /* Invoices & Downloads: hand it the live chat so row actions (Pay, Retry,
+     Download, Cancel …) narrate back into the conversation. */
+  if (document.body.dataset.navId === 'invoices') setInvoicesChat(wiseai);
 }
 
 /* ====================================================================
@@ -1109,6 +1285,7 @@ function renderAvatarBody(pop) {
     </div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
     <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
     <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
     <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
@@ -1150,6 +1327,26 @@ function openAvatarPopover(anchor) {
       window.location.href = 'login.html';
       return;
     }
+    /* Each remaining menu row now opens its own module page. The Alerts quick
+       action still opens the in-place side panel (handled above); the "Agents"
+       quick action and the list items navigate to their landing pages. */
+    const navItem = ev.target.closest('[data-pop-action]');
+    if (navItem && pop.contains(navItem)) {
+      const dest = {
+        agents: 'agents.html',
+        profile: 'profile.html',
+        prefs: 'preferences.html',
+        apikeys: 'api-keys.html',
+        help: 'help.html',
+        docs: 'docs.html',
+      }[navItem.dataset.popAction];
+      if (dest) {
+        ev.stopPropagation();
+        closeAvatarPopover();
+        window.location.href = dest;
+        return;
+      }
+    }
     if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) {
       ev.stopPropagation();
       return;
@@ -1182,11 +1379,16 @@ function refreshAppearancePopover() {
 }
 
 function renderAppearanceBody(pop) {
+  /* Only offer the "WISEai chat" on/off toggle where the shared dock actually
+     lives on the page (pages can opt out via `<body data-hide-wiseai>`). */
+  const hasWISEaiDock = !!document.getElementById('wiseai-dock-panel');
   pop.innerHTML = buildAppearanceBody({
     showPivot: true,
     isPivoted: isMenuPivoted(),
     isDark: isDarkMode(),
     wiseaiDockMode: wiseaiDockMode(),
+    showWISEaiChat: hasWISEaiDock,
+    wiseaiChatOn: !isWISEaiClosed(),
   });
 }
 
@@ -1259,6 +1461,16 @@ function openAppearancePopover(anchor) {
     if (colorblindItem && pop.contains(colorblindItem)) {
       ev.stopPropagation();
       applyColorblind(!isColorblindOn());
+      renderAppearanceBody(pop);
+      return;
+    }
+    const wiseaiChatItem = ev.target.closest('[data-wiseai-chat]');
+    if (wiseaiChatItem && pop.contains(wiseaiChatItem)) {
+      ev.stopPropagation();
+      /* Off → fresh-restart the chat back into its welcome state; on → close it
+         (folds to the floating owl, same as "Close conversation"). */
+      if (isWISEaiClosed()) restartWISEaiChat();
+      else setWISEaiCollapsed(true);
       renderAppearanceBody(pop);
       return;
     }

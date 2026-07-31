@@ -110,7 +110,7 @@ const FOODS = [
     edited: 'Jul 20, 2026',
     thumbIcon: 'water_drop',
     img: '../assets/verification/ns-powdered-vitamin-milk.png',
-    selected: true,
+    selected: false,
     ingredients:
       'Nutrient Survival Vitamin Milk Blend (Nonfat Milk, Lactose, Vitamin C (Ascorbic Acid), ' +
       'Vitamin E (DL Alpha-Tocopheryl Acetate), D-Biotin, Vitamin A (Retinyl Palmitate), Vitamin B3 (Niacinamide), ' +
@@ -145,7 +145,7 @@ const FOODS = [
     edited: 'Jul 05, 2026',
     thumbIcon: 'blender',
     img: '../assets/verification/ns-powdered-vitamin-butter.png',
-    selected: true,
+    selected: false,
     ingredients:
       'Sweet Cream (Milk), Nonfat Milk, Sea Salt, Sunflower Lecithin, ' +
       'Nutrient Survival Vitamin Blend (Vitamin A (Retinyl Palmitate), Vitamin E (DL Alpha-Tocopheryl Acetate), ' +
@@ -161,7 +161,7 @@ const FOODS = [
     edited: 'Jul 09, 2026',
     thumbIcon: 'egg_alt',
     img: '../assets/verification/ns-homestyle-scramble.png',
-    selected: true,
+    selected: false,
     ingredients:
       'Whole Eggs, Egg Whites, Freeze-Dried Sausage Crumbles (Pork, Sea Salt, Spices), Nonfat Milk, ' +
       'Cheddar Cheese (Cultured Milk, Salt, Enzymes), Sea Salt, Nutrient Survival Vitamin & Mineral Blend ' +
@@ -680,7 +680,14 @@ function bodyHTML() {
 }
 
 function renderProgress() {
-  if (progressEl) progressEl.innerHTML = progressPaneHTML();
+  if (!progressEl) return;
+  /* The progress module only appears once the user has started a selection;
+     with nothing checked there's no progress to show. */
+  const show = selectedCount() > 0;
+  progressEl.hidden = !show;
+  progressEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+  if (show) progressEl.innerHTML = progressPaneHTML();
+  else progressEl.innerHTML = '';
 }
 
 function render(preserveFocus) {

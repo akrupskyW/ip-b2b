@@ -11,9 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="agent-page.css" />
-  <link rel="stylesheet" href="wiseai-chat.css" />
-  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="wise.css" />
   <style>
     /* ═══════════ Reformulation Studio — page-specific shell ═══════════
        Reuses the shared WISE palette (agent-page.css) + chat classes
@@ -115,6 +113,18 @@
        + top-aligned scroll (this studio seeds more starter chips than the dock)
        are local. */
     #welcome-screen.sc-welcome { justify-content: flex-start; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
+    /* Welcome headline — serif + compact, matching the serif chat headlines on
+       the other WISE chat modules (which apply var(--font-serif) via
+       body.ai-chat-page .ws-heading). This studio has no ai-chat-page class, so
+       set the serif face + a smaller scale directly. */
+    #welcome-screen .ws-heading {
+      font-family: 'Noto Serif', serif;
+      font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin: 1.25rem 0 0.75rem;
+    }
     #welcome-screen .ws-sub { max-width: 52ch; }
     #welcome-screen .ws-chips { margin-bottom: 1rem; }
     .rf-ws-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); text-align: center; margin: 0.75rem 0 0.75rem; }
@@ -160,9 +170,7 @@
        their controls (restart · width toggle) into the top-right corner, exactly
        like every other WISE module. A local `display:none` used to wipe those
        floated controls, making this studio the odd one out. The only thing left
-       is the scope breadcrumb, which would otherwise read as a stray header, so
-       collapse it in lockstep with the module headers. */
-    html.header-float .rf-scope-bar { display: none !important; }
+       is the scope breadcrumb, which lives in the persistent module headline. */
     /* The welcome screen is an opaque overlay (z-index 10, light mode) that fills the
        chat card, so lift the height-collapsed topbar above it — otherwise the floated
        restart control would be painted over and read as missing (the shared CSS applies
@@ -186,29 +194,26 @@
     .rf-icon-btn:hover { background: var(--surface-2); color: var(--text); }
     .rf-icon-btn .material-symbols-outlined, .rf-icon-btn .material-icons { font-size: 18px; }
 
-    /* Scope breadcrumb. The leading scope label reads as a Noto Serif headline —
-       the shared display face used for titles on product-portfolio.html and
-       product-comparison.html — so it presents as the ⭐ panel's headline rather than a
-       weak second header strip. Deeper drill-down crumbs trail it in muted UI text. */
+    /* Persistent module headline — the SAME component as the Product Portfolio
+       module header (.pf-head in product-portfolio.html): a Noto Serif display
+       title (1.2rem/800) with a muted meta subline beneath it. Always visible
+       (never collapsed by Appearance → Header) so the panel always leads with a
+       proper headline like every other WISE module, not a bare block label. The
+       scope drill-down now reads in the meta line. */
     .rf-scope-bar {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 10px 16px; flex-shrink: 0;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 16px; flex-shrink: 0;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      font-size: 12px;
     }
-    .rf-scope-crumb { display: inline-flex; align-items: center; gap: 4px; color: var(--text-muted); }
-    .rf-scope-crumb b { color: var(--primary); font-weight: 700; }
-    .rf-scope-title {
-      font-family: 'Noto Serif', serif; font-size: 15px; font-weight: 700;
-      color: var(--text); line-height: 1.2;
-    }
-    .rf-scope-title .material-icons { color: var(--primary); font-size: 18px !important; }
-    .rf-scope-sep { color: var(--text-subtle); font-size: 14px; }
+    .rf-head-titles { min-width: 0; flex: 1 1 auto; }
+    .rf-head-title { font-family: 'Noto Serif', serif; font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
+    .rf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 3px 0 0; line-height: 1.35; }
+    .rf-head-meta b { color: var(--primary); font-weight: 700; }
     .rf-scope-reset {
-      margin-left: auto; border: 1px solid var(--border); background: var(--surface);
+      flex-shrink: 0; margin-left: auto; border: 1px solid var(--border); background: var(--surface);
       border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--text-muted);
-      padding: 3px 11px; cursor: pointer; font-family: 'Noto Serif', serif;
+      padding: 4px 12px; cursor: pointer; font-family: 'Noto Serif', serif;
     }
     .rf-scope-reset:hover { color: var(--text); background: var(--surface-2); }
 
@@ -220,10 +225,11 @@
        timestamp so past states stay scannable when you scroll back up. */
     .rf-block { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
     .rf-block:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 2px; }
-    .rf-block-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 12px; }
-    /* Block headline reads at the same weight/size as the other WISE module
-       titles (Noto Serif display face, 15px) — no far-right timestamp. */
-    .rf-block-eyebrow { font-family: 'Noto Serif', serif; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.25; }
+    .rf-block-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 14px; }
+    /* Block headline reads at the exact scale of the other WISE content headers
+       — modeled 1:1 on product-portfolio's .pf-head-title (Noto Serif display
+       face, 1.2rem, weight 800) so it no longer presents as a weak, tiny label. */
+    .rf-block-eyebrow { font-family: 'Noto Serif', serif; font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; }
 
     /* View primitives */
     .rf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: var(--shadow-1); }
@@ -258,9 +264,12 @@
     .rf-kpi {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
       padding: 12px 14px;
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
       box-shadow: var(--shadow-1); text-align: center;
     }
+    /* Rectangular tiles, not pills — override the app-wide pill radius forced on
+       elements inside #chat-shell-wrap, exactly like product-portfolio's .pf-stat. */
+    #chat-shell-wrap .rf-kpi { border-radius: 6px !important; }
     html.dark .rf-kpi { background: rgba(255,255,255,0.04); }
     .rf-kpi .v { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.05; }
     .rf-kpi .l { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
@@ -273,7 +282,12 @@
     /* ── Star-distribution donut ──
        Reuses the shared dashboard .dash-donut SVG component (dashboard.css); only
        the panel-scoped layout + legend need local styling. */
-    #rf-view .dash-donut-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 24px; margin: 4px 0 2px; }
+    /* Donut + legend sit close together and centered — the same fix the shared
+       dashboard applies (both columns size to content, the pair is centered), so
+       the legend counts no longer get shoved to the panel's far-right edge by a
+       stretched 1fr / flex:1 column. */
+    #rf-view .dash-donut-row { display: grid; grid-template-columns: auto auto; align-items: center; justify-content: center; gap: 24px; margin: 4px 0 2px; }
+    @media (max-width: 520px) { #rf-view .dash-donut-row { grid-template-columns: auto; justify-items: center; } }
     /* The star donut is a single ring drawn at the outer radius (r=124, sw=26),
        so grow the raised centre disc to meet the ring's inner edge (dashboard.css
        only sizes this for its double donut / toggled single donut). */
@@ -282,7 +296,10 @@
        CSS since this panel has no chart-host JS). */
     #rf-view .dash-donut-svg:hover .dash-donut-arc { opacity: .45; transition: opacity .14s ease; }
     #rf-view .dash-donut-svg .dash-donut-arc:hover { opacity: 1; filter: brightness(1.06) saturate(1.05); }
-    .rf-dlegend { display: flex; flex-direction: column; gap: 9px; min-width: 190px; flex: 1; }
+    /* Fixed, content-sized width (no flex-grow) so the label→count spacing stays
+       tight and the values track just to the right of the labels instead of the
+       card edge. */
+    .rf-dlegend { display: flex; flex-direction: column; gap: 9px; width: 240px; max-width: 100%; }
     .rf-dlegend-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
     .rf-dlegend-item .dash-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
     .rf-dlegend-lab { color: var(--text-muted); }
@@ -376,6 +393,46 @@
     .rf-empty { text-align: center; color: var(--text-subtle); padding: 40px 20px; font-size: 13px; }
     .rf-empty .material-icons { font-size: 40px; opacity: .4; display: block; margin: 0 auto 10px; }
 
+    /* ── Blank-slate start state ──
+       The ⭐ panel opens empty (no auto-loaded portfolio) and offers the two
+       minimum ways to start — run a Guiding Stars analysis across the whole
+       portfolio, or open a single product to reformulate. It reuses the exact
+       .rf-block-head / .rf-block-eyebrow headline every other panel block uses
+       (left-aligned Noto Serif), so it reads as the same module header — not a
+       bespoke centered layout. */
+    .rf-start-sub { font-size: 12px; color: var(--text-muted); margin: 0 2px 16px; line-height: 1.5; }
+    .rf-start-cards { display: grid; gap: 12px; }
+    .rf-start-card {
+      display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 2px 14px;
+      padding: 15px 16px; border: 1px solid var(--border); border-radius: 14px;
+      background: var(--surface); cursor: pointer; transition: .14s; box-shadow: var(--shadow-1);
+      font-family: inherit; text-align: left; width: 100%;
+    }
+    #chat-shell-wrap .rf-start-card { border-radius: 14px !important; }
+    .rf-start-card:hover { border-color: var(--primary); box-shadow: var(--shadow-2); transform: translateY(-1px); }
+    /* Bare icon — no container box. */
+    .rf-start-card .rf-start-card-ic { grid-row: 1 / span 2; color: var(--primary); font-size: 26px; }
+    .rf-start-card-t { font-size: 14px; font-weight: 700; color: var(--text); }
+    .rf-start-card-d { font-size: 12px; color: var(--text-subtle); line-height: 1.45; }
+
+    /* ── Panel picker list ──
+       The right ⭐ panel's parallel counterpart to the chat's reply chips: when an
+       intent needs the user to pick a product, brand or owner, it renders this
+       selectable list IN the panel (not only as chat chips) so the module stays a
+       fully independent interface. Each row fires the same intent as its chat chip. */
+    .rf-pick { display: flex; flex-direction: column; gap: 8px; }
+    .rf-pick-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); cursor: pointer; text-align: left;
+      font-family: inherit; font-size: 12.5px; color: var(--text); transition: .12s;
+    }
+    #chat-shell-wrap .rf-pick-item { border-radius: 10px !important; }
+    .rf-pick-item:hover { border-color: var(--primary); background: var(--surface-2); }
+    .rf-pick-item > .material-icons:first-child { font-size: 18px; color: var(--primary); flex-shrink: 0; }
+    .rf-pick-lab { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rf-pick-go { font-size: 18px; color: var(--text-subtle); flex-shrink: 0; margin-left: auto; }
+
     /* Action buttons follow the app's button standard: pill-shaped, Noto Serif. */
     .rf-btn { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 7px 15px; font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; font-family: 'Noto Serif', serif; }
     .rf-btn:hover { background: var(--surface-2); }
@@ -461,10 +518,10 @@
             </div>
           </div>
           <h1 class="ws-heading">Let's reformulate your products.</h1>
-          <p class="ws-sub">I'm your product reformulation copilot. Ask at the <b>portfolio level</b> — where the biggest, cheapest reformulation wins are — or drill into a <b>single product</b> and model the exact recipe change. Everything renders live in the panel on the right.</p>
-          <div class="rf-ws-eyebrow">Portfolio &amp; brand level</div>
+          <p class="ws-sub">I'm your product reformulation copilot, starting from a clean slate. Pick one of two ways in: run the <b>Guiding Stars</b> analysis across the whole portfolio to find the biggest, cheapest wins, or jump straight to <b>reformulating a single product</b> and model the exact recipe change. Everything renders live in the panel on the right.</p>
+          <div class="rf-ws-eyebrow">Guiding Stars · portfolio &amp; brand</div>
           <div class="ws-chips" id="ws-chips-portfolio"></div>
-          <div class="rf-ws-eyebrow">Product level</div>
+          <div class="rf-ws-eyebrow">Reformulate · single product</div>
           <div class="ws-chips" id="ws-chips-product"></div>
         </div>
       </div>
@@ -547,7 +604,7 @@
     /* mountMenuBrand must run BEFORE mountAgentMenu: setupMenuRail looks for the
        .menu-brand-bar to dock the collapse toggle and wire rail tooltips. */
     mountMenuBrand({
-      logoHref: 'product-comparison.html',
+      logoHref: 'overview.html',
       profileName: 'Arthur Krupsky',
       profileEmail: 'akrupsky@wisecode.ai',
       avatarText: 'AK',

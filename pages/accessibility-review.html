@@ -1307,7 +1307,7 @@ auditAllPages();
    page's mirrored copy — then recomputes. Falls back gracefully to the
    mirror when the file can't be fetched (e.g. opened via file://).
 ===================================================================== */
-const SOURCE_CSS = 'agent-page.css';
+const SOURCE_CSS = 'wise.css';
 function cssBlock(css, selector) {
   const re = new RegExp(selector + '\\s*\\{([\\s\\S]*?)\\}');
   const m = css.match(re);

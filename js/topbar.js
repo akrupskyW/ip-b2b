@@ -94,7 +94,7 @@ const AGENT_TRAILING_HTML = `
  */
 export function mountTopbar({
   variant = 'agent',
-  logoHref = 'product-comparison.html',
+  logoHref = 'overview.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
   profileName,
   profileEmail,
@@ -139,7 +139,7 @@ export function syncMenuTogglePlacement() {
  * rail (.mp-rail). When collapsed only the owl bug mark shows.
  */
 export function mountMenuBrand({
-  logoHref = 'product-comparison.html',
+  logoHref = 'overview.html',
   profileTitle = 'Maya Chen · Product Intelligence Lead',
   profileName,
   profileEmail,
@@ -381,23 +381,41 @@ export function restoreFullBleed() {
   applyFullBleed(isFullBleedOn());
 }
 
-/* Colorblind-friendly palette — remap the semantic status colors (success green,
-   danger red, warning amber) to a colorblind-safe set so red↔green coding stays
-   distinguishable for the most common forms of color-vision deficiency
-   (deutan/protan). Rather than re-declaring tokens in every page's :root block,
-   we inject ONE stylesheet (scoped to `html.colorblind` / `html.colorblind.dark`)
-   that overrides the shared design tokens — so every page that loads this module
-   picks up the same palette. Driven by a `colorblind` class on <html>; persisted
-   so it survives navigation. */
+/* Colorblind-friendly palettes — remap the semantic status colors (success
+   green, danger red, warning amber) to a colorblind-safe set so the red↔green
+   coding stays distinguishable. Color-vision deficiency comes in different
+   forms, and the ideal "safe" palette differs by type, so we ship THREE tuned
+   variants and let the user pick the one that matches their vision:
+     - Deuteranopia (green-weak, the most common)  → Okabe–Ito bluish-green /
+       vermillion / orange, separated on the blue–orange axis.
+     - Protanopia   (red-weak)                     → success shifts to BLUE
+       (protans lose red luminance, so a blue "good" reads far more clearly).
+     - Tritanopia   (blue-yellow-weak, rare)       → the red/green channel is
+       intact, but amber/yellow collides with pink, so warning shifts to PURPLE.
+   Rather than re-declaring tokens in every page's :root block, we inject ONE
+   stylesheet (scoped to `html.colorblind.cb-*` and their `.dark` variants) that
+   overrides the shared design tokens — so every page that loads this module
+   picks up the same palette. Driven by a `colorblind` class + a `cb-<type>`
+   class on <html>; both the on/off state and the chosen type are persisted so
+   they survive navigation. */
 const COLORBLIND_KEY = 'wise-colorblind';
+const COLORBLIND_MODE_KEY = 'wise-colorblind-mode';
 const COLORBLIND_STYLE_ID = 'wise-colorblind-style';
 
-/* Okabe–Ito colorblind-safe palette. Bluish-green vs vermillion is the
-   recommended "good/bad" pair (kept apart on the blue–orange axis that CVD
-   viewers can still see); orange fills the warning slot. The *-text shades are
-   darkened (light) / lightened (dark) so labels keep AAA contrast on their tints. */
+/** Supported CVD types. `class` is the modifier added to <html>; the label is
+    shown in the Appearance picker; `short` labels the compact segmented button. */
+export const COLORBLIND_MODES = [
+  { id: 'deuter', class: 'cb-deuter', label: 'Deuteranopia (green-weak)', short: 'Deut' },
+  { id: 'protan', class: 'cb-protan', label: 'Protanopia (red-weak)', short: 'Prot' },
+  { id: 'tritan', class: 'cb-tritan', label: 'Tritanopia (blue-weak)', short: 'Trit' },
+];
+const COLORBLIND_CLASSES = COLORBLIND_MODES.map((m) => m.class);
+const DEFAULT_COLORBLIND_MODE = 'deuter';
+
+/* The *-text shades are darkened (light mode) / lightened (dark mode) so labels
+   keep strong contrast on their translucent tints. */
 const COLORBLIND_CSS = `
-html.colorblind {
+html.colorblind.cb-deuter {
   --sec-green: #009E73;
   --sec-red: #D55E00;
   --ter-amber: #E69F00;
@@ -405,11 +423,60 @@ html.colorblind {
   --sec-red-text: #8A3D00;
   --ter-amber-text: #6B4A00;
 }
-html.colorblind.dark {
+html.colorblind.cb-deuter.dark {
   --sec-green-text: #6FD4B5;
   --sec-red-text: #FFB07A;
   --ter-amber-text: #FFD98A;
-}`;
+}
+html.colorblind.cb-protan {
+  --sec-green: #0072B2;
+  --sec-red: #D55E00;
+  --ter-amber: #E69F00;
+  --sec-green-text: #004E7A;
+  --sec-red-text: #8A3D00;
+  --ter-amber-text: #6B4A00;
+}
+html.colorblind.cb-protan.dark {
+  --sec-green-text: #7FC4EC;
+  --sec-red-text: #FFB07A;
+  --ter-amber-text: #FFD98A;
+}
+html.colorblind.cb-tritan {
+  --sec-green: #1B7F3B;
+  --sec-red: #D01C2E;
+  --ter-amber: #8130A6;
+  --sec-green-text: #0F5626;
+  --sec-red-text: #8E1220;
+  --ter-amber-text: #5C1E77;
+}
+html.colorblind.cb-tritan.dark {
+  --sec-green-text: #7FD69A;
+  --sec-red-text: #FF8A97;
+  --ter-amber-text: #D9A6F0;
+}
+/* The palette overrides above keep semantic status colors distinct, but on a
+   given screen those chips may be sparse — so the effect can look invisible.
+   To make colorblind mode unmistakable AND genuinely useful, we ALSO run the
+   whole app through a per-type daltonization (color-correction) filter. These
+   matrices are grayscale-preserving (each row sums to 1), so text and neutral
+   backgrounds are untouched while saturated reds/greens/blues visibly shift
+   apart along each type's confusion axis. Applied to <body>; the page root
+   doesn't scroll, so fixed-position popovers/docks keep their coordinates. */
+html.colorblind.cb-deuter body { filter: url(#wise-cb-deuter); }
+html.colorblind.cb-protan body { filter: url(#wise-cb-protan); }
+html.colorblind.cb-tritan body { filter: url(#wise-cb-tritan); }`;
+
+/* Daltonization (2·Identity − simulation) matrices, per CVD type. Rows are
+   R'/G'/B' as functions of R,G,B; each sums to 1 so grays map to themselves. */
+const COLORBLIND_FILTERS_ID = 'wise-colorblind-filters';
+const COLORBLIND_FILTER_MATRICES = {
+  'wise-cb-deuter':
+    '1.70969 -0.70969 0 0 0  -0.29031 1.29031 0 0 0  0.02197 -0.02197 1 0 0  0 0 0 1 0',
+  'wise-cb-protan':
+    '1.89111 -0.89111 0 0 0  -0.10889 1.10889 0 0 0  -0.00447 0.00447 1 0 0  0 0 0 1 0',
+  'wise-cb-tritan':
+    '1.05 -0.05 0 0 0  0 1.567 -0.567 0 0  0 -0.475 1.475 0 0  0 0 0 1 0',
+};
 
 /** Inject the colorblind palette stylesheet once (idempotent). */
 function ensureColorblindStyle() {
@@ -421,23 +488,77 @@ function ensureColorblindStyle() {
   (document.head || document.documentElement).appendChild(style);
 }
 
+/** Inject the SVG <filter> definitions the palette CSS references, once. */
+function ensureColorblindFilters() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(COLORBLIND_FILTERS_ID)) return;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.id = COLORBLIND_FILTERS_ID;
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.style.cssText = 'position:absolute;width:0;height:0;pointer-events:none;';
+  for (const [id, values] of Object.entries(COLORBLIND_FILTER_MATRICES)) {
+    const filter = document.createElementNS(svgNS, 'filter');
+    filter.id = id;
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+    const fe = document.createElementNS(svgNS, 'feColorMatrix');
+    fe.setAttribute('type', 'matrix');
+    fe.setAttribute('values', values.replace(/\s+/g, ' ').trim());
+    filter.appendChild(fe);
+    svg.appendChild(filter);
+  }
+  (document.body || document.documentElement).appendChild(svg);
+}
+
 /** True when the colorblind-friendly palette was last left on. */
 export function isColorblindOn() {
   try { return localStorage.getItem(COLORBLIND_KEY) === '1'; } catch { return false; }
 }
 
-/** Toggle the colorblind class on <html> and persist it. Each Appearance
-    popover reads isColorblindOn() to render its own toggle state. */
+/** The persisted CVD type id ('deuter' | 'protan' | 'tritan'), default deuter. */
+export function getColorblindMode() {
+  try {
+    const v = localStorage.getItem(COLORBLIND_MODE_KEY);
+    return COLORBLIND_MODES.some((m) => m.id === v) ? v : DEFAULT_COLORBLIND_MODE;
+  } catch { return DEFAULT_COLORBLIND_MODE; }
+}
+
+/** Reflect the active CVD type onto <html> (only one cb-* class at a time). */
+function applyColorblindModeClass(modeId) {
+  const root = document.documentElement;
+  const active = COLORBLIND_MODES.find((m) => m.id === modeId) || COLORBLIND_MODES[0];
+  COLORBLIND_CLASSES.forEach((cls) => root.classList.toggle(cls, cls === active.class));
+}
+
+/** Toggle the colorblind class on <html> and persist it, applying the chosen
+    CVD-type palette. Each Appearance popover reads isColorblindOn() /
+    getColorblindMode() to render its own state. */
 export function applyColorblind(on) {
   ensureColorblindStyle();
+  ensureColorblindFilters();
+  applyColorblindModeClass(getColorblindMode());
   document.documentElement.classList.toggle('colorblind', !!on);
   try { localStorage.setItem(COLORBLIND_KEY, on ? '1' : '0'); } catch {}
   try {
-    document.dispatchEvent(new CustomEvent('wise:colorblind', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:colorblind', {
+      detail: { on: !!on, mode: getColorblindMode() },
+    }));
   } catch {}
 }
 
-/** Restore the persisted colorblind state onto the document (no popover needed). */
+/** Switch the CVD-type palette (persisting it). Turning the palette itself on
+    is left to applyColorblind, but selecting a type implies the user wants it on,
+    so we enable it here too for a one-tap experience. */
+export function setColorblindMode(modeId) {
+  const mode = COLORBLIND_MODES.find((m) => m.id === modeId) || COLORBLIND_MODES[0];
+  try { localStorage.setItem(COLORBLIND_MODE_KEY, mode.id); } catch {}
+  ensureColorblindStyle();
+  applyColorblindModeClass(mode.id);
+  applyColorblind(true);
+}
+
+/** Restore the persisted colorblind state + type onto the document. */
 export function restoreColorblind() {
   applyColorblind(isColorblindOn());
 }
@@ -485,7 +606,36 @@ export function wireMenuFooter() {
   }
 }
 
+/* Colorblind-type picker — the segmented control lives inside every shell's
+   Appearance popover (built by buildAppearanceBody), but the popovers stop
+   click propagation before it reaches the document, so instead of duplicating a
+   handler in each shell we intercept the `data-cbtype` buttons in the CAPTURE
+   phase (which runs before the shells' own bubble-phase handlers). This makes
+   the type picker work identically on every page for free. */
+function wireColorblindTypePicker() {
+  if (typeof document === 'undefined' || document.__wiseCbPickerBound) return;
+  document.__wiseCbPickerBound = true;
+  document.addEventListener(
+    'click',
+    (e) => {
+      const btn = e.target?.closest?.('.fz-btn[data-cbtype]');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      setColorblindMode(btn.dataset.cbtype);
+      const group = btn.closest('.fz-btns');
+      group?.querySelectorAll('.fz-btn[data-cbtype]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('fz-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    },
+    true
+  );
+}
+
 if (typeof document !== 'undefined') {
+  wireColorblindTypePicker();
   document.addEventListener('DOMContentLoaded', () => {
     restoreMinimalUi();
     restoreHeaderFloat();

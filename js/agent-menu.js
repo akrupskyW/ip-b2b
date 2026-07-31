@@ -349,6 +349,10 @@ export function getAppNavNode(id) {
       if (child) return { ...child, parent: node.id };
     }
   }
+  /* Account/organization/support surfaces live only in the user-name popover,
+     but pages still resolve their header title + icon from here. */
+  const acct = WISE_ACCOUNT_NAV.find((n) => n.id === id);
+  if (acct) return acct;
   return null;
 }
 
@@ -388,11 +392,9 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
   { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
 
-  { type: 'section', label: 'Organization' },
-  { type: 'item', id: 'profile', label: 'Profile', icon: 'account_circle', slug: 'profile.html' },
-  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
-
   { type: 'section', label: 'Admin' },
+  { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
   {
     type: 'group',
     id: 'wisecode-admin',
@@ -406,6 +408,25 @@ export const WISE_APP_NAV = [
     ],
   },
   { type: 'upgrade', id: 'studio-ai', title: 'Studio & AI', sub: 'Unlock full access', icon: 'auto_awesome', slug: 'upgrade.html' },
+];
+
+/**
+ * Account / organization / support surfaces.
+ *
+ * These live exclusively in the user-name popover (see renderAvatarBody in
+ * agent-overview.js) — they are intentionally NOT rendered in the left nav so
+ * they aren't duplicated. Their node data is kept here so shells can still
+ * derive a page's title + icon from its `data-nav-id` via getAppNavNode.
+ */
+export const WISE_ACCOUNT_NAV = [
+  { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
+  { type: 'item', id: 'agents', label: 'Agents', icon: 'smart_toy', slug: 'agents.html' },
+  { type: 'item', id: 'alerts', label: 'Alerts', icon: 'notifications', slug: 'alerts.html' },
+  { type: 'item', id: 'preferences', label: 'Preferences', icon: 'tune', slug: 'preferences.html' },
+  { type: 'item', id: 'api-keys', label: 'API keys', icon: 'key', slug: 'api-keys.html' },
+  { type: 'item', id: 'help', label: 'Help', icon: 'help', slug: 'help.html' },
+  { type: 'item', id: 'docs', label: 'Docs', icon: 'menu_book', slug: 'docs.html' },
 ];
 
 /** href for an agent — top-level agents resolve to a real page; child agents
@@ -706,6 +727,57 @@ function finalizeMenu(navEl) {
 /* ====================================================================
    Sectioned workspace nav renderers (driven by WISE_APP_NAV).
 ==================================================================== */
+
+/* Pages that actually exist under `pages/`. Any workspace-nav row whose slug
+   is NOT in this set is rendered LOCKED — a muted, non-interactive row with a
+   trailing lock glyph — so it stays inactive until the page ships. When you add
+   a real page under `pages/`, add its file name here to unlock its nav row. */
+const EXISTING_PAGES = new Set([
+  'overview.html',
+  'product-portfolio.html',
+  'product-comparison.html',
+  'marketing-assets.html',
+  'reports.html',
+  'reformulation.html',
+  'ai-chat.html',
+  'ai-chat-2.html',
+  'verification.html',
+  'gras-verification.html',
+  'analytics-types.html',
+  'accessibility-review.html',
+  'app-vision-deck.html',
+  'login.html',
+  'forgot-password.html',
+  'profile.html',
+  'invoices.html',
+  'preferences.html',
+  'api-keys.html',
+  'help.html',
+  'docs.html',
+  'agents.html',
+  'alerts.html',
+]);
+
+/** True when a nav slug maps to a page that exists under `pages/`. Slugless
+    nodes (pure toggle groups) are treated as present so they stay usable. */
+function pageExists(slug) {
+  if (!slug) return true;
+  const file = String(slug).split(/[#?]/)[0].replace(/^.*\//, '');
+  return EXISTING_PAGES.has(file);
+}
+
+/** Locked workspace-nav row — visible but inert, with a trailing lock glyph.
+    Used for any nav item/subitem whose target page hasn't been built yet. */
+function renderAppLocked(node, rowClass) {
+  const iconWrapCls = rowClass === 'menu-nav-subitem' ? 'menu-nav-subicon' : 'menu-nav-icon';
+  return `
+    <div class="${rowClass} menu-nav-locked" data-nav-id="${escAttr(node.id)}" aria-disabled="true" title="Coming soon">
+      <span class="${iconWrapCls}"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+      <span class="menu-nav-label">${escAttr(node.label)}</span>
+      <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+    </div>`;
+}
+
 function renderAppNav(prefix, activeId) {
   return WISE_APP_NAV.map((node) => {
     switch (node.type) {
@@ -723,6 +795,7 @@ function renderAppNav(prefix, activeId) {
 }
 
 function renderAppItem(prefix, node, activeId) {
+  if (!pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-item');
   const href = node.slug ? `${prefix}${node.slug}` : '#';
   const isActive = node.id === activeId ? ' is-active' : '';
   return `
@@ -733,6 +806,7 @@ function renderAppItem(prefix, node, activeId) {
 }
 
 function renderAppSubitem(prefix, node, activeId) {
+  if (!pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-subitem');
   const href = node.slug ? `${prefix}${node.slug}` : '#';
   const isActive = node.id === activeId ? ' is-active' : '';
   return `
@@ -767,14 +841,24 @@ function renderAppGroup(prefix, node, activeId) {
 }
 
 function renderAppUpgrade(prefix, node) {
-  const href = node.slug ? `${prefix}${node.slug}` : '#';
-  return `
-    <a class="menu-nav-upgrade" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}">
+  const locked = !pageExists(node.slug);
+  const inner = `
       <span class="menu-nav-upgrade-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
       <span class="menu-nav-upgrade-text">
         <span class="menu-nav-upgrade-title">${escAttr(node.title)}</span>
         <span class="menu-nav-upgrade-sub">${escAttr(node.sub)}</span>
-      </span>
+      </span>`;
+  if (locked) {
+    return `
+    <div class="menu-nav-upgrade menu-nav-locked" data-nav-id="${escAttr(node.id)}" aria-disabled="true" title="Coming soon">
+      ${inner}
+      <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+    </div>`;
+  }
+  const href = node.slug ? `${prefix}${node.slug}` : '#';
+  return `
+    <a class="menu-nav-upgrade" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}">
+      ${inner}
     </a>`;
 }
 
