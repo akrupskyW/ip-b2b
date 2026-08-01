@@ -7588,13 +7588,13 @@
     /* Board header — serif title + a line of details, mirroring the Compare
        module's .cmp-board-title / .cmp-board-meta so the two modules read
        identically. */
-    .pf-head { padding: 2px 2px 0; }
+    .pf-head { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 0; }
     .pf-head-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
     .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 3px 0 0; }
 
     /* Body + views — matches the Compare module's body (14px gutter + gap,
        flex column, children never squeezed so the board scrolls vertically). */
-    .pf-body { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+    .pf-body { padding: 16px 40px; display: flex; flex-direction: column; gap: 14px; }
     .pf-body > *:not(.pf-empty) { flex-shrink: 0; }
     .pf-view { display: flex; flex-direction: column; gap: 14px; }
     .pf-view.is-hidden { display: none; }
@@ -8500,9 +8500,9 @@
               <span>Add team member to chat</span>
             </button>
             <div class="topbar-menu-divider"></div>
-            <button type="button" class="topbar-menu-item" onclick="toggleHistoryPanel({ fromMenu: true }); closeAllMoreMenus()">
+            <button type="button" class="topbar-menu-item" onclick="(window.__wiseChatHistory ? window.__wiseChatHistory.toggle() : toggleHistoryPanel({ fromMenu: true })); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">history</span>
-              <span>History &amp; Projects</span>
+              <span>History</span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="restartConversation(); closeAllMoreMenus()">
@@ -12914,9 +12914,11 @@
         ['verify', 'shields', 'claimed']);
     }
     function startAddProduct() {
-      openPortfolioModule('claimed', 'Add a product manually',
-        'If a UPC didn’t turn up in Discovered, you can add it by hand. Use <strong>Add Product</strong> at the top of the board — paste a label, spec sheet, or product URL and I’ll parse it into your portfolio, then queue ingredient verification.',
-        ['discovered', 'needsinfo', 'verify']);
+      /* Add Product opens its own dedicated builder page: a WISEai chat that
+         collects the photo, category, ingredients, Nutrition Facts, allergens
+         and UPC into a live, editable Product Details (NFP) card, with a
+         progress module beside it. Nothing persists until the user saves. */
+      window.location.href = 'add-product.html';
     }
     function startSearchPortfolio() {
       openPortfolioModule('claimed', 'Search my portfolio',
@@ -17270,6 +17272,33 @@
       } else {
         autoStartAdd();
       }
+    })();
+  </script>
+
+  <!-- Shared in-module chat history sidebar. -->
+  <script src="../js/chat-history.js"></script>
+  <script>
+    (function () {
+      if (!window.WiseChatHistory) return;
+      var shell = document.getElementById('chat-shell');
+      var msgs = document.getElementById('chat-messages');
+      if (!shell || !msgs) return;
+      var _restart = (typeof window.restartConversation === 'function') ? window.restartConversation : null;
+      var ctrl = window.WiseChatHistory.mount(shell, {
+        storageKey: 'wise-chat-history:product-portfolio',
+        messagesEl: '#chat-messages',
+        welcomeEl: '#welcome-screen',
+        paneHost: msgs.parentElement,
+        stripSelectors: ['.sc-line-typing'],
+        onNew: function () { if (_restart) _restart(); }
+      });
+      window.__wiseChatHistory = ctrl;
+      window.restartConversation = function () {
+        try { ctrl.saveCurrent(); } catch (e) {}
+        var r = _restart ? _restart.apply(this, arguments) : undefined;
+        ctrl.markNew();
+        return r;
+      };
     })();
   </script>
 </body>

@@ -407,7 +407,7 @@ export const WISE_APP_NAV = [
       { id: 'user-management', label: 'User Management', icon: 'group', slug: 'user-management.html' },
     ],
   },
-  { type: 'upgrade', id: 'studio-ai', title: 'Studio & AI', sub: 'Unlock full access', icon: 'auto_awesome', slug: 'upgrade.html' },
+  { type: 'upgrade', id: 'studio-ai', title: 'Studio & AI', sub: 'Unlock full access', icon: 'auto_awesome', slug: 'studio-ai.html' },
 ];
 
 /**
@@ -756,6 +756,7 @@ const EXISTING_PAGES = new Set([
   'docs.html',
   'agents.html',
   'alerts.html',
+  'studio-ai.html',
 ]);
 
 /** True when a nav slug maps to a page that exists under `pages/`. Slugless

@@ -46,7 +46,7 @@
     .pf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
     .pf-head-copy { min-width: 0; }
     .pf-head-actions { flex-shrink: 0; padding-top: 6px; }
-    .pf-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.85rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; }
+    .pf-title { font-family: var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
     .pf-lede { font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 0; max-width: 64ch; }
 
     /* ---------- Card ---------- */
@@ -133,7 +133,7 @@
       .pf-wrap { padding: 20px 20px 48px; }
       .pf-grid { grid-template-columns: 1fr; }
       .pf-col-2, .pf-col-3, .pf-col-6 { grid-column: 1 / -1; }
-      .pf-title { font-size: 1.5rem; }
+      .pf-title { font-size: var(--module-title-size, 1.2rem); }
       .pf-head { flex-direction: column; gap: 16px; }
       .pf-head-actions { padding-top: 0; }
       .pf-head-actions .pf-btn { width: 100%; }

@@ -234,8 +234,14 @@ export function mountWISEaiDock(dock, opts = {}) {
   /* WISEai is the fixed anchor that modules flip around — it never flips sides
      itself, so no side-flip control is added to its dock. */
 
-  /* Restore the persisted place + size, then keep this dock in sync if the
-     state changes in another tab/page. */
+  /* WISEai always loads at its single-pane width on every page. The widened
+     (double/triple) tier is a within-session choice and is intentionally NOT
+     restored across page loads, so the chat module is the exact same size every
+     time it loads. (Side/position is still restored below.) */
+  writeWISEaiDockState({ wide: 0 });
+
+  /* Restore the persisted place, then keep this dock in sync if the state
+     changes in another tab/page. */
   applyWISEaiDockState(dock);
   observeRowForSolo(dock);
   window.addEventListener('storage', (e) => {

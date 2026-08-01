@@ -14,6 +14,10 @@
  */
 
 import { decorateWISEai } from './wiseai-tooltip.js';
+/* Side-effect import: registers window.WiseChatHistory (the shared in-module
+   history sidebar) so every mounted WISEai surface gets the same history +
+   "start new conversation" behaviour. */
+import './chat-history.js';
 
 /* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
    WISEai dock can reuse the exact same mark for its collapsed floating circle. */
@@ -561,6 +565,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      rail's scroll arrows once it becomes visible (it starts display:none, so its
      scroll metrics are zero until the welcome is dismissed). */
   let refreshPersistChips = () => {};
+  /* In-module history sidebar — assigned once the DOM + reset() exist below. The
+     three-dot "History" toggles it; "Start new conversation" saves the current
+     thread here first. */
+  let chatHistory = null;
   function hideWelcome() {
     welcome?.classList.add('sc-hidden');
     if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
@@ -569,7 +577,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (messages) messages.innerHTML = '';
     closeAgents();
     welcome?.classList.remove('sc-hidden');
+    if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
+    chatHistory?.markNew();
   }
   function submit() {
     if (!input) return;
@@ -589,6 +599,29 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     hideWelcome();
     addUser(v);
     wiseaiRespond(v);
+  }
+
+  /* Mount the shared in-module history sidebar into the chat body. Threads are
+     namespaced by surface (opts.historyKey) so different WISEai surfaces keep
+     their own history; the default shares one dock-wide history. */
+  if (window.WiseChatHistory && messages) {
+    chatHistory = window.WiseChatHistory.mount(rootEl, {
+      storageKey: opts.historyKey || 'wise-wiseai-chat-history',
+      messagesEl: messages,
+      paneHost: rootEl.querySelector('.sc-body'),
+      welcomeEl: welcome,
+      onNew: () => reset(),
+      stripSelectors: ['.sc-inline-chips', '.sc-line-typing'],
+      setHTML: (html) => {
+        messages.innerHTML = html || '';
+        welcome?.classList.add('sc-hidden');
+        if (welcome) welcome.style.display = '';
+        closeAgents();
+        if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
+        scrollDown();
+        decorateWISEai(rootEl);
+      },
+    });
   }
 
   /* Score cards — a clicked card starts a chat turn on its own intent, the same
@@ -816,10 +849,16 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }
     else if (action === 'history') {
       closeMore();
-      if (typeof opts.onHistory === 'function') opts.onHistory();
+      if (chatHistory) chatHistory.toggle();
+      else if (typeof opts.onHistory === 'function') opts.onHistory();
       else addWISEai('History &amp; Projects lets you jump back into past WISEai™ conversations. It’s coming to this workspace soon.');
     }
-    else if (action === 'new') { reset(); closeMore(); }
+    else if (action === 'new') {
+      closeMore();
+      /* Save the current thread into history, then start a clean conversation. */
+      if (chatHistory) chatHistory.startNew();
+      else reset();
+    }
     else if (action === 'agents') {
       closeMore();
       openAgents();

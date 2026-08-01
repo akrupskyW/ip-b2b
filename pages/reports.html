@@ -54,10 +54,10 @@
 
     /* ---- Module masthead ---- */
     .rp-title-main {
-      font-family: 'Noto Serif', Georgia, serif;
-      margin: 2px 0 4px;
-      font-size: clamp(1.9rem, 3vw, 2.5rem);
-      font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; color: var(--text);
+      font-family: var(--module-title-family, 'Noto Serif', Georgia, serif);
+      margin: 0;
+      font-size: var(--module-title-size, 1.2rem);
+      font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em; line-height: 1.15; color: var(--text);
     }
 
     /* ---- Section heading ---- */
@@ -217,10 +217,10 @@
       position: relative !important;
       left: auto !important;
       right: auto !important;
-      flex: 0 0 clamp(360px, 33vw, 560px) !important;
-      width: clamp(360px, 33vw, 560px) !important;
-      min-width: 360px !important;
-      max-width: 560px !important;
+      flex: 0 0 var(--chat-pane-w, 380px) !important;
+      width: var(--chat-pane-w, 380px) !important;
+      min-width: var(--chat-pane-w, 380px) !important;
+      max-width: var(--chat-pane-w, 380px) !important;
     }
     #modules-row #agent-main {
       order: 0;
@@ -238,7 +238,12 @@
     /* The Reports module owns its own scroll; each section is a horizontal
        carousel rail, so posters keep a fixed width and the row scrolls
        sideways rather than reflowing into a grid. */
-    .rp-wrap { max-width: none; }
+    .rp-wrap { max-width: none; padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px; }
+    /* Match the standard content-module layout used on every other page: the
+       serif module title leads the scroll body at 26px/40px, with no separate
+       60px header bar above it. */
+    body[data-nav-id="reports"] #agent-main-header { display: none; }
+    body[data-nav-id="reports"] .agent-main-scroll { padding: 0; }
   </style>
 </head>
 <body data-nav-id="reports">

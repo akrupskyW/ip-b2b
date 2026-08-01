@@ -622,7 +622,6 @@ const DASHBOARD_WISEAI_INTENTS = [
   { intent: 'open_upf_report',      label: 'Open the UPF report',         icon: 'description' },
   { intent: 'open_gras_report',     label: 'Open the GRAS report',        icon: 'description' },
   { intent: 'open_insights_report', label: 'Open the insights report',    icon: 'insights' },
-  { intent: 'compare_brand',        label: 'Compare against Great Value', icon: 'compare_arrows' },
   { intent: 'update_logo',          label: 'Update your brand logo',      icon: 'image' },
 ];
 
@@ -637,7 +636,6 @@ const DASHBOARD_WISEAI_ACTIONS = {
   add_food:             'add-food',
   verify_upf:           'verify-upf',
   verify_gras:          'verify-gras',
-  compare_brand:        'switch-brand',
   update_logo:          'edit-logo',
 };
 

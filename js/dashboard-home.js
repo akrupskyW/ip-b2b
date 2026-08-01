@@ -1026,7 +1026,11 @@ function renderHero(d, isAlt = false) {
             <span class="dash-brand-toggle-text">Bad Scores/High Numbers</span>
           </button>
         </div>
-        <p class="dash-hero-desc">${heroDesc}</p>
+        <p class="dash-hero-desc" id="dash-hero-desc">${heroDesc}</p>
+        <button class="dash-hero-learn" type="button" data-dash-action="hero-learn"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="dash-hero-learn-pop">
+          <span class="material-icons">info</span>Learn more
+        </button>
       </div>
     </section>`;
 }
@@ -2387,6 +2391,9 @@ function renderFocusScatter(d) {
  */
 export function renderDashboardHome(host) {
   if (!host) return;
+  /* Re-render replaces the hero markup, so drop any open "Learn more" popover
+     (it's portaled to <body> and would otherwise be orphaned). */
+  closeHeroLearnPopover();
   _dashboardHost = host;
   const d = getActiveData();
   const isAlt = _altBrandActive;
@@ -2471,6 +2478,14 @@ export function renderDashboardHome(host) {
       if (a === 'switch-brand') {
         _altBrandActive = !_altBrandActive;
         renderDashboardHome(host);
+        return;
+      }
+
+      /* Responsive hero: on narrow layouts the banner description collapses to a
+         "Learn more" chip that reveals the same copy in a small popover. */
+      if (a === 'hero-learn') {
+        e.stopPropagation();
+        toggleHeroLearnPopover(action);
         return;
       }
 
@@ -3353,6 +3368,72 @@ function setupChartAnimations(host) {
 /* Floating popover on donut-segment hover. Styled to match the navigation
    rail tooltip (#menu-rail-tip): surface chip, hairline border, soft shadow,
    fade + slide in. Position is fixed so it escapes the card's overflow. */
+/* ---- Responsive hero "Learn more" popover ----
+   On narrow layouts the banner description is hidden (see .dash-hero-learn in
+   wise.css) and replaced by a compact "Learn more" chip. Tapping it reveals the
+   same copy in a small popover. The popover is portaled to <body> so the hero's
+   `overflow: hidden` can't clip it, and it's positioned under (or above) the
+   chip, repositioning on scroll/resize. */
+let _heroLearnPop = null;
+
+function closeHeroLearnPopover() {
+  if (!_heroLearnPop) return;
+  const { el, btn, onDoc, onKey, onReposition } = _heroLearnPop;
+  btn.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('click', onDoc, true);
+  document.removeEventListener('keydown', onKey);
+  window.removeEventListener('resize', onReposition);
+  window.removeEventListener('scroll', onReposition, true);
+  el.classList.remove('is-open');
+  setTimeout(() => el.remove(), 180);
+  _heroLearnPop = null;
+}
+
+function toggleHeroLearnPopover(btn) {
+  if (_heroLearnPop && _heroLearnPop.btn === btn) { closeHeroLearnPopover(); return; }
+  closeHeroLearnPopover();
+
+  const desc = btn.closest('.dash-hero-left')?.querySelector('.dash-hero-desc');
+  const el = document.createElement('div');
+  el.className = 'dash-hero-learn-pop';
+  el.id = 'dash-hero-learn-pop';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Portfolio overview');
+  el.innerHTML = `<p class="dash-hero-learn-pop-text">${desc ? desc.innerHTML : ''}</p>`;
+  document.body.appendChild(el);
+  btn.setAttribute('aria-expanded', 'true');
+
+  const onReposition = () => {
+    const r = btn.getBoundingClientRect();
+    const pr = el.getBoundingClientRect();
+    let left = r.left;
+    left = Math.min(left, window.innerWidth - pr.width - 8);
+    left = Math.max(8, left);
+    let top = r.bottom + 8;
+    if (top + pr.height > window.innerHeight - 8) {
+      top = Math.max(8, r.top - pr.height - 8);
+    }
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  };
+  onReposition();
+  requestAnimationFrame(() => el.classList.add('is-open'));
+
+  const onDoc = (ev) => {
+    if (el.contains(ev.target) || btn.contains(ev.target)) return;
+    closeHeroLearnPopover();
+  };
+  const onKey = (ev) => { if (ev.key === 'Escape') closeHeroLearnPopover(); };
+  /* Defer the outside-click listener so the click that opened the popover
+     doesn't immediately close it. */
+  setTimeout(() => document.addEventListener('click', onDoc, true), 0);
+  document.addEventListener('keydown', onKey);
+  window.addEventListener('resize', onReposition);
+  window.addEventListener('scroll', onReposition, true);
+
+  _heroLearnPop = { el, btn, onDoc, onKey, onReposition };
+}
+
 function setupDonutPopover(host) {
   let tip = document.getElementById('dash-donut-tip');
   if (!tip) {

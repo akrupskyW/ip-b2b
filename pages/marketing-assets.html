@@ -53,9 +53,9 @@
     }
     .ma-head-titles { min-width: 0; }
     .ma-head-title {
-      font-family: 'Noto Serif', Georgia, serif;
-      font-size: 1.9rem; font-weight: 800; color: var(--text);
-      line-height: 1.1; margin: 0; letter-spacing: -0.01em;
+      font-family: var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text);
+      line-height: 1.15; margin: 0; letter-spacing: -0.01em;
     }
     .ma-head-meta { font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
 
@@ -367,7 +367,7 @@
     @media (max-width: 720px) {
       .ma-head { padding: 20px 20px 0; }
       .ma-body { padding: 16px 20px 48px; }
-      .ma-head-title { font-size: 1.5rem; }
+      .ma-head-title { font-size: var(--module-title-size, 1.2rem); }
       .ma-actions .ma-btn span:not(.material-icons) { display: none; }
       .ma-actions .ma-btn { padding: 0 12px; }
     }

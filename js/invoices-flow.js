@@ -92,40 +92,122 @@ function countFor(status) {
   return status ? INVOICES.filter((i) => i.status === status).length : INVOICES.length;
 }
 
-/* Per-status action buttons, mirroring the original board's affordances. */
-function actionsFor(inv) {
-  const btn = (variant, icon, label, action) =>
-    `<button type="button" class="inv-btn inv-btn--${variant}" data-inv-action="${esc(action)}" data-inv-id="${esc(inv.id)}"><span class="material-icons">${esc(icon)}</span>${esc(label)}</button>`;
-  const invoiceBtn = btn('ghost', 'description', 'Invoice', 'invoice');
+/* Per-status actions, mirroring the original board's affordances. One source
+   of truth is rendered two ways: as an inline button row (wide) and as a
+   three-dot popover menu (narrow / mobile). */
+function actionListFor(inv) {
+  const invoice = { variant: 'ghost', icon: 'description', label: 'Invoice', action: 'invoice' };
   switch (inv.status) {
     case 'sent':
-      return btn('primary', 'credit_card', 'Pay Now', 'pay')
-        + btn('danger', 'cancel', 'Cancel', 'cancel')
-        + btn('good', 'account_balance', 'Mark paid externally', 'mark-paid')
-        + invoiceBtn;
+      return [
+        { variant: 'primary', icon: 'credit_card',     label: 'Pay Now',              action: 'pay' },
+        { variant: 'danger',  icon: 'cancel',          label: 'Cancel',               action: 'cancel' },
+        { variant: 'good',    icon: 'account_balance', label: 'Mark paid externally', action: 'mark-paid' },
+        invoice,
+      ];
     case 'failed':
-      return btn('primary', 'refresh', 'Retry Payment', 'retry')
-        + btn('danger', 'cancel', 'Cancel', 'cancel')
-        + invoiceBtn;
+      return [
+        { variant: 'primary', icon: 'refresh', label: 'Retry Payment', action: 'retry' },
+        { variant: 'danger',  icon: 'cancel',  label: 'Cancel',        action: 'cancel' },
+        invoice,
+      ];
     case 'paid':
-      return btn('ghost', 'download', 'Download', 'download') + invoiceBtn;
+      return [{ variant: 'ghost', icon: 'download', label: 'Download', action: 'download' }, invoice];
     case 'cancelled':
     default:
-      return invoiceBtn;
+      return [invoice];
   }
+}
+
+/* Inline button row (shown on a wide board). */
+function actionsFor(inv) {
+  return actionListFor(inv).map((a) =>
+    `<button type="button" class="inv-btn inv-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+  ).join('');
+}
+
+/* Three-dot menu + popover (shown when the board is too narrow for the row). */
+function menuFor(inv) {
+  const items = actionListFor(inv).map((a) =>
+    `<button type="button" class="inv-rowmenu-item inv-rowmenu-item--${esc(a.variant)}" role="menuitem" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+  ).join('');
+  return `<div class="inv-rowmenu"><button type="button" class="inv-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="inv-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function rowHtml(inv) {
   const m = STATUS_META[inv.status];
   return `
     <div class="inv-trow" data-inv-row="${esc(inv.id)}" data-inv-status="${esc(inv.status)}">
-      <span class="inv-td"><span class="inv-date">${esc(inv.date)}</span></span>
-      <span class="inv-td inv-desc"><span class="inv-desc-name">${esc(inv.desc)}</span><span class="inv-desc-sub">${esc(inv.sub)}</span></span>
-      <span class="inv-td"><span class="inv-amount">${esc(inv.amount)}</span></span>
-      <span class="inv-td"><span class="inv-chip ${m.cls}"><span class="material-icons">${esc(m.icon)}</span>${esc(m.label)}</span></span>
-      <span class="inv-td"><span class="inv-num">#${esc(inv.id)}</span></span>
-      <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span></span>
+      <span class="inv-td"><span class="inv-meta"><span class="inv-date">${esc(inv.date)}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-icons">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
+      <span class="inv-td inv-desc"><span class="inv-amount">${esc(inv.amount)}</span><span class="inv-desc-name">${esc(inv.desc)}</span><span class="inv-desc-sub">${esc(inv.sub)}</span></span>
+      <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span>${menuFor(inv)}</span>
     </div>`;
+}
+
+/* ---- Sorting -------------------------------------------------------- */
+/* Each sortable column knows how to derive a comparable key from a row. The
+   combined columns sort by their primary (top) field: Date for the
+   Date/Invoice/Status column and Amount for the Amount/Description column.
+   Actions is not sortable. */
+const SORT_COLS = [
+  { key: 'date',   label: 'Date / Invoice',        sortable: true,  value: (i) => Date.parse(i.date) || 0, type: 'num' },
+  { key: 'amount', label: 'Amount / Description',  sortable: true,  value: (i) => parseFloat(String(i.amount).replace(/[^0-9.\-]/g, '')) || 0, type: 'num' },
+  { key: 'actions', label: 'Actions',              sortable: false },
+];
+
+let sortKey = null;   // null = original seeded order
+let sortDir = 1;      // 1 asc, -1 desc
+
+const ARROW_SVG =
+  '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true">' +
+  '<path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" ' +
+  'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function theadHtml() {
+  return SORT_COLS.map((c) => {
+    if (!c.sortable) return `<span class="inv-th">${esc(c.label)}</span>`;
+    const active = c.key === sortKey;
+    const dirAttr = active ? ` data-inv-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+    const ariaSort = active ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
+    return `<span class="inv-th inv-th--sortable" role="button" tabindex="0" data-inv-sort="${esc(c.key)}" aria-sort="${ariaSort}"${dirAttr}>${esc(c.label)}<span class="inv-sort-arrow" aria-hidden="true">${ARROW_SVG}</span></span>`;
+  }).join('');
+}
+
+/* The invoice list in current sort order (falls back to seeded order). */
+function orderedInvoices() {
+  if (!sortKey) return INVOICES.slice();
+  const col = SORT_COLS.find((c) => c.key === sortKey);
+  if (!col) return INVOICES.slice();
+  const indexed = INVOICES.map((inv, i) => ({ inv, i }));
+  indexed.sort((a, b) => {
+    const av = col.value(a.inv);
+    const bv = col.value(b.inv);
+    let r;
+    if (col.type === 'text') r = String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+    else r = (av - bv);
+    return (r * sortDir) || (a.i - b.i);
+  });
+  return indexed.map((o) => o.inv);
+}
+
+/* Re-order the rendered rows in place, then re-apply the active filter and
+   refresh the header arrows. */
+function applySort() {
+  if (!hostEl) return;
+  const rowsWrap = hostEl.querySelector('[data-inv-rows]');
+  if (rowsWrap) rowsWrap.innerHTML = orderedInvoices().map(rowHtml).join('');
+  const thead = hostEl.querySelector('.inv-thead');
+  if (thead) thead.innerHTML = theadHtml();
+  applyFilter();
+}
+
+/* Click a header: same column toggles asc↔desc, a new column starts ascending. */
+function toggleSort(key) {
+  const col = SORT_COLS.find((c) => c.key === key);
+  if (!col || !col.sortable) return;
+  if (sortKey === key) sortDir = -sortDir;
+  else { sortKey = key; sortDir = 1; }
+  applySort();
 }
 
 function statsHtml() {
@@ -147,13 +229,8 @@ function paint() {
   hostEl.innerHTML = `
     <div class="inv-wrap">
       <header class="inv-head">
-        <div class="inv-head-copy">
-          <h1 class="inv-title">Invoices &amp; Downloads</h1>
-          <p class="inv-lede">Flax4Life · Manage your invoices and download marketing resources.</p>
-        </div>
-        <div class="inv-head-actions">
-          <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-icons">download</span>Download all</button>
-        </div>
+        <h1 class="inv-title">Invoices &amp; Downloads</h1>
+        <p class="inv-lede">Flax4Life · Manage your invoices and download marketing resources.</p>
       </header>
 
       <div class="inv-toolbar">
@@ -161,6 +238,7 @@ function paint() {
           <span class="material-icons">search</span>
           <input type="text" class="inv-search" data-inv-search placeholder="Search by description or invoice #" aria-label="Search invoices" value="${esc(query)}" />
         </div>
+        <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-icons">download</span>Download all</button>
       </div>
 
       <div class="inv-card inv-board">
@@ -171,15 +249,8 @@ function paint() {
         <div class="inv-board-divider"></div>
         <div class="inv-table-card">
           <div class="inv-table">
-            <div class="inv-thead">
-              <span class="inv-th">Date</span>
-              <span class="inv-th">Description</span>
-              <span class="inv-th">Amount</span>
-              <span class="inv-th">Status</span>
-              <span class="inv-th">Invoice</span>
-              <span class="inv-th">Actions</span>
-            </div>
-            <div data-inv-rows>${INVOICES.map(rowHtml).join('')}</div>
+            <div class="inv-thead">${theadHtml()}</div>
+            <div data-inv-rows>${orderedInvoices().map(rowHtml).join('')}</div>
             <div class="inv-table-foot"><span data-inv-foot></span></div>
           </div>
         </div>
@@ -285,6 +356,8 @@ export function renderInvoices(mainEl) {
   hostEl = mainEl;
   activeStatus = null;
   query = '';
+  sortKey = null;
+  sortDir = 1;
   paint();
 
   mainEl.addEventListener('click', (e) => {
@@ -296,11 +369,40 @@ export function renderInvoices(mainEl) {
       applyFilter();
       return;
     }
+    const sortHeader = e.target.closest('[data-inv-sort]');
+    if (sortHeader) {
+      toggleSort(sortHeader.dataset.invSort);
+      return;
+    }
+    /* Row-actions three-dot menu (narrow board). */
+    const menuBtn = e.target.closest('.inv-rowmenu-btn');
+    if (menuBtn) {
+      const menu = menuBtn.closest('.inv-rowmenu');
+      const open = !menu.classList.contains('is-open');
+      closeMenus(open ? menu : null);
+      menu.classList.toggle('is-open', open);
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const pop = menu.querySelector('.inv-rowmenu-pop');
+      if (pop) pop.hidden = !open;
+      return;
+    }
     const actionBtn = e.target.closest('[data-inv-action]');
     if (actionBtn) {
       runAction(actionBtn.dataset.invAction, actionBtn.dataset.invId || null, 'form');
+      closeMenus(null);
       return;
     }
+    /* A click anywhere else on the board closes any open row menu. */
+    closeMenus(null);
+  });
+
+  mainEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeMenus(null); return; }
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const sortHeader = e.target.closest('[data-inv-sort]');
+    if (!sortHeader) return;
+    e.preventDefault();
+    toggleSort(sortHeader.dataset.invSort);
   });
 
   mainEl.addEventListener('input', (e) => {
@@ -308,6 +410,26 @@ export function renderInvoices(mainEl) {
     if (!search) return;
     query = search.value.trim().toLowerCase();
     applyFilter();
+  });
+
+  /* Close an open row menu when clicking outside the board entirely. */
+  document.addEventListener('click', (e) => {
+    if (!hostEl) return;
+    if (e.target.closest && e.target.closest('.inv-rowmenu')) return;
+    closeMenus(null);
+  });
+}
+
+/* Close every open row-actions menu except `keep` (pass null to close all). */
+function closeMenus(keep) {
+  if (!hostEl) return;
+  hostEl.querySelectorAll('.inv-rowmenu.is-open').forEach((menu) => {
+    if (menu === keep) return;
+    menu.classList.remove('is-open');
+    const btn = menu.querySelector('.inv-rowmenu-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    const pop = menu.querySelector('.inv-rowmenu-pop');
+    if (pop) pop.hidden = true;
   });
 }
 

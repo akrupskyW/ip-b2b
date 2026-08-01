@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISEai — Add Product · Product Portfolio</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ Add Product — page-specific shell ═══════════
+       Reuses the shared WISE palette + chat classes (wise.css). The chat
+       column mirrors the Reformulation Studio (.ap-chat ≈ .rf-chat); the
+       Product Details (NFP) module reuses the portfolio's nfp-* label styles;
+       the right progress module reuses the shared .vf-progress-pane / vfp-*
+       component. Everything bespoke here is prefixed ap- / nfp-. */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    /* Frame the modules to the same height as the left nav (same fix the other
+       WISE app pages apply — zero out the shared shell's top margin/padding). */
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Nav brand strip height (same pin as reformulation/portfolio). */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+
+    /* ── Center chat column ── */
+    .ap-chat {
+      flex: 0 0 var(--chat-pane-w, 380px);
+      width: var(--chat-pane-w, 380px);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .ap-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
+    .ap-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
+    .chat-messages-area { flex: 1; overflow-y: auto; padding: 22px 26px 8px; }
+
+    #welcome-screen.sc-welcome { justify-content: flex-start; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
+    #welcome-screen .ws-heading {
+      font-family: 'Noto Serif', serif;
+      font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
+      font-weight: 700; line-height: 1.2; letter-spacing: -0.01em;
+      margin: 1.25rem 0 0.75rem;
+    }
+    #welcome-screen .ws-sub { max-width: 52ch; }
+    #welcome-screen .ws-chips { margin-bottom: 1rem; }
+    .ap-ws-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); text-align: center; margin: 0.75rem 0; }
+
+    .chat-input-rail { padding: 14px 26px 18px; }
+
+    /* In-chat reply / intent chips row (same as the other WISE chat pages). */
+    .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -2px 0 14px 42px; }
+    .sc-reply-chips .chip { text-align: left; max-width: 100%; }
+    .sc-reply-chips .chip .material-icons { align-self: center; flex-shrink: 0; }
+    @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
+
+    /* Message lines reuse the shared .sc-line* classes from wise.css. Small
+       adornments for system "updated field" notes in the transcript. */
+    .ap-sys-note {
+      display: flex; align-items: center; gap: 7px; margin: 2px 0 12px 42px;
+      font-size: 0.74rem; color: var(--text-muted);
+    }
+    .ap-sys-note .material-icons { font-size: 15px; color: var(--vf-ink); }
+    .ap-attach-preview { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .ap-attach-preview img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); }
+    /* Non-image attachment chip (PDF, spreadsheet, spec sheet…) shown in the transcript. */
+    .ap-file-chip { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); font-size: 0.72rem; color: var(--text-muted); }
+    .ap-file-chip .material-icons { font-size: 16px !important; color: var(--primary); }
+
+    /* Attach popover sits inside the input on the LEFT. Pad the input so text
+       clears the button, and anchor the grouped popover to the left edge. */
+    .fl-input-wrap--lead { padding-left: 4px; }
+    .fl-more-popover--left { left: 0; right: auto; }
+    .ap-attach-pop { min-width: 224px; max-height: 340px; overflow-y: auto; padding-top: 4px; }
+    .ap-attach-pop .fl-more-group { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); padding: 7px 10px 3px; }
+    .ap-attach-pop .fl-more-group:first-child { padding-top: 3px; }
+    .ap-attach-pop .fl-more-sep { height: 1px; background: var(--border); margin: 4px 6px; }
+
+    /* ── Product Details (NFP) module ── */
+    #nfp-panel { flex: 0 0 300px; width: 300px; min-width: 0; display: flex; }
+    .nfp-inner {
+      display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
+      border-radius: 16px; border: 1px solid var(--border);
+      background: var(--surface); overflow: hidden; box-shadow: var(--shadow-card);
+    }
+    /* Product Details header, styled as a brand banner — same format as the
+       overview hero (.dash-hero): embossed WISE-bug watermark on primary blue,
+       white title, and a small circular brand-logo badge on the right. */
+    .nfp-panel-header {
+      position: relative; isolation: isolate; overflow: hidden;
+      display: flex; align-items: center; gap: 11px; padding: 10px 14px;
+      height: var(--panel-header-h); min-height: var(--panel-header-h);
+      box-sizing: border-box; flex-shrink: 0;
+      border-bottom: 1px solid color-mix(in srgb, #0b1426 34%, var(--primary));
+      background: linear-gradient(118deg,
+        color-mix(in srgb, var(--primary) 94%, #0b1426) 0%,
+        color-mix(in srgb, var(--primary) 72%, #1a2339) 100%);
+    }
+    html:not(.dark) .nfp-panel-header { background: linear-gradient(118deg,
+        color-mix(in srgb, var(--primary) 94%, #0b1426) 0%,
+        color-mix(in srgb, var(--primary) 72%, #1a2339) 100%); }
+    /* A single oversized WISE bug pressed into the banner, bleeding off the
+       right edge behind the logo badge (mirrors .dash-hero-bug). */
+    .nfp-banner-pattern { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .nfp-banner-bug {
+      position: absolute; top: 50%; right: 58px; height: 168%; width: auto;
+      color: color-mix(in srgb, #0b1426 32%, var(--primary));
+      transform: translateY(-50%) rotate(-16deg);
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.10));
+    }
+    .nfp-banner-titles { flex: 1; min-width: 0; }
+    .nfp-banner-title { font-size: 0.86rem; font-weight: 800; letter-spacing: -0.01em; color: #fff; line-height: 1.15; }
+    .nfp-banner-sub {
+      font-size: 0.68rem; color: rgba(255, 255, 255, 0.78); margin-top: 1px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* Circular brand-logo badge — a smaller sibling of the overview hero logo.
+       Holds a brand image if one is set; falls back to a clean monogram. */
+    .nfp-brand-logo {
+      flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; background: #fff;
+      box-shadow: 0 4px 12px rgba(7, 12, 26, 0.30), 0 0 0 3px rgba(255, 255, 255, 0.18);
+    }
+    .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .nfp-brand-logo-mono { font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary); }
+
+    /* Scrollable body — white background (faithful label). */
+    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--surface); }
+
+    /* Hero image / uploader */
+    .nfp-hero { position: relative; overflow: hidden; height: 156px; background: #1A2339; }
+    .nfp-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .nfp-hero-edit {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px;
+      border-radius: 999px; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.5); color: #fff; font-size: 11px; font-weight: 600;
+      backdrop-filter: blur(6px);
+    }
+    .nfp-hero-edit .material-icons { font-size: 14px !important; }
+    .nfp-hero-edit:hover { background: rgba(0,0,0,0.68); }
+    /* Empty uploader state for the hero */
+    .nfp-hero-empty {
+      height: 156px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; cursor: pointer; text-align: center; padding: 12px;
+      background: var(--surface-2); border-bottom: 1px dashed var(--border-strong); color: var(--text-muted);
+    }
+    .nfp-hero-empty .material-icons { font-size: 30px; color: var(--text-subtle); }
+    .nfp-hero-empty .neh-t { font-size: 0.76rem; font-weight: 700; color: var(--text); }
+    .nfp-hero-empty .neh-d { font-size: 0.68rem; color: var(--text-subtle); }
+    .nfp-hero-empty:hover { border-color: var(--primary); color: var(--text); }
+
+    /* ── Combined hero — the product photo with the name, category and UPC all
+       stacked in one container on top of the image (single-pane). Before a
+       photo exists the same stack sits on a light panel below the dropzone so
+       every field stays visible and editable. ── */
+    .nfp-hero--rich { position: relative; overflow: hidden; height: 260px; background: #1A2339; border-bottom: 1px solid var(--border); }
+    .nfp-hero--rich.nfp-hero--empty { height: auto; background: var(--surface); }
+    .nfp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .nfp-hero-scrim { position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(7,12,26,0.45) 0%, rgba(7,12,26,0) 26%, rgba(7,12,26,0) 40%, rgba(7,12,26,0.92) 100%); }
+    .nfp-hero-stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .nfp-hero--empty .nfp-hero-stack { position: static; }
+    .nfp-hero-stack--light { background: var(--surface); padding: 10px 12px 12px; }
+    .nfp-hero-name { font-size: 0.95rem; font-weight: 900; color: #fff; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+    .nfp-hero-stack--light .nfp-hero-name { color: var(--text); text-shadow: none; }
+    .nfp-hero-name .nfp-edit:focus, .nfp-rcol-name .nfp-edit:focus { color: #111; }
+    .nfp-hero-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -4px; }
+    .nfp-hero-stack--light .nfp-hero-brand { color: var(--text-muted); }
+    .nfp-hero-cat { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .nfp-hero-upc { align-self: flex-start; max-width: 100%; }
+    .nfp-hero-upc.nfp-rupc { padding: 7px 10px 6px; }
+    .nfp-cat-chip--onphoto { background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent; }
+    .nfp-hero-field-note { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--sec-red); }
+    .nfp-hero-field-note .material-icons { font-size: 13px !important; }
+
+    /* Category block */
+    .nfp-cat { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
+    .nfp-cat-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 5px; }
+    .nfp-cat-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .nfp-cat-chip {
+      display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 600; background: var(--primary-soft); color: var(--primary);
+      border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .nfp-cat-chip .material-icons { font-size: 13px !important; }
+    .nfp-mini-btn {
+      display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-muted); border-radius: 999px;
+      padding: 3px 9px; font-size: 0.68rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .nfp-mini-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--primary); }
+    .nfp-mini-btn .material-icons { font-size: 13px !important; }
+
+    /* UPC chip */
+    .nfp-upc-chip { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 12px 10px; }
+    .nfp-upc-label { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 4px; }
+    .nfp-barcode-svg { display: block; margin: 2px auto 0; }
+    .nfp-barcode-num { font-family: 'Courier New', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
+
+    /* Food Identity thumbs (multiple product images) */
+    .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
+    .nfp-fi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+    .nfp-fi-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
+    .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
+    .nfp-fi-thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
+    .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
+    .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); transform: scale(1.08); }
+    .nfp-fi-thumb.active .nfp-fi-thumb-img { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .nfp-fi-thumb-label { font-size: 0.58rem; font-weight: 600; color: var(--text-muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .nfp-fi-add {
+      width: 40px; height: 40px; border-radius: 50%; border: 2px dashed var(--border-strong);
+      background: var(--surface-2); color: var(--text-subtle); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary); }
+    .nfp-fi-add .material-icons { font-size: 18px !important; }
+
+    /* ── NFP width toggle + double-pane (wide) layout ─────────────────────
+       The header toggle widens the module and splits it into two panes:
+       LEFT = category + Nutrition Facts + ingredients/allergens (scrolls),
+       RIGHT = the product photo filling a full-height column, with the image
+       gallery and the UPC barcode overlaid on the photo. */
+    .nfp-width-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.12);
+      color: #fff; cursor: pointer; opacity: 0.9;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+    .nfp-width-toggle:hover, .nfp-width-toggle.is-on { opacity: 1; background: rgba(255, 255, 255, 0.24); }
+    .nfp-width-toggle .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+
+    #nfp-panel.nfp-wide { flex-basis: 588px; width: 588px; }
+    @media (max-width: 1200px) { #nfp-panel.nfp-wide { flex-basis: 520px; width: 520px; } }
+
+    /* In wide mode the body itself stops scrolling; each pane manages its own
+       height (left scrolls internally, right is a fixed full-height image). */
+    .nfp-wide .nfp-scroll-body { overflow: hidden; }
+    .nfp-cols { display: flex; height: 100%; min-height: 0; }
+    .nfp-col-left { flex: 1 1 0; min-width: 0; overflow-y: auto; }
+    .nfp-col-right { flex: 0 0 46%; min-width: 0; position: relative; border-left: 1px solid var(--border); background: #0b1426; }
+
+    /* Right pane — full-bleed product photo with overlays. */
+    .nfp-rcol, .nfp-rcol-empty { position: absolute; inset: 0; display: flex; flex-direction: column; }
+    .nfp-rcol-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .nfp-rcol-scrim { position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(7,12,26,0.58) 0%, rgba(7,12,26,0) 24%, rgba(7,12,26,0) 44%, rgba(7,12,26,0.88) 100%); }
+    .nfp-rcol-replace {
+      position: absolute; top: 10px; right: 10px; z-index: 3;
+      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .nfp-rcol-replace:hover { background: rgba(0,0,0,0.7); }
+    .nfp-rcol-replace .material-icons { font-size: 16px !important; }
+
+    /* Overlaid image gallery (top of the photo). */
+    .nfp-rcol-top { position: absolute; top: 0; left: 0; right: 44px; z-index: 2; padding: 10px; }
+    .nfp-rthumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .nfp-rthumbs-badge { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.06em; color: #fff; background: rgba(0,0,0,0.45); border-radius: 5px; padding: 3px 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .nfp-rthumb { width: 34px; height: 34px; border-radius: 8px; overflow: hidden; padding: 0; cursor: pointer; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.55); background: rgba(0,0,0,0.3); transition: border-color 0.12s, transform 0.12s; }
+    .nfp-rthumb:hover { transform: scale(1.06); }
+    .nfp-rthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .nfp-rthumb.active { border-color: #fff; box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 60%, transparent); }
+    .nfp-rthumb-add { display: flex; align-items: center; justify-content: center; color: #fff; border-style: dashed; }
+    .nfp-rthumb-add .material-icons { font-size: 16px !important; }
+
+    /* Overlaid product name + UPC (bottom of the photo). */
+    .nfp-rcol-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .nfp-rcol-name { font-size: 0.9rem; font-weight: 900; color: #fff; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+    .nfp-rcol-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -3px; }
+    .nfp-rupc { align-self: flex-start; max-width: 100%; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 7px 10px 6px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
+    .nfp-rupc .nfp-barcode-svg { display: block; margin: 0 auto; }
+    .nfp-rupc-num { font-family: 'Courier New', monospace; font-size: 0.66rem; letter-spacing: 0.08em; color: #111; text-align: center; margin-top: 3px; }
+    .nfp-rupc-empty { align-self: flex-start; background: rgba(0,0,0,0.42); box-shadow: none; padding: 6px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .nfp-mini-btn--onphoto { background: rgba(255,255,255,0.94); border-color: transparent; color: var(--primary); }
+    .nfp-mini-btn--onphoto:hover { background: #fff; color: var(--primary); }
+
+    /* Empty right pane (no photo uploaded yet). */
+    .nfp-rcol-empty { background: var(--surface-2); }
+    .nfp-hero-empty--fill { height: auto; flex: 1; border-bottom: none; }
+    .nfp-rcol-empty .nfp-rcol-foot { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    /* On the light empty pane the name/brand can't use the on-photo white text. */
+    .nfp-rcol-empty .nfp-rcol-name { color: var(--text); text-shadow: none; }
+    .nfp-rcol-empty .nfp-rcol-brand { color: var(--text-muted); margin-top: 0; }
+
+    /* Product Data (Nutrition Facts) — faithful US label (always light). */
+    .nfp-nf-panel { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; color: #000; border-bottom: 1px solid #e5e7eb; }
+    .nfp-nf-title { font-size: 1.45rem; font-weight: 900; line-height: 1.05; padding: 5px 10px 3px; border-bottom: 1px solid #000; display: flex; align-items: center; justify-content: space-between; }
+    .nfp-nf-serving { padding: 2px 10px 3px; border-bottom: 8px solid #000; }
+    .nfp-nf-spc-row { font-size: 0.7rem; color: #000; padding: 2px 0 1px; border-bottom: 1px solid #000; }
+    .nfp-nf-ss-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; padding: 2px 0; }
+    .nfp-nf-cal-band { display: flex; justify-content: space-between; align-items: flex-end; padding: 3px 10px 2px; border-bottom: 4px solid #000; }
+    .nfp-nf-cal-left { display: flex; flex-direction: column; }
+    .nfp-nf-cal-sm { font-size: 0.62rem; line-height: 1.2; }
+    .nfp-nf-cal-text { font-size: 1.2rem; font-weight: 900; line-height: 1; }
+    .nfp-nf-cal-num { font-size: 2.1rem; font-weight: 900; line-height: 1; }
+    .nfp-nf-dv-hdr { text-align: right; font-size: 0.68rem; font-weight: 700; padding: 2px 10px 1px; border-bottom: 1px solid #000; }
+    .nfp-nf-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px; border-bottom: 1px solid #C5CFD7; font-size: 0.7rem; min-height: 20px; }
+    .nfp-nf-row .nfp-nf-main { flex: 1; display: flex; align-items: center; }
+    .nfp-nf-row .nfp-nf-dv { flex-shrink: 0; text-align: right; font-weight: 700; padding-left: 4px; }
+    .nfp-nf-ind1 { padding-left: 18px !important; }
+    .nfp-nf-ind2 { padding-left: 30px !important; }
+    .nfp-nf-rule8 { height: 8px; background: #000; }
+    .nfp-nf-no-b { border-bottom: none !important; }
+    .nfp-nf-footer { border-top: 8px solid #000; padding: 3px 10px 5px; font-size: 0.56rem; color: #000; line-height: 1.45; }
+
+    /* Ingredient / allergen section */
+    .nfp-ingred-wrap { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; }
+    .nfp-ingred-body { padding: 8px 12px 9px; border-bottom: 1px solid #e5e7eb; }
+    .nfp-ingred-text { font-size: 0.68rem; line-height: 1.55; color: #111827; }
+    .nfp-ingred-label { font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
+    .nfp-allergen-wrap { padding: 8px 12px 10px; border-bottom: 1px solid #e5e7eb; }
+    .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #E2EEF7; color: #1A2339; border: 1px solid #C5CFD7; }
+    .nfp-allergen-emoji { font-size: 0.95rem; line-height: 1; }
+    .nfp-contains { padding: 6px 12px 8px; font-size: 0.66rem; color: #374151; }
+
+    /* Editable affordance: any value the flow collects can be clicked to edit.
+       Applied on top of the label styles so the black-on-white label stays intact. */
+    .nfp-edit { cursor: text; border-radius: 3px; padding: 0 2px; transition: background 0.12s, box-shadow 0.12s; outline: none; }
+    .nfp-edit:hover { background: rgba(37,80,124,0.08); box-shadow: inset 0 0 0 1px rgba(37,80,124,0.25); }
+    .nfp-edit:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--primary); }
+    .nfp-edit-empty { color: #9ca3af; font-style: italic; }
+
+    /* Missing / error highlighting — a red field that needs attention, plus an
+       inline note explaining why (e.g. "Unreadable — low resolution"). */
+    .nfp-row-err { background: rgba(220,48,56,0.07); box-shadow: inset 3px 0 0 var(--sec-red); }
+    .nfp-err-val { color: var(--sec-red) !important; font-style: italic; }
+    .nfp-cat.nfp-block-err,
+    .nfp-upc-chip.nfp-block-err,
+    .nfp-ingred-body.nfp-block-err { box-shadow: inset 3px 0 0 var(--sec-red); background: rgba(220,48,56,0.05); }
+    .nfp-field-note { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--sec-red); margin-top: 4px; }
+    .nfp-field-note .material-icons { font-size: 13px !important; }
+    .nfp-req { color: var(--sec-red); font-weight: 700; }
+
+    /* Save footer */
+    .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 45%, transparent); padding: 10px 12px 12px; }
+    .nfp-foot-status { display: flex; align-items: flex-start; gap: 6px; font-size: 0.68rem; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px; }
+    .nfp-foot-status .material-icons { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .nfp-foot-status strong { color: var(--text); font-weight: 700; }
+    .nfp-save-btn {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
+      font-family: 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
+    }
+    .nfp-save-btn:hover { filter: brightness(1.07); }
+    .nfp-save-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
+    .nfp-save-btn .material-icons { font-size: 17px; }
+
+    /* Progress module (shared .vf-progress-pane / vfp-* in wise.css). Always
+       visible on this page — override the default hidden state. */
+    #ap-progress { flex: 0 0 288px; width: 288px; align-self: stretch; min-height: 0; display: flex; }
+    /* Collapsed: shrink to a slim rail showing just the % ring + step numbers
+       (the shared .vf-progress-pane:has() rule is outranked by the #id above). */
+    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+    #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
+    .vfp-step-done-icon { color: var(--vf-ink); }
+    .vfp-field--err .material-icons { color: var(--sec-red); }
+    .vfp-field--err .vfp-field-val { color: var(--sec-red); }
+    .vfp-step--err .vfp-step-num { background: var(--sec-red); color: #fff; }
+
+    /* Full-bleed / width behaviour, matching the other WISE pages. */
+    html.full-bleed .ap-chat, html.full-bleed .nfp-inner, html.full-bleed #ap-progress .vfp-inner { border: 0; border-radius: 0; box-shadow: none; }
+    html.full-bleed body { padding: 0; }
+    html.full-bleed #chat-shell-wrap.menu-brand-integrated #modules-row { gap: 0; }
+
+    #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
+    /* Chat width toggle (matches the shared module's 3-step widen). */
+    .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
+    .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
+
+    @media (max-width: 1200px) {
+      .ap-chat { flex-basis: 380px; width: 380px; }
+      #nfp-panel { flex-basis: 280px; width: 280px; }
+      #ap-progress { flex-basis: 250px; width: 250px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat + NFP + Progress share the shell's "modules" grid area -->
+    <div id="modules-row">
+      <!-- Center chat -->
+      <main class="ap-chat">
+        <div class="chat-topbar">
+          <div class="sc-topbar-lead">
+            <div class="sc-bug">
+              <svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
+            </div>
+            <div class="sc-topbar-titles">
+              <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
+              <span class="ap-topbar-tag">Add Product · <span id="ap-brand-name">Flax4Life</span></span>
+            </div>
+          </div>
+          <div class="sc-topbar-controls">
+            <button type="button" class="panel-width-toggle-btn" id="ap-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
+            <div class="panel-more-wrap" id="ap-chat-menu-wrap">
+              <button type="button" id="ap-chat-menu-btn" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="ap-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <div id="ap-chat-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="history"><span class="material-icons topbar-menu-icon">history</span><span>History</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="copy"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="restart"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="exit"><span class="material-icons topbar-menu-icon">close</span><span>Back to portfolio</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-chat-body">
+          <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
+
+          <div id="welcome-screen" class="sc-welcome">
+            <div class="ws-logo-wrap">
+              <span class="ws-pulse-ring" aria-hidden="true"></span>
+              <span class="ws-pulse-ring" aria-hidden="true"></span>
+              <span class="ws-pulse-ring" aria-hidden="true"></span>
+              <div class="ws-logo">
+                <svg viewBox="0 0 193 100" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
+              </div>
+            </div>
+            <h1 class="ws-heading">Let's add a product.</h1>
+            <p class="ws-sub">I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in <b>Product Details</b> on the right. It stays a draft until you hit <b>Save to Portfolio</b>.</p>
+            <div class="ap-ws-eyebrow">Start with what you have</div>
+            <div class="ws-chips" id="ws-chips-start"></div>
+          </div>
+        </div>
+
+        <div class="chat-input-rail shrink-0">
+          <div class="sc-input-row" style="display:flex;gap:8px;align-items:flex-end">
+            <div class="fl-input-wrap fl-input-wrap--lead" style="flex:1">
+              <div class="fl-more-wrap" id="ap-attach-wrap">
+                <button type="button" id="ap-attach" class="fl-icon-btn fl-more-btn" title="Attach a file" aria-haspopup="menu" aria-expanded="false" aria-controls="ap-attach-pop"><span class="material-icons">add</span></button>
+                <div class="fl-more-popover fl-more-popover--left ap-attach-pop" id="ap-attach-pop" role="menu">
+                  <div class="fl-more-group">Photos &amp; labels</div>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="camera"><span class="material-icons">photo_camera</span>Take a photo</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="photo"><span class="material-icons">image</span>Product photo</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="label"><span class="material-icons">document_scanner</span>Scan label / NFP</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="upc"><span class="material-icons">qr_code_scanner</span>Scan barcode (UPC)</button>
+                  <div class="fl-more-sep"></div>
+                  <div class="fl-more-group">Documents</div>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="pdf"><span class="material-icons">picture_as_pdf</span>PDF</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="word"><span class="material-icons">description</span>Word (.doc, .docx)</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="text"><span class="material-icons">notes</span>Text (.txt, .rtf)</button>
+                  <div class="fl-more-sep"></div>
+                  <div class="fl-more-group">Spreadsheets</div>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="excel"><span class="material-icons">grid_on</span>Excel (.xls, .xlsx)</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="csv"><span class="material-icons">table_rows</span>CSV</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="numbers"><span class="material-icons">table_chart</span>Numbers</button>
+                  <div class="fl-more-sep"></div>
+                  <div class="fl-more-group">Data &amp; specs</div>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="json"><span class="material-icons">data_object</span>JSON</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="xml"><span class="material-icons">code</span>XML</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="hl7"><span class="material-icons">health_and_safety</span>HL7 / CCD / HCIC</button>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="edi"><span class="material-icons">receipt_long</span>EDI / EDIFACT</button>
+                  <div class="fl-more-sep"></div>
+                  <div class="fl-more-group">From a link</div>
+                  <button type="button" class="fl-more-item" role="menuitem" data-up="url"><span class="material-icons">link</span>Paste a URL</button>
+                </div>
+              </div>
+              <input id="chat-input" type="text" placeholder="Type a value, paste a URL, or ask me anything…" class="fl-input" autocomplete="off" />
+            </div>
+            <button type="button" id="ap-send" class="sc-send" title="Send">
+              <span class="material-icons">send</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- Product Details (NFP) module -->
+      <aside id="nfp-panel" aria-label="Product Details">
+        <div class="nfp-inner">
+          <div class="nfp-panel-header">
+            <div class="nfp-banner-pattern" aria-hidden="true">
+              <svg class="nfp-banner-bug" viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
+            </div>
+            <div class="nfp-banner-titles">
+              <div class="nfp-banner-title">Product Details</div>
+              <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
+            </div>
+            <button type="button" class="nfp-width-toggle" id="nfp-width" aria-pressed="false" title="Widen to two panes" aria-label="Product Details width"><span class="material-symbols-outlined">width_normal</span></button>
+            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><span class="nfp-brand-logo-mono">F4L</span></span>
+          </div>
+          <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
+          <div class="nfp-foot">
+            <div class="nfp-foot-status" id="nfp-save-status"><span class="material-icons">info</span><span>Draft — not saved yet</span></div>
+            <button type="button" class="nfp-save-btn" id="nfp-save-btn" disabled><span class="material-icons">save</span>Save to Portfolio</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right progress module (shared vf-progress-pane / vfp-*) -->
+      <aside id="ap-progress" class="vf-progress-pane" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
+    </div><!-- /#modules-row -->
+  </div>
+
+  <!-- Hidden file input reused by all upload affordances. -->
+  <input type="file" id="ap-file" accept="image/*" style="display:none" />
+
+  <!-- Shared WISE navigation + appearance (mirrors reformulation.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { initWISEaiTooltips } from '../js/wiseai-tooltip.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'product-portfolio' });
+    }
+
+    applyStoredTextSize();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initWISEaiTooltips());
+    else initWISEaiTooltips();
+  </script>
+
+  <!-- Appearance + profile popovers for the nav footer (mirrors reformulation.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEaiDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        pop.addEventListener('click', (ev) => {
+          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
+          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
+          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
+          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
+          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML =
+          '<div class="wise-popover-header">Arthur Krupsky</div>' +
+          '<div class="wise-popover-actions">' +
+            '<button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications"><span class="material-icons">notifications</span><span>Alerts</span></button>' +
+            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
+            '<button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings"><span class="material-icons">tune</span><span>Agents</span></button>' +
+          '</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
+          '<div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>' +
+          '<div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>' +
+          '<div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>' +
+          '<div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <script src="../js/chat-history.js"></script>
+  <script src="../js/add-product-flow.js"></script>
+</body>
+</html>

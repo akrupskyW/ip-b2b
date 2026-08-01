@@ -72,6 +72,21 @@
   --panel-header-h: 60px;
   --wise-text-scale: 1;
   --chat-line-height: 1.6;
+
+  /* Canonical single-pane chat width — every chat module (Family A #chat-shell,
+     the studio panes .rf-chat/.ap-chat/.sa-chat, and the injected WISEai dock)
+     loads at this exact width on every page so the chat never changes size
+     between pages. */
+  --chat-pane-w: 380px;
+
+  /* Canonical right-module headline — the display title of whatever module sits
+     to the right of the chat. Identical size/weight/face + top-left inset on
+     every page. */
+  --module-title-family: 'Noto Serif', Georgia, serif;
+  --module-title-size: 1.2rem;
+  --module-title-weight: 800;
+  --module-head-pad-t: 26px;
+  --module-head-pad-x: 40px;
 }
 
 html.dark {
@@ -1004,6 +1019,22 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   height: 100%;
   max-height: 100%;
   align-self: stretch;
+}
+
+/* The canonical fixed chat width (var(--chat-pane-w)) is meant for the DEFAULT
+   horizontal modules row. The alternate stack/grid/tab layouts and the phone
+   breakpoint override the chat's `flex` but not its `width`/`min-width`, so
+   release the rigid width there and let the chat stretch or stack normally. */
+#modules-row.modules-stack > #chat-shell,
+#modules-row.modules-grid > #chat-shell,
+#modules-row.modules-tab > #chat-shell,
+#modules-row.modules-split > #chat-shell,
+#modules-tabbed > #chat-shell {
+  width: auto;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  #modules-row > #chat-shell { flex: 1 1 auto; width: auto; min-width: 0; }
 }
 #modules-row::-webkit-scrollbar { height: 8px; }
 #modules-row::-webkit-scrollbar-track { background: transparent; }
@@ -4143,6 +4174,63 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   color: rgba(255, 255, 255, 0.82);
 }
 
+/* Responsive "Learn more" chip — hidden by default; on narrow layouts the
+   banner description is swapped out for this chip (see the media query below),
+   which opens a small popover carrying the same copy. */
+.dash-hero-learn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 8px 0 0;
+  padding: 6px 13px 6px 10px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.dash-hero-learn:hover,
+.dash-hero-learn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.dash-hero-learn .material-icons { font-size: 16px; }
+
+/* Portaled to <body> so the hero's overflow can't clip it. */
+.dash-hero-learn-pop {
+  position: fixed;
+  z-index: 1200;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 14px 16px;
+  border-radius: var(--r-md, 12px);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  box-shadow: 0 18px 44px rgba(7, 12, 26, 0.28), 0 4px 12px rgba(0, 0, 0, 0.14);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  pointer-events: none;
+}
+.dash-hero-learn-pop.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.dash-hero-learn-pop-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text, #1a1a1a);
+}
+
 /* ---- Brand comparison toggle (inline with hero headline) ---- */
 .dash-brand-toggle {
   display: inline-flex;
@@ -4305,6 +4393,13 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   }
   .dash-hero-logo { width: 92px; height: 92px; right: 28px; }
   .dash-hero-left { padding-right: 124px; }
+}
+/* Phone widths: the long description would crowd the banner (and collide with
+   the logo/scrim), so hide it and surface the same copy behind a "Learn more"
+   chip + popover instead. */
+@media (max-width: 640px) {
+  .dash-hero-desc { display: none; }
+  .dash-hero-learn { display: inline-flex; }
 }
 @media (max-width: 520px) {
   .dash-hero-logo { display: none; }
@@ -6628,6 +6723,20 @@ html.dark .dash-ing-level--pl3 { color: #d4a830; }
   .dash-two-up { grid-template-columns: 1fr; }
 }
 
+/* Four big-numeral stat tiles in a single row need ~1050px+ to breathe; below
+   that the 4.5rem numbers start crowding (and overlapping) the stamp discs. Fold
+   the claim row to a 2×2 grid — two rows of two — while keeping the large
+   numbers, and drop the vertical dividers (their 1px grid tracks would break the
+   two-column layout). */
+@container dash (max-width: 1050px) {
+  .dash-claim {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 28px;
+    row-gap: 32px;
+  }
+  .dash-claim > .dash-claim-divider { display: none; }
+}
+
 /* The text-based claim / WISEscore splits are the most space-efficient, so keep
    them multi-column down to near-mobile. As the column narrows, just tighten the
    gaps and scale the big numbers down so all three stay side by side... */
@@ -6653,16 +6762,29 @@ html.dark .dash-ing-level--pl3 { color: #d4a830; }
   .dash-claim .dash-bignum-row > .dash-stamp-icon,
   .dash-claim .dash-progress-pct > .dash-stamp-icon { top: 1.7rem; }
 }
-/* ...and only reflow once they genuinely can't fit (mobile-width column). The
-   top claim row folds to a 2×2 grid — four stat tiles in two rows of two —
-   rather than a single tall stack; the wide/desktop layout stays a 1×4 row.
-   The WISEscore split still stacks to one column. */
+/* ...and once the column reaches phone width the claim/score cards can no
+   longer sit side by side, so they stack into a single column (the toast-topped
+   "products qualify" cards read full-width instead of overflowing). The
+   wide/desktop layout stays a 1×4 row and tablet a 2-up grid. The WISEscore
+   split stacks to one column too. */
 @container dash (max-width: 480px) {
-  .dash-claim { grid-template-columns: 1fr 1fr; row-gap: 28px; }
+  .dash-claim { grid-template-columns: 1fr; row-gap: 30px; }
   .dash-wisescore { grid-template-columns: 1fr; }
   .dash-pillars-cta-btn { white-space: normal; text-align: center; }
   .dash-claim-divider,
   .dash-wisescore .dash-claim-divider { display: none; }
+
+  /* Stacked column: the nudge toast can't float above a neighbouring column
+     anymore, so drop it into normal flow above its card content (full width,
+     no wobble) instead of overlapping the card above. */
+  .dash-claim-col--nudge .dash-score-toast {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin: 0 0 16px;
+    animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
   /* Single-pane: caption drops below the big number; multi-column keeps side-by-side.
      Stacked vertically the 32px side-by-side gap reads as too much air, so tighten it. */
@@ -7219,6 +7341,7 @@ html.dark .vf-stat--verified .vf-stat-label .material-icons { color: var(--vf-in
   min-height: 0;
   display: flex;
   animation: vfPaneIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: flex-basis 0.25s ease, width 0.25s ease;
 }
 @keyframes vfPaneIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 .vf-progress-pane[hidden] { display: none; }
@@ -7314,6 +7437,40 @@ html.dark .vf-stat--verified .vf-stat-label .material-icons { color: var(--vf-in
 @media (max-width: 560px) {
   .vf-progress-pane { flex: 1 1 auto; width: 100% !important; max-width: 100% !important; }
 }
+
+/* ---- Horizontal collapse (shared vfp) ----
+   Collapsed (default) = a narrow icon rail like the primary nav: a percentage
+   ring on top, then the numbered steps. Expanded = the full module. The toggle
+   is a bare chevron — no box/background behind it. */
+.vfp-min-btn {
+  flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+  border: 0; background: none; cursor: pointer; color: var(--text-muted);
+  display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s;
+}
+.vfp-min-btn:hover { color: var(--text); }
+.vfp-min-btn .material-icons { font-size: 20px; }
+.vfp-pct-ring {
+  display: none; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  align-items: center; justify-content: center; position: relative;
+  background: conic-gradient(var(--vf-ink) calc(var(--pct) * 1%), var(--surface-3) 0);
+}
+.vfp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
+.vfp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
+
+/* Rail (collapsed) — shrink the pane to an icon column. */
+.vf-progress-pane:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+.vfp-inner.is-min .vfp-header { flex-direction: column; gap: 8px; padding: 12px 6px; }
+.vfp-inner.is-min .vfp-header-text { display: none; }
+.vfp-inner.is-min .vfp-min-btn { order: -1; }
+.vfp-inner.is-min .vfp-pct-ring { display: flex; }
+.vfp-inner.is-min .vfp-progress,
+.vfp-inner.is-min .vfp-items,
+.vfp-inner.is-min .vfp-foot { display: none; }
+.vfp-inner.is-min .vfp-steps { padding: 10px 0; align-items: center; gap: 10px; }
+.vfp-inner.is-min .vfp-step { gap: 0; justify-content: center; }
+.vfp-inner.is-min .vfp-step-track { width: auto; }
+.vfp-inner.is-min .vfp-step-line,
+.vfp-inner.is-min .vfp-step-body { display: none; }
 
 /* ---------- Body ---------- */
 .vf-body { padding: 26px 40px 48px; }
@@ -8228,6 +8385,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gv-progress-pane {
   flex: 0 0 300px; width: 300px; align-self: stretch; min-height: 0; display: flex;
   animation: gvPaneIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: flex-basis 0.25s ease, width 0.25s ease;
 }
 .gv-progress-pane[hidden] { display: none; }
 @keyframes gvPaneIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
@@ -8292,6 +8450,35 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 @media (max-width: 560px) {
   .gv-progress-pane { flex: 1 1 auto; width: 100% !important; max-width: 100% !important; }
 }
+
+/* ---- Horizontal collapse (gvp) — narrow icon rail, bare chevron toggle. ---- */
+.gvp-min-btn {
+  flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+  border: 0; background: none; cursor: pointer; color: var(--text-muted);
+  display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s;
+}
+.gvp-min-btn:hover { color: var(--text); }
+.gvp-min-btn .material-icons { font-size: 20px; }
+.gvp-pct-ring {
+  display: none; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  align-items: center; justify-content: center; position: relative;
+  background: conic-gradient(var(--gv-ink) calc(var(--pct) * 1%), var(--surface-3) 0);
+}
+.gvp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
+.gvp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
+
+.gv-progress-pane:has(.gvp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+.gvp-inner.is-min .gvp-header { flex-direction: column; gap: 8px; padding: 12px 6px; }
+.gvp-inner.is-min .gvp-header-text { display: none; }
+.gvp-inner.is-min .gvp-min-btn { order: -1; }
+.gvp-inner.is-min .gvp-pct-ring { display: flex; }
+.gvp-inner.is-min .gvp-progress,
+.gvp-inner.is-min .gvp-foot { display: none; }
+.gvp-inner.is-min .gvp-steps { padding: 10px 0; align-items: center; gap: 10px; }
+.gvp-inner.is-min .gvp-step { gap: 0; justify-content: center; }
+.gvp-inner.is-min .gvp-step-track { width: auto; }
+.gvp-inner.is-min .gvp-step-line,
+.gvp-inner.is-min .gvp-step-body { display: none; }
 
 /* ---------- Toast ---------- */
 #gv-toast-wrap {

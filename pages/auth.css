@@ -679,6 +679,7 @@ html.dark .chip { background: rgba(255,255,255,0.04); border-color: var(--primar
 .auth-setup-pane {
   flex: 0 0 320px; width: 320px; align-self: stretch; min-height: 0; display: flex;
   animation: authPaneIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: flex-basis 0.25s ease, width 0.25s ease;
 }
 .auth-setup-pane[hidden] { display: none; }
 @keyframes authPaneIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
@@ -795,6 +796,41 @@ html.dark .sp-field--active .material-icons { color: var(--primary-bright); }
 }
 .sp-field--active .sp-field-val { color: var(--primary); font-weight: 600; }
 html.dark .sp-field--active .sp-field-val { color: var(--primary-bright); }
+
+/* ---- Horizontal collapse (sp) ----
+   Collapsed (default) = a narrow icon rail like the primary nav: a percentage
+   ring on top, then the numbered steps. The toggle is a bare chevron — no
+   box/background behind it. */
+.sp-min-btn {
+  flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+  border: 0; background: none; color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.sp-min-btn:hover { opacity: 1; color: var(--text); }
+.sp-min-btn .material-icons { font-size: 20px !important; line-height: 1 !important; }
+.sp-pct-ring {
+  display: none; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  align-items: center; justify-content: center; position: relative;
+  background: conic-gradient(var(--primary) calc(var(--pct) * 1%), var(--surface-3) 0);
+}
+.sp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
+html.dark .sp-pct-ring::before { background: #1A2339; }
+.sp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
+
+.auth-setup-pane:has(.sp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+.sp-inner.is-min .sp-header { flex-direction: column; gap: 8px; padding: 12px 6px; }
+.sp-inner.is-min .sp-header-icon,
+.sp-inner.is-min .sp-header-text,
+.sp-inner.is-min .sp-header-menu { display: none; }
+.sp-inner.is-min .sp-min-btn { order: -1; }
+.sp-inner.is-min .sp-pct-ring { display: flex; }
+.sp-inner.is-min .sp-progress { display: none; }
+.sp-inner.is-min .sp-steps { padding: 10px 0; align-items: center; gap: 10px; }
+.sp-inner.is-min .vs-step { gap: 0; justify-content: center; }
+.sp-inner.is-min .vs-step-track { width: auto; }
+.sp-inner.is-min .vs-step-line,
+.sp-inner.is-min .vs-step-body { display: none; }
 
 /* In-chat reply chips — the product-comparison .sc-reply-chips spec (own row after the
    wiseai line, indented past the 30px avatar + 12px gap). */

@@ -8078,9 +8078,9 @@
               <span>Add team member to chat</span>
             </button>
             <div class="topbar-menu-divider"></div>
-            <button type="button" class="topbar-menu-item" onclick="toggleHistoryPanel({ fromMenu: true }); closeAllMoreMenus()">
+            <button type="button" class="topbar-menu-item" onclick="(window.__wiseChatHistory ? window.__wiseChatHistory.toggle() : toggleHistoryPanel({ fromMenu: true })); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">history</span>
-              <span>History &amp; Projects</span>
+              <span>History</span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="restartConversation(); closeAllMoreMenus()">
@@ -16105,6 +16105,33 @@
       else run();
       /* Settings is relocated into #panels-row after boot; re-run once more. */
       setTimeout(run, 0);
+    })();
+  </script>
+
+  <!-- Shared in-module chat history sidebar. -->
+  <script src="../js/chat-history.js"></script>
+  <script>
+    (function () {
+      if (!window.WiseChatHistory) return;
+      var shell = document.getElementById('chat-shell');
+      var msgs = document.getElementById('chat-messages');
+      if (!shell || !msgs) return;
+      var _restart = (typeof window.restartConversation === 'function') ? window.restartConversation : null;
+      var ctrl = window.WiseChatHistory.mount(shell, {
+        storageKey: 'wise-chat-history:product-comparison',
+        messagesEl: '#chat-messages',
+        welcomeEl: '#welcome-screen',
+        paneHost: msgs.parentElement,
+        stripSelectors: ['.sc-line-typing'],
+        onNew: function () { if (_restart) _restart(); }
+      });
+      window.__wiseChatHistory = ctrl;
+      window.restartConversation = function () {
+        try { ctrl.saveCurrent(); } catch (e) {}
+        var r = _restart ? _restart.apply(this, arguments) : undefined;
+        ctrl.markNew();
+        return r;
+      };
     })();
   </script>
 </body>

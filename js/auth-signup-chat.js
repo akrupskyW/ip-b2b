@@ -296,6 +296,8 @@
 
     var flow = { qi: 0, answers: {}, done: false, questions: baseQuestions(), invite: null, delegatedFields: {},
       route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false };
+    /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
+    var progressMin = true;
 
     var scrollDown = function () { messages.scrollTop = messages.scrollHeight; };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
@@ -916,13 +918,15 @@
       }).join('');
 
       pane.innerHTML =
-        '<div class="sp-inner">' +
+        '<div class="sp-inner' + (progressMin ? ' is-min' : '') + '">' +
           '<div class="sp-header">' +
             '<div class="sp-header-icon"><span class="material-icons">badge</span></div>' +
+            '<div class="sp-pct-ring" style="--pct:' + pct + '"><span>' + pct + '%</span></div>' +
             '<div class="sp-header-text">' +
               '<div class="sp-title">Account setup</div>' +
               '<div class="sp-subtitle">' + (allDone ? 'All steps complete' : 'Complete these steps to finish') + '</div>' +
             '</div>' +
+            '<button type="button" class="sp-min-btn" data-ac="togglemin" aria-label="' + (progressMin ? 'Expand progress' : 'Collapse progress') + '" title="' + (progressMin ? 'Expand' : 'Collapse') + '"><span class="material-icons">' + (progressMin ? 'chevron_left' : 'chevron_right') + '</span></button>' +
             '<div class="sp-header-menu">' +
               '<button type="button" class="panel-more-btn" id="sp-more-btn" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="sp-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
               '<div id="sp-menu" class="sp-menu hidden" role="menu">' +
@@ -1013,6 +1017,8 @@
           }
           return;
         }
+        var mn = e.target.closest('[data-ac="togglemin"]');
+        if (mn) { progressMin = !progressMin; renderPane(flow.done); return; }
         var rm = e.target.closest('[data-ac="removepane"]');
         if (rm) { flow.paneHidden = true; pane.hidden = true; return; }
       });

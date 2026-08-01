@@ -1112,6 +1112,35 @@ function routeHash() {
 }
 window.addEventListener('hashchange', routeHash);
 
+/* ── In-module conversation history ──
+   The three-dot "History" opens a sidebar pane inside the chat module; "Start
+   new conversation" (rfReExplore) files the current thread into history first,
+   so past conversations are always recoverable. */
+window.rfToggleHistory = function () {};
+(function () {
+  if (!window.WiseChatHistory) return;
+  const card = document.querySelector('.rf-chat');
+  const msgs = document.getElementById('chat-messages');
+  if (!card || !msgs) return;
+  const _reExplore = window.rfReExplore;
+  const ctrl = window.WiseChatHistory.mount(card, {
+    storageKey: 'wise-chat-history:reformulation',
+    messagesEl: '#chat-messages',
+    welcomeEl: '#welcome-screen',
+    paneHost: msgs.parentElement,
+    stripSelectors: ['.sc-line-typing'],
+    onNew: function () { if (_reExplore) _reExplore(); },
+  });
+  window.__wiseChatHistory = ctrl;
+  window.rfToggleHistory = function () { ctrl.toggle(); };
+  window.rfReExplore = function () {
+    try { ctrl.saveCurrent(); } catch (e) {}
+    const r = _reExplore ? _reExplore.apply(this, arguments) : undefined;
+    ctrl.markNew();
+    return r;
+  };
+})();
+
 /* Boot */
 document.getElementById('rf-total-count').textContent = fmt(S.total || ROWS.length);
 renderScopeBar();

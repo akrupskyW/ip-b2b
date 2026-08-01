@@ -30,60 +30,98 @@
     body[data-nav-id="invoices"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="invoices"] #modules-row { margin-top: 0; padding-bottom: 0; }
 
-    .inv-wrap { padding: 26px 40px 56px; max-width: 1100px; }
+    /* A size container so the board responds to its OWN width — this surface
+       often sits in a narrow column beside the chat dock, where viewport media
+       queries don't reflect how little room the table actually has. */
+    .inv-wrap { padding: 26px 40px 56px; max-width: 1100px; container-type: inline-size; container-name: inv; }
 
-    /* Header */
-    .inv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-    .inv-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.9rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; }
-    .inv-lede { font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
+    /* Header — serif title + a line of details, mirroring the Product
+       Portfolio module's .pf-head / .pf-head-title / .pf-head-meta. */
+    .inv-head { padding: 2px 2px 0; margin-bottom: 16px; }
+    .inv-title { font-family: var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
+    .inv-lede { font-size: 0.9rem; color: var(--text-muted); margin: 6px 0 0; max-width: 60ch; }
 
-    /* Toolbar / search */
-    .inv-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .inv-search-inline { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; max-width: 420px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; padding: 0 14px; height: 40px; }
-    .inv-search-inline .material-icons { font-size: 18px; color: var(--text-subtle); }
-    .inv-search { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-family: inherit; font-size: 0.85rem; color: var(--text); }
-    .inv-search::placeholder { color: var(--text-subtle); }
+    /* Toolbar / search — the search fills the row and the primary action sits
+       to its right, mirroring the Portfolio module's .pf-toolbar (search +
+       Add Product). */
+    .inv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .inv-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
+    .inv-search-inline .material-icons { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .inv-search { width: 100%; height: 40px; box-sizing: border-box; padding: 0 16px 0 42px; font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill, 999px); outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+    html.dark .inv-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .inv-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .inv-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
-    /* Board card */
-    .inv-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); overflow: hidden; }
-    .inv-stats-bar { padding: 16px 18px 0; }
-    .inv-stats-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
+    /* Board card — same elevation / radius / surface as the Portfolio module's
+       .pf-card. */
+    /* overflow visible so a row's actions popover isn't clipped by the card. */
+    .inv-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-1); overflow: visible; padding: 14px; }
+    .inv-stats-bar { padding: 0 2px 10px; }
+    .inv-stats-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
 
-    /* At-a-glance filter cards */
-    .inv-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 12px 18px 18px; }
-    .inv-stat { text-align: left; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px; cursor: pointer; font-family: inherit; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
-    .inv-stat:hover { border-color: var(--border-strong); }
-    .inv-stat.is-active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) inset; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
-    html.dark .inv-stat { background: rgba(255,255,255,0.03); }
-    .inv-stat-num { display: block; font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
-    .inv-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; color: var(--text-muted); margin-top: 8px; }
-    .inv-stat-label .material-icons { font-size: 14px; }
+    /* At-a-glance filter cards — centered, rectangular tiles (serif number on
+       top, label below), matching the Portfolio module's .pf-stat. */
+    .inv-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+    .inv-stat { flex: 1 1 120px; min-width: 108px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
+    html.dark .inv-stat { background: rgba(255,255,255,0.04); }
+    .inv-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
+    .inv-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .inv-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    html.dark .inv-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .inv-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .inv-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .inv-stat-label .material-icons { font-size: 13px !important; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
     .inv-stat--sent .inv-stat-num { color: var(--primary); }
     html.dark .inv-stat--sent .inv-stat-num { color: #93C5FD; }
     .inv-stat--paid .inv-stat-num { color: var(--sec-green); }
     .inv-stat--failed .inv-stat-num { color: var(--sec-red); }
     .inv-stat--cancelled .inv-stat-num { color: var(--text-muted); }
 
-    .inv-board-divider { height: 1px; background: var(--border); }
+    .inv-board-divider { height: 1px; background: var(--border); margin: 14px 0 6px; }
 
-    /* Table (CSS grid so rows align without a real table) */
-    .inv-table-card { padding: 6px 6px 10px; }
-    .inv-thead, .inv-trow { display: grid; grid-template-columns: 120px 1.4fr 110px 150px 170px 1.6fr; align-items: center; gap: 12px; padding: 12px 14px; }
+    /* Table (CSS grid so rows align without a real table). Columns:
+       Date · Amount/Description · Status/Invoice · Actions. */
+    .inv-table-card { padding: 6px 4px; }
+    .inv-thead, .inv-trow { display: grid; grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1.1fr) minmax(0, 2fr); align-items: center; gap: 12px; padding: 12px 12px; }
     .inv-thead { border-bottom: 1px solid var(--border); }
-    .inv-th { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
-    .inv-trow { border-bottom: 1px solid var(--border); }
+    .inv-th { display: inline-flex; align-items: center; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+    .inv-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
     .inv-trow:last-child { border-bottom: 0; }
     .inv-trow:hover { background: var(--surface-2); }
-    html.dark .inv-trow:hover { background: rgba(255,255,255,0.03); }
+    html.dark .inv-trow:hover { background: rgba(255,255,255,0.04); }
     .inv-trow.inv-row-hidden { display: none; }
     .inv-td { min-width: 0; font-size: 0.85rem; color: var(--text); }
-    .inv-date { color: var(--text-muted); font-size: 0.82rem; }
+    /* Date / Invoice / Status — date on top, then the invoice number, then the
+       invoice state as plain coloured text (no chip). */
+    .inv-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    .inv-date { color: var(--text); font-size: 0.85rem; font-weight: 600; }
+    .inv-num { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--text-muted); }
+    .inv-state { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 700; }
+    .inv-state .material-icons { font-size: 14px; }
+    .inv-state--sent { color: var(--primary); }
+    html.dark .inv-state--sent { color: #93C5FD; }
+    .inv-state--paid { color: var(--sec-green); }
+    html.dark .inv-state--paid { color: #6FE0A0; }
+    .inv-state--failed { color: var(--sec-red); }
+    html.dark .inv-state--failed { color: #FF9E96; }
+    .inv-state--cancelled { color: var(--text-muted); }
+    /* Amount / Description — amount stacked above the description. */
     .inv-desc { display: flex; flex-direction: column; gap: 2px; }
-    .inv-desc-name { font-weight: 600; color: var(--text); }
+    .inv-amount { font-weight: 700; color: var(--text); font-size: 0.9rem; }
+    .inv-desc-name { font-weight: 600; color: var(--text); font-size: 0.82rem; }
     .inv-desc-sub { font-size: 0.74rem; color: var(--text-subtle); }
-    .inv-amount { font-weight: 700; color: var(--text); }
-    .inv-num { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.78rem; color: var(--text-muted); }
-    .inv-table-foot { padding: 12px 14px 4px; font-size: 0.76rem; color: var(--text-subtle); }
+    .inv-table-foot { padding: 12px 12px 4px; font-size: 0.76rem; color: var(--text-subtle); }
+
+    /* Click-to-sort headers — a faint chevron that turns primary-coloured and
+       flips for asc/desc, matching the app-wide sortable tables. */
+    .inv-th--sortable { cursor: pointer; user-select: none; -webkit-user-select: none; white-space: nowrap; }
+    .inv-sort-arrow { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-left: 5px; flex: none; opacity: 0.28; transition: opacity 0.12s ease, transform 0.12s ease; }
+    .inv-sort-arrow svg { width: 12px; height: 12px; display: block; }
+    .inv-th--sortable:hover .inv-sort-arrow { opacity: 0.6; }
+    .inv-th--sortable[data-inv-dir="asc"] .inv-sort-arrow { opacity: 1; color: var(--primary); transform: rotate(180deg); }
+    .inv-th--sortable[data-inv-dir="desc"] .inv-sort-arrow { opacity: 1; color: var(--primary); }
+    html.dark .inv-th--sortable[data-inv-dir] .inv-sort-arrow { color: var(--primary-bright, var(--primary)); }
+    @media (prefers-reduced-motion: reduce) { .inv-sort-arrow { transition: none; } }
 
     /* Status chips */
     .inv-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
@@ -97,10 +135,15 @@
     .inv-chip--cancelled { background: var(--surface-3, var(--surface-2)); color: var(--text-muted); }
     html.dark .inv-chip--cancelled { background: rgba(255,255,255,0.08); }
 
-    /* Row + header action buttons */
-    .inv-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-    .inv-btn { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; padding: 7px 12px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.72rem; font-weight: 700; line-height: 1; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
-    .inv-btn .material-icons { font-size: 14px; }
+    /* Row + header action buttons — kept in a single row (never stacked) and
+       all one uniform size. */
+    .inv-actions { display: flex; align-items: center; flex-flow: row wrap; gap: 6px; }
+    .inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 32px; box-sizing: border-box; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
+    .inv-btn .material-icons { font-size: 15px; }
+    /* Toolbar-level primary button matches the search field height + the
+       Portfolio module's Add Product button. */
+    .inv-toolbar .inv-btn { height: 40px; padding: 0 18px; font-size: 0.8rem; }
+    .inv-toolbar .inv-btn .material-icons { font-size: 16px; }
     .inv-btn--primary { background: var(--primary); color: #fff; }
     .inv-btn--primary:hover { filter: brightness(1.08); }
     .inv-btn--danger { background: transparent; color: var(--sec-red); border-color: var(--sec-red-10); }
@@ -113,17 +156,48 @@
     .inv-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
     html.dark .inv-btn--ghost:hover { background: rgba(255,255,255,0.06); }
 
+    /* Row actions kebab — hidden until the board is narrow, where the inline
+       button row is swapped for a three-dot menu + popover (mirrors the
+       Portfolio module's .pf-rowmenu). */
+    .inv-rowmenu { display: none; position: relative; }
+    .inv-rowmenu-btn { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+    .inv-rowmenu-btn:hover, .inv-rowmenu.is-open .inv-rowmenu-btn { background: var(--surface-2); color: var(--text); }
+    html.dark .inv-rowmenu-btn:hover, html.dark .inv-rowmenu.is-open .inv-rowmenu-btn { background: rgba(255,255,255,0.06); }
+    .inv-rowmenu-btn .material-icons { font-size: 20px; }
+    .inv-rowmenu-pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
+    .inv-rowmenu-pop[hidden] { display: none; }
+    .inv-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: left; }
+    .inv-rowmenu-item:hover { background: var(--surface-2); }
+    html.dark .inv-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
+    .inv-rowmenu-item .material-icons { font-size: 17px; color: var(--text-subtle); flex-shrink: 0; }
+    .inv-rowmenu-item--primary .material-icons { color: var(--primary); }
+    .inv-rowmenu-item--danger { color: var(--sec-red); }
+    html.dark .inv-rowmenu-item--danger { color: #FF9E96; }
+    .inv-rowmenu-item--danger .material-icons { color: var(--sec-red); }
+    html.dark .inv-rowmenu-item--danger .material-icons { color: #FF9E96; }
+    .inv-rowmenu-item--good { color: var(--sec-green); }
+    html.dark .inv-rowmenu-item--good { color: #6FE0A0; }
+    .inv-rowmenu-item--good .material-icons { color: var(--sec-green); }
+    html.dark .inv-rowmenu-item--good .material-icons { color: #6FE0A0; }
+
     /* Toast */
     #inv-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
     .inv-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
     .inv-toast.is-in { opacity: 1; transform: none; }
     .inv-toast .material-icons { font-size: 17px; }
 
-    @media (max-width: 1000px) {
-      .inv-wrap { padding: 20px 20px 48px; }
-      .inv-stats { grid-template-columns: repeat(2, 1fr); }
+    /* Narrow container (e.g. docked beside chat): stack each row into a single
+       column and swap the inline action buttons for a three-dot menu pinned to
+       the row's top-right. */
+    @container inv (max-width: 820px) {
       .inv-thead { display: none; }
-      .inv-trow { grid-template-columns: 1fr; gap: 6px; }
+      .inv-trow { grid-template-columns: 1fr; gap: 4px; position: relative; padding-right: 44px; }
+      .inv-actions { display: none; }
+      .inv-rowmenu { display: inline-flex; position: absolute; top: 8px; right: 6px; }
+    }
+
+    @media (max-width: 640px) {
+      .inv-wrap { padding: 20px 20px 48px; }
     }
   </style>
 </head>

@@ -271,6 +271,11 @@ function stepFields(id) {
   ];
 }
 
+/* Progress modules default to the minimal (collapsed) view: a compact
+   percentage ring in the header replaces the health bar, and the steps show
+   their numbers + field results. Toggled via the header minimize button. */
+let progressMin = true;
+
 function progressPaneHTML() {
   const active = stepIndex(state.step);
   const completed = STEPS.filter((s) => stepDone(s.id)).length;
@@ -327,12 +332,14 @@ function progressPaneHTML() {
     : '';
 
   return `
-    <div class="vfp-inner">
+    <div class="vfp-inner ${progressMin ? 'is-min' : ''}">
       <div class="vfp-header">
+        <div class="vfp-pct-ring" style="--pct:${pct}"><span>${pct}%</span></div>
         <div class="vfp-header-text">
           <div class="vfp-title">Verification progress</div>
           <div class="vfp-subtitle">Non-UPF · ${STEPS.length} steps</div>
         </div>
+        <button type="button" class="vfp-min-btn" data-vf="togglemin" aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-icons">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
       </div>
       <div class="vfp-progress">
         <div class="vfp-progress-head"><span>${completed} of ${STEPS.length} steps</span><span class="vfp-progress-pct">${pct}%</span></div>
@@ -834,6 +841,8 @@ export function renderVerificationFlow(mainEl) {
   render();
 
   progressEl?.addEventListener('click', (e) => {
+    const min = e.target.closest('[data-vf="togglemin"]');
+    if (min) { progressMin = !progressMin; renderProgress(); return; }
     const goto = e.target.closest('[data-goto]');
     if (goto) goStep(goto.dataset.goto);
   });

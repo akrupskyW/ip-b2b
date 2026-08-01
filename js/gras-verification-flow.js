@@ -927,12 +927,14 @@ function progressWizardHTML() {
   }).join('');
 
   return `
-    <div class="gvp-inner">
+    <div class="gvp-inner ${progressMin ? 'is-min' : ''}">
       <div class="gvp-header">
+        <div class="gvp-pct-ring" style="--pct:${pct}"><span>${pct}%</span></div>
         <div class="gvp-header-text">
           <div class="gvp-title">Verification progress</div>
           <div class="gvp-subtitle">GRAS · ${STEP_DEFS.length} steps</div>
         </div>
+        <button type="button" class="gvp-min-btn" data-gv-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-icons">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
       </div>
       <div class="gvp-progress">
         <div class="gvp-progress-head"><span>${completed} of ${STEP_DEFS.length} steps</span><span class="gvp-progress-pct">${pct}%</span></div>
@@ -953,6 +955,8 @@ function progressWizardHTML() {
 
 let rootEl = null;
 let progressEl = null;
+/* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
+let progressMin = true;
 /* The entrance "pop" animation should only play when the step/screen actually
    CHANGES — not on in-step re-renders (doc pick, field input, attest toggle),
    otherwise every click replays the animation and the panel appears to blink.
@@ -1088,7 +1092,10 @@ export function renderGrasVerificationFlow(mainEl) {
       }
     }
   };
-  progressEl?.addEventListener('click', (e) => paneActivate(e.target));
+  progressEl?.addEventListener('click', (e) => {
+    if (e.target.closest('[data-gv-min]')) { progressMin = !progressMin; renderProgress(); return; }
+    paneActivate(e.target);
+  });
   progressEl?.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (!e.target.closest('[data-gv-step],[data-gv-ing]')) return;
