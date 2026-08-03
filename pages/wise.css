@@ -863,6 +863,12 @@ html.dark .wise-pop-action:hover {
 .wise-pop-action .material-icons { font-size: 20px; color: var(--text-subtle); }
 .wise-pop-action:hover .material-icons { color: var(--primary); }
 html.dark .wise-pop-action:hover .material-icons { color: var(--primary-bright); }
+/* Locked quick action (Alerts / Agents) — visible but inert, with a lock glyph
+   pinned to the corner. Never highlights on hover and can't be actioned. */
+.wise-pop-action.is-locked { position: relative; cursor: default; color: var(--text-subtle); }
+.wise-pop-action.is-locked:hover { background: none; color: var(--text-subtle); }
+.wise-pop-action.is-locked:hover .material-icons { color: var(--text-subtle); }
+.wise-pop-action .wise-pop-action-lock { position: absolute; top: 5px; right: 6px; font-size: 13px !important; opacity: 0.7; }
 .wise-pop-action.has-dot { position: relative; }
 .wise-pop-action.has-dot::after {
   content: '';

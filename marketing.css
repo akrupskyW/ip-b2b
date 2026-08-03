@@ -212,19 +212,22 @@ html.dark .mkt-authseg-btn:hover { color: var(--primary-bright); }
   display: flex; align-items: center; gap: 12px;
   padding: 8px 10px 8px 20px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  /* A called-out floating pill: translucent fill + backdrop blur so page
+     content reads softly through it as you scroll, with a subtle border and
+     shadow lifting it off the page. */
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-2);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   transition: background-color .3s ease, box-shadow .3s ease, top .3s ease, border-color .3s ease;
 }
 .mkt-nav.is-scrolled {
   top: 8px;
-  /* On scroll the bar leans MORE transparent so the page reads through it. */
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  box-shadow: var(--shadow-2);
-  border-color: var(--border-strong);
+  /* Firmer on scroll — a hair more opaque with a deeper lift. */
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-3, var(--shadow-2));
+  border-color: var(--border-strong, var(--border));
 }
 .mkt-nav-brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; flex: 0 0 auto; }
 .mkt-nav-brand svg { display: block; height: 26px; width: auto; color: var(--text); }
@@ -335,7 +338,7 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
 .mkt-nav.is-collapsed .mkt-nav-cta-drawer .mkt-authseg-btn { flex: 1 1 0; padding-block: 12px; }
 
 /* ---------- Store badges ---------- */
-.mkt-badges { display: flex; flex-wrap: wrap; gap: 12px; }
+.mkt-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .mkt-badge {
   display: inline-flex; align-items: center; gap: 10px;
   padding: 10px 16px; border-radius: 12px;
@@ -1894,4 +1897,34 @@ html.dark .mkt-phone {
 @media (prefers-reduced-motion: reduce) {
   .mkt-reveal { opacity: 1; transform: none; transition: none; }
   html.mkt { scroll-behavior: auto; }
+}
+
+/* ---------- Chat ⇄ body sync highlight ----------
+   When a chat chip / reply / scorecard fires an intent, the shell scrolls the
+   matching page section into view and flashes it, so acting in the chat is
+   visibly reflected on the page (and vice-versa). Sections opt in with
+   data-chat-section="<intent>". The flash is a brief inset ring + tint that
+   fades out; the scroll offset clears the floating header. */
+[data-chat-section] { scroll-margin-top: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + 20px); }
+[data-chat-section].is-chat-focus { animation: mktChatFocus 1.8s cubic-bezier(.22,1,.36,1); }
+@keyframes mktChatFocus {
+  0%   { box-shadow: inset 0 0 0 3px var(--primary); background-color: var(--primary-10); }
+  12%  { box-shadow: inset 0 0 0 3px var(--primary); }
+  100% { box-shadow: inset 0 0 0 0 transparent; background-color: transparent; }
+}
+/* Tinted / dark sections already carry a fill, so only pulse the ring there to
+   avoid washing out their own background. */
+.mkt-section--tint[data-chat-section].is-chat-focus,
+.mkt-hero[data-chat-section].is-chat-focus {
+  animation: mktChatFocusRing 1.8s cubic-bezier(.22,1,.36,1);
+}
+@keyframes mktChatFocusRing {
+  0%   { box-shadow: inset 0 0 0 3px var(--primary); }
+  12%  { box-shadow: inset 0 0 0 3px var(--primary); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-chat-section].is-chat-focus,
+  .mkt-section--tint[data-chat-section].is-chat-focus,
+  .mkt-hero[data-chat-section].is-chat-focus { animation: none; }
 }

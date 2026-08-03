@@ -71,11 +71,12 @@
     .rf-lead { display: block; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
     .rf-lead .rf-accent { color: var(--primary); }
 
-    /* Persistent intent-chip dock — the chat's chips ALWAYS mirror the current
-       reformulation state (top recommendations). One tap applies a step. */
-    .rf-chip-dock { flex: 0 0 auto; border-top: 1px solid var(--border); padding: 10px 14px 4px; background: var(--surface); }
-    .rf-chip-dock-label { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
-    .rf-chip-dock-label .material-icons { font-size: 13px; color: var(--primary); }
+    /* Intent chips live INLINE in the conversation — they trail the latest
+       WISEai turn (in line with the text), scroll with the transcript, and
+       always mirror the current reformulation state. One tap applies a step. */
+    .rf-chips-inline { margin: 11px 0 2px; }
+    .rf-chips-inline-label { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 7px; display: flex; align-items: center; gap: 6px; }
+    .rf-chips-inline-label .material-icons { font-size: 13px; color: var(--primary); }
     .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .rf-chip {
       display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
@@ -95,14 +96,14 @@
     .rf-chip--qualified { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 40%, transparent); color: var(--sec-green-text); cursor: default; }
     .rf-chip--qualified:hover { transform: none; }
 
-    /* ── Module headers ── */
-    .rf-head { display: flex; align-items: center; gap: 12px; padding: 22px 26px 14px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-    .rf-head-ic { width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
-    html.dark .rf-head-ic { color: var(--primary-bright, #8B9FAF); }
-    .rf-head-ic .material-symbols-outlined { font-size: 20px; }
-    .rf-head-titles { flex: 1 1 auto; min-width: 0; }
-    .rf-head-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.12rem; color: var(--text); margin: 0; letter-spacing: -.01em; }
-    .rf-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; }
+    /* ── Module headers ──
+       Mirrors the product-portfolio board header (.pf-head): a serif headline
+       with a small meta line, sitting on the card surface with the same inset
+       as the body below it — no boxed icon, no shaded topbar strip. */
+    .rf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
+    .rf-head-titles { min-width: 0; }
+    .rf-head-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
+    .rf-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
 
     .rf-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 26px 26px; }
 
@@ -125,18 +126,20 @@
     .rf-dq-banner .material-icons { font-size: 18px; flex: 0 0 auto; margin-top: 1px; }
     .rf-dq-banner b { font-weight: 800; }
 
-    /* ── Actionable recommendation steps ── */
-    .rf-step { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; background: var(--surface); transition: border-color .16s, background .16s; }
+    /* ── Actionable recommendation steps ──
+       Compact, dense rows so the full list of moves reads like a checklist
+       inside the disqualification section rather than a stack of large cards. */
+    .rf-step { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 9px; margin-bottom: 5px; background: var(--surface); transition: border-color .16s, background .16s; }
     .rf-step:hover { border-color: var(--border-strong); }
-    .rf-step-badge { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
-    .rf-step-badge .material-icons { font-size: 17px; }
+    .rf-step-badge { width: 22px; height: 22px; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10.5px; }
+    .rf-step-badge .material-icons { font-size: 14px; }
     .rf-step-badge--dq { background: var(--sec-red-10); color: var(--sec-red-text); }
     .rf-step-badge--credit { background: var(--sec-green-10); color: var(--sec-green-text); }
     .rf-step-badge--debit { background: var(--primary-soft); color: var(--primary); }
     html.dark .rf-step-badge--debit { color: var(--primary-bright, #8B9FAF); }
-    .rf-step-main { flex: 1 1 auto; min-width: 0; }
-    .rf-step-title { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.35; }
-    .rf-step-sub { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; margin-top: 4px; }
+    .rf-step-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; }
+    .rf-step-title { font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .rf-step-sub { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; }
     .rf-effort { display: inline-flex; align-items: center; gap: 4px; }
     .rf-effort::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
     .rf-effort--low { color: var(--sec-green-text); }
@@ -146,16 +149,16 @@
     .rf-effort--high { color: var(--sec-red-text); }
     .rf-effort--high::before { background: var(--sec-red); }
     .rf-apply {
-      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
-      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px;
-      padding: 7px 13px; border-radius: 9999px; cursor: pointer;
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
+      padding: 4px 10px; border-radius: 9999px; cursor: pointer;
       border: 1px solid var(--primary); background: transparent; color: var(--primary);
       transition: background .16s, color .16s;
     }
     html.dark .rf-apply { border-color: var(--primary-bright, #8B9FAF); color: var(--primary-bright, #8B9FAF); }
     .rf-apply:hover { background: var(--primary); color: #fff; }
     html.dark .rf-apply:hover { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
-    .rf-apply .material-icons { font-size: 15px; }
+    .rf-apply .material-icons { font-size: 13px; }
     .rf-empty { font-size: 12.5px; color: var(--text-muted); padding: 14px; text-align: center; border: 1px dashed var(--border-strong); border-radius: 12px; }
 
     /* ── Debits / Credits trade-off ── */
@@ -187,8 +190,12 @@
       color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: 9px; padding: 8px 10px; cursor: pointer;
     }
-    .rf-basis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; margin-bottom: 18px; }
-    .rf-basis-btn { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 8px; padding: 8px 6px; cursor: pointer; transition: background .16s, color .16s; }
+    /* Nutrient basis — a fully-rounded pill toggle (no squared corners). The
+       track is a pill, and the active segment is a pill that slides between
+       Per Serving / Per 100 kcal / Per 100 g. */
+    .rf-basis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9999px; margin-bottom: 18px; }
+    .rf-basis-btn { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 9999px; padding: 8px 6px; cursor: pointer; transition: background .16s, color .16s; }
+    .rf-basis-btn:hover:not(.is-active) { color: var(--text); }
     .rf-basis-btn.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
     html.dark .rf-basis-btn.is-active { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
 
@@ -234,6 +241,54 @@
     .rf-reset:hover { background: var(--surface-2); color: var(--text); }
     .rf-reset .material-icons { font-size: 15px; }
 
+    /* ═══════════ Step 0 · Product picker ═══════════
+       The flow always starts by picking which food you're reformulating. The
+       picker lives INSIDE the working modules — the dashboard shows the food
+       list (as rows, mirroring the portfolio table), the studio waits, and the
+       chat prompts. Nothing is hidden behind a cover; we just swap the body
+       contents until a food is chosen. */
+    #modules-row.is-picking #rf-dash-loaded { display: none; }
+    #modules-row:not(.is-picking) #rf-dash-pick { display: none; }
+    /* No food chosen yet → the Reformulation Studio module isn't there at all. */
+    #modules-row.is-picking > .rf-studio { display: none; }
+
+    /* Food rows — same anatomy as a product-portfolio table row. */
+    .rf-pick-list { display: flex; flex-direction: column; }
+    .rf-pick-row {
+      display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+      padding: 10px 12px; background: transparent; border: 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; font-family: inherit; transition: background .15s ease;
+    }
+    html.dark .rf-pick-row:hover { background: rgba(255,255,255,0.04); }
+    .rf-pick-row:hover { background: var(--surface-2); }
+    .rf-pick-row:last-child { border-bottom: 0; }
+    .rf-pick-thumb { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; }
+    .rf-pick-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+    .rf-pick-thumb .material-icons { font-size: 20px; }
+    html.dark .rf-pick-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+    .rf-pick-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .rf-pick-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rf-pick-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+    .rf-pick-status { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 3px 9px; border-radius: 9999px; }
+    .rf-pick-status .material-icons { font-size: 12px; }
+    .rf-pick-status--dq { background: var(--sec-red-10); color: var(--sec-red-text); }
+    .rf-pick-status--ok { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .rf-pick-go { flex: 0 0 auto; color: var(--text-subtle); display: flex; align-items: center; }
+    .rf-pick-go .material-icons { font-size: 20px; }
+    .rf-pick-row:hover .rf-pick-go { color: var(--primary); }
+    html.dark .rf-pick-row:hover .rf-pick-go { color: var(--primary-bright, #8B9FAF); }
+
+    /* "Change product" chip in the dashboard header. */
+    .rf-change-btn {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11px;
+      padding: 6px 11px; border-radius: 9999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted);
+      transition: background .16s, color .16s, border-color .16s;
+    }
+    .rf-change-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--primary); }
+    .rf-change-btn .material-icons { font-size: 14px; }
+
     html.full-bleed .rf-card { border: 0; border-radius: 0; box-shadow: none; }
     html.full-bleed #modules-row { gap: 0; }
     html.full-bleed body { padding: 0; }
@@ -263,8 +318,11 @@
       </div>
     </div>
 
-    <!-- Chat + dashboard + studio modules share the shell's "modules" grid area -->
-    <div id="modules-row">
+    <!-- Chat + dashboard + studio modules share the shell's "modules" grid area.
+         Starts in `is-picking`: step 0 (choosing a food) lives INSIDE these
+         modules — the chat prompts, the dashboard shows the food list as rows,
+         and the studio waits. Deep-linking via ?product= skips straight in. -->
+    <div id="modules-row" class="is-picking">
 
       <!-- ═══════════ 1 · WISEai chat (reusable surface) ═══════════ -->
       <main class="rf-card rf-chat">
@@ -294,12 +352,6 @@
           <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
         </div>
 
-        <!-- Persistent intent chips — always mirror the current recommendations. -->
-        <div class="rf-chip-dock">
-          <p class="rf-chip-dock-label"><span class="material-icons">bolt</span>Reformulation moves · always in sync</p>
-          <div class="rf-chips" id="rf-chips" role="list" aria-label="Reformulation quick actions"></div>
-        </div>
-
         <div class="chat-input-rail shrink-0">
           <div style="display:flex;gap:8px;align-items:flex-end">
             <div class="fl-input-wrap" style="flex:1">
@@ -315,32 +367,41 @@
       <!-- ═══════════ 2 · Reformulation Dashboard ═══════════ -->
       <section class="rf-card rf-dash" id="rf-dash">
         <header class="rf-head">
-          <span class="rf-head-ic"><span class="material-symbols-outlined">insights</span></span>
           <div class="rf-head-titles">
             <h2 class="rf-head-title">Reformulation Dashboard</h2>
-            <p class="rf-head-meta" id="rf-dash-meta">Great Value Frosted Toaster Pastries · General Foods algorithm</p>
+            <p class="rf-head-meta" id="rf-dash-meta">Choose a product to reformulate</p>
           </div>
+          <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-icons">swap_horiz</span>Change product</button>
         </header>
         <div class="rf-body">
-          <!-- Disqualification & recommendations -->
-          <div class="rf-sec">
-            <p class="rf-sec-title"><span class="material-icons">flag</span>Disqualification &amp; Recommendations</p>
-            <div id="rf-dq"></div>
-            <div id="rf-steps" style="margin-top:12px"></div>
+
+          <!-- Step 0 · pick a food (rows) -->
+          <div id="rf-dash-pick">
+            <div class="rf-pick-list" id="rf-pick-list" role="list" aria-label="Products to reformulate"></div>
           </div>
 
-          <!-- Debits & credits trade-off -->
-          <div class="rf-sec">
-            <p class="rf-sec-title"><span class="material-icons">balance</span>Debits &amp; Credits · the trade-off</p>
-            <div class="rf-tradeoff">
-              <div class="rf-tradeoff-col rf-tradeoff-col--debit">
-                <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
-                <div id="rf-debits"></div>
-              </div>
-              <div class="rf-tradeoff-sep" aria-hidden="true"></div>
-              <div class="rf-tradeoff-col rf-tradeoff-col--credit">
-                <p class="rf-tradeoff-col-label"><span>Credits</span><span class="rf-col-sum" id="rf-credit-sum">0</span></p>
-                <div id="rf-credits"></div>
+          <!-- Loaded state · the live board -->
+          <div id="rf-dash-loaded">
+            <!-- Disqualification & recommendations -->
+            <div class="rf-sec">
+              <p class="rf-sec-title"><span class="material-icons">flag</span>Disqualification &amp; Recommendations</p>
+              <div id="rf-dq"></div>
+              <div id="rf-steps" style="margin-top:12px"></div>
+            </div>
+
+            <!-- Debits & credits trade-off -->
+            <div class="rf-sec">
+              <p class="rf-sec-title"><span class="material-icons">balance</span>Debits &amp; Credits · the trade-off</p>
+              <div class="rf-tradeoff">
+                <div class="rf-tradeoff-col rf-tradeoff-col--debit">
+                  <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
+                  <div id="rf-debits"></div>
+                </div>
+                <div class="rf-tradeoff-sep" aria-hidden="true"></div>
+                <div class="rf-tradeoff-col rf-tradeoff-col--credit">
+                  <p class="rf-tradeoff-col-label"><span>Credits</span><span class="rf-col-sum" id="rf-credit-sum">0</span></p>
+                  <div id="rf-credits"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -350,13 +411,13 @@
       <!-- ═══════════ 3 · Reformulation Studio (calculator) ═══════════ -->
       <section class="rf-card rf-studio" id="rf-studio">
         <header class="rf-head">
-          <span class="rf-head-ic"><span class="material-symbols-outlined">auto_fix_high</span></span>
           <div class="rf-head-titles">
             <h2 class="rf-head-title">Reformulation Studio</h2>
             <p class="rf-head-meta">Dial in the WISE controls · live Guiding Stars</p>
           </div>
         </header>
         <div class="rf-body">
+          <div id="rf-studio-loaded">
           <div class="rf-algo">
             <span class="rf-algo-label">Algorithm</span>
             <select id="rf-algo" aria-label="Guiding Stars algorithm">
@@ -400,6 +461,7 @@
             <div class="rf-score-path" id="rf-score-path"></div>
           </div>
           <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-icons">restart_alt</span>Reset to original label</button>
+          </div><!-- /#rf-studio-loaded -->
         </div>
       </section>
 
@@ -571,13 +633,33 @@
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
       const fmt = (n, d = 1) => { const v = Math.round(n * 10 ** d) / 10 ** d; return String(v); };
 
-      /* ── Product baseline (Great Value Frosted Toaster Pastries, per serving).
-         Added sugar 41 g against 328 kcal = ~50% of calories → the DQ we open on;
-         additives=12 → the second DQ. Everything is stored per SERVING; the basis
-         toggle only changes how a value is DISPLAYED, never the scoring math
-         (which is always per 100 kcal). */
-      const ORIGINAL = { calories: 328, grams: 82, sodium: 430, addedSugar: 41, satFat: 5, transFat: 0, fiber: 0, additives: 12, vitamins: 0, wholeGrain: false, algo: 'G' };
-      let state = { ...ORIGINAL };
+      /* ── Product catalog (from the portfolio) ──────────────────────────────
+         The flow always starts by choosing a product. Each entry carries its
+         identity (name / UPC / thumbnail) plus a per-SERVING nutrition baseline.
+         The basis toggle only changes how a value is DISPLAYED — the scoring
+         math is always per 100 kcal. Great Value Frosted Toaster Pastries is the
+         flagship demo (added sugar ≈50% of calories + 12 additives → two DQs). */
+      const PRODUCTS = [
+        { id: 'frosted-toaster', name: 'Great Value Frosted Toaster Pastries', short: 'Frosted Toaster Pastries', upc: '0 78742 12908 4', img: null, icon: 'bakery_dining',
+          baseline: { calories: 328, grams: 82, sodium: 430, addedSugar: 41, satFat: 5, transFat: 0, fiber: 0, additives: 12, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'coconut-brownies', name: 'Toasted Coconut Brownies-12 ct', short: 'Toasted Coconut Brownies', upc: '8 57287 00420 3', img: '../assets/portfolio/coconut_brownies.png', icon: 'bakery_dining',
+          baseline: { calories: 210, grams: 52, sodium: 150, addedSugar: 18, satFat: 6, transFat: 0, fiber: 1, additives: 3, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'chocolate-chip-muffins', name: 'Chocolate Chip Muffins-4 ct', short: 'Chocolate Chip Muffins', upc: '0 65776 63152 0', img: '../assets/portfolio/chocolate_chip_muffins.png', icon: 'cookie',
+          baseline: { calories: 240, grams: 60, sodium: 300, addedSugar: 20, satFat: 4, transFat: 0, fiber: 1, additives: 2, vitamins: 1, wholeGrain: false, algo: 'G' } },
+        { id: 'blueberry-muffins', name: 'Blueberry Muffins-4 ct', short: 'Blueberry Muffins', upc: '0 65776 63153 7', img: '../assets/portfolio/blueberry_muffins.png', icon: 'bakery_dining',
+          baseline: { calories: 260, grams: 65, sodium: 340, addedSugar: 22, satFat: 3.5, transFat: 0.5, fiber: 1, additives: 4, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'oatmeal-raisin-cookies', name: 'Oatmeal Raisin Cookies-5 ct', short: 'Oatmeal Raisin Cookies', upc: '8 57287 00456 2', img: '../assets/portfolio/oatmeal_raisin_cookies.png', icon: 'cookie',
+          baseline: { calories: 180, grams: 40, sodium: 135, addedSugar: 14, satFat: 2.5, transFat: 0, fiber: 2, additives: 2, vitamins: 0, wholeGrain: true, algo: 'G' } },
+        { id: 'chocolate-granola', name: 'Chunky Chocolate Granola', short: 'Chunky Chocolate Granola', upc: '8 57287 00427 2', img: '../assets/portfolio/granola.jpg', icon: 'grain',
+          baseline: { calories: 200, grams: 45, sodium: 80, addedSugar: 9, satFat: 2, transFat: 0, fiber: 6, additives: 0, vitamins: 1, wholeGrain: true, algo: 'G' } },
+      ];
+      /* A per-serving baseline used when a portfolio row is deep-linked but isn't
+         one of the modeled products above. */
+      const GENERIC_BASELINE = { calories: 230, grams: 55, sodium: 260, addedSugar: 16, satFat: 3, transFat: 0, fiber: 1, additives: 3, vitamins: 0, wholeGrain: false, algo: 'G' };
+
+      let product = null;   // the currently selected product (identity)
+      let ORIGINAL = null;  // its per-serving baseline (for reset)
+      let state = null;     // the live, editable copy
       let basis = 'serving';
 
       /* Slider config — ranges are per SERVING (canonical); labels convert. */
@@ -604,31 +686,35 @@
       /* Fiber credit tiers (per 100 kcal) → per-serving grams for the product. */
       const FIBER_TIERS = [1.4, 2.8, 4.2];
       const fiberServingFor = (per100val) => Math.round((per100val * state.calories / 100) * 10) / 10;
-      const SUGAR_CAP_G = Math.floor(0.40 * state.calories / 4); // grams of added sugar at the 40%-kcal cap
+      const sugarCapG = () => Math.floor(0.40 * state.calories / 4); // grams of added sugar at the 40%-kcal cap
 
       const STAR_THRESHOLDS = [1, 4, 7]; // net points needed for ★, ★★, ★★★
 
-      /* ── Core scoring ── */
-      function compute() {
-        const s100 = { satFat: per100(state.satFat), sodium: per100(state.sodium), addedSugar: per100(state.addedSugar), transFat: per100(state.transFat), fiber: per100(state.fiber) };
+      /* ── Core scoring ──
+         Accepts any state object (`st`), so the picker can preview a product's
+         rating without disturbing the live selection. Defaults to `state`. */
+      function compute(st) {
+        st = st || state;
+        const P = (v) => (st.calories ? (v / st.calories) * 100 : 0);
+        const s100 = { satFat: P(st.satFat), sodium: P(st.sodium), addedSugar: P(st.addedSugar), transFat: P(st.transFat), fiber: P(st.fiber) };
 
         // Debits
         let dSat = s100.satFat >= 2 ? -2 : s100.satFat >= 1 ? -1 : 0;
         let dSod = s100.sodium >= 240 ? -2 : s100.sodium >= 120 ? -1 : 0;
         let dSugar = s100.addedSugar >= 12 ? -3 : s100.addedSugar >= 6 ? -2 : s100.addedSugar >= 2 ? -1 : 0;
         const dTrans = s100.transFat > 0 ? -1 : 0;
-        const dAdd = state.additives >= 1 ? -1 : 0;
+        const dAdd = st.additives >= 1 ? -1 : 0;
 
         // Credits
         let cFiber = s100.fiber >= FIBER_TIERS[2] ? 3 : s100.fiber >= FIBER_TIERS[1] ? 2 : s100.fiber >= FIBER_TIERS[0] ? 1 : 0;
-        const cVit = Math.max(0, Math.min(3, state.vitamins));
-        const grainAlgo = state.algo === 'G';
-        let cWhole = grainAlgo && state.wholeGrain ? 1 : 0;
+        const cVit = Math.max(0, Math.min(3, st.vitamins));
+        const grainAlgo = st.algo === 'G';
+        let cWhole = grainAlgo && st.wholeGrain ? 1 : 0;
 
         // Algorithm variants
-        if (state.algo === 'M') { dSat = Math.min(0, dSat + 1); }
-        else if (state.algo === 'F') { dSat = Math.min(0, dSat + 1); dSod = Math.min(0, dSod + 1); }
-        else if (state.algo === 'V') { dSugar = Math.max(-3, dSugar - 1); cFiber = Math.min(cFiber, 1); }
+        if (st.algo === 'M') { dSat = Math.min(0, dSat + 1); }
+        else if (st.algo === 'F') { dSat = Math.min(0, dSat + 1); dSod = Math.min(0, dSod + 1); }
+        else if (st.algo === 'V') { dSugar = Math.max(-3, dSugar - 1); cFiber = Math.min(cFiber, 1); }
 
         const debits = { transFat: dTrans, satFat: dSat, sodium: dSod, additives: dAdd, addedSugar: dSugar };
         const credits = { fiber: cFiber, vitamins: cVit, wholeGrain: cWhole };
@@ -637,10 +723,10 @@
         const net = debitSum + creditSum;
 
         // Disqualification
-        const sugarPct = state.calories ? (state.addedSugar * 4 / state.calories) * 100 : 0;
+        const sugarPct = st.calories ? (st.addedSugar * 4 / st.calories) * 100 : 0;
         const dq = [];
         if (sugarPct > 40) dq.push({ id: 'dq-sugar', text: `Added sugar <b>${fmt(sugarPct, 0)}%</b> &gt; 40% of calories` });
-        if (state.additives >= 2) dq.push({ id: 'dq-additives', text: `<b>${state.additives}</b> additives to limit (≥2 disqualifies)` });
+        if (st.additives >= 2) dq.push({ id: 'dq-additives', text: `<b>${st.additives}</b> additives to limit (≥2 disqualifies)` });
         const disqualified = dq.length > 0;
 
         // Stars
@@ -654,8 +740,8 @@
       function recommendations(c) {
         const recs = [];
         if (c.dq.find((d) => d.id === 'dq-sugar')) {
-          recs.push({ id: 'dq-sugar', kind: 'dq', icon: 'block', title: `Cut added sugar below ${SUGAR_CAP_G} g/serving to exit disqualification`, note: '40% of calories cap', effort: 'high', chip: `Exit sugar DQ`,
-            apply: () => { state.addedSugar = Math.max(0, SUGAR_CAP_G - 1); } });
+          recs.push({ id: 'dq-sugar', kind: 'dq', icon: 'block', title: `Cut added sugar below ${sugarCapG()} g/serving to exit disqualification`, note: '40% of calories cap', effort: 'high', chip: `Exit sugar DQ`,
+            apply: () => { state.addedSugar = Math.max(0, sugarCapG() - 1); } });
         }
         if (c.dq.find((d) => d.id === 'dq-additives')) {
           recs.push({ id: 'dq-additives', kind: 'dq', icon: 'block', title: `Remove ${state.additives - 1} of ${state.additives} flagged additives to exit disqualification`, note: '2+ additives disqualifies', effort: 'med', chip: `Clear additive DQ`,
@@ -750,7 +836,7 @@
       }
 
       function renderDashboard(c) {
-        document.getElementById('rf-dash-meta').textContent = `Great Value Frosted Toaster Pastries · ${ALGO_NAME[state.algo]} algorithm`;
+        document.getElementById('rf-dash-meta').textContent = `${product.name} · ${ALGO_NAME[state.algo]} algorithm`;
 
         // Disqualification banners
         const dqEl = document.getElementById('rf-dq');
@@ -824,31 +910,38 @@
           </div>`;
       }
 
-      /* Chat intent chips — DERIVED from live recommendations so they always match. */
-      function renderChips(c) {
-        const el = document.getElementById('rf-chips');
+      /* Intent chips — built as a block that is embedded INSIDE a WISEai turn
+         (part of the transcript), never a sticky bottom dock. Derived from the
+         live recommendations so whichever turn carries them is always current. */
+      function chipsBlockHtml() {
+        if (!product) return '';
+        const c = compute();
         const recs = recommendations(c);
-        if (!recs.length) {
-          el.innerHTML = `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized — ${c.stars}★</span>`;
-          return;
-        }
-        el.innerHTML = recs.slice(0, 6).map((r) => {
-          const cls = r.kind === 'dq' ? 'rf-chip--dq' : r.kind === 'credit' ? 'rf-chip--credit' : '';
-          const pts = r.pts ? `<span class="rf-chip-pts">${r.pts}</span>` : '';
-          return `<button type="button" class="rf-chip ${cls}" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}${pts}</button>`;
-        }).join('');
+        const inner = !recs.length
+          ? `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized — ${c.stars}★</span>`
+          : recs.slice(0, 6).map((r) => {
+              const cls = r.kind === 'dq' ? 'rf-chip--dq' : r.kind === 'credit' ? 'rf-chip--credit' : '';
+              const pts = r.pts ? `<span class="rf-chip-pts">${r.pts}</span>` : '';
+              return `<button type="button" class="rf-chip ${cls}" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}${pts}</button>`;
+            }).join('');
+        return `<div class="rf-chips-inline"><p class="rf-chips-inline-label"><span class="material-icons">bolt</span>Reformulation moves · always in sync</p><div class="rf-chips">${inner}</div></div>`;
       }
 
       /* ═══════════ Chat ═══════════ */
       function nowLabel() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
       function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
+      /* Only the newest turn carries the chips, so old turns stay clean history. */
+      function stripChips() { box.querySelectorAll('.rf-chips-inline').forEach((n) => n.remove()); }
       function addUser(text) {
+        stripChips();
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
         box.scrollTop = box.scrollHeight;
       }
       function addWISEai(html, opts) {
+        stripChips();
         const meta = opts && opts.noMeta ? '' : metaRow();
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + meta + '</div></div>');
+        const chips = opts && opts.chips ? chipsBlockHtml() : '';
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + chips + meta + '</div></div>');
         box.scrollTop = box.scrollHeight;
       }
       function showTyping() {
@@ -858,9 +951,10 @@
         box.appendChild(el); box.scrollTop = box.scrollHeight;
         return el;
       }
+      /* Every board-state reply embeds the current chips inside its own bubble. */
       function respond(html) {
         const t = showTyping();
-        setTimeout(() => { t.remove(); addWISEai(html); }, 460);
+        setTimeout(() => { t.remove(); addWISEai(html, { chips: true }); }, 460);
       }
 
       function scoreSentence(c) {
@@ -874,7 +968,6 @@
         const c = compute();
         renderStudio(c);
         renderDashboard(c);
-        renderChips(c);
         return c;
       }
 
@@ -953,8 +1046,8 @@
         const b = e.target.closest('[data-apply]');
         if (b) applyStep(b.dataset.apply, false);
       });
-      /* ── Chat chips ── */
-      document.getElementById('rf-chips').addEventListener('click', (e) => {
+      /* ── Chat chips (embedded inside the transcript turns) ── */
+      box.addEventListener('click', (e) => {
         const b = e.target.closest('[data-chip]');
         if (b) applyStep(b.dataset.chip, true);
       });
@@ -965,6 +1058,7 @@
         if (!text) return;
         input.value = '';
         addUser(text);
+        if (!product) { respond('Pick a food from the list in the dashboard first — then I can model it against the Guiding Stars algorithm.'); return; }
         const t = text.toLowerCase();
         const c = compute();
         let reply;
@@ -975,7 +1069,7 @@
             ? `Two things block it: ${c.dq.map((d) => d.text).join('; ')}. Clear both and it can start earning stars — the moves are in the chips below.`
             : `Nothing's disqualifying it right now — it earns <b>${c.stars}★</b>.`;
         } else if (/sugar/.test(t)) {
-          reply = `Added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of calories (${fmt(c.s100.addedSugar)} g/100kcal), a <b>${c.debits.addedSugar}</b> debit${c.sugarPct > 40 ? ' and a disqualifier above 40%' : ''}. Drop it below <b>${SUGAR_CAP_G} g/serving</b> to clear the cap.`;
+          reply = `Added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of calories (${fmt(c.s100.addedSugar)} g/100kcal), a <b>${c.debits.addedSugar}</b> debit${c.sugarPct > 40 ? ' and a disqualifier above 40%' : ''}. Drop it below <b>${sugarCapG()} g/serving</b> to clear the cap.`;
         } else if (/additive|preservative|color|dye/.test(t)) {
           reply = `There are <b>${state.additives}</b> additives to limit — ≥2 disqualifies. Bring it to <b>1 or 0</b> to clear that blocker.`;
         } else if (/fiber|whole ?grain|fortif|vitamin|credit/.test(t)) {
@@ -1011,7 +1105,7 @@
         if (el) { const s = el.querySelector('span:last-child'); const o = s.textContent; s.textContent = 'Copied!'; setTimeout(() => (s.textContent = o), 1400); }
         window.rfCloseChatMenu();
       };
-      window.rfRestart = function () { box.innerHTML = ''; state = { ...ORIGINAL }; document.getElementById('rf-algo').value = state.algo; render(); seed(); };
+      window.rfRestart = function () { box.innerHTML = ''; state = { ...ORIGINAL }; basis = 'serving'; document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving')); document.getElementById('rf-algo').value = state.algo; render(); seed(); };
       window.rfResetProduct = function () {
         state = { ...ORIGINAL };
         document.getElementById('rf-algo').value = state.algo;
@@ -1020,15 +1114,94 @@
         respond(`Back to the original label. ${scoreSentence(c)}`);
       };
 
-      /* ── Opening turn ── */
+      /* ── Opening turn (tailored to the chosen product) ── */
+      function dqClause(c) {
+        const parts = [];
+        if (c.dq.find((d) => d.id === 'dq-sugar')) parts.push(`added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of its calories`);
+        if (c.dq.find((d) => d.id === 'dq-additives')) parts.push(`it carries <b>${state.additives}</b> additives to limit`);
+        return parts.join(' and ');
+      }
       function seed() {
         const c = compute();
-        addWISEai('<span class="rf-lead">Let\'s get <span class="rf-accent">Frosted Toaster Pastries</span> onto the Guiding Stars board.</span>Right now it\'s <b>disqualified</b> — added sugar is half its calories and it carries 12 additives to limit. I\'ve broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.', { noMeta: true });
-        addWISEai(`${scoreSentence(c)} ${pathToNextStar(c).msg} Tap a move below — or drag a slider — and the whole board updates live.`);
+        const opener = c.disqualified
+          ? `Right now it's <b>disqualified</b> — ${dqClause(c)}.`
+          : `Right now it <b>qualifies</b> at <b>${c.stars}★</b>.`;
+        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> onto the Guiding Stars board.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, { noMeta: true });
+        addWISEai(`${scoreSentence(c)} ${pathToNextStar(c).msg} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true });
       }
 
-      render();
-      seed();
+      /* ═══════════ Step 0 · Product picker (rows, in-module) ═══════════ */
+      const modulesRow = document.getElementById('modules-row');
+      const pickList = document.getElementById('rf-pick-list');
+      const changeBtn = document.getElementById('rf-change-btn');
+
+      function pickStatusBadge(baseline) {
+        const c = compute({ ...baseline });
+        return c.disqualified
+          ? `<span class="rf-pick-status rf-pick-status--dq"><span class="material-icons">block</span>Disqualified</span>`
+          : `<span class="rf-pick-status rf-pick-status--ok"><span class="material-icons">star</span>${c.stars}★</span>`;
+      }
+      function renderPickList() {
+        pickList.innerHTML = PRODUCTS.map((p) => {
+          const thumb = p.img
+            ? `<span class="rf-pick-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-icons').style.display='flex'"><span class="material-icons" style="display:none">${p.icon}</span></span>`
+            : `<span class="rf-pick-thumb"><span class="material-icons">${p.icon}</span></span>`;
+          return `<button type="button" class="rf-pick-row" role="listitem" data-pick="${p.id}">${thumb}<span class="rf-pick-info"><span class="rf-pick-name">${esc(p.name)}</span><span class="rf-pick-upc">UPC · ${esc(p.upc)}</span></span>${pickStatusBadge(p.baseline)}<span class="rf-pick-go"><span class="material-icons">chevron_right</span></span></button>`;
+        }).join('');
+      }
+      pickList.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-pick]');
+        if (b) selectProduct(b.dataset.pick);
+      });
+
+      /* Chat's step-0 prompt (the picking turn also lives in the chat module). */
+      function seedPickPrompt() {
+        box.innerHTML = '';
+        addWISEai('<span class="rf-lead">Which food are we reformulating?</span>Pick a product from the list in the dashboard — they come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it onto the Guiding Stars board and we\'ll dial it in together.', { noMeta: true });
+      }
+
+      window.rfShowPicker = function () {
+        renderPickList();
+        modulesRow.classList.add('is-picking');
+        document.getElementById('rf-dash-meta').textContent = 'Choose a product to reformulate';
+        if (changeBtn) changeBtn.style.display = 'none';
+        seedPickPrompt();
+      };
+
+      function selectProduct(idOrObj) {
+        const p = (typeof idOrObj === 'object') ? idOrObj : PRODUCTS.find((x) => x.id === idOrObj);
+        if (!p) return;
+        product = p;
+        ORIGINAL = { ...p.baseline };
+        state = { ...ORIGINAL };
+        basis = 'serving';
+        document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving'));
+        document.getElementById('rf-algo').value = state.algo;
+        modulesRow.classList.remove('is-picking');
+        if (changeBtn) changeBtn.style.display = '';
+        box.innerHTML = '';
+        render();
+        seed();
+      }
+
+      /* ── Boot: deep-link (?product=<id|upc>) from the portfolio, else pick ── */
+      const digits = (s) => String(s || '').replace(/\D/g, '');
+      function findProduct(q) {
+        if (!q) return null;
+        return PRODUCTS.find((p) => p.id === q) || PRODUCTS.find((p) => digits(p.upc) === digits(q)) || null;
+      }
+      (function boot() {
+        const params = new URLSearchParams(location.search);
+        const q = params.get('product');
+        const match = findProduct(q);
+        if (match) { selectProduct(match); return; }
+        if (q) {
+          const name = params.get('name') || 'Selected product';
+          selectProduct({ id: 'custom', name, short: name, upc: params.get('upc') || q, img: params.get('img') || null, icon: 'bakery_dining', baseline: { ...GENERIC_BASELINE } });
+          return;
+        }
+        window.rfShowPicker();
+      })();
     })();
   </script>
 </body>

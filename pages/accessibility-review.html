@@ -972,7 +972,7 @@ const FINDINGS = [
   {
     sev: 'pass', icon: 'check_circle',
     title: '3 · AAA — primary deepened for text AND buttons',
-    body: 'Primary was <code>#25507C</code> (link text 5.9:1, white-on-primary 5.9:1 — AA only). It is now <code>#25507C</code>, so primary link text clears 7:1 on <code>bg</code> and white-on-primary buttons clear 7:1 too. The dark-theme <code>--primary-bright #8B9FAF</code> already runs ~9.7:1. The matching <code>rgba(37, 80, 124,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
+    body: 'A lighter primary previously left link text and white-on-primary buttons at ~5.9:1 (AA only). Primary is now <code>#25507C</code>, so primary link text clears 7:1 on <code>bg</code> (≈7.9:1) and white-on-primary buttons clear 7:1 too (≈8.3:1). The dark-theme <code>--primary-bright #8B9FAF</code> already runs ~9.7:1. The matching <code>rgba(37, 80, 124,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
   },
   {
     sev: 'pass', icon: 'check_circle',
@@ -1006,8 +1006,52 @@ function renderFindings() {
    directly, root pages via '../'.
 ===================================================================== */
 const PAGES = [
+  // ----- Root-level entry & marketing site (one level up from pages/) -----
+  { title: 'Home (index)',             path: '../index.html' },
+  { title: 'IP3 Home',                 path: '../wise_ip3.html' },
+  { title: 'Marketing · WISEcode App', path: '../marketing-app.html' },
+  { title: 'Marketing · WISEai',       path: '../marketing-wiseai.html' },
+  { title: 'Marketing · WISEcoach',    path: '../marketing-coach.html' },
+  { title: 'Marketing · WISEalliance', path: '../marketing-alliance.html' },
+  { title: 'Marketing · WISEip',       path: '../marketing-enterprise.html' },
+  { title: 'Marketing · Non-UPF Verified', path: '../marketing-nonupf.html' },
+  { title: 'Marketing · GRAS Reviewed',    path: '../marketing-gras.html' },
+  { title: 'Marketing · Pricing',      path: '../marketing-pricing.html' },
+
+  // ----- Authenticated app (same directory) -----
   { title: 'Overview (Dashboard)',     path: 'overview.html' },
   { title: 'Analytics Types',          path: 'analytics-types.html' },
+  { title: 'Product Portfolio',        path: 'product-portfolio.html' },
+  { title: 'Add Product',              path: 'add-product.html' },
+  { title: 'Product Comparison',       path: 'product-comparison.html' },
+  { title: 'Reformulation Studio',     path: 'reformulation.html' },
+  { title: 'Non-UPF Dashboard',        path: 'non-upf-dashboard.html' },
+  { title: 'Non-UPF Verification',     path: 'verification.html' },
+  { title: 'GRAS Verification',        path: 'gras-verification.html' },
+  { title: 'Audit Queue',              path: 'audit-queue.html' },
+  { title: 'WISEai Chat',              path: 'ai-chat.html' },
+  { title: 'WISEai Chat 2',            path: 'ai-chat-2.html' },
+  { title: 'Studio & AI',              path: 'studio-ai.html' },
+  { title: 'Agents',                   path: 'agents.html' },
+  { title: 'Reports',                  path: 'reports.html' },
+  { title: 'Invoices & Downloads',     path: 'invoices.html' },
+  { title: 'Alerts',                   path: 'alerts.html' },
+  { title: 'Organizations',            path: 'organizations.html' },
+  { title: 'User Management',          path: 'user-management.html' },
+  { title: 'Quick Invite',             path: 'quick-invite.html' },
+  { title: 'My Profile',               path: 'profile.html' },
+  { title: 'Preferences',              path: 'preferences.html' },
+  { title: 'API Keys',                 path: 'api-keys.html' },
+  { title: 'Admin Utilities',          path: 'admin-utils.html' },
+  { title: 'Marketing Assets',         path: 'marketing-assets.html' },
+  { title: 'Help',                     path: 'help.html' },
+  { title: 'Docs',                     path: 'docs.html' },
+  { title: 'Product Vision Deck',      path: 'app-vision-deck.html' },
+
+  // ----- Auth screens -----
+  { title: 'Sign In',                  path: 'login.html' },
+  { title: 'Create Account',           path: 'create-account.html' },
+  { title: 'Reset Password',           path: 'forgot-password.html' },
 ];
 
 // Per-page running state: last content signature + last grade.

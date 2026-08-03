@@ -7707,7 +7707,7 @@
     #portfolio-panel.pf-stars-on .pf-table--discovered .pf-trow,
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-thead,
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-trow {
-      grid-template-columns: 34px 210px 74px 140px 92px 108px 132px 190px 130px 160px 168px;
+      grid-template-columns: 34px 210px 74px 140px 92px 108px 132px 190px 150px 130px 160px 168px;
       width: max-content; min-width: 100%;
     }
     #portfolio-panel.pf-stars-on .pf-table-card { overflow-x: auto; overflow-y: visible; }
@@ -7749,6 +7749,20 @@
     html.dark .pf-gs-good { color: #6FE0A0; }
     .pf-gs-issue { background: var(--ter-amber-10); color: #8a6400; }
     html.dark .pf-gs-issue { color: #FFD98A; }
+    /* Reformulate action — only rendered for disqualified (0★) or 1★ rows, so
+       the worst performers carry a one-tap path into the Reformulation studio. */
+    .pf-col-reformulate { justify-content: center; }
+    .pf-gs-reformulate-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
+      padding: 5px 11px; border-radius: 9999px; cursor: pointer; white-space: nowrap;
+      background: var(--primary); color: #fff; border: 1px solid var(--primary);
+      transition: filter .15s ease, transform .1s ease;
+    }
+    .pf-gs-reformulate-btn:hover { filter: brightness(1.08); }
+    .pf-gs-reformulate-btn:active { transform: translateY(1px); }
+    .pf-gs-reformulate-btn .material-icons { font-size: 13px !important; line-height: 1 !important; }
+    .pf-gs-dash { color: var(--text-subtle); opacity: 0.5; font-weight: 700; }
 
     /* ── Combined "Issues & Ease" cell ────────────────────────────────────
        Stacks the key-issue chip over a labelled reformulation-effort meter, so
@@ -13077,6 +13091,73 @@
       pfPopulateDates();
     }
 
+    /* ── Reformulate entry point ──────────────────────────────────────────
+       Each product row's ⋮ menu gets a "Reformulate" action that opens the
+       Reformulation Dashboard for that specific product (its name / UPC /
+       thumbnail travel over in the URL, and the dashboard's picker deep-links
+       straight to it). This also wires the row menus to actually open. */
+    /* Build the deep-link into the Reformulation studio for a given table row —
+       the product's name / UPC / thumbnail travel over in the URL. Shared by the
+       ⋮-menu action and the inline Reformulate button in the Guiding Stars view. */
+    function pfReformulateHref(row) {
+      if (!row) return 'reformulation.html';
+      const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
+      const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
+      const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+      const params = new URLSearchParams();
+      params.set('product', upc || name);
+      if (name) params.set('name', name);
+      if (upc) params.set('upc', upc);
+      if (img) params.set('img', img);
+      return 'reformulation.html?' + params.toString();
+    }
+    function pfInjectReformulate(pop) {
+      if (!pop || pop.querySelector('.pf-rowmenu-item--reformulate')) return;
+      const row = pop.closest('.pf-trow');
+      if (!row) return;
+      const item = document.createElement('a');
+      item.className = 'pf-rowmenu-item pf-rowmenu-item--reformulate';
+      item.setAttribute('role', 'menuitem');
+      item.href = pfReformulateHref(row);
+      item.style.textDecoration = 'none';
+      item.innerHTML = '<span class="material-icons">auto_fix_high</span>Reformulate';
+      pop.insertBefore(item, pop.firstChild);
+    }
+    /* Inline Reformulate button (Guiding Stars view, low-star rows). */
+    document.addEventListener('click', (e) => {
+      const rb = e.target.closest('.pf-gs-reformulate-btn');
+      if (!rb) return;
+      e.preventDefault();
+      window.location.href = pfReformulateHref(rb.closest('.pf-trow'));
+    });
+    function pfCloseRowMenus(except) {
+      document.querySelectorAll('.pf-rowmenu.is-open').forEach((rm) => {
+        if (rm === except) return;
+        rm.classList.remove('is-open');
+        rm.querySelector('.pf-rowmenu-btn')?.setAttribute('aria-expanded', 'false');
+        rm.querySelector('.pf-rowmenu-pop')?.setAttribute('hidden', '');
+      });
+    }
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pf-rowmenu-btn');
+      if (btn) {
+        e.preventDefault(); e.stopPropagation();
+        const rm = btn.closest('.pf-rowmenu');
+        const pop = rm?.querySelector('.pf-rowmenu-pop');
+        if (!pop) return;
+        const isOpen = rm.classList.contains('is-open');
+        pfCloseRowMenus(rm);
+        if (isOpen) {
+          rm.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); pop.setAttribute('hidden', '');
+        } else {
+          pfInjectReformulate(pop);
+          rm.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); pop.removeAttribute('hidden');
+        }
+        return;
+      }
+      if (!e.target.closest('.pf-rowmenu-pop')) pfCloseRowMenus();
+    });
+
     /* ── Guiding Stars ────────────────────────────────────────────────────
        The pink header switch reveals extra Guiding Stars columns in every
        table (Brand · Serving · Category · Stars · Score · Std ★ · Std Score ·
@@ -13160,6 +13241,11 @@
             + '<span class="pf-gs-ease pf-gs-ease--' + e.key + '" title="' + e.title + '">'
             + bars + '<span class="pf-gs-ease-txt">' + e.label + '</span></span></span>';
         } },
+      /* Action — a Reformulate button only for the products that need it most:
+         disqualified (0★) or single-star foods. Qualifying rows show a dash. */
+      { label: 'Reformulate', cls: 'pf-col-reformulate', cell: (d) => d.stars <= 1
+          ? '<button type="button" class="pf-gs-reformulate-btn" title="Open this product in the Reformulation studio"><span class="material-icons">auto_fix_high</span>Reformulate</button>'
+          : '<span class="pf-gs-dash" title="Already qualifies — no reformulation needed">\u2014</span>' },
     ];
     /* Ease of reformulation → effort meter + plain-language label. Higher ease
        ("High") is the easiest to fix, so it reads as the least effort. */

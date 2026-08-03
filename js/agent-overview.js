@@ -1364,28 +1364,33 @@ function closeAvatarPopover() {
 }
 
 function renderAvatarBody(pop) {
-  const notifUnread = !document.querySelector('.topbar-profile')?.classList.contains('is-read');
   const who = APP_IDENTITY?.name || 'Maya Chen';
+  /* This build locks the account menu down to the two live surfaces —
+     Invoices & Downloads (a working link) and Sign out. Everything else
+     (Alerts / Agents quick actions plus My profile, Preferences, API keys,
+     Help, Docs) renders inert with a trailing lock glyph. */
   pop.innerHTML = `
     <div class="wise-popover-header">${escHtml(who)}</div>
     <div class="wise-popover-actions">
-      <button type="button" class="wise-pop-action${notifUnread ? ' has-dot' : ''}" data-pop-action="notifications" title="Notifications">
+      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
         <span class="material-icons">notifications</span>
         <span>Alerts</span>
+        <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
       </button>
       <span class="wise-pop-vline" aria-hidden="true"></span>
-      <button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings">
+      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
         <span class="material-icons">tune</span>
         <span>Agents</span>
+        <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
       </button>
     </div>
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>
-    <div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>
-    <div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>
-    <div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">person</span>My profile<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
+    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads</div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
   `;
@@ -1431,6 +1436,7 @@ function openAvatarPopover(anchor) {
       const dest = {
         agents: 'agents.html',
         profile: 'profile.html',
+        invoices: 'invoices.html',
         prefs: 'preferences.html',
         apikeys: 'api-keys.html',
         help: 'help.html',

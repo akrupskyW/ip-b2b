@@ -30,10 +30,18 @@
     body[data-nav-id="invoices"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="invoices"] #modules-row { margin-top: 0; padding-bottom: 0; }
 
+    /* WISEai chat on this surface reads bottom-up: the welcome anchors to the
+       bottom of the pane (just above the input) and grows upward, so there's no
+       dead gap between the last chip and the composer. `safe` keeps the top
+       reachable when the content is taller than the pane. */
+    body[data-nav-id="invoices"] .sc-welcome,
+    body[data-nav-id="invoices"] .sc-welcome--cards { justify-content: safe flex-end; }
+
     /* A size container so the board responds to its OWN width — this surface
        often sits in a narrow column beside the chat dock, where viewport media
-       queries don't reflect how little room the table actually has. */
-    .inv-wrap { padding: 26px 40px 56px; max-width: 1100px; container-type: inline-size; container-name: inv; }
+       queries don't reflect how little room the table actually has. Fills the
+       full width of its area (no capped column) so the table spans the pane. */
+    .inv-wrap { padding: 26px 40px 56px; max-width: none; container-type: inline-size; container-name: inv; }
 
     /* Header — serif title + a line of details, mirroring the Product
        Portfolio module's .pf-head / .pf-head-title / .pf-head-meta. */

@@ -496,12 +496,16 @@ function boot() {
         body.classList.toggle('mkt-chat-wide', tier >= 1);
         body.classList.toggle('mkt-chat-triple', tier >= 2);
       },
+      /* Every chat-driven intent (a chip, a scorecard, an inline suggestion, or
+         a mirrored body CTA) reflects back onto the page: scroll the matching
+         section into view and flash it, so the chat and the body always move
+         together. Side-effects (scanner, brand redirect) run first. */
       onIntent: (intent) => {
-        if (intent === 'scan' || intent === 'howscan' || intent === 'ingredients') { openScanner(); return false; }
-        if (intent === 'brand') {
+        if (intent === 'scan' || intent === 'howscan' || intent === 'ingredients') openScanner();
+        else if (intent === 'brand') {
           setTimeout(() => { window.location.href = 'pages/create-account.html'; }, 1900);
-          return false;
         }
+        flashSection(intent);
         return false;
       },
     });
@@ -614,23 +618,59 @@ function boot() {
   /* ===================================================================
      Body ⇄ chat bridge — keep the two modules working together.
 
-     Any CTA in the body module tagged with data-chat-intent mirrors that click
-     into the persistent chat: it drives a real chat turn (user line + routed
-     WISEai reply) AND triggers the same side-effects a matching chip would (open
-     the scanner, etc.), so the conversation always reflects what you click on
-     the page. Route navigations already announce themselves in the chat via
-     navigate()/announceRoute, so those links are left untagged to avoid doubling
-     up — this bridge is for same-page CTAs, app-store badges and the like.
+     Clicking in the body module drives the persistent chat so the conversation
+     always reflects what you touch on the page:
+
+       1) An element explicitly tagged with data-chat-intent mirrors that exact
+          intent (with an optional data-chat-say user line).
+       2) ANY other meaningful control (button, card, in-page link) that lives
+          inside a section tagged data-chat-section="<intent>" falls back to
+          that section's intent — so untagged CTAs across every page still land
+          the visitor on the right thread instead of doing nothing.
+
+     Either way it drives a real chat turn (user line + routed WISEai reply) and
+     the same side-effects a matching chip would (open the scanner, flash the
+     section, etc.). Links that navigate to ANOTHER marketing route are left to
+     the client-side router, which already announces the page switch in the chat
+     via announceRoute() — so we don't double up on those.
   =================================================================== */
+  /* CTA-like controls only. Bare <button>s are deliberately excluded so media
+     and utility controls (video play/sound/CC, gallery arrows) inside a tagged
+     section don't fire a stray chat turn — only real calls-to-action do. */
+  const BODY_SYNC_INTERACTIVE = 'a[href], .mkt-btn, .mkt-do-card, .mkt-pillar, .mkt-choice, .mkt-plan, .mkt-badge, [data-chat]';
   document.addEventListener('click', (e) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const el = e.target.closest('[data-chat-intent]');
-    if (!el) return;
+    if (!chat) return;
     const bodyModule = document.getElementById('mkt-body-module');
-    if (!bodyModule || !bodyModule.contains(el)) return; // only body CTAs, never the chat's own chips
-    const intent = el.getAttribute('data-chat-intent');
-    if (!intent || !chat) return;
-    const say = el.getAttribute('data-chat-say');
+    if (!bodyModule) return;
+
+    // 1) Explicit tag wins.
+    let el = e.target.closest('[data-chat-intent]');
+    let intent = null;
+    let say = null;
+    if (el && bodyModule.contains(el)) {
+      intent = el.getAttribute('data-chat-intent');
+      say = el.getAttribute('data-chat-say');
+    } else {
+      // 2) Fallback: a meaningful control inside a chat-tagged section.
+      el = e.target.closest(BODY_SYNC_INTERACTIVE);
+      if (!el || !bodyModule.contains(el)) return;
+      // Leave cross-route navigation to the router (it announces the switch).
+      if (el.tagName === 'A') {
+        const href = el.getAttribute('href') || '';
+        if (href && !href.startsWith('#') && href !== '#') {
+          const url = new URL(href, location.href);
+          const rk = FILE_TO_ROUTE[fileOf(url.pathname)];
+          const goesElsewhere = rk && fileOf(url.pathname) !== fileOf(location.pathname);
+          if (goesElsewhere) return;
+        }
+      }
+      const section = el.closest('[data-chat-section]');
+      if (!section) return;
+      intent = section.getAttribute('data-chat-section');
+    }
+
+    if (!intent) return;
     chat.sendIntent(intent, say != null ? say : INTENT_ASKS[intent]);
     // On mobile the chat is a slide-in panel — surface it so the reply is seen.
     if (window.matchMedia('(max-width: 900px)').matches) setChatOpen(true);
@@ -640,6 +680,29 @@ function boot() {
     const href = el.getAttribute('href');
     if (el.tagName === 'A' && (!href || href === '#')) e.preventDefault();
   });
+
+  /* ---- Chat → body: scroll the matching section into view and flash it ---- */
+  function flashSection(intent) {
+    if (!intent) return;
+    const bodyModule = document.getElementById('mkt-body-module');
+    if (!bodyModule) return;
+    let sel;
+    try { sel = `[data-chat-section="${(window.CSS && CSS.escape) ? CSS.escape(intent) : intent}"]`; }
+    catch (_) { sel = `[data-chat-section="${intent}"]`; }
+    const section = bodyModule.querySelector(sel);
+    // Focus mode hides the body; nothing to reflect onto there.
+    if (!section || body.classList.contains('mkt-chat-focus')) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Only scroll when the section isn't already comfortably in view, so a chip
+    // for what you're already reading doesn't yank the page around.
+    const rect = section.getBoundingClientRect();
+    const inView = rect.top >= 0 && rect.top < window.innerHeight * 0.5;
+    if (!inView) section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    section.classList.remove('is-chat-focus');
+    void section.offsetWidth; /* restart the animation on repeat clicks */
+    section.classList.add('is-chat-focus');
+    section.addEventListener('animationend', () => section.classList.remove('is-chat-focus'), { once: true });
+  }
 }
 
 /* Resolve a route key from a pathname, with an explicit hint (body[data-mkt-route])
