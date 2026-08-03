@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" class="mkt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing · WISE</title>
+  <meta name="description" content="WISE pricing, in one place — the WISEcode UPF Detector and WISEcoach are free, WISEai scales from a free tier by token usage, WISEip is built for brands, and WISEalliance is free for students and paid for professionals." />
+  <script>
+    (function () { try { var t = localStorage.getItem('wise-theme'); document.documentElement.classList.toggle('dark', t === 'dark'); } catch (e) {} })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- Legacy Material Icons — the shared WISEai chat module renders its controls with <span class="material-icons">. -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="marketing.css" />
+  <!-- The exact product WISEai chat module styles (shared across the marketing surface). -->
+  <link rel="stylesheet" href="wiseai-chat.css" />
+  <!-- Hand the page to the shared marketing shell (nav + persistent chat + router). -->
+  <script>window.__WISE_MKT_SHELL__ = true;</script>
+</head>
+<body class="mkt mkt-appshell" data-mkt-route="pricing">
+
+  <!-- Shared nav + persistent WISEai chat rail are injected by js/marketing-shell.js.
+       Pricing gathers every WISE product's plan into one page — free consumer apps,
+       WISEai's token tiers, WISEip for brands, and WISEalliance's two paths. -->
+  <div id="mkt-body-module">
+
+  <main>
+    <!-- ============================================================
+         SECTION · Hero
+    ============================================================= -->
+    <section id="hero" class="mkt-hero">
+      <div class="mkt-shell">
+        <div class="mkt-hero-copy mkt-reveal" style="max-width:760px;margin-inline:auto;text-align:center;justify-items:center">
+          <span class="mkt-eyebrow">Pricing</span>
+          <h1 class="mkt-hero-title">Food Truth<sup class="mkt-tm">™</sup> for everyone — <span class="mkt-accent">priced honestly.</span></h1>
+          <p class="mkt-lede" style="margin-inline:auto">Every part of WISE, and exactly what it costs. Our consumer tools are free because food truth shouldn't have a paywall. The tools that power brands and researchers scale with what you use — no surprises, no fine print.</p>
+          <div class="mkt-hero-actions" style="justify-content:center">
+            <a class="mkt-btn mkt-btn-primary" href="#consumer">See the plans <span class="material-symbols-outlined" style="font-size:20px">arrow_downward</span></a>
+            <a class="mkt-btn mkt-btn-ghost" href="index.html#cta" data-chat-intent="getapp">Get the app</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · For everyone (free consumer apps)
+    ============================================================= -->
+    <section id="consumer" class="mkt-section mkt-section--tight">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">For everyone</span>
+          <h2 class="mkt-section-title">Free, and always will be</h2>
+          <p class="mkt-lede" style="margin-inline:auto">The tools that put food truth in your pocket cost nothing. Download, scan, and get coached — no account, no trial, no catch.</p>
+        </div>
+        <div class="mkt-pricing-grid mkt-pricing-grid--two mkt-reveal">
+          <article class="mkt-plan">
+            <span class="mkt-plan-badge">Free</span>
+            <div class="mkt-plan-head">
+              <span class="mkt-plan-icon"><span class="material-symbols-outlined">search</span></span>
+              <h3 class="mkt-plan-name">WISEcode UPF Detector<sup class="mkt-tm">™</sup></h3>
+              <p class="mkt-plan-tagline">Scan any product for an instant ultra-processed verdict.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$0</span>
+              <span class="mkt-plan-period">forever</span>
+            </div>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Unlimited barcode &amp; product scans</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Plain-language ingredient breakdowns</li>
+              <li><span class="material-symbols-outlined">check_circle</span> NFP+™ standard UPF classification on every food</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Non-UPF Verified™ Shield spotting in-store</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="index.html#cta" data-chat-intent="getapp">Get the app</a>
+            </div>
+          </article>
+
+          <article class="mkt-plan">
+            <span class="mkt-plan-badge">Free</span>
+            <div class="mkt-plan-head">
+              <span class="mkt-plan-icon"><span class="material-symbols-outlined">restaurant_menu</span></span>
+              <h3 class="mkt-plan-name">WISEcoach<sup class="mkt-tm">™</sup></h3>
+              <p class="mkt-plan-tagline">Your AI nutrition coach, tuned to your goals.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$0</span>
+              <span class="mkt-plan-period">forever</span>
+            </div>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Goal-based guidance — energy, sleep, fewer UPFs</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Thousands of food attributes weighed for you</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Plain-language swaps, right when you're deciding</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Learns your tastes and habits over time</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-coach.html" data-chat-intent="coach">Explore WISEcoach</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · WISEai — token-based tiers
+    ============================================================= -->
+    <section id="wiseai" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">WISEai™</span>
+          <h2 class="mkt-section-title">Start free, scale as you ask more</h2>
+          <p class="mkt-lede" style="margin-inline:auto">WISEai is priced on how much you use it — measured in tokens, the units of the questions you ask and the answers it writes. Everyday use is free; power users move up as they go.</p>
+        </div>
+        <div class="mkt-pricing-grid mkt-pricing-grid--sync mkt-reveal">
+          <article class="mkt-plan">
+            <span class="mkt-plan-badge">Free</span>
+            <div class="mkt-plan-head">
+              <h3 class="mkt-plan-name">Basic</h3>
+              <p class="mkt-plan-tagline">Everything most people need to eat wiser.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$0</span>
+              <span class="mkt-plan-period">/ month</span>
+            </div>
+            <p class="mkt-plan-note">Includes a generous monthly token allowance.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Ask WISEai about any food, ingredient or label</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Monthly token allowance for everyday questions</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Built on the NFP+™ food-information platform</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-wiseai.html">Start free</a>
+            </div>
+          </article>
+
+          <article class="mkt-plan mkt-plan--featured">
+            <span class="mkt-plan-badge">Most popular</span>
+            <div class="mkt-plan-head">
+              <h3 class="mkt-plan-name">Plus</h3>
+              <p class="mkt-plan-tagline">More room to explore, for the daily user.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$9</span>
+              <span class="mkt-plan-period">/ month</span>
+            </div>
+            <p class="mkt-plan-note">A larger token pool for heavier use.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Everything in Basic</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Much larger monthly token allowance</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Priority responses at peak times</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Deeper, longer conversations</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-wiseai.html">Choose Plus</a>
+            </div>
+          </article>
+
+          <article class="mkt-plan">
+            <span class="mkt-plan-badge">Pro</span>
+            <div class="mkt-plan-head">
+              <h3 class="mkt-plan-name">Pro</h3>
+              <p class="mkt-plan-tagline">Maximum headroom for power users.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$29</span>
+              <span class="mkt-plan-period">/ month</span>
+            </div>
+            <p class="mkt-plan-note">The highest token tier, plus overage as needed.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Everything in Plus</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Highest monthly token allowance</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Pay-as-you-go tokens beyond your plan</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Early access to new WISEai capabilities</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-ghost" href="marketing-wiseai.html">Choose Pro</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · WISEip — for brands & retailers (no free plan)
+    ============================================================= -->
+    <section id="wiseip" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">WISEip™ · for brands &amp; retailers</span>
+          <h2 class="mkt-section-title">Built for brands — priced to your portfolio</h2>
+          <p class="mkt-lede" style="margin-inline:auto">WISEip is where brands verify their food and query the answer engine across a million-plus products. It's a professional platform, so there's no free tier — pricing scales with the products you verify and the depth of access you need.</p>
+        </div>
+        <div class="mkt-pricing-grid mkt-pricing-grid--one mkt-reveal">
+          <article class="mkt-plan mkt-plan--featured">
+            <span class="mkt-plan-badge">For brands</span>
+            <div class="mkt-plan-head">
+              <span class="mkt-plan-icon"><span class="material-symbols-outlined">dataset</span></span>
+              <h3 class="mkt-plan-name">WISEip<sup class="mkt-tm">™</sup></h3>
+              <p class="mkt-plan-tagline">Non-UPF verification and the food answer engine.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">Custom</span>
+              <span class="mkt-plan-period">usage-based, from day one</span>
+            </div>
+            <p class="mkt-plan-note">No free plan — priced by portfolio size and access.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Non-UPF Verified™ verification for your catalog</li>
+              <li><span class="material-symbols-outlined">check_circle</span> GRAS Reviewed ingredient safety screening</li>
+              <li><span class="material-symbols-outlined">check_circle</span> The food answer engine across 1M+ products</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Reformulation tools and board-ready reports</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Scales as you add products and seats</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html#verify" data-chat-intent="verify">Talk to us</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · WISEalliance — two paths
+    ============================================================= -->
+    <section id="alliance" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">WISEalliance™</span>
+          <h2 class="mkt-section-title">Two ways into the alliance</h2>
+          <p class="mkt-lede" style="margin-inline:auto">WISEalliance is our community of scientists, researchers and clinicians who validate the food truth. If you're still training, it's on us — if you're an established expert putting the tools to work, your plan helps sustain the mission.</p>
+        </div>
+        <div class="mkt-pricing-grid mkt-pricing-grid--two mkt-reveal">
+          <article class="mkt-plan">
+            <span class="mkt-plan-badge">Free · Students</span>
+            <div class="mkt-plan-head">
+              <span class="mkt-plan-icon"><span class="material-symbols-outlined">school</span></span>
+              <h3 class="mkt-plan-name">Scholar</h3>
+              <p class="mkt-plan-tagline">For students and trainees learning the science.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$0</span>
+              <span class="mkt-plan-period">with verification</span>
+            </div>
+            <p class="mkt-plan-note">Requires proof of current enrollment — we help you get set up.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Full alliance membership, free while you study</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Verify your enrollment and we help you onboard</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Review methods and contribute to the standard</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Learn alongside working scientists and clinicians</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="pages/create-account.html">Apply as a student</a>
+            </div>
+          </article>
+
+          <article class="mkt-plan mkt-plan--featured">
+            <span class="mkt-plan-badge">Professionals</span>
+            <div class="mkt-plan-head">
+              <span class="mkt-plan-icon"><span class="material-symbols-outlined">workspace_premium</span></span>
+              <h3 class="mkt-plan-name">Professional</h3>
+              <p class="mkt-plan-tagline">For established experts using WISE for good in the world.</p>
+            </div>
+            <div class="mkt-plan-price">
+              <span class="mkt-plan-amount">$X</span>
+              <span class="mkt-plan-period">/ year</span>
+            </div>
+            <p class="mkt-plan-note">Your membership sustains the community and its work.</p>
+            <div class="mkt-plan-divider"></div>
+            <ul class="mkt-plan-features">
+              <li><span class="material-symbols-outlined">check_circle</span> Full alliance membership and validation tools</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Put WISE to work in your research and practice</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Shape the NFP+™ standard as a recognized expert</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Support open, checkable food truth for everyone</li>
+            </ul>
+            <div class="mkt-plan-cta">
+              <a class="mkt-btn mkt-btn-primary" href="pages/create-account.html">Apply to join</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Final CTA
+    ============================================================= -->
+    <section id="cta" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner mkt-mission-inner--choices">
+            <div class="mkt-choice-lead">
+              <span class="mkt-eyebrow" style="color:rgba(255,255,255,.85)">Still deciding?</span>
+              <h2>Two ways in — pick the one that's you.</h2>
+              <p>Whether you're deciding what to eat or deciding what to put on the shelf, WISE meets you where you are. Not sure? WISEai can point you to the right starting point.</p>
+            </div>
+            <div class="mkt-choice-grid">
+              <a class="mkt-choice" href="index.html#cta" data-chat-intent="getapp">
+                <span class="mkt-choice-icon"><span class="material-symbols-outlined">smartphone</span></span>
+                <span class="mkt-choice-body">
+                  <span class="mkt-choice-kicker">For shoppers</span>
+                  <span class="mkt-choice-title">Get the app</span>
+                  <span class="mkt-choice-desc">Scan any product for an instant food-truth verdict — free, forever.</span>
+                </span>
+                <span class="mkt-choice-arrow material-symbols-outlined">arrow_forward</span>
+              </a>
+              <a class="mkt-choice" href="marketing-enterprise.html#verify" data-chat-intent="verify">
+                <span class="mkt-choice-icon"><span class="material-symbols-outlined">storefront</span></span>
+                <span class="mkt-choice-body">
+                  <span class="mkt-choice-kicker">For brands &amp; retailers</span>
+                  <span class="mkt-choice-title">I'm a brand or retailer</span>
+                  <span class="mkt-choice-desc">Verify your catalog and query the food answer engine across 1M+ products.</span>
+                </span>
+                <span class="mkt-choice-arrow material-symbols-outlined">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer is injected once by js/marketing-shell.js (shared across all
+       marketing pages), so it lives OUTSIDE #mkt-body-module. -->
+
+  </div><!-- /#mkt-body-module -->
+
+  <script defer src="js/marketing.js"></script>
+  <script type="module" src="js/marketing-shell.js"></script>
+</body>
+</html>

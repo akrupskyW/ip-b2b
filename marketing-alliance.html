@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" class="mkt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISEalliance™ · WISE</title>
+  <meta name="description" content="WISEalliance™ is WISE's community of independent scientists, researchers and clinicians who validate the food truth behind every product we scan — the people, the process, and the science that keep our results honest." />
+  <script>
+    (function () { try { var t = localStorage.getItem('wise-theme'); document.documentElement.classList.toggle('dark', t === 'dark'); } catch (e) {} })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- Legacy Material Icons — the shared WISEai chat module renders its controls with <span class="material-icons">. -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="marketing.css" />
+  <!-- The exact product WISEai chat module styles (shared across the marketing surface). -->
+  <link rel="stylesheet" href="wiseai-chat.css" />
+  <!-- Hand the page to the shared marketing shell (nav + persistent chat + router). -->
+  <script>window.__WISE_MKT_SHELL__ = true;</script>
+</head>
+<body class="mkt mkt-appshell" data-mkt-route="alliance">
+
+  <!-- Shared nav + persistent WISEai chat rail are injected by js/marketing-shell.js.
+       WISEalliance™ is the community of scientists and researchers that validate
+       the food truth behind every product WISE scans. -->
+  <div id="mkt-body-module">
+
+  <main>
+    <!-- ============================================================
+         SECTION · Hero
+    ============================================================= -->
+    <section id="hero" class="mkt-hero">
+      <div class="mkt-shell">
+        <div class="mkt-hero-grid">
+          <div class="mkt-hero-copy mkt-reveal">
+            <span class="mkt-eyebrow">WISEalliance™</span>
+            <h1 class="mkt-hero-title">The scientists behind <span class="mkt-accent">the food truth.</span></h1>
+            <p class="mkt-lede">WISEalliance™ is our community of independent scientists, researchers and clinicians from around the world. They validate how WISE classifies and scores the foods we scan — so every verdict you see is backed by real expertise, not just an algorithm.</p>
+            <div class="mkt-hero-actions">
+              <a class="mkt-btn mkt-btn-primary" href="#join" data-chat-intent="alliance">Join the alliance <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="#how">How validation works</a>
+            </div>
+          </div>
+          <div class="mkt-hero-media mkt-reveal">
+            <video autoplay muted loop playsinline poster="assets/marketing/hero-poster.jpg"><source src="assets/marketing/hero.mp4" type="video/mp4" /><source src="assets/marketing/hero.webm" type="video/webm" /></video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · What it is
+    ============================================================= -->
+    <section id="what" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <span class="mkt-eyebrow">What it is</span>
+            <h2 class="mkt-feature-title">Food truth, proven by people — not just machines.</h2>
+            <p class="mkt-lede">WISE scans hundreds of thousands of foods and evaluates thousands of attributes on each one. WISEalliance™ is the human layer that keeps that work honest: a standing community of experts who review our methods, challenge our conclusions, and confirm that a WISE result reflects the best available science.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Independent scientists, researchers and clinicians — not on WISE's payroll to say yes</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Every classification method is open to expert review and challenge</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Validation spans nutrition, food science, toxicology and clinical practice</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Findings feed directly back into the NFP+™ standard and our scoring</li>
+            </ul>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/hero-poster.jpg" alt="Scientists and researchers reviewing food data together" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Who's in the alliance
+    ============================================================= -->
+    <section id="members" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">Who's in the alliance</span>
+          <h2 class="mkt-section-title">A community of experts across every corner of food and health</h2>
+          <p class="mkt-lede" style="margin-inline:auto">No single discipline can capture the full truth about a food. The alliance brings together the specialists who, together, can.</p>
+        </div>
+        <div class="mkt-pillars-grid">
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">nutrition</span></span>
+            <h3 class="mkt-pillar-title">Nutrition scientists</h3>
+            <p class="mkt-pillar-body">Researchers who study how foods and their ingredients affect the body, and who ground our scoring in current nutritional evidence.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">science</span></span>
+            <h3 class="mkt-pillar-title">Food scientists &amp; technologists</h3>
+            <p class="mkt-pillar-body">Experts in how food is made and processed — the people who can tell industrial transformation from a whole-food ingredient.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">biotech</span></span>
+            <h3 class="mkt-pillar-title">Toxicologists</h3>
+            <p class="mkt-pillar-body">Specialists who assess ingredient safety and exposure, reinforcing the GRAS Reviewed layer beneath the Non-UPF standard.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">stethoscope</span></span>
+            <h3 class="mkt-pillar-title">Physicians &amp; clinicians</h3>
+            <p class="mkt-pillar-body">Doctors and registered dietitians who see the real-world impact of diet, keeping our guidance grounded in patient outcomes.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">public</span></span>
+            <h3 class="mkt-pillar-title">Public-health researchers</h3>
+            <p class="mkt-pillar-body">Population-level experts who connect what's in the food supply to how communities actually eat and live.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">agriculture</span></span>
+            <h3 class="mkt-pillar-title">Agricultural &amp; supply experts</h3>
+            <p class="mkt-pillar-body">Specialists who trace ingredients back to the source, so a verdict accounts for where and how food is really produced.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · How validation works
+    ============================================================= -->
+    <section id="how" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">How it works</span>
+          <h2 class="mkt-section-title">How the alliance validates a result</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Every food WISE scans passes through a loop where expert judgment and machine analysis check each other.</p>
+        </div>
+        <div class="mkt-pillars-grid mkt-pillars-grid--steps">
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 01</span>
+            <h3 class="mkt-pillar-title">WISE analyzes the food</h3>
+            <p class="mkt-pillar-body">Our engine evaluates thousands of attributes per product against the NFP+™ standard, producing a UPF classification and an ingredient-level breakdown.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 02</span>
+            <h3 class="mkt-pillar-title">Experts review the method</h3>
+            <p class="mkt-pillar-body">Alliance members scrutinize how we reach a verdict — the criteria, the thresholds, the evidence — and push back where the science says we should.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 03</span>
+            <h3 class="mkt-pillar-title">Findings refine the standard</h3>
+            <p class="mkt-pillar-body">Their input is folded back into the NFP+™ standard and our scoring, so a correction improves every future result, not just one product.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 04</span>
+            <h3 class="mkt-pillar-title">The result stays current</h3>
+            <p class="mkt-pillar-body">As new research lands, the alliance keeps our methods up to date — a WISE verdict reflects today's evidence, not a fixed snapshot.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Why it matters
+    ============================================================= -->
+    <section id="why" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner">
+            <div style="display:grid;gap:14px">
+              <span class="mkt-eyebrow" style="color:rgba(255,255,255,.85)">Why it matters</span>
+              <h2>Trust in food truth has to be earned, ingredient by ingredient and expert by expert.</h2>
+              <p>Anyone can publish a score. What makes a WISE verdict worth trusting is that independent experts have stood behind the method that produced it. The alliance is how we make our science checkable rather than something you simply take on faith — so brands can stand behind their labels and shoppers never have to settle for "trust us."</p>
+            </div>
+            <div class="mkt-mission-badges">
+              <div class="mkt-seal">
+                <span class="material-symbols-outlined mkt-seal-icon">groups</span>
+                <span class="mkt-seal-txt"><strong>WISEalliance™</strong><small>Independent experts, validating the food truth</small></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · The alliance by the numbers
+    ============================================================= -->
+    <section id="impact" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">The alliance by the numbers</span>
+          <h2 class="mkt-section-title">Expert review at the scale of the food supply</h2>
+          <p class="mkt-lede" style="margin-inline:auto">The community's work touches everything WISE scans — here's the reach of that validation.</p>
+        </div>
+        <div class="mkt-stats-grid mkt-reveal">
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="240" data-count-suffix="+" data-count-duration="7000">0</span><span class="mkt-stat-label">Scientists, researchers and clinicians in the community</span></div>
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="943415">0</span><span class="mkt-stat-label">Packaged foods analyzed under expert-validated methods</span></div>
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="12483" data-count-suffix="+">0</span><span class="mkt-stat-label">Attributes evaluated per food, grounded in the science</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Join / Final CTA
+    ============================================================= -->
+    <section id="join" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner">
+            <div style="display:grid;gap:14px">
+              <span class="mkt-eyebrow" style="color:rgba(255,255,255,.85)">Join the alliance</span>
+              <h2>Are you a scientist, researcher or clinician? Help validate the food truth.</h2>
+              <p>WISEalliance™ is always growing. If you study food, nutrition, safety or health and want to help make the truth about what we eat transparent and checkable, we'd love to have you review the science alongside us.</p>
+            </div>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-ghost" style="background:#fff;color:var(--primary);border-color:#fff" href="pages/create-account.html">Apply to join</a>
+              <a class="mkt-btn mkt-btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" href="marketing-nonupf.html">See Non-UPF Verified™</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer is injected once by js/marketing-shell.js (shared across all
+       marketing pages), so it lives OUTSIDE #mkt-body-module. -->
+
+  </div><!-- /#mkt-body-module -->
+
+  <script defer src="js/marketing.js"></script>
+  <script type="module" src="js/marketing-shell.js"></script>
+</body>
+</html>

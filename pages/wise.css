@@ -678,6 +678,61 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
   color: var(--sec-red-text);
 }
 
+/* Admin controls inside the More popover — pink text + icon, with a compact
+   switch on the toggle rows (the two hero views that moved into the menu). */
+.topbar-menu-item--admin { color: rgb(219, 39, 119); }
+.topbar-menu-item--admin .topbar-menu-icon { color: rgb(219, 39, 119) !important; }
+.topbar-menu-item--admin:hover {
+  background: rgba(236, 72, 153, 0.12);
+  color: rgb(219, 39, 119);
+}
+html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16); }
+
+/* Teensy ADMIN badge — pink fill, white letters. margin-left:auto keeps it
+   pinned to the row's right edge so it never disrupts the popover's flow. */
+.topbar-menu-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgb(219, 39, 119);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
+/* Compact pink switch on the toggle rows (mirrors the old hero brand toggle).
+   The ADMIN badge carries margin-left:auto to push the badge+switch pair to the
+   row's right edge, so the switch follows the badge on the row's own gap. */
+.topbar-menu-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 26px;
+  height: 16px;
+  border-radius: 9999px;
+  background: rgba(236, 72, 153, 0.28);
+  transition: background 0.18s ease;
+}
+.topbar-menu-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgb(219, 39, 119);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.topbar-menu-item--toggle[aria-checked="true"] .topbar-menu-switch {
+  background: rgb(219, 39, 119);
+}
+.topbar-menu-item--toggle[aria-checked="true"] .topbar-menu-switch-thumb {
+  transform: translateX(10px);
+  background: #fff;
+}
+
 /* ===== Avatar / user-menu popover (matches ai-chat.html) =====
    Used by the MC profile chip in the top bar to surface profile actions.
    Text-size and theme controls live in the Appearance popover (crossword icon). */
@@ -4077,11 +4132,139 @@ html.dark .dash-eyebrow.is-primary { color: var(--primary-bright); }
   .dash-discovery-track::after { animation: none; }
 }
 
-/* The dashboard body is hidden only for the brief moment before the first
-   product is found; it then slides in and keeps a live "loading" pulse while
-   discovery continues, so the charts read as filling in as more items arrive. */
+/* On first load the dashboard body opens as a shimmering skeleton while the
+   discovery bar is still early (before ~30%); once it crosses that mark the
+   skeleton drops and the surface slides in, then keeps a live "loading" pulse
+   while discovery continues so the charts read as filling in as more items
+   arrive. `is-discovering` is retained as a hard hide for any legacy path. */
 .dash.is-discovering { display: none; }
 .dash.is-revealed { animation: dashReveal .55s cubic-bezier(.22, .61, .36, 1) both; }
+
+/* ---------------------------------------------------------------------
+   First-load skeleton. The section frames (the claim row, the two donut
+   cards, the pillars heading + its three metric cards, the CTA banner) stay
+   in place while each PIECE inside them — titles, big numbers, captions,
+   donuts, legends, metric bars and buttons — becomes its own shimmering
+   placeholder. The real content is kept in the layout (transparent), so the
+   skeleton mirrors the true structure and nothing shifts when the numbers +
+   charts populate at ~30%.
+--------------------------------------------------------------------- */
+.dash.is-skeleton { animation: dashReveal .4s ease both; }
+
+/* Blank every glyph of real text while the skeleton is up, so nothing bleeds
+   through the shimmer pieces regardless of per-element colours. */
+.dash.is-skeleton,
+.dash.is-skeleton * { color: transparent !important; }
+.dash.is-skeleton .dash-score-toast > * { visibility: hidden; }
+
+/* Shared shimmer sweep for every placeholder piece. */
+.dash.is-skeleton .dash-count-up,
+.dash.is-skeleton .dash-pct,
+.dash.is-skeleton .dash-score-num .d,
+.dash.is-skeleton .dash-bignum-cap,
+.dash.is-skeleton .dash-score-cap,
+.dash.is-skeleton .dash-card-title,
+.dash.is-skeleton .dash-section-title,
+.dash.is-skeleton .dash-pillars-intro,
+.dash.is-skeleton .dash-metric-name,
+.dash.is-skeleton .dash-donut-label,
+.dash.is-skeleton .dash-donut-sub,
+.dash.is-skeleton .dash-donut-legend-title,
+.dash.is-skeleton .dash-legend-item,
+.dash.is-skeleton .dash-btn,
+.dash.is-skeleton .dash-text-link,
+.dash.is-skeleton .dash-report-link,
+.dash.is-skeleton .dash-pillars-cta-headline,
+.dash.is-skeleton .dash-metric-track,
+.dash.is-skeleton .dash-ws-health-track,
+.dash.is-skeleton .dash-pillar-track,
+.dash.is-skeleton .dash-score-toast,
+.dash.is-skeleton .dash-donut::after {
+  color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 7px;
+  background-color: color-mix(in srgb, var(--text) 9%, transparent) !important;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text) 14%, transparent) 50%,
+    transparent 100%
+  ) !important;
+  background-repeat: no-repeat !important;
+  background-size: 220% 100% !important;
+  animation: dashSkeletonShimmer 1.4s ease-in-out infinite;
+}
+
+/* A little extra breathing room so short pieces still read as bars. */
+.dash.is-skeleton .dash-card-title,
+.dash.is-skeleton .dash-section-title { min-height: 1.1em; }
+.dash.is-skeleton .dash-pillars-intro { min-height: 2.4em; }
+.dash.is-skeleton .dash-score-toast { min-height: 96px; }
+
+/* The donut becomes a shimmering disc sized to its real footprint. */
+.dash.is-skeleton .dash-donut { position: relative; }
+.dash.is-skeleton .dash-donut::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50% !important;
+}
+.dash.is-skeleton .dash-donut-svg,
+.dash.is-skeleton .dash-donut-center { visibility: hidden; }
+
+/* Hide the non-content chrome so only the skeleton pieces show. */
+.dash.is-skeleton .material-icons,
+.dash.is-skeleton .material-symbols-outlined,
+.dash.is-skeleton .dash-stamp-icon,
+.dash.is-skeleton .dash-kebab-wrap,
+.dash.is-skeleton .dash-brand-toggle,
+.dash.is-skeleton .dash-dot,
+.dash.is-skeleton .dash-claim-divider,
+.dash.is-skeleton .dash-metric-fill,
+.dash.is-skeleton .dash-ws-health-fill,
+.dash.is-skeleton .dash-pillar-fill {
+  visibility: hidden !important;
+}
+
+/* Neutralise the CTA banner's artwork so its headline + button read as a
+   clean skeleton section rather than a finished banner. */
+.dash.is-skeleton .dash-pillars-cta .dash-cta-banner {
+  background: color-mix(in srgb, var(--text) 4%, transparent) !important;
+  box-shadow: none !important;
+}
+.dash.is-skeleton .dash-cta-bug,
+.dash.is-skeleton .dash-cta-banner-scrim { visibility: hidden; }
+
+@keyframes dashSkeletonShimmer {
+  0% { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash.is-skeleton { animation: none; }
+  .dash.is-skeleton .dash-count-up,
+  .dash.is-skeleton .dash-pct,
+  .dash.is-skeleton .dash-score-num .d,
+  .dash.is-skeleton .dash-bignum-cap,
+  .dash.is-skeleton .dash-score-cap,
+  .dash.is-skeleton .dash-card-title,
+  .dash.is-skeleton .dash-section-title,
+  .dash.is-skeleton .dash-pillars-intro,
+  .dash.is-skeleton .dash-metric-name,
+  .dash.is-skeleton .dash-donut-label,
+  .dash.is-skeleton .dash-donut-sub,
+  .dash.is-skeleton .dash-donut-legend-title,
+  .dash.is-skeleton .dash-legend-item,
+  .dash.is-skeleton .dash-btn,
+  .dash.is-skeleton .dash-text-link,
+  .dash.is-skeleton .dash-report-link,
+  .dash.is-skeleton .dash-pillars-cta-headline,
+  .dash.is-skeleton .dash-metric-track,
+  .dash.is-skeleton .dash-ws-health-track,
+  .dash.is-skeleton .dash-pillar-track,
+  .dash.is-skeleton .dash-score-toast,
+  .dash.is-skeleton .dash-donut::after { animation: none; }
+}
 @keyframes dashReveal {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
@@ -8863,6 +9046,269 @@ html.dark .adm-icon-btn--danger { color: #FF9E96; }
 body[data-adm-page] #agent-main-header { display: none; }
 body[data-adm-page] .agent-main-scroll { padding: 0; }
 body[data-adm-page] #modules-row { margin-top: 0; padding-bottom: 0; }
+
+/* =============================================================
+   Guiding Stars view (overview.html) — a second pink hero toggle
+   swaps the surface below the brand banner for the Guiding Stars
+   analytics. Uses the shared dashboard palette, cards and chart
+   primitives; only the content + chart types mirror the reference.
+============================================================= */
+
+/* Two hero toggles (brand compare + Guiding Stars) can wrap under the title on
+   tight banners instead of overflowing. */
+.dash-hero-row { flex-wrap: wrap; row-gap: 8px; }
+
+/* Stacked title + note in every Stars card head. */
+.dash--stars .dash-card-topbar-lead { flex-direction: column; align-items: flex-start; gap: 3px; }
+.dash--stars .dash-card-topbar-lead .dash-card-title { margin: 0; }
+.dash--stars .dash-card-topbar-lead .dash-ing-note { margin: 0; }
+
+/* "Add to Report" pin button on Stars cards. */
+.dash-star-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dash-star-report-btn .material-icons { font-size: 15px; transform: rotate(45deg); }
+.dash-star-report-btn:hover { background: var(--primary-soft); color: var(--text); border-color: var(--primary); }
+
+/* ---- Star Movers ---- */
+.dash-star-movers { display: flex; flex-direction: column; gap: 12px; }
+.dash-star-movers-lead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+.dash-star-movers-lead strong { color: var(--text); }
+.dash-star-movers-lead .material-icons { font-size: 18px; color: var(--ter-amber); }
+.dash-star-movers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.dash-star-mover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.06); }
+.dash-star-mover:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
+.dash-star-mover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dash-star-mover-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+.dash-star-mover-title .material-icons { font-size: 15px; color: var(--text-muted); }
+.dash-star-mover-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.dash-star-mover-cta .material-icons { font-size: 13px; }
+.dash-star-mover-num {
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.dash-star-mover-note { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ---- Count tiles ---- */
+.dash-star-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+.dash-star-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 16px 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  text-align: left;
+}
+html.dark .dash-star-tile { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.06); }
+button.dash-star-tile { cursor: pointer; font: inherit; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
+button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
+.dash-star-tile-num {
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.dash-star-tile-label {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.dash-star-tile-sub { font-size: 0.72rem; color: var(--text-subtle); }
+
+/* ---- Tabs (Brands/Owners + Categories) ---- */
+.dash-stars-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-2); border: 1px solid var(--border); }
+.dash-stars-tabs--scroll { flex-wrap: wrap; border-radius: 12px; }
+.dash-stars-tab {
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dash-stars-tab:hover { color: var(--text); }
+.dash-stars-tab.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+
+/* ---- Star Ratings by Brand ---- */
+.dash-stars-brand-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 4px 0 16px;
+}
+.dash-stars-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 220px;
+  max-width: 320px;
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.dash-stars-search .material-icons { font-size: 17px; color: var(--text-subtle); }
+.dash-stars-search input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--text); font: inherit; font-size: 0.85rem; outline: none; }
+.dash-stars-brand-section .dash-donut-legend-group { margin-bottom: 12px; }
+
+/* Vertical stacked bar chart */
+.dash-vbars { display: flex; align-items: flex-end; gap: 8px; padding-top: 6px; }
+.dash-vbar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: stretch; }
+.dash-vbar-track { height: 240px; display: flex; align-items: flex-end; }
+.dash-vbar-col { width: 74%; margin: 0 auto; display: flex; align-items: flex-end; }
+.dash-vbar-stack {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 5px 5px 3px 3px;
+  overflow: hidden;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.dash-vbar-stack.is-vbar-ready { transform: scaleY(1); }
+.dash-vbar-seg { display: block; width: 100%; transition: filter 0.14s ease; }
+.dash-vbar:hover .dash-vbar-seg { filter: brightness(1.08); }
+.dash-vbar-label {
+  margin-top: 10px;
+  height: 62px;
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--text-muted);
+  transform: rotate(-40deg);
+  transform-origin: top right;
+  white-space: nowrap;
+  overflow: visible;
+  text-align: right;
+  align-self: flex-end;
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-vbar-stack { transform: scaleY(1); transition: none; }
+}
+
+.dash-stars-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.dash-stars-pager .dash-text-link { display: inline-flex; align-items: center; gap: 2px; }
+.dash-stars-pager .dash-text-link[disabled] { opacity: 0.4; pointer-events: none; }
+.dash-stars-pager-info { font-size: 0.78rem; color: var(--text-subtle); }
+
+/* ---- Bottom three-up (Quick-Win + category donuts) ---- */
+.dash-three-up { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.dash-donut-row--compact { grid-template-columns: 1fr; justify-items: center; gap: 14px; }
+.dash-donut-row--compact .dash-donut { width: 190px; height: 190px; }
+.dash-donut-row--compact .dash-donut-num { font-size: 1.7rem; }
+.dash-donut-row--compact .dash-donut-legends { width: 100%; padding-right: 0; }
+.dash-stars-cat-panel.is-hidden { display: none; }
+.dash-stars-cat-panel { border: none; box-shadow: none; padding: 0; background: transparent; }
+html.dark .dash-stars-cat-panel { background: transparent; border: none; }
+.dash-stars-cat-panels { margin-top: 14px; }
+.dash-stars-cat-card .dash-stars-tabs { margin-top: 8px; }
+
+/* Responsive — the dashboard is a query container (container-name: dash). */
+@container dash (max-width: 1040px) {
+  .dash-three-up { grid-template-columns: 1fr; }
+  .dash-star-tiles { grid-template-columns: repeat(3, 1fr); }
+  .dash-star-movers-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@container dash (max-width: 720px) {
+  .dash-star-movers-grid { grid-template-columns: 1fr; }
+  .dash-star-tiles { grid-template-columns: repeat(2, 1fr); }
+  .dash-stars-brand-controls { flex-direction: column; align-items: stretch; }
+  .dash-stars-search { max-width: none; }
+  .dash-vbar-label { font-size: 10px; }
+}
 
 /* Narrow container (docked beside chat): collapse the grid tables into
    stacked cards and let toolbars wrap. */

@@ -693,7 +693,14 @@
       font-size: var(--fs-ui);
       line-height: var(--chat-line-height);
       transition: background-color 0.3s ease, color 0.25s ease;
+      /* Anchor the conversation to the bottom: a short thread sits low in the
+         pane (no blank space beneath it) and grows upward as it fills. The
+         auto top-margin on the first line collapses to 0 once the thread is
+         tall enough to scroll, so normal top-to-bottom scrolling still works. */
+      display: flex;
+      flex-direction: column;
     }
+    .chat-messages-area > :first-child { margin-top: auto; }
     @media (min-width: 768px) {
       .chat-messages-area {
         padding: 2.5rem 3rem;
@@ -4897,6 +4904,14 @@
        avatar lines up under the topbar owl and body text under "WISEai". */
     .sc-line { display: flex; align-items: flex-start; gap: 12px; }
     .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
+    /* The member's very first line renders as a large serif headline (the
+       message text only — the timestamp/meta row underneath stays small). */
+    .sc-line-you--first .sc-you-text {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 1.5rem; font-weight: 700; line-height: 1.28;
+      color: var(--text);
+    }
     .sc-avatar {
       flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px;
       border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
@@ -6651,7 +6666,7 @@
       top: calc(100% + 6px);
       right: 0;
       z-index: 80;
-      min-width: 214px;
+      min-width: 244px;
       padding: 6px;
       display: flex;
       flex-direction: column;
@@ -6698,6 +6713,40 @@
     .pf-module-menu-item.is-on { color: var(--primary); }
     .pf-module-menu-item.is-on .material-symbols-outlined,
     .pf-module-menu-item.is-on .material-icons { color: var(--primary); }
+    /* Let a menu item's label take the free space so a trailing badge / switch
+       is pushed to the right edge (used by the Guiding Stars item). */
+    .pf-mi-label { flex: 1 1 auto; }
+    /* ── Guiding Stars menu item ──────────────────────────────────────────
+       Pink-themed row with an "Admin" badge and a proper toggle switch. Unlike
+       the other rows, flipping it keeps the menu open so it reads like a
+       settings switch. */
+    .pf-module-menu-item--gs:hover {
+      background: color-mix(in srgb, var(--pf-pink, #EC4899) 12%, transparent);
+      color: var(--pf-pink, #EC4899);
+    }
+    .pf-module-menu-item--gs:hover .material-symbols-outlined,
+    .pf-module-menu-item--gs:hover .material-icons { color: var(--pf-pink, #EC4899); }
+    .pf-module-menu-item--gs.is-on,
+    .pf-module-menu-item--gs.is-on .material-symbols-outlined,
+    .pf-module-menu-item--gs.is-on .material-icons { color: var(--pf-pink, #EC4899); }
+    .pf-mi-badge {
+      flex-shrink: 0; padding: 2px 6px; border-radius: 999px; line-height: 1;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--pf-pink, #EC4899);
+      background: color-mix(in srgb, var(--pf-pink, #EC4899) 14%, transparent);
+    }
+    .pf-mi-switch {
+      position: relative; flex-shrink: 0; width: 32px; height: 18px; border-radius: 999px;
+      background: var(--surface-3); border: 1px solid var(--border-strong);
+      transition: background 0.16s ease, border-color 0.16s ease;
+    }
+    html.dark .pf-mi-switch { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+    .pf-mi-knob {
+      position: absolute; top: 1px; left: 1px; width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.3); transition: transform 0.16s ease;
+    }
+    .pf-module-menu-item--gs.is-on .pf-mi-switch { background: var(--pf-pink, #EC4899); border-color: var(--pf-pink, #EC4899); }
+    .pf-module-menu-item--gs.is-on .pf-mi-knob { transform: translateX(14px); }
     .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
     .pf-module-menu-item--off:hover {
       background: color-mix(in srgb, #DC3038 14%, transparent);
@@ -7588,13 +7637,222 @@
     /* Board header — serif title + a line of details, mirroring the Compare
        module's .cmp-board-title / .cmp-board-meta so the two modules read
        identically. */
-    .pf-head { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 0; }
+    /* The body now owns the standard module head padding (26px top / 40px sides),
+       so the head sits flush against the same left gutter as the toolbar and
+       cards below it — the title, subtitle, search field and score cards all
+       share one X origin. The head itself carries no extra padding (it used to
+       double up on the body's gutter and push the title ~40px too far right). */
+    .pf-head { display: flex; align-items: flex-start; gap: 16px; padding: 0; }
+    .pf-head-text { min-width: 0; }
+    /* Title and the Guiding Stars toggle share one row so the toggle sits in
+       line with the headline, just to its right — not floated to the far edge. */
+    .pf-head-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .pf-head-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
     .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 3px 0 0; }
 
-    /* Body + views — matches the Compare module's body (14px gutter + gap,
-       flex column, children never squeezed so the board scrolls vertically). */
-    .pf-body { padding: 16px 40px; display: flex; flex-direction: column; gap: 14px; }
+    /* ── Guiding Stars toggle ────────────────────────────────────────────
+       Pink pill switch that sits in line with the board title. Flipping it on
+       adds the .pf-stars-on class to the panel, which reveals the Guiding Stars
+       columns in every table (the cells are built in JS on load). */
+    #portfolio-panel { --pf-pink: #EC4899; --pf-gold: #E0A100; }
+    html.dark #portfolio-panel { --pf-pink: #F472B6; --pf-gold: #FBBF24; }
+    .pf-stars-toggle {
+      display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+      height: 34px; box-sizing: border-box; padding: 0 6px 0 12px;
+      border-radius: 999px !important; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 12px; font-weight: 700; color: var(--text-muted);
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    html.dark .pf-stars-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .pf-stars-toggle .pf-stars-toggle-icon { font-size: 16px !important; line-height: 1 !important; color: var(--text-subtle); transition: color 0.18s ease; }
+    .pf-stars-toggle:hover { border-color: var(--pf-pink); color: var(--text); }
+    .pf-stars-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-pink) 28%, transparent); }
+    .pf-stars-switch {
+      position: relative; width: 34px; height: 20px; flex-shrink: 0; border-radius: 999px;
+      background: var(--surface-3); border: 1px solid var(--border-strong);
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    html.dark .pf-stars-switch { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.16); }
+    .pf-stars-knob {
+      position: absolute; top: 1px; left: 1px; width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.28); transition: transform 0.18s ease;
+    }
+    #portfolio-panel.pf-stars-on .pf-stars-toggle {
+      color: var(--pf-pink); border-color: var(--pf-pink);
+      background: color-mix(in srgb, var(--pf-pink) 12%, var(--surface-2));
+    }
+    #portfolio-panel.pf-stars-on .pf-stars-toggle .pf-stars-toggle-icon { color: var(--pf-pink); }
+    #portfolio-panel.pf-stars-on .pf-stars-switch { background: var(--pf-pink); border-color: var(--pf-pink); }
+    #portfolio-panel.pf-stars-on .pf-stars-knob { transform: translateX(14px); }
+
+    /* Guiding Stars columns — extra table columns (Serving · Category ·
+       Rating · Standardized · Next Star · Key Issues · Ease) that are injected
+       after the Product column and stay hidden until the toggle is on. Rating
+       stacks the as-served stars over the score; Standardized stacks the
+       per-100g stars over the standardized score, so two related figures share
+       one cell instead of four separate columns. They live in the same CSS
+       grid as the rest of the row, so headers and cells line up exactly. When
+       on, the table scrolls horizontally because the full column set is wider
+       than the docked panel. */
+    .pf-col-gs { display: none; }
+    #portfolio-panel.pf-stars-on .pf-col-gs { display: flex; align-items: center; }
+    /* Widen the row grid to hold every column, and let the table scroll
+       sideways. Order: menu · product · serving · category · rating (stars +
+       score) · standardized (std★ + std score) · next star · issues & ease ·
+       data · shield · updated. */
+    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-thead,
+    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-trow,
+    #portfolio-panel.pf-stars-on .pf-table--discovered .pf-thead,
+    #portfolio-panel.pf-stars-on .pf-table--discovered .pf-trow,
+    #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-thead,
+    #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-trow {
+      grid-template-columns: 34px 210px 74px 140px 92px 108px 132px 190px 130px 160px 168px;
+      width: max-content; min-width: 100%;
+    }
+    #portfolio-panel.pf-stars-on .pf-table-card { overflow-x: auto; overflow-y: visible; }
+    #portfolio-panel.pf-stars-on .pf-table { width: max-content; min-width: 100%; }
+
+    /* Numeric / rating cells */
+    .pf-col-serving, .pf-col-rating, .pf-col-std { font-variant-numeric: tabular-nums; }
+    /* Stacked rating cells — stars on top, a small score line beneath. Both the
+       Rating and Standardized columns centre their stack. */
+    .pf-col-rating, .pf-col-std { justify-content: center; }
+    .pf-gs-stack { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; }
+    .pf-gs-stack-sub { font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-subtle); }
+    .pf-gs-num { font-weight: 800; }
+    .pf-gs-num--score { color: #0E7490; }
+    html.dark .pf-gs-num--score { color: #67E8D8; }
+    .pf-gs-num--std { color: #8a6400; }
+    html.dark .pf-gs-num--std { color: #FFD98A; }
+    /* Star glyph rows — filled stars in gold, empty stars muted. */
+    .pf-stars-glyph { display: inline-flex; align-items: center; gap: 1px; color: var(--pf-gold); }
+    .pf-stars-glyph .material-icons { font-size: 15px !important; line-height: 1 !important; }
+    .pf-stars-glyph .pf-star-empty { color: var(--text-subtle); opacity: 0.4; }
+    /* Category + Next Star + Key Issues chips — reuse the app's chip look. */
+    .pf-gs-chip {
+      display: inline-flex; align-items: center; gap: 3px; max-width: 100%;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; line-height: 1.4; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .pf-gs-chip .material-icons { font-size: 12px !important; line-height: 1 !important; }
+    .pf-gs-cat--green { background: var(--sec-green-10); color: var(--sec-green); }
+    html.dark .pf-gs-cat--green { color: #6FE0A0; }
+    .pf-gs-cat--amber { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .pf-gs-cat--amber { color: #FFD98A; }
+    .pf-gs-cat--blue { background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary); }
+    html.dark .pf-gs-cat--blue { color: #93C5FD; }
+    .pf-gs-next { background: rgba(45,212,191,0.15); color: #0E7490; }
+    html.dark .pf-gs-next { color: #67E8D8; }
+    .pf-gs-good { background: var(--sec-green-10); color: var(--sec-green); }
+    html.dark .pf-gs-good { color: #6FE0A0; }
+    .pf-gs-issue { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .pf-gs-issue { color: #FFD98A; }
+
+    /* ── Combined "Issues & Ease" cell ────────────────────────────────────
+       Stacks the key-issue chip over a labelled reformulation-effort meter, so
+       one column answers both "what's holding it back" and "how hard is the
+       fix". */
+    #portfolio-panel.pf-stars-on .pf-td.pf-col-issues { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+    .pf-gs-ie { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; max-width: 100%; }
+    .pf-gs-ease { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; }
+    .pf-gs-ease-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .pf-gs-ease-bars i { width: 3px; border-radius: 1px; background: var(--text-subtle); opacity: 0.28; }
+    .pf-gs-ease-bars i:nth-child(1) { height: 6px; }
+    .pf-gs-ease-bars i:nth-child(2) { height: 9px; }
+    .pf-gs-ease-bars i:nth-child(3) { height: 12px; }
+    .pf-gs-ease-bars i.on { opacity: 1; }
+    .pf-gs-ease--easy .pf-gs-ease-bars i.on { background: var(--sec-green); }
+    .pf-gs-ease--easy { color: var(--sec-green); }
+    html.dark .pf-gs-ease--easy { color: #6FE0A0; }
+    .pf-gs-ease--mod .pf-gs-ease-bars i.on { background: #B8860B; }
+    .pf-gs-ease--mod { color: #8a6400; }
+    html.dark .pf-gs-ease--mod { color: #FFD98A; }
+    html.dark .pf-gs-ease--mod .pf-gs-ease-bars i.on { background: #FFD98A; }
+    .pf-gs-ease--hard .pf-gs-ease-bars i.on { background: var(--sec-red); }
+    .pf-gs-ease--hard { color: var(--sec-red); }
+    .pf-gs-ease-txt { white-space: nowrap; }
+
+    /* ── Column-header info popovers ──────────────────────────────────────
+       A small ⓘ button in select Guiding Stars headers (Rating · Standardized
+       · Next Star · Issues & Ease) opens a floating explainer. */
+    .pf-th.pf-col-gs { gap: 4px; }
+    .pf-gs-info {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; flex-shrink: 0; padding: 0; margin: 0;
+      border: 0; border-radius: 50%; background: transparent; cursor: pointer;
+      color: var(--text-subtle); transition: color 0.14s ease, background 0.14s ease;
+    }
+    .pf-gs-info .material-icons { font-size: 14px !important; line-height: 1 !important; }
+    .pf-gs-info:hover, .pf-gs-info[aria-expanded="true"] { color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+    .pf-gs-infopop {
+      position: fixed; z-index: 90; width: 268px; max-width: 88vw;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-1), 0 14px 34px rgba(0,0,0,0.22); padding: 12px 13px;
+      font-weight: 400; text-transform: none; letter-spacing: normal;
+    }
+    .pf-gs-infopop[hidden] { display: none; }
+    .pf-gs-infopop-title { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+    .pf-gs-infopop-title .material-icons { font-size: 15px !important; color: var(--primary); }
+    .pf-gs-infopop-body { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
+    .pf-gs-infopop-body b { color: var(--text); font-weight: 700; }
+
+    /* ── Search filter popover ───────────────────────────────────────────
+       A funnel button floated inside the right edge of the search field opens
+       this popover, which filters the tables by the Guiding Stars fields. */
+    .pf-search-inline .pf-filter-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pf-search-inline .pf-filter-btn:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .pf-search-inline .pf-filter-btn:hover { background: rgba(255,255,255,0.08); }
+    .pf-search-inline .pf-filter-btn .material-icons { font-size: 18px !important; }
+    .pf-filter-btn.has-filters { color: var(--primary); }
+    .pf-filter-btn .pf-filter-dot {
+      position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary); border: 1.5px solid var(--surface-2); display: none;
+    }
+    .pf-filter-btn.has-filters .pf-filter-dot { display: block; }
+
+    .pf-filter-pop {
+      position: absolute; z-index: 60; top: calc(100% + 8px); right: 0; width: 320px; max-width: 92vw;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
+    }
+    .pf-filter-pop[hidden] { display: none; }
+    .pf-filter-pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pf-filter-pop-title { font-size: 13px; font-weight: 800; color: var(--text); }
+    .pf-filter-clear { border: none; background: transparent; color: var(--primary); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    .pf-filter-clear:hover { text-decoration: underline; }
+    .pf-filter-group { margin-top: 12px; }
+    .pf-filter-group:first-of-type { margin-top: 0; }
+    .pf-filter-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 7px; }
+    .pf-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pf-fchip {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+    html.dark .pf-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .pf-fchip .material-icons { font-size: 13px !important; line-height: 1 !important; }
+    .pf-fchip:hover { color: var(--text); border-color: var(--primary); }
+    .pf-fchip.is-on {
+      color: #fff; border-color: var(--primary);
+      background: var(--primary);
+    }
+    .pf-fchip.is-on .material-icons { color: #fff; }
+
+    /* Body + views — matches the Compare module's body (flex column, children
+       never squeezed so the board scrolls vertically). Uses the shared module
+       head padding on top so the serif title lands at the same Y as the other
+       modules' board titles. */
+    .pf-body { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 16px; display: flex; flex-direction: column; gap: 14px; }
     .pf-body > *:not(.pf-empty) { flex-shrink: 0; }
     .pf-view { display: flex; flex-direction: column; gap: 14px; }
     .pf-view.is-hidden { display: none; }
@@ -7615,12 +7873,15 @@
       position: relative; display: inline-flex; align-items: center;
       flex: 1 1 auto; min-width: 200px;
     }
-    .pf-search-inline .material-icons {
+    /* Only the leading search glyph (a direct child) is positioned inside the
+       field — scoping to the direct child keeps the nested filter-button icon
+       from being pulled to the left edge with pointer-events disabled. */
+    .pf-search-inline > .material-icons {
       position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
       font-size: 18px; color: var(--text-subtle); pointer-events: none;
     }
     .pf-search-inline .pf-search {
-      width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px 0 42px;
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 44px 0 42px;
       font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
       background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill); outline: none;
@@ -7687,6 +7948,21 @@
     html.dark .pf-stat--verified .pf-stat-num { color: #93C5FD; }
     .pf-stat--verified .pf-stat-label .material-icons { color: var(--primary); }
     html.dark .pf-stat--verified .pf-stat-label .material-icons { color: #93C5FD; }
+    .pf-stat-star { color: var(--pf-gold); font-size: 16px !important; vertical-align: -2px; }
+    .pf-stat:disabled { cursor: default; }
+    .pf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
+
+    /* ── Guiding Stars at-a-glance ─────────────────────────────────────────
+       When the Guiding Stars switch is on, the status filter cards (To verify /
+       Complete / …) give way to a rating-driven breakdown that filters every
+       list by star rating, near-miss opportunity, and easy fixes. */
+    .pf-stats-gs-wrap { display: none; }
+    #portfolio-panel.pf-stars-on .pf-stats-gs-wrap { display: block; margin-top: 12px; }
+    #portfolio-panel.pf-stars-on .pf-stats [data-status],
+    #portfolio-panel.pf-stars-on .pf-stats .pf-stats-break { display: none; }
+    .pf-stats-gs-label { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 8px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+    .pf-stats-gs-label .material-icons { font-size: 13px !important; color: var(--pf-gold); }
     /* Divider between the filter row and the table, and the rows a status
        filter has hidden. */
     .pf-board-divider { height: 1px; background: var(--border); margin: 14px 0 6px; }
@@ -8690,6 +8966,18 @@
                 </button>
                 <button class="chip ws-intent-chip" onclick="startSearchPortfolio()">
                     <span class="material-icons" style="font-size:16px">search</span>Search Portfolio
+                </button>
+                <button class="chip ws-intent-chip" onclick="startGuidingStars()">
+                    <span class="material-icons" style="font-size:16px">star</span>Guiding Stars Ratings
+                </button>
+                <button class="chip ws-intent-chip" onclick="startNearMiss()">
+                    <span class="material-icons" style="font-size:16px">trending_up</span>Near-miss ★★ → ★★★
+                </button>
+                <button class="chip ws-intent-chip" onclick="startEasyWins()">
+                    <span class="material-icons" style="font-size:16px">auto_fix_high</span>Easy Guiding Stars Wins
+                </button>
+                <button class="chip ws-intent-chip" onclick="startFilterPortfolio()">
+                    <span class="material-icons" style="font-size:16px">tune</span>Filter by Guiding Stars
                 </button>
                 <button class="chip ws-intent-chip" onclick="portfolioTour()">
                     <span class="material-icons" style="font-size:16px">explore</span>Tour My Portfolio
@@ -9753,8 +10041,12 @@
           <!-- Board header — serif title + a few details, mirroring the
                Compare module's .cmp-board-title / .cmp-board-meta. -->
           <header class="pf-head">
-            <h2 class="pf-head-title">Product Portfolio</h2>
-            <p class="pf-head-meta" id="pf-head-meta">Flax4Life · 10 claimed · 47 discovered · 13 needs info</p>
+            <div class="pf-head-text">
+              <h2 class="pf-head-title">Product Portfolio</h2>
+              <p class="pf-head-meta" id="pf-head-meta">Flax4Life · 10 claimed · 47 discovered · 13 needs info</p>
+            </div>
+            <!-- The Guiding Stars on/off control now lives in the module's
+                 three-dot (⋯) menu — see consolidatePanelControls(). -->
           </header>
 
           <!-- Settings row — the module's controls sit in their own bar above
@@ -9763,6 +10055,48 @@
             <div class="pf-search-inline">
               <span class="material-icons">search</span>
               <input type="text" class="pf-search" placeholder="Search by product name or UPC" aria-label="Search portfolio" />
+              <!-- Filter funnel floated to the right edge of the search field.
+                   Opens a popover to filter the tables by the Guiding Stars
+                   fields (rating, category, ease, near-miss). -->
+              <button type="button" class="pf-filter-btn" id="pf-filter-btn" aria-haspopup="true" aria-expanded="false" onclick="pfToggleFilterPop(event)" title="Filter products" aria-label="Filter products">
+                <span class="material-icons">tune</span>
+                <span class="pf-filter-dot" aria-hidden="true"></span>
+              </button>
+              <div class="pf-filter-pop" id="pf-filter-pop" role="dialog" aria-label="Filter products" hidden>
+                <div class="pf-filter-pop-head">
+                  <span class="pf-filter-pop-title">Filter products</span>
+                  <button type="button" class="pf-filter-clear" onclick="pfClearFilters()">Clear all</button>
+                </div>
+                <div class="pf-filter-group">
+                  <div class="pf-filter-label">Guiding Stars rating</div>
+                  <div class="pf-filter-chips" id="pf-filter-stars">
+                    <button type="button" class="pf-fchip is-on" data-stars="all">All</button>
+                    <button type="button" class="pf-fchip" data-stars="0">0 <span class="material-icons">star_border</span></button>
+                    <button type="button" class="pf-fchip" data-stars="1">1 <span class="material-icons">star</span></button>
+                    <button type="button" class="pf-fchip" data-stars="2">2 <span class="material-icons">star</span></button>
+                    <button type="button" class="pf-fchip" data-stars="3">3 <span class="material-icons">star</span></button>
+                  </div>
+                </div>
+                <div class="pf-filter-group">
+                  <div class="pf-filter-label">Opportunity</div>
+                  <div class="pf-filter-chips">
+                    <button type="button" class="pf-fchip" id="pf-filter-nearmiss" data-nearmiss="1"><span class="material-icons">bolt</span>Near-miss ★★ → ★★★</button>
+                  </div>
+                </div>
+                <div class="pf-filter-group">
+                  <div class="pf-filter-label">Category</div>
+                  <div class="pf-filter-chips" id="pf-filter-cats"></div>
+                </div>
+                <div class="pf-filter-group">
+                  <div class="pf-filter-label">Reformulation ease</div>
+                  <div class="pf-filter-chips" id="pf-filter-ease">
+                    <button type="button" class="pf-fchip is-on" data-ease="all">All</button>
+                    <button type="button" class="pf-fchip" data-ease="High">High</button>
+                    <button type="button" class="pf-fchip" data-ease="Medium">Medium</button>
+                    <button type="button" class="pf-fchip" data-ease="Low">Low</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <span class="pf-tool-spacer"></span>
             <button type="button" class="pf-add-btn" onclick="startAddProduct()"><span class="material-icons">add</span>Add Product</button>
@@ -9825,6 +10159,12 @@
                 <span class="pf-stat-label">Ineligible</span>
               </button>
             </div>
+            <!-- Guiding Stars breakdown — swaps in for the status cards when the
+                 Guiding Stars switch is on. Populated by pfRenderStarStats(). -->
+            <div class="pf-stats-gs-wrap">
+              <span class="pf-stats-gs-label"><span class="material-icons">star</span>Guiding Stars · <span id="pf-stats-gs-seg">Claimed</span></span>
+              <div class="pf-stats pf-stats-gs" id="pf-stats-gs" role="group" aria-label="Filter by Guiding Stars rating"></div>
+            </div>
             <div class="pf-board-divider"></div>
             <div class="pf-board-views">
 
@@ -9841,25 +10181,25 @@
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Toasted Coconut Brownies-12 ct</span><span class="pf-name-badge material-icons" title="Non-UPF Shield verified">gpp_good</span></span><span class="pf-upc">UPC · 8 57287 00420 3</span></span></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Toasted Coconut Brownies-12 ct</span></span><span class="pf-upc">UPC · 8 57287 00420 3</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-icons">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Chocolate Chip Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Chip Muffins-4 ct</span><span class="pf-name-badge material-icons" title="Non-UPF Shield verified">gpp_good</span></span><span class="pf-upc">UPC · 0 65776 63152 0</span></span></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Chocolate Chip Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Chip Muffins-4 ct</span></span><span class="pf-upc">UPC · 0 65776 63152 0</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-icons">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffins- 4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Carrot Raisin Muffins- 4 ct</span><span class="pf-name-badge material-icons" title="Non-UPF Shield verified">gpp_good</span></span><span class="pf-upc">UPC · 0 65776 63151 3</span></span></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffins- 4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Carrot Raisin Muffins- 4 ct</span></span><span class="pf-upc">UPC · 0 65776 63151 3</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-icons">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-icons">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-icons">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-icons">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Brownies-12 ct</span><span class="pf-name-badge material-icons" title="Non-UPF Shield verified">gpp_good</span></span><span class="pf-upc">UPC · 0 65776 63550 4</span></span></span>
+                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-icons" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Brownies-12 ct</span></span><span class="pf-upc">UPC · 0 65776 63550 4</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-icons">gpp_good</span>Verified</span></span>
                 </div>
@@ -11123,9 +11463,12 @@
       const box = document.getElementById('chat-messages');
       if (!box) return;
       const safe = String(text).replace(/</g, '&lt;');
+      /* The member's very first line reads as a large serif headline; any
+         later lines stay in the normal chat size. */
+      const isFirst = !box.querySelector('.sc-line-you');
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-you${isFirst ? ' sc-line-you--first' : ''}"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body"><span class="sc-you-text">${safe}</span>${wiseaiMetaRow(false)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -12606,18 +12949,48 @@
       return tags;
     }
 
+    /* Guiding Stars filter state, driven by the search-field filter popover. */
+    const pfFilters = { stars: null, ease: null, nearMiss: false, categories: new Set() };
+    function pfFiltersActive() {
+      return pfFilters.stars !== null || pfFilters.ease !== null || pfFilters.nearMiss || pfFilters.categories.size > 0;
+    }
+    /* Does a row pass the Guiding Stars filters? Reads the data-gs-* attributes
+       stamped on each row by pfBuildStarColumns. */
+    function pfRowMatchesGS(row) {
+      if (!pfFiltersActive()) return true;
+      const stars = parseInt(row.dataset.gsStars, 10);
+      if (pfFilters.stars !== null && stars !== pfFilters.stars) return false;
+      if (pfFilters.ease && row.dataset.gsEase !== pfFilters.ease) return false;
+      if (pfFilters.categories.size && !pfFilters.categories.has(row.dataset.gsCategory)) return false;
+      if (pfFilters.nearMiss && !(row.dataset.gsNearmiss === '1')) return false;
+      return true;
+    }
+
+    /* Filters every view's rows. The status filter only applies to Claimed;
+       the Guiding Stars filters apply to all three lists. Each footer keeps its
+       original text (stored once) and only shows a live count while a filter is
+       narrowing the list. */
     function pfApplyRowFilter() {
-      const view = document.getElementById('pf-view-claimed');
-      if (!view) return;
-      let shown = 0, total = 0;
-      view.querySelectorAll('.pf-trow').forEach((row) => {
-        total++;
-        const match = !pfStatus || pfRowTags(row).indexOf(pfStatus) !== -1;
-        row.classList.toggle('pf-row-hidden', !match);
-        if (match) shown++;
+      PF_TABS.forEach((seg) => {
+        const view = document.getElementById('pf-view-' + seg);
+        if (!view) return;
+        const statusActive = seg === 'claimed' && !!pfStatus;
+        let shown = 0, total = 0;
+        view.querySelectorAll('.pf-trow').forEach((row) => {
+          total++;
+          const statusOk = seg !== 'claimed' || !pfStatus || pfRowTags(row).indexOf(pfStatus) !== -1;
+          const match = statusOk && pfRowMatchesGS(row);
+          row.classList.toggle('pf-row-hidden', !match);
+          if (match) shown++;
+        });
+        const foot = view.querySelector('.pf-table-foot span');
+        if (foot) {
+          if (foot.dataset.foot === undefined) foot.dataset.foot = foot.textContent;
+          foot.textContent = (statusActive || pfFiltersActive())
+            ? 'Showing ' + shown + ' of ' + total + ' products'
+            : foot.dataset.foot;
+        }
       });
-      const foot = view.querySelector('.pf-table-foot span');
-      if (foot) foot.textContent = 'Showing ' + shown + ' of ' + total + ' products';
     }
 
     function pfRender() {
@@ -12637,6 +13010,7 @@
         b.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
       pfApplyRowFilter();
+      if (window.pfRenderStarStats) pfRenderStarStats();
     }
 
     function pfSwitchTab(tab) {
@@ -12701,6 +13075,426 @@
       document.addEventListener('DOMContentLoaded', pfPopulateDates);
     } else {
       pfPopulateDates();
+    }
+
+    /* ── Guiding Stars ────────────────────────────────────────────────────
+       The pink header switch reveals extra Guiding Stars columns in every
+       table (Brand · Serving · Category · Stars · Score · Std ★ · Std Score ·
+       Next Star · Key Issues · Ease). Rather than hand-authoring data for each
+       of the ~30 rows, we derive a stable profile per product from its name so
+       the same product always shows the same values. The cells are built once
+       on load (kept hidden until the toggle is on) and are also what the
+       search-field filter popover reads. */
+    function pfHashName(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
+      return h;
+    }
+    const PF_STAR_ISSUES = ['Added sugar', 'Sodium', 'Sat. fat', 'Refined grains', 'Low fiber'];
+    const PF_STAR_EASE = ['High', 'Medium', 'Low'];
+    const PF_STAR_CATS = [
+      { name: 'General Foods', cls: 'pf-gs-cat--green' },
+      { name: 'Snacks & Sweets', cls: 'pf-gs-cat--amber' },
+      { name: 'Cereals & Grains', cls: 'pf-gs-cat--blue' },
+    ];
+    /* Deterministic Guiding Stars profile for a product name. */
+    function pfStarData(name) {
+      /* `h` is an unsigned 32-bit hash, so every bit-shift below MUST use the
+         unsigned `>>>` operator. A signed `>>` would go negative whenever bit
+         31 is set, and `negative % length` yields a negative array index —
+         PF_STAR_CATS[-1] is undefined, which crashed pfBuildStarColumns and
+         silently killed the Guiding Stars toggle. */
+      const h = pfHashName(name || 'product');
+      const stars = h % 4;                                   /* 0–3 rating          */
+      const score = 1 + (stars * 2) + ((h >>> 2) % 3);       /* points behind rating */
+      /* Standardized (per-100g) rating is often a notch below the as-served one. */
+      const stdStars = Math.max(0, stars - ((h >>> 4) % 2));
+      const stdScore = (stdStars * 2) - 1 + (((h >>> 6) % 3));
+      const ease = PF_STAR_EASE[(h >>> 8) % PF_STAR_EASE.length];
+      const good = stars >= 2 && ((h >>> 10) % 3 !== 0);
+      const issue = good ? 'Good' : PF_STAR_ISSUES[(h >>> 10) % PF_STAR_ISSUES.length];
+      const nextPts = 1 + ((h >>> 12) % 3);
+      const cat = PF_STAR_CATS[(h >>> 14) % PF_STAR_CATS.length];
+      const serving = (40 + ((h >>> 16) % 25)) + ' g';
+      const nearMiss = stars === 2;                          /* one point off ★★★    */
+      return { stars, score, stdStars, stdScore, ease, good, issue, nextPts,
+               category: cat.name, catCls: cat.cls, serving, nearMiss, brand: 'Flax4Life' };
+    }
+    /* Renders `n` filled stars followed by `3 - n` empty stars. */
+    function pfStarGlyphs(n) {
+      let out = '<span class="pf-stars-glyph">';
+      for (let i = 0; i < 3; i++) {
+        out += '<span class="material-icons' + (i < n ? '' : ' pf-star-empty') + '">' + (i < n ? 'star' : 'star_border') + '</span>';
+      }
+      return out + '</span>';
+    }
+    /* Column definitions — header label + per-row cell renderer, kept in one
+       ordered list so headers and cells never drift apart. Inserted right after
+       the Product column. */
+    const PF_GS_COLS = [
+      { label: 'Serving',    cls: 'pf-col-serving',  cell: (d) => d.serving },
+      { label: 'Category',   cls: 'pf-col-category', cell: (d) => '<span class="pf-gs-chip ' + d.catCls + '">' + d.category + '</span>' },
+      /* Rating = as-served stars stacked over the point score. */
+      { label: 'Rating',     cls: 'pf-col-rating',   info: 'rating', cell: (d) =>
+          '<span class="pf-gs-stack">' + pfStarGlyphs(d.stars) +
+          '<span class="pf-gs-stack-sub">Score <b class="pf-gs-num pf-gs-num--score">' + d.score + '</b></span></span>' },
+      /* Standardized = per-100g stars stacked over the standardized score. */
+      { label: 'Standardized', cls: 'pf-col-std',    info: 'std', cell: (d) =>
+          '<span class="pf-gs-stack">' + pfStarGlyphs(d.stdStars) +
+          '<span class="pf-gs-stack-sub">Std <b class="pf-gs-num pf-gs-num--std">' + (d.stdScore > 0 ? '+' + d.stdScore : d.stdScore) + '</b></span></span>' },
+      { label: 'Next Star',  cls: 'pf-col-nextstar', info: 'nextstar', cell: (d) => d.stars >= 3
+          ? '<span class="pf-gs-chip pf-gs-good">Max ' + pfStarGlyphs(3) + '</span>'
+          : '<span class="pf-gs-chip pf-gs-next">+' + d.nextPts + ' pt \u2192 ' + pfStarGlyphs(d.stars + 1) + '</span>' },
+      /* Combined column: the product's key nutrition issue on top, and how hard
+         it is to reformulate (ease) beneath it as a labelled effort meter. */
+      { label: 'Issues & Ease', cls: 'pf-col-issues', info: 'issues', cell: (d) => {
+          const issue = d.good
+            ? '<span class="pf-gs-chip pf-gs-good"><span class="material-icons">check</span>On track</span>'
+            : '<span class="pf-gs-chip pf-gs-issue"><span class="material-icons">warning</span>' + d.issue + '</span>';
+          const e = PF_EASE_META[d.ease] || PF_EASE_META.Medium;
+          const bars = '<span class="pf-gs-ease-bars">'
+            + '<i class="' + (e.effort >= 1 ? 'on' : '') + '"></i>'
+            + '<i class="' + (e.effort >= 2 ? 'on' : '') + '"></i>'
+            + '<i class="' + (e.effort >= 3 ? 'on' : '') + '"></i></span>';
+          return '<span class="pf-gs-ie">' + issue
+            + '<span class="pf-gs-ease pf-gs-ease--' + e.key + '" title="' + e.title + '">'
+            + bars + '<span class="pf-gs-ease-txt">' + e.label + '</span></span></span>';
+        } },
+    ];
+    /* Ease of reformulation → effort meter + plain-language label. Higher ease
+       ("High") is the easiest to fix, so it reads as the least effort. */
+    const PF_EASE_META = {
+      High:   { key: 'easy', effort: 1, label: 'Easy fix',   title: 'High ease — a minor tweak (a small sugar or sodium cut) likely earns the next star.' },
+      Medium: { key: 'mod',  effort: 2, label: 'Moderate',   title: 'Medium ease — a meaningful reformulation is needed to gain the next star.' },
+      Low:    { key: 'hard', effort: 3, label: 'Heavy lift', title: 'Low ease — a significant reformulation is required; the next star is a stretch.' },
+    };
+    /* Build the Guiding Stars header cells + row cells once. Idempotent. */
+    function pfBuildStarColumns() {
+      document.querySelectorAll('#portfolio-panel .pf-thead').forEach((thead) => {
+        if (thead.querySelector('.pf-col-gs')) return;
+        let ref = thead.querySelector('.pf-col-product');
+        if (!ref) return;
+        PF_GS_COLS.forEach((c) => {
+          const th = document.createElement('span');
+          th.className = 'pf-th pf-col-gs ' + c.cls;
+          th.appendChild(document.createTextNode(c.label));
+          if (c.info) {
+            const ib = document.createElement('button');
+            ib.type = 'button';
+            ib.className = 'pf-gs-info';
+            ib.dataset.info = c.info;
+            ib.setAttribute('aria-label', c.label + ' — what does this mean?');
+            ib.setAttribute('aria-expanded', 'false');
+            ib.innerHTML = '<span class="material-icons">info</span>';
+            th.appendChild(ib);
+          }
+          ref.after(th); ref = th;
+        });
+      });
+      document.querySelectorAll('#portfolio-panel .pf-trow').forEach((row) => {
+        if (row.querySelector('.pf-col-gs')) return;
+        let ref = row.querySelector('.pf-col-product');
+        if (!ref) return;
+        const nameEl = row.querySelector('.pf-pname');
+        const d = pfStarData(nameEl ? nameEl.textContent.trim() : '');
+        row.dataset.gsStars = d.stars;
+        row.dataset.gsStdStars = d.stdStars;
+        row.dataset.gsEase = d.ease;
+        row.dataset.gsCategory = d.category;
+        row.dataset.gsNearmiss = d.nearMiss ? '1' : '0';
+        PF_GS_COLS.forEach((c) => {
+          const td = document.createElement('span');
+          td.className = 'pf-td pf-col-gs ' + c.cls;
+          td.innerHTML = c.cell(d);
+          ref.after(td); ref = td;
+        });
+      });
+    }
+    function pfToggleStars() {
+      const panel = document.getElementById('portfolio-panel');
+      const btn = document.getElementById('pf-stars-toggle');
+      if (!panel) return;
+      pfBuildStarColumns();
+      const on = !panel.classList.contains('pf-stars-on');
+      panel.classList.toggle('pf-stars-on', on);
+      if (btn) btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      /* Turning the columns off must not strand a Guiding Stars filter that
+         hides rows once the controls are gone — clear them so the full list
+         reappears. */
+      if (!on && window.pfClearFilters) pfClearFilters();
+      pfRenderStarStats();
+    }
+    window.pfToggleStars = pfToggleStars;
+    /* Force the Guiding Stars columns on (used by chat intents) and keep the
+       three-dot menu switch in sync. */
+    function pfEnsureStarsOn() {
+      const panel = document.getElementById('portfolio-panel');
+      if (panel && !panel.classList.contains('pf-stars-on')) pfToggleStars();
+      document.querySelectorAll('.pf-module-menu').forEach((m) => { if (m._syncGsItem) m._syncGsItem(); });
+    }
+    window.pfEnsureStarsOn = pfEnsureStarsOn;
+
+    /* ── Guiding Stars at-a-glance cards ───────────────────────────────────
+       When the switch is on, the status cards are replaced by a rating
+       breakdown for the active list. Each card is a filter: star-count cards
+       narrow to that rating, "Near-miss" to ★★→★★★ products, and "Easy fixes"
+       to the high-ease opportunities. They share state with the funnel filter
+       popover so the two never disagree. */
+    const PF_SEG_LABELS = { claimed: 'Claimed', discovered: 'Discovered', needsinfo: 'Needs Info' };
+    function pfCountStars(view) {
+      const c = { 0: 0, 1: 0, 2: 0, 3: 0, near: 0, easy: 0, total: 0, sum: 0 };
+      view.querySelectorAll('.pf-trow').forEach((row) => {
+        if (row.dataset.gsStars === undefined) return;
+        const s = parseInt(row.dataset.gsStars, 10);
+        if (isNaN(s)) return;
+        c[s] += 1; c.total += 1; c.sum += s;
+        if (row.dataset.gsNearmiss === '1') c.near += 1;
+        if (row.dataset.gsEase === 'High') c.easy += 1;
+      });
+      return c;
+    }
+    function pfStarGlyphMini(n) {
+      return '<span class="material-icons pf-stat-star">' + (n > 0 ? 'star' : 'star_border') + '</span>';
+    }
+    function pfRenderStarStats() {
+      const host = document.getElementById('pf-stats-gs');
+      if (!host) return;
+      const segEl = document.getElementById('pf-stats-gs-seg');
+      if (segEl) segEl.textContent = PF_SEG_LABELS[pfSeg] || 'Portfolio';
+      const view = document.getElementById('pf-view-' + pfSeg);
+      if (!view) { host.innerHTML = ''; return; }
+      const c = pfCountStars(view);
+      const avg = c.total ? (c.sum / c.total) : 0;
+      const cards = [
+        { key: '', cls: 'pf-stat--muted', noclick: true, num: avg.toFixed(1) + '<span class="material-icons pf-stat-star" style="font-size:19px!important;vertical-align:-3px;margin-left:1px">star</span>', label: 'Avg rating' },
+        { key: 'gs3', cls: 'pf-stat--good',  num: c[3], label: '3' + pfStarGlyphMini(1) + ' rated', act: pfFilters.stars === 3 },
+        { key: 'gs2', cls: 'pf-stat--info',  num: c[2], label: '2' + pfStarGlyphMini(1) + ' rated', act: pfFilters.stars === 2 },
+        { key: 'gs1', cls: 'pf-stat--warn',  num: c[1], label: '1' + pfStarGlyphMini(1) + ' rated', act: pfFilters.stars === 1 },
+        { key: 'gs0', cls: 'pf-stat--alert', num: c[0], label: '0' + pfStarGlyphMini(0) + ' rated', act: pfFilters.stars === 0 },
+        { key: 'near', cls: 'pf-stat--info', num: c.near, label: 'Near-miss', act: pfFilters.nearMiss },
+        { key: 'easy', cls: 'pf-stat--good', num: c.easy, label: 'Easy fixes', act: pfFilters.ease === 'High' },
+      ];
+      host.innerHTML = cards.map((k) =>
+        '<button type="button" class="pf-stat ' + k.cls + (k.act ? ' is-active' : '') + '"' +
+        (k.noclick ? ' disabled aria-disabled="true"' : ' data-gsstat="' + k.key + '" aria-pressed="' + (k.act ? 'true' : 'false') + '"') + '>' +
+        '<span class="pf-stat-num">' + k.num + '</span>' +
+        '<span class="pf-stat-label">' + k.label + '</span></button>').join('');
+    }
+    window.pfRenderStarStats = pfRenderStarStats;
+    /* Mirror pfFilters onto the funnel popover chips so board cards and the
+       popover stay in lockstep. */
+    function pfSyncFilterChips() {
+      const stars = document.getElementById('pf-filter-stars');
+      if (stars) stars.querySelectorAll('.pf-fchip').forEach((c) => {
+        const v = c.dataset.stars;
+        c.classList.toggle('is-on', v === 'all' ? pfFilters.stars === null : parseInt(v, 10) === pfFilters.stars);
+      });
+      const ease = document.getElementById('pf-filter-ease');
+      if (ease) ease.querySelectorAll('.pf-fchip').forEach((c) => {
+        const v = c.dataset.ease;
+        c.classList.toggle('is-on', v === 'all' ? pfFilters.ease === null : v === pfFilters.ease);
+      });
+      const nm = document.getElementById('pf-filter-nearmiss');
+      if (nm) nm.classList.toggle('is-on', pfFilters.nearMiss);
+    }
+    if (!window.__pfGsStatWired) {
+      window.__pfGsStatWired = true;
+      document.addEventListener('click', (e) => {
+        const b = e.target.closest('#pf-stats-gs [data-gsstat]');
+        if (!b) return;
+        const k = b.dataset.gsstat;
+        /* The rating cards act as one exclusive group (like the status cards):
+           picking one clears the others, and picking the active one clears it.
+           This guarantees they can never combine into a filter that hides every
+           product. Category filters set via the funnel are left untouched. */
+        let active = false;
+        if (k.indexOf('gs') === 0) active = pfFilters.stars === parseInt(k.slice(2), 10);
+        else if (k === 'near') active = pfFilters.nearMiss;
+        else if (k === 'easy') active = pfFilters.ease === 'High';
+        pfFilters.stars = null; pfFilters.ease = null; pfFilters.nearMiss = false;
+        if (!active) {
+          if (k.indexOf('gs') === 0) pfFilters.stars = parseInt(k.slice(2), 10);
+          else if (k === 'near') pfFilters.nearMiss = true;
+          else if (k === 'easy') pfFilters.ease = 'High';
+        }
+        pfSyncFilterChips();
+        pfAfterFilterChange();
+      });
+    }
+
+    /* ── Column-header info popovers ───────────────────────────────────────
+       Each explains a Guiding Stars metric (Rating · Standardized · Next Star
+       · Issues & Ease) in plain language. One shared body-portalled popover is
+       positioned under whichever ⓘ button was clicked. */
+    const PF_GS_INFO = {
+      rating:   { icon: 'star',         title: 'Rating (as served)',
+        body: 'The Guiding Stars rating for a single serving — <b>0 to 3 stars</b>. Points are earned for good-for-you nutrients (fiber, whole grains, vitamins) and subtracted for nutrients to limit (added sugar, sodium, saturated fat, <i>trans</i> fat). The <b>Score</b> below the stars is the raw point total behind the rating.' },
+      std:      { icon: 'straighten',   title: 'Standardized (per 100 g)',
+        body: 'The same rating recalculated on a <b>per-100&nbsp;g</b> basis so products can be compared fairly regardless of serving size. The <b>Std</b> figure is the standardized point total — it often sits a notch below the as-served rating when servings are small.' },
+      nextstar: { icon: 'arrow_upward', title: 'Next Star',
+        body: 'How close the product is to its <b>next star</b>. <b>+2 pt&nbsp;→&nbsp;★★★</b> means two more Guiding Stars points would earn the third star — the smallest, highest-leverage reformulation target. <b>Max</b> means it already holds the top 3-star rating.' },
+      issues:   { icon: 'warning',      title: 'Issues & Ease',
+        body: 'The <b>key nutrition issue</b> holding the rating back (added sugar, sodium, saturated fat, refined grains, or low fiber), paired with the <b>ease of reformulation</b>: an effort meter from <b>Easy fix</b> (a minor tweak) to <b>Heavy lift</b> (a significant reformulation) estimating how hard the next star is to earn.' },
+    };
+    let pfGsInfoPop = null;
+    function pfEnsureInfoPop() {
+      if (pfGsInfoPop) return pfGsInfoPop;
+      const p = document.createElement('div');
+      p.className = 'pf-gs-infopop';
+      p.setAttribute('role', 'dialog');
+      p.hidden = true;
+      document.body.appendChild(p);
+      pfGsInfoPop = p;
+      return p;
+    }
+    function pfCloseInfoPop() {
+      if (pfGsInfoPop) pfGsInfoPop.hidden = true;
+      document.querySelectorAll('.pf-gs-info[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    }
+    function pfOpenInfoPop(btn) {
+      const data = PF_GS_INFO[btn.dataset.info];
+      if (!data) return;
+      const pop = pfEnsureInfoPop();
+      pop.innerHTML =
+        '<div class="pf-gs-infopop-title"><span class="material-icons">' + data.icon + '</span>' + data.title + '</div>' +
+        '<div class="pf-gs-infopop-body">' + data.body + '</div>';
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      const r = btn.getBoundingClientRect();
+      const pw = pop.offsetWidth, ph = pop.offsetHeight;
+      let left = Math.max(8, Math.min(r.left + r.width / 2 - pw / 2, window.innerWidth - pw - 8));
+      let top = r.bottom + 8;
+      if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 8);
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+    }
+    if (!window.__pfGsInfoWired) {
+      window.__pfGsInfoWired = true;
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pf-gs-info');
+        if (btn) {
+          e.preventDefault(); e.stopPropagation();
+          const open = btn.getAttribute('aria-expanded') === 'true';
+          pfCloseInfoPop();
+          if (!open) pfOpenInfoPop(btn);
+          return;
+        }
+        if (!e.target.closest('.pf-gs-infopop')) pfCloseInfoPop();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') pfCloseInfoPop(); });
+      window.addEventListener('resize', pfCloseInfoPop);
+      document.addEventListener('scroll', pfCloseInfoPop, true);
+    }
+
+    /* ── Search-field filter popover ───────────────────────────────────────
+       The funnel button inside the search field opens a popover that filters
+       every table by the Guiding Stars fields. Filters apply whether or not
+       the columns are visible. */
+    function pfToggleFilterPop(e) {
+      if (e) e.stopPropagation();
+      const pop = document.getElementById('pf-filter-pop');
+      const btn = document.getElementById('pf-filter-btn');
+      if (!pop) return;
+      const show = pop.hasAttribute('hidden');
+      pop.toggleAttribute('hidden', !show);
+      if (btn) btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+    window.pfToggleFilterPop = pfToggleFilterPop;
+
+    function pfSetGroupActive(groupId, btn) {
+      const g = document.getElementById(groupId);
+      if (g) g.querySelectorAll('.pf-fchip').forEach((c) => c.classList.toggle('is-on', c === btn));
+    }
+    function pfAfterFilterChange() {
+      const fb = document.getElementById('pf-filter-btn');
+      if (fb) fb.classList.toggle('has-filters', pfFiltersActive());
+      pfApplyRowFilter();
+      if (window.pfRenderStarStats) pfRenderStarStats();
+    }
+    function pfClearFilters() {
+      pfFilters.stars = null; pfFilters.ease = null; pfFilters.nearMiss = false; pfFilters.categories.clear();
+      const stars = document.getElementById('pf-filter-stars');
+      if (stars) stars.querySelectorAll('.pf-fchip').forEach((c) => c.classList.toggle('is-on', c.dataset.stars === 'all'));
+      const ease = document.getElementById('pf-filter-ease');
+      if (ease) ease.querySelectorAll('.pf-fchip').forEach((c) => c.classList.toggle('is-on', c.dataset.ease === 'all'));
+      const cats = document.getElementById('pf-filter-cats');
+      if (cats) cats.querySelectorAll('.pf-fchip').forEach((c) => c.classList.toggle('is-on', c.dataset.cat === 'all'));
+      const nm = document.getElementById('pf-filter-nearmiss');
+      if (nm) nm.classList.remove('is-on');
+      pfAfterFilterChange();
+    }
+    window.pfClearFilters = pfClearFilters;
+
+    function pfInitFilters() {
+      const cats = document.getElementById('pf-filter-cats');
+      if (cats && !cats.dataset.built) {
+        cats.dataset.built = '1';
+        let html = '<button type="button" class="pf-fchip is-on" data-cat="all">All</button>';
+        PF_STAR_CATS.forEach((c) => { html += '<button type="button" class="pf-fchip" data-cat="' + c.name + '">' + c.name + '</button>'; });
+        cats.innerHTML = html;
+      }
+      const pop = document.getElementById('pf-filter-pop');
+      if (pop && !pop.dataset.wired) {
+        pop.dataset.wired = '1';
+        const starsGrp = document.getElementById('pf-filter-stars');
+        if (starsGrp) starsGrp.addEventListener('click', (e) => {
+          const b = e.target.closest('.pf-fchip'); if (!b) return;
+          pfFilters.stars = (b.dataset.stars === 'all') ? null : parseInt(b.dataset.stars, 10);
+          pfSetGroupActive('pf-filter-stars', b); pfAfterFilterChange();
+        });
+        const easeGrp = document.getElementById('pf-filter-ease');
+        if (easeGrp) easeGrp.addEventListener('click', (e) => {
+          const b = e.target.closest('.pf-fchip'); if (!b) return;
+          pfFilters.ease = (b.dataset.ease === 'all') ? null : b.dataset.ease;
+          pfSetGroupActive('pf-filter-ease', b); pfAfterFilterChange();
+        });
+        if (cats) cats.addEventListener('click', (e) => {
+          const b = e.target.closest('.pf-fchip'); if (!b) return;
+          if (b.dataset.cat === 'all') { pfFilters.categories.clear(); }
+          else if (pfFilters.categories.has(b.dataset.cat)) { pfFilters.categories.delete(b.dataset.cat); }
+          else { pfFilters.categories.add(b.dataset.cat); }
+          cats.querySelectorAll('.pf-fchip').forEach((c) => {
+            c.classList.toggle('is-on', c.dataset.cat === 'all' ? pfFilters.categories.size === 0 : pfFilters.categories.has(c.dataset.cat));
+          });
+          pfAfterFilterChange();
+        });
+        const nm = document.getElementById('pf-filter-nearmiss');
+        if (nm) nm.addEventListener('click', () => {
+          pfFilters.nearMiss = !pfFilters.nearMiss;
+          nm.classList.toggle('is-on', pfFilters.nearMiss);
+          pfAfterFilterChange();
+        });
+      }
+      /* Close on outside click / Escape. */
+      if (!window.__pfFilterDocWired) {
+        window.__pfFilterDocWired = true;
+        document.addEventListener('click', (e) => {
+          const pop2 = document.getElementById('pf-filter-pop');
+          if (!pop2 || pop2.hasAttribute('hidden')) return;
+          if (e.target.closest('#pf-filter-pop') || e.target.closest('#pf-filter-btn')) return;
+          pop2.setAttribute('hidden', '');
+          const fb = document.getElementById('pf-filter-btn');
+          if (fb) fb.setAttribute('aria-expanded', 'false');
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key !== 'Escape') return;
+          const pop2 = document.getElementById('pf-filter-pop');
+          if (pop2 && !pop2.hasAttribute('hidden')) {
+            pop2.setAttribute('hidden', '');
+            const fb = document.getElementById('pf-filter-btn');
+            if (fb) fb.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    }
+
+    /* Build columns + wire the filter UI on load, so both the toggle reveal and
+       the filter work the moment the module opens. */
+    function pfInitGuidingStars() { pfBuildStarColumns(); pfInitFilters(); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', pfInitGuidingStars);
+    } else {
+      pfInitGuidingStars();
     }
 
     /* Per-row ⋮ actions menu (edit / view / claim + updated & last-edited
@@ -12832,7 +13626,7 @@
     }
     /* Shared opener: hide the welcome screen, dock the board on the given tab,
        then drive the chat with a user line + a WISEai reply and follow chips. */
-    function openPortfolioModule(tab, userMsg, wiseaiMsg, chips) {
+    function openPortfolioModule(tab, userMsg, wiseaiMsg, chips, onReady) {
       hideWelcomeScreen(() => {
         openPortfolioPanel();
         pfSwitchTab(tab);
@@ -12842,6 +13636,7 @@
           typing?.remove();
           addWISEaiMessage(wiseaiMsg);
           pfOfferChips(chips);
+          if (typeof onReady === 'function') onReady();
         }, 620);
       });
     }
@@ -12857,6 +13652,10 @@
       claim:      { fn: 'startClaimProducts',     icon: 'bookmark_add',    label: 'Claim a product' },
       ineligible: { fn: 'startResolveIneligible', icon: 'gpp_maybe',       label: 'Resolve ineligible' },
       add:        { fn: 'startAddProduct',        icon: 'add_box',         label: 'Add a product' },
+      filter:     { fn: 'startFilterPortfolio',   icon: 'tune',            label: 'Filter by Guiding Stars' },
+      guidingstars: { fn: 'startGuidingStars',    icon: 'star',            label: 'Guiding Stars ratings' },
+      nearmiss:   { fn: 'startNearMiss',          icon: 'trending_up',     label: 'Near-miss \u2605\u2605 \u2192 \u2605\u2605\u2605' },
+      easywins:   { fn: 'startEasyWins',          icon: 'auto_fix_high',   label: 'Easy Guiding Stars wins' },
     };
     function pfOfferChips(keys) {
       const box = document.getElementById('chat-messages');
@@ -12925,6 +13724,53 @@
         'Every view has a search box — filter by product name or UPC across <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Needs Info</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
         ['claimed', 'discovered', 'needsinfo']);
     }
+    /* Filter intent — opens the board and pops the Guiding Stars filter so the
+       user can narrow all three lists by rating, category, ease and near-miss
+       right from the chat. */
+    function startFilterPortfolio() {
+      openPortfolioModule('claimed', 'Filter my portfolio by Guiding Stars',
+        'You can slice every view by <strong>Guiding Stars</strong> — rating, category, ease of reformulation, and near-miss opportunities (★★ → ★★★). I’ve opened the filter for you; pick the criteria that matter and I’ll trim Claimed, Discovered, and Needs Info to match.',
+        ['claimed', 'discovered', 'needsinfo'],
+        () => {
+          const pop = document.getElementById('pf-filter-pop');
+          if (pop && pop.hasAttribute('hidden')) pfToggleFilterPop();
+        });
+    }
+    window.startFilterPortfolio = startFilterPortfolio;
+    /* Guiding Stars intents — flip the star columns on and, where relevant,
+       pre-apply the matching filter so the chat drops the user straight into
+       the opportunity set. */
+    function startGuidingStars() {
+      openPortfolioModule('claimed', 'Show my Guiding Stars ratings',
+        'I’ve switched on <strong>Guiding Stars</strong> across your portfolio. Every product now shows its as-served <strong>Rating</strong>, the <strong>Standardized</strong> (per-100&nbsp;g) score, its <strong>Next Star</strong> target, and the key issue paired with how hard it is to fix. The cards above the list now break your products down by star rating — tap one to filter. Where do you want to focus?',
+        ['nearmiss', 'easywins', 'filter'],
+        () => { if (window.pfEnsureStarsOn) pfEnsureStarsOn(); });
+    }
+    function startNearMiss() {
+      openPortfolioModule('claimed', 'Find my near-miss Guiding Stars opportunities',
+        'These are your <strong>near-miss</strong> products — sitting at <strong>★★</strong> and just one point from <strong>★★★</strong>. They’re the highest-leverage reformulations you have. I’ve turned Guiding Stars on and filtered to the near-miss set; open any row to see exactly how many points it needs.',
+        ['easywins', 'guidingstars', 'claimed'],
+        () => {
+          if (window.pfEnsureStarsOn) pfEnsureStarsOn();
+          pfFilters.stars = null; pfFilters.ease = null; pfFilters.nearMiss = true; pfFilters.categories.clear();
+          if (window.pfSyncFilterChips) pfSyncFilterChips();
+          pfAfterFilterChange();
+        });
+    }
+    function startEasyWins() {
+      openPortfolioModule('claimed', 'Show me easy Guiding Stars wins',
+        'Here are your <strong>easy fixes</strong> — products where a minor reformulation (a small sugar or sodium cut) is enough to earn the next star. I’ve enabled Guiding Stars and filtered to the high-ease opportunities so you can start with the quickest wins.',
+        ['nearmiss', 'guidingstars', 'claimed'],
+        () => {
+          if (window.pfEnsureStarsOn) pfEnsureStarsOn();
+          pfFilters.stars = null; pfFilters.ease = 'High'; pfFilters.nearMiss = false; pfFilters.categories.clear();
+          if (window.pfSyncFilterChips) pfSyncFilterChips();
+          pfAfterFilterChange();
+        });
+    }
+    window.startGuidingStars = startGuidingStars;
+    window.startNearMiss = startNearMiss;
+    window.startEasyWins = startEasyWins;
     function portfolioTour() {
       openPortfolioModule('claimed', 'Give me a quick tour of my portfolio',
         'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (10 products you own — verify ingredients, then activate shields), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Needs Info</strong> (13 products missing details). Switch tabs on the right anytime — where would you like to begin?',
@@ -17195,6 +18041,40 @@
           pop.appendChild(widthItem);
         }
 
+        /* Portfolio only: the Guiding Stars on/off control lives in this menu
+           (it used to be a pink pill beside the board title). Toggling it
+           reveals the per-product star columns and mirrors the panel's
+           .pf-stars-on state. */
+        if (key === 'portfolio') {
+          const gsPanel = document.getElementById('portfolio-panel');
+          var gsItem = document.createElement('button');
+          gsItem.type = 'button';
+          gsItem.className = 'pf-module-menu-item pf-module-menu-item--gs';
+          gsItem.setAttribute('role', 'menuitemcheckbox');
+          gsItem.innerHTML =
+            '<span class="material-symbols-outlined">star_border</span>' +
+            '<span class="pf-mi-label">Guiding Stars</span>' +
+            '<span class="pf-mi-badge">Admin</span>' +
+            '<span class="pf-mi-switch"><span class="pf-mi-knob"></span></span>';
+          const syncGsItem = () => {
+            const on = !!(gsPanel && gsPanel.classList.contains('pf-stars-on'));
+            gsItem.classList.toggle('is-on', on);
+            gsItem.setAttribute('aria-checked', on ? 'true' : 'false');
+            const ic = gsItem.querySelector('.material-symbols-outlined');
+            if (ic) ic.textContent = on ? 'star' : 'star_border';
+          };
+          /* Flipping the switch keeps the menu open so it behaves like a
+             settings toggle rather than a one-shot action. */
+          gsItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.pfToggleStars) window.pfToggleStars();
+            syncGsItem();
+          });
+          pop.appendChild(gsItem);
+          menu._syncGsItem = syncGsItem;
+          syncGsItem();
+        }
+
         const sep = document.createElement('div');
         sep.className = 'pf-module-menu-sep';
         pop.appendChild(sep);
@@ -17237,6 +18117,7 @@
             btn.setAttribute('aria-expanded', 'true');
             menu.querySelector('.pf-module-menu-pop')?.removeAttribute('hidden');
             if (menu._syncWidthItem) menu._syncWidthItem();
+            if (menu._syncGsItem) menu._syncGsItem();
           }
           return;
         }

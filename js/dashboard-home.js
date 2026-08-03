@@ -30,6 +30,22 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
+/* Lightweight toast (reuses the shared .ag-toast styling from agent-overview). */
+function agToastLocal(msg, icon = 'check_circle') {
+  let wrap = document.getElementById('ag-toast-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
+  const t = document.createElement('div');
+  t.className = 'ag-toast';
+  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s ease, transform .3s ease';
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+    setTimeout(() => t.remove(), 320);
+  }, 2400);
+}
+
 /* Score element that count-ups from 0 on load. Target is stored in markup so
    animation does not depend on a post-render prep pass. */
 function countUpMarkup(value, { tag = 'span', className = '', style = '' } = {}) {
@@ -474,6 +490,443 @@ const DATA_ALT = {
 let _altBrandActive = false;
 let _dashboardHost  = null;
 
+/* Guiding Stars view toggle — a second pink switch in the hero swaps the whole
+   surface below the brand banner for the Guiding Stars analytics (star movers,
+   distribution, brand/category breakdowns) while keeping the same banner/logo. */
+let _starsActive = false;
+/* Allow deep-linking straight into the Guiding Stars view (overview.html?view=stars). */
+try { if (new URLSearchParams(location.search).get('view') === 'stars') _starsActive = true; } catch (_) { /* no-op */ }
+
+/* The two hero view switches (brand comparison + Guiding Stars) now live in the
+   overview three-dot menu instead of the banner, so expose their state + a
+   toggle for each. Flipping re-renders the dashboard; the menu reflects the new
+   state via aria-checked. */
+export function isBrandCompareActive() { return _altBrandActive; }
+export function isStarsViewActive() { return _starsActive; }
+export function toggleBrandCompare() {
+  if (_dashboardHost) { _altBrandActive = !_altBrandActive; renderDashboardHome(_dashboardHost); }
+  return _altBrandActive;
+}
+export function toggleStarsView() {
+  if (_dashboardHost) { _starsActive = !_starsActive; renderDashboardHome(_dashboardHost); }
+  return _starsActive;
+}
+/* Brand chart UI state (Guiding Stars → "Star Ratings by Brand"). */
+let _starsBrandMode = 'brands';   /* 'brands' | 'owners' */
+let _starsBrandPage = 0;          /* 0-based page of 20 */
+let _starsBrandQuery = '';
+const STARS_BRAND_PAGE_SIZE = 20;
+
+/* ================================================================== */
+/* Guiding Stars dataset. Star ratings run 0–3 (0 = not rated up to    */
+/* 3 = best). Colors are drawn from the shared brand palette so the     */
+/* rating ramp reads bad → good: orange · amber · light-green · green.  */
+/* Content + chart types mirror the reference Guiding Stars dashboard;  */
+/* the styling, colors and UI are WISEcode's own.                        */
+/* ================================================================== */
+const STAR_C = { s0: C.orange, s1: C.amber, s2: C.greenLight, s3: C.green };
+
+const DATA_STARS = {
+  totalProducts: 42060,
+  /* Current rating mix — powers the distribution donut + the count tiles. */
+  tiers: [
+    { stars: 0, label: '0 Stars', count: 28846, pct: 68.6, color: STAR_C.s0 },
+    { stars: 1, label: '1 Star',  count: 5054,  pct: 12.0, color: STAR_C.s1 },
+    { stars: 2, label: '2 Stars', count: 3783,  pct: 9.0,  color: STAR_C.s2 },
+    { stars: 3, label: '3 Stars', count: 4377,  pct: 10.4, color: STAR_C.s3 },
+  ],
+  nearMiss: 8318,
+  /* Star Movers — products one small reformulation away from the next star. */
+  movers: [
+    { title: '0★ → ★',  value: 3381, note: '+2,753 more within 2 pts',            grad: 'orange' },
+    { title: '★ → ★★',  value: 3094, note: '+1,960 more within 2 pts',            grad: 'green'  },
+    { title: '★★ → ★★★', value: 1843, note: '+1,940 more within 2 pts',            grad: 'blue'   },
+    { title: 'Fix DQ → instant ★', value: 2993, note: 'earns a star once the disqualifier is resolved', grad: 'violet', icon: 'lock_open' },
+  ],
+  /* What's blocking 0★ products — one low-effort fix (~1 debit) earns a star. */
+  blockers: [
+    { name: 'High Sodium',       value: 884, color: C.orange },
+    { name: 'High Added Sugar',  value: 622, color: C.amber },
+    { name: 'High Sat. Fat',     value: 517, color: C.red },
+    { name: 'Contains Additives', value: 392, color: C.primary },
+  ],
+  /* Star Ratings by Brand — [0★, 1★, 2★, 3★] product counts per brand. */
+  brands: [
+    { name: 'Kroger',              stars: [2150, 420, 260, 190] },
+    { name: 'SIMPLE TRUTH',        stars: [620, 210, 200, 170] },
+    { name: 'Private Selection',   stars: [645, 118, 62, 40] },
+    { name: "BOB'S RED MILL",      stars: [120, 42, 30, 22] },
+    { name: "Boar's Head",         stars: [152, 30, 15, 10] },
+    { name: 'KIND',                stars: [70, 42, 40, 30] },
+    { name: 'McCormick',           stars: [112, 26, 20, 10] },
+    { name: "Annie's",             stars: [82, 36, 26, 20] },
+    { name: "Campbell's",          stars: [122, 20, 10, 5] },
+    { name: "Reese's",             stars: [130, 15, 5, 2] },
+    { name: 'GERBER',              stars: [90, 26, 20, 15] },
+    { name: 'Nestlé',              stars: [112, 20, 10, 5] },
+    { name: 'Betty Crocker',       stars: [116, 15, 6, 3] },
+    { name: 'Gatorade',            stars: [100, 20, 8, 4] },
+    { name: 'Kraft',               stars: [106, 12, 6, 3] },
+    { name: 'Quaker',              stars: [70, 26, 18, 12] },
+    { name: 'Eden Foods',          stars: [40, 26, 30, 25] },
+    { name: "Davidson's Organics", stars: [50, 26, 20, 20] },
+    { name: 'Pepperidge Farm',     stars: [86, 15, 8, 4] },
+    { name: 'CLIF',                stars: [56, 26, 18, 12] },
+    { name: 'Cheez-It',            stars: [98, 14, 5, 2] },
+    { name: 'RITZ',                stars: [92, 12, 4, 2] },
+    { name: 'Chobani',             stars: [60, 34, 30, 24] },
+    { name: 'StarKist',            stars: [72, 18, 10, 6] },
+    { name: 'Ocean Spray',         stars: [66, 20, 12, 8] },
+  ],
+  brandOwners: [
+    { name: 'The Kroger Co.',       stars: [3210, 700, 500, 380] },
+    { name: 'Nestlé S.A.',          stars: [520, 160, 120, 90] },
+    { name: 'General Mills',        stars: [430, 150, 110, 80] },
+    { name: 'PepsiCo',              stars: [500, 120, 70, 40] },
+    { name: 'Conagra Brands',       stars: [410, 92, 50, 30] },
+    { name: 'Mondelēz',             stars: [382, 82, 45, 25] },
+    { name: 'Kraft Heinz',          stars: [402, 70, 40, 20] },
+    { name: 'Unilever',             stars: [300, 92, 62, 42] },
+    { name: 'Mars, Inc.',           stars: [352, 60, 30, 15] },
+    { name: 'Campbell Soup Co.',    stars: [282, 60, 35, 20] },
+    { name: 'The J.M. Smucker Co.', stars: [240, 55, 30, 18] },
+    { name: 'Danone',               stars: [180, 90, 70, 55] },
+    { name: 'Hormel Foods',         stars: [220, 48, 26, 16] },
+    { name: 'B&G Foods',            stars: [200, 40, 22, 12] },
+    { name: 'Post Holdings',        stars: [190, 44, 24, 14] },
+  ],
+  /* Quick-Win Opportunity — 0★ products within 1pt of ★, by brand. */
+  quickWin: [
+    { name: 'Kroger', value: 382 },
+    { name: 'Private Selection', value: 231 },
+    { name: "Annie's", value: 158 },
+    { name: 'Chobani', value: 132 },
+    { name: 'Cheez-It', value: 118 },
+    { name: 'RITZ', value: 96 },
+    { name: 'StarKist', value: 84 },
+    { name: "BOB'S RED MILL", value: 77 },
+    { name: 'Quaker', value: 69 },
+    { name: 'Ocean Spray', value: 61 },
+    { name: 'KIND', value: 54 },
+    { name: 'Gatorade', value: 47 },
+    { name: 'GERBER', value: 41 },
+    { name: 'CLIF', value: 36 },
+    { name: 'Eden Foods', value: 29 },
+  ],
+  /* Stars within Category — per-category [0★,1★,2★,3★] counts (donut + tabs). */
+  categories: [
+    { name: 'General',    stars: [17010, 3210, 2380, 2687] },
+    { name: 'Meat/Dairy', stars: [5120, 1080, 780, 820] },
+    { name: 'Fats & Oils', stars: [1980, 320, 180, 120] },
+    { name: 'Infant',     stars: [860, 360, 340, 340] },
+    { name: 'Beverages',  stars: [3210, 640, 340, 283] },
+  ],
+  /* Portfolio by Product Category — overall category mix of the portfolio. */
+  portfolio: [
+    { name: 'General Foods',    value: 25287, color: '#2E6BB0' },
+    { name: 'Meat/Dairy/Nuts',  value: 7800,  color: C.green },
+    { name: 'Fats & Oils',      value: 2600,  color: C.amber },
+    { name: 'Infant/Toddler',   value: 1900,  color: '#9A5BD1' },
+    { name: 'Beverages',        value: 4473,  color: '#0F8E96' },
+  ],
+};
+
+/* Star rating parts (label/value/color) for a [0,1,2,3] count array. */
+function starParts(counts) {
+  return DATA_STARS.tiers.map((t, i) => ({ label: t.label, value: counts[i] || 0, color: t.color }));
+}
+
+/* Values-free color key for the star ramp (used above the brand bar chart). */
+function starKeyLegend() {
+  const items = DATA_STARS.tiers.map((t) =>
+    `<span class="dash-legend-item"><span class="dash-legend-l"><span class="dash-dot" style="background:${t.color}"></span>${esc(t.label)}</span></span>`).join('');
+  return `
+    <div class="dash-donut-legend-group">
+      <div class="dash-donut-legend-title">Guiding Stars rating</div>
+      <div class="dash-legend dash-legend--key">${items}</div>
+    </div>`;
+}
+
+/* ---- Guiding Stars render helpers ---- */
+
+/* Star Movers row — four gradient cards, each a "one reformulation away" bucket
+   with a big product count + a "within 2 pts" nudge + a View products action. */
+function renderStarMovers(s) {
+  const cards = s.movers.map((m) => `
+    <button type="button" class="dash-star-mover dash-star-mover--${m.grad}" data-dash-action="review-portfolio" aria-label="${esc(m.title)} — ${m.value} products">
+      <div class="dash-star-mover-head">
+        <span class="dash-star-mover-title">${m.icon ? `<span class="material-icons">${esc(m.icon)}</span>` : ''}${esc(m.title)}</span>
+        <span class="dash-star-mover-cta">View products <span class="material-icons">arrow_forward</span></span>
+      </div>
+      ${countUpMarkup(m.value, { className: 'dash-star-mover-num' })}
+      <span class="dash-star-mover-note">${esc(m.note)}</span>
+    </button>`).join('');
+  return `
+    <section class="dash-stars-section dash-star-movers">
+      <div class="dash-star-movers-lead">
+        <span class="material-icons">auto_awesome</span>
+        <span><strong>Star Movers</strong> — products one small reformulation away from the next star</span>
+      </div>
+      <div class="dash-star-movers-grid">${cards}</div>
+    </section>`;
+}
+
+/* Count tiles — total + one tile per star tier + a near-miss tile. */
+function renderStarTiles(s) {
+  const tierTiles = s.tiers.map((t) => `
+    <div class="dash-star-tile">
+      ${countUpMarkup(t.count, { className: 'dash-star-tile-num' })}
+      <span class="dash-star-tile-label">${esc(t.label)}</span>
+      <span class="dash-star-tile-sub">${t.pct}% of portfolio</span>
+    </div>`).join('');
+  return `
+    <section class="dash-stars-section dash-star-tiles">
+      <div class="dash-star-tile dash-star-tile--total">
+        ${countUpMarkup(s.totalProducts, { className: 'dash-star-tile-num' })}
+        <span class="dash-star-tile-label">Total Products</span>
+        <span class="dash-star-tile-sub">rated on Guiding Stars</span>
+      </div>
+      ${tierTiles}
+      <button type="button" class="dash-star-tile dash-star-tile--nearmiss" data-dash-action="review-portfolio">
+        ${countUpMarkup(s.nearMiss, { className: 'dash-star-tile-num' })}
+        <span class="dash-star-tile-label">Near-Miss</span>
+        <span class="dash-star-tile-sub">1 pt from next star — click to view</span>
+      </button>
+    </section>`;
+}
+
+/* Horizontal count bars (reuses the fat-bar UI; value shown inside the fill). */
+function starHBarRows(items, maxVal) {
+  const max = maxVal || Math.max(...items.map((i) => i.value), 1);
+  return items.map((it, i) => {
+    const pct = Math.max(4, Math.round((it.value / max) * 100));
+    const color = it.color || C.teal;
+    return `
+      <div class="dash-ing-row">
+        <div class="dash-ing-bar-head">
+          <span class="dash-ing-name">${it.rank === false ? '' : `<span class="dash-ing-rank">${i + 1}</span>`}${esc(it.name)}</span>
+        </div>
+        <div class="dash-ws-health-bar dash-ws-health-bar--inline dash-ing-bar" role="group" aria-label="${esc(it.name)} — ${it.value} products">
+          <div class="dash-ws-health-track" style="--bar-color:${color}">
+            <div class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}">
+              ${countUpMarkup(it.value, { className: 'dash-ws-health-num' })}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* Star Distribution donut + What's Blocking 0★ bars (two-up row). */
+function renderStarDistribution(s) {
+  const parts = starParts(s.tiers.map((t) => t.count));
+  return `
+    <section class="dash-two-up">
+      <div class="dash-card dash-donut-card dash-stars-donut-card is-health-hidden">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">Star Distribution</h3>
+            <p class="dash-ing-note">All ${Math.round(s.totalProducts / 1000)},000+ products by current Guiding Stars rating.</p>
+          </div>
+          ${starReportBtn}
+        </div>
+        <div class="dash-donut-row">
+          ${singleDonut(parts, String(s.totalProducts), '', 'Products', 'rated total', 'Star rating')}
+          <div class="dash-donut-legends">
+            ${legendGroup('Guiding Stars rating', parts)}
+          </div>
+        </div>
+      </div>
+      <div class="dash-card dash-ingredients-card dash-stars-section">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">What's Blocking 0-Star Products</h3>
+            <p class="dash-ing-note">0★ products where one low-effort fix (~1 debit) alone earns a star.</p>
+          </div>
+          ${starReportBtn}
+        </div>
+        <div class="dash-ing-table">${starHBarRows(s.blockers)}</div>
+      </div>
+    </section>`;
+}
+
+const starReportBtn = `
+  <button type="button" class="dash-star-report-btn" data-dash-action="stars-add-report" title="Add to Report">
+    <span class="material-icons">push_pin</span>Add to Report
+  </button>`;
+
+/* Vertical stacked bar chart — one column per brand, stacked by star tier. */
+function starVBars(list) {
+  const totals = list.map((b) => b.stars.reduce((a, c) => a + c, 0));
+  const max = Math.max(...totals, 1);
+  return `<div class="dash-vbars">${list.map((b, bi) => {
+    const total = totals[bi];
+    const h = Math.max(2, Math.round((total / max) * 100));
+    const segs = b.stars.map((c, si) => c > 0
+      ? `<span class="dash-vbar-seg" style="flex-grow:${c};background:${DATA_STARS.tiers[si].color}" title="${DATA_STARS.tiers[si].label}: ${c}"></span>`
+      : '').join('');
+    return `
+      <div class="dash-vbar" title="${esc(b.name)} · ${total.toLocaleString()} products">
+        <div class="dash-vbar-track"><div class="dash-vbar-col" style="height:${h}%"><span class="dash-vbar-stack">${segs}</span></div></div>
+        <span class="dash-vbar-label">${esc(b.name)}</span>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function getStarsBrandList() {
+  const src = _starsBrandMode === 'owners' ? DATA_STARS.brandOwners : DATA_STARS.brands;
+  const q = _starsBrandQuery.trim().toLowerCase();
+  return q ? src.filter((b) => b.name.toLowerCase().includes(q)) : src;
+}
+
+/* Just the bars + pagination footer, so mode/search/paging can re-render it. */
+function renderStarsBrandBarsInner() {
+  const list = getStarsBrandList();
+  const pages = Math.max(1, Math.ceil(list.length / STARS_BRAND_PAGE_SIZE));
+  if (_starsBrandPage >= pages) _starsBrandPage = pages - 1;
+  const start = _starsBrandPage * STARS_BRAND_PAGE_SIZE;
+  const page = list.slice(start, start + STARS_BRAND_PAGE_SIZE);
+  const rangeEnd = start + page.length;
+  const bars = page.length
+    ? starVBars(page)
+    : `<div class="dash-ing-empty" style="padding:40px 0">No brands match "${esc(_starsBrandQuery)}".</div>`;
+  return `
+    ${bars}
+    <div class="dash-stars-pager">
+      <button type="button" class="dash-text-link" data-dash-action="stars-prev"${_starsBrandPage === 0 ? ' disabled' : ''}><span class="material-icons">chevron_left</span>Prev ${STARS_BRAND_PAGE_SIZE}</button>
+      <span class="dash-stars-pager-info">${list.length ? `${start + 1}–${rangeEnd}` : '0'} of ${list.length} · Page ${_starsBrandPage + 1} of ${pages}</span>
+      <button type="button" class="dash-text-link" data-dash-action="stars-next"${_starsBrandPage >= pages - 1 ? ' disabled' : ''}>Next ${STARS_BRAND_PAGE_SIZE}<span class="material-icons">chevron_right</span></button>
+    </div>`;
+}
+
+function renderStarsByBrand() {
+  const total = _starsBrandMode === 'owners' ? DATA_STARS.brandOwners.length : DATA_STARS.brands.length;
+  return `
+    <section class="dash-card dash-stars-section dash-stars-brand-section">
+      <div class="dash-card-topbar">
+        <div class="dash-card-topbar-lead">
+          <h3 class="dash-card-title">Star Ratings by ${_starsBrandMode === 'owners' ? 'Brand Owner' : 'Brand'} — 1–${Math.min(STARS_BRAND_PAGE_SIZE, total)} of ${total * 217}</h3>
+          <p class="dash-ing-note">Number of products at each star level — click a bar to explore in Product Explorer.</p>
+        </div>
+        ${starReportBtn}
+      </div>
+      <div class="dash-stars-brand-controls">
+        <div class="dash-stars-tabs" data-dash-tabgroup="stars-brandmode">
+          <button type="button" class="dash-stars-tab${_starsBrandMode === 'brands' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="brands">Brands</button>
+          <button type="button" class="dash-stars-tab${_starsBrandMode === 'owners' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="owners">Brand Owners</button>
+        </div>
+        <label class="dash-stars-search">
+          <span class="material-icons">search</span>
+          <input type="text" id="stars-brand-search" placeholder="Search ${_starsBrandMode === 'owners' ? 'brand owners' : 'brands'}…" value="${esc(_starsBrandQuery)}" autocomplete="off">
+        </label>
+      </div>
+      ${starKeyLegend()}
+      <div class="dash-stars-brand-bars" id="stars-brand-bars">${renderStarsBrandBarsInner()}</div>
+    </section>`;
+}
+
+/* Quick-Win bars + Stars-within-Category donut (with tabs) + Portfolio donut. */
+function renderStarsBottom(s) {
+  const catPanels = s.categories.map((c, i) => {
+    const parts = starParts(c.stars);
+    const total = c.stars.reduce((a, v) => a + v, 0);
+    return `<div class="dash-stars-cat-panel dash-donut-card is-health-hidden${i === 0 ? '' : ' is-hidden'}" data-stars-cat-panel="${i}">
+        <div class="dash-donut-row dash-donut-row--compact">
+          ${singleDonut(parts, String(total), '', c.name, 'products', 'Star rating')}
+          <div class="dash-donut-legends">${legendGroup('Guiding Stars', parts)}</div>
+        </div>
+      </div>`;
+  }).join('');
+  const catTabs = s.categories.map((c, i) =>
+    `<button type="button" class="dash-stars-tab${i === 0 ? ' is-active' : ''}" data-dash-tab data-stars-cat="${i}">${esc(c.name)}</button>`).join('');
+
+  const portParts = s.portfolio.map((p) => ({ label: p.name, value: p.value, color: p.color }));
+  const portTotal = s.portfolio.reduce((a, p) => a + p.value, 0);
+
+  return `
+    <section class="dash-three-up dash-stars-bottom">
+      <div class="dash-card dash-ingredients-card dash-stars-section">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">Quick-Win Opportunity by Brand</h3>
+            <p class="dash-ing-note">0★ products within 1pt of ★ — brands 1–15 of 1,553.</p>
+          </div>
+          ${starReportBtn}
+        </div>
+        <div class="dash-ing-table">${starHBarRows(s.quickWin, s.quickWin[0].value)}</div>
+      </div>
+
+      <div class="dash-card dash-stars-cat-card">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">Stars within Category</h3>
+            <p class="dash-ing-note">Star mix inside each product category.</p>
+          </div>
+        </div>
+        <div class="dash-stars-tabs dash-stars-tabs--scroll" data-dash-tabgroup="stars-cat">${catTabs}</div>
+        <div class="dash-stars-cat-panels">${catPanels}</div>
+      </div>
+
+      <div class="dash-card dash-donut-card is-health-hidden">
+        <div class="dash-card-topbar">
+          <div class="dash-card-topbar-lead">
+            <h3 class="dash-card-title">Portfolio by Product Category</h3>
+            <p class="dash-ing-note">Light→dark shading is 0★→3★ within each category.</p>
+          </div>
+          ${starReportBtn}
+        </div>
+        <div class="dash-donut-row dash-donut-row--compact">
+          ${singleDonut(portParts, String(portTotal), '', 'Products', 'across categories', 'Category')}
+          <div class="dash-donut-legends">${legendGroup('Product category', portParts)}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* The full Guiding Stars surface (everything below the shared brand banner). */
+function renderStars(s) {
+  return `
+    ${renderStarMovers(s)}
+    ${renderStarTiles(s)}
+    ${renderStarDistribution(s)}
+    ${renderStarsByBrand()}
+    ${renderStarsBottom(s)}`;
+}
+
+/* Re-render only the brand bars (search / pagination) and replay the entrance
+   animation on the fresh columns. */
+function refreshStarsBrandBars(host) {
+  const wrap = host.querySelector('#stars-brand-bars');
+  if (!wrap) return;
+  wrap.innerHTML = renderStarsBrandBarsInner();
+  animateStarVBars(wrap);
+  runCountUps(wrap.querySelectorAll('.dash-count-up'), { duration: 900, stagger: 30 });
+}
+
+/* Rebuild the whole brand section (mode switch changes its title, note, search
+   placeholder + dataset) in place, without disturbing the other Stars sections
+   or re-running their count-ups. */
+function refreshStarsBrandSection(host) {
+  const sec = host.querySelector('.dash-stars-brand-section');
+  if (!sec) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderStarsByBrand();
+  const fresh = tmp.firstElementChild;
+  sec.replaceWith(fresh);
+  animateStarVBars(fresh);
+  runCountUps(fresh.querySelectorAll('.dash-count-up'), { duration: 900, stagger: 30 });
+}
+
+/* Show one category donut panel, hide the rest, and replay its sweep. */
+function showStarsCategory(host, idx) {
+  const panels = host.querySelectorAll('[data-stars-cat-panel]');
+  panels.forEach((p) => {
+    const on = p.dataset.starsCatPanel === String(idx);
+    p.classList.toggle('is-hidden', !on);
+    if (on) reanimateDonutCard(p);
+  });
+}
+
 /* Product-discovery intro (first load only). The dashboard opens with a thin
    progress line under the hero banner — the rest of the surface stays hidden
    while WISEcode "discovers" the portfolio. Only once the bar reaches 100% is
@@ -487,6 +940,13 @@ const COUNTUP_DURATION_SCALE = 1.8;
 /* How long the simulated discovery takes + how many tokens it "spends". */
 const DISCOVERY_DURATION_MS = 7200;
 const DISCOVERY_TOKENS = 2840;
+/* How far the progress bar must fill before the skeleton placeholders drop and
+   the real numbers + charts start populating. Until this point the surface reads
+   as a shimmering skeleton (a second or two on first load). */
+const DISCOVERY_REVEAL_PCT = 30;
+/* …but also hold the skeleton for at least this long so it's clearly visible
+   (the eased bar hits 30% in well under a second, which flashes by). */
+const DISCOVERY_MIN_SKELETON_MS = 1900;
 /* Rotating status messages shown while discovery runs — each maps to a slice of
    the progress bar so the label reads like a live ingest job working through
    products, imagery, barcodes, ingredients, then a final validation pass. */
@@ -505,7 +965,7 @@ function getActiveData() {
 
 function legend(parts) {
   return `<div class="dash-legend">${parts
-    .map((p) => `<span class="dash-legend-item"><span class="dash-legend-l"><span class="dash-dot" style="background:${p.color}"></span>${esc(p.label)}</span> <strong>${p.value}</strong></span>`)
+    .map((p) => `<span class="dash-legend-item"><span class="dash-legend-l"><span class="dash-dot" style="background:${p.color}"></span>${esc(p.label)}</span> <strong>${Number.isFinite(+p.value) ? (+p.value).toLocaleString('en-US') : p.value}</strong></span>`)
     .join('')}</div>`;
 }
 
@@ -998,7 +1458,6 @@ function renderHero(d, isAlt = false) {
   const heroDesc = isAlt
     ? `Comparing food intelligence WISEcode has gathered on Great Value — ${d.claim.discovered} products analyzed for UPF status, ingredient quality, and health outcomes. Scores reflect the full private-label catalog.`
     : `Here's the food intelligence WISEcode has gathered on your portfolio — UPF status, ingredient and nutrient quality, and health-outcome metrics. Review what we found, then claim your products to manage them.`;
-  const toggleLabel = isAlt ? 'Back to Date Better Snacks' : 'Compare: Great Value';
   return `
     <section class="dash-hero${banner ? ' has-image' : ''}${isAlt ? ' is-alt-brand' : ''}" id="dash-hero">
       <div class="dash-hero-bg" id="dash-hero-bg"${banner ? ` style="background-image:${cssUrl(banner)}"` : ''}></div>
@@ -1015,16 +1474,6 @@ function renderHero(d, isAlt = false) {
       <div class="dash-hero-left">
         <div class="dash-hero-row">
           <h1 class="dash-hero-title">Welcome, ${esc(d.brand.name)}</h1>
-          <button class="dash-brand-toggle${isAlt ? ' is-on' : ''}"
-            type="button" role="switch" aria-checked="${isAlt}"
-            data-dash-action="switch-brand"
-            title="${toggleLabel}"
-            aria-label="${toggleLabel}">
-            <span class="dash-brand-toggle-track" aria-hidden="true">
-              <span class="dash-brand-toggle-thumb"></span>
-            </span>
-            <span class="dash-brand-toggle-text">Bad Scores/High Numbers</span>
-          </button>
         </div>
         <p class="dash-hero-desc" id="dash-hero-desc">${heroDesc}</p>
         <button class="dash-hero-learn" type="button" data-dash-action="hero-learn"
@@ -1069,8 +1518,10 @@ function renderDiscovery() {
 /* Drive the discovery line from 0→100% over DISCOVERY_DURATION_MS, updating the
    percentage, the estimated time remaining, and the token spend as it goes.
    Resolves once the bar completes (and briefly shows a "complete" state) so the
-   caller can reveal the dashboard and kick off the count-ups. */
-function runDiscovery(host, { onFirstFound } = {}) {
+   caller can reveal the dashboard and kick off the count-ups. `onReveal` fires
+   once the bar crosses DISCOVERY_REVEAL_PCT — the moment the skeleton drops and
+   the numbers + charts begin to populate. */
+function runDiscovery(host, { onReveal } = {}) {
   const bar = host.querySelector('#dash-discovery');
   const fill = host.querySelector('#dash-discovery-fill');
   const pctEl = host.querySelector('#dash-discovery-pct');
@@ -1078,7 +1529,7 @@ function runDiscovery(host, { onFirstFound } = {}) {
   const tokEl = host.querySelector('#dash-discovery-tokens');
   const statusEl = host.querySelector('#dash-discovery-status');
   const fmt = (n) => Math.round(n).toLocaleString('en-US');
-  let firstFound = false;
+  let revealFired = false;
   return new Promise((resolve) => {
     if (!bar || !fill) { resolve(); return; }
     const start = performance.now();
@@ -1100,9 +1551,14 @@ function runDiscovery(host, { onFirstFound } = {}) {
         const msg = DISCOVERY_STAGES[stage];
         if (statusEl.textContent !== msg) statusEl.textContent = msg;
       }
-      /* The first products have surfaced — let the dashboard paint in behind the
-         bar (loading state) so charts fill and numbers climb as more arrive. */
-      if (!firstFound && pct >= 2) { firstFound = true; onFirstFound?.(); }
+      /* Roughly a third of the way through the bar — but never before the
+         skeleton has been on screen long enough to read — the skeleton drops:
+         the dashboard reveals and its charts fill + numbers climb (loading
+         state) as the remaining products stream in. */
+      if (!revealFired && pct >= DISCOVERY_REVEAL_PCT && (now - start) >= DISCOVERY_MIN_SKELETON_MS) {
+        revealFired = true;
+        onReveal?.();
+      }
       if (t < 1) { requestAnimationFrame(tick); return; }
       /* Land on the exact totals, flip to the completed state, then resolve a
          beat later so the check reads before the surface reveals. */
@@ -2401,7 +2857,8 @@ export function renderDashboardHome(host) {
   host.innerHTML = `
     ${renderHero(d, isAlt)}
     ${discovering ? renderDiscovery() : ''}
-    <div class="dash${discovering ? ' is-discovering' : ''}">
+    <div class="dash${discovering ? ' is-skeleton' : ''}${_starsActive ? ' dash--stars' : ''}">
+      ${_starsActive ? renderStars(DATA_STARS) : `
       ${renderClaim(d)}
       ${document.body.dataset.hideWISEai ? renderTopPerformers(d) : ''}
       ${document.body.dataset.hideWISEai ? renderTopPerformersHero(d) : ''}
@@ -2417,7 +2874,7 @@ export function renderDashboardHome(host) {
       ${renderMetricSpotlight(d)}
       ${renderIngredientFlags(d)}
       ${renderScoreDistribution(d)}
-      ${document.body.dataset.hideWISEai ? renderFocusScatter(d) : ''}
+      ${document.body.dataset.hideWISEai ? renderFocusScatter(d) : ''}`}
     </div>`;
 
   /* Wire interactions only once per host element. On re-renders triggered by
@@ -2442,7 +2899,23 @@ export function renderDashboardHome(host) {
 
       const tab = e.target.closest('[data-dash-tab]');
       if (tab) {
-        host.querySelectorAll('[data-dash-tab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+        /* Scope the active state to the tab's own group so multiple tab sets on
+           the page (brand mode + category) don't fight each other. */
+        const group = tab.closest('[data-dash-tabgroup]') || host;
+        group.querySelectorAll('[data-dash-tab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+        /* Guiding Stars — "Brands / Brand Owners" mode switch. */
+        if (tab.dataset.starsBrandmode) {
+          _starsBrandMode = tab.dataset.starsBrandmode;
+          _starsBrandPage = 0;
+          _starsBrandQuery = '';
+          refreshStarsBrandSection(host);
+          return;
+        }
+        /* Guiding Stars — "Stars within Category" donut switch. */
+        if (tab.dataset.starsCat != null) {
+          showStarsCategory(host, tab.dataset.starsCat);
+          return;
+        }
         return;
       }
 
@@ -2478,6 +2951,28 @@ export function renderDashboardHome(host) {
       if (a === 'switch-brand') {
         _altBrandActive = !_altBrandActive;
         renderDashboardHome(host);
+        return;
+      }
+
+      /* Guiding Stars toggle — swap the surface below the banner for the
+         Guiding Stars analytics (keeps the brand banner + logo). */
+      if (a === 'switch-stars') {
+        _starsActive = !_starsActive;
+        renderDashboardHome(host);
+        return;
+      }
+
+      /* Guiding Stars — brand-chart pagination. */
+      if (a === 'stars-prev' || a === 'stars-next') {
+        _starsBrandPage += a === 'stars-next' ? 1 : -1;
+        if (_starsBrandPage < 0) _starsBrandPage = 0;
+        refreshStarsBrandBars(host);
+        return;
+      }
+
+      /* Guiding Stars — "Add to Report" pins a chart into the report builder. */
+      if (a === 'stars-add-report') {
+        agToastLocal('Added to your report.');
         return;
       }
 
@@ -2606,18 +3101,29 @@ export function renderDashboardHome(host) {
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.dash-kebab-wrap')) closeMenus(null);
     });
+
+    /* Guiding Stars — live-filter the brand chart as you type. Re-renders only
+       the bars (not the input) so focus + caret are preserved. */
+    host.addEventListener('input', (e) => {
+      const search = e.target.closest('#stars-brand-search');
+      if (!search) return;
+      _starsBrandQuery = search.value;
+      _starsBrandPage = 0;
+      refreshStarsBrandBars(host);
+    });
   }
 
   setupChartReplay(host);
   setupDonutPopover(host);
 
-  /* First load: the dashboard paints in as soon as the first product is found
-     (not at 100%). Until then `.dash` is hidden (is-discovering); on the first
-     "found" tick we reveal it, wire the scroll-triggered chart/count-up
-     animations so numbers climb + bars fill, and hold a live `is-loading` state
-     while the bar keeps running — the charts read as updating as more items
-     arrive. When discovery completes we drop the loading state and dismiss the
-     bar. Any later render (brand toggle) or reduced-motion animates at once. */
+  /* First load: the surface opens as a shimmering skeleton (`.dash.is-skeleton`)
+     while the discovery bar fills. About 30% of the way through the bar the
+     skeleton drops: we reveal the real content, wire the scroll-triggered
+     chart/count-up animations so numbers climb + bars fill, and hold a live
+     `is-loading` state while the bar keeps running — the charts read as updating
+     as more items arrive. When discovery completes we drop the loading state and
+     dismiss the bar. Any later render (brand toggle) or reduced-motion shows the
+     finished surface at once (no skeleton). */
   if (discovering) {
     const dash = host.querySelector('.dash');
     let revealed = false;
@@ -2625,12 +3131,12 @@ export function renderDashboardHome(host) {
       if (revealed) return;
       revealed = true;
       if (dash) {
-        dash.classList.remove('is-discovering');
+        dash.classList.remove('is-skeleton');
         dash.classList.add('is-revealed', 'is-loading');
       }
       setupChartAnimations(host);
     };
-    runDiscovery(host, { onFirstFound: reveal }).then(() => {
+    runDiscovery(host, { onReveal: reveal }).then(() => {
       _discoveryDone = true;
       reveal();
       if (dash) dash.classList.remove('is-loading');
@@ -2654,6 +3160,13 @@ function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/* Thousands separators for the big count-up numerals (e.g. 42,060). Small
+   values (scores, percentages) are unaffected. */
+function countUpFormat(n) {
+  const v = Number(n);
+  return Number.isFinite(v) ? v.toLocaleString('en-US') : String(n);
+}
+
 function countUpEl(el, duration = 1800) {
   if (el.classList.contains('is-counted')) return;
   const to = parseInt(el.getAttribute('data-count-to'), 10);
@@ -2666,9 +3179,9 @@ function countUpEl(el, duration = 1800) {
   const start = performance.now();
   const tick = (now) => {
     const t = Math.min(1, (now - start) / duration);
-    el.textContent = `${Math.round(to * easeOutCubic(t))}${suffix}`;
+    el.textContent = `${countUpFormat(Math.round(to * easeOutCubic(t)))}${suffix}`;
     if (t < 1) requestAnimationFrame(tick);
-    else el.textContent = `${to}${suffix}`;
+    else el.textContent = `${countUpFormat(to)}${suffix}`;
   };
   requestAnimationFrame(tick);
 }
@@ -2690,9 +3203,11 @@ function prepChartElements(root) {
 
 function finalizeChartElements(root) {
   root.querySelectorAll('.dash-count-up').forEach((el) => {
-    el.textContent = `${el.getAttribute('data-count-to')}${el.getAttribute('data-count-suffix') || ''}`;
+    el.textContent = `${countUpFormat(el.getAttribute('data-count-to'))}${el.getAttribute('data-count-suffix') || ''}`;
     el.classList.add('is-counted');
   });
+  /* Stacked vertical brand bars (Guiding Stars) reveal by growing up. */
+  root.querySelectorAll('.dash-vbar-stack').forEach((s) => s.classList.add('is-vbar-ready'));
   root.querySelectorAll('.dash-donut-arc[data-full-d]').forEach((arc) => {
     arc.setAttribute('d', arc.getAttribute('data-full-d'));
   });
@@ -3047,7 +3562,7 @@ function animateIngredientBars(section) {
   if (areMetricBarsComplete(section)) {
     section.querySelectorAll('.dash-metric-fill').forEach(markMetricFillReady);
     section.querySelectorAll('.dash-count-up').forEach((el) => {
-      el.textContent = `${el.getAttribute('data-count-to')}${el.getAttribute('data-count-suffix') || ''}`;
+      el.textContent = `${countUpFormat(el.getAttribute('data-count-to'))}${el.getAttribute('data-count-suffix') || ''}`;
     });
     return;
   }
@@ -3065,6 +3580,21 @@ function animateIngredientBars(section) {
     }
   });
   runCountUps(section.querySelectorAll('.dash-count-up'), { duration: 1200, stagger: CHART_BAR_STAGGER_MS });
+}
+
+/* Grow the stacked vertical brand bars up from the baseline, staggered. */
+function animateStarVBars(root) {
+  if (!root) return;
+  const stacks = [...root.querySelectorAll('.dash-vbar-stack')];
+  if (prefersReducedMotion()) {
+    stacks.forEach((s) => s.classList.add('is-vbar-ready'));
+    return;
+  }
+  stacks.forEach((s, i) => {
+    s.classList.remove('is-vbar-ready');
+    s.style.transitionDelay = `${i * 35}ms`;
+    requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('is-vbar-ready')));
+  });
 }
 
 /* Reveal the segmented distribution bar left-to-right (clip-path), then count
@@ -3331,6 +3861,11 @@ function setupChartAnimations(host) {
         animateScatter(el.querySelector('.dash-scatter-section'));
         const side = el.querySelector('.dash-scatter-side');
         if (side) animateIngredientBars(side);
+      } else if (el.classList.contains('dash-stars-section')) {
+        /* Guiding Stars blocks: count up the numerals, fill any horizontal
+           bars, and grow the stacked vertical brand bars. */
+        animateIngredientBars(el);
+        animateStarVBars(el);
       }
       observer.unobserve(el);
     });
@@ -3363,6 +3898,7 @@ function setupChartAnimations(host) {
   if (radarSection) observer.observe(radarSection);
   const scatterRow = host.querySelector('.dash-scatter-row');
   if (scatterRow) observer.observe(scatterRow);
+  host.querySelectorAll('.dash-stars-section').forEach((s) => observer.observe(s));
 }
 
 /* Floating popover on donut-segment hover. Styled to match the navigation

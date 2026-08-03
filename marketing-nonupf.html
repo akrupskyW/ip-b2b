@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" class="mkt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Non-UPF Verified™ · WISE</title>
+  <meta name="description" content="Non-UPF Verified™ is WISE's independent, science-backed certification that a product is not ultra-processed — our vision, our values, the science behind it, and the metrics we measure your brand on." />
+  <script>
+    (function () { try { var t = localStorage.getItem('wise-theme'); document.documentElement.classList.toggle('dark', t === 'dark'); } catch (e) {} })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- Legacy Material Icons — the shared WISEai chat module renders its controls with <span class="material-icons">. -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="marketing.css" />
+  <!-- The exact product WISEai chat module styles (shared across the marketing surface). -->
+  <link rel="stylesheet" href="wiseai-chat.css" />
+  <!-- Hand the page to the shared marketing shell (nav + persistent chat + router). -->
+  <script>window.__WISE_MKT_SHELL__ = true;</script>
+</head>
+<body class="mkt mkt-appshell" data-mkt-route="nonupf">
+
+  <!-- Shared nav + persistent WISEai chat rail are injected by js/marketing-shell.js.
+       This is a dedicated deep-dive branching off WISEip (marketing-enterprise.html). -->
+  <div id="mkt-body-module">
+
+  <main>
+    <!-- ============================================================
+         SECTION · Hero
+    ============================================================= -->
+    <section id="hero" class="mkt-hero">
+      <div class="mkt-shell">
+        <div class="mkt-hero-grid">
+          <div class="mkt-hero-copy mkt-reveal">
+            <img class="mkt-hero-shield" src="assets/marketing/non-upf-shield.svg" alt="Non-UPF Verified Shield" width="120" height="104" />
+            <span class="mkt-eyebrow">WISEip · Non-UPF Verified™</span>
+            <h1 class="mkt-hero-title">The proof that a product is <span class="mkt-accent">not</span> ultra-processed.</h1>
+            <p class="mkt-lede">Non-UPF Verified™ is WISE's independent, science-backed certification. Every ingredient is evaluated against the NFP+™ standard and screened for safety — so the brands doing the work earn the Shield, and shoppers who want honest food can finally find them.</p>
+            <div class="mkt-hero-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html#verify" data-chat-intent="verify">Start my verification <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="#metrics">See what we measure</a>
+            </div>
+          </div>
+          <div class="mkt-hero-media mkt-reveal">
+            <video autoplay muted loop playsinline poster="assets/marketing/hero-poster.jpg"><source src="assets/marketing/hero.mp4" type="video/mp4" /><source src="assets/marketing/hero.webm" type="video/webm" /></video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · What it is
+    ============================================================= -->
+    <section id="what" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <span class="mkt-eyebrow">What it is</span>
+            <h2 class="mkt-feature-title">A single, trustworthy answer to one honest question.</h2>
+            <p class="mkt-lede">"Is this ultra-processed?" is the question shoppers can't answer from a label alone. Non-UPF Verified™ answers it for them — not with a marketing claim, but with an independent evaluation of what's in a product and how far it has been industrially transformed from whole food.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Every ingredient is evaluated against the science-backed NFP+™ UPF standard</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Processing is judged, not just contents — how far a food has been transformed, not only what's on the label</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Passing products earn the Non-UPF Verified™ Shield shoppers can spot at a glance</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Independent of the brand — the verdict is WISE's, backed by evidence</li>
+            </ul>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/screens/wiseip-verification.png" alt="The Non-UPF Verified™ portal listing products and their Shield status" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Our vision
+    ============================================================= -->
+    <section id="vision" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner">
+            <div style="display:grid;gap:14px">
+              <span class="mkt-eyebrow" style="color:rgba(255,255,255,.85)">Our vision</span>
+              <h2>A food system where "not ultra-processed" is something you can prove, not just claim.</h2>
+              <p>We picture a shelf where honest food is easy to find and impossible to fake — where the Shield means the same thing on every package, and the brands investing in real ingredients are the ones that get discovered. Non-UPF Verified™ exists to make food truth a standard the whole industry can build on, and every shopper can trust at a glance.</p>
+            </div>
+            <div class="mkt-mission-badges">
+              <div class="mkt-seal">
+                <img class="mkt-seal-shield" src="assets/marketing/non-upf-shield.svg" alt="Non-UPF Verified Shield" width="72" height="62" />
+                <span class="mkt-seal-txt"><strong>Non-UPF Verified™</strong><small>One standard, verified the same way every time</small></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Its values
+    ============================================================= -->
+    <section id="values" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">What we stand for</span>
+          <h2 class="mkt-section-title">The values behind the Shield</h2>
+          <p class="mkt-lede" style="margin-inline:auto">A certification is only as good as the principles that govern it. These are the commitments the Non-UPF Verified™ program is held to.</p>
+        </div>
+        <div class="mkt-pillars-grid">
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">balance</span></span>
+            <h3 class="mkt-pillar-title">Independence</h3>
+            <p class="mkt-pillar-body">The verdict is ours, not the brand's. Verification is earned against a fixed standard — it can't be bought, negotiated or spun.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">visibility</span></span>
+            <h3 class="mkt-pillar-title">Transparency</h3>
+            <p class="mkt-pillar-body">Every result is traceable to the ingredient and the evidence behind it. If a product passes — or doesn't — a brand can see exactly why.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">science</span></span>
+            <h3 class="mkt-pillar-title">Scientific rigor</h3>
+            <p class="mkt-pillar-body">The standard follows the science, not the trend. It's grounded in peer-reviewed research on ultra-processing and refined as the evidence evolves.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">groups</span></span>
+            <h3 class="mkt-pillar-title">Accessibility</h3>
+            <p class="mkt-pillar-body">Food truth shouldn't require a chemistry degree. The Shield distills a complex evaluation into one signal anyone can trust in a second.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">verified_user</span></span>
+            <h3 class="mkt-pillar-title">Consistency</h3>
+            <p class="mkt-pillar-body">The same rules apply to a household name and a first-time founder. One standard, applied identically to every product, every time.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-icon"><span class="material-symbols-outlined">trending_up</span></span>
+            <h3 class="mkt-pillar-title">Progress</h3>
+            <p class="mkt-pillar-body">Verification is a starting line, not a gate. Brands that fall short get a clear path — and the tools — to reformulate and try again.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Our methods — where the science comes from
+    ============================================================= -->
+    <section id="methods" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">Our methods</span>
+          <h2 class="mkt-section-title">Where the science comes from</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Every Non-UPF verdict rests on evidence, not opinion. Here's how we source, evaluate and keep the science current.</p>
+        </div>
+        <div class="mkt-pillars-grid">
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Source 01</span>
+            <h3 class="mkt-pillar-title">Peer-reviewed research</h3>
+            <p class="mkt-pillar-body">The definition of ultra-processing is grounded in published nutrition science — including the NOVA framework and the growing body of research linking ultra-processed food to health outcomes.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Source 02</span>
+            <h3 class="mkt-pillar-title">Regulatory &amp; safety records</h3>
+            <p class="mkt-pillar-body">Ingredient identities and safety status are cross-checked against authoritative regulatory sources, including FDA GRAS records and additive databases.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Source 03</span>
+            <h3 class="mkt-pillar-title">The NFP+™ platform</h3>
+            <p class="mkt-pillar-body">Over a million analyzed products and 12,000+ attributes per food feed a living model of how ingredients are processed, combined and labeled across the market.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Source 04</span>
+            <h3 class="mkt-pillar-title">Expert review</h3>
+            <p class="mkt-pillar-body">Nutrition scientists and food engineers set the thresholds, adjudicate edge cases and update the standard as new evidence emerges — so the model never runs unsupervised.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Metrics — how we measure your brand
+    ============================================================= -->
+    <section id="metrics" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">The metrics</span>
+          <h2 class="mkt-section-title">How we measure your brand</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Verification isn't a single pass/fail switch — it's a set of measured signals across your whole portfolio. These are the metrics behind the Shield.</p>
+        </div>
+
+        <div class="mkt-stats-grid mkt-reveal" style="margin-bottom:clamp(28px,4vw,48px)">
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="12483" data-count-suffix="+">0</span><span class="mkt-stat-label">Attributes evaluated per product</span></div>
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="100" data-count-suffix="%">0</span><span class="mkt-stat-label">Of ingredients scored, not sampled</span></div>
+          <div class="mkt-stat"><span class="mkt-stat-num" data-count-to="1043912" data-count-suffix="+">0</span><span class="mkt-stat-label">Products benchmarked against</span></div>
+        </div>
+
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> <strong>UPF classification</strong> — the headline verdict: is the product ultra-processed under the NFP+™ standard?</li>
+              <li><span class="material-symbols-outlined">check_circle</span> <strong>Processing depth</strong> — how far each ingredient has been industrially transformed from its whole-food origin.</li>
+              <li><span class="material-symbols-outlined">check_circle</span> <strong>Ingredient integrity</strong> — the share of recognizable, whole-food ingredients versus industrial additives and markers.</li>
+              <li><span class="material-symbols-outlined">check_circle</span> <strong>GRAS safety coverage</strong> — the proportion of ingredients with a clear Generally Recognized as Safe basis.</li>
+              <li><span class="material-symbols-outlined">check_circle</span> <strong>Portfolio verification rate</strong> — how much of your catalog qualifies for and has earned the Shield.</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html#verify" data-chat-intent="verify">Start my verification <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="marketing-gras.html">See GRAS Reviewed</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/screens/wiseip-dashboard.png" alt="WISEip verification dashboard with UPF split and verification-status charts" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Final CTA
+    ============================================================= -->
+    <section id="cta" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner">
+            <div style="display:grid;gap:14px">
+              <span class="mkt-eyebrow" style="color:rgba(255,255,255,.85)">Earn the Shield</span>
+              <h2>Prove your food is the real thing.</h2>
+              <p>Run your portfolio through the Non-UPF Verified™ program and get discovered by shoppers and retailers actively searching for cleaner food.</p>
+            </div>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-ghost" style="background:#fff;color:var(--primary);border-color:#fff" href="marketing-enterprise.html#verify" data-chat-intent="verify">Start my verification</a>
+              <a class="mkt-btn mkt-btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" href="marketing-enterprise.html">Back to WISEip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer is injected once by js/marketing-shell.js (shared across all
+       marketing pages), so it lives OUTSIDE #mkt-body-module. -->
+
+  </div><!-- /#mkt-body-module -->
+
+  <script defer src="js/marketing.js"></script>
+  <script type="module" src="js/marketing-shell.js"></script>
+</body>
+</html>

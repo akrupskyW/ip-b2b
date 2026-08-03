@@ -55,6 +55,60 @@
     nav.querySelectorAll('.mkt-nav-link').forEach(function (link) {
       link.addEventListener('click', function () { nav.classList.remove('is-open'); });
     });
+
+    initNavCollapse(nav, toggle);
+  }
+
+  /* ---- Overflow-driven collapse ("go mobile the moment it can't fit") ----
+     Instead of a fixed pixel breakpoint (which just lets the links scroll in a
+     horizontal rail when the bar is wide but crowded — e.g. the docked chat rail
+     eats the width, or there are simply too many items), we MEASURE whether the
+     nav links actually fit their row. The instant they'd overflow, we flip the
+     whole bar into its drawer/hamburger layout via .is-collapsed.
+
+     Measuring is done in the expanded (row) state: we drop .is-collapsed, read
+     the links' content vs box width synchronously (no paint happens mid-task,
+     so there's no flicker), then re-apply collapse if it doesn't fit. */
+  function initNavCollapse(nav, toggle) {
+    var links = nav.querySelector('.mkt-nav-links');
+    if (!links) return;
+    var scheduled = false;
+
+    var check = function () {
+      scheduled = false;
+      nav.classList.remove('is-collapsed');
+      // Reading scrollWidth forces a synchronous reflow, so this reflects the
+      // true row layout even though we removed .is-collapsed a line ago.
+      var overflowing = (links.scrollWidth - links.clientWidth) > 1;
+      if (overflowing) {
+        nav.classList.add('is-collapsed');
+      } else {
+        // Room to breathe again — make sure a leftover open drawer is closed.
+        nav.classList.remove('is-open');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    var schedule = function () {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(check);
+    };
+
+    if (typeof ResizeObserver !== 'undefined') {
+      var ro = new ResizeObserver(schedule);
+      ro.observe(nav);
+      // The actions cluster grows when the "Get the Cool Owl app" CTA types
+      // itself in; watching it re-checks fit as the row's demands change.
+      var actions = nav.querySelector('.mkt-nav-actions');
+      if (actions) ro.observe(actions);
+    }
+    window.addEventListener('resize', schedule);
+    schedule();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+    // Re-check after the CTA typing animation has settled its final width.
+    setTimeout(schedule, 400);
+    setTimeout(schedule, 1400);
   }
 
   /* ---- Theme toggle (persisted with the same key the app uses) ---- */
@@ -113,6 +167,10 @@
       // from zero. Defaults to 0 for the from-scratch reveal.
       var from = parseFloat(el.getAttribute('data-count-from'));
       if (isNaN(from)) from = 0;
+      // Perpetual-ticker step: default +1 ("one by one"), but if a max is given
+      // the counter jumps by a small randomized integer (1..stepMax) each tick.
+      var stepMax = parseInt(el.getAttribute('data-count-step-max'), 10);
+      if (isNaN(stepMax) || stepMax < 1) stepMax = 1;
       var render = function (v) { el.textContent = Math.round(v).toLocaleString() + suffix; };
 
       // Land the ramp a hair below the headline number, so the perpetual
@@ -126,10 +184,19 @@
 
       var keepTicking = function () {
         var delay = 1800 + Math.random() * 900; // ~2s cadence, jittered
-        setTimeout(function () { value += 1; render(value); keepTicking(); }, delay);
+        setTimeout(function () {
+          value += stepMax > 1 ? 1 + Math.floor(Math.random() * stepMax) : 1;
+          render(value);
+          keepTicking();
+        }, delay);
       };
 
-      var dur = 1500, start = null;
+      // Ramp duration defaults to 1.5s, but an element can ask for a slower
+      // (or faster) climb via data-count-duration (ms) — e.g. a small headline
+      // number you want visitors to actually watch tick upward.
+      var dur = parseInt(el.getAttribute('data-count-duration'), 10);
+      if (isNaN(dur) || dur < 0) dur = 1500;
+      var start = null;
       var step = function (ts) {
         if (!start) start = ts;
         var p = Math.min((ts - start) / dur, 1);
@@ -328,6 +395,7 @@
     var video = section.querySelector('[data-mkt-video]');
     var capEl = section.querySelector('[data-mkt-video-cc]');
     var ccBtn = section.querySelector('[data-mkt-video-captions]');
+    var soundBtn = section.querySelector('[data-mkt-video-sound]');
     if (!video) return;
 
     var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
@@ -355,6 +423,22 @@
         ccBtn.setAttribute('aria-label', off ? 'Turn captions on' : 'Turn captions off');
         var tt = video.textTracks && video.textTracks[0];
         if (tt) renderCue(tt);
+      });
+    }
+
+    /* Audio is muted by default (required for autoplay). The sound button
+       unmutes/mutes the voiceover on demand. */
+    if (soundBtn) {
+      video.muted = true;
+      soundBtn.addEventListener('click', function () {
+        video.muted = !video.muted;
+        var on = !video.muted;
+        if (on) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
+        soundBtn.classList.toggle('is-on', on);
+        soundBtn.setAttribute('aria-pressed', String(on));
+        soundBtn.setAttribute('aria-label', on ? 'Turn sound off' : 'Turn sound on');
+        var icon = soundBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = on ? 'volume_up' : 'volume_off';
       });
     }
 
@@ -618,6 +702,168 @@
     });
   }
 
+  /* ---- Scroll-gated films ----
+     Videos tagged [data-mkt-scrollvideo] only play while they're on screen and
+     pause the moment they scroll away, so nothing runs off-view. When a clip
+     finishes it holds on its last frame for HOLD_MS, then loops. Muted so the
+     play() promise isn't blocked by autoplay policies. Idempotent. */
+  function initScrollVideo() {
+    var vids = document.querySelectorAll('[data-mkt-scrollvideo]');
+    if (!vids.length) return;
+
+    var HOLD_MS = 10000; // freeze on the last frame this long before looping
+
+    Array.prototype.forEach.call(vids, function (v) {
+      if (v.dataset.scrollvidInit) return;
+      v.dataset.scrollvidInit = '1';
+
+      /* We loop by hand (native loop suppresses the 'ended' event we need). */
+      v.loop = false;
+      v.removeAttribute('loop');
+
+      var inView = false;
+      var holdTimer = null;
+
+      var play = function () {
+        v.muted = true;
+        var p = v.play();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      };
+      var restart = function () {
+        try { v.currentTime = 0; } catch (e) {}
+        play();
+      };
+
+      /* Reached the end: sit on the last frame, then loop if still on screen. */
+      v.addEventListener('ended', function () {
+        if (holdTimer) clearTimeout(holdTimer);
+        holdTimer = setTimeout(function () {
+          holdTimer = null;
+          if (inView) restart();
+        }, HOLD_MS);
+      });
+
+      if (!('IntersectionObserver' in window)) { inView = true; play(); return; }
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          inView = e.isIntersecting;
+          if (!inView) { v.pause(); return; }
+          // Back on screen: if the hold already elapsed while we were away,
+          // kick off the next loop; otherwise resume/continue playing. During
+          // an active hold, leave the last frame frozen for the timer.
+          if (v.ended) { if (!holdTimer) restart(); }
+          else play();
+        });
+      }, { threshold: 0.35 });
+      io.observe(v);
+    });
+  }
+
+  /* ---- Ambient hero owl: pulse at the 3s mark ----
+     Each loop, when the background film crosses 3.0s, it briefly enlarges
+     (anchored bottom-left via CSS transform-origin) and then eases gently back
+     to its default size. Idempotent + reduced-motion aware. */
+  function initHeroBgPulse() {
+    var video = document.querySelector('.mkt-hero-bgvideo');
+    if (!video || video.dataset.pulseInit) return;
+    video.dataset.pulseInit = '1';
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    /* Hold for 3s at the end of each pass, then restart — so instead of an
+       instant loop there's a brief breath before the clip plays again. */
+    var LOOP_PAUSE = 3000;
+    video.removeAttribute('loop');
+    video.loop = false;
+    video.addEventListener('ended', function () {
+      setTimeout(function () {
+        try { video.currentTime = 0; } catch (e) {}
+        var p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }, LOOP_PAUSE);
+    });
+
+    var MARK = 3;      // seconds into the clip
+    var HOLD = 950;    // ms to stay enlarged before relaxing back
+    var armed = true;  // re-armed every loop so it fires once per pass
+
+    video.addEventListener('timeupdate', function () {
+      if (video.currentTime < MARK) { armed = true; return; }
+      if (!armed) return;
+      armed = false;
+      video.classList.add('is-bump');
+      setTimeout(function () { video.classList.remove('is-bump'); }, HOLD);
+    });
+    // A loop back to the start re-arms even if timeupdate hasn't fired yet.
+    video.addEventListener('seeked', function () { if (video.currentTime < MARK) armed = true; });
+  }
+
+  /* ---- Store-badge QR code ----
+     Anywhere the App Store + Google Play badges appear, drop a scannable QR
+     immediately to their right, matched to the exact height of the badge row.
+     The QR encodes a device-aware "get the app" link, so scanning it on a
+     phone lands the visitor straight on the right store for their device.
+     Idempotent so the shell can re-run it after a client-side route swap. */
+  var GETAPP_URL = 'https://wisecode.ai/get-app';
+  var qrGroups = [];
+  /* Size every injected QR to the exact pixel height of its neighboring badge
+     row, keeping it a perfect square. Re-run on resize / font load so it stays
+     locked to the badges even as they reflow. */
+  function sizeStoreQRs() {
+    qrGroups.forEach(function (group) {
+      var badge = group.querySelector('.mkt-badge');
+      var qr = group.querySelector('.mkt-badge-qr');
+      if (!badge || !qr) return;
+      var h = badge.offsetHeight;
+      if (!h) return;
+      qr.style.width = h + 'px';
+      qr.style.height = h + 'px';
+    });
+  }
+  function initStoreQR() {
+    var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=' +
+      encodeURIComponent(GETAPP_URL);
+    var groups = document.querySelectorAll('.mkt-badges:not([data-qr-init])');
+    var added = false;
+    Array.prototype.forEach.call(groups, function (group) {
+      group.dataset.qrInit = '1';
+      // Only augment groups that actually contain the store badges.
+      if (!group.querySelector('.mkt-badge')) return;
+      var qr = document.createElement('a');
+      qr.className = 'mkt-badge-qr';
+      qr.href = GETAPP_URL;
+      qr.target = '_blank';
+      qr.rel = 'noopener';
+      qr.setAttribute('aria-label', 'Scan this QR code to download the WISEcode app for your device');
+      qr.title = 'Scan to download the WISEcode app';
+      var img = document.createElement('img');
+      img.src = qrSrc;
+      img.alt = 'QR code to download the WISEcode app';
+      img.width = 240;
+      img.height = 240;
+      img.loading = 'lazy';
+      qr.appendChild(img);
+      group.appendChild(qr);
+      qrGroups.push(group);
+      added = true;
+    });
+    if (added) sizeStoreQRs();
+    // One-time listeners that keep every QR matched to its badge row.
+    if (!initStoreQR._bound) {
+      initStoreQR._bound = true;
+      var raf;
+      var relayout = function () {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(sizeStoreQRs);
+      };
+      window.addEventListener('resize', relayout, { passive: true });
+      window.addEventListener('load', sizeStoreQRs);
+      if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+        document.fonts.ready.then(sizeStoreQRs);
+      }
+    }
+  }
+
   /* Page-content interactions (everything that lives inside #mkt-body-module).
      Split out from boot() so the shell can re-run just these after a soft
      (client-side) route swap, without re-wiring the persistent nav/theme. All
@@ -629,7 +875,10 @@
     initMarquee();
     initVideoHero();
     initVideoClips();
+    initScrollVideo();
     initVoicesGalaxy();
+    initHeroBgPulse();
+    initStoreQR();
   }
   function boot() { injectLogos(); initNav(); initTheme(); initContent(); }
 
@@ -639,7 +888,8 @@
     injectLogos: injectLogos, initNav: initNav, initTheme: initTheme,
     initReveal: initReveal, initCounters: initCounters, initMarquee: initMarquee,
     initVideoHero: initVideoHero, initVideoClips: initVideoClips,
-    initVoicesGalaxy: initVoicesGalaxy,
+    initScrollVideo: initScrollVideo, initStoreQR: initStoreQR,
+    initVoicesGalaxy: initVoicesGalaxy, initHeroBgPulse: initHeroBgPulse,
     initContent: initContent, boot: boot
   };
 

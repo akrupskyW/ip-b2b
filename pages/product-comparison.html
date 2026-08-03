@@ -535,9 +535,14 @@
       font-size: var(--fs-ui) !important;
     }
 
+    /* Single (default) tier — a fixed-width single pane. The chat is pinned to a
+       definite 380px so it reads as ONE column and never balloons to fill the
+       modules row (matches the WISEai dock + portfolio #pf-chat-panel dock). */
     #chat-shell {
-      flex: 1 1 0%;
-      min-width: 320px;
+      flex: 0 0 380px;
+      width: 380px;
+      min-width: 380px;
+      max-width: 380px;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -551,18 +556,27 @@
       --chat-line-height: 1.6;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    /* WISEai "double width": the chat normally grows to fill the centre of the
-       modules row, so wide means it claims more of the row and refuses to
-       shrink — neighbouring panels compress and the row scrolls. Most visible
-       when side modules are open beside the chat. */
+    @media (max-width: 1100px) {
+      #chat-shell {
+        flex-basis: 330px;
+        width: 330px;
+        min-width: 330px;
+        max-width: 330px;
+      }
+    }
+    /* WISEai "double width": the chat grows to a wider, viewport-capped definite
+       length so single → double is a clear step up. Most visible when side
+       modules are open beside the chat. */
     #chat-shell.panel-wide {
-      flex-grow: 2;
-      min-width: min(760px, 92vw);
+      --chat-w: min(760px, 92vw);
+      flex: 0 0 var(--chat-w);
+      width: var(--chat-w);
+      min-width: var(--chat-w);
+      max-width: var(--chat-w);
     }
     /* Triple width — third tier of the single → double → triple cycle. */
     #chat-shell.panel-wide.panel-triple {
-      flex-grow: 3;
-      min-width: min(1080px, 96vw);
+      --chat-w: min(1080px, 96vw);
     }
 
     /* ── Report mode ────────────────────────────────────────────────────
@@ -578,18 +592,31 @@
       overflow-x: hidden;
     }
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell {
-      flex: 1 1 0 !important;
-      min-width: 320px !important;
-      max-width: none !important;
+      flex: 0 0 380px !important;
+      width: 380px !important;
+      min-width: 380px !important;
+      max-width: 380px !important;
+    }
+    @media (max-width: 1100px) {
+      #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell {
+        flex-basis: 330px !important;
+        width: 330px !important;
+        min-width: 330px !important;
+        max-width: 330px !important;
+      }
     }
     /* The chat can still be widened with its own width toggle — single stays a
-       third of the split, double matches the report, triple overtakes it —
-       without ever forcing the modules row to scroll horizontally. */
+       true single pane, double/triple step up to definite viewport-capped
+       widths — without ever forcing the modules row to scroll horizontally. */
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell.panel-wide {
-      flex-grow: 2 !important;
+      --chat-w: min(760px, 92vw);
+      flex: 0 0 var(--chat-w) !important;
+      width: var(--chat-w) !important;
+      min-width: var(--chat-w) !important;
+      max-width: var(--chat-w) !important;
     }
     #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell.panel-wide.panel-triple {
-      flex-grow: 3 !important;
+      --chat-w: min(1080px, 96vw);
     }
     /* The open report board fills the space to the right of the chat.
        Its fixed pixel widths are overridden so it can shrink to fit any
@@ -673,19 +700,27 @@
     .chat-messages-area {
       flex: 1 1 0%;
       overflow-y: auto;
-      /* Horizontal padding (48px) matches the topbar's px-12 so the message
-         avatars line up directly under the header owl. */
-      padding: 2rem 3rem;
+      /* Anchor the conversation to the BOTTOM: a short transcript sits at the
+         bottom of the pane and grows upward like a normal chat instead of
+         starting at the top with a gap below. `margin-top: auto` on the first
+         message (below) pushes the stack down while keeping scroll working
+         once the transcript outgrows the pane. */
+      display: flex;
+      flex-direction: column;
+      /* This chat lives in a NARROW side module (not the full-width WISEai
+         page), so the canonical 3rem side padding — plus the avatar column and
+         gap — squeezed the readable transcript into a tight column that wrapped
+         far too early. Pulled the inline padding in so the transcript uses the
+         module's full width; block padding stays generous. */
+      padding: 1.5rem 1.25rem;
       background: var(--bg);
       color: var(--text-muted);
       font-size: var(--fs-ui);
       line-height: var(--chat-line-height);
       transition: background-color 0.3s ease, color 0.25s ease;
     }
-    @media (min-width: 768px) {
-      .chat-messages-area {
-        padding: 2.5rem 3rem;
-      }
+    .chat-messages-area > *:first-child {
+      margin-top: auto;
     }
 
     .chat-input-rail {
@@ -3061,6 +3096,14 @@
       display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 999px;
       font-size: 9px; font-weight: 800; background: var(--primary); color: #fff; vertical-align: middle;
     }
+    /* Floated "YOU" chip — pinned to the top-right corner of the tile instead of
+       riding inline after the product name in the bottom overlay. The primary
+       ("YOU") column never carries a remove ×, so the top-right is free. */
+    .cmp-you-float {
+      position: absolute; top: 12px; right: 12px; z-index: 4;
+      margin-left: 0; padding: 3px 8px; font-size: 10px;
+      box-shadow: 0 1px 6px rgba(8,12,20,0.35);
+    }
     /* Category = a first-class peer column. Neutral striped tile + dashed pill
        so it reads as a benchmark entity, distinct from a real product/brand. */
     .cmp-cat-pill {
@@ -3410,6 +3453,85 @@
       .cmp-takeaways { grid-template-columns: 1fr; }
       .cmp-rank-bar { width: 64px; }
     }
+
+    /* ── Guiding Stars ────────────────────────────────────────────────────
+       A pink toggle in the Compare Foods header flips the board into a
+       "Guiding Stars"-style nutrition rating table — debit/credit points,
+       an overall star rating, and the key per-100-kcal nutrients that drive
+       it — instead of the WISEcode bar grid. */
+    /* Guiding Stars switch inside the module ⋯ menu — pink, so it stands out
+       from the neutral Move/Width/Off items. */
+    .pf-module-menu-item.pf-mi-gs .material-symbols-outlined,
+    .pf-module-menu-item.pf-mi-gs .material-icons { color: #EC4899 !important; }
+    .pf-module-menu-item.pf-mi-gs { color: color-mix(in srgb, #EC4899 82%, var(--text)); font-weight: 600; }
+    .pf-module-menu-item.pf-mi-gs:hover {
+      background: color-mix(in srgb, #EC4899 12%, transparent);
+      color: #EC4899;
+    }
+    .pf-module-menu-item.pf-mi-gs:hover .material-symbols-outlined,
+    .pf-module-menu-item.pf-mi-gs:hover .material-icons { color: #EC4899 !important; }
+    .pf-module-menu-item.pf-mi-gs.is-on {
+      background: color-mix(in srgb, #EC4899 14%, transparent);
+      color: #EC4899;
+    }
+
+    /* In-chat Guiding Stars intent chip — pink star accent. */
+    .sc-reply-chips .chip.chip-gs .material-icons,
+    .chip.chip-gs .material-icons { color: #EC4899 !important; }
+    .chip.chip-gs.is-on {
+      border-color: #EC4899 !important;
+      background: color-mix(in srgb, #EC4899 12%, transparent) !important;
+      color: color-mix(in srgb, #EC4899 82%, var(--text)) !important;
+    }
+    .chip.chip-gs.is-on .material-icons { color: #EC4899 !important; }
+
+    /* Stars-and-Score badge on the header tile (replaces the WISEscore gauge
+       when Guiding Stars is on). Centred on the tile, same footprint as the
+       circular gauge, layered over the tile scrim. */
+    .cmp-gs-badge {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 3; display: flex; flex-direction: column; align-items: center;
+      gap: 2px; text-align: center; pointer-events: none;
+    }
+    .cmp-gs-badge-stars { font-size: 34px; line-height: 1; letter-spacing: 3px; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+    .cmp-gs-badge-star { color: rgba(255,255,255,.4); }
+    .cmp-gs-badge-star.is-on { color: #FFC94A; }
+    .cmp-gs-badge.is-dq .cmp-gs-badge-star.is-on { color: #FFC94A; }
+    .cmp-gs-badge-score { font-size: 40px; font-weight: 800; color: #fff; line-height: 1.02; margin-top: 5px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgba(0,0,0,.35); }
+    .cmp-gs-badge-lbl { font-size: 10px; font-weight: 700; letter-spacing: .16em; color: rgba(255,255,255,.85); }
+    .cmp-gs-badge.is-low .cmp-gs-badge-score { color: #FF8A8A; }
+    .cmp-gs-badge.is-good .cmp-gs-badge-score { color: #9FE6B8; }
+
+    /* Guiding Stars row cell values — reuse the metric-cell frame, so the rows
+       read exactly like the WISEcode bar rows. */
+    .cmp-gs-rowval {
+      display: block; text-align: center; width: 100%;
+      font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+      padding: 6px 0;
+    }
+    .cmp-gs-text { font-weight: 600; font-size: 12px; color: var(--text); }
+    .cmp-gs-neg { color: var(--sec-red); }
+    .cmp-gs-pos { color: var(--sec-green); }
+    .cmp-gs-zero { color: var(--text-subtle); }
+    .cmp-gs-unit { font-size: 10px; font-weight: 600; color: var(--text-subtle); }
+
+    /* Per-cell chat affordance for the Guiding Stars rows — the forum icon rides
+       in the top-right of each entity cell and fades in on hover/focus, so every
+       product × line item can spawn a WISEai chat about that exact value. */
+    .cmp-gs-cell { position: relative; }
+    .cmp-gs-cellchat {
+      position: absolute; top: 4px; right: 4px; z-index: 2;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 6px;
+      color: var(--primary); cursor: pointer; opacity: 0;
+      background: color-mix(in srgb, var(--surface) 80%, transparent);
+      transition: opacity 0.14s ease, transform 0.12s ease, background-color 0.14s ease;
+    }
+    .cmp-gs-cellchat .material-icons { font-size: 14px !important; color: var(--primary); }
+    .cmp-gs-cell:hover .cmp-gs-cellchat,
+    .cmp-gs-cell:focus-within .cmp-gs-cellchat { opacity: 0.9; }
+    .cmp-gs-cellchat:hover { opacity: 1 !important; transform: scale(1.08); }
+    .cmp-gs-cellchat:focus-visible { opacity: 1; outline: 2px solid var(--primary); outline-offset: 2px; }
 
     /* ── Launch Readiness — stacked dual-module column ───────────────────
        Two workflow modules share one #panels-row-right slot and stack
@@ -5644,7 +5766,7 @@
         min-height: 56px;
       }
       .chat-messages-area {
-        padding: 1rem 2.5rem;
+        padding: 1rem 1rem;
       }
       #welcome-screen {
         padding: 1.25rem 2rem;
@@ -6382,12 +6504,11 @@
        send button cleanly aligned and sized to match.
        ===================================================================== */
     .chat-input-rail {
-      padding: 12px 40px !important;
+      /* Matches the canonical WISEai module input rail (wiseai-chat.css /
+         wise.css `.chat-input-rail`): 12px block, 32px inline. */
+      padding: 12px 32px !important;
       background: var(--bg) !important;
       border-top: 1px solid var(--border) !important;
-    }
-    @media (min-width: 768px) {
-      .chat-input-rail { padding: 12px 56px !important; }
     }
     .chat-input-rail > .flex {
       align-items: center !important;
@@ -6466,7 +6587,9 @@
        per-line meta (timestamp) stays in the body sans face. */
     body.ai-chat-page .sc-line-lead .sc-line-body {
       font-family: var(--font-serif);
-      font-size: 1.0625rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.25;
       letter-spacing: -0.01em;
     }
     body.ai-chat-page .sc-line-lead .sc-line-meta {
@@ -11733,6 +11856,10 @@
       drill: false,
       metricMenuOpen: false,
       chartMode: 'bars',   /* 'bars' = per-metric line/bar rows · 'radar' = overlaid spider chart */
+      guidingStars: false, /* pink header toggle — swaps the board for the Guiding Stars rating table */
+      gsAlgorithm: 'auto', /* Guiding Stars scoring algorithm: 'auto' | 'General Foods' | 'Meat/Dairy/Nuts' | 'Fats/Oils' | 'Beverages' */
+      gsRows: null,        /* which Guiding Stars line items are shown (null = all); lazily seeded from CMP_GS_ROWS */
+      gsAlgoMenuOpen: false,
       followDone: {},
       takeawaySlots: ['perf', 'prot', 'clean', 'val'],   /* which takeaway lives in each of the four cards (swappable) */
     };
@@ -11773,10 +11900,18 @@
     }
 
     function compareResetState() {
+      /* Preserve the Guiding Stars view choice across scope rebuilds so
+         "Change comparison" doesn't silently drop the user back to the
+         WISEcode bars. */
+      const keepGuidingStars = !!(compareState && compareState.guidingStars);
+      const keepGsAlgorithm = (compareState && compareState.gsAlgorithm) || 'auto';
+      const keepGsRows = (compareState && compareState.gsRows) ? compareState.gsRows.slice() : null;
       compareState = {
         scope: null, metrics: CMP_DEFAULT_METRICS.slice(), category: 'all',
         showAvg: false, shown: [], pending: [], stale: false, recalcing: false,
         drill: false, metricMenuOpen: false, chartMode: 'bars', followDone: {},
+        guidingStars: keepGuidingStars,
+        gsAlgorithm: keepGsAlgorithm, gsRows: keepGsRows, gsAlgoMenuOpen: false,
         takeawaySlots: ['perf', 'prot', 'clean', 'val'],
       };
       const body = document.getElementById('cmp-body');
@@ -12719,7 +12854,8 @@
     /* Build the overlaid spider/radar chart: one axis per selected metric,
        one translucent polygon per entity (in the entity's own brand colour),
        plus an optional dashed category-average ring. Returns an HTML string. */
-    function cmpRadarSection(scope, metrics, ents, showAvg) {
+    function cmpRadarSection(scope, metrics, ents, showAvg, valFn) {
+      const val = valFn || ((e, mm) => cmpScoreFor(e, mm.id));
       const M = metrics.length;
       if (M < 3) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
@@ -12768,7 +12904,7 @@
       const polyEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
         const coords = metrics.map((m, i) => {
-          const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
+          const v = Math.max(0, Math.min(100, val(ent, m)));
           return pt(i, v / 100);
         });
         const pts = coords.map(c => c.map(n => n.toFixed(1)).join(',')).join(' ');
@@ -12786,7 +12922,7 @@
         const catCls = kind === 'category' ? ' cmp-legend-bug--cat' : '';
         const z = ent.primary ? 30 : (10 + ei);
         return metrics.map((m, i) => {
-          const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
+          const v = Math.max(0, Math.min(100, val(ent, m)));
           const c = pt(i, v / 100);
           const lx = (c[0] / size * 100).toFixed(2);
           const ty = (c[1] / size * 100).toFixed(2);
@@ -12818,7 +12954,8 @@
        selected metric, one polyline per entity threading its value across every
        axis (drawn in the entity's brand colour), plus an optional dashed
        category-average line. Returns an HTML string. */
-    function cmpParallelSection(scope, metrics, ents, showAvg) {
+    function cmpParallelSection(scope, metrics, ents, showAvg, valFn) {
+      const val = valFn || ((e, mm) => cmpScoreFor(e, mm.id));
       const M = metrics.length;
       if (M < 2) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
@@ -12883,7 +13020,7 @@
          over the SVG so the chart and legend read with one visual language. */
       const seriesEls = ents.map((ent, ei) => {
         const color = ent.color || cmpMetricColor('wisescore');
-        const coords = metrics.map((m, i) => [axisX(i), yFor(cmpScoreFor(ent, m.id))]);
+        const coords = metrics.map((m, i) => [axisX(i), yFor(val(ent, m))]);
         const pts = coords.map(c => `${c[0].toFixed(1)},${c[1].toFixed(1)}`).join(' ');
         return `<g class="cmp-par-series-g" style="--delay:${ei * 90}ms">` +
           `<polyline class="cmp-par-series" points="${pts}" pathLength="1" style="stroke:${color};--delay:${ei * 90}ms"></polyline></g>`;
@@ -12899,7 +13036,7 @@
         const z = ent.primary ? 30 : (10 + ei);
         return metrics.map((m, i) => {
           const lx = (axisX(i) / W * 100).toFixed(2);
-          const ty = (yFor(cmpScoreFor(ent, m.id)) / H * 100).toFixed(2);
+          const ty = (yFor(val(ent, m)) / H * 100).toFixed(2);
           const delay = ei * 90 + i * 90 + 90;
           return `<span class="cmp-legend-bug cmp-par-bug${catCls}" ` +
             `style="--lc:${color};left:${lx}%;top:${ty}%;z-index:${z};` +
@@ -12932,7 +13069,8 @@
        line so the metrics read like a race. The right column carries the
        category average, with an optional dashed avg marker on each track.
        Returns an HTML string. */
-    function cmpRaceSection(scope, metrics, ents, showAvg) {
+    function cmpRaceSection(scope, metrics, ents, showAvg, valFn) {
+      const val = valFn || ((e, mm) => cmpScoreFor(e, mm.id));
       const M = metrics.length;
       if (!M) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
@@ -12957,7 +13095,7 @@
           ? `<span class="cmp-race-avg-inline">Category average <b>${Math.round(avg)}</b></span>`
           : '';
         const runners = ents.map((ent, ei) => {
-          const v = Math.max(0, Math.min(100, cmpScoreFor(ent, m.id)));
+          const v = Math.max(0, Math.min(100, val(ent, m)));
           const pos = Math.round(v);
           const color = ent.color || cmpMetricColor('wisescore');
           const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
@@ -13001,6 +13139,275 @@
       });
     }
 
+    /* ── Guiding Stars ──────────────────────────────────────────────────
+       The pink header toggle flips the board into a Guiding Stars-style
+       nutrition rating table. Ratings are DERIVED deterministically from each
+       entity's existing 0–100 goodness scores so the view stays live as the
+       shelf set changes: goodness scores are back-solved into plausible
+       per-100-kcal nutrient values, those drive debit/credit points, and the
+       net score maps to a 0–3 star rating (with a disqualifier gate). */
+    function cmpToggleGuidingStars(on) {
+      compareState.guidingStars = (on == null) ? !compareState.guidingStars : !!on;
+      /* Keep the ⋯ menu switch item (if built) in sync with the new state. */
+      document.querySelectorAll('.pf-module-menu').forEach(m => { if (m._syncGsItem) m._syncGsItem(); });
+      renderCompare();
+    }
+
+    /* Guiding Stars uses different scoring algorithms per food group; pick one
+       deterministically from the entity's category so the "Algorithm" row reads
+       like the reference tool. */
+    function cmpGsAlgorithm(ent) {
+      const c = ((ent.cat || ent.catLine || '') + '').toLowerCase();
+      if (/meat|poultry|fish|nut|dip|sauce|protein/.test(c)) return 'Meat/Dairy/Nuts';
+      if (/oil|fat|butter|spread/.test(c)) return 'Fats/Oils';
+      if (/drink|beverage|juice|soda|water/.test(c)) return 'Beverages';
+      return 'General Foods';
+    }
+
+    /* Back-solve a Guiding Stars scorecard for one entity from its goodness
+       scores. Returns per-100-kcal nutrients, debit/credit points, the summed
+       score, a disqualified flag and a 0–3 star rating. */
+    function cmpGuidingStarsData(ent, algoOverride) {
+      /* The active algorithm comes from the toolbar selector; 'auto' (or an
+         unset override) falls back to the per-food auto-detected algorithm. */
+      const sel = algoOverride || ((typeof compareState !== 'undefined' && compareState.gsAlgorithm) || 'auto');
+      const algo = (sel && sel !== 'auto') ? sel : cmpGsAlgorithm(ent);
+      const nut   = cmpScoreFor(ent, 'nutrient_overall'); /* higher = more nutritious            */
+      const sugar = cmpScoreFor(ent, 'sugar_density');    /* higher = less added sugar            */
+      const fatQ  = cmpScoreFor(ent, 'fat_quality');      /* higher = better fat profile          */
+      const fiberD= cmpScoreFor(ent, 'fiber_density');    /* higher = more fiber                  */
+      const upf   = cmpScoreFor(ent, 'upf');              /* higher = less processed              */
+      const clean = cmpScoreFor(ent, 'clean_label');      /* higher = fewer additives             */
+      const h = cmpHash(ent.id);
+
+      const servingSize = 15 + (h % 385);                       /* g   */
+      const calories = 90 + ((h >> 3) % 380);                   /* kcal */
+
+      /* Per-100-kcal nutrient values, back-solved from goodness. */
+      const satFat     = Math.max(0, +(((100 - fatQ)  / 100) * 2.6 + (h % 5) / 10).toFixed(1));
+      const sodium     = Math.max(0, Math.round(((100 - upf)   / 100) * 230 + ((h >> 4) % 40)));
+      const addedSugar = Math.max(0, +(((100 - sugar) / 100) * 21).toFixed(1));
+      const fiber      = Math.max(0, +((fiberD / 100) * 3.2).toFixed(1));
+
+      /* Debit points (negative) — Guiding Stars penalizes sat fat, sugar,
+         sodium, trans fat and non-GRAS/cosmetic additives. */
+      const dSat   = satFat     >= 2   ? -2 : satFat     >= 1   ? -1 : 0;
+      const dSugar = addedSugar >= 12  ? -3 : addedSugar >= 6   ? -2 : addedSugar >= 2 ? -1 : 0;
+      const dSod   = sodium     >= 240 ? -2 : sodium     >= 120 ? -1 : 0;
+      const dTrans = (h % 17) === 0 ? -1 : 0;               /* trans fat is rare — usually 0 */
+      const dAdd   = clean < 45 ? -2 : clean < 66 ? -1 : 0;
+
+      /* Credit points (positive) — fiber, micronutrients, whole grain. */
+      let cFiber = fiber >= 2.5 ? 2 : fiber >= 1.4 ? 1 : 0;
+      const cVit   = nut   >= 78  ? 2 : nut   >= 62  ? 1 : 0;
+      const isGrain = /grain|granola|cereal|oat|muesli|bread|pasta|flake/.test(((ent.cat || ent.catLine || '') + '').toLowerCase());
+      let cWhole = isGrain ? (upf >= 70 ? 1 : 0) : null;  /* null → "—" for non-grain foods */
+
+      /* Algorithm-specific tuning — Guiding Stars scores food groups on their
+         own terms. Fats/Oils and Meat/Dairy/Nuts expect more saturated fat, so
+         that debit is relaxed; Beverages are judged harder on sugar; whole
+         grain only credits grain-family General Foods. */
+      let dSatA = dSat, dSodA = dSod, dSugarA = dSugar;
+      if (algo === 'Meat/Dairy/Nuts') { dSatA = Math.min(0, dSat + 1); cWhole = null; }
+      else if (algo === 'Fats/Oils') { dSatA = Math.min(0, dSat + 1); dSodA = Math.min(0, dSod + 1); cWhole = null; }
+      else if (algo === 'Beverages') { dSugarA = Math.max(-3, dSugar - 1); cFiber = Math.min(cFiber, 1); cWhole = null; }
+      else if (algo !== 'General Foods') { cWhole = null; }
+
+      const score = dSatA + dSugarA + dSodA + dTrans + dAdd + cFiber + cVit + (cWhole || 0);
+      /* Disqualifiers: heavy additive load or high processing knocks a product
+         out of the star system entirely, matching the reference behaviour. */
+      const disqualified = dAdd <= -2 || upf < 42 || (dSugarA <= -3 && cVit === 0);
+      const stars = disqualified ? 0 : (score >= 4 ? 3 : score >= 2 ? 2 : score >= 0 ? 1 : 0);
+
+      return {
+        servingSize, calories, satFat, sodium, addedSugar, fiber,
+        dSat: dSatA, dSugar: dSugarA, dSod: dSodA, dTrans, dAdd, cFiber, cVit, cWhole,
+        score, disqualified, stars, algorithm: algo,
+      };
+    }
+
+    /* Guiding Stars line items, rendered as ordinary metric rows on the SAME
+       board grid. Each row reads its value off a scorecard from
+       cmpGuidingStarsData. `type` decides the cell renderer:
+         · 'text'  — plain text (Algorithm)
+         · 'flag'  — Yes/No (Disqualified?)
+         · 'point' — a debit/credit point (−n / +n / 0 / —)
+         · 'num'   — a raw nutrient/serving value, drawn with a proportional bar
+       `better` drives best/worst colouring for numeric rows. */
+    const CMP_GS_ROWS = [
+      { key: 'algorithm', label: 'Algorithm',        icon: 'calculate',   color: '#5B6ED0', type: 'text',  get: g => g.algorithm,
+        desc: 'Which Guiding Stars scoring algorithm applies to this food group.' },
+      { key: 'disq',      label: 'Disqualified?',     icon: 'gpp_maybe',   color: '#C9832E', type: 'flag',  get: g => g.disqualified,
+        desc: 'A heavy additive load or high processing removes a product from the star system entirely.' },
+      { key: 'dSat',      label: 'Sat. Fat',          icon: 'opacity',     color: '#DC3038', type: 'point', better: 'higher', get: g => g.dSat,
+        desc: 'Debit points for saturated fat per 100 kcal — closer to 0 is better.' },
+      { key: 'dSugar',    label: 'Sugar',             icon: 'icecream',    color: '#DC3038', type: 'point', better: 'higher', get: g => g.dSugar,
+        desc: 'Debit points for added sugar per 100 kcal — closer to 0 is better.' },
+      { key: 'dSod',      label: 'Sodium',            icon: 'grain',       color: '#DC3038', type: 'point', better: 'higher', get: g => g.dSod,
+        desc: 'Debit points for sodium per 100 kcal — closer to 0 is better.' },
+      { key: 'dTrans',    label: 'Trans Fat',         icon: 'block',       color: '#DC3038', type: 'point', better: 'higher', get: g => g.dTrans,
+        desc: 'Debit points for trans fat — any presence is penalised.' },
+      { key: 'dAdd',      label: 'Additives',         icon: 'science',     color: '#DC3038', type: 'point', better: 'higher', get: g => g.dAdd,
+        desc: 'Debit points for cosmetic or non-GRAS additives — closer to 0 is better.' },
+      { key: 'cFiber',    label: 'Fiber',             icon: 'grass',       color: '#2AA866', type: 'point', better: 'higher', get: g => g.cFiber,
+        desc: 'Credit points earned for dietary fiber — more is better.' },
+      { key: 'cVit',      label: 'Vitamins/Minerals', icon: 'medication',  color: '#2AA866', type: 'point', better: 'higher', get: g => g.cVit,
+        desc: 'Credit points earned for naturally occurring vitamins and minerals.' },
+      { key: 'cWhole',    label: 'Whole Grain',       icon: 'agriculture', color: '#2AA866', type: 'point', better: 'higher', get: g => g.cWhole,
+        desc: 'Credit points earned for whole grain — “—” for foods where it doesn’t apply.' },
+      { key: 'satFat',    label: 'Sat. Fat (g)',      icon: 'water_drop',  color: '#2F74C7', type: 'num', unit: 'g',    better: 'lower',  get: g => g.satFat,
+        desc: 'Saturated fat per 100 kcal.' },
+      { key: 'sodium',    label: 'Sodium (mg)',       icon: 'grain',       color: '#2F74C7', type: 'num', unit: 'mg',   better: 'lower',  get: g => g.sodium,
+        desc: 'Sodium per 100 kcal.' },
+      { key: 'addedSugar',label: 'Added Sugar (g)',   icon: 'icecream',    color: '#2F74C7', type: 'num', unit: 'g',    better: 'lower',  get: g => g.addedSugar,
+        desc: 'Added sugar per 100 kcal.' },
+      { key: 'fiber',     label: 'Fiber (g)',         icon: 'grass',       color: '#2F74C7', type: 'num', unit: 'g',    better: 'higher', get: g => g.fiber,
+        desc: 'Dietary fiber per 100 kcal.' },
+      { key: 'servingSize',label: 'Serving Size',     icon: 'straighten',  color: '#8A5CC4', type: 'num', unit: 'g',    better: null,     get: g => g.servingSize,
+        desc: 'Reference serving size.' },
+      { key: 'calories',  label: 'Calories',          icon: 'local_fire_department', color: '#8A5CC4', type: 'num', unit: 'kcal', better: 'lower', get: g => g.calories,
+        desc: 'Calories per serving.' },
+    ];
+
+    /* Stars-and-Score badge that replaces the circular WISEscore gauge on each
+       header tile when Guiding Stars is on. */
+    function cmpGsBadgeHtml(gs) {
+      const cls = gs.disqualified ? 'is-dq' : (gs.stars >= 2 ? 'is-good' : gs.stars === 1 ? 'is-mid' : 'is-low');
+      let stars = '';
+      for (let i = 0; i < 3; i++) stars += '<span class="cmp-gs-badge-star' + (i < gs.stars ? ' is-on' : '') + '">' + (i < gs.stars ? '★' : '☆') + '</span>';
+      const pill = gs.disqualified
+        ? '<span class="cmp-tile-toppill cmp-top-pill tp-low">Disqualified</span>'
+        : '';
+      return pill +
+        '<div class="cmp-gs-badge ' + cls + '">' +
+          '<div class="cmp-gs-badge-stars">' + stars + '</div>' +
+          '<div class="cmp-gs-badge-score">' + (gs.score > 0 ? '+' : '') + gs.score + '</div>' +
+          '<div class="cmp-gs-badge-lbl">SCORE</div>' +
+        '</div>';
+    }
+
+    /* Format a debit/credit point cell. */
+    function cmpGsPoint(v) {
+      if (v == null) return '<span class="cmp-gs-rowval cmp-gs-zero">—</span>';
+      if (v < 0) return '<span class="cmp-gs-rowval cmp-gs-neg">' + v + '</span>';
+      if (v > 0) return '<span class="cmp-gs-rowval cmp-gs-pos">+' + v + '</span>';
+      return '<span class="cmp-gs-rowval cmp-gs-zero">0</span>';
+    }
+
+    /* ── Guiding Stars toolbar controls (parity with the WISEcode toolbar) ──
+       Guiding Stars gets the same three controls the default board has:
+         · Metrics  — toggles which Guiding Stars line items (rows) are shown
+         · Algorithm — the "General Foods / Meat, Dairy & Nuts / …" selector that
+                       stands in for the WISEcode Category filter
+         · Chart type — Bars (the rating table) / Spider / Parallel / Race, drawn
+                       from the Guiding Stars debit/credit & nutrient values. */
+
+    /* Visible Guiding Stars rows, in canonical order (lazily defaults to all). */
+    function cmpGsVisibleRows() {
+      if (!compareState.gsRows) compareState.gsRows = CMP_GS_ROWS.map(r => r.key);
+      return CMP_GS_ROWS.filter(r => compareState.gsRows.includes(r.key));
+    }
+
+    /* Metrics-picker menu for Guiding Stars — reuses the WISEcode menu shell
+       (same id + open flag) so cmpToggleMetricMenu / cmpOutsideMetric drive it. */
+    function cmpGsMetricMenu() {
+      if (!compareState.gsRows) compareState.gsRows = CMP_GS_ROWS.map(r => r.key);
+      const on = compareState.gsRows;
+      const sections = [
+        ['Rating basis', ['algorithm', 'disq']],
+        ['Debit points', ['dSat', 'dSugar', 'dSod', 'dTrans', 'dAdd']],
+        ['Credit points', ['cFiber', 'cVit', 'cWhole']],
+        ['Nutrient values', ['satFat', 'sodium', 'addedSugar', 'fiber', 'servingSize', 'calories']],
+      ];
+      return '<div class="cmp-metric-menu" id="cmp-metric-menu" ' + (compareState.metricMenuOpen ? '' : 'hidden') + '>' +
+        sections.map(([title, keys]) => {
+          const rows = keys.map(k => CMP_GS_ROWS.find(r => r.key === k)).filter(Boolean);
+          if (!rows.length) return '';
+          return '<div class="cmp-metric-group">' + title + '</div>' + rows.map(r =>
+            '<label class="cmp-metric-opt"><input type="checkbox" ' + (on.includes(r.key) ? 'checked' : '') +
+            ' onchange="cmpToggleGsRow(\'' + r.key + '\')">' + r.label + '</label>'
+          ).join('');
+        }).join('') + '</div>';
+    }
+    function cmpToggleGsRow(key) {
+      if (!compareState.gsRows) compareState.gsRows = CMP_GS_ROWS.map(r => r.key);
+      const i = compareState.gsRows.indexOf(key);
+      if (i >= 0) { if (compareState.gsRows.length <= 1) return; compareState.gsRows.splice(i, 1); }
+      else compareState.gsRows.push(key);
+      renderCompare();
+    }
+
+    /* Algorithm selector — the Guiding Stars analogue of the Category filter. */
+    const CMP_GS_ALGOS = ['auto', 'General Foods', 'Meat/Dairy/Nuts', 'Fats/Oils', 'Beverages'];
+    function cmpGsAlgoLabel(a) { return a === 'auto' ? 'Auto (per food)' : a; }
+    function cmpGsAlgoControl() {
+      const cur = compareState.gsAlgorithm || 'auto';
+      return '<div id="cmp-gsalgo-wrap" class="cmp-tool-item" style="position:relative">' +
+        '<button type="button" class="cmp-tool-btn cmp-cat-btn" onclick="cmpToggleGsAlgoMenu()" aria-haspopup="menu" aria-expanded="' + (!!compareState.gsAlgoMenuOpen) + '" aria-label="Guiding Stars scoring algorithm">' +
+          '<span class="material-icons">calculate</span>' +
+          '<span class="cmp-cat-btn-label">' + cmpGsAlgoLabel(cur) + '</span>' +
+          '<span class="material-icons cmp-cat-caret">expand_more</span>' +
+        '</button>' +
+        '<div class="cmp-metric-menu" id="cmp-gsalgo-menu" ' + (compareState.gsAlgoMenuOpen ? '' : 'hidden') + '>' +
+          '<div class="cmp-metric-group">Scoring algorithm</div>' +
+          CMP_GS_ALGOS.map(a => {
+            const isOn = a === cur;
+            return '<label class="cmp-metric-opt' + (isOn ? ' is-active' : '') + '"><input type="radio" name="cmp-gsalgo" ' + (isOn ? 'checked' : '') +
+              ' onchange="cmpSetGsAlgorithm(\'' + a.replace(/'/g, "\\'") + '\')">' + cmpGsAlgoLabel(a) + '</label>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+    function cmpToggleGsAlgoMenu() {
+      compareState.gsAlgoMenuOpen = !compareState.gsAlgoMenuOpen;
+      renderCompare();
+      if (compareState.gsAlgoMenuOpen) setTimeout(() => document.addEventListener('mousedown', cmpOutsideGsAlgo), 0);
+      else document.removeEventListener('mousedown', cmpOutsideGsAlgo);
+    }
+    function cmpOutsideGsAlgo(e) {
+      const wrap = document.getElementById('cmp-gsalgo-wrap');
+      if (wrap && wrap.contains(e.target)) return;
+      compareState.gsAlgoMenuOpen = false;
+      document.removeEventListener('mousedown', cmpOutsideGsAlgo);
+      renderCompare();
+    }
+    function cmpSetGsAlgorithm(a) {
+      compareState.gsAlgorithm = a;
+      compareState.gsAlgoMenuOpen = false;
+      document.removeEventListener('mousedown', cmpOutsideGsAlgo);
+      renderCompare();
+    }
+
+    /* Chart adapter — turn the quantitative Guiding Stars rows into 0–100
+       "goodness" axes so the spider / parallel / race charts can plot them the
+       same way they plot WISEcode metrics (higher is always better here). */
+    const CMP_GS_CHART_KEYS = ['dSat', 'dSugar', 'dSod', 'dTrans', 'dAdd', 'cFiber', 'cVit', 'cWhole', 'satFat', 'sodium', 'addedSugar', 'fiber', 'calories'];
+    function cmpGsChartMetrics() {
+      return cmpGsVisibleRows()
+        .filter(r => CMP_GS_CHART_KEYS.includes(r.key))
+        .map(r => ({ id: 'gs:' + r.key, gsKey: r.key, label: r.label, short: r.label, icon: r.icon, color: r.color, better: 'higher' }));
+    }
+    function cmpGsGoodness(ent, m) {
+      const clamp = x => Math.max(0, Math.min(100, x));
+      const c = cmpGuidingStarsData(ent);
+      switch (m.gsKey) {
+        case 'dSat':       return clamp((2 + c.dSat) / 2 * 100);
+        case 'dSugar':     return clamp((3 + c.dSugar) / 3 * 100);
+        case 'dSod':       return clamp((2 + c.dSod) / 2 * 100);
+        case 'dTrans':     return clamp((1 + c.dTrans) * 100);
+        case 'dAdd':       return clamp((2 + c.dAdd) / 2 * 100);
+        case 'cFiber':     return clamp(c.cFiber / 2 * 100);
+        case 'cVit':       return clamp(c.cVit / 2 * 100);
+        case 'cWhole':     return c.cWhole == null ? 50 : clamp(c.cWhole * 100);
+        case 'satFat':     return clamp(100 * (1 - c.satFat / 3));
+        case 'sodium':     return clamp(100 * (1 - c.sodium / 250));
+        case 'addedSugar': return clamp(100 * (1 - c.addedSugar / 21));
+        case 'fiber':      return clamp(100 * (c.fiber / 3.2));
+        case 'calories':   return clamp(100 * (1 - c.calories / 470));
+        default:           return 50;
+      }
+    }
+
     /* ── The render engine — paints #cmp-body from state ───────────────── */
     function renderCompare() {
       const scope = CMP_SCOPES[compareState.scope];
@@ -13028,6 +13435,11 @@
       const ranked = rankable.slice().sort((a, b) => (b.na ? -1 : cmpScoreFor(b, 'wisescore')) - (a.na ? -1 : cmpScoreFor(a, 'wisescore')));
       const rankOf = new Map(ranked.map((e, i) => [e.id, i + 1]));
       const ordered = ranked.concat(pendingEnts);
+
+      /* Guiding Stars reuses the SAME board UI (header tiles + metric rows).
+         It only swaps WISEscore for the star rating on the tiles and renders
+         the Guiding Stars line items as ordinary metric rows below. */
+      const gs = !!compareState.guidingStars;
 
       /* ── Recalculate bar (pending changes / running recompute) ── */
       const noun = scope.noun;
@@ -13063,19 +13475,22 @@
 
       const chartBtn = (mode, icon, label, title) =>
         `<button type="button" class="cmp-chart-btn ${compareState.chartMode === mode ? 'is-active' : ''}" onclick="cmpSetChartMode('${mode}')" title="${title}" aria-label="${title}" aria-pressed="${compareState.chartMode === mode}"><span class="material-icons">${icon}</span><span class="cmp-chart-label">${label}</span></button>`;
-      /* The toolbar is its own full-width row above the grid container (not
-         packed into the grid's corner cell), so it lays out as one horizontal
-         bar: metric picker · category filter · chart-type toggle · (spacer) ·
-         Add. */
+      /* The toolbar is its own full-width row above the grid container. Guiding
+         Stars gets the SAME three controls the default board has: the Metrics
+         picker (over the Guiding Stars rows), an Algorithm selector in place of
+         the product Category filter, and the chart-type toggle (drawn from the
+         Guiding Stars values). The Guiding Stars on/off switch itself still
+         lives only in the header ⋯ menu, never in the body. */
+      const metricCount = gs ? cmpGsVisibleRows().length : M;
       const toolbar =
         '<div class="cmp-toolbar cmp-toolbar--bar">' +
           '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
-            `<button type="button" class="cmp-tool-btn" onclick="cmpToggleMetricMenu()"><span class="material-icons">tune</span>Metrics · ${M}</button>` +
-            metricMenu +
+            `<button type="button" class="cmp-tool-btn" onclick="cmpToggleMetricMenu()"><span class="material-icons">tune</span>Metrics · ${metricCount}</button>` +
+            (gs ? cmpGsMetricMenu() : metricMenu) +
           '</div>' +
-          (scope.categories ? cmpCatControl() : '') +
+          (gs ? cmpGsAlgoControl() : (scope.categories ? cmpCatControl() : '')) +
           '<div class="cmp-chart-toggle" role="group" aria-label="Chart type">' +
-            chartBtn('bars', 'align_horizontal_left', 'Bars', 'Health bar view') +
+            chartBtn('bars', 'align_horizontal_left', 'Bars', gs ? 'Guiding Stars rating table' : 'Health bar view') +
             chartBtn('radar', 'radar', 'Spider', 'Spider chart view') +
             chartBtn('parallel', 'ssid_chart', 'Parallel', 'Parallel coordinates view') +
             chartBtn('race', 'sports_score', 'Race', 'Race view') +
@@ -13091,7 +13506,9 @@
       const nounPlural = scope.noun === 'portfolio' ? 'Portfolios' : 'Products';
       const pendMeta = pendingEnts.length ? ` · ${pendingEnts.length} pending` : '';
       const catMeta = (compareState.category && compareState.category !== 'all') ? ' · ' + compareState.category : '';
-      const metaText = rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics' + catMeta;
+      const metaText = gs
+        ? (rankable.length + ' ' + nounPlural + pendMeta + ' · Guiding Stars · ' + cmpGsAlgoLabel(compareState.gsAlgorithm || 'auto'))
+        : (rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics' + catMeta);
       const cmpSub = document.getElementById('cmp-subtitle');
       if (cmpSub) cmpSub.textContent = metaText;
 
@@ -13137,11 +13554,19 @@
          row's rail moves up here, beneath the "Compare Foods" title. The score
          numerals themselves are promoted onto each entity's image tile as a
          circular gauge (below). */
-      cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell cmp-hcell--corner">' +
-        '<div class="cmp-corner-score"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayGauges()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayGauges()}"><span class="material-icons">verified</span></span><div class="cmp-rail-metric-name">WISEscore</div></div><div class="cmp-rail-body">' +
-        '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
-        '</div></div></div>' +
-      '</div>');
+      if (gs) {
+        cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell cmp-hcell--corner">' +
+          '<div class="cmp-corner-score"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic" style="--mic:#EC4899"><span class="material-icons">star</span></span><div class="cmp-rail-metric-name">Guiding Stars</div></div><div class="cmp-rail-body">' +
+          '<div class="cmp-rail-metric-desc">The overall 0–3 star rating and its net score, from the debit &amp; credit points below. <a class="cmp-rail-learn" role="button" tabindex="0" title="How are stars scored?" aria-label="How are stars scored?" onclick="cmpFollow(\'gs_explain\')"><span class="material-icons">forum</span></a></div>' +
+          '</div></div></div>' +
+        '</div>');
+      } else {
+        cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell cmp-hcell--corner">' +
+          '<div class="cmp-corner-score"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayGauges()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayGauges()}"><span class="material-icons">verified</span></span><div class="cmp-rail-metric-name">WISEscore</div></div><div class="cmp-rail-body">' +
+          '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-icons">forum</span></a></div>' +
+          '</div></div></div>' +
+        '</div>');
+      }
       const seedId = cmpSeedId();
       ordered.forEach(ent => {
         const isPending = pendingSet.has(ent.id);
@@ -13158,7 +13583,10 @@
            inside the chip as its leading badge. Hidden while mid-add. */
         const chipTitle = isSeed ? 'Change comparison type — product, portfolio or category' : ('Swap in another ' + cmpKindLabel(kind));
         const kindChip = isPending ? '' : `<button type="button" class="cmp-kind-chip${isSeed ? ' is-seed' : ''}" title="${chipTitle}" aria-label="${chipTitle}" aria-haspopup="menu" onclick="event.stopPropagation();cmpToggleKindMenu('${ent.id}', this)"><span class="cmp-kind-rank">${rank}</span><span class="cmp-kind-chip-label">${cmpKindLabel(kind)}</span><span class="material-icons cmp-kind-chip-caret">expand_more</span></button>`;
-        const you = ent.primary ? ' <span class="cmp-you-pill">YOU</span>' : (ent.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '');
+        /* The CATEGORY tag stays inline after the name; the primary "YOU" chip
+           floats up to the tile's top-right corner instead (see cmp-you-float). */
+        const you = ent.isCategory ? ' <span class="cmp-cat-pill">CATEGORY</span>' : '';
+        const youFloat = ent.primary ? '<span class="cmp-you-pill cmp-you-float">YOU</span>' : '';
         const imgUrl = cmpImgUrl(ent);
         const img = imgUrl ? `<img class="cmp-tile-img" src="${imgUrl}" alt="${ent.name}" loading="lazy" onerror="this.style.display='none'">` : '';
         /* Category tiles carry the category's own icon as a centred watermark
@@ -13181,17 +13609,21 @@
            Pending / N-A slots have no score, so they skip the gauge. */
         let gauge = '';
         if (!isPending && !ent.na) {
-          const ov = Math.round(cmpScoreFor(ent, 'wisescore'));
-          const pillCls = ent.isCategory ? 'tp-cat' : (ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : ''));
-          const gaugeColor = ov < 55 ? 'var(--sec-red)' : (ov < 68 ? 'var(--ter-amber)' : 'var(--sec-green)');
-          gauge = cmpScoreGaugeHtml(ov, pillCls, gaugeColor, ent.top);
+          if (gs) {
+            gauge = cmpGsBadgeHtml(cmpGuidingStarsData(ent));
+          } else {
+            const ov = Math.round(cmpScoreFor(ent, 'wisescore'));
+            const pillCls = ent.isCategory ? 'tp-cat' : (ov < 55 ? 'tp-low' : (ov < 68 ? 'tp-mid' : ''));
+            const gaugeColor = ov < 55 ? 'var(--sec-red)' : (ov < 68 ? 'var(--ter-amber)' : 'var(--sec-green)');
+            gauge = cmpScoreGaugeHtml(ov, pillCls, gaugeColor, ent.top);
+          }
         }
         /* Full-bleed tile: the image is the background; the score gauge, rank,
            name and label are layered on top over a legibility scrim (no drop
            shadows anywhere). */
         cells.push(
           '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm + kindChip +
-          `<div class="cmp-tile"${tileStyle}>${img}${catIc}${badge}${gauge}` +
+          `<div class="cmp-tile"${tileStyle}>${img}${catIc}${badge}${youFloat}${gauge}` +
             `<div class="cmp-tile-overlay"><div class="cmp-ent-name" title="${ent.name}">${ent.name}${you}</div>${sub}</div>` +
           `</div>` +
           '</div>');
@@ -13205,8 +13637,63 @@
       const chartOverlay = radarMode || parallelMode || raceMode;
 
       /* Metric rows — only in the default health-bar view. In radar/parallel
-         mode these per-metric rows collapse into a single overlaid chart below. */
-      if (!chartOverlay) {
+         mode these per-metric rows collapse into a single overlaid chart below.
+         Guiding Stars reuses the exact same rail + cell rows, but its line items
+         (debit/credit points, key nutrients, serving info) stand in for the
+         WISEcode metrics. */
+      if (!chartOverlay && gs) {
+        /* Precompute a scorecard per shown entity so rows can reference values
+           and compute per-row best/worst without recomputing each cell. */
+        const gsCards = ordered.map(ent => (pendingSet.has(ent.id) || ent.na) ? null : cmpGuidingStarsData(ent));
+        cmpGsVisibleRows().forEach((r, mi) => {
+          /* Rail — icon replays the whole row's bars (numeric rows) and the desc
+             carries the same inline "chat about this" forum link the WISEcode
+             rows have, wired to cmpExplainGs so tapping it continues the
+             conversation in the chat module. */
+          cells.push(
+            '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + r.label + ' bars" style="--mic:' + r.color + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-icons">' + r.icon + '</span></span><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-lbl">' + r.label + '</span></div></div><div class="cmp-rail-body">' +
+            '<div class="cmp-rail-metric-desc">' + r.desc + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about ' + r.label + '" aria-label="Chat with WISEai about ' + r.label + '" onclick="cmpExplainGs(\'' + r.key + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpExplainGs(\'' + r.key + '\')}"><span class="material-icons">forum</span></a></div>' +
+            '</div></div></div>');
+          /* Numeric rows: find the row's best/worst live value for the bar
+             scale + colour, so each row reads like the WISEcode bars. */
+          let rowMax = 0, best = null, worst = null;
+          if (r.type === 'num') {
+            gsCards.forEach(c => { if (!c) return; const v = r.get(c); if (v == null || isNaN(v)) return; rowMax = Math.max(rowMax, v); if (best == null || v > best) best = v; if (worst == null || v < worst) worst = v; });
+          }
+          ordered.forEach((ent, ei) => {
+            const pc = ent.primary ? ' is-primary' : '';
+            if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>'); return; }
+            if (ent.na) { cells.push('<div class="cmp-cell cmp-cell--entity' + pc + '"><span class="cmp-metric-na">N/A</span></div>'); return; }
+            const card = gsCards[ei];
+            const val = r.get(card);
+            /* Every cell carries a chat link so you can drill into that exact
+               product × metric, mirroring the WISEcode insight cell. */
+            const chatLink = '<a class="cmp-gs-cellchat" role="button" tabindex="0" title="Chat about ' + ent.name + ' · ' + r.label + '" aria-label="Chat with WISEai about ' + ent.name + ' ' + r.label + '" onclick="event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')}"><span class="material-icons">forum</span></a>';
+            if (r.type === 'text') {
+              cells.push('<div class="cmp-cell cmp-cell--entity cmp-gs-cell' + pc + '"><span class="cmp-gs-rowval cmp-gs-text">' + (val || '—') + '</span>' + chatLink + '</div>');
+            } else if (r.type === 'flag') {
+              cells.push('<div class="cmp-cell cmp-cell--entity cmp-gs-cell' + pc + '"><span class="cmp-gs-rowval ' + (val ? 'cmp-gs-neg' : 'cmp-gs-pos') + '">' + (val ? 'Yes' : 'No') + '</span>' + chatLink + '</div>');
+            } else if (r.type === 'point') {
+              cells.push('<div class="cmp-cell cmp-cell--entity cmp-gs-cell' + pc + '">' + cmpGsPoint(val) + chatLink + '</div>');
+            } else {
+              /* num — value + proportional bar, coloured green(best)/red(worst).
+                 Clicking the cell replays the bar, exactly like the WISEcode rows. */
+              const pct = rowMax > 0 ? Math.round((val / rowMax) * 100) : 0;
+              let gc = 'g-c';
+              if (r.better && best !== worst) {
+                const isBest = r.better === 'lower' ? (val === worst) : (val === best);
+                const isWorst = r.better === 'lower' ? (val === best) : (val === worst);
+                gc = isBest ? 'g-a' : (isWorst ? 'g-d' : 'g-c');
+              }
+              cells.push(
+                '<div class="cmp-cell cmp-cell--entity cmp-gs-cell' + pc + '"><div class="cmp-metric-cell" data-mrow="' + mi + '" onclick="cmpReplayBar(this)" title="Click to replay" style="--i:' + mi + '">' +
+                '<span class="cmp-metric-val">' + val + (r.unit ? '<span class="cmp-gs-unit"> ' + r.unit + '</span>' : '') + '</span>' +
+                '<span class="cmp-bar-outer ' + gc + '"><span class="cmp-bar-fill ' + gc + '" style="width:' + pct + '%"></span></span>' +
+                '</div>' + chatLink + '</div>');
+            }
+          });
+        });
+      } else if (!chartOverlay) {
         metrics.forEach((m, mi) => {
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
@@ -13255,7 +13742,7 @@
         const lockedLabel = cmpKindLabel(cmpLockedKind());
         /* Rows: header + (health-bar view) one per metric + insight. The old
            standalone score row is gone (scores now ride on the header tiles). */
-        const addColRows = chartOverlay ? 1 : (metrics.length + 2);
+        const addColRows = chartOverlay ? 1 : (gs ? (cmpGsVisibleRows().length + 1) : (metrics.length + 2));
         cells.push(
           '<div class="cmp-cell cmp-addcol cmp-addcol-span" style="grid-column:-2 / -1;grid-row:1 / span ' + addColRows + ';">' +
             '<div class="cmp-addcol-inner">' +
@@ -13271,12 +13758,17 @@
       const gridCls = 'cmp-grid' + (compareState._settle ? ' cmp-settled' : '') + (compact ? ' cmp-grid--compact' : '');
       const grid = `<div class="${gridWrapCls}"><div class="${gridCls}" style="grid-template-columns:${cols}">${cells.join('')}</div></div>`;
 
-      /* ── Overlay chart — spider or parallel coords for every entity ── */
+      /* ── Overlay chart — spider / parallel / race for every entity. In the
+         Guiding Stars view the same charts plot the GS debit/credit & nutrient
+         values (normalised to 0–100 goodness) instead of the WISEcode metrics. */
       const chartEnts = ordered.filter(e => !e.na && !pendingSet.has(e.id));
+      const chartMetrics = gs ? cmpGsChartMetrics() : metrics;
+      const chartValFn = gs ? cmpGsGoodness : null;
+      const chartShowAvg = gs ? false : showAvg;
       const chart_html = radarMode
-        ? cmpRadarSection(scope, metrics, chartEnts, showAvg)
-        : (parallelMode ? cmpParallelSection(scope, metrics, chartEnts, showAvg)
-        : (raceMode ? cmpRaceSection(scope, metrics, chartEnts, showAvg) : ''));
+        ? cmpRadarSection(scope, chartMetrics, chartEnts, chartShowAvg, chartValFn)
+        : (parallelMode ? cmpParallelSection(scope, chartMetrics, chartEnts, chartShowAvg, chartValFn)
+        : (raceMode ? cmpRaceSection(scope, chartMetrics, chartEnts, chartShowAvg, chartValFn) : ''));
 
       /* ── Key Takeaways (auto-generated, responsive to what's on the board) ── */
       const live = ordered.filter(e => !e.na && !pendingSet.has(e.id));
@@ -13354,7 +13846,11 @@
           '</div></div>'
         : '';
 
-      body.innerHTML = boardHead + toolbar + recalcBar + grid + chart_html + takeaways + rankedSummary + drillDetail;
+      /* Guiding Stars shows the rating grid on its own — the Key Takeaways,
+         Ranked Summary and Ingredient drill are WISEcode-specific, so they're
+         suppressed while the star view is on. */
+      const extras = gs ? '' : (takeaways + rankedSummary + drillDetail);
+      body.innerHTML = boardHead + toolbar + recalcBar + grid + chart_html + extras;
       body.scrollTop = 0;
       compareState._settle = false;   /* consume the one-shot settle animation flag */
       /* Animate the header WISEscore gauges + count the takeaway scores up on
@@ -13592,21 +14088,31 @@
         chips.push(`<button type="button" class="chip chip-primary" onclick="cmpRecalculate(this)"><span class="material-icons">calculate</span>Recalculate</button>`);
       /* Adding an entity is the primary next step. The comparison is LOCKED to
          its own kind, so there's just one Add chip — of the same kind the board
-         started as. No cross-type mixing. */
+         started as. No cross-type mixing. Available in both views. */
       if (compareState.shown.length < 5) {
         const lk = cmpLockedKind();
         chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('${lk}', this)"><span class="material-icons">${cmpKindIcon(lk)}</span>Add a ${cmpKindLabel(lk)}</button>`);
       }
       if (compareState.shown.length > 2)
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove an item</button>`);
-      chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-icons">tune</span>Metrics · ${compareState.metrics.length}</button>`);
-      if (scope.categories) {
-        const cur = compareState.category === 'all' ? 'All' : compareState.category;
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('category', this)"><span class="material-icons">filter_alt</span>Category · ${cur}</button>`);
+      if (compareState.guidingStars) {
+        /* Guiding Stars view — only chips that make sense for the rating table.
+           The metric picker, chart types and category average don't apply here,
+           so surface the rating-specific actions instead. */
+        chips.push(`<button type="button" class="chip chip-primary chip-gs is-on" onclick="cmpFollow('gs', this)"><span class="material-icons">star</span>Guiding Stars · On</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('gs_explain', this)"><span class="material-icons">help_outline</span>How are stars scored?</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('gs_dq', this)"><span class="material-icons">gpp_maybe</span>Why disqualified?</button>`);
+      } else {
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-icons">tune</span>Metrics · ${compareState.metrics.length}</button>`);
+        if (scope.categories) {
+          const cur = compareState.category === 'all' ? 'All' : compareState.category;
+          chips.push(`<button type="button" class="chip" onclick="cmpFollow('category', this)"><span class="material-icons">filter_alt</span>Category · ${cur}</button>`);
+        }
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('avg', this)"><span class="material-icons">show_chart</span>Category avg · ${compareState.showAvg ? 'On' : 'Off'}</button>`);
+        if (scope.many)
+          chips.push(`<button type="button" class="chip" onclick="cmpFollow('rank', this)"><span class="material-icons">leaderboard</span>Rank them</button>`);
+        chips.push(`<button type="button" class="chip chip-gs" onclick="cmpFollow('gs', this)"><span class="material-icons">star</span>Guiding Stars · Off</button>`);
       }
-      chips.push(`<button type="button" class="chip" onclick="cmpFollow('avg', this)"><span class="material-icons">show_chart</span>Category avg · ${compareState.showAvg ? 'On' : 'Off'}</button>`);
-      if (scope.many)
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('rank', this)"><span class="material-icons">leaderboard</span>Rank them</button>`);
       chips.push(`<button type="button" class="chip" onclick="cmpFollow('switch', this)"><span class="material-icons">swap_horiz</span>Change comparison</button>`);
       const row = document.createElement('div');
       row.className = 'sc-reply-chips';
@@ -13627,6 +14133,45 @@
       if (action === 'metrics')  { cmpPromptMetrics();      return; }
       if (action === 'category') { cmpPromptCategory();     return; }
       if (action === 'kind')     { cmpPromptKind();         return; }
+
+      if (action === 'gs') {
+        const on = !compareState.guidingStars;
+        addUserMessage(on ? 'Show me the Guiding Stars ratings.' : 'Back to the WISEcode comparison.');
+        const typing = showWISEaiTyping();
+        setTimeout(() => {
+          typing?.remove();
+          cmpToggleGuidingStars(on); scrollPanelIntoView('compare-panel');
+          addWISEaiMessage(on
+            ? 'Switched the board to the <strong>Guiding Stars</strong> rating. Each product earns <strong>debit points</strong> for saturated fat, sugar, sodium, trans fat and additives, and <strong>credit points</strong> for fiber, vitamins/minerals and whole grain — netted into a <strong>0–3 star</strong> rating. Products with a heavy additive load or high processing are <em>disqualified</em>.'
+            : 'Back to the <strong>WISEcode</strong> comparison — the 0–100 metric bars and charts. Flip <strong>Guiding Stars</strong> on anytime to see the star ratings.', { source: false });
+          cmpOfferFollowChips();
+        }, delay);
+        return;
+      }
+      if (action === 'gs_explain') {
+        addUserMessage('How are the Guiding Stars scored?');
+        const typing = showWISEaiTyping();
+        setTimeout(() => {
+          typing?.remove();
+          addWISEaiMessage('Guiding Stars sums <strong>debit points</strong> (saturated fat, added sugar, sodium, trans fat, and cosmetic/non-GRAS additives — all measured per 100 kcal) against <strong>credit points</strong> (fiber, vitamins &amp; minerals, and whole grain). The net score maps to <strong>1★</strong> (good), <strong>2★</strong> (better) or <strong>3★</strong> (best); a product that clears none, or trips a disqualifier, shows <strong>0★</strong>.', { source: false });
+          cmpOfferFollowChips();
+        }, delay);
+        return;
+      }
+      if (action === 'gs_dq') {
+        addUserMessage('Why is a product disqualified?');
+        const typing = showWISEaiTyping();
+        setTimeout(() => {
+          typing?.remove();
+          const dq = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).filter(e => !e.na).filter(e => cmpGuidingStarsData(e).disqualified);
+          const names = dq.map(e => '<strong>' + e.name + '</strong>').join(', ');
+          addWISEaiMessage((dq.length
+            ? names + (dq.length > 1 ? ' are' : ' is') + ' <strong>disqualified</strong> — a heavy additive load or a high level of processing keeps a product out of the star system entirely, so it can only score <strong>0★</strong> regardless of its debit/credit tally.'
+            : 'Nothing on the board is currently disqualified — every product clears the additive and processing gates, so each one earns its stars from the debit/credit tally.'), { source: false });
+          cmpOfferFollowChips();
+        }, delay);
+        return;
+      }
 
       if (action === 'avg') {
         const on = !compareState.showAvg;
@@ -13807,6 +14352,58 @@
       setTimeout(() => {
         typing?.remove();
         addWISEaiMessage(cmpMetricLong(id), { source: false, feedback: true });
+        if (compareState.scope) cmpOfferFollowChips();
+      }, 640);
+    }
+
+    /* Fuller Guiding Stars explanations, keyed by row. Falls back to the row's
+       rail desc when no long-form copy exists. */
+    const CMP_GS_LONG = {
+      algorithm: 'Guiding Stars runs three separate algorithms — <strong>General Foods</strong>, <strong>Meat/Dairy/Nuts</strong>, and <strong>Fats/Oils</strong> — because the nutrients that matter differ by food group. The right algorithm is picked from the product’s category before any points are tallied.',
+      disq: 'A product is <strong>disqualified</strong> when it trips a hard gate — a heavy cosmetic/non-GRAS additive load or a high level of processing. Disqualified items sit outside the star system entirely and can only show <strong>0★</strong>, no matter how their debit/credit points net out.',
+      dSat: '<strong>Sat. Fat</strong> debit points are assigned from saturated fat per 100 kcal: roughly −1 above 1 g and −2 above 2 g. Closer to <strong>0</strong> is better.',
+      dSugar: '<strong>Sugar</strong> debit points come from added sugar per 100 kcal, scaling from −1 up to −3 as added sugar climbs. Closer to <strong>0</strong> is better.',
+      dSod: '<strong>Sodium</strong> debit points come from sodium per 100 kcal — about −1 past 120 mg and −2 past 240 mg. Closer to <strong>0</strong> is better.',
+      dTrans: '<strong>Trans Fat</strong> is penalised on any presence. Most products score <strong>0</strong> here; a debit signals detectable industrial trans fat.',
+      dAdd: '<strong>Additives</strong> debit points reflect cosmetic or non-GRAS additives on the label — the more concerning the panel, the larger the debit. This is also the most common trigger for disqualification.',
+      cFiber: '<strong>Fiber</strong> earns credit points — about +1 past 1.4 g and +2 past 2.5 g of fiber per 100 kcal. More is better.',
+      cVit: '<strong>Vitamins/Minerals</strong> credit points reward naturally occurring micronutrient density, scaling to +2 for the most nutrient-dense products.',
+      cWhole: '<strong>Whole Grain</strong> earns a credit point when a grain-based product is built on whole grains. It shows “—” for foods where whole grain doesn’t apply.',
+      satFat: '<strong>Saturated fat per 100 kcal</strong> — the raw value the Sat. Fat debit is derived from. Lower is better.',
+      sodium: '<strong>Sodium per 100 kcal</strong> — the raw value the Sodium debit is derived from. Lower is better.',
+      addedSugar: '<strong>Added sugar per 100 kcal</strong> — the raw value the Sugar debit is derived from. Lower is better.',
+      fiber: '<strong>Fiber per 100 kcal</strong> — the raw value the Fiber credit is derived from. Higher is better.',
+      servingSize: '<strong>Serving size</strong> is the reference amount the label’s nutrients are stated against; Guiding Stars normalises everything to per-100-kcal so serving size doesn’t skew the rating.',
+      calories: '<strong>Calories</strong> per serving — context for the nutrient values, which are all judged per 100 kcal so small and large servings compare fairly.',
+    };
+
+    /* Continue the conversation about a Guiding Stars line item (optionally for
+       one specific product on the board), mirroring cmpExplainMetric. */
+    function cmpExplainGs(key, entId) {
+      const r = CMP_GS_ROWS.find(x => x.key === key);
+      if (!r) return;
+      const scope = CMP_SCOPES[compareState.scope];
+      document.getElementById('cmp-follow-chips')?.remove();
+      let ent = null;
+      if (entId && scope) ent = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).find(e => e.id === entId) || null;
+      addUserMessage(ent
+        ? 'Tell me about ' + ent.name + '’s ' + r.label + ' in Guiding Stars.'
+        : 'Tell me more about ' + r.label + ' in Guiding Stars.');
+      const typing = showWISEaiTyping('WISEai is pulling the ' + r.label + ' detail');
+      setTimeout(() => {
+        typing?.remove();
+        let msg = CMP_GS_LONG[key] || r.desc;
+        if (ent && !ent.na) {
+          const gsd = cmpGuidingStarsData(ent);
+          const raw = r.get(gsd);
+          let read;
+          if (r.type === 'flag') read = raw ? 'is <strong>disqualified</strong>' : 'is <strong>not disqualified</strong>';
+          else if (r.type === 'text') read = 'uses the <strong>' + raw + '</strong> algorithm';
+          else if (r.type === 'point') read = 'scores <strong>' + (raw == null ? '—' : (raw > 0 ? '+' + raw : raw)) + '</strong> here';
+          else read = 'comes in at <strong>' + raw + (r.unit ? ' ' + r.unit : '') + '</strong>';
+          msg += '<br><br>For <strong>' + ent.name + '</strong>: it ' + read + ' (overall ' + gsd.stars + '★, score ' + (gsd.score > 0 ? '+' : '') + gsd.score + ').';
+        }
+        addWISEaiMessage(msg, { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
     }
@@ -16058,6 +16655,32 @@
         menu.appendChild(trigger);
         menu.appendChild(pop);
 
+        /* Compare Foods only — a pink Guiding Stars switch at the top of the
+           menu. Toggles the board between the WISEcode view and the Guiding
+           Stars rating (see cmpToggleGuidingStars); its state is re-synced
+           whenever the menu opens or the view is toggled elsewhere. */
+        if (key === 'compare') {
+          const gsItem = makeItem({
+            icon: 'star', label: 'Guiding Stars', extraClass: 'pf-mi-gs',
+            onClick: () => { if (typeof cmpToggleGuidingStars === 'function') cmpToggleGuidingStars(); },
+          });
+          pop.appendChild(gsItem);
+          const gsSep = document.createElement('div');
+          gsSep.className = 'pf-module-menu-sep';
+          pop.appendChild(gsSep);
+          const syncGsItem = () => {
+            const on = (typeof compareState !== 'undefined') && !!compareState.guidingStars;
+            gsItem.classList.toggle('is-on', on);
+            gsItem.setAttribute('aria-pressed', on ? 'true' : 'false');
+            const ic = gsItem.querySelector('.material-symbols-outlined');
+            if (ic) ic.textContent = on ? 'star' : 'star_outline';
+            const lbl = gsItem.querySelector('.pf-mi-label');
+            if (lbl) lbl.textContent = on ? 'Guiding Stars · On' : 'Guiding Stars';
+          };
+          menu._syncGsItem = syncGsItem;
+          syncGsItem();
+        }
+
         if (flipBtn) {
           pop.appendChild(makeItem({
             icon: 'side_navigation', label: 'Move to other side',
@@ -16116,6 +16739,7 @@
             btn.setAttribute('aria-expanded', 'true');
             menu.querySelector('.pf-module-menu-pop')?.removeAttribute('hidden');
             if (menu._syncWidthItem) menu._syncWidthItem();
+            if (menu._syncGsItem) menu._syncGsItem();
           }
           return;
         }

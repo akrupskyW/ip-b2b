@@ -212,8 +212,6 @@ html.dark .mkt-authseg-btn:hover { color: var(--primary-bright); }
   display: flex; align-items: center; gap: 12px;
   padding: 8px 10px 8px 20px;
   border-radius: var(--radius-pill);
-  /* Query container so the bar collapses to its drawer based on its own width. */
-  container: mktnav / inline-size;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-1);
@@ -233,7 +231,11 @@ html.dark .mkt-authseg-btn:hover { color: var(--primary-bright); }
 .mkt-nav-divider { width: 1px; align-self: stretch; margin: 8px 4px; background: var(--border); flex: 0 0 auto; }
 .mkt-nav-links {
   display: flex; align-items: center; gap: 2px; flex: 1 1 auto;
-  overflow-x: auto; scrollbar-width: none;
+  /* Never rail/scroll the links: JS measures this row and flips the whole bar
+     into its drawer layout (.mkt-nav.is-collapsed) the moment they'd overflow.
+     hidden (not auto) keeps a crowded row from briefly showing a scroll rail
+     in the frame before the collapse measurement lands. */
+  overflow: hidden; scrollbar-width: none;
 }
 .mkt-nav-links::-webkit-scrollbar { display: none; }
 .mkt-nav-link {
@@ -305,30 +307,32 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
 }
 .mkt-nav-theme:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
 
-@container mktnav (max-width: 860px) {
-  .mkt-nav-divider { display: none; }
-  /* Pivot-style bar: the menu icon sits to the LEFT of the logo (already first
-     in the DOM) and everything else is pushed to the right. */
-  .mkt-nav-brand { margin-right: auto; }
-  .mkt-nav-links {
-    position: absolute; top: calc(100% + 10px); left: 0; right: 0;
-    flex-direction: column; align-items: stretch; gap: 4px;
-    padding: 10px; border-radius: var(--r-md);
-    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2);
-    overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
-    transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
-  }
-  .mkt-nav.is-open .mkt-nav-links { max-height: 60vh; opacity: 1; pointer-events: auto; padding: 10px; }
-  .mkt-nav-link { padding: 12px 14px; }
-  .mkt-nav-link--drawer { display: block; }
-  .mkt-nav-toggle { display: inline-flex; }
-  .mkt-nav-cta-desktop { display: none; }
-  /* Same segmented Brand login / Create brand account pill, now docked inside
-     the drawer as a full-width control below the product links. */
-  .mkt-nav-cta-drawer { display: flex; margin-top: 6px; }
-  .mkt-nav-cta-drawer .mkt-authseg { flex: 1 1 auto; }
-  .mkt-nav-cta-drawer .mkt-authseg-btn { flex: 1 1 0; padding-block: 12px; }
+/* Collapsed / drawer ("mobile") mode. Driven ENTIRELY by JS overflow detection
+   (initNavCollapse) via .mkt-nav.is-collapsed — not a fixed pixel breakpoint —
+   so the bar goes mobile the instant the links can't fit, whether that's a
+   narrow phone, a crowded set of items, or the docked chat rail stealing width. */
+.mkt-nav.is-collapsed .mkt-nav-divider { display: none; }
+/* Pivot-style bar: the menu icon sits to the LEFT of the logo (already first
+   in the DOM) and everything else is pushed to the right. */
+.mkt-nav.is-collapsed .mkt-nav-brand { margin-right: auto; }
+.mkt-nav.is-collapsed .mkt-nav-links {
+  position: absolute; top: calc(100% + 10px); left: 0; right: 0;
+  flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 10px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2);
+  overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
+  transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
 }
+.mkt-nav.is-collapsed.is-open .mkt-nav-links { max-height: 60vh; opacity: 1; pointer-events: auto; padding: 10px; }
+.mkt-nav.is-collapsed .mkt-nav-link { padding: 12px 14px; }
+.mkt-nav.is-collapsed .mkt-nav-link--drawer { display: block; }
+.mkt-nav.is-collapsed .mkt-nav-toggle { display: inline-flex; }
+.mkt-nav.is-collapsed .mkt-nav-cta-desktop { display: none; }
+/* Same segmented Brand login / Create brand account pill, now docked inside
+   the drawer as a full-width control below the product links. */
+.mkt-nav.is-collapsed .mkt-nav-cta-drawer { display: flex; margin-top: 6px; }
+.mkt-nav.is-collapsed .mkt-nav-cta-drawer .mkt-authseg { flex: 1 1 auto; }
+.mkt-nav.is-collapsed .mkt-nav-cta-drawer .mkt-authseg-btn { flex: 1 1 0; padding-block: 12px; }
 
 /* ---------- Store badges ---------- */
 .mkt-badges { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -344,6 +348,20 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
 .mkt-badge-txt { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
 .mkt-badge-txt small { font-size: 0.62rem; opacity: 0.8; font-weight: 500; }
 .mkt-badge-txt strong { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+
+/* Scannable QR sitting directly to the right of the store badges. It stretches
+   to the exact height of the badge row (align-self: stretch) and stays a
+   perfect square by scaling the square QR image to height:100% with auto width. */
+.mkt-badge-qr {
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: stretch; flex: 0 0 auto;
+  padding: 4px; border-radius: 12px;
+  background: #fff; border: 1px solid rgba(0,0,0,0.14);
+  box-shadow: var(--shadow-1);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.mkt-badge-qr:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.mkt-badge-qr img { display: block; height: 100%; width: auto; }
 
 /* ---------- Section scaffolding ---------- */
 .mkt-section { padding-block: var(--mkt-section-py); position: relative; }
@@ -406,18 +424,23 @@ html.dark .mkt-do-link { color: var(--primary-bright); }
    part of the background rather than a foreground player. */
 .mkt-hero-bgvideo {
   position: absolute; left: 0; bottom: 0; z-index: 0;
-  width: clamp(160px, 26vw, 380px);
-  max-width: 35%;
+  width: clamp(179px, 29.12vw, 426px);
+  max-width: 39.2%;
   height: auto;
   pointer-events: none; user-select: none;
   object-fit: contain;
   opacity: 0.9;
-  transform: scaleX(-1);
-  /* Mask is authored in the element's pre-transform space; scaleX(-1) mirrors it,
-     so anchoring at 100% 100% keeps the solid area in the visual bottom-left. */
-  -webkit-mask-image: radial-gradient(130% 130% at 100% 100%, #000 55%, transparent 100%);
-          mask-image: radial-gradient(130% 130% at 100% 100%, #000 55%, transparent 100%);
+  /* Anchor any scale at the bottom-left corner (matches left/bottom docking). */
+  transform-origin: left bottom;
+  /* Default → the gentle, slow ease used when the bump relaxes back to size. */
+  transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Natural (un-mirrored) orientation; anchor the mask at the visual bottom-left. */
+  -webkit-mask-image: radial-gradient(130% 130% at 0% 100%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(130% 130% at 0% 100%, #000 55%, transparent 100%);
 }
+/* Momentary enlarge fired at the video's 3s mark (js initHeroBgPulse). A gentle,
+   slow grow with no overshoot, so it eases in and out without bouncing. */
+.mkt-hero-bgvideo.is-bump { transform: scale(1.09); transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (max-width: 900px) {
   .mkt-hero-bgvideo { width: 45%; max-width: 45%; opacity: 0.5; }
 }
@@ -470,13 +493,17 @@ html.dark .mkt-stat-num { color: var(--primary-bright); }
    Fully responsive: the column count flexes with the viewport. Each tile is a
    normalized ink silhouette that pops and gets a diagonal "shine" on hover. */
 .mkt-logowall {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 9vw, 122px), 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: clamp(8px, 1.4vw, 20px);
   align-items: center;
 }
 .mkt-logotile {
   position: relative; overflow: hidden;
+  /* Let tiles fill the row evenly but stay centered on a short last row. */
+  flex: 1 1 clamp(84px, 9vw, 122px);
+  max-width: clamp(140px, 14vw, 180px);
   display: flex; align-items: center; justify-content: center;
   min-height: clamp(58px, 6vw, 84px);
   padding: clamp(8px, 1vw, 14px);
@@ -538,6 +565,26 @@ html.dark .mkt-logotile::after {
   .mkt-pillars-grid { grid-template-columns: 1fr; }
   .mkt-pillars-grid > .mkt-pillar:first-child { grid-column: auto; }
 }
+/* Homepage pillars carry 5 cards, so a plain 3-up grid leaves the 4th and 5th
+   orphaned on the left of the second row. Use a 6-track grid (each card spans 2)
+   and offset the last row so those two cards center beneath the row above. Only
+   applies at wide widths; below 900px the layout balances to banner + 2 + 2. */
+@container mktbody (min-width: 901px) {
+  #pillars .mkt-pillars-grid { grid-template-columns: repeat(6, 1fr); }
+  #pillars .mkt-pillars-grid > .mkt-pillar { grid-column: span 2; }
+  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(4) { grid-column: 2 / span 2; }
+  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(5) { grid-column: 4 / span 2; }
+}
+/* Step variant — a single row of four (e.g. WISEalliance "How it works").
+   Declared after the base grid + container queries so it wins the cascade;
+   only collapses to two-up, then one-up, at the narrowest widths. */
+.mkt-pillars-grid--steps { grid-template-columns: repeat(4, 1fr); }
+@container mktbody (max-width: 780px) {
+  .mkt-pillars-grid--steps { grid-template-columns: 1fr 1fr; }
+}
+@container mktbody (max-width: 460px) {
+  .mkt-pillars-grid--steps { grid-template-columns: 1fr; }
+}
 .mkt-pillar {
   display: grid; gap: 16px; align-content: start;
   padding: clamp(24px, 3vw, 34px);
@@ -555,7 +602,7 @@ html.dark .mkt-pillar-icon { color: var(--primary-bright); }
    pulled up to overlap the lower half of the picture. */
 .mkt-pillar--media { display: block; padding: 0; gap: 0; overflow: hidden; }
 .mkt-pillar-media {
-  display: block; width: 100%; height: clamp(180px, 22vw, 230px);
+  display: block; width: 100%; height: clamp(220px, 27vw, 300px);
   object-fit: cover; object-position: top right;
 }
 .mkt-pillar--media .mkt-pillar-content {
@@ -572,7 +619,7 @@ html.dark .mkt-pillar--media .mkt-pillar-content { box-shadow: 0 -14px 28px rgba
 .mkt-pillar-kicker { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-subtle); }
 .mkt-pillar-title { font-size: 1.35rem; font-weight: 800; }
 .mkt-pillar-body { color: var(--text-muted); font-size: 0.95rem; }
-.mkt-pillar-link { margin-top: 2px; display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 700; text-decoration: none; font-family: var(--font-serif); }
+.mkt-pillar-link { margin-top: 2px; justify-self: end; display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 700; text-decoration: none; font-family: var(--font-serif); }
 html.dark .mkt-pillar-link { color: var(--primary-bright); }
 .mkt-pillar-link:hover { gap: 10px; }
 
@@ -593,7 +640,9 @@ html.dark .mkt-pillar-link { color: var(--primary-bright); }
   backdrop-filter: blur(6px);
   box-shadow: 0 12px 34px rgba(0,0,0,0.18);
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  color: inherit; text-decoration: none;
 }
+a.mkt-seal { cursor: pointer; }
 .mkt-seal:hover { transform: translateY(-3px); background: rgba(255,255,255,0.18); box-shadow: 0 18px 44px rgba(0,0,0,0.24); }
 .mkt-seal .mkt-seal-icon { font-size: 56px; color: #fff; flex: none; }
 .mkt-seal-shield { width: 72px; height: auto; flex: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25)); }
@@ -628,6 +677,123 @@ html.dark .mkt-feature-list .material-symbols-outlined { color: #6FD79E; }
 }
 .mkt-feature-media video, .mkt-feature-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mkt-feature-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ---------- Pricing plans ----------
+   Reusable plan cards for the Pricing page. Each product family (free consumer
+   apps, WISEai token tiers, WISEip for brands, WISEalliance) drops its plans
+   into a .mkt-pricing-grid; the card itself is shape-agnostic so a free plan, a
+   metered tier and a "let's talk" plan all read consistently. */
+.mkt-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: clamp(18px, 2.6vw, 28px);
+  align-items: stretch;
+}
+/* Two-up / single-up families stay centered and don't stretch to full width. */
+.mkt-pricing-grid--two { max-width: 860px; margin-inline: auto; }
+.mkt-pricing-grid--one { max-width: 560px; margin-inline: auto; }
+.mkt-plan {
+  position: relative;
+  display: flex; flex-direction: column; gap: 18px;
+  padding: clamp(26px, 3vw, 36px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.mkt-plan:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: var(--primary-20); }
+/* Highlighted plan (e.g. the recommended WISEai tier). */
+.mkt-plan--featured { border-color: var(--primary); box-shadow: var(--shadow-2); }
+html.dark .mkt-plan--featured { border-color: var(--primary-bright); }
+.mkt-plan-badge {
+  position: absolute; top: -12px; left: clamp(26px, 3vw, 36px);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: var(--radius-pill);
+  background: var(--primary); color: #fff;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.68rem;
+  letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+}
+html.dark .mkt-plan-badge { background: var(--primary-bright); color: #05141C; }
+.mkt-plan-head { display: grid; gap: 8px; }
+.mkt-plan-icon { display: inline-flex; align-items: center; color: var(--primary); }
+html.dark .mkt-plan-icon { color: var(--primary-bright); }
+.mkt-plan-icon .material-symbols-outlined { font-size: 34px; }
+.mkt-plan-name { font-size: 1.3rem; font-weight: 800; line-height: 1.15; }
+.mkt-plan-tagline { color: var(--text-muted); font-size: 0.92rem; }
+.mkt-plan-price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.mkt-plan-amount { font-family: var(--font-serif); font-weight: 800; font-size: clamp(2.1rem, 4vw, 2.9rem); line-height: 1; color: var(--text); }
+.mkt-plan-period { color: var(--text-subtle); font-size: 0.9rem; font-weight: 600; }
+.mkt-plan-note { color: var(--text-subtle); font-size: 0.82rem; margin-top: -6px; }
+.mkt-plan-divider { height: 1px; background: var(--border); margin: 2px 0; }
+.mkt-plan-features { display: grid; gap: 11px; padding: 0; margin: 0; list-style: none; }
+.mkt-plan-features li { display: flex; gap: 10px; color: var(--text-muted); font-size: 0.92rem; line-height: 1.45; }
+.mkt-plan-features .material-symbols-outlined { color: var(--sec-green); font-size: 20px; flex: 0 0 auto; margin-top: 1px; }
+html.dark .mkt-plan-features .material-symbols-outlined { color: #6FD79E; }
+.mkt-plan-cta { margin-top: auto; }
+.mkt-plan-cta .mkt-btn { width: 100%; }
+
+/* ---------- Synced pricing rows (WISEai tiers) ----------
+   When the three WISEai plans sit side by side, align every comparison row
+   across the cards with subgrid: the name, price, note, divider, each feature
+   line and the CTA line up perfectly from Basic to Pro. Cards can end up
+   different heights and the rows still match. Below the 3-up breakpoint the
+   cards fall back to the normal stacked layout (alignment only matters when
+   the cards are next to each other). */
+@media (min-width: 960px) {
+  .mkt-pricing-grid--sync {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto auto auto repeat(4, auto) auto;
+  }
+  .mkt-pricing-grid--sync .mkt-plan {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+    row-gap: 16px;
+  }
+  .mkt-pricing-grid--sync .mkt-plan-head { grid-row: 1; }
+  .mkt-pricing-grid--sync .mkt-plan-price { grid-row: 2; }
+  .mkt-pricing-grid--sync .mkt-plan-note { grid-row: 3; }
+  .mkt-pricing-grid--sync .mkt-plan-divider { grid-row: 4; }
+  .mkt-pricing-grid--sync .mkt-plan-features {
+    grid-row: 5 / span 4;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 12px;
+    align-content: start;
+  }
+  .mkt-pricing-grid--sync .mkt-plan-cta { grid-row: 9; }
+}
+
+/* ---------- Pricing final CTA: two prominent "which are you" cards ----------
+   Replaces the small ghost buttons with two large, tappable choice cards so
+   the two reasons (get the app / I'm a brand) read as the main event. */
+.mkt-mission-inner--choices { align-items: center; }
+.mkt-choice-lead { display: grid; gap: 14px; }
+.mkt-choice-grid { display: grid; gap: 16px; }
+.mkt-choice {
+  display: flex; align-items: center; gap: 18px;
+  padding: 20px 22px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.30);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(6px);
+  color: #fff; text-decoration: none;
+  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+.mkt-choice:hover { transform: translateY(-3px); background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.55); }
+.mkt-choice-icon {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(255,255,255,0.94); color: var(--primary);
+}
+.mkt-choice-icon .material-symbols-outlined { font-size: 28px; }
+.mkt-choice-body { display: grid; gap: 3px; min-width: 0; }
+.mkt-choice-kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.82); }
+.mkt-choice-title { font-family: var(--font-serif); font-weight: 800; font-size: 1.18rem; line-height: 1.12; }
+.mkt-choice-desc { font-size: 0.88rem; color: rgba(255,255,255,0.86); line-height: 1.42; }
+.mkt-choice-arrow { margin-left: auto; flex: 0 0 auto; font-size: 22px; opacity: 0.85; transition: transform .2s ease; }
+.mkt-choice:hover .mkt-choice-arrow { transform: translateX(4px); }
 
 /* ---------- Footer ---------- */
 .mkt-footer { background: var(--surface-2); border-top: 1px solid var(--border); padding-block: clamp(48px, 6vw, 72px) 32px; }
@@ -778,12 +944,13 @@ html.dark .mkt-chat-chip:hover { color: var(--primary-bright); border-color: var
     linear-gradient(to bottom, rgba(0,0,0,.42) 0%, rgba(0,0,0,0) 24%);
 }
 
+
 .mkt-videohero-caption {
   position: absolute; left: 50%; transform: translateX(-50%);
-  bottom: clamp(88px, 13vh, 148px); z-index: 3;
+  bottom: clamp(150px, 24vh, 300px); z-index: 3;
   width: min(90%, 940px); text-align: center; pointer-events: none;
   color: #fff; font-family: var(--font-body);
-  font-size: clamp(1rem, 2.4vw, 1.55rem); font-weight: 600; line-height: 1.4;
+  font-size: clamp(1.15rem, 2.8vw, 1.85rem); font-weight: 600; line-height: 1.4;
 }
 .mkt-videohero-caption:empty { display: none; }
 .mkt-videohero-caption span {
@@ -814,6 +981,46 @@ html.dark .mkt-chat-chip:hover { color: var(--primary-bright); border-color: var
   .mkt-videohero-btn-txt { display: none; }
   .mkt-videohero-btn { padding: 10px; }
 }
+
+/* ---------- The food truth film ----------
+   Full-bleed film (edge to edge) with the headline stacked above it. The top of
+   the section stays on the page background (var(--bg)) so the copy melts into
+   the section above, then settles to the clip's own top-edge grey (≈#eeebec) by
+   the time the video begins, so the film seams invisibly into the page. Height
+   follows the clip so the whole thing is visible top to bottom. Play/pause is
+   gated to the viewport in js/marketing.js (initScrollVideo). */
+.mkt-truthfilm {
+  position: relative;
+  width: 100vw; margin-left: calc(50% - 50vw);
+  background: linear-gradient(180deg, var(--bg) 0, #eeebec clamp(120px, 22vh, 240px));
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: clamp(40px, 7vh, 96px);
+  overflow: hidden;
+}
+/* Full-bleed left-to-right; height follows the clip so it's fully visible.
+   The top edge fades out (mask) so the film's background melts into the section
+   background above it instead of meeting it at a hard line. */
+.mkt-truthfilm-media {
+  display: block; width: 100%; height: auto; z-index: 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 clamp(80px, 13vw, 180px));
+          mask-image: linear-gradient(to bottom, transparent 0, #000 clamp(80px, 13vw, 180px));
+}
+.mkt-truthfilm-inner {
+  z-index: 2;
+  margin: 0 auto clamp(32px, 6vh, 84px);
+  width: min(1180px, 92%);
+  text-align: center;
+}
+.mkt-truthfilm-title {
+  margin: 0; color: var(--text);
+  font-size: clamp(1.9rem, 5vw, 4rem);
+  font-weight: 800; line-height: 1.06; letter-spacing: -0.02em;
+}
+.mkt-truthfilm-title sup {
+  font-size: 0.42em; font-weight: 700; top: -0.9em;
+  margin-left: 0.04em; letter-spacing: 0;
+}
+.mkt-appshell .mkt-truthfilm { width: 100%; margin-left: 0; }
 
 /* ---------- Voices across America (interactive US map) ---------- */
 .mkt-voices {

@@ -25,7 +25,7 @@ import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDock
 import { buildAppearanceBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
-import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply } from './dashboard-home.js';
+import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply, isBrandCompareActive, isStarsViewActive, toggleBrandCompare, toggleStarsView } from './dashboard-home.js';
 import { renderVerificationFlow, VERIFICATION_WISEAI } from './verification-flow.js';
 import { renderGrasVerificationFlow, GRAS_WISEAI, setGrasChat } from './gras-verification-flow.js';
 import { renderMarketingAssets } from './marketing-assets-flow.js';
@@ -1054,22 +1054,31 @@ function renderMorePopover() {
     </button>
     <div class="topbar-menu-divider"></div>`
     : '';
+  /* Admin-only controls — the two hero view switches (moved off the banner) plus
+     the invite action. Highlighted pink and flagged with a teensy ADMIN badge. */
+  const adminItems = isDashboard
+    ? `
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isBrandCompareActive()}" data-action="toggle-brand">
+      <span class="material-icons topbar-menu-icon">insights</span>
+      <span>Bad Scores / High Numbers</span>
+      <span class="topbar-menu-badge">ADMIN</span>
+      <span class="topbar-menu-switch" aria-hidden="true"><span class="topbar-menu-switch-thumb"></span></span>
+    </button>
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isStarsViewActive()}" data-action="toggle-stars">
+      <span class="material-icons topbar-menu-icon">star</span>
+      <span>Guiding Stars</span>
+      <span class="topbar-menu-badge">ADMIN</span>
+      <span class="topbar-menu-switch" aria-hidden="true"><span class="topbar-menu-switch-thumb"></span></span>
+    </button>
+    <div class="topbar-menu-divider"></div>`
+    : '';
   return `
     ${bannerItem}
-    <button type="button" class="topbar-menu-item" data-action="back-workspace">
-      <span class="material-icons topbar-menu-icon">arrow_back</span>
-      <span>Back to workspace</span>
-    </button>
-    <button type="button" class="topbar-menu-item" data-action="open-chat">
-      <span class="material-icons topbar-menu-icon">chat</span>
-      <span>Open WISEowl chat</span>
-    </button>
-    <div class="topbar-menu-divider"></div>
-    <button type="button" class="topbar-menu-item" data-action="add-member">
+    <button type="button" class="topbar-menu-item" data-action="invite-member">
       <span class="material-icons topbar-menu-icon">person_add</span>
-      <span>Add team member</span>
+      <span>Invite team member</span>
     </button>
-    <div class="topbar-menu-divider"></div>
+    ${adminItems}
     <button type="button" class="topbar-menu-item" data-action="export">
       <span class="material-icons topbar-menu-icon">download</span>
       <span>Export overview</span>
@@ -1077,11 +1086,6 @@ function renderMorePopover() {
     <button type="button" class="topbar-menu-item" data-action="share">
       <span class="material-icons topbar-menu-icon">share</span>
       <span>Share</span>
-    </button>
-    <div class="topbar-menu-divider"></div>
-    <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-action="close">
-      <span class="material-icons topbar-menu-icon">close</span>
-      <span>Close</span>
     </button>`;
 }
 
@@ -1115,14 +1119,16 @@ function runMoreAction(action) {
     case 'update-banner':
       editBrandBanner();
       break;
-    case 'back-workspace':
-      window.location.href = '../index.html';
+    case 'invite-member':
+      window.location.href = 'quick-invite.html';
       break;
-    case 'open-chat':
-      window.location.href = 'ai-chat.html';
+    case 'toggle-brand':
+      toggleBrandCompare();
+      syncDashToggleItems();
       break;
-    case 'add-member':
-      openAddMemberSheet();
+    case 'toggle-stars':
+      toggleStarsView();
+      syncDashToggleItems();
       break;
     case 'export':
       exportOverview(getAgent(document.body.dataset.agentId)?.label || 'WISEcode');
@@ -1130,11 +1136,17 @@ function runMoreAction(action) {
     case 'share':
       shareOverview();
       break;
-    case 'close':
-      if (window.history.length > 1) window.history.back();
-      else window.location.href = '../index.html';
-      break;
   }
+}
+
+/* Reflect the live brand-compare / Guiding-Stars state onto every rendered
+   toggle menu item (the popover persists across dashboard re-renders, so the
+   switch state must be pushed in after a toggle). */
+function syncDashToggleItems() {
+  const brand = String(isBrandCompareActive());
+  const stars = String(isStarsViewActive());
+  document.querySelectorAll('[data-action="toggle-brand"]').forEach((el) => el.setAttribute('aria-checked', brand));
+  document.querySelectorAll('[data-action="toggle-stars"]').forEach((el) => el.setAttribute('aria-checked', stars));
 }
 
 /* ====================================================================
@@ -1241,8 +1253,11 @@ function setupMainPanelControls() {
     morePop.addEventListener('click', (e) => {
       const action = e.target.closest('[data-action]');
       if (!action) return;
-      closePop();
-      runMoreAction(action.dataset.action);
+      const act = action.dataset.action;
+      /* Keep the menu open on the pink toggles so both views can be switched in
+         one pass; every other action dismisses it. */
+      if (act !== 'toggle-brand' && act !== 'toggle-stars') closePop();
+      runMoreAction(act);
     });
     document.addEventListener('click', (e) => {
       if (morePop.classList.contains('hidden')) return;
@@ -1310,8 +1325,9 @@ function setupTrailingRail() {
     morePop.addEventListener('click', (e) => {
       const action = e.target.closest('[data-action]');
       if (!action) return;
-      closeMorePopover();
-      runMoreAction(action.dataset.action);
+      const act = action.dataset.action;
+      if (act !== 'toggle-brand' && act !== 'toggle-stars') closeMorePopover();
+      runMoreAction(act);
     });
   }
 

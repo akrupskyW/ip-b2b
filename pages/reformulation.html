@@ -4,7 +4,1032 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISEai — Reformulation Studio · Guiding Stars</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ Reformulation Studio — page-specific shell ═══════════
+       Reuses the shared WISE palette + chat classes (wiseai-chat.css). Everything
+       bespoke here is prefixed rf-. Three synced modules share the shell's
+       "modules" grid area: the WISEai chat (left), the Reformulation Dashboard
+       (center: disqualification + recommendations, then a debits/credits
+       trade-off), and the Reformulation Studio calculator (right: WISE sliders +
+       toggles that live-update the score and the star you can reach). */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+
+    /* ── Shared carded module frame ── */
+    .rf-card {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    /* Left chat column (fixed width, carded) */
+    .rf-chat { flex: 0 0 var(--chat-pane-w, 340px); width: var(--chat-pane-w, 340px); background: var(--bg); }
+    .rf-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
+    .rf-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
+    .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
+    .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
+    .rf-lead { display: block; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
+    .rf-lead .rf-accent { color: var(--primary); }
+
+    /* Persistent intent-chip dock — the chat's chips ALWAYS mirror the current
+       reformulation state (top recommendations). One tap applies a step. */
+    .rf-chip-dock { flex: 0 0 auto; border-top: 1px solid var(--border); padding: 10px 14px 4px; background: var(--surface); }
+    .rf-chip-dock-label { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+    .rf-chip-dock-label .material-icons { font-size: 13px; color: var(--primary); }
+    .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rf-chip {
+      display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.25;
+      padding: 6px 11px; border-radius: 9999px; cursor: pointer; text-align: left;
+      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);
+      transition: background .16s, border-color .16s, transform .1s;
+    }
+    .rf-chip:hover { background: var(--surface-3); transform: translateY(-1px); }
+    .rf-chip:active { transform: translateY(0); }
+    .rf-chip .material-icons { font-size: 14px; flex: 0 0 auto; }
+    .rf-chip .rf-chip-pts { font-weight: 800; font-size: 10.5px; }
+    .rf-chip--dq { background: var(--sec-red-10); border-color: color-mix(in srgb, var(--sec-red) 40%, transparent); color: var(--sec-red-text); }
+    .rf-chip--dq:hover { background: color-mix(in srgb, var(--sec-red) 20%, transparent); }
+    .rf-chip--credit { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 40%, transparent); color: var(--sec-green-text); }
+    .rf-chip--credit:hover { background: color-mix(in srgb, var(--sec-green) 20%, transparent); }
+    .rf-chip--qualified { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 40%, transparent); color: var(--sec-green-text); cursor: default; }
+    .rf-chip--qualified:hover { transform: none; }
+
+    /* ── Module headers ── */
+    .rf-head { display: flex; align-items: center; gap: 12px; padding: 22px 26px 14px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .rf-head-ic { width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
+    html.dark .rf-head-ic { color: var(--primary-bright, #8B9FAF); }
+    .rf-head-ic .material-symbols-outlined { font-size: 20px; }
+    .rf-head-titles { flex: 1 1 auto; min-width: 0; }
+    .rf-head-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.12rem; color: var(--text); margin: 0; letter-spacing: -.01em; }
+    .rf-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; }
+
+    .rf-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 26px 26px; }
+
+    /* Center dashboard column */
+    .rf-dash { flex: 1 1 auto; min-width: 380px; }
+
+    /* Right studio column */
+    .rf-studio { flex: 0 0 var(--studio-pane-w, 392px); width: var(--studio-pane-w, 392px); }
+
+    /* ── Section scaffolding ── */
+    .rf-sec { margin: 0 0 26px; }
+    .rf-sec:last-child { margin-bottom: 0; }
+    .rf-sec-title { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .rf-sec-title .material-icons { font-size: 15px; color: var(--primary); }
+
+    /* ── Disqualification banners ── */
+    .rf-dq-banner { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.4; }
+    .rf-dq-banner.is-dq { background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 30%, transparent); color: var(--sec-red-text); }
+    .rf-dq-banner.is-ok { background: var(--sec-green-10); border: 1px solid color-mix(in srgb, var(--sec-green) 30%, transparent); color: var(--sec-green-text); }
+    .rf-dq-banner .material-icons { font-size: 18px; flex: 0 0 auto; margin-top: 1px; }
+    .rf-dq-banner b { font-weight: 800; }
+
+    /* ── Actionable recommendation steps ── */
+    .rf-step { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; background: var(--surface); transition: border-color .16s, background .16s; }
+    .rf-step:hover { border-color: var(--border-strong); }
+    .rf-step-badge { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+    .rf-step-badge .material-icons { font-size: 17px; }
+    .rf-step-badge--dq { background: var(--sec-red-10); color: var(--sec-red-text); }
+    .rf-step-badge--credit { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .rf-step-badge--debit { background: var(--primary-soft); color: var(--primary); }
+    html.dark .rf-step-badge--debit { color: var(--primary-bright, #8B9FAF); }
+    .rf-step-main { flex: 1 1 auto; min-width: 0; }
+    .rf-step-title { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.35; }
+    .rf-step-sub { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; margin-top: 4px; }
+    .rf-effort { display: inline-flex; align-items: center; gap: 4px; }
+    .rf-effort::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+    .rf-effort--low { color: var(--sec-green-text); }
+    .rf-effort--low::before { background: var(--sec-green); }
+    .rf-effort--med { color: var(--ter-amber-text); }
+    .rf-effort--med::before { background: var(--ter-amber); }
+    .rf-effort--high { color: var(--sec-red-text); }
+    .rf-effort--high::before { background: var(--sec-red); }
+    .rf-apply {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px;
+      padding: 7px 13px; border-radius: 9999px; cursor: pointer;
+      border: 1px solid var(--primary); background: transparent; color: var(--primary);
+      transition: background .16s, color .16s;
+    }
+    html.dark .rf-apply { border-color: var(--primary-bright, #8B9FAF); color: var(--primary-bright, #8B9FAF); }
+    .rf-apply:hover { background: var(--primary); color: #fff; }
+    html.dark .rf-apply:hover { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .rf-apply .material-icons { font-size: 15px; }
+    .rf-empty { font-size: 12.5px; color: var(--text-muted); padding: 14px; text-align: center; border: 1px dashed var(--border-strong); border-radius: 12px; }
+
+    /* ── Debits / Credits trade-off ── */
+    .rf-tradeoff { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0 20px; align-items: start; }
+    .rf-tradeoff-sep { width: 1px; background: var(--border-strong); align-self: stretch; margin: 2px 0; }
+    .rf-tradeoff-col-label { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
+    .rf-tradeoff-col-label .rf-col-sum { font-family: 'Noto Serif', Georgia, serif; font-size: 14px; }
+    .rf-tradeoff-col--debit .rf-tradeoff-col-label { color: var(--sec-red-text); }
+    .rf-tradeoff-col--credit .rf-tradeoff-col-label { color: var(--sec-green-text); }
+    .rf-metric { display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; align-items: center; padding: 9px 11px; border-radius: 10px; margin-bottom: 7px; background: var(--surface-2); border: 1px solid transparent; }
+    .rf-metric-pts { grid-row: 1 / span 2; align-self: center; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 20px; text-align: center; color: var(--text-subtle); }
+    .rf-metric-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .rf-metric-detail { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
+    .rf-metric.sev-0 { background: var(--surface-2); }
+    .rf-metric.sev-debit-1 { background: var(--ter-amber-10); border-color: color-mix(in srgb, var(--ter-amber) 26%, transparent); }
+    .rf-metric.sev-debit-1 .rf-metric-pts { color: var(--ter-amber-text); }
+    .rf-metric.sev-debit-2 { background: color-mix(in srgb, var(--sec-red) 12%, transparent); border-color: color-mix(in srgb, var(--sec-red) 26%, transparent); }
+    .rf-metric.sev-debit-2 .rf-metric-pts { color: var(--sec-red-text); }
+    .rf-metric.sev-debit-3 { background: color-mix(in srgb, var(--sec-red) 18%, transparent); border-color: color-mix(in srgb, var(--sec-red) 34%, transparent); }
+    .rf-metric.sev-debit-3 .rf-metric-pts { color: var(--sec-red-text); }
+    .rf-metric.sev-credit { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 26%, transparent); }
+    .rf-metric.sev-credit .rf-metric-pts { color: var(--sec-green-text); }
+
+    /* ── Studio: algorithm + basis ── */
+    .rf-algo { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .rf-algo-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); }
+    .rf-algo select {
+      flex: 1 1 auto; min-width: 0; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 9px; padding: 8px 10px; cursor: pointer;
+    }
+    .rf-basis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; margin-bottom: 18px; }
+    .rf-basis-btn { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 8px; padding: 8px 6px; cursor: pointer; transition: background .16s, color .16s; }
+    .rf-basis-btn.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+    html.dark .rf-basis-btn.is-active { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+
+    /* ── Studio: sliders ("WISE wigs") ── */
+    .rf-controls { margin-bottom: 20px; }
+    .rf-ctl { margin-bottom: 15px; }
+    .rf-ctl-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px; }
+    .rf-ctl-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .rf-ctl-val { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 13.5px; color: var(--primary); }
+    html.dark .rf-ctl-val { color: var(--primary-bright, #8B9FAF); }
+    .rf-ctl-row { display: flex; align-items: center; gap: 9px; }
+    .rf-step-btn { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .16s; }
+    .rf-step-btn:hover { background: var(--surface-3); }
+    .rf-range { flex: 1 1 auto; min-width: 0; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 9999px; background: var(--surface-3); outline: none; cursor: pointer; }
+    .rf-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); border: 2px solid var(--surface); box-shadow: var(--shadow-1); cursor: pointer; }
+    .rf-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--primary); border: 2px solid var(--surface); cursor: pointer; }
+    html.dark .rf-range::-webkit-slider-thumb { background: var(--primary-bright, #8B9FAF); }
+    html.dark .rf-range::-moz-range-thumb { background: var(--primary-bright, #8B9FAF); }
+
+    .rf-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid var(--border); }
+    .rf-toggle-info { min-width: 0; }
+    .rf-toggle-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .rf-toggle-sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+    .rf-switch { position: relative; width: 40px; height: 22px; flex: 0 0 auto; border-radius: 9999px; border: 0; background: var(--surface-3); cursor: pointer; transition: background .18s; }
+    .rf-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-1); transition: transform .18s; }
+    .rf-switch.is-on { background: var(--primary); }
+    html.dark .rf-switch.is-on { background: var(--primary-bright, #8B9FAF); }
+    .rf-switch.is-on::after { transform: translateX(18px); }
+    .rf-stepper { display: inline-flex; align-items: center; gap: 8px; }
+    .rf-stepper-val { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 14px; min-width: 16px; text-align: center; color: var(--text); }
+
+    /* ── Studio: live score readout ── */
+    .rf-score { margin-top: 4px; padding: 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); text-align: center; }
+    .rf-score.is-dq { border-color: color-mix(in srgb, var(--sec-red) 34%, transparent); background: var(--sec-red-10); }
+    .rf-stars { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; }
+    .rf-stars .material-icons { font-size: 34px; color: var(--surface-3); transition: color .2s, transform .2s; }
+    .rf-stars .material-icons.is-on { color: var(--ter-amber); transform: scale(1.04); }
+    .rf-score-net { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); }
+    .rf-score-net.is-dq { color: var(--sec-red-text); }
+    .rf-score-path { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
+    .rf-score-path b { color: var(--text); font-weight: 800; }
+    .rf-reset { margin-top: 14px; width: 100%; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; padding: 9px; border-radius: 9px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .16s; }
+    .rf-reset:hover { background: var(--surface-2); color: var(--text); }
+    .rf-reset .material-icons { font-size: 15px; }
+
+    html.full-bleed .rf-card { border: 0; border-radius: 0; box-shadow: none; }
+    html.full-bleed #modules-row { gap: 0; }
+    html.full-bleed body { padding: 0; }
+
+    /* Narrow viewports: let the three modules scroll horizontally rather than crush. */
+    @media (max-width: 1180px) {
+      #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
+      .rf-dash { min-width: 460px; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module (shared WISE app nav) -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat + dashboard + studio modules share the shell's "modules" grid area -->
+    <div id="modules-row">
+
+      <!-- ═══════════ 1 · WISEai chat (reusable surface) ═══════════ -->
+      <main class="rf-card rf-chat">
+        <div class="chat-topbar">
+          <div class="sc-topbar-lead">
+            <div class="sc-bug">
+              <svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
+            </div>
+            <div class="sc-topbar-titles">
+              <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
+              <span class="rf-topbar-tag">Reformulation · Guiding Stars</span>
+            </div>
+          </div>
+          <div class="sc-topbar-controls">
+            <div class="panel-more-wrap" id="rf-chat-menu-wrap">
+              <button type="button" id="rf-chat-menu-btn" class="panel-more-btn" onclick="rfToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <div id="rf-chat-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset product &amp; chat</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rf-chat-body">
+          <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
+        </div>
+
+        <!-- Persistent intent chips — always mirror the current recommendations. -->
+        <div class="rf-chip-dock">
+          <p class="rf-chip-dock-label"><span class="material-icons">bolt</span>Reformulation moves · always in sync</p>
+          <div class="rf-chips" id="rf-chips" role="list" aria-label="Reformulation quick actions"></div>
+        </div>
+
+        <div class="chat-input-rail shrink-0">
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div class="fl-input-wrap" style="flex:1">
+              <input id="chat-input" type="text" placeholder="Ask WISEai to reformulate this product…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();rfSend();}" />
+            </div>
+            <button type="button" id="rf-send" class="rf-send-btn" onclick="rfSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
+              <span class="material-icons">send</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ═══════════ 2 · Reformulation Dashboard ═══════════ -->
+      <section class="rf-card rf-dash" id="rf-dash">
+        <header class="rf-head">
+          <span class="rf-head-ic"><span class="material-symbols-outlined">insights</span></span>
+          <div class="rf-head-titles">
+            <h2 class="rf-head-title">Reformulation Dashboard</h2>
+            <p class="rf-head-meta" id="rf-dash-meta">Great Value Frosted Toaster Pastries · General Foods algorithm</p>
+          </div>
+        </header>
+        <div class="rf-body">
+          <!-- Disqualification & recommendations -->
+          <div class="rf-sec">
+            <p class="rf-sec-title"><span class="material-icons">flag</span>Disqualification &amp; Recommendations</p>
+            <div id="rf-dq"></div>
+            <div id="rf-steps" style="margin-top:12px"></div>
+          </div>
+
+          <!-- Debits & credits trade-off -->
+          <div class="rf-sec">
+            <p class="rf-sec-title"><span class="material-icons">balance</span>Debits &amp; Credits · the trade-off</p>
+            <div class="rf-tradeoff">
+              <div class="rf-tradeoff-col rf-tradeoff-col--debit">
+                <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
+                <div id="rf-debits"></div>
+              </div>
+              <div class="rf-tradeoff-sep" aria-hidden="true"></div>
+              <div class="rf-tradeoff-col rf-tradeoff-col--credit">
+                <p class="rf-tradeoff-col-label"><span>Credits</span><span class="rf-col-sum" id="rf-credit-sum">0</span></p>
+                <div id="rf-credits"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ 3 · Reformulation Studio (calculator) ═══════════ -->
+      <section class="rf-card rf-studio" id="rf-studio">
+        <header class="rf-head">
+          <span class="rf-head-ic"><span class="material-symbols-outlined">auto_fix_high</span></span>
+          <div class="rf-head-titles">
+            <h2 class="rf-head-title">Reformulation Studio</h2>
+            <p class="rf-head-meta">Dial in the WISE controls · live Guiding Stars</p>
+          </div>
+        </header>
+        <div class="rf-body">
+          <div class="rf-algo">
+            <span class="rf-algo-label">Algorithm</span>
+            <select id="rf-algo" aria-label="Guiding Stars algorithm">
+              <option value="G">G — General Foods</option>
+              <option value="M">M — Meat / Dairy / Nuts</option>
+              <option value="F">F — Fats &amp; Oils</option>
+              <option value="V">V — Beverage</option>
+            </select>
+          </div>
+
+          <div class="rf-basis" role="tablist" aria-label="Nutrient basis">
+            <button type="button" class="rf-basis-btn is-active" data-basis="serving" role="tab">Per Serving</button>
+            <button type="button" class="rf-basis-btn" data-basis="100kcal" role="tab">Per 100 kcal</button>
+            <button type="button" class="rf-basis-btn" data-basis="100g" role="tab">Per 100 g</button>
+          </div>
+
+          <div class="rf-controls" id="rf-controls"></div>
+
+          <div class="rf-toggle-row">
+            <div class="rf-toggle-info">
+              <div class="rf-toggle-name">Vitamins / minerals ≥5% DV</div>
+              <div class="rf-toggle-sub">+1 credit each per 100 kcal · max +3</div>
+            </div>
+            <div class="rf-stepper">
+              <button type="button" class="rf-step-btn" data-vit="-1" aria-label="Fewer fortified nutrients">−</button>
+              <span class="rf-stepper-val" id="rf-vit-val">0</span>
+              <button type="button" class="rf-step-btn" data-vit="1" aria-label="More fortified nutrients">+</button>
+            </div>
+          </div>
+          <div class="rf-toggle-row" id="rf-wg-row">
+            <div class="rf-toggle-info">
+              <div class="rf-toggle-name">Named whole-grain ingredient</div>
+              <div class="rf-toggle-sub">+1 whole-grain bonus · grain-based foods</div>
+            </div>
+            <button type="button" class="rf-switch" id="rf-wg" role="switch" aria-checked="false" aria-label="Whole grain"></button>
+          </div>
+
+          <div class="rf-score" id="rf-score" style="margin-top:18px">
+            <div class="rf-stars" id="rf-stars" aria-label="Guiding Stars rating"></div>
+            <div class="rf-score-net" id="rf-score-net">—</div>
+            <div class="rf-score-path" id="rf-score-path"></div>
+          </div>
+          <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-icons">restart_alt</span>Reset to original label</button>
+        </div>
+      </section>
+
+    </div><!-- /#modules-row -->
+  </div>
+
+  <!-- Shared WISE navigation + brand strip (same pattern as studio-ai.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { initWISEaiTooltips } from '../js/wiseai-tooltip.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'reformulation' });
+    }
+
+    applyStoredTextSize();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initWISEaiTooltips());
+    else initWISEaiTooltips();
+  </script>
+
+  <!-- Appearance + profile popovers for the nav footer (mirrors studio-ai.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEaiDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        pop.addEventListener('click', (ev) => {
+          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
+          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
+          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
+          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
+          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML =
+          '<div class="wise-popover-header">Arthur Krupsky</div>' +
+          '<div class="wise-popover-actions">' +
+            '<button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications"><span class="material-icons">notifications</span><span>Alerts</span></button>' +
+            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
+            '<button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings"><span class="material-icons">tune</span><span>Agents</span></button>' +
+          '</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
+          '<div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>' +
+          '<div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>' +
+          '<div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>' +
+          '<div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <!-- ═══════════ Reformulation engine — single source of truth ═══════════
+       One state object drives all three modules. Any change (a studio slider, a
+       dashboard "Apply", or a chat chip) mutates state, recomputes the Guiding
+       Stars score, and re-renders the dashboard + studio + chat chips together.
+       The chat's intent chips are DERIVED from the live recommendations, so they
+       always match whatever the product currently is. -->
+  <script>
+    (function () {
+      const OWL = document.querySelector('.sc-bug svg').outerHTML;
+      const box = document.getElementById('chat-messages');
+      const input = document.getElementById('chat-input');
+
+      const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+      const fmt = (n, d = 1) => { const v = Math.round(n * 10 ** d) / 10 ** d; return String(v); };
+
+      /* ── Product baseline (Great Value Frosted Toaster Pastries, per serving).
+         Added sugar 41 g against 328 kcal = ~50% of calories → the DQ we open on;
+         additives=12 → the second DQ. Everything is stored per SERVING; the basis
+         toggle only changes how a value is DISPLAYED, never the scoring math
+         (which is always per 100 kcal). */
+      const ORIGINAL = { calories: 328, grams: 82, sodium: 430, addedSugar: 41, satFat: 5, transFat: 0, fiber: 0, additives: 12, vitamins: 0, wholeGrain: false, algo: 'G' };
+      let state = { ...ORIGINAL };
+      let basis = 'serving';
+
+      /* Slider config — ranges are per SERVING (canonical); labels convert. */
+      const SLIDERS = [
+        { key: 'sodium', name: 'Sodium', unit: 'mg', min: 0, max: 800, step: 10 },
+        { key: 'addedSugar', name: 'Added Sugar', unit: 'g', min: 0, max: 60, step: 1 },
+        { key: 'satFat', name: 'Saturated Fat', unit: 'g', min: 0, max: 15, step: 0.5 },
+        { key: 'fiber', name: 'Dietary Fiber', unit: 'g', min: 0, max: 20, step: 0.5 },
+        { key: 'additives', name: 'Additives to limit', unit: '', min: 0, max: 12, step: 1 },
+      ];
+      const ALGO_NAME = { G: 'General Foods', M: 'Meat / Dairy / Nuts', F: 'Fats & Oils', V: 'Beverage' };
+
+      /* Per-100-kcal converter (mg or g → per 100 kcal). */
+      const per100 = (v) => (state.calories ? (v / state.calories) * 100 : 0);
+      /* Display a per-serving value in the currently-selected basis. */
+      function display(key) {
+        const v = state[key];
+        if (key === 'additives') return { num: String(v), unit: '' };
+        if (basis === '100kcal') return { num: fmt(per100(v), key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') + '/100kcal' };
+        if (basis === '100g') return { num: fmt(state.grams ? (v / state.grams) * 100 : 0, key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') + '/100g' };
+        return { num: fmt(v, key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') };
+      }
+
+      /* Fiber credit tiers (per 100 kcal) → per-serving grams for the product. */
+      const FIBER_TIERS = [1.4, 2.8, 4.2];
+      const fiberServingFor = (per100val) => Math.round((per100val * state.calories / 100) * 10) / 10;
+      const SUGAR_CAP_G = Math.floor(0.40 * state.calories / 4); // grams of added sugar at the 40%-kcal cap
+
+      const STAR_THRESHOLDS = [1, 4, 7]; // net points needed for ★, ★★, ★★★
+
+      /* ── Core scoring ── */
+      function compute() {
+        const s100 = { satFat: per100(state.satFat), sodium: per100(state.sodium), addedSugar: per100(state.addedSugar), transFat: per100(state.transFat), fiber: per100(state.fiber) };
+
+        // Debits
+        let dSat = s100.satFat >= 2 ? -2 : s100.satFat >= 1 ? -1 : 0;
+        let dSod = s100.sodium >= 240 ? -2 : s100.sodium >= 120 ? -1 : 0;
+        let dSugar = s100.addedSugar >= 12 ? -3 : s100.addedSugar >= 6 ? -2 : s100.addedSugar >= 2 ? -1 : 0;
+        const dTrans = s100.transFat > 0 ? -1 : 0;
+        const dAdd = state.additives >= 1 ? -1 : 0;
+
+        // Credits
+        let cFiber = s100.fiber >= FIBER_TIERS[2] ? 3 : s100.fiber >= FIBER_TIERS[1] ? 2 : s100.fiber >= FIBER_TIERS[0] ? 1 : 0;
+        const cVit = Math.max(0, Math.min(3, state.vitamins));
+        const grainAlgo = state.algo === 'G';
+        let cWhole = grainAlgo && state.wholeGrain ? 1 : 0;
+
+        // Algorithm variants
+        if (state.algo === 'M') { dSat = Math.min(0, dSat + 1); }
+        else if (state.algo === 'F') { dSat = Math.min(0, dSat + 1); dSod = Math.min(0, dSod + 1); }
+        else if (state.algo === 'V') { dSugar = Math.max(-3, dSugar - 1); cFiber = Math.min(cFiber, 1); }
+
+        const debits = { transFat: dTrans, satFat: dSat, sodium: dSod, additives: dAdd, addedSugar: dSugar };
+        const credits = { fiber: cFiber, vitamins: cVit, wholeGrain: cWhole };
+        const debitSum = dTrans + dSat + dSod + dAdd + dSugar;
+        const creditSum = cFiber + cVit + cWhole;
+        const net = debitSum + creditSum;
+
+        // Disqualification
+        const sugarPct = state.calories ? (state.addedSugar * 4 / state.calories) * 100 : 0;
+        const dq = [];
+        if (sugarPct > 40) dq.push({ id: 'dq-sugar', text: `Added sugar <b>${fmt(sugarPct, 0)}%</b> &gt; 40% of calories` });
+        if (state.additives >= 2) dq.push({ id: 'dq-additives', text: `<b>${state.additives}</b> additives to limit (≥2 disqualifies)` });
+        const disqualified = dq.length > 0;
+
+        // Stars
+        let stars = 0;
+        if (!disqualified) stars = net >= STAR_THRESHOLDS[2] ? 3 : net >= STAR_THRESHOLDS[1] ? 2 : net >= STAR_THRESHOLDS[0] ? 1 : 0;
+
+        return { s100, debits, credits, debitSum, creditSum, net, sugarPct, dq, disqualified, stars, grainAlgo };
+      }
+
+      /* ── Recommendations (fastest, dynamic, each with an apply mutation) ── */
+      function recommendations(c) {
+        const recs = [];
+        if (c.dq.find((d) => d.id === 'dq-sugar')) {
+          recs.push({ id: 'dq-sugar', kind: 'dq', icon: 'block', title: `Cut added sugar below ${SUGAR_CAP_G} g/serving to exit disqualification`, note: '40% of calories cap', effort: 'high', chip: `Exit sugar DQ`,
+            apply: () => { state.addedSugar = Math.max(0, SUGAR_CAP_G - 1); } });
+        }
+        if (c.dq.find((d) => d.id === 'dq-additives')) {
+          recs.push({ id: 'dq-additives', kind: 'dq', icon: 'block', title: `Remove ${state.additives - 1} of ${state.additives} flagged additives to exit disqualification`, note: '2+ additives disqualifies', effort: 'med', chip: `Clear additive DQ`,
+            apply: () => { state.additives = 1; } });
+        }
+        // Fiber tiers (each +1)
+        for (let i = 0; i < FIBER_TIERS.length; i++) {
+          if (c.s100.fiber < FIBER_TIERS[i]) {
+            const g = fiberServingFor(FIBER_TIERS[i]);
+            recs.push({ id: 'fiber-' + i, kind: 'credit', icon: 'grass', pts: '+1', title: `Raise fiber to ≥${g} g/serving (now ${fmt(state.fiber)} g) → +1 credit`, note: 'oat/legume flour · inulin · whole grains', effort: 'low', chip: `Fiber → +1`,
+              apply: () => { state.fiber = g; } });
+            break;
+          }
+        }
+        // Vitamins/minerals (+1 each up to 3)
+        if (c.credits.vitamins < 3) {
+          recs.push({ id: 'vit', kind: 'credit', icon: 'medication', pts: '+1', title: `Fortify one more vitamin/mineral to ≥5% DV per 100 kcal (${c.credits.vitamins} credited) → +1`, note: 'fortification', effort: 'low', chip: `Fortify → +1`,
+            apply: () => { state.vitamins = Math.min(3, state.vitamins + 1); } });
+        }
+        // Whole grain (+1, grain algo only)
+        if (c.grainAlgo && !state.wholeGrain) {
+          recs.push({ id: 'wg', kind: 'credit', icon: 'grain', pts: '+1', title: 'Use a named whole-grain ingredient → +1 whole-grain bonus', note: 'grain-based foods', effort: 'low', chip: `Whole grain → +1`,
+            apply: () => { state.wholeGrain = true; } });
+        }
+        // Debit reductions
+        if (c.debits.sodium < 0) {
+          const target = Math.floor(119 * state.calories / 100);
+          recs.push({ id: 'sodium', kind: 'debit', icon: 'trending_down', pts: '+1', title: `Cut sodium below 120 mg/100 kcal (${fmt(c.s100.sodium, 0)} now) → +1`, note: 'reduce salt · potassium salt', effort: 'med', chip: `Sodium → +1`,
+            apply: () => { state.sodium = Math.min(state.sodium, target); } });
+        }
+        if (c.debits.satFat < 0) {
+          const target = Math.floor((0.99 * state.calories / 100) * 10) / 10;
+          recs.push({ id: 'satfat', kind: 'debit', icon: 'trending_down', pts: `+${-c.debits.satFat}`, title: `Cut saturated fat below 1 g/100 kcal (${fmt(c.s100.satFat)} now) → +${-c.debits.satFat}`, note: 'unsaturated oil swap', effort: 'med', chip: `Sat. fat → +${-c.debits.satFat}`,
+            apply: () => { state.satFat = Math.min(state.satFat, target); } });
+        }
+        return recs;
+      }
+
+      /* ── Path to the next reachable star ── */
+      function pathToNextStar(c) {
+        if (c.stars >= 3) return { done: true, msg: 'Top rating — this product already earns the full <b>★★★</b>.' };
+        const targetStar = c.stars + 1;
+        const targetNet = STAR_THRESHOLDS[targetStar - 1];
+        const need = Math.max(0, targetNet - c.net);
+        const stars = '★'.repeat(targetStar);
+        if (c.disqualified) {
+          return { done: false, msg: `Disqualified. Clear the <b>${c.dq.length}</b> blocker${c.dq.length > 1 ? 's' : ''} and add <b>+${need}</b> net point${need === 1 ? '' : 's'} to reach <b>${stars}</b>.` };
+        }
+        if (need === 0) return { done: false, msg: `On the cusp of <b>${stars}</b> — one more credit locks it in.` };
+        return { done: false, msg: `Needs <b>+${need}</b> point${need === 1 ? '' : 's'} to reach <b>${stars}</b>.` };
+      }
+
+      /* ═══════════ Renderers ═══════════ */
+      const effortLabel = { low: 'Low effort', med: 'Medium effort', high: 'Higher effort' };
+
+      function renderStudio(c) {
+        // Sliders
+        const controls = document.getElementById('rf-controls');
+        controls.innerHTML = SLIDERS.map((s) => {
+          const d = display(s.key);
+          return `
+            <div class="rf-ctl" data-key="${s.key}">
+              <div class="rf-ctl-top">
+                <span class="rf-ctl-name">${s.name}</span>
+                <span class="rf-ctl-val" data-val="${s.key}">${d.num}${d.unit ? ' ' + d.unit : ''}</span>
+              </div>
+              <div class="rf-ctl-row">
+                <button type="button" class="rf-step-btn" data-nudge="${s.key}" data-dir="-1" aria-label="Decrease ${s.name}">−</button>
+                <input type="range" class="rf-range" data-range="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${state[s.key]}" aria-label="${s.name}" />
+                <button type="button" class="rf-step-btn" data-nudge="${s.key}" data-dir="1" aria-label="Increase ${s.name}">+</button>
+              </div>
+            </div>`;
+        }).join('');
+        // Vitamins + whole grain
+        document.getElementById('rf-vit-val').textContent = String(state.vitamins);
+        const wg = document.getElementById('rf-wg');
+        wg.classList.toggle('is-on', state.wholeGrain);
+        wg.setAttribute('aria-checked', String(state.wholeGrain));
+        document.getElementById('rf-wg-row').style.display = c.grainAlgo ? '' : 'none';
+
+        // Score readout
+        const starsEl = document.getElementById('rf-stars');
+        starsEl.innerHTML = [0, 1, 2].map((i) => `<span class="material-icons ${i < c.stars ? 'is-on' : ''}">${i < c.stars ? 'star' : 'star_border'}</span>`).join('');
+        const scoreBox = document.getElementById('rf-score');
+        scoreBox.classList.toggle('is-dq', c.disqualified);
+        const netEl = document.getElementById('rf-score-net');
+        netEl.classList.toggle('is-dq', c.disqualified);
+        netEl.innerHTML = c.disqualified
+          ? `Disqualified · ${c.net >= 0 ? '+' : ''}${c.net} net pts (blocked)`
+          : `${c.stars}★ · ${c.net >= 0 ? '+' : ''}${c.net} net points`;
+        document.getElementById('rf-score-path').innerHTML = pathToNextStar(c).msg;
+      }
+
+      function renderDashboard(c) {
+        document.getElementById('rf-dash-meta').textContent = `Great Value Frosted Toaster Pastries · ${ALGO_NAME[state.algo]} algorithm`;
+
+        // Disqualification banners
+        const dqEl = document.getElementById('rf-dq');
+        if (c.disqualified) {
+          dqEl.innerHTML = c.dq.map((d) => `<div class="rf-dq-banner is-dq"><span class="material-icons">block</span><span>${d.text}</span></div>`).join('')
+            + `<div class="rf-dq-banner is-dq" style="background:transparent;border:0;padding:2px 2px 0;font-size:11.5px"><span class="material-icons" style="font-size:15px">arrow_forward</span><span>Recommendations to reach <b>★ 1 star</b> — apply any step to model it live.</span></div>`;
+        } else {
+          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-icons">verified</span><span>Qualifies — earns <b>${c.stars}★</b>. ${c.stars < 3 ? 'Keep going for the next star.' : 'Top Guiding Stars rating.'}</span></div>`;
+        }
+
+        // Actionable steps
+        const recs = recommendations(c);
+        const stepsEl = document.getElementById('rf-steps');
+        if (!recs.length) {
+          stepsEl.innerHTML = `<div class="rf-empty">No further moves — this product is fully optimized for the ${ALGO_NAME[state.algo]} algorithm.</div>`;
+        } else {
+          stepsEl.innerHTML = recs.map((r) => {
+            const badge = r.kind === 'dq'
+              ? `<span class="rf-step-badge rf-step-badge--dq"><span class="material-icons">block</span></span>`
+              : r.kind === 'credit'
+                ? `<span class="rf-step-badge rf-step-badge--credit">${r.pts}</span>`
+                : `<span class="rf-step-badge rf-step-badge--debit">${r.pts}</span>`;
+            return `
+              <div class="rf-step">
+                ${badge}
+                <div class="rf-step-main">
+                  <div class="rf-step-title">${r.title}</div>
+                  <div class="rf-step-sub"><span class="rf-effort rf-effort--${r.effort}">${effortLabel[r.effort]}</span></div>
+                </div>
+                <button type="button" class="rf-apply" data-apply="${r.id}"><span class="material-icons">check</span>Apply</button>
+              </div>`;
+          }).join('');
+        }
+
+        // Debits & credits trade-off
+        const debitRows = [
+          { key: 'transFat', name: 'Trans Fat', detail: c.s100.transFat > 0 ? `${fmt(c.s100.transFat)} g/100kcal` : 'Not detected' },
+          { key: 'satFat', name: 'Saturated Fat', detail: `${fmt(c.s100.satFat)} g/100kcal` },
+          { key: 'sodium', name: 'Sodium', detail: `${fmt(c.s100.sodium, 0)} mg/100kcal` },
+          { key: 'additives', name: 'Additives', detail: state.additives ? `${state.additives} to limit` : 'None flagged' },
+          { key: 'addedSugar', name: 'Added Sugar', detail: `${fmt(c.sugarPct, 0)}% of calories · ${fmt(c.s100.addedSugar)} g/100kcal` },
+        ];
+        document.getElementById('rf-debits').innerHTML = debitRows.map((row) => {
+          const pts = c.debits[row.key];
+          const sev = pts === 0 ? 'sev-0' : `sev-debit-${Math.abs(pts)}`;
+          return metricHtml(sev, pts, row.name, row.detail);
+        }).join('');
+
+        const creditRows = [
+          { key: 'fiber', name: 'Dietary Fiber', detail: `${fmt(c.s100.fiber)} g/100kcal` },
+          { key: 'vitamins', name: 'Vitamins / Min.', detail: state.vitamins ? `${state.vitamins} ≥5% DV credited` : 'None ≥5% DV' },
+          { key: 'wholeGrain', name: 'Whole Grain', detail: !c.grainAlgo ? 'N/A for this algorithm' : (state.wholeGrain ? 'Named whole grain' : 'Not detected') },
+        ];
+        document.getElementById('rf-credits').innerHTML = creditRows.map((row) => {
+          const pts = c.credits[row.key];
+          const sev = pts > 0 ? 'sev-credit' : 'sev-0';
+          return metricHtml(sev, pts, row.name, row.detail);
+        }).join('');
+
+        document.getElementById('rf-debit-sum').textContent = c.debitSum;
+        document.getElementById('rf-credit-sum').textContent = '+' + c.creditSum;
+      }
+
+      function metricHtml(sev, pts, name, detail) {
+        const label = pts > 0 ? '+' + pts : String(pts);
+        return `
+          <div class="rf-metric ${sev}">
+            <div class="rf-metric-pts">${label}</div>
+            <div class="rf-metric-name">${name}</div>
+            <div class="rf-metric-detail">${detail}</div>
+          </div>`;
+      }
+
+      /* Chat intent chips — DERIVED from live recommendations so they always match. */
+      function renderChips(c) {
+        const el = document.getElementById('rf-chips');
+        const recs = recommendations(c);
+        if (!recs.length) {
+          el.innerHTML = `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized — ${c.stars}★</span>`;
+          return;
+        }
+        el.innerHTML = recs.slice(0, 6).map((r) => {
+          const cls = r.kind === 'dq' ? 'rf-chip--dq' : r.kind === 'credit' ? 'rf-chip--credit' : '';
+          const pts = r.pts ? `<span class="rf-chip-pts">${r.pts}</span>` : '';
+          return `<button type="button" class="rf-chip ${cls}" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}${pts}</button>`;
+        }).join('');
+      }
+
+      /* ═══════════ Chat ═══════════ */
+      function nowLabel() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+      function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
+      function addUser(text) {
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
+        box.scrollTop = box.scrollHeight;
+      }
+      function addWISEai(html, opts) {
+        const meta = opts && opts.noMeta ? '' : metaRow();
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + meta + '</div></div>');
+        box.scrollTop = box.scrollHeight;
+      }
+      function showTyping() {
+        const el = document.createElement('div');
+        el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
+        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing"><span></span><span></span><span></span></span><span class="sc-typing-label">WISEai is modeling…</span></span></div>';
+        box.appendChild(el); box.scrollTop = box.scrollHeight;
+        return el;
+      }
+      function respond(html) {
+        const t = showTyping();
+        setTimeout(() => { t.remove(); addWISEai(html); }, 460);
+      }
+
+      function scoreSentence(c) {
+        if (c.disqualified) return `It's still <b>disqualified</b> (${c.dq.length} blocker${c.dq.length > 1 ? 's' : ''}) at <b>${c.net >= 0 ? '+' : ''}${c.net}</b> net points.`;
+        return `It now earns <b>${c.stars}★</b> at <b>${c.net >= 0 ? '+' : ''}${c.net}</b> net points.`;
+      }
+
+      /* ═══════════ The one update path ═══════════ */
+      let firstPaint = true;
+      function render() {
+        const c = compute();
+        renderStudio(c);
+        renderDashboard(c);
+        renderChips(c);
+        return c;
+      }
+
+      /* Apply a recommendation by id from ANY surface (dashboard Apply or chat chip). */
+      function applyStep(id, fromChat) {
+        const before = compute();
+        const rec = recommendations(before).find((r) => r.id === id);
+        if (!rec) return;
+        rec.apply();
+        const after = render();
+        addUser(fromChat ? rec.chip : ('Apply · ' + rec.chip));
+        respond(`Done — <b>${esc(rec.title)}</b>. ${scoreSentence(after)}${after.disqualified ? '' : (after.stars > before.stars ? ' 🎉 that just earned a star.' : '')}`);
+      }
+      window.rfApplyFromChip = (id) => applyStep(id, true);
+
+      /* ── Studio interactions ── */
+      let chatDebounce = null;
+      function afterSliderChange(key) {
+        const c = render();
+        clearTimeout(chatDebounce);
+        chatDebounce = setTimeout(() => {
+          const d = display(key);
+          const nm = SLIDERS.find((s) => s.key === key)?.name || key;
+          respond(`${nm} set to <b>${d.num}${d.unit ? ' ' + d.unit : ''}</b>. ${scoreSentence(c)}`);
+        }, 700);
+      }
+
+      document.getElementById('rf-controls').addEventListener('input', (e) => {
+        const r = e.target.closest('[data-range]');
+        if (!r) return;
+        const key = r.dataset.range;
+        state[key] = parseFloat(r.value);
+        // live number label without full re-render jitter
+        const valEl = document.querySelector(`[data-val="${key}"]`);
+        if (valEl) { const d = display(key); valEl.textContent = d.num + (d.unit ? ' ' + d.unit : ''); }
+      });
+      document.getElementById('rf-controls').addEventListener('change', (e) => {
+        const r = e.target.closest('[data-range]');
+        if (!r) return;
+        afterSliderChange(r.dataset.range);
+      });
+      document.getElementById('rf-controls').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-nudge]');
+        if (!b) return;
+        const key = b.dataset.nudge;
+        const cfg = SLIDERS.find((s) => s.key === key);
+        const dir = parseInt(b.dataset.dir, 10);
+        state[key] = Math.max(cfg.min, Math.min(cfg.max, Math.round((state[key] + dir * cfg.step) * 100) / 100));
+        afterSliderChange(key);
+      });
+
+      document.querySelectorAll('[data-vit]').forEach((b) => b.addEventListener('click', () => {
+        state.vitamins = Math.max(0, Math.min(3, state.vitamins + parseInt(b.dataset.vit, 10)));
+        const c = render();
+        respond(`Fortified nutrients set to <b>${state.vitamins}</b>. ${scoreSentence(c)}`);
+      }));
+      document.getElementById('rf-wg').addEventListener('click', () => {
+        state.wholeGrain = !state.wholeGrain;
+        const c = render();
+        respond(`Whole-grain ingredient <b>${state.wholeGrain ? 'added' : 'removed'}</b>. ${scoreSentence(c)}`);
+      });
+      document.getElementById('rf-algo').addEventListener('change', (e) => {
+        state.algo = e.target.value;
+        const c = render();
+        respond(`Switched to the <b>${ALGO_NAME[state.algo]}</b> algorithm. ${scoreSentence(c)}`);
+      });
+
+      document.querySelectorAll('.rf-basis-btn').forEach((b) => b.addEventListener('click', () => {
+        basis = b.dataset.basis;
+        document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+        render();
+      }));
+
+      /* ── Dashboard Apply buttons ── */
+      document.getElementById('rf-steps').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-apply]');
+        if (b) applyStep(b.dataset.apply, false);
+      });
+      /* ── Chat chips ── */
+      document.getElementById('rf-chips').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-chip]');
+        if (b) applyStep(b.dataset.chip, true);
+      });
+
+      /* ── Free-text conversation ── */
+      window.rfSend = function () {
+        const text = (input.value || '').trim();
+        if (!text) return;
+        input.value = '';
+        addUser(text);
+        const t = text.toLowerCase();
+        const c = compute();
+        let reply;
+        if (/star|rating|score|how many|point/.test(t)) {
+          reply = `${scoreSentence(c)} ${pathToNextStar(c).msg}`;
+        } else if (/disqualif|dq|blocked|why.*(0|zero)/.test(t)) {
+          reply = c.disqualified
+            ? `Two things block it: ${c.dq.map((d) => d.text).join('; ')}. Clear both and it can start earning stars — the moves are in the chips below.`
+            : `Nothing's disqualifying it right now — it earns <b>${c.stars}★</b>.`;
+        } else if (/sugar/.test(t)) {
+          reply = `Added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of calories (${fmt(c.s100.addedSugar)} g/100kcal), a <b>${c.debits.addedSugar}</b> debit${c.sugarPct > 40 ? ' and a disqualifier above 40%' : ''}. Drop it below <b>${SUGAR_CAP_G} g/serving</b> to clear the cap.`;
+        } else if (/additive|preservative|color|dye/.test(t)) {
+          reply = `There are <b>${state.additives}</b> additives to limit — ≥2 disqualifies. Bring it to <b>1 or 0</b> to clear that blocker.`;
+        } else if (/fiber|whole ?grain|fortif|vitamin|credit/.test(t)) {
+          reply = `Credits available: fiber tiers (+1 each), fortifying vitamins/minerals (+1 each, max +3)${c.grainAlgo ? ', and a named whole-grain ingredient (+1)' : ''}. Tap a green chip below to model it.`;
+        } else if (/reformulate|fix|improve|best|fastest|how.*(reach|get)/.test(t)) {
+          const recs = recommendations(c).slice(0, 3);
+          reply = `Fastest path: ${recs.map((r) => r.title).join('; ')}. ${pathToNextStar(c).msg} Apply any chip below and everything updates live.`;
+        } else {
+          reply = `I'm modeling this product against the <b>${ALGO_NAME[state.algo]}</b> Guiding Stars algorithm. ${scoreSentence(c)} Ask about the disqualification, debits, credits, or the fastest path to the next star — or tap a chip below to reformulate.`;
+        }
+        respond(reply);
+      };
+
+      /* ── More-menu ── */
+      window.rfToggleChatMenu = function (e) {
+        if (e) e.stopPropagation();
+        const m = document.getElementById('rf-chat-menu');
+        const btn = document.getElementById('rf-chat-menu-btn');
+        const open = m.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', String(open));
+      };
+      window.rfCloseChatMenu = function () {
+        document.getElementById('rf-chat-menu')?.classList.add('hidden');
+        document.getElementById('rf-chat-menu-btn')?.setAttribute('aria-expanded', 'false');
+      };
+      document.addEventListener('click', (e) => { if (!e.target.closest('#rf-chat-menu-wrap')) window.rfCloseChatMenu(); });
+      window.rfCopyTranscript = function (el) {
+        const text = Array.from(box.querySelectorAll('.sc-line')).map((l) => {
+          const you = l.classList.contains('sc-line-you');
+          return (you ? 'You: ' : 'WISEai: ') + (l.querySelector('.sc-line-body')?.innerText || '').trim();
+        }).join('\n\n');
+        navigator.clipboard?.writeText(text);
+        if (el) { const s = el.querySelector('span:last-child'); const o = s.textContent; s.textContent = 'Copied!'; setTimeout(() => (s.textContent = o), 1400); }
+        window.rfCloseChatMenu();
+      };
+      window.rfRestart = function () { box.innerHTML = ''; state = { ...ORIGINAL }; document.getElementById('rf-algo').value = state.algo; render(); seed(); };
+      window.rfResetProduct = function () {
+        state = { ...ORIGINAL };
+        document.getElementById('rf-algo').value = state.algo;
+        const c = render();
+        addUser('Reset to original label');
+        respond(`Back to the original label. ${scoreSentence(c)}`);
+      };
+
+      /* ── Opening turn ── */
+      function seed() {
+        const c = compute();
+        addWISEai('<span class="rf-lead">Let\'s get <span class="rf-accent">Frosted Toaster Pastries</span> onto the Guiding Stars board.</span>Right now it\'s <b>disqualified</b> — added sugar is half its calories and it carries 12 additives to limit. I\'ve broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.', { noMeta: true });
+        addWISEai(`${scoreSentence(c)} ${pathToNextStar(c).msg} Tap a move below — or drag a slider — and the whole board updates live.`);
+      }
+
+      render();
+      seed();
+    })();
+  </script>
 </body>
 </html>

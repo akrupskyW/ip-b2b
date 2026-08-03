@@ -43,6 +43,8 @@ const NAV_HTML = `
       <a class="mkt-nav-link" href="marketing-coach.html" data-route="coach">WISEcoach<sup class="mkt-tm">™</sup></a>
       <a class="mkt-nav-link" href="marketing-enterprise.html" data-route="enterprise">WISEip<sup class="mkt-tm">™</sup></a>
       <a class="mkt-nav-link" href="marketing-wiseai.html" data-route="wiseai">WISEai<sup class="mkt-tm">™</sup></a>
+      <a class="mkt-nav-link" href="marketing-alliance.html" data-route="alliance">WISEalliance<sup class="mkt-tm">™</sup></a>
+      <a class="mkt-nav-link" href="marketing-pricing.html" data-route="pricing">Pricing</a>
       <div class="mkt-authgroup mkt-nav-cta-drawer">
         <div class="mkt-authseg">
           <a class="mkt-authseg-btn" href="pages/login.html">Brand login</a>
@@ -81,21 +83,22 @@ const FOOTER_HTML = `
         </div>
         <div class="mkt-footer-col">
           <h4>For Consumers</h4>
-          <a href="marketing-app.html">WISEcode UPF Detector</a>
+          <a href="marketing-app.html">WISEcode UPF Detector™</a>
           <a href="marketing-coach.html">WISEcoach™</a>
-          <a href="index.html#cta">Get WISEcode</a>
         </div>
         <div class="mkt-footer-col">
           <h4>For Brands</h4>
-          <a href="marketing-enterprise.html">WISEip</a>
-          <a href="index.html#mission">Non-UPF Verified™</a>
-          <a href="marketing-enterprise.html">Start my verification</a>
+          <a href="marketing-enterprise.html">WISEip™</a>
+          <a href="marketing-nonupf.html">Non-UPF Verified™</a>
+          <a href="marketing-gras.html">GRAS Reviewed</a>
+          <a href="marketing-pricing.html">Pricing</a>
         </div>
         <div class="mkt-footer-col">
           <h4>Company</h4>
-          <a href="index.html">Home</a>
-          <a href="marketing-wiseai.html">WISEai</a>
+          <a href="marketing-wiseai.html">WISEai™</a>
+          <a href="marketing-alliance.html">WISEalliance™</a>
           <a href="pages/login.html">Sign in</a>
+          <a href="pages/create-account.html">Create account</a>
         </div>
       </div>
     </div>
@@ -184,6 +187,13 @@ const INTENT_REPLIES = {
       <li><strong>Re-scores as you go</strong> so you can watch a product move toward Non-UPF Verified™.</li>
     </ul>
     <p>Want to try it on a product? <a href="pages/create-account.html">Create your brand account →</a></p>`,
+  alliance: `<p><strong>WISEalliance™</strong> is our community of independent scientists, researchers and clinicians who stand behind WISE's food truth.</p>
+    <ul>
+      <li><strong>Independent experts review the science</strong> — nutrition scientists, toxicologists, food technologists and physicians who validate how we classify and score food.</li>
+      <li><strong>Every verdict is grounded in evidence</strong> — the alliance pressure-tests the NFP+™ standard so a WISE result reflects real research, not opinion.</li>
+      <li><strong>The methods stay current</strong> — as the science evolves, the alliance keeps our standards honest and up to date.</li>
+    </ul>
+    <p>Meet the community on the <a href="marketing-alliance.html">WISEalliance page →</a>.</p>`,
 };
 
 /* ---------------------------------------------------------------------
@@ -207,6 +217,7 @@ const INTENT_ASKS = {
   engine: 'Tell me about the food answer engine',
   gras: 'Start GRAS verification',
   reformulate: 'Help me reformulate my food',
+  alliance: 'What is WISEalliance™?',
 };
 
 /* ---------------------------------------------------------------------
@@ -294,6 +305,32 @@ const ROUTES = {
       { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
     ],
   },
+  /* Two dedicated deep-dives branching off WISEip. They keep the "WISEip" nav
+     item highlighted (nav: 'enterprise') since they live under that pillar. */
+  nonupf: {
+    file: 'marketing-nonupf.html',
+    title: 'Non-UPF Verified™ · WISE',
+    nav: 'enterprise',
+    announce: `This is <strong>Non-UPF Verified™</strong> — WISE's independent, science-backed certification. Here's what I can walk you through:`,
+    intents: [
+      { intent: 'nonupf', label: 'What is Non-UPF Verified™?', icon: 'verified' },
+      { intent: 'verify', label: 'Start my verification', icon: 'shield' },
+      { intent: 'gras', label: 'How does GRAS review work?', icon: 'health_and_safety' },
+      { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
+    ],
+  },
+  gras: {
+    file: 'marketing-gras.html',
+    title: 'GRAS Reviewed · WISE',
+    nav: 'enterprise',
+    announce: `This is <strong>GRAS Reviewed</strong> — the ingredient-by-ingredient safety layer beneath the Non-UPF standard. Here's where I can take you:`,
+    intents: [
+      { intent: 'gras', label: 'How does GRAS review work?', icon: 'health_and_safety' },
+      { intent: 'nonupf', label: 'What is Non-UPF Verified™?', icon: 'verified' },
+      { intent: 'verify', label: 'Start my verification', icon: 'shield' },
+      { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
+    ],
+  },
   wiseai: {
     file: 'marketing-wiseai.html',
     title: 'WISEai™ · WISE',
@@ -306,6 +343,28 @@ const ROUTES = {
       { intent: 'howscan', label: 'How does scanning work?', icon: 'qr_code_scanner' },
       { intent: 'ingredients', label: 'Break down an ingredient', icon: 'science' },
       { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
+    ],
+  },
+  alliance: {
+    file: 'marketing-alliance.html',
+    title: 'WISEalliance™ · WISE',
+    announce: `This is <strong>WISEalliance™</strong> — the community of scientists and researchers who validate WISE's food truth. Here's what I can walk you through:`,
+    intents: [
+      { intent: 'alliance', label: 'What is WISEalliance™?', icon: 'groups' },
+      { intent: 'nonupf', label: 'What is Non-UPF Verified™?', icon: 'verified' },
+      { intent: 'gras', label: 'How does GRAS review work?', icon: 'health_and_safety' },
+      { intent: 'scan', label: 'Is my food ultra-processed?', icon: 'search' },
+    ],
+  },
+  pricing: {
+    file: 'marketing-pricing.html',
+    title: 'Pricing · WISE',
+    announce: `You're on <strong>Pricing</strong> — every WISE plan in one place, from the free apps to WISEip for brands. Here's where I can take you:`,
+    intents: [
+      { intent: 'getapp', label: 'Get the app', icon: 'get_app' },
+      { intent: 'coach', label: 'How does WISEcoach work?', icon: 'restaurant_menu' },
+      { intent: 'verify', label: 'Start my verification', icon: 'shield' },
+      { intent: 'alliance', label: 'What is WISEalliance™?', icon: 'groups' },
     ],
   },
 };
@@ -411,6 +470,8 @@ function boot() {
         { key: 'coach', label: 'WISEcoach™', icon: 'restaurant_menu' },
         { key: 'enterprise', label: 'WISEip', icon: 'dataset' },
         { key: 'wiseai', label: 'WISEai™', icon: 'forum' },
+        { key: 'alliance', label: 'WISEalliance™', icon: 'groups' },
+        { key: 'pricing', label: 'Pricing', icon: 'sell' },
         { key: 'getapp', label: 'Get the app', icon: 'get_app' },
         { key: 'login', label: 'Brand login', icon: 'login' },
         { key: 'create', label: 'Create brand account', icon: 'person_add' },
@@ -596,8 +657,11 @@ function applyRouteChrome(routeKey, setChatOpen) {
   document.title = route.title;
   document.body.dataset.mktRoute = routeKey;
 
+  // Sub-pages (e.g. the Non-UPF / GRAS deep-dives) can point their highlight at
+  // a parent nav item via route.nav, so the pillar they branch off stays active.
+  const activeNav = route.nav || routeKey;
   document.querySelectorAll('.mkt-nav-link[data-route]').forEach((link) => {
-    const on = link.dataset.route === routeKey;
+    const on = link.dataset.route === activeNav;
     link.classList.toggle('is-active', on);
     if (on) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
