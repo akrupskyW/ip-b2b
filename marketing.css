@@ -1,0 +1,1690 @@
+/* ===================================================================
+   WISE — MARKETING stylesheet (front-end marketing site).
+
+   Standalone from the app's pages/wise.css so marketing can evolve its
+   own layout/components, BUT the PRIMARY design primitives below
+   (colors, fonts, elevation/shadows, radii, spacing) are duplicated
+   1:1 from pages/wise.css and MUST be kept in sync with it. When a
+   token changes in wise.css, mirror it here.
+
+   Everything under "SECTION 2 — MARKETING COMPONENTS" is new and lives
+   only here.
+=================================================================== */
+
+
+/* ===================================================================
+   SECTION 1 — DESIGN TOKENS  (mirror of pages/wise.css :root / html.dark)
+   KEEP IN SYNC with pages/wise.css.
+=================================================================== */
+:root {
+  --bg: #F9F8F3;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EA;
+  --surface-3: #EFEDE2;
+  --text: #111827;
+  --text-muted: #444B55;
+  --text-subtle: #474E58;
+  --border: rgba(17,24,39,0.08);
+  --border-strong: rgba(17,24,39,0.14);
+
+  --primary: #25507C;
+  --primary-10: rgba(37, 80, 124, 0.10);
+  --primary-20: rgba(37, 80, 124, 0.20);
+  --primary-soft: rgba(37, 80, 124, 0.08);
+  --sec-green: #32A966;
+  --sec-red: #DC3038;
+  --ter-amber: #FFC434;
+  --ter-violet: #25507C;
+  --ter-cyan: #25507C;
+
+  --sec-green-text: #245E3B;
+  --ter-amber-text: #75360A;
+  --sec-red-text: #831F23;
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+
+  --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
+  --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+  --shadow-card: var(--shadow-2);
+
+  --radius-pill: 9999px;
+
+  /* Type faces — mirror of wise.css (DM Sans body, Noto Serif display). */
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+}
+
+html.dark {
+  --bg: #05141C;
+  --surface: #0D1B24;
+  --surface-2: #112633;
+  --surface-3: #15303F;
+  --text: #F3F4F6;
+  --text-muted: #BCC6D3;
+  --text-subtle: #B1BAC7;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --primary-soft: rgba(37, 80, 124, 0.18);
+  --primary-bright: #8B9FAF;
+
+  --sec-green-text: #B6C9BE;
+  --ter-amber-text: #D7BE91;
+  --sec-red-text: #FFE1DC;
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+
+/* ===================================================================
+   SECTION 2 — MARKETING COMPONENTS  (new — marketing site only)
+=================================================================== */
+
+/* Marketing-only tokens (layout rhythm, floating nav geometry). */
+:root {
+  --mkt-maxw: 1200px;
+  /* The floating nav runs a touch wider than the content shell. */
+  --mkt-nav-maxw: 1340px;
+  --mkt-gutter: clamp(20px, 5vw, 48px);
+  --mkt-section-py: clamp(64px, 9vw, 128px);
+  --mkt-nav-h: 60px;
+  --mkt-nav-top: 16px;
+  --mkt-hero-grad: radial-gradient(120% 120% at 15% 0%, rgba(37,80,124,0.10) 0%, rgba(37,80,124,0) 55%),
+                   radial-gradient(120% 120% at 100% 10%, rgba(50,169,102,0.10) 0%, rgba(50,169,102,0) 50%);
+}
+html.dark {
+  --mkt-hero-grad: radial-gradient(120% 120% at 15% 0%, rgba(139,159,175,0.16) 0%, rgba(37,80,124,0) 55%),
+                   radial-gradient(120% 120% at 100% 10%, rgba(50,169,102,0.14) 0%, rgba(50,169,102,0) 50%);
+}
+
+/* Marketing base — NOTE: unlike the app (overflow:hidden shell) the
+   marketing site scrolls normally. */
+* { box-sizing: border-box; }
+html.mkt {
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--bg);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body.mkt {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .35s ease, color .25s ease;
+}
+
+.mkt h1, .mkt h2, .mkt h3, .mkt .mkt-display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0;
+}
+
+.mkt-shell { max-width: var(--mkt-maxw); margin: 0 auto; padding-inline: var(--mkt-gutter); }
+.mkt-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+html.dark .mkt-eyebrow { color: var(--primary-bright); }
+.mkt-lede { color: var(--text-muted); font-size: 1.05rem; max-width: 60ch; }
+
+/* ---------- Buttons ---------- */
+.mkt-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-serif); font-weight: 700; font-size: 0.95rem;
+  padding: 13px 22px; border-radius: var(--radius-pill);
+  border: 1px solid transparent; cursor: pointer; text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease;
+  white-space: nowrap;
+}
+.mkt-btn:active { transform: translateY(1px); }
+.mkt-btn-primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+.mkt-btn-primary:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+.mkt-btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.mkt-btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); color: var(--primary); }
+html.dark .mkt-btn-ghost:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
+.mkt-btn-sm { padding: 9px 16px; font-size: 0.85rem; }
+
+/* ---------- Segmented auth control (Log in | Create account) ----------
+   The app is free for everyone; these sign-ins are the brand/retailer portal,
+   so a quiet "For brands" label sits beside the pill (and heads the same links
+   inside the mobile drawer) to make that distinction without saying "only". */
+/* The label stacks in a small caption directly above the auth pill. */
+.mkt-authgroup { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.mkt-authseg-label {
+  font-family: var(--font-body); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-subtle);
+  white-space: nowrap; user-select: none; line-height: 1;
+}
+.mkt-nav-drawer-label {
+  font-family: var(--font-body); font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle);
+  padding: 12px 14px 2px;
+}
+.mkt-authseg {
+  display: inline-flex; align-items: stretch;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  background: transparent; overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.mkt-authseg:hover { border-color: var(--primary); box-shadow: var(--shadow-1); }
+html.dark .mkt-authseg:hover { border-color: var(--primary-bright); }
+.mkt-authseg-btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif); font-weight: 700; font-size: 0.85rem;
+  padding: 9px 18px; color: var(--text); text-decoration: none; white-space: nowrap;
+  transition: background-color .18s ease, color .18s ease;
+}
+.mkt-authseg-btn:hover { background: var(--surface-2); color: var(--primary); }
+html.dark .mkt-authseg-btn:hover { color: var(--primary-bright); }
+.mkt-authseg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* The split: a hairline that blooms in the middle and fades at both ends. */
+.mkt-authseg-btn + .mkt-authseg-btn::before {
+  content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border-strong) 22%, var(--border-strong) 78%, transparent);
+}
+
+/* ---------- Floating pivot navigation ----------
+   A rounded, elevated pill that floats over the page and spans the full top of
+   the screen (inset by the page gutters on both sides), sitting above the docked
+   chat rail. Translucent + backdrop-blurred so content reads through on scroll. */
+.mkt-nav {
+  position: fixed; z-index: 90;
+  top: var(--mkt-nav-top); left: var(--mkt-gutter); right: var(--mkt-gutter);
+  width: auto; transform: none;
+  min-height: var(--mkt-nav-h);
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px 8px 20px;
+  border-radius: var(--radius-pill);
+  /* Query container so the bar collapses to its drawer based on its own width. */
+  container: mktnav / inline-size;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  transition: background-color .3s ease, box-shadow .3s ease, top .3s ease, border-color .3s ease;
+}
+.mkt-nav.is-scrolled {
+  top: 8px;
+  /* On scroll the bar leans MORE transparent so the page reads through it. */
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: var(--shadow-2);
+  border-color: var(--border-strong);
+}
+.mkt-nav-brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; flex: 0 0 auto; }
+.mkt-nav-brand svg { display: block; height: 26px; width: auto; color: var(--text); }
+.mkt-nav-divider { width: 1px; align-self: stretch; margin: 8px 4px; background: var(--border); flex: 0 0 auto; }
+.mkt-nav-links {
+  display: flex; align-items: center; gap: 2px; flex: 1 1 auto;
+  overflow-x: auto; scrollbar-width: none;
+}
+.mkt-nav-links::-webkit-scrollbar { display: none; }
+.mkt-nav-link {
+  font-family: var(--font-body); font-weight: 600; font-size: 0.9rem;
+  color: var(--text-muted); text-decoration: none; white-space: nowrap;
+  padding: 8px 12px; border-radius: var(--radius-pill);
+  transition: color .15s ease, background-color .15s ease;
+}
+/* Trademark superscript on the product names — kept tiny with a zeroed
+   line-height so it never stretches the nav row. */
+.mkt-tm {
+  font-size: 0.58em; font-weight: 700; line-height: 0;
+  vertical-align: 0.35em; margin-left: 0.5px; letter-spacing: 0;
+}
+.mkt-nav-link:hover { color: var(--text); background: var(--surface-2); }
+.mkt-nav-link.is-active { color: var(--primary); background: var(--primary-10); }
+html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
+/* No heavy ring on click/active — a pointer press should never leave the
+   default browser focus outline stuck around the pill. Keyboard users still
+   get a clear, on-brand focus cue via :focus-visible only. */
+.mkt-nav-link:focus { outline: none; }
+.mkt-nav-link:focus:not(:focus-visible) { outline: none; box-shadow: none; }
+.mkt-nav-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.mkt-nav-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+/* "Get the ___ app" CTA — "Cool Owl" is typed into the middle at boot, then the
+   whole button gets a quick shake. The typed span carries a blinking caret
+   while it's filling in. */
+.mkt-cta-app .mkt-cta-label { display: inline; white-space: nowrap; }
+.mkt-cta-app .mkt-cta-typed { white-space: pre; }
+.mkt-cta-app .mkt-cta-typed.is-typing::after {
+  content: ''; display: inline-block;
+  width: 1px; height: 1em; margin-left: 1px; vertical-align: -0.12em;
+  background: currentColor;
+  animation: mkt-cta-caret 1s steps(1, end) infinite;
+}
+@keyframes mkt-cta-caret { 50% { opacity: 0; } }
+.mkt-btn.mkt-cta-shake { animation: mkt-cta-shake .6s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes mkt-cta-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-cta-app .mkt-cta-typed.is-typing::after { animation: none; }
+  .mkt-btn.mkt-cta-shake { animation: none; }
+}
+/* Auth controls (Brand login / Create brand account) live as the segmented
+   pill in the actions on desktop, and as that SAME segmented pill inside the
+   mobile drawer — each hidden in the other mode so they never duplicate. */
+.mkt-nav-link--drawer { display: none; }
+.mkt-nav-cta-drawer { display: none; }
+.mkt-nav-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: var(--radius-pill);
+  background: transparent; border: 1px solid transparent; color: var(--text-muted);
+  cursor: pointer; transition: background-color .15s ease, color .15s ease;
+}
+.mkt-nav-icon:hover { background: var(--surface-2); color: var(--text); }
+.mkt-nav-toggle { display: none; }
+
+/* Theme toggle sits inline at the far right of the full-width bar. */
+.mkt-nav-theme {
+  width: 40px; height: 40px;
+  background: transparent; border: 1px solid transparent; color: var(--text-muted);
+}
+.mkt-nav-theme:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
+
+@container mktnav (max-width: 860px) {
+  .mkt-nav-divider { display: none; }
+  /* Pivot-style bar: the menu icon sits to the LEFT of the logo (already first
+     in the DOM) and everything else is pushed to the right. */
+  .mkt-nav-brand { margin-right: auto; }
+  .mkt-nav-links {
+    position: absolute; top: calc(100% + 10px); left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 4px;
+    padding: 10px; border-radius: var(--r-md);
+    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2);
+    overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
+    transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
+  }
+  .mkt-nav.is-open .mkt-nav-links { max-height: 60vh; opacity: 1; pointer-events: auto; padding: 10px; }
+  .mkt-nav-link { padding: 12px 14px; }
+  .mkt-nav-link--drawer { display: block; }
+  .mkt-nav-toggle { display: inline-flex; }
+  .mkt-nav-cta-desktop { display: none; }
+  /* Same segmented Brand login / Create brand account pill, now docked inside
+     the drawer as a full-width control below the product links. */
+  .mkt-nav-cta-drawer { display: flex; margin-top: 6px; }
+  .mkt-nav-cta-drawer .mkt-authseg { flex: 1 1 auto; }
+  .mkt-nav-cta-drawer .mkt-authseg-btn { flex: 1 1 0; padding-block: 12px; }
+}
+
+/* ---------- Store badges ---------- */
+.mkt-badges { display: flex; flex-wrap: wrap; gap: 12px; }
+.mkt-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 12px;
+  background: #000; color: #fff; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.mkt-badge:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.mkt-badge svg { width: 26px; height: 26px; flex: 0 0 auto; }
+.mkt-badge-txt { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.mkt-badge-txt small { font-size: 0.62rem; opacity: 0.8; font-weight: 500; }
+.mkt-badge-txt strong { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ---------- Section scaffolding ---------- */
+.mkt-section { padding-block: var(--mkt-section-py); position: relative; }
+.mkt-section--tint { background: var(--surface-2); }
+.mkt-section-head { max-width: 720px; margin-bottom: clamp(32px, 5vw, 56px); display: grid; gap: 14px; }
+.mkt-section-head.is-center { margin-inline: auto; text-align: center; justify-items: center; }
+.mkt-section-title { font-size: clamp(1.8rem, 3.6vw, 2.75rem); font-weight: 800; line-height: 1.1; }
+/* Tighter top padding — used for the "what you can do" band that sits right
+   under the hero so it reads as a continuation, not a separate section. */
+.mkt-section--tight { padding-top: clamp(28px, 4vw, 48px); }
+.mkt-section--tight .mkt-section-head { margin-bottom: clamp(24px, 3.5vw, 40px); }
+
+/* ---------- "What you can do now" — three flagship journey cards ---------- */
+.mkt-do-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(18px, 2.4vw, 26px); align-items: stretch; }
+@media (max-width: 860px) { .mkt-do-grid { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; } }
+.mkt-do-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: clamp(22px, 2.6vw, 30px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  text-decoration: none; color: inherit;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.mkt-do-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(17,24,39,.14);
+  border-color: var(--primary-20);
+}
+html.dark .mkt-do-card:hover { box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.mkt-do-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: var(--r-md);
+  background: var(--primary-10); color: var(--primary);
+  flex: 0 0 auto;
+}
+html.dark .mkt-do-icon { color: var(--primary-bright); }
+.mkt-do-icon .material-symbols-outlined { font-size: 26px; }
+.mkt-do-title { font-size: 1.12rem; font-weight: 800; line-height: 1.2; color: var(--text); }
+.mkt-do-body { font-size: .92rem; color: var(--text-muted); line-height: 1.5; }
+.mkt-do-link {
+  margin-top: auto; padding-top: 6px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .9rem; font-weight: 700; color: var(--primary);
+}
+html.dark .mkt-do-link { color: var(--primary-bright); }
+.mkt-do-link .material-symbols-outlined { font-size: 19px; transition: transform .25s ease; }
+.mkt-do-card:hover .mkt-do-link .material-symbols-outlined { transform: translateX(3px); }
+
+/* ---------- Hero ---------- */
+.mkt-hero {
+  position: relative; overflow: hidden;
+  padding-top: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + clamp(40px, 8vw, 96px));
+  padding-bottom: clamp(56px, 8vw, 112px);
+  background: var(--mkt-hero-grad), var(--bg);
+}
+/* Ambient background film pinned to the hero's bottom-right corner. Sits behind
+   the copy (which is lifted above it) and fades into the page so it reads as
+   part of the background rather than a foreground player. */
+.mkt-hero-bgvideo {
+  position: absolute; left: 0; bottom: 0; z-index: 0;
+  width: clamp(160px, 26vw, 380px);
+  max-width: 35%;
+  height: auto;
+  pointer-events: none; user-select: none;
+  object-fit: contain;
+  opacity: 0.9;
+  transform: scaleX(-1);
+  /* Mask is authored in the element's pre-transform space; scaleX(-1) mirrors it,
+     so anchoring at 100% 100% keeps the solid area in the visual bottom-left. */
+  -webkit-mask-image: radial-gradient(130% 130% at 100% 100%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(130% 130% at 100% 100%, #000 55%, transparent 100%);
+}
+@media (max-width: 900px) {
+  .mkt-hero-bgvideo { width: 45%; max-width: 45%; opacity: 0.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-hero-bgvideo { display: none; }
+}
+.mkt-hero .mkt-shell { position: relative; z-index: 1; }
+.mkt-hero-grid {
+  display: grid; gap: clamp(32px, 5vw, 64px); align-items: center;
+  grid-template-columns: 1.05fr 0.95fr;
+}
+@media (max-width: 900px) { .mkt-hero-grid { grid-template-columns: 1fr; } }
+.mkt-hero-copy { display: grid; gap: 22px; max-width: 620px; }
+.mkt-hero-title { font-size: clamp(2.6rem, 6.4vw, 4.4rem); font-weight: 900; line-height: 1.02; }
+.mkt-hero-title .mkt-accent { color: var(--primary); }
+html.dark .mkt-hero-title .mkt-accent { color: var(--primary-bright); }
+.mkt-hero-sub { font-family: var(--font-serif); font-size: clamp(1.3rem, 2.6vw, 1.75rem); font-weight: 700; color: var(--text); margin: 0; line-height: 1.15; }
+.mkt-hero-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.mkt-hero-media {
+  position: relative; border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow-card); border: 1px solid var(--border);
+  aspect-ratio: 4 / 3; background: var(--surface-3);
+}
+.mkt-hero-media video, .mkt-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Stats ---------- */
+.mkt-stats-grid {
+  display: grid;
+  /* Fluid: 3 across on wide, auto-reflows to 2 then 1 as space tightens.
+     min(100%, 240px) keeps a single column from overflowing tiny screens. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: clamp(20px, 4vw, 48px);
+}
+@media (max-width: 560px) { .mkt-stats-grid { grid-template-columns: 1fr; text-align: center; } }
+/* min-width:0 lets each cell shrink below the big number's intrinsic width. */
+.mkt-stat { display: grid; gap: 6px; min-width: 0; }
+.mkt-stat-num {
+  font-family: var(--font-serif); font-weight: 800;
+  font-size: clamp(1.9rem, 5vw, 4rem); line-height: 1.05; color: var(--primary);
+  overflow-wrap: break-word;
+}
+html.dark .mkt-stat-num { color: var(--primary-bright); }
+.mkt-stat-label { color: var(--text-muted); font-weight: 600; font-size: 0.95rem; }
+.mkt-stat-note { color: var(--text-subtle); font-size: 0.8rem; }
+
+/* ---------- Logo wall (static · packed responsive grid) ----------
+   No title, no marquee, no horizontal scroll. Every partner logo is packed
+   into an auto-filling grid that spans the full content width and fills the
+   entire wall — the brands repeat across the grid so no cell is ever empty.
+   Fully responsive: the column count flexes with the viewport. Each tile is a
+   normalized ink silhouette that pops and gets a diagonal "shine" on hover. */
+.mkt-logowall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 9vw, 122px), 1fr));
+  gap: clamp(8px, 1.4vw, 20px);
+  align-items: center;
+}
+.mkt-logotile {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  min-height: clamp(58px, 6vw, 84px);
+  padding: clamp(8px, 1vw, 14px);
+  border-radius: var(--r-md);
+}
+.mkt-logotile img {
+  height: clamp(30px, 3.4vw, 46px); width: auto; max-width: 100%; object-fit: contain;
+  /* The brand art is mixed polarity — some logos are near-white, some dark —
+     so normalize every one to a single ink silhouette. That's the only resting
+     state where all of them are actually visible on the light surface. */
+  filter: brightness(0);
+  opacity: 0.5;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.mkt-logotile:hover img { opacity: 0.92; transform: scale(1.06); }
+/* Diagonal light sweep across the tile on hover. */
+.mkt-logotile::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.55) 50%, transparent 66%);
+  transform: translateX(-130%);
+  transition: transform .7s ease;
+}
+.mkt-logotile:hover::after { transform: translateX(130%); }
+/* On the dark theme the same silhouettes are inverted to light ink. */
+html.dark .mkt-logotile img { filter: brightness(0) invert(1); opacity: 0.5; }
+html.dark .mkt-logotile:hover img { opacity: 0.95; }
+html.dark .mkt-logotile::after {
+  background: linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.22) 50%, transparent 66%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-logotile img, .mkt-logotile::after { transition: none; }
+  .mkt-logotile:hover img { transform: none; }
+}
+
+/* ---------- Pillars (3 columns) ---------- */
+.mkt-pillars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 3vw, 28px); align-items: start; }
+/* Responsive (container-width based): the first pillar — the WISEcode UPF
+   Detector — becomes a big full-width banner on top, and WISEcoach + WISEip
+   share the row beneath it. */
+@container mktbody (max-width: 900px) {
+  .mkt-pillars-grid { grid-template-columns: 1fr 1fr; }
+  .mkt-pillars-grid > .mkt-pillar:first-child { grid-column: 1 / -1; }
+}
+/* In the mid band the featured banner lays out image-beside-copy so it reads as
+   a hero, not just a very wide card. */
+@container mktbody (min-width: 601px) and (max-width: 900px) {
+  .mkt-pillars-grid > .mkt-pillar--media:first-child {
+    display: grid; grid-template-columns: 1.15fr 1fr; align-items: stretch;
+  }
+  .mkt-pillars-grid > .mkt-pillar--media:first-child .mkt-pillar-media {
+    height: 100%; min-height: clamp(200px, 26vw, 260px); object-position: center;
+  }
+  .mkt-pillars-grid > .mkt-pillar--media:first-child .mkt-pillar-content {
+    margin-top: 0; align-content: center; border-radius: 0; box-shadow: none;
+  }
+}
+/* Narrow: single column, first pillar returns to a normal stacked card. */
+@container mktbody (max-width: 600px) {
+  .mkt-pillars-grid { grid-template-columns: 1fr; }
+  .mkt-pillars-grid > .mkt-pillar:first-child { grid-column: auto; }
+}
+.mkt-pillar {
+  display: grid; gap: 16px; align-content: start;
+  padding: clamp(24px, 3vw, 34px);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.mkt-pillar:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: var(--primary-20); }
+/* Bare icon — no square/box behind it. */
+.mkt-pillar-icon { display: inline-flex; align-items: center; color: var(--primary); margin-bottom: 2px; }
+html.dark .mkt-pillar-icon { color: var(--primary-bright); }
+.mkt-pillar-icon .material-symbols-outlined { font-size: 40px; }
+
+/* Media pillars — a large full-bleed product image bleeds to the top/left/right
+   edges of the card (subject anchored top-right), and the content panel is
+   pulled up to overlap the lower half of the picture. */
+.mkt-pillar--media { display: block; padding: 0; gap: 0; overflow: hidden; }
+.mkt-pillar-media {
+  display: block; width: 100%; height: clamp(180px, 22vw, 230px);
+  object-fit: cover; object-position: top right;
+}
+.mkt-pillar--media .mkt-pillar-content {
+  position: relative;
+  margin-top: clamp(-115px, -11vw, -88px);
+  padding: clamp(24px, 3vw, 34px);
+  display: grid; gap: 14px; align-content: start;
+  background: var(--surface);
+  border-top-left-radius: var(--r-lg);
+  border-top-right-radius: var(--r-lg);
+  box-shadow: 0 -14px 28px rgba(17, 24, 39, 0.05);
+}
+html.dark .mkt-pillar--media .mkt-pillar-content { box-shadow: 0 -14px 28px rgba(0, 0, 0, 0.28); }
+.mkt-pillar-kicker { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-subtle); }
+.mkt-pillar-title { font-size: 1.35rem; font-weight: 800; }
+.mkt-pillar-body { color: var(--text-muted); font-size: 0.95rem; }
+.mkt-pillar-link { margin-top: 2px; display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 700; text-decoration: none; font-family: var(--font-serif); }
+html.dark .mkt-pillar-link { color: var(--primary-bright); }
+.mkt-pillar-link:hover { gap: 10px; }
+
+/* ---------- Mission strip (Non-UPF + GRAS) ---------- */
+.mkt-mission { background: var(--primary); color: #fff; border-radius: var(--r-xl); overflow: hidden; position: relative; }
+.mkt-mission::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(90% 140% at 100% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 55%);
+}
+.mkt-mission-inner { position: relative; padding: clamp(32px, 5vw, 56px); display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 4vw, 48px); align-items: center; }
+@container mktbody (max-width: 820px) { .mkt-mission-inner { grid-template-columns: 1fr; } }
+.mkt-mission h2 { color: #fff; font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 800; }
+.mkt-mission p { color: rgba(255,255,255,0.86); }
+.mkt-mission-badges { display: grid; grid-template-columns: 1fr; gap: 18px; }
+.mkt-seal {
+  display: flex; align-items: center; gap: 18px; padding: 22px 24px;
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.28); border-radius: var(--r-lg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.18);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.mkt-seal:hover { transform: translateY(-3px); background: rgba(255,255,255,0.18); box-shadow: 0 18px 44px rgba(0,0,0,0.24); }
+.mkt-seal .mkt-seal-icon { font-size: 56px; color: #fff; flex: none; }
+.mkt-seal-shield { width: 72px; height: auto; flex: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25)); }
+.mkt-seal-txt strong { display: block; color: #fff; font-weight: 800; font-size: 1.2rem; line-height: 1.15; }
+.mkt-seal-txt small { display: block; margin-top: 4px; color: rgba(255,255,255,0.82); font-size: 0.9rem; }
+
+/* Hero shield above the eyebrow */
+.mkt-hero-shield {
+  width: clamp(96px, 12vw, 132px); height: auto; margin: 0 auto 2px;
+  filter: drop-shadow(0 8px 20px rgba(25,35,57,0.18));
+}
+
+/* ---------- Feature deep-dive sections ---------- */
+.mkt-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 64px); align-items: center; }
+.mkt-feature--reverse .mkt-feature-media { order: -1; }
+/* Stack copy over media once the real content width gets tight (container-based
+   so it works even while the chat rail is narrowing the page). */
+@container mktbody (max-width: 860px) {
+  .mkt-feature-grid { grid-template-columns: 1fr; }
+  .mkt-feature--reverse .mkt-feature-media { order: 0; }
+}
+.mkt-feature-copy { display: grid; gap: 18px; max-width: 560px; }
+.mkt-feature-title { font-size: clamp(1.7rem, 3.2vw, 2.5rem); font-weight: 800; line-height: 1.1; }
+.mkt-feature-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.mkt-feature-list li { display: flex; gap: 10px; color: var(--text-muted); }
+.mkt-feature-list .material-symbols-outlined { color: var(--sec-green); font-size: 22px; flex: 0 0 auto; }
+html.dark .mkt-feature-list .material-symbols-outlined { color: #6FD79E; }
+.mkt-feature-media {
+  position: relative; border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow-card); border: 1px solid var(--border);
+  aspect-ratio: 5 / 4; background: var(--surface-3);
+}
+.mkt-feature-media video, .mkt-feature-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mkt-feature-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ---------- Footer ---------- */
+.mkt-footer { background: var(--surface-2); border-top: 1px solid var(--border); padding-block: clamp(48px, 6vw, 72px) 32px; }
+.mkt-footer-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: clamp(28px, 4vw, 48px); }
+@container mktbody (max-width: 820px) { .mkt-footer-grid { grid-template-columns: 1fr 1fr; } }
+@container mktbody (max-width: 520px) { .mkt-footer-grid { grid-template-columns: 1fr; } }
+.mkt-footer-brand svg { height: 28px; width: auto; color: var(--text); margin-bottom: 14px; }
+.mkt-footer-col h4 { font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 14px; }
+.mkt-footer-col a { display: block; color: var(--text-muted); text-decoration: none; padding: 5px 0; font-size: 0.92rem; }
+.mkt-footer-col a:hover { color: var(--primary); }
+html.dark .mkt-footer-col a:hover { color: var(--primary-bright); }
+.mkt-footer-bottom { max-width: var(--mkt-maxw); margin: clamp(36px, 5vw, 56px) auto 0; padding: 24px var(--mkt-gutter) 0; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; color: var(--text-subtle); font-size: 0.85rem; }
+
+/* ---------- WISEai chat dock ----------
+   A self-contained marketing chat surface that mirrors the app's WISEai
+   module (owl mark, title, suggestion chips, message bubbles) using the
+   shared tokens. Desktop: a sticky left rail. Mobile: collapses to a floating
+   owl icon that expands to a full-screen chat. */
+.mkt-chat {
+  position: fixed; z-index: 70;
+  left: 20px; top: calc(var(--mkt-nav-top) + var(--mkt-nav-h) + 14px); bottom: 20px;
+  width: 372px; max-width: calc(100vw - 40px);
+  display: flex; flex-direction: column;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+.mkt-chat[hidden] { display: none; }
+.mkt-chat.is-anim-in { animation: mktChatIn .24s cubic-bezier(.22,1,.36,1); }
+@keyframes mktChatIn { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.mkt-chat-head { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--border); }
+.mkt-chat-bug { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--primary); color: #fff; flex: 0 0 auto; }
+.mkt-chat-bug svg { width: 22px; height: 22px; }
+.mkt-chat-titles { display: grid; line-height: 1.1; }
+.mkt-chat-title { font-family: var(--font-serif); font-weight: 800; font-size: 1rem; color: var(--text); }
+.mkt-chat-sub { color: var(--text-subtle); font-size: 0.72rem; }
+.mkt-chat-head-btn {
+  width: 34px; height: 34px; border-radius: 9px; border: 0; background: transparent; color: var(--text-muted);
+  display: grid; place-items: center; cursor: pointer; transition: background-color .15s, color .15s;
+}
+.mkt-chat-head-btn:hover { background: var(--surface-2); color: var(--text); }
+.mkt-chat-head-btn:first-of-type { margin-left: auto; }
+.mkt-chat-head-btn .material-symbols-outlined { font-size: 20px; }
+
+.mkt-chat-body { flex: 1 1 auto; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
+.mkt-chat-welcome { display: grid; gap: 6px; margin-bottom: 2px; }
+.mkt-chat-welcome h4 { font-family: var(--font-serif); font-weight: 800; font-size: 1.05rem; margin: 0; color: var(--text); }
+.mkt-chat-welcome p { margin: 0; color: var(--text-muted); font-size: 0.85rem; }
+.mkt-msg { max-width: 88%; padding: 10px 14px; border-radius: 15px; font-size: 0.9rem; line-height: 1.5; }
+.mkt-msg--ai { background: var(--surface-2); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+.mkt-msg--user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.mkt-msg a { color: inherit; text-decoration: underline; }
+.mkt-chat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.mkt-chat-chip {
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+  border-radius: var(--radius-pill); padding: 7px 12px; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; transition: border-color .15s, color .15s, background-color .15s; font-family: var(--font-body);
+}
+.mkt-chat-chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-10); }
+html.dark .mkt-chat-chip:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
+.mkt-chat-typing { display: inline-flex; gap: 4px; align-self: flex-start; padding: 12px 14px; background: var(--surface-2); border-radius: 15px; border-bottom-left-radius: 4px; }
+.mkt-chat-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-subtle); animation: mktBlink 1.2s infinite ease-in-out both; }
+.mkt-chat-typing span:nth-child(2) { animation-delay: .18s; }
+.mkt-chat-typing span:nth-child(3) { animation-delay: .36s; }
+@keyframes mktBlink { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+
+.mkt-chat-foot { padding: 12px; border-top: 1px solid var(--border); }
+.mkt-chat-form { display: flex; gap: 8px; align-items: flex-end; }
+.mkt-chat-input {
+  flex: 1 1 auto; resize: none; border: 1px solid var(--border-strong); border-radius: 14px;
+  padding: 10px 12px; font-family: var(--font-body); font-size: 0.9rem; line-height: 1.4;
+  background: var(--surface); color: var(--text); max-height: 120px; min-height: 42px;
+}
+.mkt-chat-input:focus { outline: none; border-color: var(--primary); }
+.mkt-chat-send {
+  flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; border: 0; cursor: pointer;
+  background: var(--primary); color: #fff; display: grid; place-items: center;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.mkt-chat-send:hover { transform: translateY(-1px); }
+.mkt-chat-send:disabled { opacity: .45; cursor: default; transform: none; }
+.mkt-chat-disclaimer { margin: 8px 2px 0; color: var(--text-subtle); font-size: 0.68rem; text-align: center; }
+
+/* Floating owl launcher (collapsed state / mobile default). */
+.mkt-chat-fab {
+  position: fixed; z-index: 70; left: 20px; bottom: 20px;
+  width: 60px; height: 60px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary); color: #fff; display: grid; place-items: center;
+  box-shadow: var(--shadow-2); transition: transform .18s ease, box-shadow .18s ease;
+}
+.mkt-chat-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: var(--shadow-card); }
+.mkt-chat-fab svg { width: 32px; height: 30px; }
+.mkt-chat-fab[hidden] { display: none; }
+.mkt-chat-fab-label {
+  position: absolute; left: calc(100% + 12px); white-space: nowrap;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  box-shadow: var(--shadow-1); border-radius: var(--radius-pill); padding: 8px 14px;
+  font-size: 0.82rem; font-weight: 600; opacity: 0; transform: translateX(-6px); pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.mkt-chat-fab:hover .mkt-chat-fab-label { opacity: 1; transform: none; }
+
+/* Mobile: the panel takes over the whole screen; the launcher shrinks to an icon. */
+@media (max-width: 860px) {
+  .mkt-chat { left: 0; right: 0; top: 0; bottom: 0; width: 100%; max-width: none; height: 100dvh; border: 0; border-radius: 0; }
+  .mkt-chat-fab-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .mkt-chat.is-anim-in { animation: none; } }
+
+/* ---------- Hero (solo, text-only) ----------
+   The hero video now lives in its own full-bleed section (.mkt-videohero),
+   so the hero itself is a single centered column of copy. */
+.mkt-hero-grid--solo { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+.mkt-hero-grid--solo .mkt-hero-copy { max-width: 780px; justify-items: center; }
+.mkt-hero-grid--solo .mkt-hero-copy > * { max-width: 100%; }
+.mkt-hero-grid--solo .mkt-lede { margin-inline: auto; }
+.mkt-hero-grid--solo .mkt-hero-actions,
+.mkt-hero-grid--solo .mkt-badges { justify-content: center; }
+
+/* ---------- Cinematic full-bleed video section ----------
+   Breaks the shell to fill the whole viewport (width + height) with the
+   film playing edge-to-edge. Autoplays muted for the browser; a sound
+   toggle enables the voiceover and a CC toggle drives the custom-styled
+   caption bar (rendered from the WebVTT track in initVideoHero). */
+.mkt-videohero {
+  position: relative;
+  width: 100vw; margin-left: calc(50% - 50vw);
+  height: 100vh; height: 100svh;
+  min-height: 460px;
+  overflow: hidden;
+  background: #000;
+  display: block;
+}
+.mkt-videohero-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+/* We render captions in .mkt-videohero-caption, so suppress native cue UI. */
+.mkt-videohero-media::-webkit-media-text-track-container { display: none; }
+.mkt-videohero-media::cue { background: transparent; color: transparent; }
+
+.mkt-videohero-scrim {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    linear-gradient(to top, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 32%),
+    linear-gradient(to bottom, rgba(0,0,0,.42) 0%, rgba(0,0,0,0) 24%);
+}
+
+.mkt-videohero-caption {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: clamp(88px, 13vh, 148px); z-index: 3;
+  width: min(90%, 940px); text-align: center; pointer-events: none;
+  color: #fff; font-family: var(--font-body);
+  font-size: clamp(1rem, 2.4vw, 1.55rem); font-weight: 600; line-height: 1.4;
+}
+.mkt-videohero-caption:empty { display: none; }
+.mkt-videohero-caption span {
+  background: rgba(0,0,0,.6); border-radius: 8px;
+  padding: .14em .42em; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.mkt-videohero.is-cc-off .mkt-videohero-caption { display: none; }
+
+.mkt-videohero-controls {
+  position: absolute; z-index: 3;
+  right: clamp(16px, 3vw, 32px);
+  top: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + 22px);
+  display: flex; gap: 10px;
+}
+.mkt-videohero-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 15px; border-radius: var(--radius-pill);
+  border: 1px solid rgba(255,255,255,.28); background: rgba(0,0,0,.42); color: #fff;
+  cursor: pointer; font-family: var(--font-body); font-weight: 600; font-size: 0.85rem;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.mkt-videohero-btn:hover { background: rgba(0,0,0,.62); transform: translateY(-1px); }
+.mkt-videohero-btn.is-on { background: #fff; color: #111827; border-color: #fff; }
+.mkt-videohero-btn .material-symbols-outlined { font-size: 20px; }
+
+@media (max-width: 560px) {
+  .mkt-videohero-btn-txt { display: none; }
+  .mkt-videohero-btn { padding: 10px; }
+}
+
+/* ---------- Voices across America (interactive US map) ---------- */
+.mkt-voices {
+  position: relative; overflow: hidden;
+  padding-block: var(--mkt-section-py);
+  background:
+    radial-gradient(80% 120% at 20% 0%, rgba(37,80,124,0.08) 0%, rgba(37,80,124,0) 55%),
+    radial-gradient(80% 120% at 90% 20%, rgba(50,169,102,0.09) 0%, rgba(50,169,102,0) 50%),
+    var(--surface-2);
+}
+/* The galaxy spans the full content width, centered under the section head. */
+.mkt-galaxy {
+  position: relative; width: 100%; max-width: 1180px;
+  margin: clamp(28px, 5vw, 60px) auto 0;
+  aspect-ratio: 1.6 / 1; isolation: isolate;
+}
+
+/* --- Spider-web threads (SVG, drawn in a 0–100 space matching node %) --- */
+.mkt-galaxy-web { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; overflow: visible; pointer-events: none; }
+.mkt-galaxy-web line {
+  stroke: var(--primary); stroke-opacity: .13; stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: stroke-opacity .35s ease, stroke-width .35s ease;
+}
+.mkt-galaxy-web .mkt-web-ring { stroke-dasharray: 2.5 5; stroke-opacity: .1; }
+.mkt-galaxy-web .mkt-web-spoke.is-live { stroke-opacity: .32; }
+.mkt-galaxy-web .mkt-web-spoke.is-hot { stroke-opacity: .6; stroke-width: 1.6; }
+html.dark .mkt-galaxy-web line { stroke: var(--primary-bright); stroke-opacity: .2; }
+
+/* --- Rotating orbit rings (the "solar system" scaffolding) --- */
+.mkt-galaxy-rings { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.mkt-galaxy-ring {
+  position: absolute; top: 50%; left: 50%; border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--primary) 20%, transparent);
+  transform: translate(-50%, -50%);
+  animation: mktGalaxySpin linear infinite;
+}
+.mkt-galaxy-ring--1 { width: 40%; height: 40%; animation-duration: 90s; }
+.mkt-galaxy-ring--2 { width: 72%; height: 72%; animation-duration: 130s; animation-direction: reverse; }
+.mkt-galaxy-ring--3 { width: 100%; height: 100%; animation-duration: 175s; border-style: dotted; }
+html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-bright) 24%, transparent); }
+@keyframes mktGalaxySpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* --- The WISE owl core (the sun) — the EXACT pulsating owl from the WISEai
+   chat welcome screen. It reuses .ws-logo / .ws-pulse-ring from wiseai-chat.css
+   (same primary color, same breathing + ring-bloom animation, same UX); we only
+   scale it up here to read as the galaxy's glowing center. --- */
+.mkt-galaxy-core {
+  position: absolute; top: 50%; left: 50%; z-index: 2;
+  width: clamp(88px, 9.5vw, 124px); height: clamp(88px, 9.5vw, 124px);
+  transform: translate(-50%, -50%);
+  display: flex; align-items: center; justify-content: center;
+}
+/* Fill the enlarged core with the shared owl mark + pulse rings. */
+.mkt-galaxy-core .ws-logo {
+  width: 100%; height: 100%; margin: 0;
+  padding: clamp(16px, 2vw, 22px);
+}
+.mkt-galaxy-core .ws-pulse-ring {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 100%; margin: 0;
+}
+
+/* --- Floating member cards --- */
+.mkt-galaxy-nodes { position: absolute; inset: 0; z-index: 3; }
+.mkt-voice-node {
+  position: absolute; transform: translate(-50%, -50%);
+  width: clamp(184px, 16vw, 232px); outline: none;
+}
+.mkt-voice-node:hover, .mkt-voice-node:focus-within { z-index: 20; }
+.mkt-voice-float {
+  animation: mktGalaxyFloat var(--float-dur, 8s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s); will-change: transform;
+}
+.mkt-voice-node:nth-child(even) .mkt-voice-float { animation-direction: reverse; }
+.mkt-voice-node:hover .mkt-voice-float,
+.mkt-voice-node:focus-within .mkt-voice-float { animation-play-state: paused; }
+@keyframes mktGalaxyFloat {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(4px, -12px, 0) rotate(.6deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+.mkt-voice-card {
+  display: grid; gap: 8px; padding: 12px 13px 11px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  transition: transform .45s cubic-bezier(.2,.85,.25,1), box-shadow .25s ease, border-color .25s ease, background-color .25s ease, opacity .45s ease;
+}
+.mkt-voice-node:hover .mkt-voice-card,
+.mkt-voice-node:focus-within .mkt-voice-card {
+  transform: scale(1.06);
+  background: var(--surface); border-color: var(--primary-20); box-shadow: var(--shadow-card);
+}
+/* Testimonial swap — a card fades/scales out, its content is replaced with a
+   fresh voice, then it blooms back in. Driven by initVoicesGalaxy. */
+.mkt-voice-card.is-swapping {
+  opacity: 0; transform: scale(.9) translateY(8px); pointer-events: none;
+}
+/* Auto-spotlight — a softer highlight than hover. */
+.mkt-voice-node.is-active .mkt-voice-card { border-color: var(--sec-green); box-shadow: var(--shadow-2); }
+
+.mkt-voice-top { display: flex; align-items: center; gap: 9px; }
+.mkt-voice-avatar {
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+  border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--primary-20);
+}
+.mkt-voice-id { display: grid; gap: 2px; min-width: 0; }
+.mkt-voice-persona {
+  font-family: var(--font-serif); font-weight: 800; font-size: .92rem; line-height: 1.1; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mkt-voice-stars { display: inline-flex; gap: 1px; line-height: 1; }
+.mkt-voice-star { color: var(--border-strong); font-size: .74rem; }
+.mkt-voice-star.is-on { color: #f2a93b; }
+.mkt-voice-quote {
+  margin: 0; font-family: var(--font-serif); font-style: normal;
+  font-size: .86rem; line-height: 1.5; color: var(--text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+}
+.mkt-voice-quote::before { content: "\201C"; }
+.mkt-voice-quote::after { content: "\201D"; }
+.mkt-voice-node:hover .mkt-voice-quote,
+.mkt-voice-node:focus-within .mkt-voice-quote { -webkit-line-clamp: 99; }
+.mkt-voice-loc {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--text-subtle); font-size: .72rem; font-weight: 600;
+}
+.mkt-voice-loc .material-symbols-outlined { font-size: 14px; color: var(--sec-green); }
+
+/* When the real available width (not the viewport) is too tight to read as a
+   scatter, flow the galaxy into a tidy grid of cards. initVoicesGalaxy also
+   drops to fewer cards + faster rotation at these widths. */
+@container mktbody (max-width: 820px) {
+  .mkt-galaxy { aspect-ratio: auto; max-width: 640px; }
+  .mkt-galaxy-web, .mkt-galaxy-rings, .mkt-galaxy-core { display: none; }
+  .mkt-galaxy-nodes {
+    position: static; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;
+  }
+  .mkt-voice-node {
+    position: static !important; left: auto !important; top: auto !important;
+    transform: none !important; width: auto;
+  }
+  .mkt-voice-float { animation: none !important; }
+  .mkt-voice-quote { -webkit-line-clamp: unset; }
+}
+@container mktbody (max-width: 480px) {
+  .mkt-galaxy-nodes { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-voice-float, .mkt-galaxy-ring, .mkt-galaxy-core { animation: none !important; }
+}
+
+/* ===================================================================
+   APP-STYLE SHELL — WISEai docked as a left rail (the EXACT product chat
+   module), with the whole page living beside it as a full-bleed body
+   content module. The rail is fixed so it never floats over content.
+=================================================================== */
+:root { --mkt-chat-w: 384px; }
+
+/* Module width tiers — the chat's own width toggle (single → double → triple,
+   mirroring the product) drives these body classes via the shell's
+   onToggleWidth hook. Overriding --mkt-chat-w here reflows the ENTIRE shell in
+   one move: the rail widens and the body module, footer and floating nav all
+   track it, since every offset is expressed in terms of --mkt-chat-w. */
+body.mkt-chat-wide { --mkt-chat-w: 560px; }
+body.mkt-chat-wide.mkt-chat-triple { --mkt-chat-w: 720px; }
+
+/* The docked rail — fixed column holding the real chat card. It starts BELOW
+   the full-width top nav and runs to the bottom, so the chat is sticky beneath
+   the pivoted top navigation. */
+#mkt-chat-rail {
+  position: fixed; top: calc(var(--mkt-nav-top) + var(--mkt-nav-h)); right: auto; bottom: 0; left: 0; z-index: 80;
+  width: var(--mkt-chat-w);
+  display: flex; padding: 14px;
+  transition: width .3s cubic-bezier(.22,1,.36,1);
+}
+/* The inner card always fills the rail — the rail's width is the single source
+   of truth, so the chat's own panel-wide/panel-triple classes (meant for a
+   free-flex card elsewhere) must never force a min-width here and overflow. */
+#mkt-chat-rail > #mkt-wiseai,
+#mkt-chat-rail > #mkt-wiseai.panel-wide,
+#mkt-chat-rail > #mkt-wiseai.panel-triple {
+  flex: 1 1 auto; min-width: 0; height: 100%;
+}
+
+/* Body content module — offset past the rail; its sections bleed edge-to-edge
+   within the remaining width. */
+.mkt-appshell #mkt-body-module {
+  margin-left: var(--mkt-chat-w); position: relative; min-width: 0;
+  /* The body module is offset past the fixed chat rail, so its width is much
+     narrower than the viewport. Make it a query container so section grids can
+     respond to the REAL available width instead of the viewport width. */
+  container: mktbody / inline-size;
+}
+
+/* Shared footer — injected ONCE by the shell as a persistent sibling of
+   #mkt-body-module (mirroring the nav). It has to track the body module past
+   the chat/scanner rails and carry its own query container so the footer grid
+   responds to its real width, not the viewport. */
+.mkt-appshell .mkt-footer {
+  margin-left: var(--mkt-chat-w);
+  container: mktbody / inline-size;
+  transition: margin-left .3s cubic-bezier(.22,1,.36,1);
+}
+body.mkt-scanner-open.mkt-appshell .mkt-footer {
+  margin-left: calc(var(--mkt-chat-w) + var(--mkt-scanner-w));
+}
+/* Focus mode ("Just WISEai") hides the page body — hide the footer with it. */
+body.mkt-chat-focus.mkt-appshell .mkt-footer { display: none; }
+@media (max-width: 900px) {
+  .mkt-appshell .mkt-footer,
+  body.mkt-scanner-open.mkt-appshell .mkt-footer { margin-left: 0; }
+}
+
+/* The docked marketing chat carries the SAME three-dot menu (history, new
+   conversation, export, share…) and single/double/triple width toggle as the
+   product module — but with hideBranding on (no owl / title / "agents running"
+   pill). Without a title, the shared topbar's surface-2 fill + bottom divider
+   read as an empty coloured header strip, so on the docked rail we strip that
+   chrome and let the controls float into the top-right corner (a touch tighter
+   than the product module's 48px inset so they hug the rail edge). Focus mode
+   hides the topbar entirely further down.
+
+   The topbar must sit on the SAME surface as the transcript below it — the
+   shared card is --surface (#FFFFFF) but the messages area paints itself
+   --bg (#F9F8F3), so leaving the header transparent let the white card show
+   through as a mismatched white strip above the cream conversation. Paint the
+   header --bg to match the transcript exactly (dark mode keeps the transcript's
+   transparent fill, so the navy card reads through seamlessly there). */
+#mkt-chat-rail #mkt-wiseai .chat-topbar {
+  background: var(--bg);
+  border-bottom: 0;
+  padding: 12px 14px;
+}
+html.dark #mkt-chat-rail #mkt-wiseai .chat-topbar {
+  background: transparent;
+}
+
+/* Transcript + welcome hug the input rail (start low, no blank space below). */
+#mkt-wiseai .chat-messages-area { display: flex; flex-direction: column; }
+#mkt-wiseai .chat-messages-area::before { content: ""; margin-top: auto; }
+#mkt-wiseai .sc-welcome { justify-content: flex-end; }
+
+/* Full-bleed sections are now relative to the body module, not the viewport. */
+.mkt-appshell .mkt-videohero { width: 100%; margin-left: 0; }
+
+/* The floating pivot nav spans the full top of the screen (inset by the page
+   gutters), above the docked rail — its geometry no longer tracks the rail's
+   width, so the base .mkt-nav rule applies unchanged in the appshell. */
+
+/* Mobile launcher for the rail (owl bug) + slide-in overlay. */
+#mkt-chat-fab {
+  position: fixed; right: 20px; left: auto; bottom: 20px; z-index: 130;
+  width: 60px; height: 60px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary); color: #fff; display: none;
+  align-items: center; justify-content: center; box-shadow: var(--shadow-2);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+#mkt-chat-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: var(--shadow-card); }
+#mkt-chat-fab svg { width: 34px; height: 20px; color: #fff; }
+#mkt-chat-scrim[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  .mkt-appshell #mkt-body-module { margin-left: 0; }
+  #mkt-chat-rail {
+    width: min(var(--mkt-chat-w), 100vw); z-index: 120;
+    transform: translateX(-100%); transition: transform .3s cubic-bezier(.22,1,.36,1);
+    filter: drop-shadow(0 12px 40px rgba(0,0,0,.4));
+  }
+  body.mkt-chat-open #mkt-chat-rail { transform: none; }
+  #mkt-chat-fab { display: inline-flex; }
+  #mkt-chat-scrim { position: fixed; inset: 0; z-index: 110; background: rgba(4,8,18,.44); }
+}
+
+/* ===================================================================
+   WISE WEB SCANNER MODULE — docked as a second rail right beside the
+   WISEai chat when the "Is my food ultra-processed?" intent fires. It
+   slides in, reflows the body module + floating nav, and embeds the full
+   standalone scanner in an iframe (its own theme/tokens).
+=================================================================== */
+/* The scanner rail matches the single-pane chat module width by default — the
+   embedded scan screen fills it edge-to-edge (no floating device-frame look). */
+:root { --mkt-scanner-w: 384px; }
+
+#mkt-scanner-panel {
+  position: fixed; top: calc(var(--mkt-nav-top) + var(--mkt-nav-h)); bottom: 0; left: var(--mkt-chat-w);
+  width: var(--mkt-scanner-w); z-index: 79;
+  padding: 14px 14px 14px 0;
+  transform: translateX(-18px); opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .28s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s linear .3s;
+}
+body.mkt-scanner-open #mkt-scanner-panel {
+  transform: none; opacity: 1; visibility: visible; pointer-events: auto;
+  transition: opacity .28s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s;
+}
+.mkt-scanner-card {
+  position: relative;
+  display: flex; flex-direction: column; height: 100%;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-2);
+}
+/* Minimal floating close — no header chrome, just the scanner in the pane. */
+.mkt-scanner-close {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 0; background: rgba(17, 17, 17, .45); color: #fff;
+  cursor: pointer; backdrop-filter: blur(6px);
+  opacity: 0; transition: opacity .18s ease, background-color .15s ease;
+}
+.mkt-scanner-card:hover .mkt-scanner-close,
+.mkt-scanner-close:focus-visible { opacity: 1; }
+.mkt-scanner-close:hover { background: rgba(17, 17, 17, .7); }
+.mkt-scanner-close .material-symbols-outlined { font-size: 20px; }
+.mkt-scanner-body { flex: 1 1 auto; min-height: 0; background: #efedf1; }
+.mkt-scanner-frame { width: 100%; height: 100%; border: 0; display: block; }
+
+/* When the scanner is open, push the body module + nav past both rails. */
+body.mkt-scanner-open.mkt-appshell #mkt-body-module {
+  margin-left: calc(var(--mkt-chat-w) + var(--mkt-scanner-w));
+}
+.mkt-appshell #mkt-body-module { transition: margin-left .3s cubic-bezier(.22,1,.36,1); }
+
+/* Snugger scanner on mid-size desktops so the body still breathes. */
+@media (max-width: 1200px) and (min-width: 901px) {
+  :root { --mkt-scanner-w: 344px; }
+}
+
+/* Mobile: the scanner becomes a full-screen module over the page. */
+@media (max-width: 900px) {
+  #mkt-scanner-panel { left: 0; width: 100vw; z-index: 125; padding: 0; }
+  .mkt-scanner-card { border: 0; border-radius: 0; }
+  body.mkt-scanner-open.mkt-appshell #mkt-body-module { margin-left: 0; }
+}
+
+/* ===================================================================
+   "JUST WISEai" FOCUS MODE — the same persistent chat rail, but taking over
+   the page. The body module steps aside and the docked chat fills the shell,
+   so navigating to (or away from) marketing-wiseai.html never reloads or
+   restarts the conversation — it just expands / contracts the one chat.
+=================================================================== */
+body.mkt-chat-focus.mkt-appshell #mkt-body-module { display: none; }
+body.mkt-chat-focus #mkt-chat-rail {
+  z-index: 40; /* below the top nav so the pivot stays tappable */
+}
+/* Desktop: the chat is a CONTAINED card, centered and matched to the floating
+   nav's width — it reads as a module sitting under the header, not a full-bleed
+   takeover. Mobile keeps the slide-in drawer behaviour untouched. */
+@media (min-width: 901px) {
+  body.mkt-chat-focus #mkt-chat-rail {
+    top: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + 20px);
+    right: auto;
+    bottom: clamp(16px, 3vh, 32px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(calc(100% - 2 * var(--mkt-gutter)), var(--mkt-nav-maxw));
+    padding: 0;
+  }
+}
+/* No header strip on the focus surface — the topbar is lifted OUT of the layout
+   (absolute, transparent, zero height) and only its controls (the three-dot
+   "More" menu + width toggle) float as an overlay in the top-right of the chat
+   body. That hands the full card height back to the welcome, so the animated owl
+   below is centered and never clipped by a reserved header row. The controls sit
+   a touch lower than the very edge so they overlay the body cleanly. */
+body.mkt-chat-focus #mkt-wiseai .chat-topbar {
+  display: flex !important;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 50;
+  height: auto !important; min-height: 0 !important; padding: 14px 18px !important;
+  background: transparent !important; border: 0 !important;
+  pointer-events: none;
+}
+/* Only the controls capture clicks; the transparent header area lets the welcome
+   behind it stay fully interactive. */
+body.mkt-chat-focus #mkt-wiseai .sc-topbar-controls { pointer-events: auto; }
+/* Reclaim the full card height for the conversation now the header floats. */
+body.mkt-chat-focus #mkt-wiseai .sc-body { min-height: 0; }
+/* Keep the reading content in a comfortable centered column on wide screens. */
+body.mkt-chat-focus #mkt-wiseai .chat-messages-area {
+  padding-inline: max(1.5rem, calc((100% - 860px) / 2));
+}
+body.mkt-chat-focus #mkt-wiseai .chat-input-rail {
+  padding-inline: max(1.25rem, calc((100% - 860px) / 2));
+}
+/* Center the welcome column on the tall full-page card instead of hugging the
+   input (the docked-rail default), so the expanded surface reads as balanced
+   rather than leaving a large empty band above the owl. The generous top pad
+   drops the owl clear of the floating controls AND gives its pulse-ring
+   animation room to bloom without being clipped by the card's top edge on
+   shorter viewports (where the column top-aligns as it starts to overflow). */
+body.mkt-chat-focus #mkt-wiseai .sc-welcome {
+  width: 100%; max-width: 860px; margin-inline: auto;
+  justify-content: safe center;
+  padding-top: clamp(4rem, 7vh, 6rem);
+}
+
+/* Bigger, more confident hero heading inside the chat. */
+body.mkt-chat-focus #mkt-wiseai .ws-heading {
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1.05;
+  margin-bottom: 0.5rem;
+}
+body.mkt-chat-focus #mkt-wiseai .ws-sub {
+  font-size: 1.0625rem;
+  margin-bottom: 1.75rem;
+}
+body.mkt-chat-focus #mkt-wiseai .ws-logo-wrap,
+body.mkt-chat-focus #mkt-wiseai .ws-logo,
+body.mkt-chat-focus #mkt-wiseai .ws-pulse-ring {
+  width: 84px; height: 84px;
+}
+body.mkt-chat-focus #mkt-wiseai .ws-pulse-ring { margin-left: -42px; margin-top: -42px; }
+
+/* ---- Large "start here" intent tiles ----
+   Only rendered on the full-page focus surface (hidden on the docked rail),
+   laid out as a centered wrapping grid rather than a horizontal scroll rail. */
+#mkt-wiseai .ws-scorecards-section { display: none; }
+body.mkt-chat-focus #mkt-wiseai .ws-scorecards-section { display: block; margin: 0 0 1.5rem; }
+body.mkt-chat-focus #mkt-wiseai .ws-scorecards-bar { display: none; }
+body.mkt-chat-focus #mkt-wiseai .ws-scorecards {
+  overflow: visible; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 0;
+}
+body.mkt-chat-focus #mkt-wiseai .ws-scorecard {
+  flex: 1 1 230px; min-width: 210px; max-width: 320px;
+  aspect-ratio: auto; min-height: 138px; padding: 18px;
+}
+body.mkt-chat-focus #mkt-wiseai .ws-sc-icon .material-icons { font-size: 28px !important; }
+body.mkt-chat-focus #mkt-wiseai .ws-sc-intro-title { font-size: 1.0625rem; margin-top: 8px; }
+body.mkt-chat-focus #mkt-wiseai .ws-sc-desc { font-size: 0.8125rem; }
+body.mkt-chat-focus #mkt-wiseai .ws-sc-scroll { display: none !important; }
+body.mkt-chat-focus #mkt-wiseai .ws-scorecards-wrap::before,
+body.mkt-chat-focus #mkt-wiseai .ws-scorecards-wrap::after { display: none; }
+/* If the scanner is summoned from the focus route, float it over the chat. */
+body.mkt-chat-focus #mkt-scanner-panel { z-index: 90; }
+
+@media (max-width: 900px) {
+  body.mkt-chat-focus #mkt-chat-rail { width: min(var(--mkt-chat-w), 100vw); padding-top: 14px; }
+}
+
+/* A hair of dimming while a soft route swap is in flight. */
+body.mkt-routing #mkt-body-module { opacity: 0.55; transition: opacity .12s ease; }
+
+/* ---- Rich WISEai replies on the marketing surface ---- */
+#mkt-wiseai .sc-line-wiseai .sc-line-body p { margin: 0 0 8px; }
+#mkt-wiseai .sc-line-wiseai .sc-line-body p:last-of-type { margin-bottom: 0; }
+#mkt-wiseai .sc-line-wiseai .sc-line-body ul {
+  margin: 6px 0 10px; padding-left: 18px; display: grid; gap: 5px;
+}
+#mkt-wiseai .sc-line-wiseai .sc-line-body li { line-height: 1.45; }
+
+/* "Get the app" — QR code + store badges rendered inside a WISEai reply. */
+#mkt-wiseai .mkt-chat-getapp {
+  display: flex; gap: 14px; align-items: center; margin-top: 12px; flex-wrap: wrap;
+}
+#mkt-wiseai .mkt-chat-qr {
+  width: 118px; height: 118px; border-radius: 12px; flex: 0 0 auto;
+  border: 1px solid var(--border); background: #fff; padding: 6px;
+}
+#mkt-wiseai .mkt-chat-getapp-links { display: flex; flex-direction: column; gap: 8px; }
+#mkt-wiseai .mkt-store-badge {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 8px 13px; border-radius: 10px; text-decoration: none;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+#mkt-wiseai .mkt-store-badge:hover { background: var(--surface-2); border-color: var(--border-strong); }
+#mkt-wiseai .mkt-store-badge svg { width: 20px; height: 20px; flex: 0 0 auto; }
+#mkt-wiseai .mkt-store-badge small { display: block; font-size: 10px; line-height: 1.1; color: var(--text-muted); }
+#mkt-wiseai .mkt-store-badge strong { display: block; font-size: 13px; line-height: 1.25; }
+
+/* ===================================================================
+   DEDICATED WISEai PAGE (marketing-wiseai.html) — the EXACT shared chat
+   module on its own, full-bleed width + height beneath the floating nav.
+=================================================================== */
+body.mkt-wiseai-page { height: 100dvh; overflow: hidden; }
+
+/* Fills the viewport; top padding clears the floating pivot nav so the chat
+   topbar never tucks under it. The card grows edge-to-edge (flex: 1). */
+#wiseai-full {
+  position: fixed; inset: 0; z-index: 1;
+  display: flex;
+  padding: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + 14px) 0 0;
+}
+/* The mounted .sc-card goes full-bleed: drop the rounded frame + shadow and
+   keep only a hairline top border to seat it below the nav. */
+#wiseai-full > #wiseai-full-card {
+  flex: 1 1 auto; min-width: 0; height: 100%;
+  border-radius: 0; border-inline: 0; border-bottom: 0;
+  box-shadow: none;
+}
+
+/* Full-bleed surface, but the reading content (transcript, welcome, input)
+   stays in a comfortable centered column on wide screens. */
+.mkt-wiseai-page #wiseai-full-card .chat-messages-area {
+  padding-inline: max(3rem, calc((100% - 860px) / 2));
+}
+.mkt-wiseai-page #wiseai-full-card .chat-input-rail {
+  padding-inline: max(32px, calc((100% - 860px) / 2));
+}
+.mkt-wiseai-page #wiseai-full-card .sc-welcome {
+  width: 100%; max-width: 860px; margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  #wiseai-full { padding-top: calc(var(--mkt-nav-h) + var(--mkt-nav-top) + 8px); }
+  .mkt-wiseai-page #wiseai-full-card .chat-messages-area { padding-inline: 1.25rem; }
+  .mkt-wiseai-page #wiseai-full-card .chat-input-rail { padding-inline: 14px; }
+}
+
+/* ============================================================
+   App showcase — real product screenshots framed in a simple
+   browser-window "device" shell. Used on the App / Coach /
+   Enterprise pages (see marketing-*.html · #showcase).
+============================================================= */
+.mkt-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: clamp(20px, 3vw, 32px);
+  margin-top: clamp(20px, 3vw, 32px);
+}
+
+.mkt-device {
+  margin: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.mkt-device:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(17,24,39,.14);
+  border-color: var(--primary-20);
+}
+html.dark .mkt-device:hover { box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+
+/* macOS-style browser chrome */
+.mkt-device-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.mkt-device-dots { display: inline-flex; gap: 7px; flex: 0 0 auto; }
+.mkt-device-dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--border-strong); }
+.mkt-device-dots i:nth-child(1) { background: #FF5F57; }
+.mkt-device-dots i:nth-child(2) { background: #FEBC2E; }
+.mkt-device-dots i:nth-child(3) { background: #28C840; }
+.mkt-device-url {
+  flex: 1 1 auto; min-width: 0;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: .78rem; font-weight: 500; line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mkt-device-url .material-symbols-outlined { font-size: 15px; color: var(--sec-green-text); }
+
+.mkt-device-screen {
+  position: relative;
+  aspect-ratio: 16 / 10;   /* matches the 1440×900 captures — no cropping */
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.mkt-device-screen img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  display: block;
+}
+
+.mkt-device-cap {
+  padding: 14px 18px 16px;
+  display: grid; gap: 3px;
+}
+.mkt-device-cap strong { font-size: .98rem; font-weight: 700; color: var(--text); }
+.mkt-device-cap span { font-size: .88rem; color: var(--text-muted); line-height: 1.45; }
+
+/* Lead device — full-width feature capture above the grid. */
+.mkt-device--lead { max-width: 960px; margin-inline: auto; }
+.mkt-device--lead .mkt-device-cap { padding: 16px 22px 18px; }
+.mkt-device--lead .mkt-device-cap strong { font-size: 1.06rem; }
+
+@media (max-width: 560px) {
+  .mkt-device-url { font-size: .72rem; }
+  .mkt-device-cap { padding: 12px 14px 14px; }
+}
+
+/* ============================================================
+   Phone mockups — real WISEcode app screenshots framed as
+   handsets (marketing-app.html · #showcase). Scoped classes so
+   the enterprise macOS browser chrome (.mkt-device) is untouched.
+============================================================= */
+.mkt-phones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(24px, 4vw, 44px);
+  margin-top: clamp(28px, 4vw, 44px);
+  align-items: start;
+  justify-items: center;
+}
+
+.mkt-appshot {
+  margin: 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 18px;
+  max-width: 300px;
+}
+
+/* Handset body — bezel-less modern phone: soft dark rail, big radius. */
+.mkt-phone {
+  position: relative;
+  width: 100%;
+  padding: 9px;
+  border-radius: 44px;
+  background: linear-gradient(160deg, #2a2d34 0%, #14151a 46%, #1f2127 100%);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.4) inset,
+    0 26px 60px -18px rgba(17,24,39,.55),
+    0 8px 22px -12px rgba(17,24,39,.4);
+  transition: transform .28s ease, box-shadow .28s ease;
+}
+html.dark .mkt-phone {
+  background: linear-gradient(160deg, #3a3d45 0%, #0c0d11 48%, #26282f 100%);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.6) inset,
+    0 30px 70px -18px rgba(0,0,0,.7),
+    0 10px 26px -12px rgba(0,0,0,.55);
+}
+.mkt-appshot:hover .mkt-phone {
+  transform: translateY(-6px);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.4) inset,
+    0 36px 72px -18px rgba(17,24,39,.6),
+    0 12px 28px -12px rgba(17,24,39,.45);
+}
+
+.mkt-phone-screen {
+  position: relative;
+  aspect-ratio: 9 / 19.5;
+  border-radius: 36px;
+  overflow: hidden;
+  background: #f4f2f6;
+}
+.mkt-phone-screen img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  display: block;
+}
+/* Dynamic-island style pill floating over the status area. */
+.mkt-phone-screen::before {
+  content: "";
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 34%; max-width: 116px; height: 26px;
+  border-radius: 16px;
+  background: rgba(9,10,14,.92);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.mkt-appshot-cap {
+  display: grid; gap: 5px;
+  text-align: center;
+  padding-inline: 6px;
+}
+.mkt-appshot-cap strong { font-size: 1rem; font-weight: 700; color: var(--text); }
+.mkt-appshot-cap span { font-size: .9rem; color: var(--text-muted); line-height: 1.5; }
+
+/* Lead: one hero handset beside the decoded story. */
+.mkt-appshowcase-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  max-width: 960px;
+  margin: 0 auto clamp(40px, 6vw, 72px);
+}
+.mkt-appshowcase-lead .mkt-appshot { justify-self: center; width: min(288px, 74vw); }
+.mkt-appshowcase-lead .mkt-appshot .mkt-appshot-cap { display: none; }
+.mkt-appshowcase-lead-copy { display: grid; gap: 14px; }
+.mkt-appshowcase-lead-copy h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800; line-height: 1.12; color: var(--text); margin: 0;
+}
+.mkt-appshowcase-lead-copy p { font-size: 1.02rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+.mkt-appshowcase-points { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.mkt-appshowcase-points li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .96rem; color: var(--text); line-height: 1.45;
+}
+.mkt-appshowcase-points .material-symbols-outlined { font-size: 20px; color: var(--sec-green-text); flex: 0 0 auto; margin-top: 1px; }
+
+@media (max-width: 860px) {
+  .mkt-appshowcase-lead { grid-template-columns: 1fr; text-align: center; gap: 32px; }
+  .mkt-appshowcase-lead-copy { justify-items: center; }
+  .mkt-appshowcase-points { text-align: left; }
+}
+@media (max-width: 560px) {
+  .mkt-phones { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px; }
+  .mkt-phone { padding: 7px; border-radius: 36px; }
+  .mkt-phone-screen { border-radius: 30px; }
+}
+
+/* ============================================================
+   Coach device shots — real WISEcoach app captures that already
+   carry their own handset bezel + status bar (marketing-coach.html
+   · #showcase). Presented free-standing with a soft drop shadow,
+   so we don't double-frame them like the .mkt-phone mockups.
+============================================================= */
+.mkt-coachshowcase-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  max-width: 960px;
+  margin: 0 auto clamp(40px, 6vw, 72px);
+}
+.mkt-coachshowcase-lead-copy { display: grid; gap: 14px; }
+.mkt-coachshowcase-lead-copy h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800; line-height: 1.12; color: var(--text); margin: 0;
+}
+.mkt-coachshowcase-lead-copy p { font-size: 1.02rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+.mkt-coachshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(24px, 4vw, 44px);
+  margin-top: clamp(28px, 4vw, 44px);
+  align-items: start;
+  justify-items: center;
+}
+
+.mkt-coachshot {
+  margin: 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 18px;
+  max-width: 300px;
+}
+.mkt-coachshot-media {
+  width: 100%;
+  border-radius: 40px;
+  overflow: hidden;
+  filter: drop-shadow(0 26px 60px rgba(17,24,39,.5)) drop-shadow(0 8px 22px rgba(17,24,39,.35));
+  transition: transform .28s ease;
+}
+.mkt-coachshot-media img { display: block; width: 100%; height: auto; }
+.mkt-coachshot:hover .mkt-coachshot-media { transform: translateY(-6px); }
+
+.mkt-coachshowcase-lead .mkt-coachshot { justify-self: center; width: min(288px, 74vw); }
+
+.mkt-coachshot-cap {
+  display: grid; gap: 5px;
+  text-align: center;
+  padding-inline: 6px;
+}
+.mkt-coachshot-cap strong { font-size: 1rem; font-weight: 700; color: var(--text); }
+.mkt-coachshot-cap span { font-size: .9rem; color: var(--text-muted); line-height: 1.5; }
+
+.mkt-coachshowcase-points { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.mkt-coachshowcase-points li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .96rem; color: var(--text); line-height: 1.45;
+}
+.mkt-coachshowcase-points .material-symbols-outlined { font-size: 20px; color: var(--sec-green-text); flex: 0 0 auto; margin-top: 1px; }
+
+@media (max-width: 860px) {
+  .mkt-coachshowcase-lead { grid-template-columns: 1fr; text-align: center; gap: 32px; }
+  .mkt-coachshowcase-lead-copy { justify-items: center; }
+  .mkt-coachshowcase-points { text-align: left; }
+}
+@media (max-width: 560px) {
+  .mkt-coachshots { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px; }
+  .mkt-coachshot-media { border-radius: 32px; }
+}
+
+/* ============================================================
+   Video clip — secondary "watch it work" player. Poster + play
+   button; first tap reveals native controls (wired in
+   js/marketing.js · initVideoClips). Placeholder film for now.
+============================================================= */
+.mkt-videoclip {
+  position: relative;
+  margin: 0;
+  max-width: 960px; margin-inline: auto;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  background: #0b1620;
+  aspect-ratio: 16 / 9;
+  isolation: isolate;
+}
+.mkt-videoclip-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #0b1620;
+}
+
+/* Subtle scrim so the play button + badge stay legible over any poster. */
+.mkt-videoclip::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(120% 120% at 50% 45%, rgba(0,0,0,.12), rgba(0,0,0,.42));
+  opacity: 1; transition: opacity .3s ease;
+  pointer-events: none;
+}
+.mkt-videoclip.is-playing::after { opacity: 0; }
+
+.mkt-videoclip-play {
+  position: absolute; z-index: 2;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 76px; height: 76px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--primary) 92%, #000);
+  color: #fff; border: 0; cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.14);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.mkt-videoclip-play .material-symbols-outlined { font-size: 40px; margin-left: 3px; }
+.mkt-videoclip-play:hover { transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 14px 40px rgba(0,0,0,.42), 0 0 0 10px rgba(255,255,255,.18); }
+.mkt-videoclip-play:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.mkt-videoclip.is-playing .mkt-videoclip-play { opacity: 0; pointer-events: none; }
+
+/* "Placeholder" ribbon — remove once the real film is dropped in. */
+.mkt-videoclip-badge {
+  position: absolute; z-index: 2;
+  top: 14px; left: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: rgba(11,22,32,.62);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.22);
+  color: #fff; font-size: .74rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+}
+.mkt-videoclip-badge::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ter-amber); box-shadow: 0 0 0 3px rgba(255,196,52,.28);
+}
+.mkt-videoclip.is-playing .mkt-videoclip-badge { opacity: 0; pointer-events: none; }
+
+.mkt-videoclip-badge, .mkt-videoclip-play { transition: opacity .25s ease, transform .2s ease, box-shadow .2s ease, background .2s ease; }
+
+/* Optional caption strip under the player. */
+.mkt-videoclip-cap {
+  max-width: 960px; margin: 16px auto 0;
+  text-align: center; color: var(--text-muted); font-size: .92rem;
+}
+
+@media (max-width: 560px) {
+  .mkt-videoclip-play { width: 60px; height: 60px; }
+  .mkt-videoclip-play .material-symbols-outlined { font-size: 32px; }
+}
+
+/* ---------- Reveal-on-scroll ---------- */
+.mkt-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1); }
+.mkt-reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .mkt-reveal { opacity: 1; transform: none; transition: none; }
+  html.mkt { scroll-behavior: auto; }
+}

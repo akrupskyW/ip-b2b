@@ -478,6 +478,15 @@
             </div>
             <h1 class="ws-heading">Let's add a product.</h1>
             <p class="ws-sub">I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in <b>Product Details</b> on the right. It stays a draft until you hit <b>Save to Portfolio</b>.</p>
+            <!-- Large intent cards (mirror the small chips below) — rendered by add-product-flow.js. -->
+            <div class="ws-scorecards-section" id="ap-scorecards-section" hidden>
+              <div class="ws-scorecards-bar"><span class="ws-scorecards-label">Fastest ways to start</span></div>
+              <div class="ws-scorecards-wrap">
+                <div class="ws-scorecards" id="ap-scorecards" role="list" aria-label="Fastest ways to start"></div>
+                <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ap-sc-prev" aria-label="Scroll to previous cards" hidden><span class="material-icons">chevron_left</span></button>
+                <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ap-sc-next" aria-label="Scroll to see more cards" hidden><span class="material-icons">chevron_right</span></button>
+              </div>
+            </div>
             <div class="ap-ws-eyebrow">Start with what you have</div>
             <div class="ws-chips" id="ws-chips-start"></div>
           </div>

@@ -243,6 +243,16 @@ export const PREFERENCES_WISEAI = {
   sub: 'Tune appearance, notifications and workspace — just ask.',
   chipsFlow: 'wrap',
   sourceLabel: '',
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Tune your workspace',
+    cards: [
+      { intent: 'toggle_theme', icon: 'dark_mode', iconTone: 'brand', pill: { tone: 'up', icon: 'contrast', text: 'Do next' }, title: 'Switch light / dark', desc: 'Flip the theme everywhere — saved to your preferences.', action: 'Switch theme', ask: 'Switch light / dark' },
+      { intent: 'bigger_text', icon: 'format_size', iconTone: 'brand', pill: { tone: 'up', icon: 'text_increase', text: 'Adjust' }, title: 'Make text bigger', desc: 'Bump interface text up a notch for easier reading.', action: 'Make text bigger', ask: 'Make text bigger' },
+      { intent: 'dock_right', icon: 'view_sidebar', iconTone: 'brand', pill: { tone: 'up', icon: 'view_sidebar', text: 'Layout' }, title: 'Move chat to the right', desc: 'Dock WISEai on the right across the whole app.', action: 'Move chat right', ask: 'Move chat to the right' },
+    ],
+  },
   intents: [
     { intent: 'toggle_theme', label: 'Switch light / dark', icon: 'dark_mode' },
     { intent: 'bigger_text', label: 'Make text bigger', icon: 'format_size' },

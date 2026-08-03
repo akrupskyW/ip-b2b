@@ -173,6 +173,16 @@ export const API_KEYS_WISEAI = {
   sub: 'Create, reveal and manage your API keys — I can do it for you.',
   chipsFlow: 'wrap',
   sourceLabel: '',
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your API keys at a glance',
+    cards: [
+      { intent: 'create_key', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'vpn_key', text: 'Do next' }, title: 'Create a new API key', desc: 'Generate a fresh secret key — shown once, so copy it right away.', action: 'Create a key', ask: 'Create a new API key' },
+      { intent: 'usage', icon: 'insights', iconTone: 'brand', pill: { tone: 'up', icon: 'trending_up', text: 'Usage' }, metric: '128.4k', metricUnit: ' reqs', title: 'This month\u2019s usage', desc: '99.98% success against a 1,000/min limit — jump to the usage panel.', action: 'Show my usage', ask: 'Show my usage' },
+      { intent: 'rotate', icon: 'autorenew', iconTone: 'brand', pill: { tone: 'up', icon: 'warning', text: 'Review' }, title: 'Rotate a stale key', desc: 'Your \u201cLegacy import\u201d key hasn\u2019t been used in 3 weeks — rotate it out.', action: 'Which key should I rotate?', ask: 'Which key should I rotate?' },
+    ],
+  },
   intents: [
     { intent: 'create_key', label: 'Create a new API key', icon: 'add' },
     { intent: 'reveal_keys', label: 'Reveal my keys', icon: 'visibility' },

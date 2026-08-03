@@ -22,6 +22,8 @@
   var LANDING  = 'product-comparison.html';
   /* "Dive right into the product" during signup lands on the workspace overview. */
   var OVERVIEW = 'overview.html';
+  /* Public marketing home for logged-out visitors (lives at the repo root). */
+  var HOME     = 'index.html';
   var AUTH_PAGES = ['login.html', 'create-account.html', 'forgot-password.html'];
   var DEMO_EMAIL = 'demo@wisealliance.com';
 
@@ -113,6 +115,12 @@
   function loginUrl()    { return inPages() ? 'login.html'  : 'pages/login.html'; }
   function landingUrl()  { return inPages() ? LANDING       : 'pages/' + LANDING; }
   function overviewUrl() { return inPages() ? OVERVIEW      : 'pages/' + OVERVIEW; }
+  /* Marketing home lives at the repo root, so pages under /pages/ step up. */
+  function homeUrl()     { return inPages() ? '../' + HOME  : HOME; }
+
+  /* Where the WISE logo/wordmark should point from anywhere: signed-in users go
+     to their workspace overview, signed-out visitors to the marketing home. */
+  function brandHomeUrl() { return isAuthed() ? overviewUrl() : homeUrl(); }
 
   /* Guard: send unauthenticated users to the sign-in screen. Auth pages
      themselves are always allowed. Returns true when the page may render. */
@@ -127,6 +135,7 @@
     REG_KEY: REG_KEY,
     LANDING: LANDING,
     OVERVIEW: OVERVIEW,
+    HOME: HOME,
     DEMO_EMAIL: DEMO_EMAIL,
     getUser: getUser,
     isAuthed: isAuthed,
@@ -138,6 +147,8 @@
     loginUrl: loginUrl,
     landingUrl: landingUrl,
     overviewUrl: overviewUrl,
+    homeUrl: homeUrl,
+    brandHomeUrl: brandHomeUrl,
     initialsFrom: initialsFrom
   };
 })();

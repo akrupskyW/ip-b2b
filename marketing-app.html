@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" class="mkt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISEcode App · WISE</title>
+  <meta name="description" content="WISEcode is the food truth app that instantly tells you what's really in your food — ultra-processed detection, ingredient breakdowns and personalized insights." />
+  <script>
+    (function () { try { var t = localStorage.getItem('wise-theme'); document.documentElement.classList.toggle('dark', t === 'dark'); } catch (e) {} })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- Legacy Material Icons — the shared WISEai chat module renders its controls with <span class="material-icons">. -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="marketing.css" />
+  <!-- The exact product WISEai chat module styles (shared across the marketing surface). -->
+  <link rel="stylesheet" href="wiseai-chat.css" />
+  <!-- Hand the page to the shared marketing shell (nav + persistent chat + router). -->
+  <script>window.__WISE_MKT_SHELL__ = true;</script>
+</head>
+<body class="mkt mkt-appshell" data-mkt-route="app">
+
+  <!-- Shared nav + persistent WISEai chat rail are injected by js/marketing-shell.js. -->
+  <div id="mkt-body-module">
+
+  <main>
+    <section id="hero" class="mkt-hero">
+      <div class="mkt-shell">
+        <div class="mkt-hero-grid">
+          <div class="mkt-hero-copy mkt-reveal">
+            <span class="mkt-eyebrow">WISEcode App · For Consumers</span>
+            <h1 class="mkt-hero-title">Is your food<br /><span class="mkt-accent">ultra-processed?</span></h1>
+            <p class="mkt-hero-sub">Find out instantly.</p>
+            <p class="mkt-lede">WISEcode is the food truth app that instantly tells you what's really in your food. From ultra-processed ingredients to personalized nutrition insights, make informed choices for yourself and your family.</p>
+            <div class="mkt-badges">
+              <a class="mkt-badge" href="#get" data-chat-intent="getapp" aria-label="Download on the App Store">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.13 3-.79.9-2.1 1.6-3.19 1.51-.14-1.1.42-2.27 1.09-3 .77-.85 2.14-1.5 3.23-1.51zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.78-4.05-3.35-2.77-4.4-3.06-9.56-1.35-12.3 1.21-1.95 3.13-3.09 4.93-3.09 1.84 0 2.99 1.01 4.51 1.01 1.47 0 2.37-1.01 4.5-1.01 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.22 9.84z"/></svg>
+                <span class="mkt-badge-txt"><small>Download on the</small><strong>App Store</strong></span>
+              </a>
+              <a class="mkt-badge" href="#get" data-chat-intent="getapp" aria-label="Get it on Google Play">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#34d399" d="M3.6 2.1 13.3 12 3.6 21.9c-.4-.2-.6-.6-.6-1.1V3.2c0-.5.2-.9.6-1.1z"/><path fill="#60a5fa" d="M17.3 8.1 14 11.4 3.9 1.9c.2-.1.5-.1.8.1l12.6 6.1z"/><path fill="#f87171" d="M17.3 15.9 4.7 22c-.3.2-.6.2-.8.1L14 12.6l3.3 3.3z"/><path fill="#fbbf24" d="m17.3 8.1 3.4 1.7c.7.4.7 1.4 0 1.8l-3.4 1.7L13.7 12l3.6-3.9z"/></svg>
+                <span class="mkt-badge-txt"><small>Get it on</small><strong>Google Play</strong></span>
+              </a>
+            </div>
+          </div>
+          <div class="mkt-hero-media mkt-reveal">
+            <video autoplay muted loop playsinline poster="assets/marketing/hero-poster.jpg"><source src="assets/marketing/hero.mp4" type="video/mp4" /><source src="assets/marketing/hero.webm" type="video/webm" /></video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · See it in action — real WISEcode app screenshots in
+         handset mockups (captured from the mobile app itself).
+    ============================================================= -->
+    <section id="showcase" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">See it in action</span>
+          <h2 class="mkt-section-title">Real screens from WISEcode</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Actual captures from the app — scan a product and see the ultra-processed truth in your hand, in plain language.</p>
+        </div>
+
+        <div class="mkt-appshowcase-lead mkt-reveal">
+          <figure class="mkt-appshot">
+            <div class="mkt-phone">
+              <div class="mkt-phone-screen">
+                <img src="assets/marketing/screens/app-scan-upf.png" alt="WISEcode scan result for Doritos Nacho Cheese — flagged UPF with a WISEscore of 19 out of 100 and a Super-Ultra Processed rating" loading="lazy" />
+              </div>
+            </div>
+          </figure>
+          <div class="mkt-appshowcase-lead-copy">
+            <h3>Scan result, decoded</h3>
+            <p>Point your camera at any product and WISEcode returns the verdict instantly — a clear UPF flag, its WISEscore and the processing level, all in plain language.</p>
+            <ul class="mkt-appshowcase-points">
+              <li><span class="material-symbols-outlined">verified</span> A straight UPF / NON‑UPF call on every product</li>
+              <li><span class="material-symbols-outlined">speed</span> WISEscore out of 100, graded against the science</li>
+              <li><span class="material-symbols-outlined">science</span> Processing level and ingredient truth, decoded</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mkt-phones">
+          <figure class="mkt-appshot mkt-reveal">
+            <div class="mkt-phone">
+              <div class="mkt-phone-screen">
+                <img src="assets/marketing/screens/app-scan-nonupf.png" alt="WISEcode scan result for siggi's Vanilla Whole Milk Yogurt — marked NON-UPF with a WISEscore of 84 and Minimally Processed" loading="lazy" />
+              </div>
+            </div>
+            <figcaption class="mkt-appshot-cap">
+              <strong>The all-clear, too</strong>
+              <span>Minimally processed foods get a NON‑UPF badge and a high WISEscore — so you know what's actually good.</span>
+            </figcaption>
+          </figure>
+          <figure class="mkt-appshot mkt-reveal">
+            <div class="mkt-phone">
+              <div class="mkt-phone-screen">
+                <img src="assets/marketing/screens/app-pantry.png" alt="WISEcode pantry showing scanned products with WISEscores and processing levels" loading="lazy" />
+              </div>
+            </div>
+            <figcaption class="mkt-appshot-cap">
+              <strong>Your whole pantry, scored</strong>
+              <span>Every scan, list and favorite stays in one place — sorted by score so the store run isn't a memory test.</span>
+            </figcaption>
+          </figure>
+          <figure class="mkt-appshot mkt-reveal">
+            <div class="mkt-phone">
+              <div class="mkt-phone-screen">
+                <img src="assets/marketing/screens/app-chat.png" alt="WISEAI chat in the WISEcode app answering questions about a product" loading="lazy" />
+              </div>
+            </div>
+            <figcaption class="mkt-appshot-cap">
+              <strong>Ask WISEAI™ anything</strong>
+              <span>Why this score? Healthier go-tos? Ask in plain language and get answers grounded in the data.</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">How it works</span>
+          <h2 class="mkt-section-title">Three taps to food truth</h2>
+        </div>
+        <div class="mkt-pillars-grid">
+          <article class="mkt-pillar mkt-reveal">
+            <div class="mkt-pillar-icon"><span class="material-symbols-outlined">barcode_scanner</span></div>
+            <h3 class="mkt-pillar-title">Scan</h3>
+            <p class="mkt-pillar-body">Point your camera at any barcode or search a product to pull its full profile in seconds.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <div class="mkt-pillar-icon"><span class="material-symbols-outlined">science</span></div>
+            <h3 class="mkt-pillar-title">Reveal</h3>
+            <p class="mkt-pillar-body">See ultra-processed flags and an ingredient-by-ingredient breakdown in plain language.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <div class="mkt-pillar-icon"><span class="material-symbols-outlined">favorite</span></div>
+            <h3 class="mkt-pillar-title">Choose</h3>
+            <p class="mkt-pillar-body">Get personalized insights and cleaner alternatives tuned to your household.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid mkt-feature--reverse">
+          <div class="mkt-feature-copy mkt-reveal">
+            <span class="mkt-eyebrow">Built on FoodTruth™</span>
+            <h2 class="mkt-feature-title">The data that was scattered — now in your pocket.</h2>
+            <p class="mkt-lede">The data that could explain your food has been scattered, unreliable and hard to use. Until now. WISEcode gives you the one thing you've never had: the full picture behind every product.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Powered by the NFP+ Food Information™ platform</li>
+              <li><span class="material-symbols-outlined">check_circle</span> 943,415+ packaged foods analyzed and growing</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Built by nutrition scientists and engineers</li>
+            </ul>
+          </div>
+          <div class="mkt-feature-media mkt-reveal" style="display:flex;justify-content:center;aspect-ratio:auto;overflow:visible;border:0;box-shadow:none;background:transparent;border-radius:0">
+            <figure class="mkt-appshot" style="width:min(288px,74vw)">
+              <div class="mkt-phone">
+                <div class="mkt-phone-screen">
+                  <img src="assets/marketing/app-pocket.png" alt="WISEcode app home screen showing scan journey progress and personalized health goals" loading="lazy" />
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Watch it work (placeholder film — swap in the real cut)
+    ============================================================= -->
+    <section id="film" class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <span class="mkt-eyebrow">Watch</span>
+          <h2 class="mkt-section-title">See WISEcode in motion</h2>
+          <p class="mkt-lede" style="margin-inline:auto">A quick look at scanning a product and reading its ultra-processed truth, in plain language.</p>
+        </div>
+        <figure class="mkt-videoclip mkt-reveal" data-mkt-videoclip>
+          <!-- Drop the real film at assets/marketing/videos/wisecode-upf-demo.(mp4|webm).
+               Until then the shared hero film plays as a placeholder. -->
+          <video class="mkt-videoclip-media" playsinline preload="none"
+                 poster="assets/marketing/hero-poster.jpg" data-mkt-clip-video>
+            <source src="assets/marketing/videos/wisecode-upf-demo.mp4" type="video/mp4" />
+            <source src="assets/marketing/videos/wisecode-upf-demo.webm" type="video/webm" />
+            <source src="assets/marketing/hero.mp4" type="video/mp4" />
+            <source src="assets/marketing/hero.webm" type="video/webm" />
+          </video>
+          <span class="mkt-videoclip-badge">Placeholder film</span>
+          <button type="button" class="mkt-videoclip-play" data-mkt-clip-play aria-label="Play the WISEcode demo video">
+            <span class="material-symbols-outlined">play_arrow</span>
+          </button>
+        </figure>
+        <p class="mkt-videoclip-cap mkt-reveal">Final product film coming soon.</p>
+      </div>
+    </section>
+
+    <section id="get" class="mkt-section mkt-section--tint">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal" style="margin-bottom:28px">
+          <h2 class="mkt-section-title">Scan any food for free.</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Download WISEcode and find out instantly whether it's ultra-processed.</p>
+        </div>
+        <div class="mkt-badges mkt-reveal" style="justify-content:center">
+          <a class="mkt-badge" href="#" data-chat-intent="getapp" aria-label="Download on the App Store">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.13 3-.79.9-2.1 1.6-3.19 1.51-.14-1.1.42-2.27 1.09-3 .77-.85 2.14-1.5 3.23-1.51zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.78-4.05-3.35-2.77-4.4-3.06-9.56-1.35-12.3 1.21-1.95 3.13-3.09 4.93-3.09 1.84 0 2.99 1.01 4.51 1.01 1.47 0 2.37-1.01 4.5-1.01 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.22 9.84z"/></svg>
+            <span class="mkt-badge-txt"><small>Download on the</small><strong>App Store</strong></span>
+          </a>
+          <a class="mkt-badge" href="#" data-chat-intent="getapp" aria-label="Get it on Google Play">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#34d399" d="M3.6 2.1 13.3 12 3.6 21.9c-.4-.2-.6-.6-.6-1.1V3.2c0-.5.2-.9.6-1.1z"/><path fill="#60a5fa" d="M17.3 8.1 14 11.4 3.9 1.9c.2-.1.5-.1.8.1l12.6 6.1z"/><path fill="#f87171" d="M17.3 15.9 4.7 22c-.3.2-.6.2-.8.1L14 12.6l3.3 3.3z"/><path fill="#fbbf24" d="m17.3 8.1 3.4 1.7c.7.4.7 1.4 0 1.8l-3.4 1.7L13.7 12l3.6-3.9z"/></svg>
+            <span class="mkt-badge-txt"><small>Get it on</small><strong>Google Play</strong></span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer is injected once by js/marketing-shell.js (shared across all
+       marketing pages), so it lives OUTSIDE #mkt-body-module and is never
+       swapped by the client-side router. -->
+
+  </div><!-- /#mkt-body-module -->
+
+  <script defer src="js/marketing.js"></script>
+  <script type="module" src="js/marketing-shell.js"></script>
+</body>
+</html>

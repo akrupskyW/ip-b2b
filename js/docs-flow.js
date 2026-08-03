@@ -188,6 +188,16 @@ export const DOCS_WISEAI = {
   sub: 'Ask about any part of WISE — I\u2019ll open the right doc.',
   chipsFlow: 'wrap',
   sourceLabel: '',
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Explore the docs',
+    cards: [
+      { intent: 'quickstart', icon: 'rocket_launch', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Start here' }, title: 'Show me the quickstart', desc: 'Add products, review classifications, then verify — about ten minutes.', action: 'Open the quickstart', ask: 'Show me the quickstart' },
+      { intent: 'api', icon: 'code', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Reference' }, title: 'Open the API reference', desc: 'Auth, endpoints and rate limits — 1,000 requests/min per key.', action: 'Open API reference', ask: 'Open the API reference' },
+      { intent: 'changelog', icon: 'new_releases', iconTone: 'brand', pill: { tone: 'up', icon: 'bolt', text: 'New' }, title: 'What\u2019s new?', desc: 'Marketing Assets, GRAS verification, and the reformulation simulator.', action: 'What\u2019s new?', ask: 'What\u2019s new?' },
+    ],
+  },
   intents: [
     { intent: 'quickstart', label: 'Show me the quickstart', icon: 'rocket_launch' },
     { intent: 'api', label: 'Open the API reference', icon: 'code' },

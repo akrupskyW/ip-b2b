@@ -464,6 +464,16 @@ export const PROFILE_WISEAI = {
   chipsFlow: 'wrap',
   sourceLabel: '',
   reply,
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your profile at a glance',
+    cards: [
+      { intent: 'logo', icon: 'image', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Do next' }, title: 'Upload your brand logo', desc: 'Add or replace your logo — paste an image URL here and I\u2019ll import it.', action: 'Upload brand logo', ask: 'Upload brand logo' },
+      { intent: 'address', icon: 'home', iconTone: 'brand', pill: { tone: 'up', icon: 'edit', text: 'Edit' }, title: 'Edit mailing address', desc: 'Update street, city, state and zip — just tell me the new details.', action: 'Edit address', ask: 'Edit mailing address' },
+      { intent: 'save', icon: 'save', iconTone: 'brand', pill: { tone: 'up', icon: 'save', text: 'Save' }, title: 'Save changes', desc: 'Write your profile edits — I\u2019ll confirm exactly what changed.', action: 'Save changes', ask: 'Save changes' },
+    ],
+  },
   intents: [
     { intent: 'rename_org', label: 'Rename organization', icon: 'badge' },
     { intent: 'org_type', label: 'Change organization type', icon: 'category' },

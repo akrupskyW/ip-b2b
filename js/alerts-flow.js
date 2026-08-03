@@ -176,6 +176,16 @@ export const ALERTS_WISEAI = {
   sub: 'Triage your alerts — filter, read, or clear them for you.',
   chipsFlow: 'wrap',
   sourceLabel: '',
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your alerts at a glance',
+    cards: [
+      { intent: 'flags', icon: 'flag', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What needs my review?', desc: '3 ingredient flags need review — I\u2019ll filter to them so you can jump to the products.', action: 'Show what needs review', ask: 'What needs my review?' },
+      { intent: 'show_unread', icon: 'mark_email_unread', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Triage' }, title: 'Show only unread', desc: 'Filter your inbox down to just the alerts you haven\u2019t seen yet.', action: 'Show unread', ask: 'Show only unread' },
+      { intent: 'verification', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verify' }, title: 'Verification alerts', desc: 'A Sample Co. verification is ready and 12 shields were minted yesterday.', action: 'Show verification alerts', ask: 'Verification alerts' },
+    ],
+  },
   intents: [
     { intent: 'show_unread', label: 'Show only unread', icon: 'mark_email_unread' },
     { intent: 'mark_all', label: 'Mark everything read', icon: 'done_all' },

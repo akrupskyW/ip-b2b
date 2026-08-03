@@ -37,6 +37,12 @@ import { renderHelp, HELP_WISEAI } from './help-flow.js';
 import { renderDocs, DOCS_WISEAI } from './docs-flow.js';
 import { renderAgents, AGENTS_WISEAI } from './agents-flow.js';
 import { renderAlerts, ALERTS_WISEAI } from './alerts-flow.js';
+import { renderOrganizations, ORGANIZATIONS_WISEAI, setOrganizationsChat } from './organizations-flow.js';
+import { renderQuickInvite, QUICK_INVITE_WISEAI, setQuickInviteChat } from './quick-invite-flow.js';
+import { renderUserManagement, USER_MANAGEMENT_WISEAI, setUserManagementChat } from './user-management-flow.js';
+import { renderNonUpfDashboard, NON_UPF_WISEAI, setNonUpfChat } from './non-upf-dashboard-flow.js';
+import { renderAuditQueue, AUDIT_QUEUE_WISEAI, setAuditQueueChat } from './audit-queue-flow.js';
+import { renderAdminUtils, ADMIN_UTILS_WISEAI, setAdminUtilsChat } from './admin-utils-flow.js';
 
 function escHtml(s) {
   return String(s)
@@ -501,6 +507,30 @@ function bootstrapAppNavPage(navId) {
     /* Alerts — a full-page, filterable inbox of agent notifications. */
     document.title = 'WISE · Alerts';
     if (mainEl) renderAlerts(mainEl);
+  } else if (navId === 'organizations') {
+    /* WISEcode Admin · Organizations — customer org directory + counts. */
+    document.title = 'WISE · Organizations';
+    if (mainEl) renderOrganizations(mainEl);
+  } else if (navId === 'quick-invite') {
+    /* WISEcode Admin · Quick Invite — one-step org invite + history. */
+    document.title = 'WISE · Quick Invite';
+    if (mainEl) renderQuickInvite(mainEl);
+  } else if (navId === 'user-management') {
+    /* WISEcode Admin · User & Role Management. */
+    document.title = 'WISE · User Management';
+    if (mainEl) renderUserManagement(mainEl);
+  } else if (navId === 'non-upf-dashboard') {
+    /* WISEcode Admin · Non-UPF Verification Dashboard (analytics charts). */
+    document.title = 'WISE · Non-UPF Dashboard';
+    if (mainEl) renderNonUpfDashboard(mainEl);
+  } else if (navId === 'audit-queue') {
+    /* WISEcode Admin · Ingredient Audit Review queue. */
+    document.title = 'WISE · Audit Queue';
+    if (mainEl) renderAuditQueue(mainEl);
+  } else if (navId === 'admin-utils') {
+    /* WISEcode Admin · Admin Utilities (maintenance + seeding tools). */
+    document.title = 'WISE · Admin Utilities';
+    if (mainEl) renderAdminUtils(mainEl);
   } else if (mainEl && !mainEl.innerHTML.trim()) {
     mainEl.innerHTML = `
       <div class="agent-empty" data-module-placeholder>
@@ -742,6 +772,13 @@ function setupWISEaiDock() {
     docs: DOCS_WISEAI,
     agents: AGENTS_WISEAI,
     alerts: ALERTS_WISEAI,
+    /* WISEcode Admin surfaces — each pairs its board with the WISEai dock. */
+    organizations: ORGANIZATIONS_WISEAI,
+    'quick-invite': QUICK_INVITE_WISEAI,
+    'user-management': USER_MANAGEMENT_WISEAI,
+    'non-upf-dashboard': NON_UPF_WISEAI,
+    'audit-queue': AUDIT_QUEUE_WISEAI,
+    'admin-utils': ADMIN_UTILS_WISEAI,
   };
   const accountWiseai = ACCOUNT_WISEAI[document.body.dataset.navId];
 
@@ -777,6 +814,15 @@ function setupWISEaiDock() {
     cfg = {
       sub: 'Find and pull any co-branding asset — one tap.',
       chipsFlow: 'wrap',
+      /* Large welcome cards alongside the small chips — reuse the same intents. */
+      scorecards: {
+        label: 'Your co-branding assets at a glance',
+        cards: [
+          { intent: 'shield', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Do next' }, title: 'Get the Non-UPF Verified\u2122 shield', desc: 'Digital and print shield lockups, ready to drop on your assets.', action: 'Get the shield', ask: 'Get the Non-UPF Verified\u2122 shield' },
+          { intent: 'onesheet', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Toolkit' }, title: 'Co-branded one-sheets', desc: 'Editable PSDs and print-ready PNGs, plus setup instructions.', action: 'Open the one-sheets', ask: 'Open the co-branded one-sheets' },
+          { intent: 'social', icon: 'share', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Toolkit' }, title: 'Social media toolkit', desc: 'Post packs and instructions for every platform.', action: 'Grab the social toolkit', ask: 'Grab the social media toolkit' },
+        ],
+      },
       intents: MARKETING_WISEAI_INTENTS,
       /* Each reply is built by the marketing module so it can carry contextual
          download/open chips (the exact files just discussed) inside the thread —
@@ -796,6 +842,15 @@ function setupWISEaiDock() {
     cfg = {
       sub: 'Ask anything about your reports.',
       chipsFlow: 'wrap',
+      /* Large welcome cards alongside the small chips — reuse the same intents. */
+      scorecards: {
+        label: 'Your reports at a glance',
+        cards: [
+          { intent: 'open_upf_report', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Open the UPF report', desc: 'Jump straight to your live portfolio UPF report.', action: 'Open the UPF report', ask: 'Open the UPF report' },
+          { intent: 'improve_score', icon: 'trending_up', iconTone: 'brand', pill: { tone: 'up', icon: 'trending_up', text: 'Improve' }, title: 'How do I improve my score?', desc: 'The fastest wins — swap a single flagged ingredient to flip products to Non-UPF.', action: 'How do I improve it?', ask: 'How do I improve it?' },
+          { variant: 'wiseai', intent: 'unlock_studio', icon: 'lock_open', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Unlock the full Studio', desc: 'GRAS, Insights, Nutrient-Quality and Health-Outcomes reports across your portfolio.', action: 'Unlock the full Studio', ask: 'Unlock the full Studio' },
+        ],
+      },
       intents: REPORTS_WISEAI_INTENTS,
       intentReplies: REPORTS_WISEAI_REPLIES,
       onIntent: (intent) => {
@@ -808,6 +863,19 @@ function setupWISEaiDock() {
     cfg = {
       sub: '',
       chipsFlow: 'wrap',
+      /* Start with the large "at a glance" cards collapsed — the Dashboard
+         welcome leads with just the headline + small intent chips, and the
+         cards are one tap away from the three-dot menu. */
+      cardsHiddenDefault: true,
+      /* Large welcome cards alongside the small chips — reuse the same intents. */
+      scorecards: {
+        label: 'Your portfolio at a glance',
+        cards: [
+          { intent: 'claim_products', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Claim your products', desc: 'Take ownership of your UPCs to unlock verification and reports.', action: 'Claim your products', ask: 'Claim your products' },
+          { intent: 'verify_upf', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verify' }, title: 'Verify your Non-UPF products', desc: 'Run Non-UPF verification across your qualifying SKUs.', action: 'Verify Non-UPF', ask: 'Verify your Non-UPF products' },
+          { intent: 'open_upf_report', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Report' }, title: 'Open the UPF report', desc: 'See your portfolio\u2019s UPF classification — opens right here.', action: 'Open the UPF report', ask: 'Open the UPF report' },
+        ],
+      },
       intents: DASHBOARD_WISEAI_INTENTS,
       /* Report chips get a state-aware narration in the thread while the report
          opens on the surface to the right (see onIntent) — no modal. */
@@ -865,6 +933,20 @@ function setupWISEaiDock() {
   /* Invoices & Downloads: hand it the live chat so row actions (Pay, Retry,
      Download, Cancel …) narrate back into the conversation. */
   if (document.body.dataset.navId === 'invoices') setInvoicesChat(wiseai);
+
+  /* WISEcode Admin surfaces: hand each its live chat so on-board actions
+     (invites, resolves, verifications …) narrate back into the conversation,
+     matching the chip-driven flow in the other direction. */
+  const ADMIN_CHAT_SETTERS = {
+    organizations: setOrganizationsChat,
+    'quick-invite': setQuickInviteChat,
+    'user-management': setUserManagementChat,
+    'non-upf-dashboard': setNonUpfChat,
+    'audit-queue': setAuditQueueChat,
+    'admin-utils': setAdminUtilsChat,
+  };
+  const adminSetter = ADMIN_CHAT_SETTERS[document.body.dataset.navId];
+  if (adminSetter) adminSetter(wiseai);
 }
 
 /* ====================================================================

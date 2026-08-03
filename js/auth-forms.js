@@ -39,11 +39,15 @@
         '<span class="menu-nav-icon"><span class="material-icons">' + it.icon + '</span></span>' +
         '<span class="menu-nav-label">' + it.label + '</span></a>';
     }).join('');
+    /* The logo points at the marketing home for signed-out visitors and at the
+       workspace overview once signed in — the same "brand home" rule the app
+       shell and marketing nav follow. */
+    var brandHome = (Auth && Auth.brandHomeUrl) ? Auth.brandHomeUrl() : '../index.html';
     el.innerHTML =
       '<div class="menu-inner">' +
         '<div class="menu-brand-bar">' +
           '<div class="menu-brand-logo">' +
-            '<a href="login.html" aria-label="WISE home">' + WORDMARK + BUG_SVG +
+            '<a href="' + brandHome + '" aria-label="WISE home">' + WORDMARK + BUG_SVG +
               '<span class="topbar-tagline">Intelligence<sup class="tagline-tm">TM</sup></span>' +
             '</a>' +
           '</div>' +

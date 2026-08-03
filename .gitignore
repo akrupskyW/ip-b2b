@@ -11,3 +11,6 @@ node_modules/
 
 # Logs
 *.log
+
+# External design source (symlink to a separate repo outside this project)
+_WISEdesigns

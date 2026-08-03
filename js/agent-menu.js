@@ -405,6 +405,9 @@ export const WISE_APP_NAV = [
       { id: 'organizations', label: 'Organizations', icon: 'apartment', slug: 'organizations.html' },
       { id: 'quick-invite', label: 'Quick Invite', icon: 'bolt', slug: 'quick-invite.html' },
       { id: 'user-management', label: 'User Management', icon: 'group', slug: 'user-management.html' },
+      { id: 'non-upf-dashboard', label: 'Non-UPF Dashboard', icon: 'dashboard', slug: 'non-upf-dashboard.html' },
+      { id: 'audit-queue', label: 'Audit Queue', icon: 'shield', slug: 'audit-queue.html' },
+      { id: 'admin-utils', label: 'Admin Utils', icon: 'build', slug: 'admin-utils.html' },
     ],
   },
   { type: 'upgrade', id: 'studio-ai', title: 'Studio & AI', sub: 'Unlock full access', icon: 'auto_awesome', slug: 'studio-ai.html' },
@@ -757,6 +760,12 @@ const EXISTING_PAGES = new Set([
   'agents.html',
   'alerts.html',
   'studio-ai.html',
+  'organizations.html',
+  'quick-invite.html',
+  'user-management.html',
+  'non-upf-dashboard.html',
+  'audit-queue.html',
+  'admin-utils.html',
 ]);
 
 /** True when a nav slug maps to a page that exists under `pages/`. Slugless

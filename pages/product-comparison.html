@@ -6461,6 +6461,18 @@
       font-family: var(--font-serif);
       letter-spacing: 0;
     }
+    /* The opening line of a transcript reads as a display line — serif, a touch
+       larger — echoing the serif treatment used for headings and CTAs. The
+       per-line meta (timestamp) stays in the body sans face. */
+    body.ai-chat-page .sc-line-lead .sc-line-body {
+      font-family: var(--font-serif);
+      font-size: 1.0625rem;
+      letter-spacing: -0.01em;
+    }
+    body.ai-chat-page .sc-line-lead .sc-line-meta {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      letter-spacing: normal;
+    }
 
     /* ================================================================
        LAYOUT TOGGLE + MODULE FLIP — top-bar controls
@@ -10371,13 +10383,14 @@
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${wiseaiNowLabel()}</span></div>`;
     }
 
-    function addUserMessage(text) {
+    function addUserMessage(text, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
       const safe = String(text).replace(/</g, '&lt;');
+      const leadCls = opts.lead ? ' sc-line-lead' : '';
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-you${leadCls}"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -13360,7 +13373,7 @@
       hideWelcomeScreen(() => {
         compareResetState();
         openComparePanel();
-        addUserMessage('Compare my food');
+        addUserMessage('Compare my food', { lead: true });
         const typing = showWISEaiTyping('WISEai is loading your food');
         setTimeout(() => {
           typing?.remove();
@@ -15947,6 +15960,15 @@
     /* Pre-fill History with a couple of restorable conversations (inline +
        floating-module styles) so Views/History aren't empty on first load. */
     try { seedSavedViews(); } catch (_) {}
+    /* This page is dedicated to the comparison workflow — land members straight
+       in the single-pane Compare Foods chat module rather than the welcome
+       screen. Hide the welcome screen synchronously first so it never flashes,
+       then let startComparisonWorkflow() run its callback immediately. */
+    try {
+      const ws = document.getElementById('welcome-screen');
+      if (ws) { ws.classList.add('ws-hidden'); ws.style.display = 'none'; }
+      startComparisonWorkflow();
+    } catch (_) {}
     (function initChatTheme() {
       let theme = localStorage.getItem('wise-theme');
       if (theme !== 'light' && theme !== 'dark') {

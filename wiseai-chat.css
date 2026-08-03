@@ -1,0 +1,841 @@
+/* ===================================================================
+   WISEai chat module — the EXACT shared chat surface used in the WISE
+   product. Extracted verbatim from Section 2 of pages/wise.css ("was
+   wiseai-chat.css") so marketing pages can mount the real component via
+   js/wiseai-chat.js. KEEP IN SYNC with pages/wise.css Section 2.
+
+   The few chrome tokens the module reads but that aren't in marketing.css
+   are declared here as fallbacks (values mirror pages/wise.css :root).
+=================================================================== */
+:root {
+  --fs-ui: 0.75rem;
+  --fs-label: 0.6875rem;
+  --panel-header-h: 60px;
+}
+
+/* =============================================================
+   WISEai Chat Module — the ONE shared chat surface for WISE.
+   A framework-free extraction of the chat module in
+   pages/ai-chat.html (welcome screen + WISE-owl, intent chips,
+   plain message lines, floating-label input rail) so the exact
+   same component can be mounted on any page via mountWISEaiChat().
+
+   Depends only on the design tokens declared in agent-page.css
+   (--primary, --surface, --border, etc.). Adds the few extra
+   tokens the chat needs as scoped fallbacks below.
+============================================================= */
+
+/* Sized right-rail dock that any module can drop the WISEai card into. */
+.wiseai-dock {
+  display: none;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-self: stretch;
+  height: 100%;
+  max-height: 100%;
+  order: 99;
+}
+/* Stay pinned during horizontal scroll, like the #menu-panel rail, so WISEai
+   never scrolls off-screen — it sticks to the edge it's docked to. A sticky
+   element only pins when it has a SINGLE inline inset; setting both left:0 and
+   right:0 makes the constraint rect span the whole scrollport, so a narrower
+   box never reaches a stick threshold and just scrolls away. So the default
+   (right) dock pins right, and the left-flipped variant below pins left.
+   The position lives on the higher-specificity .wiseai-dock-open selector
+   because the dock element is also a .sc-card (position: relative), which
+   would otherwise win on source order and cancel the stickiness. */
+/* Single (default) tier — a fixed-width docked rail. The dock element is also a
+   .sc-card, which carries `flex: 1 1 0%`; without pinning `flex` here that grow
+   would balloon the single tier up to its max-width, making single + double look
+   identical. Pinning `flex: 0 0 380px` keeps single a true single (matches the
+   portfolio #pf-chat-panel dock). */
+.wiseai-dock.wiseai-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
+@media (max-width: 1100px) { .wiseai-dock.wiseai-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
+/* WISEai width cycles through three tiers: single (380/330px), double
+   (680/560px), and triple (980/800px). The header width icon reflects the tier;
+   the base max-width above is overridden per-tier so triple can grow past
+   double, while min-width keeps it from shrinking below single. */
+/* Double-width — the dock element is itself the .sc-card, so panel-wide must
+   beat the fixed 380px width above (same pattern as portfolio.css). The width
+   is a DEFINITE length (so the sticky-clamp still works) but viewport-capped —
+   exactly like ai-chat.html's #chat-shell — so widening WISEai never overflows
+   the modules row on a narrow screen. */
+.wiseai-dock.wiseai-dock-open.panel-wide {
+  --wiseai-w: min(680px, 90vw);
+  flex: 0 0 var(--wiseai-w);
+  width: var(--wiseai-w);
+  min-width: var(--wiseai-w);
+  max-width: var(--wiseai-w);
+}
+@media (max-width: 1100px) {
+  .wiseai-dock.wiseai-dock-open.panel-wide { --wiseai-w: min(560px, 90vw); }
+}
+/* Triple-width (third tier) — lifts the double cap so WISEai can grow further. */
+.wiseai-dock.wiseai-dock-open.panel-wide.panel-triple {
+  --wiseai-w: min(980px, 96vw);
+  flex: 0 0 var(--wiseai-w);
+  width: var(--wiseai-w);
+  min-width: var(--wiseai-w);
+  max-width: var(--wiseai-w);
+}
+@media (max-width: 1100px) {
+  .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple { --wiseai-w: min(800px, 96vw); }
+}
+/* Solo state — when WISEai is the ONLY module left in the row it must not
+   stretch to fill the empty space. It stays capped at (at most) double width
+   (above) and is centre-docked, overriding any left/right preference. Auto
+   margins centre the lone flex item; js/wiseai-dock.js also forces the
+   wiseai-dock-center class so it stays sticky-clamped. */
+.wiseai-dock.wiseai-dock-open.wiseai-dock-solo {
+  /* Alone in the row, WISEai may grow to fill the empty space, but stays capped
+     at (at most) double width. Overrides the fixed single-tier flex above. */
+  flex: 1 1 auto;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Side flip — the dock defaults to the far-right of the modules row (order
+   99), pinned to the right edge. Flipping it left re-orders it to the front
+   and pins it to the LEFT edge instead. Persisted via js/wiseai-dock.js so the
+   side carries across page switches. */
+.wiseai-dock.wiseai-dock-open.wiseai-dock-left { order: -1; left: 0; right: auto; }
+/* When the sticky menu rail is open, pin the LEFT-docked WISEai just to the
+   RIGHT of it (260px rail + 8px row gap) so the two sit side-by-side as frozen
+   columns instead of WISEai disappearing behind the higher-z menu. */
+#menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open.wiseai-dock-left { left: 268px; }
+/* Center mode = the DEFAULT "floating in the middle" state. Unlike left/right
+   (which lock to one edge with a SINGLE inset), center keeps BOTH insets
+   (left:0 + right:0). With a fixed-width dock (see portfolio.css) that two-inset
+   sticky clamp means the dock starts at its natural mid-row spot and, as the row
+   scrolls, gets stuck to the left or the right edge instead of ever sliding
+   off-screen — the other modules just scroll past it. (This only works because
+   the dock is a fixed width now; the old flex-grown full-width box could never
+   satisfy both insets and so drifted away — that's why earlier it "scrolled
+   off".) */
+.wiseai-dock.wiseai-dock-open.wiseai-dock-center {
+  position: sticky;
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+/* Keep the centered dock clear of the sticky menu rail when it's open, exactly
+   like the left dock — pin its left clamp just to the right of the rail. */
+#menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open.wiseai-dock-center {
+  left: 268px;
+  right: 0;
+}
+/* Collapsed = "Close conversation" folded the whole module into the floating
+   circle below. Pull the dock out of the modules row entirely (display:none
+   beats the .wiseai-dock-open flex rule via the extra class) so the remaining
+   modules re-flow and resize across their single/double/triple widths. */
+.wiseai-dock.wiseai-dock-open.wiseai-dock-collapsed { display: none; }
+
+/* Floating circle — the collapsed WISEai module. A fixed FAB carrying the
+   WISE-owl bug; click it to reopen the module. Hidden until `is-shown`. */
+.wiseai-dock-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  width: 56px;
+  height: 56px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #fff 18%, var(--primary));
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.22);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.18s ease;
+}
+.wiseai-dock-fab.is-shown {
+  display: inline-flex;
+  animation: wiseaiFabPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.wiseai-dock-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), 0 3px 10px rgba(0, 0, 0, 0.26);
+}
+.wiseai-dock-fab:active { transform: scale(0.96); }
+.wiseai-dock-fab:focus-visible {
+  outline: 2px solid color-mix(in srgb, #fff 70%, var(--primary));
+  outline-offset: 2px;
+}
+.wiseai-dock-fab-bug {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 16px;
+}
+.wiseai-dock-fab-bug svg { width: 28px; height: 16px; color: #fff; }
+@keyframes wiseaiFabPop {
+  from { opacity: 0; transform: scale(0.4) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (max-width: 767px) {
+  .wiseai-dock-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; }
+}
+
+.wiseai-dock .sc-card {
+  transform-origin: right center;
+  animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.05s;
+}
+
+.sc-card {
+  --fs-welcome-title: 1.0625rem;
+  /* Conversation copy reads a step larger than the 12px UI chrome so the
+     dialogue itself is the most legible thing in the panel. */
+  --fs-chat: 0.9375rem;
+  --sc-shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45);
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+  font-size: var(--fs-ui);
+  --chat-line-height: 1.6;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.dark .sc-card {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.18);
+  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Topbar (60px) — verbatim from ai-chat.html .chat-topbar ===== */
+.chat-topbar {
+  display: flex; align-items: center; position: relative; z-index: 50;
+  padding: 12px 48px;
+  height: var(--panel-header-h, 60px); min-height: var(--panel-header-h, 60px);
+  box-sizing: border-box; flex-shrink: 0;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+html.dark .chat-topbar {
+  background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%), var(--surface);
+  border-bottom-color: rgba(37, 80, 124, 0.20);
+}
+.sc-topbar-lead { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* WISE-owl bug icon (the .panel-header-icon container in the real app) */
+.sc-bug {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sc-bug svg { width: 18px; height: 10px; color: var(--text); }
+
+.sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
+.sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
+.sc-topbar-titles .topbar-title[data-wiseai-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
+html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
+
+.topbar-agents-btn {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 0; flex-shrink: 0;
+  padding: 1px 7px 1px 5px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: transparent;
+  color: var(--text-muted); font-size: 0.65rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
+  width: fit-content;
+}
+.topbar-agents-btn:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--primary-soft); color: var(--text); }
+.topbar-agents-btn .material-icons { font-size: 12px !important; }
+.agents-count-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 14px; height: 14px; border-radius: 999px; padding: 0 3px;
+  background: var(--primary); color: #fff; font-size: 0.6rem; font-weight: 800;
+}
+
+/* More-menu trigger (verbatim from .panel-more-wrap / .panel-more-btn).
+   The popover itself reuses .topbar-popover / .topbar-menu-item from
+   agent-page.css for a pixel-identical menu. */
+.panel-more-wrap { position: relative; margin-left: auto; display: inline-flex; align-items: center; }
+.panel-more-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.panel-more-btn .material-icons { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
+.panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+/* Three-dot "More" popover + its menu rows. These live in the product's
+   agent-page.css / wise.css, which the marketing pages don't load — so they're
+   ported here verbatim, keeping the shared chat's menu pixel-identical wherever
+   it's mounted (including the marketing surface's docked rail). */
+.topbar-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 240px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  z-index: 200;
+  padding: 6px;
+  animation: morePopIn 0.15s ease-out both;
+}
+.topbar-popover.hidden { display: none; }
+html.dark .topbar-popover {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+@keyframes morePopIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.sc-card .topbar-popover { position: absolute; top: calc(100% + 6px); right: 0; left: auto; }
+
+/* Section label above a group of menu items (e.g. the marketing "Go to" nav). */
+.topbar-menu-label {
+  padding: 8px 12px 4px;
+  font-size: var(--fs-label, 0.6875rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.topbar-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; border-radius: 9999px;
+  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted);
+  background: none; border: 0; cursor: pointer; text-align: left;
+  transition: background 0.15s ease, color 0.15s ease; font-family: inherit;
+}
+.topbar-menu-item:hover { background: var(--surface-3); color: var(--text); }
+html.dark .topbar-menu-item:hover { background: rgba(255,255,255,0.06); }
+.topbar-menu-icon { color: var(--text-subtle) !important; flex-shrink: 0; font-size: 18px !important; }
+.topbar-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
+.topbar-menu-item--danger { color: var(--sec-red-text); }
+.topbar-menu-item--danger:hover {
+  background: color-mix(in srgb, var(--sec-red) 18%, var(--surface-2));
+  color: var(--sec-red-text);
+}
+
+/* Header controls cluster — groups the width toggle with the more menu and
+   floats the pair to the far right of the topbar. */
+.sc-topbar-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.sc-topbar-controls .panel-more-wrap { margin-left: 0; }
+
+/* Module width toggle (verbatim from .panel-width-toggle-btn on the other
+   modules — doubles the module column when active). */
+.panel-width-toggle-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  color: var(--text-muted); opacity: 0.75; cursor: pointer; padding: 0; flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.panel-width-toggle-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-width-toggle-btn:hover,
+.panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+
+/* Wide state — legacy hook when panel-wide is applied to an inner card; the
+   dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
+.sc-card.panel-wide {
+  flex-grow: 2;
+  min-width: min(760px, 92vw);
+}
+
+/* ===== Body (messages + welcome overlay) ===== */
+.sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden; }
+.chat-messages-area {
+  flex: 1 1 0%; overflow-y: auto; padding: 1.5rem 3rem;
+  background: var(--bg); color: var(--text-muted);
+  font-size: var(--fs-ui); line-height: var(--chat-line-height);
+}
+html.dark .chat-messages-area { background: transparent; }
+.chat-messages-area .material-icons { vertical-align: middle; }
+
+/* Plain message lines (mirrors ai-chat.html — not bubbles). Each line is an
+   avatar column (the WISE-owl bug, same as the header) + the message body. The
+   conversation copy is set a notch larger than the surrounding UI for
+   readability; the meta row (timestamp + grounding) stays small below. */
+/* gap (12px) + avatar (30px) match the header's icon→title spacing so the
+   avatar column lines up under the topbar owl and the body text lines up under
+   the "WISEai™" title. */
+.sc-line {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 1.1rem; color: var(--text);
+}
+.sc-line-body {
+  flex: 1 1 0%; min-width: 0;
+  /* High-contrast conversation copy — the dialogue is the most legible thing in
+     the panel (the small, quiet meta row below carries the timestamp). */
+  font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
+}
+/* Per-line profile avatars in place of the old "You" / "WISEai™" labels.
+   WISEai = the WISE-owl bug (same mark as the header) in a brand-blue circle.
+   You   = the member's initials, matching the top-bar .topbar-profile chip. */
+.sc-avatar {
+  flex-shrink: 0;
+  width: 30px; height: 30px; margin-top: 1px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; letter-spacing: 0.02em;
+  user-select: none;
+}
+.sc-avatar svg { width: 18px; height: auto; }
+/* The WISEai owl bug rides on a black chip in every chat module app-wide (the
+   canonical product-comparison / product-portfolio pages set this explicitly). Kept as the
+   shared default so any page using the base classes matches without a local override. */
+.sc-avatar-wiseai {
+  background: #141414; color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+/* Mirror of .topbar-profile: transparent fill, strong ring, muted initials. */
+.sc-avatar-you {
+  background: transparent; color: var(--text-muted);
+  border: 1.5px solid var(--border-strong);
+}
+.sc-line strong { color: var(--primary); font-weight: 700; }
+.sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
+.sc-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-subtle); animation: scBlink 1.2s infinite; }
+.sc-typing span:nth-child(2) { animation-delay: 0.2s; }
+.sc-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes scBlink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+/* ===== Welcome screen ===== */
+.sc-welcome {
+  position: absolute; inset: 0; z-index: 10; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+  /* Centered when it fits, but `safe` flips to top-alignment the moment the
+     content is taller than the dock, and overflow-y lets you scroll to the last
+     chip — otherwise a short dock clips the logo + stacked intent chips (they'd
+     vanish behind the input rail). Applies to every WISEai surface. */
+  justify-content: safe center; overflow-y: auto;
+  padding: 2rem; font-size: var(--fs-ui);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+html.dark .sc-welcome { background: transparent; }
+.sc-welcome.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+
+.ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ws-pulse-ring {
+  position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin-left: -36px; margin-top: -36px;
+  border-radius: 50%; border: 1px solid rgba(37, 80, 124, 0.55);
+  box-shadow: 0 0 18px rgba(37, 80, 124, 0.35), 0 0 36px rgba(37, 80, 124, 0.2);
+  pointer-events: none; animation: wsRingBloom 5s cubic-bezier(0.2, 0.85, 0.25, 1) infinite;
+}
+.ws-pulse-ring:nth-child(2) { animation-delay: -1.66s; }
+.ws-pulse-ring:nth-child(3) { animation-delay: -3.33s; }
+@keyframes wsRingBloom { 0% { transform: scale(1); opacity: 0.5; } 55% { opacity: 0.18; } 100% { transform: scale(3.2); opacity: 0; } }
+.ws-logo {
+  position: relative; z-index: 1; width: 72px; height: 72px; background: var(--primary); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; padding: 14px;
+  box-shadow: 0 0 28px rgba(37, 80, 124, 0.55), 0 0 52px rgba(37, 80, 124, 0.22);
+  animation: wsLogoBreath 6.5s ease-in-out infinite;
+}
+.ws-logo svg { width: 100%; height: 100%; }
+@keyframes wsLogoBreath {
+  0%, 100% { box-shadow: 0 0 24px rgba(37, 80, 124, 0.45), 0 0 48px rgba(37, 80, 124, 0.18); transform: scale(1); }
+  50% { box-shadow: 0 0 36px rgba(37, 80, 124, 0.55), 0 0 72px rgba(37, 80, 124, 0.28); transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
+  .ws-logo { animation: none; transform: none; }
+}
+.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.4rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
+html.dark .ws-heading { color: var(--text); }
+.ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }
+.ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
+.ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
+/* Intent chips, carousel variant — a single horizontal row with left/right
+   controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip
+   stays reachable inside the narrower dock. */
+.ws-chips-wrap { position: relative; width: 100%; max-width: 100%; margin: 0 0 2rem; }
+.ws-chips-wrap .ws-chips {
+  flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+  scroll-behavior: smooth; scroll-snap-type: x proximity;
+  scrollbar-width: none; -ms-overflow-style: none; margin-bottom: 0; padding: 4px 2px;
+}
+.ws-chips-wrap .ws-chips::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.ws-chips-wrap .ws-chips .chip { scroll-snap-align: start; }
+.ws-chips-wrap::before, .ws-chips-wrap::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
+}
+.ws-chips-wrap::before { left: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
+.ws-chips-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
+html.dark .ws-chips-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
+html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+/* Inside the WISEai dock the card surface is the navy gradient (#1A2339), not
+   --surface — so the edge fades must blend into that, otherwise they read as a
+   darker band beside the chips in dark mode. */
+html.dark .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
+html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, #1A2339 0%, transparent 100%); }
+.ws-chips-wrap.has-prev::before { opacity: 1; }
+.ws-chips-wrap.has-next::after { opacity: 1; }
+.ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
+
+/* Persistent intent-chip rail (opt-in via mountWISEaiChat({ persistChips:true }))
+   — a single horizontal, snap-scrolling row of every conversational route,
+   docked just above the input for the whole conversation. Hidden while the
+   welcome screen is up (which already shows the chips); revealed once the
+   conversation begins (root gets `.sc-conversing`). */
+.ws-chips-bar { display: none; width: 100%; max-width: 100%; margin: 0; padding: 8px 14px 4px; border-top: 1px solid var(--border); }
+.sc-conversing .ws-chips-bar { display: block; }
+.ws-chips-bar .ws-chips { margin-bottom: 0; padding: 2px 2px; }
+.ws-chips-bar::before, .ws-chips-bar::after { width: 20px; }
+
+/* Inline intent chips (opt-in via mountWISEaiChat({ inlineChips:true })) — a
+   block of suggested actions that lives inside the transcript, trailing the
+   latest WISEai reply like a regular chat's suggested replies. Left-aligned and
+   indented to sit under the assistant's message body (avatar 30px + 12px gap). */
+.sc-inline-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: flex-start;
+  width: auto; max-width: 100%;
+  margin: -0.4rem 0 1.1rem; padding-left: 42px;
+}
+.sc-inline-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
+
+/* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
+   The "Your portfolio at a glance" rail, ported into the shared dock: a
+   horizontal, snap-scrolling row of cards with floating scroll controls and
+   soft edge fades. Two variants (intro / wiseai) carry a sleeker tinted backdrop
+   so they read as orientation rather than data. */
+.sc-welcome--cards { justify-content: flex-start; overflow-y: auto; padding-top: 1.75rem; }
+.ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
+/* Overview cards hidden (three-dot menu → "Hide overview cards") — drop the
+   large "at a glance" card rail from the welcome; everything else stays. */
+.sc-cards-hidden .ws-scorecards-section { display: none; }
+.ws-scorecards-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.ws-scorecards-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.ws-scorecards-wrap { position: relative; width: 100%; }
+.ws-scorecards {
+  display: flex; gap: 12px; width: 100%; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  scrollbar-width: none; -ms-overflow-style: none; padding: 6px 2px 14px;
+}
+.ws-scorecards::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.ws-scorecard {
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left;
+  flex: 0 0 244px; min-width: 244px; scroll-snap-align: start;
+  padding: 14px 16px; aspect-ratio: 16 / 9;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: 10px !important; cursor: pointer; font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.ws-scorecard:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12); transform: translateY(-2px); }
+.ws-scorecard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Bare chevrons sitting just off the rail edges — no chunky circle. The edge
+   fades below provide the backdrop that keeps the glyphs legible. */
+.ws-sc-scroll {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 36px; padding: 0; border-radius: 0 !important;
+  background: transparent; border: 0; box-shadow: none; color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+.ws-sc-scroll:hover { background: transparent; color: var(--text); transform: translateY(-50%) scale(1.15); }
+.ws-sc-scroll .material-icons { font-size: 22px !important; }
+.ws-sc-scroll--next { right: -16px; }
+.ws-sc-scroll--prev { left: -16px; }
+.ws-sc-scroll[hidden] { display: none; }
+.ws-scorecards-wrap::before, .ws-scorecards-wrap::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
+}
+.ws-scorecards-wrap::before { left: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
+.ws-scorecards-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
+html.dark .ws-scorecards-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
+html.dark .ws-scorecards-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
+/* Match the dock card's navy gradient surface (see .ws-chips-wrap above). */
+html.dark .sc-card .ws-scorecards-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
+html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to left, #1A2339 0%, transparent 100%); }
+.ws-scorecards-wrap.has-prev::before { opacity: 1; }
+.ws-scorecards-wrap.has-next::after { opacity: 1; }
+.ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* Bare glyphs — no chip behind them — sized up a touch for presence. */
+.ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ws-sc-icon .material-icons { font-size: 24px !important; }
+/* Metric cards: neutral (foreground) icon — intro/WISEai keep the brand accent. */
+.ws-sc-icon--brand,
+.ws-sc-icon--warn,
+.ws-sc-icon--alert { color: var(--text); }
+.ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
+.ws-sc-pill .material-icons { font-size: 12px !important; }
+/* Metric-card pills: neutral grey "shades of black" (intro/WISEai keep accent). */
+.ws-sc-pill--up,
+.ws-sc-pill--warn,
+.ws-sc-pill--alert { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
+.ws-sc-metric { font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--text); margin-top: 4px; letter-spacing: -0.02em; }
+.ws-sc-metric-unit { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; }
+.ws-sc-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+.ws-sc-desc { font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); flex: 1 1 auto; }
+.ws-sc-action { display: inline-flex; align-items: center; align-self: flex-end; gap: 4px; margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--primary); }
+.ws-sc-action .material-icons { font-size: 15px !important; transition: transform 0.15s ease; }
+.ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
+/* Intro / orientation variants — same surface as the metric cards, set apart
+   only by an accent stroke + a matching accent headline. */
+.ws-scorecard--intro,
+.ws-scorecard--wiseai { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+.ws-scorecard--intro:hover,
+.ws-scorecard--wiseai:hover { border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 16%, transparent); }
+.ws-sc-icon--intro,
+.ws-sc-icon--wiseai { color: var(--primary); }
+.ws-sc-pill--intro,
+.ws-sc-pill--wiseai { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+html.dark .ws-sc-icon--intro,
+html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
+.ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); margin-top: 6px; }
+.ws-scorecard--intro .ws-sc-intro-title,
+.ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+.chip .material-icons { font-size: 16px !important; }
+/* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
+   navigation icons (#left-icon-rail .lir-btn = 20px). */
+.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
+.ws-intent-chip .material-icons { font-size: 20px !important; }
+.ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+/* Dark mode: faint-white chip fills get our royal-blue border so they don't
+   read as white-bordered pills on the navy chrome. */
+html.dark .chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+
+/* ===== Input rail — compact single-line bar (verbatim from ai-chat.html's
+   refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
+.chat-input-rail {
+  border-top: 1px solid var(--border); background: var(--surface-2);
+  padding: 12px 32px; flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+html.dark .chat-input-rail { background: var(--surface); border-top-color: var(--border); }
+.sc-input-row { display: flex; gap: 8px; align-items: center; }
+.fl-input-wrap {
+  position: relative; flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
+  display: flex; align-items: center; gap: 4px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+.fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; padding: 8px 0; color: var(--text); font-family: inherit; }
+.fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
+.fl-icon-btn {
+  width: 32px; height: 32px; border-radius: 9999px; color: var(--text-muted); cursor: pointer;
+  border: none; background: none; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease; flex-shrink: 0;
+}
+.fl-icon-btn:hover { background: var(--surface-2); color: var(--primary); }
+.fl-icon-btn .material-icons { font-size: 20px !important; }
+/* Active voice-dictation state on the input's more button. */
+.fl-more-btn.sc-recording { color: var(--sec-red, #DC3038); background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); animation: scRecPulse 1.2s ease-in-out infinite; }
+@keyframes scRecPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sec-red, #DC3038) 40%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
+.fl-more-wrap { position: relative; flex-shrink: 0; }
+.fl-more-popover {
+  display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
+  box-shadow: var(--shadow-3, var(--sc-shadow-pop)); padding: 4px; z-index: 600; min-width: 140px; flex-direction: column; gap: 2px;
+}
+.fl-more-popover.open { display: flex; }
+html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%); border-color: rgba(37, 80, 124,0.22); }
+.fl-more-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: none; background: transparent;
+  border-radius: 10px; color: var(--text-muted); font-size: var(--fs-ui); font-weight: 500; cursor: pointer;
+  width: 100%; transition: background 0.12s, color 0.12s; text-align: left; font-family: inherit;
+}
+.fl-more-item:hover { background: var(--surface-2); color: var(--text); }
+.fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
+
+/* Send button — 40px primary circle, aligned to the input */
+.sc-send {
+  width: 40px; height: 40px; flex-shrink: 0; align-self: center;
+  border-radius: 9999px; border: 0; cursor: pointer;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
+.sc-send .material-icons { font-size: 20px !important; }
+
+/* =============================================================
+   Microcopy & trust
+   Small, low-contrast signals that tell the user how WISEai treats
+   their data, time-stamp every line, ground each reply in a source,
+   and keep a standing "verify before you act" reminder in view.
+============================================================= */
+
+/* Welcome trust badges — a quiet footnote row under the hint. */
+.ws-trust {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 6px 14px; margin-top: 1.25rem; max-width: 100%;
+}
+.sc-trust-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
+  color: var(--text-subtle);
+}
+.sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
+html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF); }
+
+/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEai). */
+.sc-line-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
+  margin-top: 4px;
+}
+.sc-line-you .sc-line-meta { justify-content: flex-start; }
+.sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+.sc-trust-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--primary) 75%, var(--text-muted));
+}
+.sc-trust-chip .material-icons { font-size: 12px !important; }
+html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+
+/* Typing indicator now carries a status label ("WISEai is checking…"). */
+.sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+.sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
+
+/* Standing AI-limitations disclaimer, centered under the input row. */
+.sc-disclaimer {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  margin: 8px 4px 0; padding: 0;
+  font-size: 0.625rem; font-weight: 500; line-height: 1.3;
+  color: var(--text-subtle); text-align: center;
+}
+.sc-disclaimer .material-icons { font-size: 12px !important; opacity: 0.8; flex-shrink: 0; }
+
+/* =============================================================
+   In-chat "Agent Settings" panel
+   A faithful, scoped extraction of #settings-screen in
+   pages/ai-chat.html. Slides over the message area (like the
+   welcome screen) when the user clicks the "N agents running"
+   pill / "Choose Agents" chip — so the same roster control is
+   available wherever the shared WISEai chat is mounted.
+============================================================= */
+.sc-settings {
+  position: absolute; inset: 0; z-index: 11;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+html.dark .sc-settings { background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%); }
+.sc-settings.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+
+/* Header (sticky top of the panel) */
+.sc-settings .ss-header {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  padding: 14px 16px;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+}
+html.dark .sc-settings .ss-header {
+  background: linear-gradient(135deg, rgba(37, 80, 124,0.20) 0%, rgba(37, 80, 124,0.08) 60%, transparent 100%), var(--surface);
+  border-bottom-color: rgba(37, 80, 124,0.20);
+}
+.sc-settings .ss-back-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  border: 0; background: transparent; color: var(--text-muted); cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sc-settings .ss-back-btn:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--text); }
+.sc-settings .ss-back-btn .material-icons { font-size: 20px !important; }
+.sc-settings .ss-header-icon {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+}
+.sc-settings .ss-header-icon .material-icons { font-size: 18px !important; }
+.sc-settings .ss-header-titles { flex: 1; min-width: 0; }
+.sc-settings .ss-header-title { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.2; margin: 0; }
+.sc-settings .ss-header-subtitle { font-size: 0.6875rem; color: var(--text-muted); margin: 2px 0 0; }
+
+/* Scrollable body */
+.sc-settings .ss-body { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 16px; background: var(--bg); }
+html.dark .sc-settings .ss-body { background: transparent; }
+
+.sc-settings .ss-info-card {
+  display: flex; gap: 10px; padding: 12px 14px; margin-bottom: 4px;
+  border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2);
+}
+.sc-settings .ss-info-icon {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary-soft); color: var(--primary);
+}
+.sc-settings .ss-info-icon .material-icons { font-size: 16px !important; }
+.sc-settings .ss-info-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); margin: 0; }
+.sc-settings .ss-info-desc { font-size: var(--fs-label); color: var(--text-muted); margin: 4px 0 0; line-height: 1.5; }
+
+.sc-settings .ss-section-title {
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-subtle); margin: 24px 0 12px;
+}
+.sc-settings .ss-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+.sc-settings .ss-agent-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; margin-bottom: 8px;
+  border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2);
+  transition: border-color 0.15s, background 0.15s;
+}
+.sc-settings .ss-agent-row.ssr-on {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border-strong));
+  background: var(--primary-soft);
+}
+.sc-settings .ss-agent-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3);
+}
+.sc-settings .ss-agent-icon .material-icons { font-size: 20px !important; }
+.sc-settings .ss-agent-body { flex: 1; min-width: 0; }
+.sc-settings .ss-agent-name {
+  font-size: var(--fs-ui); font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.sc-settings .ss-agent-name.ssa-off { color: var(--text-subtle); }
+.sc-settings .ss-agent-tagline { font-size: var(--fs-ui); color: var(--text-muted); margin: 2px 0 0; }
+.sc-settings .ss-agent-desc { font-size: var(--fs-label); color: var(--text-muted); margin: 6px 0 0; line-height: 1.55; }
+.sc-settings .ss-tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.sc-settings .ss-version-badge {
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: var(--radius-pill);
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.04em;
+  background: var(--surface-3); color: var(--text-muted); border: 1px solid var(--border-strong);
+}
+.sc-settings .ss-capability-tag {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--radius-pill);
+  font-size: var(--fs-label); font-weight: 600;
+  background: var(--surface-3); color: var(--text-muted); border: 1px solid var(--border);
+}
+
+/* Toggle switch (verbatim from .agent-toggle-* in ai-chat.html) */
+.sc-settings .agent-toggle-wrap { position: relative; width: 34px; height: 19px; flex-shrink: 0; margin-top: 4px; }
+.sc-settings .agent-toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.sc-settings .agent-toggle-track {
+  position: absolute; inset: 0; background: var(--border-strong); border-radius: 999px;
+  cursor: pointer; transition: background 0.2s, box-shadow 0.2s; box-shadow: inset 0 0 0 1px var(--border);
+}
+.sc-settings .agent-toggle-track::after {
+  content: ''; position: absolute; width: 13px; height: 13px; border-radius: 50%;
+  background: #FFFFFF; top: 3px; left: 3px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s, background 0.2s;
+}
+html.dark .sc-settings .agent-toggle-track::after { background: #E2E8F0; }
+.sc-settings .agent-toggle-wrap input:checked + .agent-toggle-track {
+  background: var(--sec-green, #32A966);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sec-green, #32A966) 50%, transparent);
+}
+.sc-settings .agent-toggle-wrap input:checked + .agent-toggle-track::after { transform: translateX(15px); background: #FFFFFF; }
+

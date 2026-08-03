@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Admin Utilities</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) { document.documentElement.classList.add('dark'); }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ===================================================================
+       Admin Utilities — presented in the same "poster shelf" language as
+       reports.html. Everything reuses the shared design tokens (--surface,
+       --primary, --border …) and is prefixed `au-` so it can't collide with
+       the shared shell or the `adm-*` component set.
+
+       The maintenance jobs and platform tools read like a shelf of posters:
+       each card has a cinematic duotone "poster" header (accent gradient +
+       the WISE bug watermark) with the glyph sitting DIRECTLY on the art —
+       no plate, box, or circle behind any icon — above an editorial serif
+       title. The database connection sits up top as a row of scorecards,
+       with the Host card doubled in width as the hero.
+    =================================================================== */
+
+    .au-wrap { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px; }
+
+    /* ---- Module masthead ---- */
+    .au-title-main {
+      font-family: 'Noto Serif', Georgia, serif;
+      margin: 0; font-size: 1.5rem; font-weight: 800;
+      letter-spacing: -0.01em; line-height: 1.12; color: var(--text);
+    }
+    .au-lede { font-size: 0.9rem; color: var(--text-muted); margin: 6px 0 0; max-width: 68ch; }
+
+    /* ---- Database scorecards ---- */
+    .au-db { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 22px; }
+    .au-score {
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: 8px;
+      flex: 1 1 180px; min-width: 160px;
+      padding: 18px 20px; border-radius: 16px;
+      border: 1px solid var(--border); background: var(--surface);
+      box-shadow: var(--shadow-1);
+    }
+    /* Host is the hero: double the width of the others and dressed as a
+       mini-poster (duotone wash) to echo the shelf. */
+    .au-score--wide {
+      --acc: #25507C;
+      flex: 2 2 380px; min-width: 300px;
+      border-color: color-mix(in srgb, var(--acc) 34%, var(--border));
+      background:
+        radial-gradient(135% 150% at 92% -30%, color-mix(in srgb, var(--acc) 30%, transparent), transparent 60%),
+        var(--surface);
+    }
+    .au-score-key {
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+    .au-score-val {
+      font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+      font-size: 0.9rem; color: var(--text); word-break: break-all; line-height: 1.35;
+    }
+    .au-score--wide .au-score-val {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; word-break: break-word;
+    }
+    .au-score-top { display: flex; align-items: center; gap: 10px; }
+    .au-score-pill {
+      margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted); background: var(--surface-3, var(--surface-2));
+    }
+    html.dark .au-score-pill { background: rgba(255,255,255,0.08); }
+    .au-score-pill .material-icons { font-size: 12px !important; }
+
+    /* ---- Section heading ---- */
+    .au-section { margin-top: 36px; }
+    .au-sec-eyebrow {
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+    .au-sec-sub { font-size: 0.9375rem; color: var(--text-muted); margin: 5px 0 18px; }
+
+    /* ---- Poster shelf (horizontal carousel rail) ---- */
+    .au-grid {
+      display: flex; gap: 20px;
+      overflow-x: auto; overflow-y: visible;
+      scroll-snap-type: x proximity;
+      padding: 6px 4px 14px; margin: -6px -4px 0;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--primary) 45%, transparent) transparent;
+    }
+    .au-grid::-webkit-scrollbar { height: 8px; }
+    .au-grid::-webkit-scrollbar-track { background: transparent; }
+    .au-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--primary) 40%, transparent); border-radius: 999px; }
+    .au-grid::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--primary) 60%, transparent); }
+
+    .au-card {
+      position: relative; display: flex; flex-direction: column;
+      flex: 0 0 clamp(258px, 78%, 300px);
+      scroll-snap-align: start;
+      min-height: 272px;
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--surface);
+      box-shadow: var(--shadow-1); text-align: left; color: inherit; cursor: pointer;
+      padding: 0; font: inherit;
+      transition: transform 0.2s cubic-bezier(.2,.7,.3,1), box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .au-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-2);
+      border-color: color-mix(in srgb, var(--acc, var(--primary)) 40%, var(--border));
+    }
+    .au-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    /* ---- The poster ---- */
+    .au-poster {
+      --acc: #3f4d61;
+      position: relative; height: 132px; overflow: hidden;
+      background:
+        radial-gradient(135% 130% at 82% -25%, color-mix(in srgb, var(--acc) 62%, transparent), transparent 60%),
+        linear-gradient(150deg, color-mix(in srgb, var(--acc) 34%, #0b1a29), #091522 80%);
+    }
+    .au-poster.tone-maint { --acc: #25507C; }
+    .au-poster.tone-tool  { --acc: #2F6B5E; }
+
+    /* Bug watermark — the WISE mark, drifting off the bottom-right corner. */
+    .au-poster-bug {
+      position: absolute; right: -18px; bottom: -46px;
+      width: 210px; height: auto; color: #fff; opacity: 0.09;
+      transform: rotate(-6deg);
+      transition: transform 0.4s ease, opacity 0.3s ease;
+    }
+    .au-card:hover .au-poster-bug { transform: rotate(-6deg) scale(1.06) translate(-6px, -4px); opacity: 0.13; }
+
+    /* Diagonal sheen that sweeps across on hover. */
+    .au-poster::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.16) 48%, transparent 62%);
+      transform: translateX(-120%); transition: transform 0.6s ease;
+      pointer-events: none;
+    }
+    .au-card:hover .au-poster::after { transform: translateX(120%); }
+
+    /* Icon overlays the poster directly — NO plate, box or circle behind it.
+       Just the glyph, with a soft drop-shadow so it stays legible on the art. */
+    .au-poster-icon {
+      position: absolute; top: 14px; left: 16px;
+      display: grid; place-items: center;
+      background: none; border: 0; box-shadow: none; padding: 0;
+      color: #fff;
+    }
+    .au-poster-icon .material-icons {
+      font-size: 30px !important;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+    }
+
+    .au-badge {
+      position: absolute; top: 17px; right: 16px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase;
+      color: #fff; background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(3px);
+    }
+    .au-badge .material-icons { font-size: 12px !important; }
+
+    /* Open/run affordance revealed on hover, bottom-right of the poster. */
+    .au-poster-open {
+      position: absolute; right: 14px; bottom: 12px;
+      width: 30px; height: 30px; border-radius: 999px;
+      display: grid; place-items: center;
+      background: #fff; color: #0b1a29;
+      opacity: 0; transform: translateY(6px) scale(0.9);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .au-poster-open .material-icons { font-size: 18px !important; }
+    .au-card:hover .au-poster-open { opacity: 1; transform: translateY(0) scale(1); }
+
+    /* ---- Card body ---- */
+    .au-body { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; flex: 1; }
+    .au-name {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 1.125rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); line-height: 1.2;
+    }
+    .au-tag {
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--ter-amber-10); color: var(--ter-amber-text);
+    }
+    .au-desc {
+      margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted);
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .au-foot { margin-top: auto; padding-top: 12px; display: flex; justify-content: flex-end; }
+    .au-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.8125rem; font-weight: 700; color: var(--primary);
+    }
+    html.dark .au-cta { color: var(--primary-bright, #93C5FD); }
+    .au-cta .material-icons { font-size: 17px !important; transition: transform 0.18s ease; }
+    /* "Open" cards nudge their arrow up-and-out; "Run" cards slide the play
+       glyph forward — a clean, legible motion instead of an odd rotation. */
+    .au-card:hover .au-cta .material-icons { transform: translate(3px, -3px); }
+    .au-card:hover .au-cta .material-icons.au-cta--run { transform: translateX(4px); }
+  </style>
+</head>
+<body data-nav-id="admin-utils" data-adm-page data-default-dock="left" data-default-nav-collapsed="1">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <div id="topbar-row" hidden aria-hidden="true"></div>
+    <div id="modules-row">
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module" src="../js/agent-overview.js"></script>
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

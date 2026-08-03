@@ -2593,7 +2593,7 @@ export function renderDashboardHome(host) {
         'review-portfolio': 'product-portfolio.html',
         'add-food': 'product-portfolio.html?add=food',
         'dispute-upc': 'portfolio.html',
-        'claim-upcs': 'portfolio.html',
+        'claim-upcs': 'product-portfolio.html',
         'verify-upf': 'verification.html',
         'verify-gras': 'gras-verification.html',
         'topproduct-report': 'portfolio.html',

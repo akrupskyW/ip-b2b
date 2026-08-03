@@ -1247,6 +1247,16 @@ export const GRAS_WISEAI = {
   sourceLabel: '',
   /* A chip for every route the flow can take: start → each wizard step → submit
      → review → navigate → repeat, plus the three explainers. */
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your GRAS verification at a glance',
+    cards: [
+      { intent: 'verify_top', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Verify your top ingredient', desc: 'Clear the biggest blocker first — documenting one ingredient clears every product that contains it.', action: 'Verify top ingredient', ask: 'Verify my top ingredient' },
+      { intent: 'view_submissions', icon: 'assignment_turned_in', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'Open the review queue', desc: 'Track everything you\u2019ve submitted for WISEcode review in one place.', action: 'Open the review queue', ask: 'Open the review queue' },
+      { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
+    ],
+  },
   intents: [
     { intent: 'verify_top', label: 'Verify my top ingredient', icon: 'verified' },
     { intent: 'use_recommended', label: 'Use the recommended pathway', icon: 'fact_check' },

@@ -903,6 +903,16 @@ export const VERIFICATION_WISEAI = {
   /* The chat can DRIVE every step of the flow (not just answer questions): each
      action chip performs the step on the surface to the right, then confirms
      with a state-aware reply. Q&A chips follow. */
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your verification at a glance',
+    cards: [
+      { intent: 'select_all', icon: 'library_add_check', iconTone: 'brand', pill: { tone: 'up', icon: 'playlist_add_check', text: 'Do next' }, title: 'Select every pre-qualified food', desc: 'Add all pre-qualified SKUs to this verification in one tap — ready to attest.', action: 'Select all foods', ask: 'Select all foods' },
+      { intent: 'go_payment', icon: 'payments', iconTone: 'brand', pill: { tone: 'up', icon: 'payments', text: 'Pay' }, title: 'Review & pay', desc: 'Choose a method, review your total, accept the VSA, and finalize.', action: 'Go to payment', ask: 'Go to payment' },
+      { variant: 'wiseai', intent: 'explain_flow', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Let WISEai run verification', desc: 'Select \u2192 Attest \u2192 Pay — I can drive every step for you.', action: 'How does verification work?', ask: 'How does verification work?' },
+    ],
+  },
   intents: [
     { intent: 'select_all', label: 'Select all foods', icon: 'library_add_check' },
     { intent: 'go_attest', label: 'Continue to attestation', icon: 'fact_check' },

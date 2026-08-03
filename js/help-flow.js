@@ -169,6 +169,16 @@ export const HELP_WISEAI = {
   sub: 'Search help, browse topics, or reach support — ask away.',
   chipsFlow: 'wrap',
   sourceLabel: '',
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Get help fast',
+    cards: [
+      { intent: 'getting_started', icon: 'rocket_launch', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Start here' }, title: 'How do I get started?', desc: 'Add products, then run verification — I\u2019ll pull up the getting-started articles.', action: 'Get started', ask: 'How do I get started?' },
+      { intent: 'verification_help', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Learn' }, title: 'Explain verification', desc: 'Non-UPF vs GRAS — what each one classifies and documents.', action: 'Explain verification', ask: 'Explain verification' },
+      { intent: 'contact', icon: 'support_agent', iconTone: 'brand', pill: { tone: 'up', icon: 'chat', text: 'Support' }, title: 'Contact support', desc: 'Chat here for instant answers, or reach the support team.', action: 'Contact support', ask: 'Contact support' },
+    ],
+  },
   intents: [
     { intent: 'getting_started', label: 'How do I get started?', icon: 'rocket_launch' },
     { intent: 'verification_help', label: 'Explain verification', icon: 'verified' },

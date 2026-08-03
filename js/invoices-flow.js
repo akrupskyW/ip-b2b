@@ -477,6 +477,16 @@ export const INVOICES_WISEAI = {
   chipsFlow: 'wrap',
   sourceLabel: '',
   reply,
+  /* Large "at a glance" cards shown alongside the small chips on the welcome
+     screen — each reuses an existing intent so a click drives the same flow. */
+  scorecards: {
+    label: 'Your invoices at a glance',
+    cards: [
+      { intent: 'outstanding', icon: 'schedule', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What\u2019s outstanding?', desc: 'Invoice-sent or failed payments — settle up right from the row.', action: 'What\u2019s outstanding?', ask: 'What\u2019s outstanding?' },
+      { intent: 'show_failed', icon: 'error', iconTone: 'brand', pill: { tone: 'up', icon: 'autorenew', text: 'Retry' }, title: 'Failed payments', desc: 'Retry any failed charge directly from its row.', action: 'Show failed payments', ask: 'Show failed payments' },
+      { intent: 'download_all', icon: 'download', iconTone: 'brand', pill: { tone: 'up', icon: 'folder_zip', text: 'Export' }, title: 'Download all', desc: 'Grab a ZIP of every invoice for your records.', action: 'Download all', ask: 'Download all' },
+    ],
+  },
   intents: [
     { intent: 'outstanding', label: 'What\u2019s outstanding?', icon: 'schedule' },
     { intent: 'show_paid', label: 'Show paid invoices', icon: 'check_circle' },

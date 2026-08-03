@@ -6,7 +6,11 @@ static HTML/CSS/JS.
 
 ## Structure
 
-- `index.html` — app hub / entry point
+- `index.html` — single primary entry point: the public marketing home for
+  logged-out visitors (redirects signed-in users to `pages/overview.html`)
+- `marketing-app.html`, `marketing-coach.html`, `marketing-enterprise.html`,
+  `marketing-wiseai.html` — marketing sub-pages; all share the nav + footer that
+  `js/marketing-shell.js` injects
 - `pages/` — individual screens (dashboard `overview.html`, `analytics-types.html`,
   `ai-chat.html`, accessibility review, report prototypes in `_reports/`, etc.)
 - `js/` — UI modules (dashboard rendering, WISEai chat/dock, topbar, appearance menu,

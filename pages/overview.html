@@ -99,6 +99,29 @@
     body[data-product-id="dashboard"] {
       padding-left: 16px;
     }
+
+    /* =====================================================================
+       WISEai welcome layout (this page only) — the welcome reads like a chat
+       transcript: it isn't pinned to the top, it sits toward the BOTTOM (just
+       above the input rail) and grows upward as content is added. The large
+       "at a glance" cards start hidden (see cardsHiddenDefault in
+       agent-overview.js), so the welcome leads with the headline + the small
+       intent chips, with no dead space beneath them.
+    ===================================================================== */
+    body[data-product-id="dashboard"] .sc-welcome--cards {
+      justify-content: flex-end;
+      padding-top: 2rem;
+    }
+
+    /* Drop the gap below the small intent chips so they hug the input rail. */
+    body[data-product-id="dashboard"] .sc-welcome .ws-chips {
+      margin-bottom: 0;
+    }
+
+    /* Larger "What can WISEai™ help with?" headline. */
+    body[data-product-id="dashboard"] .sc-welcome .ws-heading {
+      font-size: clamp(1.9rem, 3vw, 2.5rem);
+    }
   </style>
 </head>
 <body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="0" data-default-header="1" data-default-nav-collapsed="1" data-default-dock="left">
