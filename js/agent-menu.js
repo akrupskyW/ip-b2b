@@ -390,7 +390,7 @@ export const WISE_APP_NAV = [
 
   { type: 'section', label: 'Studio' },
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
-  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
+  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html', locked: true },
 
   { type: 'section', label: 'Admin' },
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
@@ -805,7 +805,7 @@ function renderAppNav(prefix, activeId) {
 }
 
 function renderAppItem(prefix, node, activeId) {
-  if (!pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-item');
+  if (node.locked || !pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-item');
   const href = node.slug ? `${prefix}${node.slug}` : '#';
   const isActive = node.id === activeId ? ' is-active' : '';
   return `
@@ -816,7 +816,7 @@ function renderAppItem(prefix, node, activeId) {
 }
 
 function renderAppSubitem(prefix, node, activeId) {
-  if (!pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-subitem');
+  if (node.locked || !pageExists(node.slug)) return renderAppLocked(node, 'menu-nav-subitem');
   const href = node.slug ? `${prefix}${node.slug}` : '#';
   const isActive = node.id === activeId ? ' is-active' : '';
   return `
@@ -851,7 +851,7 @@ function renderAppGroup(prefix, node, activeId) {
 }
 
 function renderAppUpgrade(prefix, node) {
-  const locked = !pageExists(node.slug);
+  const locked = node.locked || !pageExists(node.slug);
   const inner = `
       <span class="menu-nav-upgrade-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
       <span class="menu-nav-upgrade-text">
