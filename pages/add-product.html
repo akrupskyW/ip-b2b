@@ -53,14 +53,13 @@
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
 
-    /* ── Center chat column ──
-       Opens at triple width; the header toggle steps down to narrow / wide. */
+    /* ── Center chat column — always opens single-pane. Holds that width until
+       the Product Details module has given back everything it can, then shrinks
+       rather than letting the row overflow. ── */
     .ap-chat {
-      /* Shrinkable so a narrow viewport squeezes the chat rather than clipping
-         the Product Details / progress modules beside it. */
-      flex: 0 1 720px;
-      width: 720px;
-      min-width: 380px;
+      flex: 0 1 var(--chat-pane-w, 380px);
+      width: var(--chat-pane-w, 380px);
+      min-width: 300px;
       display: flex;
       flex-direction: column;
       background: var(--bg);
@@ -116,8 +115,10 @@
     .ap-attach-pop .fl-more-sep { height: 1px; background: var(--border); margin: 4px 6px; }
 
     /* ── Product Details (NFP) module ──
-       Takes whatever width the chat and progress modules leave behind. */
-    #nfp-panel { flex: 1 1 0%; width: auto; min-width: 300px; display: flex; }
+       Takes whatever width the chat and progress modules leave behind. min-width
+       stays 0 so it gives space back as the window narrows instead of pushing
+       the progress module past the (clipped) edge of the row. */
+    #nfp-panel { flex: 1 1 0%; width: auto; min-width: 0; display: flex; }
     .nfp-inner {
       display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
       border-radius: 16px; border: 1px solid var(--border);
@@ -324,8 +325,14 @@
     .nfp-rcol-empty .nfp-rcol-name { color: var(--text); text-shadow: none; }
     .nfp-rcol-empty .nfp-rcol-brand { color: var(--text-muted); margin-top: 0; }
 
-    /* Product Data (Nutrition Facts) — faithful US label (always light). */
-    .nfp-nf-panel { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; color: #000; border-bottom: 1px solid #e5e7eb; }
+    /* Product Data (Nutrition Facts) — faithful US label (always light). Boxed
+       in the heavy black rule a printed label carries, and held to a readable
+       column so it doesn't stretch across the whole (now much wider) module. */
+    .nfp-nf-panel {
+      background: #fff; font-family: 'DM Sans', system-ui, sans-serif; color: #000;
+      width: calc(100% - 24px); max-width: 460px; margin: 12px auto 14px;
+      border: 3px solid #000;
+    }
     .nfp-nf-title { font-size: 1.45rem; font-weight: 900; line-height: 1.05; padding: 5px 10px 3px; border-bottom: 1px solid #000; display: flex; align-items: center; justify-content: space-between; }
     .nfp-nf-serving { padding: 2px 10px 3px; border-bottom: 8px solid #000; }
     .nfp-nf-spc-row { font-size: 0.7rem; color: #000; padding: 2px 0 1px; border-bottom: 1px solid #000; }
@@ -344,10 +351,8 @@
     .nfp-nf-rule8 { height: 8px; background: #000; }
     .nfp-nf-no-b { border-bottom: none !important; }
     .nfp-nf-footer { border-top: 8px solid #000; padding: 3px 10px 5px; font-size: 0.56rem; color: #000; line-height: 1.45; }
-    /* The module fills the width left over by the chat, so hold the label itself
-       at a readable column and centre it — the section backgrounds still bleed
-       to the panel edges, only the rules and copy are constrained. */
-    .nfp-nf-panel > *,
+    /* Same readable column for the ingredient / allergen block, whose section
+       background still bleeds to the panel edges. */
     .nfp-ingred-wrap > * { max-width: 460px; margin-left: auto; margin-right: auto; }
 
     /* Ingredient / allergen section */
@@ -419,13 +424,17 @@
     html.full-bleed #chat-shell-wrap.menu-brand-integrated #modules-row { gap: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
-    /* Chat width toggle — steps down from the default triple width. */
-    .ap-chat.panel-narrow { flex-basis: 420px; width: 420px; }
+    /* Chat width toggle (matches the shared module's 3-step widen). */
     .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
+    .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
 
     @media (max-width: 1200px) {
-      .ap-chat { flex-basis: 560px; width: 560px; }
       #ap-progress { flex-basis: 250px; width: 250px; }
+    }
+    /* Below this the chat has to give ground too, or Product Details is left
+       too narrow to read the label in. */
+    @media (max-width: 1100px) {
+      .ap-chat { flex-basis: 320px; width: 320px; }
     }
   </style>
 </head>
@@ -470,7 +479,9 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" data-ap="copy"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
                 <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item" role="menuitem" data-ap="restart"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="exit"><span class="material-icons topbar-menu-icon">close</span><span>Back to portfolio</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="close"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="exit"><span class="material-icons topbar-menu-icon">inventory_2</span><span>Back to portfolio</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="ap-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -682,16 +693,17 @@
         pop.innerHTML =
           '<div class="wise-popover-header">Arthur Krupsky</div>' +
           '<div class="wise-popover-actions">' +
-            '<button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications"><span class="material-icons">notifications</span><span>Alerts</span></button>' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
             '<span class="wise-pop-vline" aria-hidden="true"></span>' +
-            '<button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings"><span class="material-icons">tune</span><span>Agents</span></button>' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
           '</div>' +
           '<div class="wise-popover-divider"></div>' +
           '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
-          '<div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>' +
-          '<div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>' +
-          '<div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>' +
-          '<div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
           '<div class="wise-popover-divider"></div>' +
           '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
         positionWisePopover(pop, anchor);
@@ -699,6 +711,8 @@
         activePopover = pop; activeAnchor = anchor;
         anchor.classList.add('is-open');
         pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
           if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }

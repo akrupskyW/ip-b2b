@@ -807,6 +807,11 @@ html.dark .wise-popover-item.is-active {
 html.dark .wise-popover-item.is-locked:hover { background: none; color: var(--text-subtle); }
 .wise-popover-item.is-locked:hover .material-icons { color: var(--text-subtle); }
 .wise-popover-item .wise-popover-lock { margin-left: auto; font-size: 15px; opacity: 0.7; }
+/* Rows that are real links (e.g. Appearance → Accessibility review) keep the
+   row look and gain a trailing "leaves this page" glyph. */
+a.wise-popover-item { text-decoration: none; }
+.wise-popover-item .wise-popover-ext { margin-left: auto; font-size: 14px; opacity: 0.65; }
+.wise-popover-item:hover .wise-popover-ext { opacity: 1; }
 .wise-popover-item .material-icons { font-size: 17px; color: var(--text-subtle); }
 .wise-popover-item:hover .material-icons,
 .wise-popover-item.is-active .material-icons { color: var(--primary); }

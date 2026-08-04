@@ -62,6 +62,9 @@
       box-shadow: var(--shadow-card);
       overflow: hidden;
     }
+    /* Chat width toggle (matches the shared module's 3-step widen). */
+    .sa-chat.panel-wide { flex-basis: 560px; width: 560px; }
+    .sa-chat.panel-triple { flex-basis: 720px; width: 720px; }
     .sa-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
 
     .sa-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
@@ -192,45 +195,9 @@
 
     <!-- Chat + coming-soon modules share the shell's "modules" grid area -->
     <div id="modules-row">
-    <!-- Center chat -->
-    <main class="sa-chat">
-      <div class="chat-topbar">
-        <div class="sc-topbar-lead">
-          <div class="sc-bug">
-            <svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
-          </div>
-          <div class="sc-topbar-titles">
-            <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
-            <span class="sa-topbar-tag">Studio &amp; AI · Private Beta</span>
-          </div>
-        </div>
-        <div class="sc-topbar-controls">
-          <div class="panel-more-wrap" id="sa-chat-menu-wrap">
-            <button type="button" id="sa-chat-menu-btn" class="panel-more-btn" onclick="saToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="sa-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
-            <div id="sa-chat-menu" class="topbar-popover hidden" role="menu">
-              <button type="button" class="topbar-menu-item" role="menuitem" onclick="saCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
-              <div class="topbar-menu-divider"></div>
-              <button type="button" class="topbar-menu-item" role="menuitem" onclick="saRestart(); saCloseChatMenu()"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sa-chat-body">
-        <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
-      </div>
-
-      <div class="chat-input-rail shrink-0">
-        <div class="flex gap-2 items-end" style="display:flex;gap:8px;align-items:flex-end">
-          <div class="fl-input-wrap" style="flex:1">
-            <input id="chat-input" type="text" placeholder="Ask about Studio &amp; AI…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saSend();}" />
-          </div>
-          <button type="button" id="sa-send" class="sa-send-btn" onclick="saSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
-            <span class="material-icons">send</span>
-          </button>
-        </div>
-      </div>
-    </main>
+    <!-- Center chat — the ONE shared WISEai chat module (js/wiseai-chat.js),
+         mounted with Studio & AI–specific content below. -->
+    <main class="sa-chat" id="sa-chat"></main>
 
     <!-- Right coming-soon module -->
     <section class="sa-panel" id="sa-panel">
@@ -475,16 +442,17 @@
         pop.innerHTML =
           '<div class="wise-popover-header">Arthur Krupsky</div>' +
           '<div class="wise-popover-actions">' +
-            '<button type="button" class="wise-pop-action" data-pop-action="notifications" title="Notifications"><span class="material-icons">notifications</span><span>Alerts</span></button>' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
             '<span class="wise-pop-vline" aria-hidden="true"></span>' +
-            '<button type="button" class="wise-pop-action" data-pop-action="agents" title="Agent Settings"><span class="material-icons">tune</span><span>Agents</span></button>' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
           '</div>' +
           '<div class="wise-popover-divider"></div>' +
           '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
-          '<div class="wise-popover-item" data-pop-action="prefs"><span class="material-icons">tune</span>Preferences</div>' +
-          '<div class="wise-popover-item" data-pop-action="apikeys"><span class="material-icons">key</span>API keys</div>' +
-          '<div class="wise-popover-item" data-pop-action="help"><span class="material-icons">help</span>Help</div>' +
-          '<div class="wise-popover-item" data-pop-action="docs"><span class="material-icons">menu_book</span>Docs</div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
           '<div class="wise-popover-divider"></div>' +
           '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
         positionWisePopover(pop, anchor);
@@ -492,6 +460,8 @@
         activePopover = pop; activeAnchor = anchor;
         anchor.classList.add('is-open');
         pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
           if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
@@ -510,141 +480,58 @@
     })();
   </script>
 
-  <!-- Studio & AI chat module: seeds the Frame-1 opening turn + intent chips and
-       answers with waitlist-oriented canned replies (feature is pre-launch). -->
-  <script>
-    (function () {
-      const OWL = document.querySelector('.sc-bug svg').outerHTML;
-      const box = document.getElementById('chat-messages');
-      const input = document.getElementById('chat-input');
+  <!-- Studio & AI chat — mounts the ONE shared WISEai chat module
+       (js/wiseai-chat.js) with Studio & AI–specific content (heading, intent
+       chips, and waitlist-oriented canned replies; the feature is pre-launch). -->
+  <script type="module">
+    import { mountWISEaiChat } from '../js/wiseai-chat.js';
 
-      function esc(s) { return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
-      function nowLabel() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
-      function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
+    /* Page-specific content — the same template, Studio & AI's own copy. */
+    const INTENTS = [
+      { intent: 'studio', icon: 'description', label: 'What is Studio?' },
+      { intent: 'ai', icon: 'auto_awesome', label: 'What can AI do?' },
+      { intent: 'join', icon: 'how_to_reg', label: 'Join the waitlist' },
+      { intent: 'launch', icon: 'schedule', label: 'When does it launch?' },
+    ];
 
-      function addUser(text) {
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
-        box.scrollTop = box.scrollHeight;
-      }
-      function addWISEai(html, opts) {
-        const meta = opts && opts.noMeta ? '' : metaRow();
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + meta + '</div></div>');
-        box.scrollTop = box.scrollHeight;
-      }
-      function showTyping() {
-        const el = document.createElement('div');
-        el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
-        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing"><span></span><span></span><span></span></span><span class="sc-typing-label">WISEai is typing…</span></span></div>';
-        box.appendChild(el); box.scrollTop = box.scrollHeight;
-        return el;
-      }
-      function offerChips(chips) {
-        if (!chips || !chips.length) return;
-        const row = document.createElement('div');
-        row.className = 'sc-reply-chips';
-        row.innerHTML = chips.map(c => '<button type="button" class="chip' + (c.primary ? ' chip--primary' : '') + '" data-key="' + c.key + '"><span class="material-icons">' + c.icon + '</span>' + esc(c.label) + '</button>').join('');
-        row.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) saChip(b.dataset.key, b.textContent.trim()); });
-        box.appendChild(row); box.scrollTop = box.scrollHeight;
-      }
+    const INTENT_REPLIES = {
+      studio: '<b>Studio</b> is your reports library — verified food-intelligence reports for your whole catalog. It runs GRAS safety, WISEscore™ Insights, and Deep Nutrient reports automatically against your claimed products, all filtered, rolled up, and exportable. See the full <b>Studio</b> column to the right.',
+      ai: '<b>AI</b> is an analyst built on the same verified data behind every Studio report — now answerable. Ask why a score is what it is, compare products head to head, or describe a report and have AI assemble it from a prompt. See the full <b>AI</b> column to the right.',
+      join: 'Done — you\'re on the waitlist. I\'ll email <b>akrupsky@wisecode.ai</b> and unlock <b>Studio</b> &amp; <b>AI</b> in your workspace the moment your wave opens. Nothing else to do.',
+      launch: '<b>Studio</b> and <b>AI</b> are rolling out to small waves now. Waitlist members get access first as spots open — there are <b>100</b> beta spots remaining. A few Deep Nutrient reports (like Omega 3:6 ratios) follow in <b>Q3 2026</b>.',
+    };
 
-      /* Opening turn — plain conversational copy at the standard chat scale.
-         The whole pitch (both products + the waitlist offer) is explained here
-         in the transcript, so "Join the waitlist" is just another intent. */
-      const OPENER = '<span class="sa-lead">Studio &amp; AI are two new products, now in private beta.</span><b>Studio</b> turns your portfolio into verified, board-ready reports. <b>AI</b> lets you ask your verified data anything and build reports of your own — everything that\'s launching is in the panel on the right.';
-      const OPENER_2 = 'Both launch to a small group first, and there\'s <b>one waitlist</b> for the pair. Join it and I\'ll flip on beta access for your account the moment your wave opens — nothing else to fill out. <b>100</b> beta spots remaining.';
+    const DEFAULT_REPLY = '<b>Studio</b> and <b>AI</b> are still in private beta, so I can\'t run that live just yet. Join the waitlist and you\'ll be first in when your wave opens — until then, everything that\'s launching is in the panel on the right.';
 
-      const STARTER_CHIPS = [
-        { key: 'studio', icon: 'description', label: 'What is Studio?' },
-        { key: 'ai', icon: 'auto_awesome', label: 'What can AI do?' },
-        { key: 'join', icon: 'how_to_reg', label: 'Join the waitlist', primary: true },
-        { key: 'launch', icon: 'schedule', label: 'When does it launch?' },
-      ];
+    /* Free-text routing mirrors the old keyword matcher so typed questions still
+       land on the right canned answer. */
+    function reply(text, intent) {
+      if (intent && INTENT_REPLIES[intent] != null) return INTENT_REPLIES[intent];
+      const t = String(text || '').toLowerCase();
+      if (/studio|report/.test(t)) return INTENT_REPLIES.studio;
+      if (/\bai\b|analyst|chat/.test(t)) return INTENT_REPLIES.ai;
+      if (/join|waitlist|sign ?up|access|beta/.test(t)) return INTENT_REPLIES.join;
+      if (/when|launch|release|available|date/.test(t)) return INTENT_REPLIES.launch;
+      return DEFAULT_REPLY;
+    }
 
-      const REPLIES = {
-        studio: {
-          html: '<b>Studio</b> is your reports library — verified food-intelligence reports for your whole catalog. It runs GRAS safety, WISEscore™ Insights, and Deep Nutrient reports automatically against your claimed products, all filtered, rolled up, and exportable. See the full <b>Studio</b> column to the right.',
-          chips: [{ key: 'ai', icon: 'auto_awesome', label: 'What can AI do?' }, { key: 'join', icon: 'how_to_reg', label: 'Join the waitlist', primary: true }],
-        },
-        ai: {
-          html: '<b>AI</b> is an analyst built on the same verified data behind every Studio report — now answerable. Ask why a score is what it is, compare products head to head, or describe a report and have AI assemble it from a prompt. See the full <b>AI</b> column to the right.',
-          chips: [{ key: 'studio', icon: 'description', label: 'What is Studio?' }, { key: 'join', icon: 'how_to_reg', label: 'Join the waitlist', primary: true }],
-        },
-        join: {
-          html: 'Done — you\'re on the waitlist. I\'ll email <b>akrupsky@wisecode.ai</b> and unlock <b>Studio</b> &amp; <b>AI</b> in your workspace the moment your wave opens. Nothing else to do.',
-          chips: [{ key: 'studio', icon: 'description', label: 'What is Studio?' }, { key: 'ai', icon: 'auto_awesome', label: 'What can AI do?' }],
-        },
-        launch: {
-          html: '<b>Studio</b> and <b>AI</b> are rolling out to small waves now. Waitlist members get access first as spots open — there are <b>100</b> beta spots remaining. A few Deep Nutrient reports (like Omega 3:6 ratios) follow in <b>Q3 2026</b>.',
-          chips: [{ key: 'join', icon: 'how_to_reg', label: 'Join the waitlist', primary: true }],
-        },
-      };
-
-      const DEFAULT_REPLY = {
-        html: '<b>Studio</b> and <b>AI</b> are still in private beta, so I can\'t run that live just yet. Join the waitlist and you\'ll be first in when your wave opens — until then, everything that\'s launching is in the panel on the right.',
-        chips: STARTER_CHIPS,
-      };
-
-      function respond(reply) {
-        const t = showTyping();
-        setTimeout(() => {
-          t.remove();
-          addWISEai(reply.html);
-          offerChips(reply.chips);
-        }, 520);
-      }
-
-      window.saChip = function (key, label) {
-        addUser(label || (STARTER_CHIPS.find(c => c.key === key) || {}).label || key);
-        respond(REPLIES[key] || DEFAULT_REPLY);
-      };
-
-      window.saSend = function () {
-        const text = (input.value || '').trim();
-        if (!text) return;
-        input.value = '';
-        addUser(text);
-        const t = text.toLowerCase();
-        let key = null;
-        if (/studio|report/.test(t)) key = 'studio';
-        else if (/\bai\b|analyst|chat/.test(t)) key = 'ai';
-        else if (/join|waitlist|sign ?up|access|beta/.test(t)) key = 'join';
-        else if (/when|launch|release|available|date/.test(t)) key = 'launch';
-        respond(key ? REPLIES[key] : DEFAULT_REPLY);
-      };
-
-      // ── More-menu ──
-      window.saToggleChatMenu = function (e) {
-        if (e) e.stopPropagation();
-        const m = document.getElementById('sa-chat-menu');
-        const btn = document.getElementById('sa-chat-menu-btn');
-        const open = m.classList.toggle('hidden') === false;
-        btn.setAttribute('aria-expanded', String(open));
-      };
-      window.saCloseChatMenu = function () {
-        document.getElementById('sa-chat-menu')?.classList.add('hidden');
-        document.getElementById('sa-chat-menu-btn')?.setAttribute('aria-expanded', 'false');
-      };
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('#sa-chat-menu-wrap')) window.saCloseChatMenu();
+    const host = document.getElementById('sa-chat');
+    if (host) {
+      mountWISEaiChat(host, {
+        title: 'WISEai™',
+        heading: 'Studio & AI — now in private beta',
+        sub: 'Studio turns your portfolio into verified, board-ready reports. AI lets you ask your verified data anything and build reports of your own.',
+        placeholder: 'Ask about Studio & AI…',
+        chipsFlow: 'wrap',
+        inlineChips: true,
+        sourceLabel: '',
+        userInitials: 'AK',
+        historyKey: 'wise-chat-history:studio-ai',
+        intents: INTENTS,
+        intentReplies: INTENT_REPLIES,
+        reply,
       });
-      window.saCopyTranscript = function (el) {
-        const text = Array.from(box.querySelectorAll('.sc-line')).map(l => {
-          const you = l.classList.contains('sc-line-you');
-          return (you ? 'You: ' : 'WISEai: ') + (l.querySelector('.sc-line-body')?.innerText || '').trim();
-        }).join('\n\n');
-        navigator.clipboard?.writeText(text);
-        if (el) { const s = el.querySelector('span:last-child'); const o = s.textContent; s.textContent = 'Copied!'; setTimeout(() => s.textContent = o, 1400); }
-        window.saCloseChatMenu();
-      };
-      window.saRestart = function () { box.innerHTML = ''; seed(); };
-
-      function seed() {
-        addWISEai(OPENER, { noMeta: true });
-        addWISEai(OPENER_2);
-        offerChips(STARTER_CHIPS);
-      }
-      seed();
-    })();
+    }
   </script>
 </body>
 </html>

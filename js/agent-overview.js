@@ -1366,8 +1366,8 @@ function closeAvatarPopover() {
 function renderAvatarBody(pop) {
   const who = APP_IDENTITY?.name || 'Maya Chen';
   /* This build locks the account menu down to the two live surfaces —
-     Invoices & Downloads (a working link) and Sign out. Everything else
-     (Alerts / Agents quick actions plus My profile, Preferences, API keys,
+     My profile (a working link) and Sign out. Everything else
+     (Alerts / Agents quick actions plus Invoices, Preferences, API keys,
      Help, Docs) renders inert with a trailing lock glyph. */
   pop.innerHTML = `
     <div class="wise-popover-header">${escHtml(who)}</div>
@@ -1385,8 +1385,8 @@ function renderAvatarBody(pop) {
       </button>
     </div>
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">person</span>My profile<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads</div>
+    <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
+    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
     <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
     <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
     <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>

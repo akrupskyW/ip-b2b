@@ -1240,28 +1240,26 @@
     });
     fileInput?.addEventListener('change', () => onFile(fileInput.files && fileInput.files[0]));
 
-    /* Chat width toggle — the pane opens at triple width, so the 3-step cycle
-       steps DOWN from there (triple → narrow → wide → triple). */
-    const WIDTH_ICONS = ['width_full', 'width_normal', 'width_wide'];
-    const WIDTH_TITLES = ['Narrow the chat', 'Widen chat', 'Back to full width'];
+    // Chat width toggle — 3-step widen (single → wide → triple), like the shared module.
+    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
+    const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Reset chat width'];
     let widthTier = 0;
     const widthBtn = $('ap-width');
     function syncWidth() {
       const chat = document.querySelector('.ap-chat');
       if (chat) {
-        chat.classList.toggle('panel-narrow', widthTier === 1);
-        chat.classList.toggle('panel-wide', widthTier === 2);
+        chat.classList.toggle('panel-wide', widthTier >= 1);
+        chat.classList.toggle('panel-triple', widthTier >= 2);
       }
       if (widthBtn) {
         const ic = widthBtn.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = WIDTH_ICONS[widthTier];
-        widthBtn.classList.toggle('is-on', widthTier === 0);
-        widthBtn.setAttribute('aria-pressed', widthTier === 0 ? 'true' : 'false');
+        widthBtn.classList.toggle('is-on', widthTier >= 1);
+        widthBtn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
         widthBtn.title = WIDTH_TITLES[widthTier];
       }
     }
     widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 3; syncWidth(); });
-    syncWidth();
 
     // NFP width toggle — single pane ↔ double pane (photo column on the right).
     const nfpWidthBtn = $('nfp-width');
@@ -1296,6 +1294,7 @@
       menu.classList.add('hidden'); menuBtn.classList.remove('is-open');
       const a = item.dataset.ap;
       if (a === 'restart') restart();
+      else if (a === 'close') restart();
       else if (a === 'exit') window.location.href = 'product-portfolio.html';
       else if (a === 'copy') { copyTranscript(item); }
       else if (a === 'history') { addWISEai('This session\'s draft lives here until you save it. Past products live in your <strong>Product Portfolio</strong>.'); }

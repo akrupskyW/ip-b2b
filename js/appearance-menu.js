@@ -88,6 +88,21 @@ function colorblindTypeSection() {
     <div class="wise-popover-divider"></div>`;
 }
 
+/** Link out to the standalone WCAG audit. The review lives in pages/, so the
+    href is resolved against wherever the calling shell is mounted (app pages
+    sit in pages/, the root shell one level up) — same rule as auth-guard.js. */
+function accessibilityReviewSection() {
+  let href = 'pages/accessibility-review.html';
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) href = 'accessibility-review.html';
+  } catch (e) { /* non-browser context — keep the default */ }
+  return `
+    <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review">
+      <span class="material-icons">accessibility_new</span>Accessibility review
+      <span class="wise-popover-ext material-icons" aria-hidden="true">arrow_outward</span>
+    </a>`;
+}
+
 /** "Dock Chat" segmented control (left / center / right) for the WISEai dock. */
 function wiseaiDockSection(mode) {
   const btn = (m, icon, label) =>
@@ -159,5 +174,7 @@ export function buildAppearanceBody({
       <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
       <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
     </div>
+    <div class="wise-popover-divider"></div>
+    ${accessibilityReviewSection()}
   `;
 }
