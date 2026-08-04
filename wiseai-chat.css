@@ -237,7 +237,7 @@ html.dark .chat-topbar {
 
 .sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
-.sc-topbar-titles .topbar-title[data-wiseai-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
+.sc-topbar-titles .topbar-title { flex-shrink: 0; white-space: nowrap; }
 html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 
 .topbar-agents-btn {
@@ -430,6 +430,20 @@ html.dark .chat-messages-area { background: transparent; }
 }
 html.dark .sc-welcome { background: transparent; }
 .sc-welcome.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+
+/* Keep the large welcome cards (scorecards) and the intent chips centered no
+   matter how wide the chat gets (e.g. the full-width WISEai surface). The
+   welcome column already centers its items; capping these full-width blocks to
+   a comfortable max-width + auto side margins keeps them as a centered cluster
+   instead of stretching edge-to-edge. Harmless in the narrow docked layout,
+   where the cap is wider than the dock. */
+.sc-welcome > .ws-scorecards-section,
+.sc-welcome > .ws-chips-wrap,
+.sc-welcome > .ws-chips {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ws-pulse-ring {

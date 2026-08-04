@@ -160,6 +160,7 @@ export const AGENTS_WISEAI = {
     cards: [
       { intent: 'enable_all', icon: 'play_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'bolt', text: 'Do next' }, title: 'Enable all agents', desc: 'Turn the whole pipeline on so every agent runs automatically.', action: 'Enable all agents', ask: 'Enable all agents' },
       { intent: 'portfolio', icon: 'business_center', iconTone: 'brand', pill: { tone: 'up', icon: 'open_in_new', text: 'Open' }, title: 'Open the Portfolio Agent', desc: 'The top of your agent tree — data, identity, eligibility, verification and recipes.', action: 'Open Portfolio Agent', ask: 'Open the Portfolio Agent' },
+      { intent: 'pause_all', icon: 'pause_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'pause_circle', text: 'Pause' }, title: 'Pause all agents', desc: 'Stop the pipeline — nothing runs automatically until you re-enable it.', action: 'Pause all agents', ask: 'Pause all agents' },
       { variant: 'wiseai', intent: 'autonomy', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'What does autonomy mean?', desc: 'Manual, Assisted, or Autonomous — I\u2019ll explain how each mode behaves.', action: 'Explain autonomy', ask: 'What does autonomy mean?' },
     ],
   },

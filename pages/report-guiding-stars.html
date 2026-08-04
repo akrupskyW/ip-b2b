@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<!--
+  WISE · Guiding Stars Action Plan (Report)
+
+  A standalone report module docked to the right of the persistent WISEai chat,
+  sharing the shell's "modules" row with the reusable app nav (left). Mirrors the
+  reformulation.html shell: nav module, chat module (with inline intent chips),
+  and one content module on the right. Report-specific styles are prefixed `gs-`;
+  the chat + shell reuse the shared WISE tokens/classes from wise.css.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISEai — Guiding Stars Action Plan · Mondelēz International</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ Guiding Stars Action Plan — page shell ═══════════
+       Two synced modules share the shell's "modules" grid area: the WISEai chat
+       (left, reusable surface) and the Action Plan report (right). Everything
+       bespoke here is prefixed gs-; the chat reuses wise.css chat classes. */
+
+    :root {
+      --sec-green-10: rgba(50, 169, 102, 0.12);
+      --sec-red-10: rgba(220, 48, 56, 0.12);
+      --ter-amber-10: rgba(255, 196, 52, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Nav brand strip height (matches every other WISE page) ── */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+
+    /* ── Shared carded module frame ── */
+    .gs-card {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    /* Left chat column (fixed width, carded) */
+    .gs-chat { flex: 0 0 var(--chat-pane-w, 360px); width: var(--chat-pane-w, 360px); background: var(--bg); }
+    .gs-chat.panel-wide { flex-basis: 520px; width: 520px; }
+    .gs-chat.panel-triple { flex-basis: 700px; width: 700px; }
+    .gs-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
+    .gs-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
+    .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
+    .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
+
+    /* ── Intent chips — trail the latest WISEai turn, inline in the transcript.
+       One tap drives the report (scroll + filter) and continues the chat. ── */
+    .gs-chips-inline { margin: 11px 0 2px; }
+    .gs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .gs-chip {
+      display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.25;
+      padding: 6px 11px; border-radius: 9999px; cursor: pointer; text-align: left;
+      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);
+      transition: background .16s, border-color .16s, transform .1s;
+    }
+    .gs-chip:hover { background: var(--surface-3); transform: translateY(-1px); }
+    .gs-chip:active { transform: translateY(0); }
+    .gs-chip .material-icons { font-size: 14px; flex: 0 0 auto; color: var(--primary); }
+    html.dark .gs-chip .material-icons { color: var(--primary-bright, #8B9FAF); }
+    .gs-chip--go { background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary) 40%, transparent); color: var(--primary); }
+    html.dark .gs-chip--go { color: var(--primary-bright, #8B9FAF); }
+    .gs-chip--go:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+
+    /* Composer */
+    .chat-input-rail { padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+
+    /* ═══════════ Report module ═══════════ */
+    .gs-report { flex: 1 1 auto; min-width: 460px; }
+    .gs-report .gs-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 0 40px; }
+
+    /* Module entrance — same staggered bounce as every other WISE module. */
+    .gs-chat { transform-origin: left center; animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
+    .gs-report { transform-origin: right center; animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.14s both; }
+    @media (prefers-reduced-motion: reduce) { .gs-chat, .gs-report { animation: none !important; } }
+
+    /* ── Hero header — solid dark banner, report title left / company logo right ── */
+    .gs-hero {
+      position: relative;
+      display: flex; align-items: center; gap: 24px;
+      padding: 26px 30px;
+      color: #fff;
+      background: #131c2f;
+    }
+    .gs-hero-main { flex: 1 1 auto; min-width: 0; }
+    .gs-hero-title {
+      font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.5rem;
+      letter-spacing: -.01em; line-height: 1.14; margin: 0;
+    }
+    .gs-hero-sub { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,.78); max-width: 62ch; }
+
+    /* Company logo lockup (placeholder wordmark — swap for a brand asset when available). */
+    .gs-hero-logo { flex: 0 0 auto; }
+    .gs-hero-logo-plate {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+      padding: 12px 18px; border-radius: 12px; background: #fff;
+      box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    }
+    .gs-hero-logo-word {
+      position: relative; font-family: 'DM Sans', sans-serif; font-weight: 800;
+      font-size: 22px; letter-spacing: -.01em; line-height: 1; color: #4a2b8c;
+    }
+    .gs-hero-logo-spark { color: #d1268f; font-size: 13px; margin-left: 2px; vertical-align: super; }
+    .gs-hero-logo-sub {
+      font-size: 9.5px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #7a6aa3;
+    }
+
+    /* ── Content inset ── */
+    .gs-wrap { padding: 22px 30px 0; }
+    .gs-section { margin-top: 30px; scroll-margin-top: 12px; }
+    .gs-section:first-child { margin-top: 0; }
+    .gs-flash { animation: gsFlash 1.5s ease-out both; border-radius: 12px; }
+    @keyframes gsFlash {
+      0% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 55%, transparent); }
+      70% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 55%, transparent); }
+      100% { box-shadow: 0 0 0 3px transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) { .gs-flash { animation: none !important; } }
+
+    .gs-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    .gs-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -.01em; }
+    .gs-sec-sub { font-size: 12px; color: var(--text-muted); margin: 4px 0 14px; line-height: 1.5; }
+
+    /* ── Scorecards ── */
+    .gs-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .gs-stat {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      padding: 14px 12px; border-radius: 10px; text-align: center; cursor: pointer;
+      background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    html.dark .gs-stat { background: rgba(255,255,255,0.04); }
+    .gs-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
+    .gs-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .gs-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    html.dark .gs-stat.is-active { background: color-mix(in srgb, var(--primary) 24%, transparent); border-color: var(--primary-bright, #8B9FAF); }
+    .gs-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
+    .gs-stat-label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); line-height: 1.3; }
+    .gs-stat--alert .gs-stat-num { color: var(--sec-red); }
+    .gs-stat--star .gs-stat-num { color: var(--ter-amber); }
+    .gs-stat--accent .gs-stat-num { color: var(--primary); }
+    html.dark .gs-stat--accent .gs-stat-num { color: var(--primary-bright, #8B9FAF); }
+
+    /* ── Executive summary callout ── */
+    .gs-exec {
+      margin-top: 18px; padding: 16px 18px; border-radius: 12px;
+      background: var(--ter-amber-10); border: 1px solid color-mix(in srgb, var(--ter-amber) 34%, transparent);
+      font-size: 13px; line-height: 1.6; color: var(--text);
+    }
+    .gs-exec b { font-weight: 800; }
+    .gs-exec-lead { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #8a6400; margin-bottom: 8px; }
+    html.dark .gs-exec-lead { color: #FFD98A; }
+    .gs-exec-lead .material-icons { font-size: 16px; }
+
+    /* ── Toolbar / search ── */
+    .gs-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .gs-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; }
+    .gs-search-inline > .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .gs-search {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
+      font-family: inherit; font-size: 13px; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 9999px; outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    html.dark .gs-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .gs-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .gs-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+
+    /* ── Data table ── */
+    .gs-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .gs-thead, .gs-trow {
+      display: grid; align-items: center; gap: 12px; padding: 11px 16px;
+      grid-template-columns: 104px minmax(0, 2.2fr) 78px minmax(0, 2.5fr) 132px;
+    }
+    .gs-trow { align-items: start; }
+    .gs-trow > * { align-self: center; }
+    .gs-thead {
+      background: var(--surface-2); border-bottom: 1px solid var(--border);
+    }
+    html.dark .gs-thead { background: rgba(255,255,255,0.03); }
+    /* Header cells — match the app-wide sortable header style (srt-* arrow). */
+    .gs-th { display: inline-flex; align-items: center; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
+    .gs-trow { border-bottom: 1px solid var(--border); transition: background .14s ease; }
+    .gs-trow:last-child { border-bottom: 0; }
+    .gs-trow:hover { background: var(--surface-2); }
+    html.dark .gs-trow:hover { background: rgba(255,255,255,0.03); }
+    .gs-trow.gs-hidden { display: none; }
+
+    /* Product cell — thumbnail + brand/name */
+    .gs-prodcell { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .gs-thumb {
+      width: 40px; height: 40px; flex: 0 0 auto; border-radius: 9px; overflow: hidden;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary-soft); color: var(--primary); border: 1px solid var(--border);
+    }
+    html.dark .gs-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+    .gs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gs-thumb .material-icons { font-size: 22px; }
+    .gs-prod { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .gs-prod-name { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.25; }
+    .gs-prod-brand { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle); }
+
+    .gs-stars { display: inline-flex; align-items: center; gap: 1px; color: var(--ter-amber); }
+    .gs-stars .material-icons { font-size: 15px; }
+    .gs-stars .is-empty { color: var(--text-subtle); opacity: .38; }
+
+    /* Move cell — the move on top, impact directly below */
+    .gs-move { font-size: 12px; color: var(--text); line-height: 1.4; }
+    .gs-move-impact { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; font-weight: 800; color: var(--primary); }
+    html.dark .gs-move-impact { color: var(--primary-bright, #8B9FAF); }
+    .gs-move-impact .material-icons { font-size: 14px; }
+
+    /* Row CTA — blue (primary) pill */
+    .gs-cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      height: 30px; padding: 0 13px; border-radius: 9999px; cursor: pointer; white-space: nowrap;
+      font-family: inherit; font-weight: 700; font-size: 11px; text-decoration: none;
+      border: 1px solid var(--primary); background: var(--primary); color: #fff;
+      transition: filter .15s ease, transform .1s ease;
+    }
+    html.dark .gs-cta { border-color: var(--primary-bright, #8B9FAF); background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .gs-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .gs-cta .material-icons { font-size: 14px; }
+    .gs-cta--ghost { background: transparent; color: var(--primary); }
+    html.dark .gs-cta--ghost { background: transparent; color: var(--primary-bright, #8B9FAF); }
+    .gs-cta--ghost:hover { background: var(--primary-soft); }
+
+    .gs-empty { padding: 22px 16px; text-align: center; font-size: 12.5px; color: var(--text-subtle); }
+    .gs-table-foot { padding: 11px 16px; font-size: 11.5px; color: var(--text-subtle); border-top: 1px solid var(--border); background: var(--surface-2); }
+    html.dark .gs-table-foot { background: rgba(255,255,255,0.02); }
+
+    .gs-blocker { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: var(--sec-red-10); color: var(--sec-red-text); }
+    html.dark .gs-blocker { background: color-mix(in srgb, var(--sec-red) 26%, transparent); }
+    .gs-blockers { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+
+    /* Segment tag on a row (which bucket a product is in) */
+    .gs-seg { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .gs-seg--quick { background: var(--primary-soft); color: var(--primary); }
+    html.dark .gs-seg--quick { color: var(--primary-bright, #8B9FAF); }
+    .gs-seg--near { background: var(--ter-amber-10); color: #8a6400; }
+    html.dark .gs-seg--near { color: #FFD98A; }
+    .gs-seg--stuck { background: var(--sec-red-10); color: var(--sec-red-text); }
+    .gs-seg--earn { background: color-mix(in srgb, var(--ter-amber) 20%, transparent); color: #8a6400; }
+    html.dark .gs-seg--earn { color: #FFD98A; }
+
+    /* ── Shared horizontal bar (matches the app dash health-bar look) ── */
+    .gs-hbar-track {
+      position: relative; height: 22px; border-radius: 9999px; overflow: hidden;
+      background: color-mix(in srgb, var(--bar-color, var(--primary)) 15%, transparent);
+    }
+    .gs-hbar-fill {
+      position: absolute; left: 0; top: 0; bottom: 0; min-width: 34px;
+      display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+      border-radius: 9999px; background: var(--bar-color, var(--primary));
+      transition: width .8s cubic-bezier(.2,.7,.3,1);
+    }
+    .gs-hbar-num { font-size: 12px; font-weight: 800; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(8,15,26,.35); }
+
+    /* ── Competitive contrast — grouped bars per category ── */
+    .gs-comp { display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px; }
+    .gs-comp-row { min-width: 0; }
+    .gs-comp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .gs-comp-cat { font-size: 13px; font-weight: 800; color: var(--text); }
+    .gs-comp-gap { font-size: 11px; font-weight: 800; color: var(--sec-red-text); }
+    .gs-comp-bars { display: flex; flex-direction: column; gap: 7px; }
+    .gs-cbar { display: grid; grid-template-columns: 116px 1fr; align-items: center; gap: 12px; }
+    .gs-cbar-key { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+    .gs-cbar-key .material-icons { font-size: 12px; vertical-align: -2px; margin-right: 3px; }
+
+    /* ── Pillar cards ── */
+    .gs-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+    .gs-pillar { padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); }
+    html.dark .gs-pillar { background: rgba(255,255,255,0.03); }
+    .gs-pillar-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); margin-bottom: 10px; }
+    html.dark .gs-pillar-icon { color: var(--primary-bright, #8B9FAF); }
+    .gs-pillar-icon .material-icons { font-size: 18px; }
+    .gs-pillar-title { font-size: 13px; font-weight: 800; color: var(--text); margin: 0 0 4px; }
+    .gs-pillar-body { font-size: 11.5px; line-height: 1.55; color: var(--text-muted); margin: 0; }
+
+    /* ── Distribution bars ── */
+    .gs-bars { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .gs-bar-row { display: grid; grid-template-columns: 148px 1fr; align-items: center; gap: 14px; }
+    .gs-bar-label { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .gs-footnote { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; line-height: 1.6; color: var(--text-subtle); }
+
+    /* Full-bleed / responsive */
+    html.full-bleed .gs-card { border: 0; border-radius: 0; box-shadow: none; }
+    html.full-bleed #modules-row { gap: 0; }
+    html.full-bleed body { padding: 0; }
+    @media (max-width: 1180px) {
+      #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
+      .gs-report { min-width: 620px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module (shared WISE app nav) -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <div id="modules-row">
+
+      <!-- ═══════════ 1 · WISEai chat (reusable surface) ═══════════ -->
+      <main class="gs-card gs-chat">
+        <div class="chat-topbar">
+          <div class="sc-topbar-lead">
+            <div class="sc-bug">
+              <svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
+            </div>
+            <div class="sc-topbar-titles">
+              <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
+              <span class="gs-topbar-tag">Action Plan · Guiding Stars</span>
+            </div>
+          </div>
+          <div class="sc-topbar-controls">
+            <div class="panel-more-wrap" id="gs-chat-menu-wrap">
+              <button type="button" id="gs-chat-menu-btn" class="panel-more-btn" onclick="gsToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="gs-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <div id="gs-chat-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsExportPlan(); gsCloseChatMenu()"><span class="material-icons topbar-menu-icon">download</span><span>Export action plan</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset conversation</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" id="gs-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
+        </div>
+
+        <div class="gs-chat-body">
+          <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
+        </div>
+
+        <div class="chat-input-rail shrink-0">
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div class="fl-input-wrap" style="flex:1">
+              <input id="chat-input" type="text" placeholder="Ask WISEai about the action plan…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();gsSend();}" />
+            </div>
+            <button type="button" id="gs-send" onclick="gsSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
+              <span class="material-icons">send</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ═══════════ 2 · Guiding Stars Action Plan report ═══════════ -->
+      <section class="gs-card gs-report" id="gs-report">
+        <div class="gs-body" id="gs-scroll">
+
+          <!-- Hero -->
+          <div class="gs-hero">
+            <div class="gs-hero-main">
+              <h1 class="gs-hero-title">Guiding Stars Action Plan</h1>
+              <p class="gs-hero-sub">A prioritized path to more stars across 628 SKUs. WISEai ranked every product by how little it would take to earn its next star, then grouped the portfolio into quick wins, near-misses, and deeper reformulations.</p>
+            </div>
+            <div class="gs-hero-logo" aria-label="Mondelēz International">
+              <div class="gs-hero-logo-plate">
+                <span class="gs-hero-logo-word">Mondelēz<span class="gs-hero-logo-spark">✦</span></span>
+                <span class="gs-hero-logo-sub">International</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="gs-wrap">
+
+            <!-- Scorecards -->
+            <div class="gs-section" id="sec-overview">
+              <p class="gs-sec-sub" style="margin:0 0 12px">Tap a scorecard to filter the action plan below.</p>
+              <div class="gs-stats">
+                <button type="button" class="gs-stat" data-filter="all">
+                  <span class="gs-stat-num">628</span>
+                  <span class="gs-stat-label">All products</span>
+                </button>
+                <button type="button" class="gs-stat gs-stat--alert" data-filter="zero">
+                  <span class="gs-stat-num">491</span>
+                  <span class="gs-stat-label">Zero-star today</span>
+                </button>
+                <button type="button" class="gs-stat gs-stat--star" data-filter="earn">
+                  <span class="gs-stat-num">137</span>
+                  <span class="gs-stat-label">Earning ≥1 star</span>
+                </button>
+                <button type="button" class="gs-stat gs-stat--accent" data-filter="quick">
+                  <span class="gs-stat-num">113</span>
+                  <span class="gs-stat-label">One-move quick wins</span>
+                </button>
+                <button type="button" class="gs-stat gs-stat--accent" data-filter="near">
+                  <span class="gs-stat-num">26</span>
+                  <span class="gs-stat-label">Near-misses</span>
+                </button>
+                <button type="button" class="gs-stat gs-stat--accent" data-filter="stuck">
+                  <span class="gs-stat-num">352</span>
+                  <span class="gs-stat-label">Deeper work</span>
+                </button>
+              </div>
+
+              <div class="gs-exec">
+                <div class="gs-exec-lead"><span class="material-icons">lightbulb</span>Executive summary — where the stars are</div>
+                <p style="margin:0">
+                  <b>78% of the portfolio (491 SKUs) earns no star today</b>, but the gap is thinner than it looks. <b>113 products are a single reformulation away</b> from their first star — most just need added sugar under the 40%-of-calories cap or one debit trimmed below its per-100&nbsp;kcal threshold. Clear those and portfolio star-earning products jump from <b>137 → 250 (+82%)</b>. A further <b>26 near-misses</b> reach a star with two light moves. The heaviest concentration of zero-star SKUs sits in the <b>Cookies &amp; Crackers</b> lines, which is also where you trail the category leader most.
+                </p>
+              </div>
+            </div>
+
+            <!-- The action plan — one table, segmented by the scorecards above -->
+            <div class="gs-section" id="sec-plan">
+              <div class="gs-sec-head">
+                <h2 class="gs-sec-title">The action plan</h2>
+              </div>
+              <p class="gs-sec-sub">Every product WISEai flagged, ranked by effort to the next star. Filter with the scorecards above or search below — quick wins, near-misses, and deeper work all live in one list.</p>
+
+              <div class="gs-toolbar">
+                <div class="gs-search-inline" id="gs-search-wrap">
+                  <span class="material-icons">search</span>
+                  <input type="text" class="gs-search" id="gs-search" placeholder="Filter by product or brand…" aria-label="Filter products" autocomplete="off" />
+                </div>
+              </div>
+
+              <div class="gs-table" id="gs-table">
+                <div class="gs-thead" id="gs-head">
+                  <span class="gs-th srt-sortable" data-sort="segment">Segment</span>
+                  <span class="gs-th srt-sortable" data-sort="product">Product</span>
+                  <span class="gs-th srt-sortable" data-sort="current">Current</span>
+                  <span class="gs-th srt-sortable" data-sort="move">Recommended move</span>
+                  <span class="gs-th">Action</span>
+                </div>
+                <div id="gs-body"></div>
+                <div class="gs-empty" id="gs-empty" hidden>No products match.</div>
+                <div class="gs-table-foot"><span id="gs-foot"></span></div>
+              </div>
+            </div>
+
+            <!-- 4 · Competitive contrast -->
+            <div class="gs-section" id="sec-competitive">
+              <div class="gs-sec-head">
+                <h2 class="gs-sec-title">Competitive contrast</h2>
+              </div>
+              <p class="gs-sec-sub">Average Guiding Stars rating by category vs. the current category leader on shelf. Red is where the gap is widest.</p>
+
+              <div class="gs-comp" id="gs-comp"></div>
+
+              <div class="gs-pillars">
+                <div class="gs-pillar">
+                  <span class="gs-pillar-icon"><span class="material-icons">bolt</span></span>
+                  <p class="gs-pillar-title">Sugar is the #1 lever</p>
+                  <p class="gs-pillar-body">Added sugar over the 40%-of-calories cap disqualifies 61% of zero-star SKUs. It's the single most common blocker — and the easiest to model.</p>
+                </div>
+                <div class="gs-pillar">
+                  <span class="gs-pillar-icon"><span class="material-icons">grass</span></span>
+                  <p class="gs-pillar-title">Fiber earns cheap credits</p>
+                  <p class="gs-pillar-body">A named whole-grain ingredient plus fiber to 2.8&nbsp;g/100&nbsp;kcal adds up to +3 credits — enough to flip 40 near-zero products.</p>
+                </div>
+                <div class="gs-pillar">
+                  <span class="gs-pillar-icon"><span class="material-icons">science</span></span>
+                  <p class="gs-pillar-title">Cut the additive count</p>
+                  <p class="gs-pillar-body">Dropping to zero additives-to-limit removes a standing −1 debit on 220 SKUs and clears a clean-label blocker at the same time.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5 · Distribution -->
+            <div class="gs-section" id="sec-distribution">
+              <div class="gs-sec-head">
+                <h2 class="gs-sec-title">Where the portfolio's zero-star SKUs concentrate</h2>
+              </div>
+              <p class="gs-sec-sub">Count of zero-star products by brand line. The taller the bar, the bigger the opportunity — and the bigger the competitive exposure.</p>
+              <div class="gs-bars" id="gs-bars"></div>
+            </div>
+
+            <div class="gs-footnote">
+              Ratings modeled with the Guiding Stars General Foods algorithm on current label data. Quick-win and near-miss moves assume no change to serving size or category; competitive averages use the latest on-shelf snapshot. Figures are illustrative for this planning view — open any product in the Reformulation Studio to validate against its live formula.
+            </div>
+
+          </div><!-- /.gs-wrap -->
+        </div>
+      </section>
+
+    </div><!-- /#modules-row -->
+  </div>
+
+  <!-- Shared WISE navigation + brand strip (same pattern as reformulation.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'reports' });
+    }
+
+    applyStoredTextSize();
+  </script>
+
+  <!-- Appearance + profile popovers for the nav footer (mirrors reformulation.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEaiDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        pop.addEventListener('click', (ev) => {
+          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
+          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
+          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
+          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
+          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML =
+          '<div class="wise-popover-header">Arthur Krupsky</div>' +
+          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <!-- ═══════════ Report + chat engine ═══════════ -->
+  <script>
+    (function () {
+      const OWL = document.querySelector('.sc-bug svg').outerHTML;
+      const box = document.getElementById('chat-messages');
+      const input = document.getElementById('chat-input');
+      const scroller = document.getElementById('gs-scroll');
+      const STUDIO = 'reformulation.html';
+
+      const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+      const stars = (n) => {
+        let out = '';
+        for (let i = 0; i < 3; i++) out += `<span class="material-icons${i < n ? '' : ' is-empty'}">star${i < n ? '' : '_border'}</span>`;
+        return `<span class="gs-stars" aria-label="${n} of 3 stars">${out}</span>`;
+      };
+
+      /* ── Report data (illustrative — Mondelēz brand lines) ──
+         One flat list. `seg` buckets each product; the scorecards filter on it,
+         so the whole plan lives in a single table rather than three. */
+      const SEG = {
+        quick: { label: 'Quick win',   cls: 'gs-seg--quick' },
+        near:  { label: 'Near-miss',   cls: 'gs-seg--near' },
+        stuck: { label: 'Deeper work', cls: 'gs-seg--stuck' },
+        earn:  { label: 'Earning',     cls: 'gs-seg--earn' },
+      };
+      /* Portfolio-wide counts each segment represents (the table shows a sample). */
+      const TOTALS = { all: 628, zero: 491, earn: 137, quick: 113, near: 26, stuck: 352 };
+
+      const PRODUCTS = [
+        // Quick wins — one move to a first star
+        { brand: 'Wheat Thins', name: 'Wheat Thins Original', icon: 'bakery_dining', seg: 'quick', stars: 0, rec: 'Cut added sugar 4 g → under the 40%-kcal cap', tag: '→ ★' },
+        { brand: 'Triscuit', name: 'Triscuit Original', icon: 'grain', seg: 'quick', stars: 0, rec: 'Lower sodium to <240 mg / 100 kcal', tag: '→ ★' },
+        { brand: 'belVita', name: 'belVita Blueberry Breakfast', icon: 'breakfast_dining', seg: 'quick', stars: 0, rec: 'Add fiber to 2.8 g / 100 kcal (+2 credits)', tag: '→ ★' },
+        { brand: 'Honey Maid', name: 'Honey Maid Grahams', icon: 'cookie', seg: 'quick', stars: 0, rec: 'Name a whole-grain ingredient (+1 credit)', tag: '→ ★' },
+        { brand: 'Ritz', name: 'Ritz Whole Wheat', icon: 'bakery_dining', seg: 'quick', stars: 0, rec: 'Trim saturated fat below 1 g / 100 kcal', tag: '→ ★' },
+        { brand: 'Chips Ahoy!', name: 'Chips Ahoy! Reduced Sugar', icon: 'cookie', seg: 'quick', stars: 0, rec: 'Cut added sugar 3 g → clears the cap', tag: '→ ★' },
+        { brand: 'Nabisco', name: 'Nabisco Ginger Snaps', icon: 'cookie', seg: 'quick', stars: 0, rec: 'Drop 1 additive to limit (−1 debit removed)', tag: '→ ★' },
+        { brand: 'Good Thins', name: 'Good Thins Rice & Sea Salt', icon: 'bakery_dining', seg: 'quick', stars: 0, rec: 'Lower sodium to <120 mg / 100 kcal', tag: '→ ★' },
+        { brand: 'belVita', name: 'belVita Cinnamon Brown Sugar', icon: 'breakfast_dining', seg: 'quick', stars: 0, rec: 'Cut added sugar 5 g → under the cap', tag: '→ ★' },
+        { brand: 'Wheat Thins', name: 'Wheat Thins Reduced Fat', icon: 'bakery_dining', seg: 'quick', stars: 0, rec: 'Add fiber to 1.4 g / 100 kcal (+1 credit)', tag: '→ ★' },
+        { brand: 'Premium', name: 'Premium Whole Grain Saltines', icon: 'grain', seg: 'quick', stars: 0, rec: 'Lower sodium one tier (−1 debit removed)', tag: '→ ★' },
+        { brand: 'Teddy Grahams', name: 'Teddy Grahams Honey', icon: 'cookie', seg: 'quick', stars: 0, rec: 'Cut added sugar 4 g → under the cap', tag: '→ ★' },
+        { brand: 'Triscuit', name: 'Triscuit Thin Crisps', icon: 'grain', seg: 'quick', stars: 0, rec: 'Name a whole-grain ingredient (+1 credit)', tag: '→ ★' },
+        { brand: 'Nutter Butter', name: 'Nutter Butter Bites', icon: 'cookie', seg: 'quick', stars: 0, rec: 'Trim saturated fat below 1 g / 100 kcal', tag: '→ ★' },
+        // Near-misses — two light moves
+        { brand: 'Oreo', name: 'Oreo Thins Original', icon: 'cookie', seg: 'near', stars: 0, rec: 'Cut added sugar under cap · trim saturated fat below 1 g / 100 kcal', tag: '2 moves → ★' },
+        { brand: 'Chips Ahoy!', name: 'Chips Ahoy! Original', icon: 'cookie', seg: 'near', stars: 0, rec: 'Cut added sugar under cap · add fiber to 1.4 g / 100 kcal', tag: '2 moves → ★' },
+        { brand: 'Ritz', name: 'Ritz Original', icon: 'bakery_dining', seg: 'near', stars: 0, rec: 'Lower sodium one tier · name a whole-grain ingredient', tag: '2 moves → ★' },
+        { brand: 'belVita', name: 'belVita Chocolate', icon: 'breakfast_dining', seg: 'near', stars: 0, rec: 'Cut added sugar under cap · remove 2 additives to limit', tag: '2 moves → ★' },
+        { brand: 'Nilla', name: 'Nilla Wafers', icon: 'cookie', seg: 'near', stars: 0, rec: 'Cut added sugar under cap · add fiber to 2.8 g / 100 kcal', tag: '2 moves → ★' },
+        { brand: 'Honey Maid', name: 'Honey Maid Cinnamon', icon: 'cookie', seg: 'near', stars: 0, rec: 'Cut added sugar one tier · name a whole-grain ingredient', tag: '2 moves → ★' },
+        // Deeper work — multiple blockers
+        { brand: 'Oreo', name: 'Oreo Original', icon: 'cookie', seg: 'stuck', stars: 0, rec: 'Reformulate crème + reduce sugar ~35%', blockers: ['Added sugar', 'Sat fat', 'Additives'] },
+        { brand: 'Sour Patch Kids', name: 'Sour Patch Kids', icon: 'cake', seg: 'stuck', stars: 0, rec: 'Category rethink — confection has no path', blockers: ['Added sugar', 'No credits'] },
+        { brand: 'Chips Ahoy!', name: 'Chips Ahoy! Chewy', icon: 'cookie', seg: 'stuck', stars: 0, rec: 'Swap fat system + sugar reduction', blockers: ['Added sugar', 'Sat fat', 'Trans fat'] },
+        { brand: 'Swedish Fish', name: 'Swedish Fish', icon: 'cake', seg: 'stuck', stars: 0, rec: 'No viable move within category', blockers: ['Added sugar', 'No credits'] },
+        { brand: 'Toblerone', name: 'Toblerone Milk', icon: 'cake', seg: 'stuck', stars: 0, rec: 'Recipe + portion redesign', blockers: ['Added sugar', 'Sat fat'] },
+        { brand: 'Cadbury', name: 'Cadbury Dairy Milk', icon: 'cake', seg: 'stuck', stars: 0, rec: 'Recipe redesign; review on M algorithm', blockers: ['Added sugar', 'Sat fat'] },
+        // Already earning — protect on the next change
+        { brand: 'Triscuit', name: 'Triscuit Hint of Sea Salt', icon: 'grain', seg: 'earn', stars: 2, rec: 'Holding 2★ — protect fiber & sodium on the next change', tag: 'Qualifies' },
+        { brand: 'belVita', name: 'belVita Protein', icon: 'breakfast_dining', seg: 'earn', stars: 1, rec: 'Holding 1★ — keep added sugar under the cap', tag: 'Qualifies' },
+        { brand: 'Good Thins', name: 'Good Thins Corn & Sea Salt', icon: 'bakery_dining', seg: 'earn', stars: 1, rec: 'Holding 1★ — watch sodium creep on reformulation', tag: 'Qualifies' },
+        { brand: 'Wheat Thins', name: 'Wheat Thins Whole Grain', icon: 'bakery_dining', seg: 'earn', stars: 1, rec: 'Holding 1★ — protect the whole-grain credit', tag: 'Qualifies' },
+        { brand: 'Nabisco', name: 'Nabisco 100% Whole Wheat', icon: 'grain', seg: 'earn', stars: 2, rec: 'Holding 2★ — a fiber bump reaches 3★', tag: 'Qualifies' },
+      ];
+
+      const COMPETITIVE = [
+        { cat: 'Crackers', you: 0.8, them: 2.1 },
+        { cat: 'Breakfast biscuits', you: 1.1, them: 2.4 },
+        { cat: 'Cookies', you: 0.2, them: 1.3 },
+        { cat: 'Graham / snack', you: 0.9, them: 1.8 },
+        { cat: 'Confection', you: 0.0, them: 0.4 },
+      ];
+
+      const BARS = [
+        { label: 'Cookies', val: 168 },
+        { label: 'Crackers', val: 121 },
+        { label: 'Confection', val: 96 },
+        { label: 'Breakfast biscuits', val: 44 },
+        { label: 'Graham / snack', val: 38 },
+        { label: 'Gum & mints', val: 24 },
+      ];
+
+      /* ── Render the report ── */
+      function studioLink(label) {
+        return `<a class="gs-cta" href="${STUDIO}"><span class="material-icons">tune</span>${label}</a>`;
+      }
+      function thumb(icon) {
+        return `<span class="gs-thumb"><span class="material-icons">${icon || 'inventory_2'}</span></span>`;
+      }
+      function prodCell(p) {
+        return `<div class="gs-prodcell">${thumb(p.icon)}<div class="gs-prod"><span class="gs-prod-brand">${esc(p.brand)}</span><span class="gs-prod-name">${esc(p.name)}</span></div></div>`;
+      }
+
+      /* View copy so sorting never mutates source order. */
+      let VIEW = PRODUCTS.slice();
+      let activeFilter = 'all';
+      let search = '';
+
+      function inFilter(p) {
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'zero') return p.seg === 'quick' || p.seg === 'near' || p.seg === 'stuck';
+        return p.seg === activeFilter;
+      }
+      function recCell(p) {
+        const sub = p.blockers
+          ? `<div class="gs-blockers">${p.blockers.map((b) => `<span class="gs-blocker">${esc(b)}</span>`).join('')}</div>`
+          : `<span class="gs-move-impact"><span class="material-icons">${p.seg === 'earn' ? 'check_circle' : 'trending_up'}</span>${esc(p.tag || '')}</span>`;
+        return `<div><div class="gs-move">${esc(p.rec)}</div>${sub}</div>`;
+      }
+      function renderTable() {
+        const q = search.trim().toLowerCase();
+        const body = document.getElementById('gs-body');
+        let shown = 0;
+        body.innerHTML = VIEW.map((p) => {
+          const hit = inFilter(p) && (!q || (p.name + ' ' + p.brand).toLowerCase().includes(q));
+          if (hit) shown++;
+          return `<div class="gs-trow${hit ? '' : ' gs-hidden'}">
+            <div><span class="gs-seg ${SEG[p.seg].cls}">${SEG[p.seg].label}</span></div>
+            ${prodCell(p)}
+            ${stars(p.stars)}
+            ${recCell(p)}
+            <div>${studioLink('Open in Studio')}</div>
+          </div>`;
+        }).join('');
+        document.getElementById('gs-empty').hidden = shown !== 0;
+        const noun = activeFilter === 'all' ? 'products' : activeFilter === 'zero' ? 'zero-star products'
+          : activeFilter === 'earn' ? 'products already earning' : SEG[activeFilter].label.toLowerCase() + ' products';
+        document.getElementById('gs-foot').textContent = `Showing ${shown} sampled · ${TOTALS[activeFilter]} ${noun} in the full portfolio`;
+      }
+
+      /* Shared bar animator — grows every fill from 0 to its data-w on next frame. */
+      function animateBars(scope) {
+        requestAnimationFrame(() => {
+          (scope || document).querySelectorAll('.gs-hbar-fill[data-w]').forEach((f) => { f.style.width = f.dataset.w + '%'; });
+        });
+      }
+
+      function renderCompetitive() {
+        const w = (v) => Math.round((v / 3) * 100);
+        document.getElementById('gs-comp').innerHTML = COMPETITIVE.map((c) => {
+          const gap = (c.them - c.you).toFixed(1);
+          return `<div class="gs-comp-row">
+            <div class="gs-comp-head"><span class="gs-comp-cat">${esc(c.cat)}</span><span class="gs-comp-gap">Gap −${gap}★</span></div>
+            <div class="gs-comp-bars">
+              <div class="gs-cbar">
+                <span class="gs-cbar-key"><span class="material-icons">storefront</span>Your portfolio</span>
+                <div class="gs-hbar-track" style="--bar-color:#c98a2e"><div class="gs-hbar-fill" style="--bar-color:#c98a2e;width:0" data-w="${w(c.you)}"><span class="gs-hbar-num">${c.you.toFixed(1)}★</span></div></div>
+              </div>
+              <div class="gs-cbar">
+                <span class="gs-cbar-key"><span class="material-icons">emoji_events</span>Category leader</span>
+                <div class="gs-hbar-track"><div class="gs-hbar-fill" style="width:0" data-w="${w(c.them)}"><span class="gs-hbar-num">${c.them.toFixed(1)}★</span></div></div>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+        animateBars(document.getElementById('gs-comp'));
+      }
+
+      function renderBars() {
+        const max = Math.max(...BARS.map((b) => b.val));
+        document.getElementById('gs-bars').innerHTML = BARS.map((b) => `
+          <div class="gs-bar-row">
+            <span class="gs-bar-label">${esc(b.label)}</span>
+            <div class="gs-hbar-track"><div class="gs-hbar-fill" style="width:0" data-w="${Math.round((b.val / max) * 100)}"><span class="gs-hbar-num">${b.val}</span></div></div>
+          </div>`).join('');
+        animateBars(document.getElementById('gs-bars'));
+      }
+
+      renderTable();
+      renderCompetitive();
+      renderBars();
+
+      /* Search filters the action-plan table live. */
+      document.getElementById('gs-search').addEventListener('input', (e) => { search = e.target.value; renderTable(); });
+
+      /* ── Sortable headers (matches the app-wide srt-* header style) ── */
+      const SRT_ARROW = '<span class="srt-arrow" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      const cmpText = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+      const SEG_ORDER = { quick: 0, near: 1, stuck: 2, earn: 3 };
+      const keyOf = (p, k) =>
+        k === 'product' ? p.brand + ' ' + p.name :
+        k === 'move' ? p.rec :
+        k === 'current' ? String(p.stars) :
+        k === 'segment' ? String(SEG_ORDER[p.seg]) : '';
+      (function initSort() {
+        const head = document.getElementById('gs-head');
+        head.querySelectorAll('.srt-sortable').forEach((h) => {
+          if (!h.querySelector('.srt-arrow')) h.insertAdjacentHTML('beforeend', SRT_ARROW);
+          h.setAttribute('role', 'button');
+          h.setAttribute('tabindex', '0');
+          const run = () => {
+            const dir = h.getAttribute('data-srt-dir') === 'asc' ? -1 : 1;
+            head.querySelectorAll('.srt-sortable').forEach((x) => { if (x !== h) x.removeAttribute('data-srt-dir'); });
+            h.setAttribute('data-srt-dir', dir === 1 ? 'asc' : 'desc');
+            const k = h.dataset.sort;
+            VIEW.sort((a, b) => cmpText(keyOf(a, k), keyOf(b, k)) * dir);
+            renderTable();
+          };
+          h.addEventListener('click', run);
+          h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(); } });
+        });
+      })();
+
+      /* Scroll a section into view + flash it. */
+      function gotoSection(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.remove('gs-flash');
+        void el.offsetWidth;
+        el.classList.add('gs-flash');
+      }
+
+      /* Scorecards drive the single table's filter. */
+      const statBtns = Array.from(document.querySelectorAll('.gs-stat[data-filter]'));
+      function setFilter(f, scroll) {
+        activeFilter = f;
+        statBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.filter === f));
+        renderTable();
+        if (scroll) gotoSection('sec-plan');
+      }
+      statBtns.forEach((b) => b.addEventListener('click', () => setFilter(b.dataset.filter, false)));
+      setFilter('all', false); // default active
+
+      /* ── Chat ── */
+      function metaRow() {
+        const t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return `<div class="sc-line-meta"><span class="sc-line-time">${t}</span></div>`;
+      }
+      function stripChips() { box.querySelectorAll('.gs-chips-inline').forEach((n) => n.remove()); }
+
+      /* Intent chips — each drives the report (scroll/filter) and continues the chat. */
+      const CHIPS = [
+        { id: 'quickwins', icon: 'bolt', cls: 'gs-chip--go', label: 'Show the quick wins', filter: 'quick',
+          reply: 'Filtering the plan to the <b>113 one-move quick wins</b>. <b>Wheat Thins Original</b>, <b>Triscuit</b>, and the <b>belVita</b> line are the fastest: each earns its first star with a single change. Clearing all 113 lifts star-earning products from <b>137 → 250</b>.' },
+        { id: 'nearmiss', icon: 'trending_up', label: 'Which are near-misses?', filter: 'near',
+          reply: 'Showing the <b>26 near-misses</b> — two light moves each, usually sugar under the cap plus one credit. <b>Oreo Thins</b> and <b>Chips Ahoy! Original</b> are the highest-volume; batch them into one reformulation brief and you cover most of the group.' },
+        { id: 'competitive', icon: 'compare_arrows', label: 'Where are we losing to competitors?', goto: 'sec-competitive',
+          reply: 'The widest gaps are in <b>Cookies (−1.1★)</b> and <b>Breakfast biscuits (−1.3★)</b>. Crackers trail by −1.3★ too. That\'s where zero-star SKUs concentrate <i>and</i> where the shelf leader is furthest ahead — so it\'s the highest-leverage place to invest.' },
+        { id: 'distribution', icon: 'bar_chart', label: 'How are our stars distributed?', goto: 'sec-distribution',
+          reply: 'Zero-star SKUs cluster hard in <b>Cookies (168)</b> and <b>Crackers (121)</b>. Confection (96) mostly has no viable path within category. So Cookies + Crackers is where a reformulation program pays back fastest.' },
+        { id: 'email', icon: 'mail', label: 'Draft an action-plan email', goto: null,
+          reply: 'Here\'s a starting draft:<br><br><i>Subject: Guiding Stars — Q3 reformulation priorities</i><br>Team — we have <b>113 SKUs one move from a star</b> and <b>26 two-move near-misses</b>. Proposal: sprint 1 tackles the Wheat Thins / Triscuit / belVita quick wins (sugar + fiber), sprint 2 batches the Oreo Thins & Chips Ahoy near-misses. Target: +139 star-earning products, closing most of the Cookies & Crackers gap vs. the category leader. Full breakdown in the WISE Studio report.' },
+      ];
+      function chipsHtml() {
+        const inner = CHIPS.map((c) =>
+          `<button type="button" class="gs-chip ${c.cls || ''}" data-chip="${c.id}"><span class="material-icons">${c.icon}</span>${esc(c.label)}</button>`
+        ).join('');
+        return `<div class="gs-chips-inline"><div class="gs-chips">${inner}</div></div>`;
+      }
+
+      function addUser(text) {
+        stripChips();
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
+        box.scrollTop = box.scrollHeight;
+      }
+      function addWISEai(html, opts) {
+        stripChips();
+        const chips = (opts && opts.chips) ? chipsHtml() : '';
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + chips + metaRow() + '</div></div>');
+        box.scrollTop = box.scrollHeight;
+      }
+      function showTyping() {
+        const el = document.createElement('div');
+        el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
+        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing"><span></span><span></span><span></span></span><span class="sc-typing-label">WISEai is reading the plan…</span></span></div>';
+        box.appendChild(el); box.scrollTop = box.scrollHeight;
+        return el;
+      }
+      function respond(html) {
+        const t = showTyping();
+        setTimeout(() => { t.remove(); addWISEai(html, { chips: true }); }, 480);
+      }
+
+      /* Chip click → scroll/filter the report + continue the chat. */
+      box.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-chip]');
+        if (!btn) return;
+        const chip = CHIPS.find((c) => c.id === btn.dataset.chip);
+        if (!chip) return;
+        addUser(chip.label);
+        if (chip.filter) setFilter(chip.filter, true);
+        else if (chip.goto) gotoSection(chip.goto);
+        respond(chip.reply);
+      });
+
+      window.gsSend = function () {
+        const text = (input.value || '').trim();
+        if (!text) return;
+        input.value = '';
+        addUser(text);
+        const t = text.toLowerCase();
+        let chip = null;
+        if (/quick|win|fast|easy|one move/.test(t)) chip = CHIPS[0];
+        else if (/near|two|almost|close/.test(t)) chip = CHIPS[1];
+        else if (/compet|leader|rival|shelf|gap/.test(t)) chip = CHIPS[2];
+        else if (/distribut|where|cluster|concentr|brand/.test(t)) chip = CHIPS[3];
+        else if (/email|draft|write|summary|summar/.test(t)) chip = CHIPS[4];
+        if (chip) { if (chip.filter) setFilter(chip.filter, true); else if (chip.goto) gotoSection(chip.goto); respond(chip.reply); }
+        else respond('This action plan covers <b>628 SKUs</b>. I can walk you through the <b>quick wins</b>, the <b>near-misses</b>, where you\'re <b>losing to competitors</b>, or how your zero-star products are <b>distributed</b> — tap a chip below or ask away.');
+      };
+
+      /* Chat width toggle (3-step widen, matches the shared module). */
+      (function () {
+        const btn = document.getElementById('gs-width');
+        const chat = document.querySelector('.gs-chat');
+        const STEPS = ['', 'panel-wide', 'panel-triple'];
+        let i = 0;
+        btn.addEventListener('click', () => {
+          chat.classList.remove('panel-wide', 'panel-triple');
+          i = (i + 1) % STEPS.length;
+          if (STEPS[i]) chat.classList.add(STEPS[i]);
+          btn.setAttribute('aria-pressed', String(i !== 0));
+        });
+      })();
+
+      /* Executive summary — mirrors the callout in the report so the chat opens
+         with the same headline the report leads with. */
+      const EXEC_MSG = 'Good morning, Arthur. Here\'s the <b>executive summary</b> of your <b>Guiding Stars Action Plan</b> for Mondelēz:<br><br><b>78% of the portfolio (491 SKUs) earns no star today</b>, but the gap is thinner than it looks. <b>113 products are one reformulation away</b> from their first star — most just need added sugar under the 40%-of-calories cap or one debit trimmed. Clear those and star-earning products jump <b>137 → 250 (+82%)</b>. A further <b>26 near-misses</b> reach a star with two light moves. The heaviest concentration of zero-star SKUs sits in <b>Cookies &amp; Crackers</b> — also where you trail the category leader most.';
+
+      function openConversation() {
+        box.innerHTML = '';
+        addWISEai(EXEC_MSG);
+        addWISEai('That\'s the whole plan in one table below — filter it with the scorecards, or ask me anything. Where should we start?', { chips: true });
+      }
+      openConversation();
+
+      /* ── Chat overflow menu (three-dot) ── */
+      const menuWrap = document.getElementById('gs-chat-menu-wrap');
+      const menuBtn = document.getElementById('gs-chat-menu-btn');
+      const menuPop = document.getElementById('gs-chat-menu');
+      window.gsCloseChatMenu = function () {
+        menuPop.classList.add('hidden');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      };
+      window.gsToggleChatMenu = function (e) {
+        if (e) e.stopPropagation();
+        const open = menuPop.classList.contains('hidden');
+        menuPop.classList.toggle('hidden', !open);
+        menuBtn.setAttribute('aria-expanded', String(open));
+      };
+      document.addEventListener('click', (e) => { if (!menuWrap.contains(e.target)) window.gsCloseChatMenu(); });
+      window.gsCopyTranscript = function (btn) {
+        const lines = Array.from(box.querySelectorAll('.sc-line')).map((l) => {
+          const who = l.classList.contains('sc-line-you') ? 'You' : 'WISEai';
+          const body = l.querySelector('.sc-line-body');
+          const txt = body ? (body.cloneNode(true)) : null;
+          if (txt) txt.querySelectorAll('.sc-line-meta, .gs-chips-inline').forEach((n) => n.remove());
+          return `${who}: ${(txt ? txt.textContent : '').trim().replace(/\s+/g, ' ')}`;
+        }).filter(Boolean);
+        const text = lines.join('\n\n');
+        navigator.clipboard?.writeText(text).then(() => {
+          const label = btn.querySelector('span:last-child');
+          const prev = label.textContent; label.textContent = 'Copied!';
+          setTimeout(() => { label.textContent = prev; window.gsCloseChatMenu(); }, 900);
+        }).catch(() => window.gsCloseChatMenu());
+      };
+      window.gsExportPlan = function () { window.location.href = STUDIO; };
+      window.gsRestart = function () { setFilter('all', false); openConversation(); box.scrollTop = 0; };
+    })();
+  </script>
+
+  <!-- App-wide sortable-table styles (injects the shared srt-* header arrow CSS). -->
+  <script src="../js/sortable-tables.js"></script>
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

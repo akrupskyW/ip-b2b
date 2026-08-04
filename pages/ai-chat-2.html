@@ -3410,6 +3410,9 @@
       max-width: 864px;
       margin: 0 auto 1.5rem;
     }
+    /* Large "at a glance" overview cards are hidden by default; the three-dot
+       "Show overview cards" toggle reveals them. */
+    .sc-cards-hidden .ws-scorecards-section { display: none; }
     .ws-scorecards-bar {
       display: flex;
       align-items: center;
@@ -6167,7 +6170,6 @@
       import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
-      import { initWISEaiTooltips } from '../js/wiseai-tooltip.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody } from '../js/appearance-menu.js';
       Object.assign(window, {
@@ -6266,11 +6268,6 @@
         },
       });
       applyStoredTextSize();
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => initWISEaiTooltips());
-      } else {
-        initWISEaiTooltips();
-      }
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
       <button type="button" id="topbar-menu-toggle" class="lir-btn topbar-menu-toggle" data-tip="Menu" title="Collapse menu to icons" aria-label="Collapse menu to icons">
@@ -6684,7 +6681,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
-            <span class="topbar-title" data-wiseai-tip tabindex="0">WISEai<sup class="title-tm">™</sup></span>
+            <span class="topbar-title">WISEai<sup class="title-tm">™</sup></span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-icons" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -6721,6 +6718,11 @@
               <span>Share</span>
             </button>
             <div class="topbar-menu-divider"></div>
+            <button type="button" class="topbar-menu-item" onclick="toggleOverviewCards(); closeAllMoreMenus()">
+              <span class="material-icons topbar-menu-icon" id="wiseai-cards-icon">visibility</span>
+              <span id="wiseai-cards-label">Show overview cards</span>
+            </button>
+            <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item topbar-menu-item--danger" onclick="restartConversation(); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">close</span>
               <span>Close conversation</span>
@@ -6734,7 +6736,7 @@
       <div class="flex flex-1 overflow-hidden relative">
         <div id="chat-messages" class="chat-messages-area" aria-live="polite" aria-atomic="false"></div>
 
-        <div id="welcome-screen">
+        <div id="welcome-screen" class="sc-cards-hidden">
             <!-- WISE logo + soft expanding rings -->
             <div class="ws-logo-wrap">
                 <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -8260,6 +8262,30 @@
       closeTopbarMenu();
       closeWISEaiMenu();
     }
+
+    /* Large "at a glance" overview cards: hidden by default, toggled from the
+       three-dot menu, with the choice remembered per surface. */
+    var OVERVIEW_CARDS_KEY = 'wise-cards-hidden:ai-chat-2';
+    function applyOverviewCards() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var stored;
+      try { stored = localStorage.getItem(OVERVIEW_CARDS_KEY); } catch (_) { stored = null; }
+      var hidden = stored === null ? true : stored === '1';
+      ws.classList.toggle('sc-cards-hidden', hidden);
+      var icon = document.getElementById('wiseai-cards-icon');
+      var label = document.getElementById('wiseai-cards-label');
+      if (icon) icon.textContent = hidden ? 'visibility' : 'visibility_off';
+      if (label) label.textContent = hidden ? 'Show overview cards' : 'Hide overview cards';
+    }
+    function toggleOverviewCards() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var willHide = !ws.classList.contains('sc-cards-hidden');
+      try { localStorage.setItem(OVERVIEW_CARDS_KEY, willHide ? '1' : '0'); } catch (_) {}
+      applyOverviewCards();
+    }
+    applyOverviewCards();
 
     function applyChatTheme(theme) {
       const isDark = theme === 'dark';

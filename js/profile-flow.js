@@ -471,6 +471,8 @@ export const PROFILE_WISEAI = {
     cards: [
       { intent: 'logo', icon: 'image', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Do next' }, title: 'Upload your brand logo', desc: 'Add or replace your logo — paste an image URL here and I\u2019ll import it.', action: 'Upload brand logo', ask: 'Upload brand logo' },
       { intent: 'address', icon: 'home', iconTone: 'brand', pill: { tone: 'up', icon: 'edit', text: 'Edit' }, title: 'Edit mailing address', desc: 'Update street, city, state and zip — just tell me the new details.', action: 'Edit address', ask: 'Edit mailing address' },
+      { intent: 'rename_org', icon: 'badge', iconTone: 'brand', pill: { tone: 'up', icon: 'edit', text: 'Edit' }, title: 'Rename organization', desc: 'Update your org\u2019s display name — just tell me the new one.', action: 'Rename organization', ask: 'Rename organization' },
+      { intent: 'banner', icon: 'panorama', iconTone: 'brand', pill: { tone: 'up', icon: 'panorama', text: 'Brand' }, title: 'Set brand banner', desc: 'Add or replace your profile banner image.', action: 'Set brand banner', ask: 'Set brand banner' },
       { intent: 'save', icon: 'save', iconTone: 'brand', pill: { tone: 'up', icon: 'save', text: 'Save' }, title: 'Save changes', desc: 'Write your profile edits — I\u2019ll confirm exactly what changed.', action: 'Save changes', ask: 'Save changes' },
     ],
   },

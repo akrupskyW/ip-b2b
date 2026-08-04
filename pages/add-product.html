@@ -582,7 +582,6 @@
     import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
     import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
-    import { initWISEaiTooltips } from '../js/wiseai-tooltip.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
     import { buildAppearanceBody } from '../js/appearance-menu.js';
 
@@ -616,8 +615,6 @@
     }
 
     applyStoredTextSize();
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initWISEaiTooltips());
-    else initWISEaiTooltips();
   </script>
 
   <!-- Appearance + profile popovers for the nav footer (mirrors reformulation.html). -->

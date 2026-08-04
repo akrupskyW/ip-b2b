@@ -251,6 +251,8 @@ export const PREFERENCES_WISEAI = {
       { intent: 'toggle_theme', icon: 'dark_mode', iconTone: 'brand', pill: { tone: 'up', icon: 'contrast', text: 'Do next' }, title: 'Switch light / dark', desc: 'Flip the theme everywhere — saved to your preferences.', action: 'Switch theme', ask: 'Switch light / dark' },
       { intent: 'bigger_text', icon: 'format_size', iconTone: 'brand', pill: { tone: 'up', icon: 'text_increase', text: 'Adjust' }, title: 'Make text bigger', desc: 'Bump interface text up a notch for easier reading.', action: 'Make text bigger', ask: 'Make text bigger' },
       { intent: 'dock_right', icon: 'view_sidebar', iconTone: 'brand', pill: { tone: 'up', icon: 'view_sidebar', text: 'Layout' }, title: 'Move chat to the right', desc: 'Dock WISEai on the right across the whole app.', action: 'Move chat right', ask: 'Move chat to the right' },
+      { intent: 'mute_email', icon: 'notifications_off', iconTone: 'brand', pill: { tone: 'up', icon: 'notifications_off', text: 'Notify' }, title: 'Mute email notifications', desc: 'Silence emails — you\u2019ll still see in-app alerts.', action: 'Mute email', ask: 'Mute email notifications' },
+      { intent: 'reduce_motion', icon: 'motion_photos_off', iconTone: 'brand', pill: { tone: 'up', icon: 'motion_photos_off', text: 'Adjust' }, title: 'Reduce motion', desc: 'Minimize animations and transitions across the app.', action: 'Reduce motion', ask: 'Reduce motion' },
     ],
   },
   intents: [

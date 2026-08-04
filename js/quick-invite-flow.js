@@ -249,6 +249,8 @@ export const QUICK_INVITE_WISEAI = {
       { intent: 'need_attention', icon: 'priority_high', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, metric: '3', metricUnit: ' invites', title: 'Need attention', desc: 'Expired or unaccepted past 7 days — resend or cancel them.', action: 'What needs attention?', ask: 'What needs attention?' },
       { intent: 'show_pending', icon: 'hourglass_top', iconTone: 'brand', pill: { tone: 'up', icon: 'hourglass_top', text: 'Pending' }, metric: '4', metricUnit: ' pending', title: 'Awaiting a response', desc: 'Nudge or cancel the invites still waiting to be accepted.', action: 'Show pending', ask: 'Show pending invites' },
       { intent: 'show_all', icon: 'history', iconTone: 'brand', pill: { tone: 'up', icon: 'history', text: 'All' }, metric: '24', metricUnit: ' total', title: 'All invitations', desc: 'Every invite you\u2019ve sent, most recent first.', action: 'Show all invites', ask: 'Show all invites' },
+      { intent: 'show_accepted', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Accepted' }, title: 'Accepted invitations', desc: '5 people have joined from your invites.', action: 'Show accepted', ask: 'Show accepted' },
+      { intent: 'show_cancelled', icon: 'cancel', iconTone: 'brand', pill: { tone: 'up', icon: 'cancel', text: 'Cancelled' }, title: 'Cancelled invitations', desc: 'Invites you withdrew — 12 in total.', action: 'Show cancelled', ask: 'Show cancelled' },
     ],
   },
   intents: [

@@ -484,6 +484,8 @@ export const INVOICES_WISEAI = {
     cards: [
       { intent: 'outstanding', icon: 'schedule', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What\u2019s outstanding?', desc: 'Invoice-sent or failed payments — settle up right from the row.', action: 'What\u2019s outstanding?', ask: 'What\u2019s outstanding?' },
       { intent: 'show_failed', icon: 'error', iconTone: 'brand', pill: { tone: 'up', icon: 'autorenew', text: 'Retry' }, title: 'Failed payments', desc: 'Retry any failed charge directly from its row.', action: 'Show failed payments', ask: 'Show failed payments' },
+      { intent: 'show_paid', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Paid' }, title: 'Paid invoices', desc: 'Everything already settled, filtered in one tap.', action: 'Show paid', ask: 'Show paid invoices' },
+      { intent: 'show_all', icon: 'receipt_long', iconTone: 'brand', pill: { tone: 'up', icon: 'receipt_long', text: 'All' }, title: 'All invoices', desc: 'Your full billing history in one list.', action: 'Show all', ask: 'Show all invoices' },
       { intent: 'download_all', icon: 'download', iconTone: 'brand', pill: { tone: 'up', icon: 'folder_zip', text: 'Export' }, title: 'Download all', desc: 'Grab a ZIP of every invoice for your records.', action: 'Download all', ask: 'Download all' },
     ],
   },

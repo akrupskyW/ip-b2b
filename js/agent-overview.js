@@ -18,7 +18,6 @@ import {
   setMenuPivot,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { initWISEaiTooltips } from './wiseai-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState, isWISEaiClosed, restartWISEaiChat, setWISEaiCollapsed } from './wiseai-dock.js';
@@ -821,6 +820,9 @@ function setupWISEaiDock() {
           { intent: 'shield', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Do next' }, title: 'Get the Non-UPF Verified\u2122 shield', desc: 'Digital and print shield lockups, ready to drop on your assets.', action: 'Get the shield', ask: 'Get the Non-UPF Verified\u2122 shield' },
           { intent: 'onesheet', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Toolkit' }, title: 'Co-branded one-sheets', desc: 'Editable PSDs and print-ready PNGs, plus setup instructions.', action: 'Open the one-sheets', ask: 'Open the co-branded one-sheets' },
           { intent: 'social', icon: 'share', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Toolkit' }, title: 'Social media toolkit', desc: 'Post packs and instructions for every platform.', action: 'Grab the social toolkit', ask: 'Grab the social media toolkit' },
+          { intent: 'brand_standards', icon: 'menu_book', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Guide' }, title: 'Brand standards guide', desc: 'Clear space, color and approved shield usage — the trademark use guide.', action: 'Download the guide', ask: 'Download the brand standards guide' },
+          { intent: 'email_sms', icon: 'mail', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Toolkit' }, title: 'Email & SMS assets', desc: 'Ready-made banners and headers in multiple sizes, with setup instructions.', action: 'Get email & SMS assets', ask: 'Get email & SMS assets' },
+          { intent: 'packaging', icon: 'inventory_2', iconTone: 'brand', pill: { tone: 'up', icon: 'folder', text: 'Resources' }, title: 'Packaging resources', desc: 'Shield examples and the trademark guide for getting the mark on-pack.', action: 'Open packaging resources', ask: 'Packaging resources' },
         ],
       },
       intents: MARKETING_WISEAI_INTENTS,
@@ -848,6 +850,9 @@ function setupWISEaiDock() {
         cards: [
           { intent: 'open_upf_report', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Open the UPF report', desc: 'Jump straight to your live portfolio UPF report.', action: 'Open the UPF report', ask: 'Open the UPF report' },
           { intent: 'improve_score', icon: 'trending_up', iconTone: 'brand', pill: { tone: 'up', icon: 'trending_up', text: 'Improve' }, title: 'How do I improve my score?', desc: 'The fastest wins — swap a single flagged ingredient to flip products to Non-UPF.', action: 'How do I improve it?', ask: 'How do I improve it?' },
+          { intent: 'explain_score', icon: 'help_outline', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Learn' }, title: 'Explain my UPF score', desc: 'How each product is classified against the NOVA scale — 92% lands Non-UPF.', action: 'Explain my score', ask: 'Explain my UPF score' },
+          { intent: 'ingredient_quality', icon: 'science', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Deep dive' }, title: 'Ingredient quality', desc: 'Additives, clean-label share and seed oils — scored one metric at a time.', action: 'Ingredient quality', ask: 'Ingredient quality' },
+          { intent: 'compare_products', icon: 'compare_arrows', iconTone: 'brand', pill: { tone: 'up', icon: 'compare_arrows', text: 'Compare' }, title: 'Compare two products', desc: 'Line up any two SKUs across UPF class, ingredient quality and flags.', action: 'Compare products', ask: 'Compare two products' },
           { variant: 'wiseai', intent: 'unlock_studio', icon: 'lock_open', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Unlock the full Studio', desc: 'GRAS, Insights, Nutrient-Quality and Health-Outcomes reports across your portfolio.', action: 'Unlock the full Studio', ask: 'Unlock the full Studio' },
         ],
       },
@@ -874,6 +879,10 @@ function setupWISEaiDock() {
           { intent: 'claim_products', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Claim your products', desc: 'Take ownership of your UPCs to unlock verification and reports.', action: 'Claim your products', ask: 'Claim your products' },
           { intent: 'verify_upf', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verify' }, title: 'Verify your Non-UPF products', desc: 'Run Non-UPF verification across your qualifying SKUs.', action: 'Verify Non-UPF', ask: 'Verify your Non-UPF products' },
           { intent: 'open_upf_report', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Report' }, title: 'Open the UPF report', desc: 'See your portfolio\u2019s UPF classification — opens right here.', action: 'Open the UPF report', ask: 'Open the UPF report' },
+          { intent: 'review_portfolio', icon: 'inventory_2', iconTone: 'brand', pill: { tone: 'up', icon: 'inventory_2', text: 'Review' }, title: 'Review your food portfolio', desc: 'Scan every SKU\u2019s status, compliance and ingredient health in one view.', action: 'Review portfolio', ask: 'Review your food portfolio' },
+          { intent: 'verify_gras', icon: 'shield', iconTone: 'brand', pill: { tone: 'up', icon: 'shield', text: 'Verify' }, title: 'Verify your GRAS products', desc: 'Run GRAS verification across your qualifying ingredients and SKUs.', action: 'Verify GRAS', ask: 'Verify your GRAS products' },
+          { intent: 'open_gras_report', icon: 'description', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Report' }, title: 'Open the GRAS report', desc: 'See your portfolio\u2019s GRAS documentation status — opens right here.', action: 'Open the GRAS report', ask: 'Open the GRAS report' },
+          { intent: 'add_food', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'add', text: 'Add' }, title: 'Add a food', desc: 'Bring a new product into your portfolio to classify and verify.', action: 'Add a food', ask: 'Add a food' },
         ],
       },
       intents: DASHBOARD_WISEAI_INTENTS,
@@ -1634,5 +1643,4 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAvatarPopover();
   applyStoredTextSize();
   initLirTooltip();
-  initWISEaiTooltips();
 });

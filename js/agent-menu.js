@@ -389,8 +389,9 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },
+  { type: 'item', id: 'wiseai', label: 'WISEai', icon: 'auto_awesome', slug: 'wiseai.html' },
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
-  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html', locked: true },
+  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
 
   { type: 'section', label: 'Admin' },
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
@@ -400,7 +401,7 @@ export const WISE_APP_NAV = [
     id: 'wisecode-admin',
     label: 'WISEcode Admin',
     icon: 'shield',
-    defaultOpen: true,
+    defaultOpen: false,
     children: [
       { id: 'organizations', label: 'Organizations', icon: 'apartment', slug: 'organizations.html' },
       { id: 'quick-invite', label: 'Quick Invite', icon: 'bolt', slug: 'quick-invite.html' },
@@ -742,6 +743,7 @@ const EXISTING_PAGES = new Set([
   'marketing-assets.html',
   'reports.html',
   'reformulation.html',
+  'wiseai.html',
   'ai-chat.html',
   'ai-chat-2.html',
   'verification.html',

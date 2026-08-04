@@ -409,64 +409,9 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* WISEai™ acronym tooltip — multi-line expansion on hover/focus (see wiseai-tooltip.js). */
-.wiseai-mark {
-  cursor: help;
-  text-decoration: underline dotted;
-  text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
-  text-underline-offset: 2px;
-}
-.wiseai-mark--bound { text-decoration: none; }
-.sc-topbar-titles .topbar-title[data-wiseai-tip] {
+.sc-topbar-titles .topbar-title {
   flex-shrink: 0;
   white-space: nowrap;
-}
-.wiseai-mark:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-#wiseai-tip {
-  position: fixed;
-  z-index: 10001;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 8px 12px;
-  border-radius: 8px;
-  pointer-events: none;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
-  font-family: inherit;
-  opacity: 0;
-  transform: translateX(-50%) translateY(-4px);
-  transition: opacity 0.12s ease, transform 0.12s ease;
-  max-width: 260px;
-}
-#wiseai-tip.wiseai-tip-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-.wiseai-tip-title {
-  font-size: 11px;
-  font-weight: 700;
-  margin-bottom: 6px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid var(--border);
-  letter-spacing: 0.02em;
-}
-.wiseai-tip-line {
-  display: block;
-  line-height: 1.45;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.wiseai-tip-letter {
-  display: inline-block;
-  width: 1.1em;
-  font-weight: 700;
-  color: var(--text);
 }
 .lir-btn:hover { background: rgba(0,0,0,0.04); color: var(--text); }
 html.dark .lir-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
@@ -3404,7 +3349,7 @@ html.dark .chat-topbar {
 
 .sc-topbar-titles { display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .sc-topbar-titles .topbar-title { color: var(--text); font-weight: 700; font-size: var(--fs-ui); line-height: 1.2; }
-.sc-topbar-titles .topbar-title[data-wiseai-tip] { flex-shrink: 0; white-space: nowrap; cursor: help; }
+.sc-topbar-titles .topbar-title { flex-shrink: 0; white-space: nowrap; }
 html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 
 .topbar-agents-btn {
@@ -5909,7 +5854,10 @@ html.dark .dash-badge--poor { color: #f07070; }
   font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text);
+  /* The value sits inside the saturated colored fill, so keep it white in both
+     themes (var(--text) went dark/invisible in light mode). */
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(8, 15, 26, 0.35);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -9140,20 +9088,25 @@ html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-colo
 .dash-star-mover-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 .dash-star-mover-title {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--text);
 }
-.dash-star-mover-title .material-icons { font-size: 15px; color: var(--text-muted); }
+.dash-star-mover-title .material-icons { font-size: 16px; }
+.dash-star-mover-arrow,
+.dash-star-mover-lock { color: var(--text-muted); }
+/* CTA pinned to the very bottom of the card, aligned right (arrow points ↗). */
 .dash-star-mover-cta {
+  margin-top: auto;
+  align-self: flex-end;
+  padding-top: 12px;
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -9162,7 +9115,7 @@ html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-colo
   color: var(--primary);
   white-space: nowrap;
 }
-.dash-star-mover-cta .material-icons { font-size: 13px; }
+.dash-star-mover-cta .material-icons { font-size: 14px; }
 .dash-star-mover-num {
   font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
   font-size: 2.4rem;
@@ -9172,6 +9125,12 @@ html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-colo
   color: var(--text);
 }
 .dash-star-mover-note { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Star icons (rating ramp) shared by the mover titles + the count tiles. The
+   filled stars carry an inline tier color; the empty (0-star) state is muted. */
+.dash-star-ico-row { display: inline-flex; align-items: center; gap: 1px; }
+.dash-star-ico { font-size: 14px; line-height: 1; }
+.dash-star-ico--empty { color: var(--text-subtle); opacity: 0.7; }
 
 /* ---- Count tiles ---- */
 .dash-star-tiles {
@@ -9203,6 +9162,9 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
   color: var(--text);
 }
 .dash-star-tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 4px;
   font-size: 0.7rem;
   font-weight: 700;
@@ -9210,7 +9172,26 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.dash-star-tile-sub { font-size: 0.72rem; color: var(--text-subtle); }
+.dash-star-tile-label .dash-star-ico { font-size: 13px; }
+.dash-star-tile-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+}
+.dash-star-tile-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dash-star-tile-trend .material-icons { font-size: 14px; }
+.dash-star-tile-trend--up { color: var(--sec-green); }
+.dash-star-tile-trend--down { color: var(--sec-red); }
 
 /* ---- Tabs (Brands/Owners + Categories) ---- */
 .dash-stars-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-2); border: 1px solid var(--border); }
@@ -9234,10 +9215,11 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
 .dash-stars-brand-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: flex-end;
+  gap: 10px;
   flex-wrap: wrap;
-  margin: 4px 0 16px;
+  flex-shrink: 0;
+  margin: 0;
 }
 .dash-stars-search {
   display: inline-flex;
@@ -9254,41 +9236,53 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
 .dash-stars-search input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--text); font: inherit; font-size: 0.85rem; outline: none; }
 .dash-stars-brand-section .dash-donut-legend-group { margin-bottom: 12px; }
 
-/* Vertical stacked bar chart */
-.dash-vbars { display: flex; align-items: flex-end; gap: 8px; padding-top: 6px; }
-.dash-vbar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: stretch; }
-.dash-vbar-track { height: 240px; display: flex; align-items: flex-end; }
-.dash-vbar-col { width: 74%; margin: 0 auto; display: flex; align-items: flex-end; }
-.dash-vbar-stack {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column-reverse;
-  border-radius: 5px 5px 3px 3px;
+/* Horizontal stacked bar chart — one row per brand (name · bar · total). */
+.dash-hbars { display: flex; flex-direction: column; gap: 9px; padding-top: 6px; }
+.dash-hbar {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.dash-hbar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
   overflow: hidden;
-  transform: scaleY(0);
-  transform-origin: bottom;
+  text-overflow: ellipsis;
+}
+.dash-hbar-track {
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-subtle) 12%, transparent);
+  overflow: hidden;
+}
+.dash-hbar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
-.dash-vbar-stack.is-vbar-ready { transform: scaleY(1); }
-.dash-vbar-seg { display: block; width: 100%; transition: filter 0.14s ease; }
-.dash-vbar:hover .dash-vbar-seg { filter: brightness(1.08); }
-.dash-vbar-label {
-  margin-top: 10px;
-  height: 62px;
-  font-size: 11px;
-  line-height: 1.15;
-  color: var(--text-muted);
-  transform: rotate(-40deg);
-  transform-origin: top right;
-  white-space: nowrap;
-  overflow: visible;
+.dash-hbar-fill.is-hbar-ready { transform: scaleX(1); }
+.dash-hbar-stack { display: flex; width: 100%; height: 100%; }
+.dash-hbar-seg { display: block; height: 100%; transition: filter 0.14s ease; }
+.dash-hbar:hover .dash-hbar-seg { filter: brightness(1.08); }
+.dash-hbar-total {
+  min-width: 46px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
   text-align: right;
-  align-self: flex-end;
-  width: 100%;
+  font-variant-numeric: tabular-nums;
 }
 @media (prefers-reduced-motion: reduce) {
-  .dash-vbar-stack { transform: scaleY(1); transition: none; }
+  .dash-hbar-fill { transform: scaleX(1); transition: none; }
 }
 
 .dash-stars-pager {
@@ -9312,6 +9306,11 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
    dividers filling whole cells as grey blocks. */
 .dash-donut-row--compact { grid-template-columns: 1fr; justify-items: center; gap: 14px; }
 .dash-donut-row--compact .dash-donut { width: 190px; height: 190px; }
+/* The center disc's size is authored for the full 252px donut (184px). At the
+   compact 190px size that fixed disc is larger than the ring itself and hides
+   every segment, leaving a plain dark circle — so scale the disc down to fit
+   inside the (now smaller) ring hole and let the colored arcs show. */
+.dash-donut-row--compact .dash-donut-single .dash-donut-center::before { width: 138px; height: 138px; }
 .dash-donut-row--compact .dash-donut-num { font-size: 1.7rem; }
 .dash-donut-row--compact .dash-donut-legends { width: 100%; padding-right: 0; }
 .dash-stars-cat-panel.is-hidden { display: none; }
@@ -9334,7 +9333,8 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
   .dash-star-tiles { grid-template-columns: repeat(2, 1fr); }
   .dash-stars-brand-controls { flex-direction: column; align-items: stretch; }
   .dash-stars-search { max-width: none; }
-  .dash-vbar-label { font-size: 10px; }
+  .dash-hbar { grid-template-columns: 110px 1fr auto; gap: 10px; }
+  .dash-hbar-label { font-size: 11px; }
 }
 
 /* Narrow container (docked beside chat): collapse the grid tables into

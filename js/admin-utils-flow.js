@@ -181,6 +181,8 @@ export const ADMIN_UTILS_WISEAI = {
       { intent: 'refresh_verif', icon: 'autorenew', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Refresh verifications', desc: 'Recompute all org verifications — WISEshield tiers and rewards.', action: 'Refresh verifications', ask: 'Refresh verifications' },
       { intent: 'seed', icon: 'grass', iconTone: 'brand', pill: { tone: 'up', icon: 'warning', text: 'Job' }, title: 'Seed the platform', desc: 'Reseed reference data — destructive, run from the job card.', action: 'Seed the platform', ask: 'Seed the platform' },
       { intent: 'db_info', icon: 'storage', iconTone: 'brand', pill: { tone: 'up', icon: 'info', text: 'Info' }, title: 'What DB am I on?', desc: 'Host, database and schema for the current environment.', action: 'What DB am I on?', ask: 'What DB am I on?' },
+      { intent: 'refresh_attr', icon: 'insights', iconTone: 'brand', pill: { tone: 'up', icon: 'autorenew', text: 'Job' }, title: 'Refresh attribute insights', desc: 'Recompute the attribute insights snapshot for the dashboard.', action: 'Refresh attribute insights', ask: 'Refresh attribute insights' },
+      { intent: 'fix_account', icon: 'manage_accounts', iconTone: 'brand', pill: { tone: 'up', icon: 'build', text: 'Job' }, title: 'Fix an account status', desc: 'Flip an org back to Active when a payment webhook missed the change.', action: 'Fix an account status', ask: 'Fix an account status' },
     ],
   },
   intents: [

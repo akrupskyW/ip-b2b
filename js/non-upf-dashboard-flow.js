@@ -554,6 +554,8 @@ export const NON_UPF_WISEAI = {
       { intent: 'action_required', icon: 'warning', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, metric: '10', metricUnit: ' products', title: 'Need attention', desc: 'Each is missing mandatory data — I\u2019ll filter the table so you can fix them.', action: 'What needs attention?', ask: 'What needs attention?' },
       { intent: 'ready_to_attest', icon: 'fact_check', iconTone: 'brand', pill: { tone: 'up', icon: 'fact_check', text: 'Attest' }, metric: '19', metricUnit: ' pending', title: 'Ready to attest', desc: '19 pending attestation, 2 attested and ready for payment.', action: 'What\u2019s ready to attest?', ask: 'What\u2019s ready to attest?' },
       { intent: 'portfolio_split', icon: 'donut_large', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Overview' }, title: 'Your UPF split', desc: 'See the Non-UPF vs UPF breakdown across your whole portfolio.', action: 'What\u2019s my UPF split?', ask: 'What\u2019s my UPF split?' },
+      { intent: 'verified', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verified' }, title: 'Show verified products', desc: '8 products carrying the Non-UPF shield — filtered in one tap.', action: 'Show verified products', ask: 'Show verified products' },
+      { intent: 'ineligible', icon: 'do_not_disturb', iconTone: 'brand', pill: { tone: 'up', icon: 'do_not_disturb', text: 'Review' }, title: 'Why are products ineligible?', desc: '51 products don\u2019t meet the Non-UPF criteria — see the specific flag.', action: 'Why ineligible?', ask: 'Why are products ineligible?' },
     ],
   },
   intents: [

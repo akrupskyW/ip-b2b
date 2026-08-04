@@ -1254,6 +1254,8 @@ export const GRAS_WISEAI = {
     cards: [
       { intent: 'verify_top', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Verify your top ingredient', desc: 'Clear the biggest blocker first — documenting one ingredient clears every product that contains it.', action: 'Verify top ingredient', ask: 'Verify my top ingredient' },
       { intent: 'view_submissions', icon: 'assignment_turned_in', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'Open the review queue', desc: 'Track everything you\u2019ve submitted for WISEcode review in one place.', action: 'Open the review queue', ask: 'Open the review queue' },
+      { intent: 'autofill_docs', icon: 'upload_file', iconTone: 'brand', pill: { tone: 'up', icon: 'upload_file', text: 'Docs' }, title: 'Attach & fill the documents', desc: 'Auto-fill the GRAS documentation for your ingredient in one pass.', action: 'Attach & fill the documents', ask: 'Attach & fill the documents' },
+      { intent: 'sign_attestation', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'verified_user', text: 'Sign' }, title: 'Sign the attestation', desc: 'Confirm your GRAS attestation to submit for WISEcode review.', action: 'Sign the attestation', ask: 'Sign the attestation' },
       { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
     ],
   },

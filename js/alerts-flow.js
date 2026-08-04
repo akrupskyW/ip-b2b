@@ -184,6 +184,7 @@ export const ALERTS_WISEAI = {
       { intent: 'flags', icon: 'flag', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What needs my review?', desc: '3 ingredient flags need review — I\u2019ll filter to them so you can jump to the products.', action: 'Show what needs review', ask: 'What needs my review?' },
       { intent: 'show_unread', icon: 'mark_email_unread', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Triage' }, title: 'Show only unread', desc: 'Filter your inbox down to just the alerts you haven\u2019t seen yet.', action: 'Show unread', ask: 'Show only unread' },
       { intent: 'verification', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verify' }, title: 'Verification alerts', desc: 'A Sample Co. verification is ready and 12 shields were minted yesterday.', action: 'Show verification alerts', ask: 'Verification alerts' },
+      { intent: 'mark_all', icon: 'done_all', iconTone: 'brand', pill: { tone: 'up', icon: 'done_all', text: 'Clear' }, title: 'Mark everything read', desc: 'Clear your inbox — mark every alert as read in one tap.', action: 'Mark all read', ask: 'Mark everything read' },
     ],
   },
   intents: [

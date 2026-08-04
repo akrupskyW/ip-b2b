@@ -388,6 +388,8 @@ export const ORGANIZATIONS_WISEAI = {
       { intent: 'show_active', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Do next' }, title: 'Active organizations', desc: 'The orgs currently live on the platform, filtered in one tap.', action: 'Show active orgs', ask: 'Show active orgs' },
       { intent: 'add_org', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'add_business', text: 'Create' }, title: 'Add an organization', desc: 'Spin up a new org — I\u2019ll ask for the company name to start.', action: 'Add an organization', ask: 'Add an organization' },
       { intent: 'quick_invite', icon: 'bolt', iconTone: 'brand', pill: { tone: 'up', icon: 'mail', text: 'Invite' }, title: 'Quick invite', desc: 'Find or create an org and send the invite in one step.', action: 'Quick invite', ask: 'Quick invite' },
+      { intent: 'show_invited', icon: 'mail', iconTone: 'brand', pill: { tone: 'up', icon: 'mail', text: 'Invited' }, title: 'Invited organizations', desc: 'Orgs with an open invite still awaiting acceptance.', action: 'Show invited orgs', ask: 'Show invited orgs' },
+      { intent: 'show_all', icon: 'apartment', iconTone: 'brand', pill: { tone: 'up', icon: 'apartment', text: 'All' }, title: 'All organizations', desc: 'Every org on the platform in one list.', action: 'Show all', ask: 'Show all' },
     ],
   },
   intents: [

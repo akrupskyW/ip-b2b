@@ -346,6 +346,8 @@ export const AUDIT_QUEUE_WISEAI = {
       { intent: 'show_open', icon: 'schedule', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Open audits', desc: 'Rows awaiting reviewer action — mostly new-canon suggestions.', action: 'Show open audits', ask: 'Show open audits' },
       { intent: 'new_canon', icon: 'add_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'New canon suggestions', desc: 'Brand suggestions to create a new canonical ingredient — resolve to add.', action: 'New canon suggestions', ask: 'New canon suggestions' },
       { intent: 'show_all', icon: 'inbox', iconTone: 'brand', pill: { tone: 'up', icon: 'inbox', text: 'All' }, title: 'All audits', desc: 'Every loaded audit row across all statuses, in one view.', action: 'Show all audits', ask: 'Show all audits' },
+      { intent: 'show_accepted', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Accepted' }, title: 'Accepted audits', desc: 'Remapped or flag-only resolutions, filtered in one tap.', action: 'Show accepted', ask: 'Show accepted' },
+      { intent: 'show_canceled', icon: 'block', iconTone: 'brand', pill: { tone: 'up', icon: 'block', text: 'Canceled' }, title: 'Canceled audits', desc: 'Withdrawn or superseded by a re-analyze.', action: 'Show canceled', ask: 'Show canceled' },
     ],
   },
   intents: [

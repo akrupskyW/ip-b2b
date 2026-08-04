@@ -525,23 +525,26 @@ const STARS_BRAND_PAGE_SIZE = 20;
 /* the styling, colors and UI are WISEcode's own.                        */
 /* ================================================================== */
 const STAR_C = { s0: C.orange, s1: C.amber, s2: C.greenLight, s3: C.green };
+/* Star colors indexed by rating level (0–3) — used to color the star icons. */
+const STAR_LEVEL_C = [STAR_C.s0, STAR_C.s1, STAR_C.s2, STAR_C.s3];
 
 const DATA_STARS = {
   totalProducts: 42060,
   /* Current rating mix — powers the distribution donut + the count tiles. */
   tiers: [
-    { stars: 0, label: '0 Stars', count: 28846, pct: 68.6, color: STAR_C.s0 },
-    { stars: 1, label: '1 Star',  count: 5054,  pct: 12.0, color: STAR_C.s1 },
-    { stars: 2, label: '2 Stars', count: 3783,  pct: 9.0,  color: STAR_C.s2 },
-    { stars: 3, label: '3 Stars', count: 4377,  pct: 10.4, color: STAR_C.s3 },
+    { stars: 0, label: '0 Stars', count: 28846, pct: 68.6, color: STAR_C.s0, trend: { dir: 'down', val: '2.1%' } },
+    { stars: 1, label: '1 Star',  count: 5054,  pct: 12.0, color: STAR_C.s1, trend: { dir: 'up', val: '0.8%' } },
+    { stars: 2, label: '2 Stars', count: 3783,  pct: 9.0,  color: STAR_C.s2, trend: { dir: 'up', val: '1.2%' } },
+    { stars: 3, label: '3 Stars', count: 4377,  pct: 10.4, color: STAR_C.s3, trend: { dir: 'up', val: '1.6%' } },
   ],
   nearMiss: 8318,
-  /* Star Movers — products one small reformulation away from the next star. */
+  /* Star Movers — products one small reformulation away from the next star.
+     from/to are star levels (0–3) so the titles render as colored star icons. */
   movers: [
-    { title: '0★ → ★',  value: 3381, note: '+2,753 more within 2 pts',            grad: 'orange' },
-    { title: '★ → ★★',  value: 3094, note: '+1,960 more within 2 pts',            grad: 'green'  },
-    { title: '★★ → ★★★', value: 1843, note: '+1,940 more within 2 pts',            grad: 'blue'   },
-    { title: 'Fix DQ → instant ★', value: 2993, note: 'earns a star once the disqualifier is resolved', grad: 'violet', icon: 'lock_open' },
+    { from: 0, to: 1, value: 3381, note: '+2,753 more within 2 pts',            grad: 'orange' },
+    { from: 1, to: 2, value: 3094, note: '+1,960 more within 2 pts',            grad: 'green'  },
+    { from: 2, to: 3, value: 1843, note: '+1,940 more within 2 pts',            grad: 'blue'   },
+    { special: 'dq', to: 1, value: 2993, note: 'earns a star once the disqualifier is resolved', grad: 'violet', icon: 'lock_open' },
   ],
   /* What's blocking 0★ products — one low-effort fix (~1 debit) earns a star. */
   blockers: [
@@ -649,24 +652,53 @@ function starKeyLegend() {
 
 /* ---- Guiding Stars render helpers ---- */
 
+/* Render a rating as star icons in the ramp colors: `count` filled stars in the
+   `level`'s color; level 0 (no stars) renders a single hollow/muted star. */
+function starIcons(count, level) {
+  if (!count) {
+    return `<span class="dash-star-ico-row"><span class="material-icons dash-star-ico dash-star-ico--empty">star_border</span></span>`;
+  }
+  const color = STAR_LEVEL_C[level] || STAR_C.s3;
+  let out = '';
+  for (let i = 0; i < count; i++) {
+    out += `<span class="material-icons dash-star-ico" style="color:${color}">star</span>`;
+  }
+  return `<span class="dash-star-ico-row">${out}</span>`;
+}
+
+/* Small up/down trend delta shown beside a tile's "% of portfolio". */
+function trendBadge(tr) {
+  if (!tr) return '';
+  const up = tr.dir === 'up';
+  return `<span class="dash-star-tile-trend dash-star-tile-trend--${up ? 'up' : 'down'}"><span class="material-icons">${up ? 'trending_up' : 'trending_down'}</span>${esc(tr.val)}</span>`;
+}
+
+/* A star-mover card title, rendered as colored star icons (from → to). */
+function moverTitle(m) {
+  const arrow = `<span class="material-icons dash-star-mover-arrow">arrow_forward</span>`;
+  if (m.special === 'dq') {
+    return `<span class="dash-star-mover-title"><span class="material-icons dash-star-mover-lock">${esc(m.icon)}</span>Fix DQ ${arrow} instant ${starIcons(1, m.to)}</span>`;
+  }
+  return `<span class="dash-star-mover-title">${starIcons(m.from, m.from)} ${arrow} ${starIcons(m.to, m.to)}</span>`;
+}
+
 /* Star Movers row — four gradient cards, each a "one reformulation away" bucket
    with a big product count + a "within 2 pts" nudge + a View products action. */
 function renderStarMovers(s) {
-  const cards = s.movers.map((m) => `
-    <button type="button" class="dash-star-mover dash-star-mover--${m.grad}" data-dash-action="review-portfolio" aria-label="${esc(m.title)} — ${m.value} products">
-      <div class="dash-star-mover-head">
-        <span class="dash-star-mover-title">${m.icon ? `<span class="material-icons">${esc(m.icon)}</span>` : ''}${esc(m.title)}</span>
-        <span class="dash-star-mover-cta">View products <span class="material-icons">arrow_forward</span></span>
-      </div>
+  const cards = s.movers.map((m) => {
+    const aria = m.special === 'dq'
+      ? `Fix disqualifier for an instant star — ${m.value} products`
+      : `${m.from}-star to ${m.to}-star — ${m.value} products`;
+    return `
+    <button type="button" class="dash-star-mover dash-star-mover--${m.grad}" data-dash-action="review-portfolio" aria-label="${esc(aria)}">
+      <div class="dash-star-mover-head">${moverTitle(m)}</div>
       ${countUpMarkup(m.value, { className: 'dash-star-mover-num' })}
       <span class="dash-star-mover-note">${esc(m.note)}</span>
-    </button>`).join('');
+      <span class="dash-star-mover-cta">View products <span class="material-icons">north_east</span></span>
+    </button>`;
+  }).join('');
   return `
     <section class="dash-stars-section dash-star-movers">
-      <div class="dash-star-movers-lead">
-        <span class="material-icons">auto_awesome</span>
-        <span><strong>Star Movers</strong> — products one small reformulation away from the next star</span>
-      </div>
       <div class="dash-star-movers-grid">${cards}</div>
     </section>`;
 }
@@ -676,8 +708,11 @@ function renderStarTiles(s) {
   const tierTiles = s.tiers.map((t) => `
     <div class="dash-star-tile">
       ${countUpMarkup(t.count, { className: 'dash-star-tile-num' })}
-      <span class="dash-star-tile-label">${esc(t.label)}</span>
-      <span class="dash-star-tile-sub">${t.pct}% of portfolio</span>
+      <span class="dash-star-tile-label">${starIcons(t.stars, t.stars)}<span class="dash-star-tile-label-txt">${esc(t.label)}</span></span>
+      <span class="dash-star-tile-sub">
+        <span class="dash-star-tile-sub-txt">${t.pct}% of portfolio</span>
+        ${trendBadge(t.trend)}
+      </span>
     </div>`).join('');
   return `
     <section class="dash-stars-section dash-star-tiles">
@@ -728,7 +763,6 @@ function renderStarDistribution(s) {
             <h3 class="dash-card-title">Star Distribution</h3>
             <p class="dash-ing-note">All ${Math.round(s.totalProducts / 1000)},000+ products by current Guiding Stars rating.</p>
           </div>
-          ${starReportBtn}
         </div>
         <div class="dash-donut-row">
           ${singleDonut(parts, String(s.totalProducts), '', 'Products', 'rated total', 'Star rating')}
@@ -743,32 +777,31 @@ function renderStarDistribution(s) {
             <h3 class="dash-card-title">What's Blocking 0-Star Products</h3>
             <p class="dash-ing-note">0★ products where one low-effort fix (~1 debit) alone earns a star.</p>
           </div>
-          ${starReportBtn}
         </div>
         <div class="dash-ing-table">${starHBarRows(s.blockers)}</div>
       </div>
     </section>`;
 }
 
-const starReportBtn = `
-  <button type="button" class="dash-star-report-btn" data-dash-action="stars-add-report" title="Add to Report">
-    <span class="material-icons">push_pin</span>Add to Report
-  </button>`;
-
-/* Vertical stacked bar chart — one column per brand, stacked by star tier. */
-function starVBars(list) {
+/* Horizontal stacked bar chart — one row per brand, stacked by star tier. The
+   bar grows from the left (scaleX) on entrance; the total sits at the trailing
+   edge so each row reads name → distribution → count. */
+function starHBars(list) {
   const totals = list.map((b) => b.stars.reduce((a, c) => a + c, 0));
   const max = Math.max(...totals, 1);
-  return `<div class="dash-vbars">${list.map((b, bi) => {
+  return `<div class="dash-hbars">${list.map((b, bi) => {
     const total = totals[bi];
-    const h = Math.max(2, Math.round((total / max) * 100));
+    const w = Math.max(2, (total / max) * 100);
     const segs = b.stars.map((c, si) => c > 0
-      ? `<span class="dash-vbar-seg" style="flex-grow:${c};background:${DATA_STARS.tiers[si].color}" title="${DATA_STARS.tiers[si].label}: ${c}"></span>`
+      ? `<span class="dash-hbar-seg" style="flex-grow:${c};background:${DATA_STARS.tiers[si].color}" title="${DATA_STARS.tiers[si].label}: ${c}"></span>`
       : '').join('');
     return `
-      <div class="dash-vbar" title="${esc(b.name)} · ${total.toLocaleString()} products">
-        <div class="dash-vbar-track"><div class="dash-vbar-col" style="height:${h}%"><span class="dash-vbar-stack">${segs}</span></div></div>
-        <span class="dash-vbar-label">${esc(b.name)}</span>
+      <div class="dash-hbar" title="${esc(b.name)} · ${total.toLocaleString()} products">
+        <span class="dash-hbar-label">${esc(b.name)}</span>
+        <div class="dash-hbar-track">
+          <div class="dash-hbar-fill" style="width:${w}%"><span class="dash-hbar-stack">${segs}</span></div>
+        </div>
+        <span class="dash-hbar-total">${total.toLocaleString()}</span>
       </div>`;
   }).join('')}</div>`;
 }
@@ -788,7 +821,7 @@ function renderStarsBrandBarsInner() {
   const page = list.slice(start, start + STARS_BRAND_PAGE_SIZE);
   const rangeEnd = start + page.length;
   const bars = page.length
-    ? starVBars(page)
+    ? starHBars(page)
     : `<div class="dash-ing-empty" style="padding:40px 0">No brands match "${esc(_starsBrandQuery)}".</div>`;
   return `
     ${bars}
@@ -808,17 +841,16 @@ function renderStarsByBrand() {
           <h3 class="dash-card-title">Star Ratings by ${_starsBrandMode === 'owners' ? 'Brand Owner' : 'Brand'} — 1–${Math.min(STARS_BRAND_PAGE_SIZE, total)} of ${total * 217}</h3>
           <p class="dash-ing-note">Number of products at each star level — click a bar to explore in Product Explorer.</p>
         </div>
-        ${starReportBtn}
-      </div>
-      <div class="dash-stars-brand-controls">
-        <div class="dash-stars-tabs" data-dash-tabgroup="stars-brandmode">
-          <button type="button" class="dash-stars-tab${_starsBrandMode === 'brands' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="brands">Brands</button>
-          <button type="button" class="dash-stars-tab${_starsBrandMode === 'owners' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="owners">Brand Owners</button>
+        <div class="dash-stars-brand-controls">
+          <div class="dash-stars-tabs" data-dash-tabgroup="stars-brandmode">
+            <button type="button" class="dash-stars-tab${_starsBrandMode === 'brands' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="brands">Brands</button>
+            <button type="button" class="dash-stars-tab${_starsBrandMode === 'owners' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="owners">Brand Owners</button>
+          </div>
+          <label class="dash-stars-search">
+            <span class="material-icons">search</span>
+            <input type="text" id="stars-brand-search" placeholder="Search ${_starsBrandMode === 'owners' ? 'brand owners' : 'brands'}…" value="${esc(_starsBrandQuery)}" autocomplete="off">
+          </label>
         </div>
-        <label class="dash-stars-search">
-          <span class="material-icons">search</span>
-          <input type="text" id="stars-brand-search" placeholder="Search ${_starsBrandMode === 'owners' ? 'brand owners' : 'brands'}…" value="${esc(_starsBrandQuery)}" autocomplete="off">
-        </label>
       </div>
       ${starKeyLegend()}
       <div class="dash-stars-brand-bars" id="stars-brand-bars">${renderStarsBrandBarsInner()}</div>
@@ -851,7 +883,6 @@ function renderStarsBottom(s) {
             <h3 class="dash-card-title">Quick-Win Opportunity by Brand</h3>
             <p class="dash-ing-note">0★ products within 1pt of ★ — brands 1–15 of 1,553.</p>
           </div>
-          ${starReportBtn}
         </div>
         <div class="dash-ing-table">${starHBarRows(s.quickWin, s.quickWin[0].value)}</div>
       </div>
@@ -873,7 +904,6 @@ function renderStarsBottom(s) {
             <h3 class="dash-card-title">Portfolio by Product Category</h3>
             <p class="dash-ing-note">Light→dark shading is 0★→3★ within each category.</p>
           </div>
-          ${starReportBtn}
         </div>
         <div class="dash-donut-row dash-donut-row--compact">
           ${singleDonut(portParts, String(portTotal), '', 'Products', 'across categories', 'Category')}
@@ -899,7 +929,7 @@ function refreshStarsBrandBars(host) {
   const wrap = host.querySelector('#stars-brand-bars');
   if (!wrap) return;
   wrap.innerHTML = renderStarsBrandBarsInner();
-  animateStarVBars(wrap);
+  animateStarHBars(wrap);
   runCountUps(wrap.querySelectorAll('.dash-count-up'), { duration: 900, stagger: 30 });
 }
 
@@ -913,7 +943,7 @@ function refreshStarsBrandSection(host) {
   tmp.innerHTML = renderStarsByBrand();
   const fresh = tmp.firstElementChild;
   sec.replaceWith(fresh);
-  animateStarVBars(fresh);
+  animateStarHBars(fresh);
   runCountUps(fresh.querySelectorAll('.dash-count-up'), { duration: 900, stagger: 30 });
 }
 
@@ -3206,8 +3236,8 @@ function finalizeChartElements(root) {
     el.textContent = `${countUpFormat(el.getAttribute('data-count-to'))}${el.getAttribute('data-count-suffix') || ''}`;
     el.classList.add('is-counted');
   });
-  /* Stacked vertical brand bars (Guiding Stars) reveal by growing up. */
-  root.querySelectorAll('.dash-vbar-stack').forEach((s) => s.classList.add('is-vbar-ready'));
+  /* Stacked horizontal brand bars (Guiding Stars) reveal by growing right. */
+  root.querySelectorAll('.dash-hbar-fill').forEach((f) => f.classList.add('is-hbar-ready'));
   root.querySelectorAll('.dash-donut-arc[data-full-d]').forEach((arc) => {
     arc.setAttribute('d', arc.getAttribute('data-full-d'));
   });
@@ -3582,18 +3612,18 @@ function animateIngredientBars(section) {
   runCountUps(section.querySelectorAll('.dash-count-up'), { duration: 1200, stagger: CHART_BAR_STAGGER_MS });
 }
 
-/* Grow the stacked vertical brand bars up from the baseline, staggered. */
-function animateStarVBars(root) {
+/* Grow the stacked horizontal brand bars out from the left, staggered. */
+function animateStarHBars(root) {
   if (!root) return;
-  const stacks = [...root.querySelectorAll('.dash-vbar-stack')];
+  const fills = [...root.querySelectorAll('.dash-hbar-fill')];
   if (prefersReducedMotion()) {
-    stacks.forEach((s) => s.classList.add('is-vbar-ready'));
+    fills.forEach((f) => f.classList.add('is-hbar-ready'));
     return;
   }
-  stacks.forEach((s, i) => {
-    s.classList.remove('is-vbar-ready');
-    s.style.transitionDelay = `${i * 35}ms`;
-    requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('is-vbar-ready')));
+  fills.forEach((f, i) => {
+    f.classList.remove('is-hbar-ready');
+    f.style.transitionDelay = `${i * 35}ms`;
+    requestAnimationFrame(() => requestAnimationFrame(() => f.classList.add('is-hbar-ready')));
   });
 }
 
@@ -3863,9 +3893,9 @@ function setupChartAnimations(host) {
         if (side) animateIngredientBars(side);
       } else if (el.classList.contains('dash-stars-section')) {
         /* Guiding Stars blocks: count up the numerals, fill any horizontal
-           bars, and grow the stacked vertical brand bars. */
+           bars, and grow the stacked horizontal brand bars. */
         animateIngredientBars(el);
-        animateStarVBars(el);
+        animateStarHBars(el);
       }
       observer.unobserve(el);
     });

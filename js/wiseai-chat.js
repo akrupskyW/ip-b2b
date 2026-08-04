@@ -13,7 +13,6 @@
  * wiseai-chat.css to be loaded on the host page.
  */
 
-import { decorateWISEai } from './wiseai-tooltip.js';
 /* Side-effect import: registers window.WiseChatHistory (the shared in-module
    history sidebar) so every mounted WISEai surface gets the same history +
    "start new conversation" behaviour. */
@@ -242,7 +241,6 @@ function buildScorecardsHtml(sc, id) {
   };
   return `
     <div class="ws-scorecards-section">
-      <div class="ws-scorecards-bar"><span class="ws-scorecards-label">${esc(label)}</span></div>
       <div class="ws-scorecards-wrap">
         <div class="ws-scorecards" id="${id}-scorecards" role="list" aria-label="${esc(label)}">${sc.cards.map(cardHtml).join('')}</div>
         <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-sc-scroll="-1" aria-label="Scroll to previous cards" hidden><span class="material-icons">chevron_left</span></button>
@@ -355,10 +353,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      a host's choice sticks across reloads. Nothing else on the welcome (owl,
      headline, intent chips) is affected. */
   const CHIPS_PREF_KEY = opts.chipsPrefKey || `${opts.historyKey || 'wise-wiseai-chat'}-cards-hidden`;
-  /* Hosts can start with the large "at a glance" cards collapsed (e.g. the
-     Dashboard) via `cardsHiddenDefault: true`; a stored preference (from the
-     three-dot toggle) always wins so the user's own choice sticks. */
-  let cardsHidden = opts.cardsHiddenDefault === true;
+  /* The large "at a glance" cards are collapsed by DEFAULT on every surface —
+     the welcome leads with the owl, headline and small intent chips, and the
+     big cards are opt-in via the three-dot "Show overview cards" toggle. A host
+     can force them open on first load by passing `cardsHiddenDefault: false`;
+     a stored preference (from the toggle) always wins so the user's own choice
+     sticks across reloads. */
+  let cardsHidden = opts.cardsHiddenDefault !== false;
   try {
     const stored = localStorage.getItem(CHIPS_PREF_KEY);
     if (stored === '1') cardsHidden = true;
@@ -392,7 +393,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       ${hideBranding ? '' : `<div class="sc-topbar-lead">
         <div class="sc-bug">${OWL_BUG}</div>
         <div class="sc-topbar-titles">
-          <span class="topbar-title" data-wiseai-tip tabindex="0">${esc(title)}</span>
+          <span class="topbar-title">${esc(title)}</span>
           <button type="button" class="topbar-agents-btn" data-sc="agents" title="Choose agents">
             <span class="material-icons">smart_toy</span>
             <span class="agents-count-pill" id="${id}-count">${esc(agentCount)}</span>
@@ -408,6 +409,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-icons topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+          ${scorecardsHtml ? `<div class="topbar-menu-divider"></div>
+          <button type="button" class="topbar-menu-item" data-sc="toggle-cards"><span class="material-icons topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span></button>` : ''}
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
@@ -684,7 +687,6 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         closeAgents();
         if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
         scrollDown();
-        decorateWISEai(rootEl);
       },
     });
   }
@@ -1016,8 +1018,6 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   /* Apply the remembered overview-cards preference now the DOM exists. */
   syncCards();
-
-  decorateWISEai(rootEl);
 
   return { addUser, addWISEai, ask, sendIntent, reset, openAgents, closeAgents, hideWelcome, setIntents, announceRoute, root: rootEl };
 }

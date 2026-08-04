@@ -408,6 +408,8 @@ export const USER_MANAGEMENT_WISEAI = {
     cards: [
       { intent: 'show_pending', icon: 'mark_email_unread', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Pending email confirmation', desc: 'Users who haven\u2019t confirmed yet — nudge or resend from the row.', action: 'Show pending email', ask: 'Pending email' },
       { intent: 'show_locked', icon: 'lock', iconTone: 'brand', pill: { tone: 'up', icon: 'lock_open', text: 'Resolve' }, title: 'Locked-out accounts', desc: 'Resolve a lockout from the row edit action.', action: 'Show locked out', ask: 'Locked out' },
+      { intent: 'show_admins', icon: 'badge', iconTone: 'brand', pill: { tone: 'up', icon: 'badge', text: 'Filter' }, title: 'Show admins', desc: 'Filter to admin users across your organization.', action: 'Show admins', ask: 'Show admins' },
+      { intent: 'show_all', icon: 'group', iconTone: 'brand', pill: { tone: 'up', icon: 'group', text: 'All' }, title: 'All users', desc: 'Every loaded user in one list.', action: 'Show all users', ask: 'Show all users' },
       { intent: 'new_user', icon: 'person_add', iconTone: 'brand', pill: { tone: 'up', icon: 'person_add', text: 'Add' }, title: 'Add a user', desc: 'Invite someone new — I\u2019ll ask for their email and role.', action: 'Add a user', ask: 'Add a user' },
     ],
   },

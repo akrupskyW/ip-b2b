@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISEai — Ask your verified food data anything</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ WISEai — page-specific shell ═══════════
+       Reuses the shared WISE palette + chat classes (wise.css Section 2). Everything
+       bespoke here is prefixed wa-. The shell mirrors reformulation.html / studio-ai.html:
+       a fixed-width WISEai chat card on the left, and up to two RESULT panes that open
+       on the right as the conversation surfaces data — one for Results & Details (food
+       results, food-detail cards, reports) and one for Visuals (charts, graphs, trends).
+       Each result pane carries its own three-dot menu + width control. */
+
+    :root {
+      --sec-green-10: rgba(50, 169, 102, 0.12);
+      --sec-red-10: rgba(220, 48, 56, 0.12);
+      --ter-amber-10: rgba(255, 196, 52, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+
+    /* ── Center chat column (the ONE shared WISEai chat, carded) ──
+       Default: the chat fills the whole modules row (full-screen, single pane).
+       Once a result pane opens, it collapses to a fixed-width side column so the
+       layout reads as a double pane. */
+    .wa-chat {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transform-origin: left center;
+      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+    }
+    /* When any result pane is open, dock the chat to a fixed-width column. */
+    #modules-row:has(.wa-pane.is-open) .wa-chat {
+      flex: 0 0 var(--chat-pane-w, 420px);
+      width: var(--chat-pane-w, 420px);
+    }
+    /* Chat width toggle (matches the shared module's 3-step widen) — only
+       meaningful while a pane is open and the chat is docked. */
+    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-wide { flex-basis: 620px; width: 620px; }
+    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-triple { flex-basis: 840px; width: 840px; }
+
+    /* Small in-chat lead + intent-chip helpers reused from studio-ai (kept so the
+       shared chat's inline chips read the same as everywhere else in the app). */
+    .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 4px 42px; }
+    .sc-reply-chips .chip { font-weight: 500; padding: 7px 13px; font-size: var(--fs-label); line-height: 1.25; text-align: left; max-width: 100%; }
+    @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
+    html.header-float .wa-chat .chat-topbar { z-index: 12 !important; }
+
+    /* Bigger welcome headline on the WISEai surface — it leads the full-width
+       chat, so give it more presence than the shared default. */
+    #wa-chat .ws-heading { font-size: clamp(1.9rem, 3.2vw, 2.6rem); }
+
+    /* Make the input placeholder the WISE blue so the prompt pops. */
+    #wa-chat .fl-input::placeholder { color: var(--primary); opacity: 1; }
+    html.dark #wa-chat .fl-input::placeholder { color: var(--primary-bright, #8B9FAF); }
+
+    /* Center the large welcome cards (and intent chips). The shared rule gives
+       these blocks width:100%, so on the full-width WISEai surface they stretch
+       edge-to-edge and the cards left-float. Let the card cluster shrink to its
+       content and center it (the welcome column is already align-items:center);
+       the max-width fits the full set on wide screens and caps + scrolls on
+       narrower ones. */
+    #wa-chat .sc-welcome > .ws-scorecards-section,
+    #wa-chat .sc-welcome > .ws-chips-wrap,
+    #wa-chat .sc-welcome > .ws-chips {
+      width: auto;
+      max-width: min(100%, 1040px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ═══════════ Right result panes ═══════════
+       Two carded modules that open on demand. Both share .wa-pane; each keeps its
+       own header controls (three-dot menu + 3-step width toggle). Hidden until the
+       conversation produces content for them. */
+    .wa-pane {
+      display: none;
+      flex-direction: column;
+      min-width: 0; min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .wa-pane.is-open {
+      display: flex;
+      flex: 1 1 0%;
+      min-width: 400px;
+      transform-origin: right center;
+      animation: panelBounceRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    /* Width control — cycles the pane's grow ratio so it visibly takes more of the
+       row. Single (1) · Double (2) · Triple (3). */
+    .wa-pane.is-open.pane-wide { flex-grow: 2; }
+    .wa-pane.is-open.pane-triple { flex-grow: 3; }
+    @media (prefers-reduced-motion: reduce) { .wa-chat, .wa-pane.is-open { animation: none !important; } }
+
+    /* Pane header — a Noto Serif title + muted meta, controls floated right.
+       Mirrors the product-portfolio board header (no boxed icon, no shaded strip). */
+    /* Pane header — a plain editorial masthead like reports.html (.rp-title-main):
+       a serif title + muted meta, NO icon and NO boxed/shaded chrome. The title
+       and meta are set dynamically to the current result's own name, so the
+       result name and the module header read as one thing. */
+    .wa-pane-head {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 20px 16px 16px 24px; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .wa-pane-head-titles { flex: 1 1 auto; min-width: 0; }
+    .wa-pane-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.16; }
+    .wa-pane-meta { font-size: 11.5px; color: var(--text-muted); margin: 5px 0 0; line-height: 1.4; }
+    .wa-pane-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+    .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; }
+    .wa-pane-body > .wa-block { animation: waBlockIn .34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+    @keyframes waBlockIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* Empty-state placeholder that hints what each pane will hold before it opens. */
+    .wa-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; height: 100%; gap: 12px; color: var(--text-muted); padding: 24px;
+    }
+    .wa-empty .material-icons { font-size: 34px; color: var(--text-subtle); }
+    .wa-empty-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 15px; color: var(--text); }
+    .wa-empty-sub { font-size: 12.5px; line-height: 1.5; max-width: 300px; }
+
+    /* ── Section scaffolding inside panes ── */
+    .wa-block { margin: 0 0 26px; }
+    .wa-block:last-child { margin-bottom: 0; }
+    /* As the conversation surfaces more results/charts, each new answer is
+       appended into the pane so it keeps growing. Separate stacked blocks with
+       a hairline rule so each result reads as its own section. */
+    .wa-pane-body > .wa-block + .wa-block { margin-top: 4px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+    .wa-sec-title .material-icons { font-size: 18px; color: var(--primary); }
+    html.dark .wa-sec-title .material-icons { color: var(--primary-bright, #8B9FAF); }
+    .wa-caption { font-size: 11.5px; color: var(--text-subtle); margin: 0 0 12px; font-style: italic; }
+
+    /* ── Result "table" (grid rows, head + body columns line up) ── */
+    .wa-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .wa-thead, .wa-trow { display: grid; align-items: center; gap: 10px; padding: 9px 14px; }
+    .wa-thead { background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    html.dark .wa-thead { background: rgba(255,255,255,0.04); }
+    .wa-th { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
+    .wa-th--end, .wa-td--end { text-align: right; justify-self: end; }
+    .wa-trow { border-bottom: 1px solid var(--border); transition: background .14s; }
+    .wa-trow:last-child { border-bottom: 0; }
+    .wa-trow:hover { background: var(--surface-2); }
+    html.dark .wa-trow:hover { background: rgba(255,255,255,0.03); }
+    .wa-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+    .wa-food { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.32; }
+    .wa-rank { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); font-size: 10.5px; font-weight: 800; flex: 0 0 auto; }
+    .wa-score { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .wa-score--bad { color: var(--sec-red-text); }
+    .wa-score--good { color: var(--sec-green-text); }
+    .wa-nodata { color: var(--text-subtle); }
+    .wa-cat { font-size: 11px; color: var(--text-subtle); }
+    .wa-ing { font-size: 11px; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .wa-table-foot { font-size: 11.5px; color: var(--text-subtle); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+    .wa-table-foot .material-icons { font-size: 14px; }
+
+    /* ═══ Result-set treatment ═══
+       The result's name now lives in the pane header (see .wa-pane-head), so a
+       block just carries its scorecards, a search, and a proper sortable table. */
+    .wa-resultset { margin: 0; }
+
+    /* ── Scorecards ── */
+    .wa-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+    .wa-stat { flex: 1 1 118px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-1); text-align: center; }
+    html.dark .wa-stat { background: rgba(255,255,255,0.04); }
+    .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .wa-stat--alert .wa-stat-num { color: var(--sec-red-text); }
+    .wa-stat--good .wa-stat-num { color: var(--sec-green-text); }
+
+    /* ── Toolbar + inline search ── */
+    .wa-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+    .wa-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
+    .wa-search-inline > .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .wa-search { width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px 0 42px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 9999px; outline: none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+    html.dark .wa-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .wa-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+
+    /* ── Sortable results table (real column headers, click-to-sort) ── */
+    .wa-tbl { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .wa-tbl-head, .wa-trow { display: grid; align-items: center; gap: 12px; padding: 10px 14px; }
+    .wa-tbl-head { background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    html.dark .wa-tbl-head { background: rgba(255,255,255,0.04); }
+    .wa-tbl-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; white-space: nowrap; }
+    button.wa-tbl-th { cursor: pointer; transition: color .14s; }
+    button.wa-tbl-th:hover { color: var(--text); }
+    .wa-tbl-th--end { justify-content: flex-end; text-align: right; }
+    .wa-tbl-th.is-sorted { color: var(--primary); }
+    html.dark .wa-tbl-th.is-sorted { color: var(--primary-bright, #8B9FAF); }
+    .wa-sort-ic { font-size: 14px !important; opacity: .5; }
+    .wa-tbl-th.is-sorted .wa-sort-ic { opacity: 1; }
+    .wa-tbl-body { display: block; }
+    .wa-trow { border-bottom: 1px solid var(--border); transition: background .14s; }
+    .wa-tbl-body .wa-trow:last-child { border-bottom: 0; }
+    .wa-trow:hover { background: var(--surface-2); }
+    html.dark .wa-trow:hover { background: rgba(255,255,255,0.03); }
+    .wa-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+    .wa-td--end { text-align: right; justify-self: end; }
+
+    /* Product cell — real food image + name with brand beneath it */
+    .wa-prod { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .wa-thumb { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; position: relative; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--primary); border: 1px solid var(--border); }
+    html.dark .wa-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+    .wa-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wa-thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
+    .wa-thumb-fallback .material-icons { font-size: 19px; }
+    .wa-prod-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .wa-prod-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.32; }
+    .wa-prod-brand { font-size: 11px; color: var(--text-subtle); }
+
+    /* Ingredients as its own column */
+    .wa-ing-cell { font-size: 11px; color: var(--text-muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .wa-ing-cell.wa-nodata { color: var(--text-subtle); }
+
+    /* Score as a plain sortable column value (no pill chip) */
+    .wa-score-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .wa-score-num--bad { color: var(--sec-red-text); }
+    .wa-score-num--good { color: var(--sec-green-text); }
+    .wa-empty-row { padding: 22px 14px; text-align: center; color: var(--text-subtle); font-size: 12px; border-top: 1px solid var(--border); }
+
+    /* ── Food-detail card (with a failed-lookup notice state) ── */
+    .wa-detail { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .wa-detail-top { display: flex; align-items: center; gap: 14px; padding: 18px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    html.dark .wa-detail-top { background: rgba(255,255,255,0.04); }
+    .wa-detail-thumb { width: 52px; height: 52px; flex: 0 0 auto; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
+    html.dark .wa-detail-thumb { color: var(--primary-bright, #8B9FAF); }
+    .wa-detail-thumb .material-icons { font-size: 26px; }
+    .wa-detail-name { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.25; }
+    .wa-detail-brand { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 3px; }
+    .wa-detail-score { margin-left: auto; text-align: center; flex: 0 0 auto; }
+    .wa-detail-score .n { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 24px; color: var(--sec-red-text); line-height: 1; }
+    .wa-detail-score .l { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); margin-top: 3px; }
+    .wa-detail-body { padding: 16px 18px 18px; }
+    .wa-notice { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: 11px; font-size: 12px; line-height: 1.45; margin-bottom: 14px; background: var(--ter-amber-10); border: 1px solid color-mix(in srgb, var(--ter-amber) 34%, transparent); color: var(--ter-amber-text); }
+    .wa-notice .material-icons { font-size: 17px; flex: 0 0 auto; margin-top: 1px; }
+    .wa-detail-sub { font-size: 12px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
+    .wa-chiplist { display: flex; flex-wrap: wrap; gap: 6px; }
+    .wa-ing-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 26%, transparent); color: var(--sec-red-text); }
+
+    /* ── Report layout ── */
+    .wa-report-hero { margin-bottom: 20px; }
+    .wa-report-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 900; font-size: 1.55rem; line-height: 1.15; letter-spacing: -.015em; color: var(--text); margin: 0 0 10px; }
+    .wa-report-lede { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); margin: 0; max-width: 640px; }
+    .wa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 22px; }
+    .wa-stat { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+    html.dark .wa-stat { background: rgba(255,255,255,0.04); }
+    .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 26px; line-height: 1; color: var(--text); }
+    .wa-stat-num .u { font-size: 14px; color: var(--text-muted); font-weight: 700; }
+    .wa-stat-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 7px; }
+    .wa-shortlist { display: flex; flex-direction: column; gap: 8px; }
+    .wa-cand { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); }
+    html.dark .wa-cand { background: rgba(255,255,255,0.03); }
+    .wa-cand-rank { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 13px; background: var(--primary); color: #fff; }
+    html.dark .wa-cand-rank { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .wa-cand-body { flex: 1 1 auto; min-width: 0; }
+    .wa-cand-name { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .wa-cand-note { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .wa-cand-score { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 16px; color: var(--sec-green-text); flex: 0 0 auto; }
+
+    /* ── Charts (SVG + div bars, app tokens only) ── */
+    .wa-chart-card { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); }
+    .wa-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--text-muted); }
+    .wa-chart-legend .k { display: inline-flex; align-items: center; gap: 6px; }
+    .wa-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .wa-bars { display: flex; flex-direction: column; gap: 9px; }
+    .wa-bar-row { display: grid; grid-template-columns: 92px 1fr 44px; align-items: center; gap: 10px; }
+    .wa-bar-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; }
+    .wa-bar-track { height: 16px; border-radius: 9999px; background: var(--surface-3); overflow: hidden; }
+    .wa-bar-fill { height: 100%; border-radius: 9999px; background: var(--primary); }
+    html.dark .wa-bar-fill { background: var(--primary-bright, #8B9FAF); }
+    .wa-bar-val { font-size: 11.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-radar-wrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .wa-radar-scores { flex: 1 1 220px; min-width: 200px; }
+    .wa-nd-tag { display: inline-block; padding: 1px 7px; border-radius: 9999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--ter-amber-10); color: var(--ter-amber-text); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); }
+
+    html.full-bleed .wa-chat, html.full-bleed .wa-pane { border: 0; border-radius: 0; box-shadow: none; }
+    html.full-bleed #modules-row { gap: 0; }
+    html.full-bleed body { padding: 0; }
+
+    /* Narrow viewports: let the modules scroll horizontally rather than crush. */
+    @media (max-width: 1180px) {
+      #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
+      .wa-pane.is-open { min-width: 480px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module (shared WISE app nav) -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat + result panes share the shell's "modules" grid area -->
+    <div id="modules-row">
+      <!-- 1 · WISEai chat — the ONE shared WISEai chat module (js/wiseai-chat.js). -->
+      <main class="wa-chat" id="wa-chat"></main>
+
+      <!-- 2 · Results & Details pane — food results, food-detail cards, reports. -->
+      <section class="wa-pane" id="wa-results" aria-label="Results & Details">
+        <header class="wa-pane-head">
+          <div class="wa-pane-head-titles">
+            <h2 class="wa-pane-title" id="wa-results-title">Results &amp; Details</h2>
+            <p class="wa-pane-meta" id="wa-results-meta">Food results, detail cards &amp; reports</p>
+          </div>
+          <div class="wa-pane-controls">
+            <div class="panel-more-wrap" data-pane-more="results">
+              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <div class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-icons topbar-menu-icon">download</span><span>Export</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close pane</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-pane-width="results" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Results pane width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
+        </header>
+        <div class="wa-pane-body" id="wa-results-body"></div>
+      </section>
+
+      <!-- 3 · Visuals pane — charts, graphs & trends. -->
+      <section class="wa-pane" id="wa-visuals" aria-label="Visuals">
+        <header class="wa-pane-head">
+          <div class="wa-pane-head-titles">
+            <h2 class="wa-pane-title" id="wa-visuals-title">Visuals</h2>
+            <p class="wa-pane-meta" id="wa-visuals-meta">Charts, graphs &amp; trends</p>
+          </div>
+          <div class="wa-pane-controls">
+            <div class="panel-more-wrap" data-pane-more="visuals">
+              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <div class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-icons topbar-menu-icon">download</span><span>Export</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close pane</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" data-pane-width="visuals" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Visuals pane width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
+        </header>
+        <div class="wa-pane-body" id="wa-visuals-body"></div>
+      </section>
+    </div><!-- /#modules-row -->
+  </div>
+
+  <!-- Shared WISE navigation + brand strip (same pattern as studio-ai.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'wiseai' });
+    }
+
+    applyStoredTextSize();
+  </script>
+
+  <!-- Appearance + profile popovers for the nav footer (mirrors studio-ai.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEaiDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+
+        pop.addEventListener('click', (ev) => {
+          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
+          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
+          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
+          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
+          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
+          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML =
+          '<div class="wise-popover-header">Arthur Krupsky</div>' +
+          '<div class="wise-popover-actions">' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
+            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
+            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
+          '</div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
+          '<div class="wise-popover-divider"></div>' +
+          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <!-- WISEai — mounts the shared chat (left) and drives the scripted transcript,
+       opening the Results & Details / Visuals panes as data surfaces. -->
+  <script type="module">
+    import { mountWISEaiChat } from '../js/wiseai-chat.js';
+
+    /* ═════════ Data (copy + rows lifted verbatim from the WISEai transcript) ═════════ */
+    const WORST_FOODS = [
+      ['Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.', 'Member\u2019s Mark', 0.06],
+      ['Freshness Guaranteed White And Chocolate Cupcakes With Buttercream Icing, 12 Count', 'Freshness Guaranteed', 0.12],
+      ['Mini Boston Crm 6-more - Ea', 'Cheesecake & Cream Cakes', 0.17],
+      ['Freshness Guaranteed White Cupcakes With Icing, 52 Oz, 24 Count, Colors Will Vary', 'Freshness Guaranteed', 0.47],
+      ['Brownies Cookies N\u2019Creme 8 Ct - Ea', 'Brownies', 0.58],
+      ['Freshness Guaranteed 7-Inch Round Confetti Cake, White Buttercreme, 37oz, Refrigerated', 'Freshness Guaranteed', 0.64],
+      ['Bakery Cake Cream Half Marble - Each', 'Categories', 0.64],
+      ['Chocolate Lovers Candy Baby Cake - Ea', '\u2014', 0.87],
+      ['Carlo\u2019s Bakery Christmas Tree Cake, 24 Oz, 1 Count', 'Carlos Bakery', 0.93],
+      ['Oscar Mayer Blueberry Enrobed Sausage Link, 3.31 Pound', 'Oscar Mayer', 1.05],
+      ['Boxcar Express O-Coffee (Whole Bean Or Grounded)', 'Chocolat\u00e9', 1.11],
+      ['Apples Chocolate Caramel - 9 Oz', 'Apple Fruit', 1.17],
+      ['Freshness Guaranteed 7" Color Blast Rodeo Cake, 34 Oz', 'Freshness Guaranteed', 1.17],
+      ['Peanut Butter Chocolate Passon Cake', 'Dawn\u2019s', 1.17],
+      ['Bakery Cupcake Jumbo Iced - Each', '\u2014', 1.22],
+      ['Freshness Guaranteed Color Blast Glam Cake, 35 Oz, Marble Cake', 'Freshness Guaranteed', 1.28],
+      ['Bakery Cake 8 Inch 2 Layer Lemon - Each', 'Classic Cakes & Cupcakes', 1.28],
+      ['Little Debbie Star Crunch Caramel Fudge Crispy Cookies 12 Count 13 Oz', 'Little Debbie', 1.34],
+      ['Mardi Gras Vanilla Cupcakes 10 Oz, 12 Count', 'Cafe Valley', 1.40],
+      ['Carlo\u2019s Bakery Valentine\u2019s Day 8" Heart Cake, 24 Oz', 'Carlos Bakery', 1.46],
+    ];
+
+    const COOKIES = [
+      ['Overjoyed Chocolate Chip Biscotti With Dark Chocolaty Drizzle Mini - 10 Oz', 'Overjoyed', 100, 'Enriched Wheat Flour, Sugar, Chocolate Chips, Dark Chocolate Flavored Confectionary\u2026'],
+      ['Sweet Logic Mini Cookies - Chocolate Chip - Nut Free - Gluten Free - Keto (3-Pack)', 'Sweet Logic', 100, 'sunflower seed flour\u2026'],
+      ['Manischewitz Passover Chocolate Chip Cookies, (2 Pack) 7 Oz Mezonos', 'Manischewitz', 100, 'MATZA MEAL\u2026'],
+      ['Mpb Cookie Bites, Chocolate Chocolate Chip, Gluten Free, Low Sugar (Pack Of 10)', 'Mpb', 100, 'Whey Protein, Oat Flour\u2026'],
+      ['Sheila G\u2019s Brownie Brittle - Chocolate Chip - Case Of 12 - 5 Oz.', 'Sheila G\u2019s', 100, 'Enriched Wheat Flour Bleached, Powdered Sugar, Palm Kernel, Palm Oil\u2026'],
+      ['Gogo Quinoa Chocolate Chip Soft Cookies, 168 Gr', 'Gogo Quinoa', 100, 'Quinoa, Chia, Kaniwa\u2026'],
+      ['Maxine\u2019s Heavenly Chocolate Chunk Cookies, Made With Oats & Coconut Sugar (2 Pk)', 'Maxine\u2019s Heavenly', 100, 'organic rice flour, sea salt\u2026'],
+      ['Beast Energy Cookie, Protein Cookie - Chocolate Chip (Pack Of 6)', 'Beast', 100, 'Oatmeal Raisin\u2026'],
+      ['David\u2019s Cookies Fresh-Baked Sweet Sampler Mini Bites Tin - 14oz', 'David\u2019s Cookies', 100, 'flour, eggs, butter, unsweetened cocoa\u2026'],
+      ['Keto, Mpb Cookie Bites, Chocolate Chip, Plant Based, Vegan, Pack Of 10', 'Mpb', 100, 'Vegan, Plant Based Protein\u2026'],
+      ['Get Back To Human Chocolate Chip Grain-Free Cookies', 'Get Back To Human', 100, 'Organic Almonds, Organic Cacao, Unrefined Organic Coconut Sugar, Sea Salt.'],
+      ['Murray Sugar Free Cookies, Chocolate Chip, 8.8 Ounce Tray, Pack Of 12', 'Murray', 100, 'Enriched flour (wheat flour, niacin, reduced iron, vitamin B1\u2026)'],
+      ['Voortman #1 In U.S. Sugar Free Fudge Brownie Chocolate Chip Cookies - 4 Pack', 'Voortman', 98.5, 'Zero Sugar\u2026'],
+      ['Emmy\u2019s Organics Coconut Cookies Gluten Free Vegan Chocolate Chip - 6 Oz Pack Of 3', 'Emmy\u2019s Organics', 98.5, 'organic coconut, organic agave syrup, *organic chocolate chips, organic almond flour\u2026'],
+      ['Paleo, Vegan Chocolate Chip Cookie: 5 Count, Grain-Free, Coconut Sugar Sweetened', 'Paleo', 98.5, 'Sprouted Organic Almonds, Organic Tapioca, Organic Coconut Sugar, Organic Coconut Oil\u2026'],
+    ];
+
+    /* ═════════ Helpers ═════════ */
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    const fmtScore = (n) => (Math.round(n * 100) / 100).toFixed(2);
+
+    /* Result panes ------------------------------------------------------------ */
+    const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals') };
+    const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body') };
+    const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title') };
+    const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta') };
+
+    /* Append a result/chart into a pane so the module keeps GROWING as the
+       conversation surfaces more — each answer stacks below the previous one.
+       The result's own name + byline are promoted INTO the pane header (so the
+       module header and the result name read as one), then the body accumulates.
+       Returns the first appended block so we can reveal it. */
+    function openPane(which, { html, title, meta } = {}) {
+      const el = paneEl[which];
+      if (!el) return;
+      if (title != null && paneTitle[which]) paneTitle[which].textContent = title;
+      if (meta != null && paneMeta[which]) paneMeta[which].textContent = meta;
+      let firstAdded = null;
+      if (html != null) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        while (tmp.firstChild) {
+          const node = tmp.firstChild;
+          paneBody[which].appendChild(node);
+          if (!firstAdded && node.nodeType === 1) firstAdded = node;
+        }
+      }
+      if (!el.classList.contains('is-open')) {
+        el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
+        el.classList.add('is-open');
+      }
+      /* Scroll the newest result into view so growth is visible. */
+      if (firstAdded) requestAnimationFrame(() => firstAdded.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    }
+    function closePane(which) {
+      const el = paneEl[which];
+      if (el) el.classList.remove('is-open', 'pane-wide', 'pane-triple');
+      if (paneBody[which]) paneBody[which].innerHTML = '';
+      const wb = document.querySelector(`[data-pane-width="${which}"]`);
+      if (wb) syncPaneWidthBtn(wb, 0);
+    }
+
+    /* Per-pane three-dot menu + width control (their own, independent of the chat) */
+    const PANE_W_ICONS = ['width_normal', 'width_wide', 'width_full'];
+    const PANE_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+    function syncPaneWidthBtn(btn, tier) {
+      btn.classList.toggle('is-on', tier >= 1);
+      btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+      btn.title = PANE_W_TITLES[tier];
+      const ic = btn.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = PANE_W_ICONS[tier];
+    }
+    document.querySelectorAll('[data-pane-width]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const which = btn.dataset.paneWidth;
+        const el = paneEl[which];
+        const cur = el.classList.contains('pane-triple') ? 2 : el.classList.contains('pane-wide') ? 1 : 0;
+        const next = (cur + 1) % 3;
+        el.classList.toggle('pane-wide', next >= 1);
+        el.classList.toggle('pane-triple', next >= 2);
+        syncPaneWidthBtn(btn, next);
+      });
+    });
+    document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
+      const btn = wrap.querySelector('.panel-more-btn');
+      const pop = wrap.querySelector('.topbar-popover');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = pop.classList.contains('hidden');
+        document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
+        document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+        pop.classList.toggle('hidden', !open);
+        btn.classList.toggle('is-open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      pop.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-pane-act]');
+        if (!item) return;
+        pop.classList.add('hidden'); btn.classList.remove('is-open');
+        const act = item.dataset.paneAct;
+        const which = wrap.dataset.paneMore;
+        if (act === 'close') closePane(which);
+        else if (act === 'export') {
+          const blob = new Blob(['WISEai export placeholder\n'], { type: 'text/plain' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `wiseai-${which}.txt`; a.click();
+        } else if (act === 'share') {
+          const url = location.href;
+          if (navigator.share) navigator.share({ title: 'WISEai', url }).catch(() => {});
+          else navigator.clipboard?.writeText(url).catch(() => {});
+        }
+      });
+    });
+    document.addEventListener('click', () => {
+      document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
+      document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+    });
+
+    /* Live search — filters the rows of whichever result-set the input belongs to. */
+    function wireResultSearch(body) {
+      if (!body) return;
+      body.addEventListener('input', (e) => {
+        const inp = e.target.closest('.wa-search');
+        if (!inp) return;
+        const set = inp.closest('.wa-resultset');
+        if (!set) return;
+        const q = inp.value.trim().toLowerCase();
+        let shown = 0;
+        set.querySelectorAll('.wa-trow').forEach((row) => {
+          const hit = !q || (row.dataset.search || '').includes(q);
+          row.style.display = hit ? '' : 'none';
+          if (hit) shown += 1;
+        });
+        const empty = set.querySelector('[data-empty]');
+        if (empty) empty.hidden = shown !== 0;
+      });
+    }
+    wireResultSearch(paneBody.results);
+    wireResultSearch(paneBody.visuals);
+
+    /* Click-to-sort on the table column headers. Re-orders the rows in place and
+       renumbers the rank column so the ranking follows the active sort. */
+    function wireSort(body) {
+      if (!body) return;
+      body.addEventListener('click', (e) => {
+        const th = e.target.closest('button.wa-tbl-th[data-sort]');
+        if (!th) return;
+        const tbl = th.closest('.wa-tbl');
+        if (!tbl) return;
+        const key = th.dataset.sort;
+        const dir = tbl.dataset.sortCol === key
+          ? (tbl.dataset.sortDir === 'asc' ? 'desc' : 'asc')
+          : (key === 'score' ? 'desc' : 'asc');
+        tbl.dataset.sortCol = key;
+        tbl.dataset.sortDir = dir;
+        tbl.querySelectorAll('.wa-tbl-th').forEach((h) => {
+          const ic = h.querySelector('.wa-sort-ic');
+          const on = h.dataset.sort === key;
+          h.classList.toggle('is-sorted', on);
+          if (ic && h.dataset.sort) ic.textContent = on ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+        });
+        const tb = tbl.querySelector('.wa-tbl-body');
+        const rows = Array.from(tb.querySelectorAll('.wa-trow'));
+        rows.sort((a, b) => {
+          let av, bv;
+          if (key === 'score') { av = parseFloat(a.dataset.score); bv = parseFloat(b.dataset.score); }
+          else { av = a.dataset.name || ''; bv = b.dataset.name || ''; }
+          if (av < bv) return dir === 'asc' ? -1 : 1;
+          if (av > bv) return dir === 'asc' ? 1 : -1;
+          return 0;
+        });
+        rows.forEach((r, i) => { tb.appendChild(r); const rk = r.querySelector('.wa-rank'); if (rk) rk.textContent = i + 1; });
+      });
+    }
+    wireSort(paneBody.results);
+    wireSort(paneBody.visuals);
+
+    /* ═════════ Content builders ═════════ */
+    /* Representative food photos pulled from the app's asset library. The exact
+       943k database items don't ship photos, so each row is assigned the closest
+       available product shot, with a Material icon fallback if the file 404s. */
+    const IMG = '../assets/';
+    const DESSERT_IMGS = [
+      'portfolio/coconut_brownies.png', 'portfolio/chocolate_brownies.png', 'portfolio/frosted_toaster_pastries.png',
+      'portfolio/dark_cherry_brownies.png', 'portfolio/chocolate_chip_muffins.png', 'portfolio/blueberry_muffins.png',
+      'portfolio/apple_cinnamon_muffins.png', 'portfolio/oatmeal_raisin_cookies.png', 'portfolio/vegan_chocolate_brownies.png',
+      'portfolio/carrot_raisin_muffins.png',
+    ];
+    const COOKIE_IMGS = [
+      'portfolio/oatmeal_raisin_cookies.png', 'top5-walnut-brownie-bar.png', 'top5-almond-coconut-crisp.png',
+      'top5-matcha-cashew-bites.png', 'top5-pistachio-rose-bar.png', 'top5-ginger-turmeric-bar.png',
+      'date-better-cashew-lime-crisp.png', 'portfolio/chocolate_brownies.png', 'portfolio/coconut_brownies.png',
+      'portfolio/dark_cherry_brownies.png', 'portfolio/granola.jpg',
+    ];
+    function thumb(imgRel, fallbackIcon) {
+      return `<span class="wa-thumb"><img class="wa-thumb-img" src="${IMG}${imgRel}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">${fallbackIcon}</span></span></span>`;
+    }
+
+    function scoreCards(cards) {
+      return `<div class="wa-stats">${cards.map((c) => `<div class="wa-stat${c.tone ? ' wa-stat--' + c.tone : ''}"><span class="wa-stat-num">${c.num}</span><span class="wa-stat-label">${esc(c.label)}</span></div>`).join('')}</div>`;
+    }
+
+    function searchToolbar(placeholder) {
+      return `<div class="wa-toolbar"><div class="wa-search-inline"><span class="material-icons">search</span><input type="text" class="wa-search" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}"></div></div>`;
+    }
+
+    /* Proper sortable table: real column headers (click Food / Score to sort),
+       a real food photo per row, the brand tucked under the name, and — when the
+       data has it — ingredients in their own column. Score is a plain numeric
+       column value, not a pill. */
+    function sortTable(rows, { images, fallbackIcon = 'restaurant', tone = 'bad', showIngredients = false, sortCol = 'score', sortDir = 'desc' } = {}) {
+      const cols = showIngredients
+        ? '28px minmax(0,1.5fr) minmax(0,1.35fr) 74px'
+        : '28px minmax(0,1fr) 74px';
+      const scoreCls = tone === 'good' ? 'wa-score-num--good' : 'wa-score-num--bad';
+      const arrow = (key) => {
+        const on = key === sortCol;
+        return on ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+      };
+      const cls = (key, end) => `wa-tbl-th${end ? ' wa-tbl-th--end' : ''}${key === sortCol ? ' is-sorted' : ''}`;
+      const head = `<div class="wa-tbl-head" style="grid-template-columns:${cols}">
+          <span class="wa-tbl-th">#</span>
+          <button type="button" class="${cls('name')}" data-sort="name">Food<span class="material-icons wa-sort-ic">${arrow('name')}</span></button>
+          ${showIngredients ? '<span class="wa-tbl-th">Ingredients</span>' : ''}
+          <button type="button" class="${cls('score', true)}" data-sort="score">Score<span class="material-icons wa-sort-ic">${arrow('score')}</span></button>
+        </div>`;
+      const body = rows.map((r, i) => {
+        const [food, brand, score] = r;
+        const img = images[i % images.length];
+        const key = `${food} ${brand}`.toLowerCase();
+        const ing = showIngredients
+          ? `<div class="wa-td wa-ing-cell${r[3] ? '' : ' wa-nodata'}">${esc(r[3] || '\u2014')}</div>`
+          : '';
+        return `<div class="wa-trow" style="grid-template-columns:${cols}" data-search="${esc(key)}" data-name="${esc(food.toLowerCase())}" data-score="${score}">
+            <span class="wa-rank">${i + 1}</span>
+            <div class="wa-prod">
+              ${thumb(img, fallbackIcon)}
+              <span class="wa-prod-text">
+                <span class="wa-prod-name">${esc(food)}</span>
+                <span class="wa-prod-brand">${esc(brand)}</span>
+              </span>
+            </div>
+            ${ing}
+            <div class="wa-td--end"><span class="wa-score-num ${scoreCls}">${fmtScore(score)}</span></div>
+          </div>`;
+      }).join('');
+      return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}">
+          ${head}
+          <div class="wa-tbl-body">${body}</div>
+          <div class="wa-empty-row" data-empty hidden>No foods match your search.</div>
+        </div>`;
+    }
+
+    function worstFoodsView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '943,428', label: 'Foods searched' },
+            { num: '25', label: 'Matches' },
+            { num: '0.06', label: 'Lowest score', tone: 'alert' },
+            { num: '20', label: 'Shown' },
+          ])}
+          ${searchToolbar('Search food or brand\u2026')}
+          ${sortTable(WORST_FOODS, { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc' })}
+          <div class="wa-table-foot"><span class="material-icons">south</span>Lower WISEscore = further from the WISE standard. The bottom of the database clusters around decorated cakes, cupcakes &amp; dessert kits.</div>
+        </div>`;
+    }
+
+    function tenWorstView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '10', label: 'Shown' },
+            { num: '0.06', label: 'Lowest score', tone: 'alert' },
+            { num: '0', label: 'Gut Health', tone: 'alert' },
+            { num: '0', label: 'Excellent Src', tone: 'alert' },
+          ])}
+          ${searchToolbar('Search these 10 foods\u2026')}
+          ${sortTable(WORST_FOODS.slice(0, 10), { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc' })}
+          <div class="wa-table-foot"><span class="material-icons">info</span>Gut Health and Excellent Source came back empty across all ten — that data gap is what the spider chart is really showing.</div>
+        </div>`;
+    }
+
+    function cupcakeDetailView() {
+      const badIngredients = ['Refined sugars & syrups', 'Multiple refined oils', 'Emulsifiers & stabilizers', 'Artificial colors', 'Multiple preservatives'];
+      return `
+        <div class="wa-block">
+          <div class="wa-detail">
+            <div class="wa-detail-top">
+              <span class="wa-detail-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/frosted_toaster_pastries.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">cake</span></span></span>
+              <div style="min-width:0">
+                <div class="wa-detail-name">Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</div>
+                <div class="wa-detail-brand">Member\u2019s Mark</div>
+              </div>
+              <div class="wa-detail-score"><div class="n">0.06</div><div class="l">WISEscore</div></div>
+            </div>
+            <div class="wa-detail-body">
+              <div class="wa-notice"><span class="material-icons">error_outline</span><span>The full food-detail card couldn\u2019t be fetched — the detail lookup failed. Below is what\u2019s confirmed from the search result.</span></div>
+              <p class="wa-detail-sub">Its ingredient list is extremely long and dense with:</p>
+              <div class="wa-chiplist">${badIngredients.map((t) => `<span class="wa-ing-chip"><span class="material-icons" style="font-size:13px">close</span>${esc(t)}</span>`).join('')}</div>
+              <p class="wa-detail-sub" style="margin-top:16px">Why it ranks last</p>
+              <p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:0">That combination — not simply being \u201ca dessert\u201d — is why it surfaced at the very bottom of the ranking.</p>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function cookiesView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '3,010', label: 'Cookies matched' },
+            { num: '15', label: 'Shown' },
+            { num: '100', label: 'Top score', tone: 'good' },
+            { num: '12', label: 'Perfect scores', tone: 'good' },
+          ])}
+          ${searchToolbar('Search cookies or brand\u2026')}
+          ${sortTable(COOKIES, { images: COOKIE_IMGS, fallbackIcon: 'cookie', tone: 'good', showIngredients: true, sortCol: 'score', sortDir: 'desc' })}
+          <div class="wa-table-foot"><span class="material-icons">warning_amber</span>Several top rows have broken or incomplete ingredient lists, so read the ranking as strong candidates, not a final answer.</div>
+        </div>`;
+    }
+
+    /* ── Charts ── */
+    function radarChart() {
+      const size = 280, cx = 140, cy = 140, R = 100;
+      const axes = [
+        { label: 'WISEscore', ang: -90, data: true },
+        { label: 'Gut Health', ang: 30, data: false },
+        { label: 'Excellent Source', ang: 150, data: false },
+      ];
+      const pt = (ang, t) => {
+        const r = (ang * Math.PI) / 180;
+        return [cx + R * t * Math.cos(r), cy + R * t * Math.sin(r)];
+      };
+      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" style="max-width:300px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods">`;
+      // rings
+      [0.33, 0.66, 1].forEach((t) => {
+        const poly = axes.map((a) => pt(a.ang, t).map((v) => v.toFixed(1)).join(',')).join(' ');
+        svg += `<polygon points="${poly}" fill="none" stroke="var(--border-strong)" stroke-width="1" opacity="0.7"/>`;
+      });
+      // spokes
+      axes.forEach((a) => {
+        const [x, y] = pt(a.ang, 1);
+        svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-strong)" stroke-width="1" ${a.data ? '' : 'stroke-dasharray="4 4"'} opacity="0.8"/>`;
+      });
+      // spread of the 10 normalized WISEscores along the data axis
+      const scores = WORST_FOODS.slice(0, 10).map((r) => r[2]);
+      const mn = Math.min(...scores), mx = Math.max(...scores);
+      const norm = (s) => 0.16 + 0.72 * ((s - mn) / (mx - mn || 1));
+      const avgT = norm(scores.reduce((a, b) => a + b, 0) / scores.length);
+      // collapsed polygon: real data on axis 1, near-zero on the two empty axes
+      const polyPts = [pt(-90, avgT), pt(30, 0.05), pt(150, 0.05)].map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+      svg += `<polygon points="${polyPts}" fill="var(--primary)" fill-opacity="0.18" stroke="var(--primary)" stroke-width="2"/>`;
+      // dots for each food on the data axis
+      scores.forEach((s) => {
+        const [x, y] = pt(-90, norm(s));
+        svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="var(--primary)"/>`;
+      });
+      // axis labels
+      axes.forEach((a) => {
+        const [x, y] = pt(a.ang, 1.16);
+        const anchor = Math.abs(a.ang + 90) < 1 ? 'middle' : a.ang === 30 ? 'start' : 'end';
+        svg += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" font-size="10.5" font-weight="700" fill="var(--text)">${a.label}</text>`;
+      });
+      svg += `</svg>`;
+
+      const scoreBars = WORST_FOODS.slice(0, 10).map((r) => {
+        const w = (norm(r[2]) * 100).toFixed(0);
+        return `<div class="wa-bar-row" style="grid-template-columns:1fr 90px 44px">
+            <div class="wa-bar-label" style="text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r[0])}</div>
+            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${w}%"></div></div>
+            <div class="wa-bar-val">${fmtScore(r[2])}</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="wa-block">
+          <p class="wa-sec-title">Spider chart · 10 worst foods</p>
+          <p class="wa-caption">Requested sort: gut health &amp; immune-system support. Only WISEscore returned data.</p>
+          <div class="wa-chart-card">
+            <div class="wa-radar-wrap">
+              <div style="flex:0 0 300px;max-width:300px">${svg}</div>
+              <div class="wa-radar-scores">
+                <div style="margin-bottom:8px"><span class="wa-nd-tag">No data</span> <span style="font-size:11px;color:var(--text-muted)">Gut Health · Excellent Source came back empty across the set.</span></div>
+                <div class="wa-bars">${scoreBars}</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function scoreCurveChart() {
+      // "Where the cookie shell gets its score" — a descending curve across the ranking.
+      const W = 560, H = 200, padL = 34, padR = 14, padT = 14, padB = 26;
+      const pts = [100, 100, 100, 100, 100, 98.5, 96, 91, 84, 73, 61, 49, 38, 29, 22];
+      const n = pts.length, mx = 100;
+      const x = (i) => padL + (i / (n - 1)) * (W - padL - padR);
+      const y = (v) => padT + (1 - v / mx) * (H - padT - padB);
+      const line = pts.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+      const area = `${padL},${(H - padB)} ${line} ${(W - padR)},${(H - padB)}`;
+      let grid = '';
+      [0, 25, 50, 75, 100].forEach((g) => {
+        const yy = y(g);
+        grid += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+        grid += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-subtle)">${g}</text>`;
+      });
+      return `
+        <div class="wa-block">
+          <p class="wa-sec-title">Where the cookie shell gets its score</p>
+          <div class="wa-chart-card">
+            <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="WISEscore across the ranked chocolate chip cookies">
+              ${grid}
+              <polygon points="${area}" fill="var(--primary)" fill-opacity="0.12"/>
+              <polyline points="${line}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>
+              <text x="${padL}" y="${H - 6}" font-size="9" fill="var(--text-subtle)">Rank 1</text>
+              <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="9" fill="var(--text-subtle)">Rank ${n}</text>
+            </svg>
+            <p class="wa-caption" style="margin:8px 0 0">Score holds at the top of the ranking, then falls off sharply as ingredient lists get noisier and more chocolate-forward.</p>
+          </div>
+        </div>`;
+    }
+
+    function distributionChart() {
+      const buckets = [
+        ['90–100', 612], ['70–89', 548], ['50–69', 806], ['30–49', 574], ['0–29', 470],
+      ];
+      const mx = Math.max(...buckets.map((b) => b[1]));
+      const bars = buckets.map(([lbl, v]) => `<div class="wa-bar-row">
+          <div class="wa-bar-label">${lbl}</div>
+          <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%"></div></div>
+          <div class="wa-bar-val">${v.toLocaleString()}</div>
+        </div>`).join('');
+      return `
+        <div class="wa-block">
+          <p class="wa-sec-title">WISEscore distribution · 3,010 cookies</p>
+          <div class="wa-chart-card"><div class="wa-bars">${bars}</div></div>
+        </div>`;
+    }
+
+    function trendSlopeChart() {
+      const W = 560, H = 200, padT = 20, padB = 30, padX = 90;
+      const series = [
+        ['Coconut / almond-base', 42, 88, 'var(--sec-green)'],
+        ['Sugar-free / keto', 55, 61, 'var(--primary)'],
+        ['Drizzled / enrobed', 70, 24, 'var(--sec-red)'],
+      ];
+      const y = (v) => padT + (1 - v / 100) * (H - padT - padB);
+      const xL = padX, xR = W - padX;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Trend-style slope of cookie clusters by WISEscore">`;
+      svg += `<line x1="${xL}" y1="${padT}" x2="${xL}" y2="${H - padB}" stroke="var(--border)" stroke-width="1"/>`;
+      svg += `<line x1="${xR}" y1="${padT}" x2="${xR}" y2="${H - padB}" stroke="var(--border)" stroke-width="1"/>`;
+      svg += `<text x="${xL}" y="${H - 12}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">Ingredient rank</text>`;
+      svg += `<text x="${xR}" y="${H - 12}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">WISEscore</text>`;
+      series.forEach(([lbl, a, b, col]) => {
+        svg += `<line x1="${xL}" y1="${y(a).toFixed(1)}" x2="${xR}" y2="${y(b).toFixed(1)}" stroke="${col}" stroke-width="2.5"/>`;
+        svg += `<circle cx="${xL}" cy="${y(a).toFixed(1)}" r="3.5" fill="${col}"/>`;
+        svg += `<circle cx="${xR}" cy="${y(b).toFixed(1)}" r="3.5" fill="${col}"/>`;
+        svg += `<text x="${xR + 8}" y="${(y(b) + 3).toFixed(1)}" font-size="9.5" font-weight="600" fill="var(--text)">${b}</text>`;
+      });
+      svg += `</svg>`;
+      const legend = series.map(([lbl, , , col]) => `<span class="k"><span class="wa-dot" style="background:${col}"></span>${esc(lbl)}</span>`).join('');
+      return `
+        <div class="wa-block">
+          <p class="wa-sec-title">Trend-style slopes</p>
+          <p class="wa-caption">Built from the current cookie ranking (not invented time trends): where chocolate falls later in the list, WISEscore climbs.</p>
+          <div class="wa-chart-card">${svg}<div class="wa-chart-legend">${legend}</div></div>
+        </div>`;
+    }
+
+    function reportView() {
+      const shortlist = [
+        ['Paleo, Vegan Chocolate Chip Cookie', 'Chocolate chips appear last — least chocolate by weight.', 98.5],
+        ['Emmy\u2019s Organics Coconut Cookies', 'Coconut & almond base ahead of the chocolate chips.', 98.5],
+        ['Get Back To Human Grain-Free Cookies', 'Almond / cacao base, short clean ingredient list.', 100],
+      ];
+      return `
+        <div class="wa-block">
+          <div class="wa-report-hero">
+            <h1 class="wa-report-title">Finding the best chocolate chip cookie with the least chocolate load</h1>
+            <p class="wa-report-lede">A full visual read of the chocolate chip cookie ranking — ranked views, a candidate shortlist, and trend-style slopes built from the current data rather than invented time trends. The set still contains noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates.</p>
+          </div>
+          <div class="wa-stats">
+            <div class="wa-stat"><div class="wa-stat-num">3,010</div><div class="wa-stat-label">Cookies matched</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">44.4</div><div class="wa-stat-label">Avg WISEscore</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">35.7<span class="u">%</span></div><div class="wa-stat-label">Clean / credible lists</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">3</div><div class="wa-stat-label">Shortlisted</div></div>
+          </div>
+          <p class="wa-sec-title">Candidate shortlist</p>
+          <div class="wa-shortlist">
+            ${shortlist.map((c, i) => `<div class="wa-cand">
+                <span class="wa-cand-rank">${i + 1}</span>
+                <div class="wa-cand-body"><div class="wa-cand-name">${esc(c[0])}</div><div class="wa-cand-note">${esc(c[1])}</div></div>
+                <span class="wa-cand-score">${fmtScore(c[2])}</span>
+              </div>`).join('')}
+          </div>
+          <div class="wa-table-foot" style="margin-top:18px"><span class="material-icons">insights</span>Charts, distribution &amp; trend slopes are in the Visuals pane →</div>
+        </div>`;
+    }
+
+    function reportVisualsView() {
+      return distributionChart() + scoreCurveChart() + trendSlopeChart();
+    }
+
+    /* ═════════ Scripted transcript (chips → user turn → WISEai reply → panes) ═════════
+       The chat transcript stays verbatim to the source conversation; only the
+       surfaced RESULTS move into the panes on the right. */
+    const INTENTS = [
+      { intent: 'upf',     icon: 'science',        label: 'Is this ingredient list ultra-processed?' },
+      { intent: 'worst',   icon: 'trending_down',  label: 'What\u2019s the worst food in our database?' },
+      { intent: 'spider',  icon: 'radar',          label: 'Spider-chart the 10 worst foods by gut & immune health' },
+      { intent: 'cupcake', icon: 'cake',           label: 'Tell me more about the worst-ranked cupcake' },
+      { intent: 'cookie',  icon: 'cookie',         label: 'Best chocolate chip cookie with the least chocolate' },
+      { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report — all the charts & trends' },
+    ];
+
+    const INTENT_REPLIES = {
+      upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
+      worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br><em>Opened the full ranking in Results &amp; Details \u2192</em>',
+      spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, <strong>Gut Health</strong> and <strong>Excellent Source</strong> are missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br><em>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details</em>',
+      cupcake: 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d',
+      cookie: 'I pulled the highest-WISEscore chocolate chip cookies first, but the result quality is noisy: several top rows have clearly broken or incomplete ingredient lists, so they don\u2019t really answer your \u201cleast amount of chocolate\u201d criterion reliably.<br><br>Among the credible top-scoring matches, the strongest candidates look like the ones where chocolate chips appear later in the ingredient list, which usually means less chocolate by weight. The cleanest examples near the top are <strong>Paleo, Vegan Chocolate Chip Cookie</strong> and <strong>Emmy\u2019s Organics Coconut Cookies</strong>. By contrast, products like the Overjoyed biscotti put chocolate ingredients much earlier and even add a drizzle, so they\u2019re clearly more chocolate-heavy.',
+      report: 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.',
+    };
+
+    const DEFAULT_REPLY = 'I\u2019m answering from your verified WISE Food data. Try one of the suggested prompts to walk through this conversation \u2014 as results come up, I\u2019ll open them in the Results &amp; Details and Visuals panes on the right.';
+
+    function reply(text, intent) {
+      if (intent && INTENT_REPLIES[intent] != null) return INTENT_REPLIES[intent];
+      const t = String(text || '').toLowerCase();
+      if (/ultra|upf|processed/.test(t)) return INTENT_REPLIES.upf;
+      if (/worst|bottom|lowest/.test(t)) return INTENT_REPLIES.worst;
+      if (/spider|radar|gut|immune/.test(t)) return INTENT_REPLIES.spider;
+      if (/cupcake|detail/.test(t)) return INTENT_REPLIES.cupcake;
+      if (/cookie|chocolate chip/.test(t)) return INTENT_REPLIES.cookie;
+      if (/report|chart|graph|trend|pretty/.test(t)) return INTENT_REPLIES.report;
+      return DEFAULT_REPLY;
+    }
+
+    /* When a turn surfaces data, open/refresh the right panes shortly after the
+       reply lands (so the transcript reads first, then the pane resolves). */
+    function surface(intent) {
+      setTimeout(() => {
+        if (intent === 'worst') {
+          openPane('results', {
+            title: 'Worst foods in the database',
+            meta: '25 of 943,428 matches — all foods, sorted by WISEscore ascending (showing top 20)',
+            html: worstFoodsView(),
+          });
+        } else if (intent === 'spider') {
+          openPane('results', {
+            title: '10 worst foods · gut & immune request',
+            meta: '10 of 943,428 matches — sorted by WISEscore ascending · Gut Health & Excellent Source requested',
+            html: tenWorstView(),
+          });
+          openPane('visuals', {
+            title: 'Spider chart · 10 worst foods',
+            meta: 'Requested sort: gut health & immune-system support. Only WISEscore returned data.',
+            html: radarChart(),
+          });
+        } else if (intent === 'cupcake') {
+          openPane('results', {
+            title: 'Worst-ranked cupcake · detail',
+            meta: 'Member’s Mark Christmas Gourmet Cupcakes, 8 Ct. — detail lookup',
+            html: cupcakeDetailView(),
+          });
+        } else if (intent === 'cookie') {
+          openPane('results', {
+            title: 'Best chocolate chip cookies',
+            meta: "25 of 3,010 matches — category 'snacks,cookies' & name 'chocolate chip', sorted by WISEscore descending (showing top 15)",
+            html: cookiesView(),
+          });
+        } else if (intent === 'report') {
+          openPane('results', {
+            title: 'Finding the best chocolate chip cookie',
+            meta: 'WISEai report · ranked views, candidate shortlist & trend-style slopes',
+            html: reportView(),
+          });
+          openPane('visuals', {
+            title: 'Report visuals · cookie ranking',
+            meta: 'Distribution, score curve & trend-style slopes built from the current data',
+            html: reportVisualsView(),
+          });
+        }
+      }, 660);
+    }
+
+    const host = document.getElementById('wa-chat');
+    let chat = null;
+    if (host) {
+      chat = mountWISEaiChat(host, {
+        title: 'WISEai\u2122',
+        heading: 'Ask your verified food data anything',
+        sub: 'Search 943,428 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
+        placeholder: 'Ask WISEai about any food\u2026',
+        chipsFlow: 'wrap',
+        inlineChips: true,
+        persistChips: false,
+        cardsHiddenDefault: false,
+        sourceLabel: '',
+        statusLabel: 'WISEai is searching',
+        userInitials: 'AK',
+        historyKey: 'wise-chat-history:wiseai',
+        intents: INTENTS,
+        intentReplies: INTENT_REPLIES,
+        reply,
+        /* Large "at a glance" welcome cards — the big intent chips. */
+        scorecards: {
+          label: 'Start a conversation',
+          cards: [
+            { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },
+            { variant: 'metric', icon: 'trending_down', pill: { tone: 'alert', icon: 'south', text: 'Lowest' }, metric: '0.06', title: 'Worst food in the database', desc: 'The bottom of the WISEscore ranking across 943,428 foods.', action: 'Show ranking', intent: 'worst', ask: 'What\u2019s the worst food in our database?' },
+            { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
+            { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
+          ],
+        },
+        /* Open the right panes when a turn surfaces data; return false so the
+           scripted reply still posts into the transcript. */
+        onIntent(intent) {
+          surface(intent);
+          return false;
+        },
+      });
+
+      /* History is toggled from the chat's own three-dot menu — inject the entry
+         (the shared module wires data-sc="history" to the in-module sidebar). */
+      const morePop = host.querySelector('.topbar-popover');
+      if (morePop && !morePop.querySelector('[data-sc="history"]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'topbar-menu-item';
+        btn.setAttribute('data-sc', 'history');
+        btn.innerHTML = '<span class="material-icons topbar-menu-icon">history</span><span>History &amp; Projects</span>';
+        const div = document.createElement('div');
+        div.className = 'topbar-menu-divider';
+        morePop.insertBefore(div, morePop.firstChild);
+        morePop.insertBefore(btn, div);
+      }
+    }
+  </script>
+</body>
+</html>

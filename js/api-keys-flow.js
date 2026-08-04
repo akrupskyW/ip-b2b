@@ -181,6 +181,8 @@ export const API_KEYS_WISEAI = {
       { intent: 'create_key', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'vpn_key', text: 'Do next' }, title: 'Create a new API key', desc: 'Generate a fresh secret key — shown once, so copy it right away.', action: 'Create a key', ask: 'Create a new API key' },
       { intent: 'usage', icon: 'insights', iconTone: 'brand', pill: { tone: 'up', icon: 'trending_up', text: 'Usage' }, metric: '128.4k', metricUnit: ' reqs', title: 'This month\u2019s usage', desc: '99.98% success against a 1,000/min limit — jump to the usage panel.', action: 'Show my usage', ask: 'Show my usage' },
       { intent: 'rotate', icon: 'autorenew', iconTone: 'brand', pill: { tone: 'up', icon: 'warning', text: 'Review' }, title: 'Rotate a stale key', desc: 'Your \u201cLegacy import\u201d key hasn\u2019t been used in 3 weeks — rotate it out.', action: 'Which key should I rotate?', ask: 'Which key should I rotate?' },
+      { intent: 'reveal_keys', icon: 'visibility', iconTone: 'brand', pill: { tone: 'up', icon: 'visibility', text: 'Reveal' }, title: 'Reveal my keys', desc: 'Show the full key values in the table — re-masked when you hide them.', action: 'Reveal my keys', ask: 'Reveal my keys' },
+      { intent: 'docs', icon: 'menu_book', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Docs' }, title: 'Open the API reference', desc: 'Authentication, endpoints and rate limits, all in one place.', action: 'Open the API reference', ask: 'Open the API reference' },
     ],
   },
   intents: [
