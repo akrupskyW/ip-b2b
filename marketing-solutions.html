@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" class="mkt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solutions · WISE</title>
+  <meta name="description" content="WISE food intelligence, pointed at your problem — Non-UPF verification and reformulation for brands, assortment screening for retailers, evidence-grade data for clinicians and researchers, and free scanning for shoppers." />
+  <script>
+    (function () { try { var t = localStorage.getItem('wise-theme'); document.documentElement.classList.toggle('dark', t === 'dark'); } catch (e) {} })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- Legacy Material Icons — the shared WISEai chat module renders its controls with <span class="material-icons">. -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="marketing.css" />
+  <!-- The exact product WISEai chat module styles (shared across the marketing surface). -->
+  <link rel="stylesheet" href="wiseai-chat.css" />
+  <!-- Hand the page to the shared marketing shell (nav + persistent chat + router). -->
+  <script>window.__WISE_MKT_SHELL__ = true;</script>
+</head>
+<body class="mkt mkt-appshell" data-mkt-route="solutions">
+
+  <!-- Shared nav + persistent WISEai chat rail are injected by js/marketing-shell.js. -->
+  <div id="mkt-body-module">
+
+  <main>
+    <section id="hero" class="mkt-hero" data-chat-section="solutions">
+      <div class="mkt-shell">
+        <div class="mkt-hero-grid">
+          <div class="mkt-hero-copy mkt-reveal">
+            <h1 class="mkt-hero-title">Same food truth.<br /><span class="mkt-accent">Your problem.</span></h1>
+            <p class="mkt-hero-sub">Start from what you're trying to solve.</p>
+            <p class="mkt-lede">A brand proving a claim, a buyer screening an assortment, a clinician turning labels into advice, a parent standing in an aisle — different questions, one answer engine underneath. Find the shortest path to yours.</p>
+            <div class="mkt-hero-actions">
+              <a class="mkt-btn mkt-btn-primary" href="#roles">
+                Find your path
+                <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+          <div class="mkt-hero-media mkt-reveal">
+            <video autoplay muted loop playsinline poster="assets/marketing/hero-poster.jpg"><source src="assets/marketing/hero.mp4" type="video/mp4" /><source src="assets/marketing/hero.webm" type="video/webm" /></video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Who it's for — six roles, each a jump link into its own
+         deep-dive below (or straight to the product that solves it).
+    ============================================================= -->
+    <section id="roles" class="mkt-section mkt-section--tight" data-chat-section="solutions">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <h2 class="mkt-section-title">Which one of these is you?</h2>
+          <p class="mkt-lede" style="margin-inline:auto">Six ways people use WISE today. Pick the closest fit — the detail is a click away.</p>
+        </div>
+
+        <div class="mkt-do-grid">
+          <a class="mkt-do-card mkt-reveal" href="#brands" data-chat-intent="verify" data-chat-say="I make food and need to prove what's in it">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">factory</span></span>
+            <strong class="mkt-do-title">CPG brands &amp; manufacturers</strong>
+            <span class="mkt-do-body">Prove what's really in your products, earn the Shield, and reformulate the SKUs that don't clear the bar yet.</span>
+            <span class="mkt-do-link">Prove and improve <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+
+          <a class="mkt-do-card mkt-reveal" href="#retail" data-chat-intent="engine" data-chat-say="I buy for a retailer and need to screen an assortment">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">storefront</span></span>
+            <strong class="mkt-do-title">Retailers &amp; grocers</strong>
+            <span class="mkt-do-body">Screen a whole assortment before it hits the planogram, and merchandise a cleaner shelf shoppers actually trust.</span>
+            <span class="mkt-do-link">Curate the shelf <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+
+          <a class="mkt-do-card mkt-reveal" href="#health" data-chat-intent="coach" data-chat-say="I advise patients on what to eat">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">stethoscope</span></span>
+            <strong class="mkt-do-title">Clinicians &amp; health programs</strong>
+            <span class="mkt-do-body">Turn "eat less processed food" into specific, shoppable guidance your patients can follow in a real store.</span>
+            <span class="mkt-do-link">Make advice actionable <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+
+          <a class="mkt-do-card mkt-reveal" href="#science" data-chat-intent="alliance" data-chat-say="I do food research and need the underlying data">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">biotech</span></span>
+            <strong class="mkt-do-title">Researchers &amp; academia</strong>
+            <span class="mkt-do-body">Work from a consistent, transparent classification across a million products — and help pressure-test the standard itself.</span>
+            <span class="mkt-do-link">Get the evidence <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+
+          <a class="mkt-do-card mkt-reveal" href="#shoppers" data-chat-intent="scan" data-chat-say="I just want to know if my food is ultra-processed">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">shopping_basket</span></span>
+            <strong class="mkt-do-title">Shoppers &amp; families</strong>
+            <span class="mkt-do-body">Know before you buy. Scan anything on the shelf and get a straight answer in plain language — free, forever.</span>
+            <span class="mkt-do-link">Scan your groceries <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+
+          <a class="mkt-do-card mkt-reveal" href="#science" data-chat-intent="engine" data-chat-say="I need portfolio-level food risk for diligence">
+            <span class="mkt-do-icon"><span class="material-symbols-outlined">query_stats</span></span>
+            <strong class="mkt-do-title">Investors &amp; diligence teams</strong>
+            <span class="mkt-do-body">Read a target's portfolio the way regulators and shoppers increasingly will — UPF exposure, ingredient risk, category position.</span>
+            <span class="mkt-do-link">Assess a portfolio <span class="material-symbols-outlined">arrow_outward</span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Brands & manufacturers
+    ============================================================= -->
+    <section id="brands" class="mkt-section" data-chat-section="verify">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <h2 class="mkt-feature-title">Prove what's in your catalog.<br />Then make it better.</h2>
+            <p class="mkt-lede">"Clean label" is a claim anyone can print. Non-UPF Verified™ is a claim someone else checked. Run your catalog through the standard, earn the Shield on what passes, and get a concrete plan for what doesn't.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Independent verification against the science-backed UPF standard</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Every ingredient screened for GRAS safety, with the evidence attached</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Reformulation guidance that keeps taste, texture and cost in check</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Board-ready reports you can hand to retail buyers as-is</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html#verify">Start my verification <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="marketing-nonupf.html">How the standard works</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/screens/wiseip-verification.png" alt="WISEip Non-UPF verification portal listing products and their shield status" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Retailers & grocers
+    ============================================================= -->
+    <section id="retail" class="mkt-section mkt-section--tint" data-chat-section="engine">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid mkt-feature--reverse">
+          <div class="mkt-feature-copy mkt-reveal">
+            <h2 class="mkt-feature-title">Build a shelf shoppers trust.</h2>
+            <p class="mkt-lede">Shoppers are already reading labels and putting things back. Screen a category before you list it, see where your assortment sits against the market, and give the aisle a signal people believe.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Screen a whole category against the UPF standard in one pass</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Compare your assortment and private label against 1M+ products</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Surface Non-UPF Verified™ suppliers already doing the work</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Plain-language answers any buyer or merchant can act on</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html">Explore WISEip <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="pages/create-account.html">Talk to us</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/screens/wiseip-dashboard.png" alt="WISEip verification dashboard with UPF split and verification-status charts" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Clinicians & health programs
+    ============================================================= -->
+    <section id="health" class="mkt-section" data-chat-section="coach">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <h2 class="mkt-feature-title">Guidance your patients can act on in a real store.</h2>
+            <p class="mkt-lede">"Cut down on ultra-processed food" is good advice and useless instructions. WISEcoach turns the same clinical intent into specific swaps, tied to actual products, at the moment someone is deciding.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> Goal-aware guidance for energy, sleep, weight and specific ways of eating</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Recommendations grounded in real product data, not food-group generalities</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Plain-language explanations patients can repeat back to you</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Reviewed by the clinicians and scientists of WISEalliance™</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-coach.html">Explore WISEcoach <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="marketing-alliance.html">Meet WISEalliance</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal" style="display:flex;justify-content:center;aspect-ratio:auto;overflow:visible;border:0;box-shadow:none;background:transparent;border-radius:0">
+            <figure class="mkt-appshot" style="width:min(288px,74vw)">
+              <div class="mkt-phone">
+                <div class="mkt-phone-screen">
+                  <img src="assets/marketing/screens/coach-chat.png" alt="WISEcoach chat giving goal-aware food guidance in plain language" loading="lazy" />
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Researchers, academia & diligence
+    ============================================================= -->
+    <section id="science" class="mkt-section mkt-section--tint" data-chat-section="alliance">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid mkt-feature--reverse">
+          <div class="mkt-feature-copy mkt-reveal">
+            <h2 class="mkt-feature-title">Research-grade evidence the field can stand behind.</h2>
+            <p class="mkt-lede">Food research keeps stalling on the same problem: the data is scattered, inconsistent and hard to compare. WISE applies one transparent classification across a million products — and puts the methodology in front of independent experts.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> One consistent UPF classification across 1M+ products</li>
+              <li><span class="material-symbols-outlined">check_circle</span> 12,483 attributes per food, with the reasoning exposed rather than hidden</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Methods pressure-tested by independent scientists and clinicians</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Portfolio-level views for category, cohort and diligence work</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-alliance.html">Meet WISEalliance <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="marketing-enterprise.html">See the answer engine</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal">
+            <img src="assets/marketing/screens/wiseip-reports.png" alt="WISEip board-ready report with product hero and GRAS and insights sections" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Shoppers & families
+    ============================================================= -->
+    <section id="shoppers" class="mkt-section" data-chat-section="scan">
+      <div class="mkt-shell">
+        <div class="mkt-feature-grid">
+          <div class="mkt-feature-copy mkt-reveal">
+            <h2 class="mkt-feature-title">Know before you buy.</h2>
+            <p class="mkt-lede">You shouldn't need a chemistry degree to feed your family. Point your camera at any barcode and WISEcode tells you whether it's ultra-processed, what the confusing names actually are, and what to reach for instead.</p>
+            <ul class="mkt-feature-list">
+              <li><span class="material-symbols-outlined">check_circle</span> A straight UPF / NON-UPF call on any packaged product</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Ingredient-by-ingredient breakdowns in plain language</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Cleaner alternatives, scored and sorted</li>
+              <li><span class="material-symbols-outlined">check_circle</span> Free to download and free to scan</li>
+            </ul>
+            <div class="mkt-feature-actions">
+              <a class="mkt-btn mkt-btn-primary" href="marketing-app.html">Get the WISEcode app <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
+              <a class="mkt-btn mkt-btn-ghost" href="#" data-chat-intent="scan">Try the web scanner</a>
+            </div>
+          </div>
+          <div class="mkt-feature-media mkt-reveal" style="display:flex;justify-content:center;aspect-ratio:auto;overflow:visible;border:0;box-shadow:none;background:transparent;border-radius:0">
+            <figure class="mkt-appshot" style="width:min(288px,74vw)">
+              <div class="mkt-phone">
+                <div class="mkt-phone-screen">
+                  <img src="assets/marketing/screens/app-scan-upf.png" alt="WISEcode scan result flagging a product as ultra-processed with a WISEscore of 19 out of 100" loading="lazy" />
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · How every one of these actually runs
+    ============================================================= -->
+    <section id="how" class="mkt-section mkt-section--tint" data-chat-section="verify">
+      <div class="mkt-shell">
+        <div class="mkt-section-head is-center mkt-reveal">
+          <h2 class="mkt-section-title">Four steps, whoever you are</h2>
+          <p class="mkt-lede" style="margin-inline:auto">The destination changes with the role. The path doesn't.</p>
+        </div>
+        <div class="mkt-pillars-grid mkt-pillars-grid--steps">
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 01</span>
+            <h3 class="mkt-pillar-title">Connect</h3>
+            <p class="mkt-pillar-body">Bring in what you're asking about — a barcode, a product deck, a private label range or a whole category.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 02</span>
+            <h3 class="mkt-pillar-title">Evaluate</h3>
+            <p class="mkt-pillar-body">Every ingredient is read against NFP+™, GRAS safety and the UPF standard — processing judged, not just contents.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 03</span>
+            <h3 class="mkt-pillar-title">Act</h3>
+            <p class="mkt-pillar-body">Swap a product in your cart, reformulate a SKU, drop a supplier, or design a study — with the reasoning in plain language.</p>
+          </article>
+          <article class="mkt-pillar mkt-reveal">
+            <span class="mkt-pillar-kicker">Step 04</span>
+            <h3 class="mkt-pillar-title">Prove</h3>
+            <p class="mkt-pillar-body">Earn the Non-UPF Verified™ Shield, export a board-ready report, or cite a classification anyone can check.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mkt-section">
+      <div class="mkt-shell">
+        <div class="mkt-stats-grid">
+          <div class="mkt-stat mkt-reveal">
+            <span class="mkt-stat-num" data-count-to="1043912" data-count-suffix="+" data-count-step-max="9">0</span>
+            <span class="mkt-stat-label">Products to compare against</span>
+            <span class="mkt-stat-note">Whatever category you're working in</span>
+          </div>
+          <div class="mkt-stat mkt-reveal">
+            <span class="mkt-stat-num" data-count-to="12483" data-count-suffix="+" data-count-step-max="9">0</span>
+            <span class="mkt-stat-label">Attributes evaluated per food</span>
+            <span class="mkt-stat-note">The detail behind every verdict</span>
+          </div>
+          <div class="mkt-stat mkt-reveal">
+            <span class="mkt-stat-num" data-count-to="943415" data-count-step-max="9">0</span>
+            <span class="mkt-stat-label">Packaged foods already analyzed</span>
+            <span class="mkt-stat-note">Your portfolio is probably in there</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION · Final CTA
+    ============================================================= -->
+    <section id="cta" class="mkt-section mkt-section--tint" data-chat-section="brand">
+      <div class="mkt-shell">
+        <div class="mkt-mission mkt-reveal">
+          <div class="mkt-mission-inner mkt-mission-inner--choices">
+            <div class="mkt-choice-lead">
+              <h2>Pick the door that matches your day.</h2>
+              <p>Still weighing it up? Tell WISEai in the rail what you're trying to solve and it will take you straight to the right starting point.</p>
+            </div>
+            <div class="mkt-choice-grid">
+              <a class="mkt-choice" href="pages/create-account.html" data-chat-intent="brand">
+                <span class="mkt-choice-icon"><span class="material-symbols-outlined">storefront</span></span>
+                <span class="mkt-choice-body">
+                  <span class="mkt-choice-kicker">Brands, retailers &amp; researchers</span>
+                  <span class="mkt-choice-title">Create a brand account</span>
+                  <span class="mkt-choice-desc">Verify your catalog, reformulate what needs it, and query the answer engine.</span>
+                </span>
+                <span class="mkt-choice-arrow material-symbols-outlined">arrow_forward</span>
+              </a>
+              <a class="mkt-choice" href="marketing-app.html" data-chat-intent="getapp">
+                <span class="mkt-choice-icon"><span class="material-symbols-outlined">smartphone</span></span>
+                <span class="mkt-choice-body">
+                  <span class="mkt-choice-kicker">Shoppers &amp; families</span>
+                  <span class="mkt-choice-title">Get the app</span>
+                  <span class="mkt-choice-desc">Scan any product for an instant food-truth verdict — free, forever.</span>
+                </span>
+                <span class="mkt-choice-arrow material-symbols-outlined">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer is injected once by js/marketing-shell.js (shared across all
+       marketing pages), so it lives OUTSIDE #mkt-body-module and is never
+       swapped by the client-side router. -->
+
+  </div><!-- /#mkt-body-module -->
+
+  <script defer src="js/marketing.js"></script>
+  <script type="module" src="js/marketing-shell.js"></script>
+</body>
+</html>

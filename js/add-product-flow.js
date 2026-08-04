@@ -1143,68 +1143,6 @@
     { label: 'Show me an example', icon: 'auto_awesome', action: 'sample' },
   ];
 
-  /* Large "at a glance" cards shown above the small chips on the welcome screen
-     (mirrors pages/product-comparison.html). Each reuses a WELCOME_CHIPS action
-     so a click routes through the same dispatch — the welcome collapses and the
-     Product Details module on the right fills with what you're working on. */
-  const WELCOME_CARDS = [
-    { action: 'labelUpload', variant: 'metric', icon: 'document_scanner', iconTone: 'brand', pill: { tone: 'up', icon: 'bolt', text: 'Fastest' }, title: 'Upload a label photo', desc: 'Snap or drop the Nutrition Facts label and I\u2019ll read it straight into a draft.', action_label: 'Scan a label' },
-    { action: 'url', variant: 'metric', icon: 'link', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_fix_high', text: 'Quick' }, title: 'Paste a product URL', desc: 'Give me a retail or brand page and I\u2019ll pull the product details in for you.', action_label: 'Paste a URL' },
-    { action: 'sample', variant: 'wiseai', icon: 'auto_awesome', iconTone: 'wiseai', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Show me an example', desc: 'Watch me build a sample product end to end, then tweak it to make it yours.', action_label: 'Show an example' },
-  ];
-
-  /* Render the large welcome cards (mirrors the shared chat's score-card rail)
-     and wire the horizontal scroll arrows + edge fades. */
-  function renderWelcomeCards() {
-    const rail = $('ap-scorecards');
-    const section = $('ap-scorecards-section');
-    if (!rail || !section) return;
-    rail.innerHTML = WELCOME_CARDS.map((c) => {
-      const isIntro = c.variant === 'intro' || c.variant === 'wiseai';
-      const variantClass = c.variant === 'wiseai'
-        ? ' ws-scorecard--intro ws-scorecard--wiseai'
-        : c.variant === 'intro' ? ' ws-scorecard--intro' : '';
-      const iconTone = c.iconTone ? `ws-sc-icon--${esc(c.iconTone)}` : 'ws-sc-icon--brand';
-      const pill = c.pill
-        ? `<span class="ws-sc-pill ws-sc-pill--${esc(c.pill.tone || 'up')}">${c.pill.icon ? `<span class="material-icons">${esc(c.pill.icon)}</span>` : ''}${esc(c.pill.text || '')}</span>`
-        : '';
-      const lead = isIntro
-        ? `<div class="ws-sc-intro-title">${esc(c.title || '')}</div>`
-        : `<div class="ws-sc-title">${esc(c.title || '')}</div>`;
-      const action = c.action_label
-        ? `<div class="ws-sc-action">${esc(c.action_label)}<span class="material-icons">arrow_outward</span></div>`
-        : '';
-      return `<button type="button" class="ws-scorecard${variantClass}" role="listitem" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}>
-        <div class="ws-sc-top"><span class="ws-sc-icon ${iconTone}"><span class="material-icons">${esc(c.icon || 'insights')}</span></span>${pill}</div>
-        ${lead}
-        <div class="ws-sc-desc">${esc(c.desc || '')}</div>
-        ${action}
-      </button>`;
-    }).join('');
-    section.hidden = false;
-
-    const wrap = rail.closest('.ws-scorecards-wrap');
-    const prev = $('ap-sc-prev');
-    const next = $('ap-sc-next');
-    if (!wrap) return;
-    const updateArrows = () => {
-      const max = rail.scrollWidth - rail.clientWidth - 1;
-      const hasPrev = rail.scrollLeft > 1;
-      const hasNext = rail.scrollLeft < max && rail.scrollWidth > rail.clientWidth + 1;
-      if (prev) prev.hidden = !hasPrev;
-      if (next) next.hidden = !hasNext;
-      wrap.classList.toggle('has-prev', hasPrev);
-      wrap.classList.toggle('has-next', hasNext);
-    };
-    [prev, next].forEach((btn, i) => btn && btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      rail.scrollBy({ left: (i === 0 ? -1 : 1) * Math.max(rail.clientWidth * 0.8, 240), behavior: 'smooth' });
-    }));
-    rail.addEventListener('scroll', updateArrows, { passive: true });
-    window.addEventListener('resize', updateArrows);
-    requestAnimationFrame(updateArrows);
-  }
-
   function init() {
     messagesEl = $('chat-messages');
     welcomeEl = $('welcome-screen');
@@ -1220,9 +1158,6 @@
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
         `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
-
-    // Large welcome cards (rendered above the chips; same data-action routing).
-    renderWelcomeCards();
 
     // First paint
     renderNFP();
@@ -1305,26 +1240,28 @@
     });
     fileInput?.addEventListener('change', () => onFile(fileInput.files && fileInput.files[0]));
 
-    // Chat width toggle — 3-step widen (single → wide → triple), like the shared module.
-    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-    const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Reset chat width'];
+    /* Chat width toggle — the pane opens at triple width, so the 3-step cycle
+       steps DOWN from there (triple → narrow → wide → triple). */
+    const WIDTH_ICONS = ['width_full', 'width_normal', 'width_wide'];
+    const WIDTH_TITLES = ['Narrow the chat', 'Widen chat', 'Back to full width'];
     let widthTier = 0;
     const widthBtn = $('ap-width');
     function syncWidth() {
       const chat = document.querySelector('.ap-chat');
       if (chat) {
-        chat.classList.toggle('panel-wide', widthTier >= 1);
-        chat.classList.toggle('panel-triple', widthTier >= 2);
+        chat.classList.toggle('panel-narrow', widthTier === 1);
+        chat.classList.toggle('panel-wide', widthTier === 2);
       }
       if (widthBtn) {
         const ic = widthBtn.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = WIDTH_ICONS[widthTier];
-        widthBtn.classList.toggle('is-on', widthTier >= 1);
-        widthBtn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+        widthBtn.classList.toggle('is-on', widthTier === 0);
+        widthBtn.setAttribute('aria-pressed', widthTier === 0 ? 'true' : 'false');
         widthBtn.title = WIDTH_TITLES[widthTier];
       }
     }
     widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 3; syncWidth(); });
+    syncWidth();
 
     // NFP width toggle — single pane ↔ double pane (photo column on the right).
     const nfpWidthBtn = $('nfp-width');

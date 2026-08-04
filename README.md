@@ -8,9 +8,11 @@ static HTML/CSS/JS.
 
 - `index.html` — single primary entry point: the public marketing home for
   logged-out visitors (redirects signed-in users to `pages/overview.html`)
+- `marketing-products.html`, `marketing-solutions.html` — the top-level marketing
+  story pages (the whole catalog, and the catalog seen by role/outcome)
 - `marketing-app.html`, `marketing-coach.html`, `marketing-enterprise.html`,
-  `marketing-wiseai.html` — marketing sub-pages; all share the nav + footer that
-  `js/marketing-shell.js` injects
+  `marketing-wiseai.html` — per-product sub-pages, reached from the nav's "Apps"
+  menu; all share the nav + footer that `js/marketing-shell.js` injects
 - `pages/` — individual screens (dashboard `overview.html`, `analytics-types.html`,
   `ai-chat.html`, accessibility review, report prototypes in `_reports/`, etc.)
 - `js/` — UI modules (dashboard rendering, WISEai chat/dock, topbar, appearance menu,

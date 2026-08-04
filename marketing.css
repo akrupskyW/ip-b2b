@@ -265,6 +265,66 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
   outline: none;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--primary) 55%, transparent);
 }
+/* ---------- Nav disclosure menu (the "Apps" dropdown) ----------
+   The five named products live one level down from the top-level story pages.
+   The trigger is a plain button wearing .mkt-nav-link, so it sits in the row
+   exactly like a link; its panel floats beneath it in the full-width bar and
+   becomes an inline accordion once the bar collapses (see the drawer block
+   further down). State is a single data-open on the wrapper (js/marketing.js). */
+.mkt-nav-menu { position: relative; display: flex; align-items: center; }
+.mkt-nav-menu-btn {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: transparent; border: 0; line-height: inherit; cursor: pointer;
+}
+.mkt-nav-menu-caret { font-size: 18px; transition: transform .2s ease; }
+.mkt-nav-menu[data-open] .mkt-nav-menu-caret { transform: rotate(180deg); }
+.mkt-nav-menu[data-open] > .mkt-nav-menu-btn { color: var(--text); background: var(--surface-2); }
+.mkt-nav-menu[data-open] > .mkt-nav-menu-btn.is-active { color: var(--primary); background: var(--primary-10); }
+html.dark .mkt-nav-menu[data-open] > .mkt-nav-menu-btn.is-active { color: var(--primary-bright); }
+/* Hangs from the trigger's left edge rather than centring on it, so the panel
+   can only ever grow toward the middle of the bar — never off the right side. */
+.mkt-nav-menu-panel {
+  position: absolute; z-index: 5;
+  top: calc(100% + 12px); left: 0;
+  width: min(420px, calc(100vw - 2 * var(--mkt-gutter)));
+  display: grid; gap: 2px; padding: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-2);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+/* Bridges the gap between trigger and panel so the pointer never crosses dead
+   space on its way down (belt and braces with the JS close delay). */
+.mkt-nav-menu-panel::before { content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
+.mkt-nav-menu[data-open] > .mkt-nav-menu-panel {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: translateY(0);
+}
+.mkt-nav-menu-item {
+  display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start;
+  padding: 10px 12px; border-radius: var(--r-sm);
+  color: var(--text); text-decoration: none;
+  transition: background-color .15s ease;
+}
+.mkt-nav-menu-item:hover { background: var(--surface-2); }
+.mkt-nav-menu-item.is-active { background: var(--primary-10); }
+.mkt-nav-menu-item:focus { outline: none; }
+.mkt-nav-menu-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.mkt-nav-menu-icon { font-size: 24px; color: var(--primary); }
+html.dark .mkt-nav-menu-icon { color: var(--primary-bright); }
+.mkt-nav-menu-text { display: grid; gap: 2px; min-width: 0; }
+.mkt-nav-menu-title { font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; line-height: 1.25; }
+.mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primary); }
+html.dark .mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primary-bright); }
+.mkt-nav-menu-desc { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); line-height: 1.4; }
+@media (prefers-reduced-motion: reduce) {
+  .mkt-nav-menu-panel, .mkt-nav-menu-caret { transition: none; }
+}
+
 .mkt-nav-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 /* "Get the ___ app" CTA — "Cool Owl" is typed into the middle at boot, then the
    whole button gets a quick shake. The typed span carries a blinking caret
@@ -326,8 +386,14 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
   overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
   transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
 }
-.mkt-nav.is-collapsed.is-open .mkt-nav-links { max-height: 60vh; opacity: 1; pointer-events: auto; padding: 10px; }
+/* Scrolls rather than clips once the Apps accordion is expanded on a short
+   viewport — the drawer can hold more than 60vh of content now. */
+.mkt-nav.is-collapsed.is-open .mkt-nav-links { max-height: 60vh; overflow-y: auto; opacity: 1; pointer-events: auto; padding: 10px; }
 .mkt-nav.is-collapsed .mkt-nav-link { padding: 12px 14px; }
+/* The floating panel would be clipped by the links row, which stays clipped so
+   initNavCollapse can measure the row honestly. Un-clip it only while a menu
+   is actually open, and only in the full-width bar (the drawer nests inline). */
+.mkt-nav:not(.is-collapsed) .mkt-nav-links.is-menu-open { overflow: visible; }
 .mkt-nav.is-collapsed .mkt-nav-link--drawer { display: block; }
 .mkt-nav.is-collapsed .mkt-nav-toggle { display: inline-flex; }
 .mkt-nav.is-collapsed .mkt-nav-cta-desktop { display: none; }
@@ -336,6 +402,29 @@ html.dark .mkt-nav-link.is-active { color: var(--primary-bright); }
 .mkt-nav.is-collapsed .mkt-nav-cta-drawer { display: flex; margin-top: 6px; }
 .mkt-nav.is-collapsed .mkt-nav-cta-drawer .mkt-authseg { flex: 1 1 auto; }
 .mkt-nav.is-collapsed .mkt-nav-cta-drawer .mkt-authseg-btn { flex: 1 1 0; padding-block: 12px; }
+
+/* Apps menu in the drawer: a plain inline accordion under a full-width trigger.
+   Descriptions are dropped so five products stay thumb-friendly instead of
+   turning the drawer into a wall of text. */
+.mkt-nav.is-collapsed .mkt-nav-menu { display: block; }
+.mkt-nav.is-collapsed .mkt-nav-menu-btn { width: 100%; justify-content: space-between; text-align: left; }
+.mkt-nav.is-collapsed .mkt-nav-menu-panel {
+  display: none; position: static; width: auto;
+  opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+  padding: 2px 0 6px 10px; margin-left: 8px;
+  background: transparent; border: 0; border-left: 1px solid var(--border);
+  border-radius: 0; box-shadow: none;
+}
+.mkt-nav.is-collapsed .mkt-nav-menu[data-open] > .mkt-nav-menu-panel { display: grid; }
+.mkt-nav.is-collapsed .mkt-nav-menu-panel::before { content: none; }
+.mkt-nav.is-collapsed .mkt-nav-menu-desc { display: none; }
+/* Indentation carries the hierarchy here, so the products drop back to the same
+   weight as the top-level links instead of out-ranking their own parent. */
+.mkt-nav.is-collapsed .mkt-nav-menu-item { padding: 11px 12px; }
+.mkt-nav.is-collapsed .mkt-nav-menu-title { font-weight: 600; color: var(--text-muted); }
+.mkt-nav.is-collapsed .mkt-nav-menu-item:hover .mkt-nav-menu-title { color: var(--text); }
+.mkt-nav.is-collapsed .mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primary); }
+html.dark .mkt-nav.is-collapsed .mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primary-bright); }
 
 /* ---------- Store badges ---------- */
 .mkt-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
@@ -406,14 +495,17 @@ html.dark .mkt-do-icon { color: var(--primary-bright); }
 .mkt-do-icon .material-symbols-outlined { font-size: 26px; }
 .mkt-do-title { font-size: 1.12rem; font-weight: 800; line-height: 1.2; color: var(--text); }
 .mkt-do-body { font-size: .92rem; color: var(--text-muted); line-height: 1.5; }
+/* Sits bottom-right of the card with an outward (↗) arrow — the same "go deeper"
+   convention as .mkt-pillar-link, so every card CTA on the marketing surface
+   reads identically wherever it appears. */
 .mkt-do-link {
-  margin-top: auto; padding-top: 6px;
+  margin-top: auto; padding-top: 6px; align-self: flex-end;
   display: inline-flex; align-items: center; gap: 6px;
   font-size: .9rem; font-weight: 700; color: var(--primary);
 }
 html.dark .mkt-do-link { color: var(--primary-bright); }
 .mkt-do-link .material-symbols-outlined { font-size: 19px; transition: transform .25s ease; }
-.mkt-do-card:hover .mkt-do-link .material-symbols-outlined { transform: translateX(3px); }
+.mkt-do-card:hover .mkt-do-link .material-symbols-outlined { transform: translate(3px, -3px); }
 
 /* ---------- Hero ---------- */
 .mkt-hero {
@@ -568,15 +660,20 @@ html.dark .mkt-logotile::after {
   .mkt-pillars-grid { grid-template-columns: 1fr; }
   .mkt-pillars-grid > .mkt-pillar:first-child { grid-column: auto; }
 }
-/* Homepage pillars carry 5 cards, so a plain 3-up grid leaves the 4th and 5th
-   orphaned on the left of the second row. Use a 6-track grid (each card spans 2)
-   and offset the last row so those two cards center beneath the row above. Only
-   applies at wide widths; below 900px the layout balances to banner + 2 + 2. */
+/* Five-card grids (the homepage pillars, the Products catalog) leave the 4th and
+   5th orphaned on the left of a plain 3-up second row. Use a 6-track grid (each
+   card spans 2) and offset the last row so those two cards center beneath the
+   row above. Only applies at wide widths; below 900px the layout balances to
+   banner + 2 + 2. */
 @container mktbody (min-width: 901px) {
-  #pillars .mkt-pillars-grid { grid-template-columns: repeat(6, 1fr); }
-  #pillars .mkt-pillars-grid > .mkt-pillar { grid-column: span 2; }
-  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(4) { grid-column: 2 / span 2; }
-  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(5) { grid-column: 4 / span 2; }
+  #pillars .mkt-pillars-grid,
+  .mkt-pillars-grid--five { grid-template-columns: repeat(6, 1fr); }
+  #pillars .mkt-pillars-grid > .mkt-pillar,
+  .mkt-pillars-grid--five > .mkt-pillar { grid-column: span 2; }
+  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(4),
+  .mkt-pillars-grid--five > .mkt-pillar:nth-child(4) { grid-column: 2 / span 2; }
+  #pillars .mkt-pillars-grid > .mkt-pillar:nth-child(5),
+  .mkt-pillars-grid--five > .mkt-pillar:nth-child(5) { grid-column: 4 / span 2; }
 }
 /* Step variant — a single row of four (e.g. WISEalliance "How it works").
    Declared after the base grid + container queries so it wins the cascade;
@@ -800,7 +897,8 @@ html.dark .mkt-plan-features .material-symbols-outlined { color: #6FD79E; }
 
 /* ---------- Footer ---------- */
 .mkt-footer { background: var(--surface-2); border-top: 1px solid var(--border); padding-block: clamp(48px, 6vw, 72px) 32px; }
-.mkt-footer-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: clamp(28px, 4vw, 48px); }
+.mkt-footer-grid { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: clamp(28px, 4vw, 48px); }
+@container mktbody (max-width: 1080px) { .mkt-footer-grid { grid-template-columns: 1fr repeat(2, 1fr); } }
 @container mktbody (max-width: 820px) { .mkt-footer-grid { grid-template-columns: 1fr 1fr; } }
 @container mktbody (max-width: 520px) { .mkt-footer-grid { grid-template-columns: 1fr; } }
 .mkt-footer-brand svg { height: 28px; width: auto; color: var(--text); margin-bottom: 14px; }

@@ -405,12 +405,6 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-icons">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
           ${menuLinksHtml}
-          <button type="button" class="topbar-menu-item" data-sc="add-member"><span class="material-icons topbar-menu-icon">person_add</span><span>Add team member to chat</span></button>
-          <div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item" data-sc="history"><span class="material-icons topbar-menu-icon">history</span><span>History &amp; Projects</span></button>
-          <div class="topbar-menu-divider"></div>
-          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item" data-sc="toggle-cards"><span class="material-icons topbar-menu-icon" id="${id}-cards-icon">visibility_off</span><span id="${id}-cards-label">Hide overview cards</span></button>
-          <div class="topbar-menu-divider"></div>` : ''}
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-icons topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
@@ -966,8 +960,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       else if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
     } else if (action === 'close') {
       closeMore();
-      if (typeof opts.onClose === 'function') opts.onClose();
-      else window.history.back();
+      /* "Close conversation" wipes the thread and restarts the chat from scratch —
+         back to the fresh welcome screen, not a navigation away. */
+      reset();
     } else if (action === 'attach') {
       flPop?.classList.remove('open');
       pickFile();

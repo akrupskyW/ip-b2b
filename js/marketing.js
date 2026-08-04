@@ -52,11 +52,94 @@
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
-    nav.querySelectorAll('.mkt-nav-link').forEach(function (link) {
+    /* Only real links close the drawer — the "Apps" trigger is a button that
+       opens its submenu inside it, so it must not collapse the drawer. */
+    nav.querySelectorAll('a.mkt-nav-link, a.mkt-nav-menu-item').forEach(function (link) {
       link.addEventListener('click', function () { nav.classList.remove('is-open'); });
     });
 
+    initNavMenus(nav);
     initNavCollapse(nav, toggle);
+  }
+
+  /* ---- Nav disclosure menus (the "Apps" dropdown) ----
+     One behavior, two presentations: a floating panel under the trigger in the
+     full-width bar, and an inline accordion once the bar has gone to its drawer
+     layout (CSS handles the difference off .mkt-nav.is-collapsed).
+
+     Pointer users get hover-to-open, which is what a marketing nav is expected
+     to do; keyboard and touch users get click-to-toggle. Either way the state
+     lives in one place: data-open on the .mkt-nav-menu wrapper. */
+  function initNavMenus(nav) {
+    var menus = nav.querySelectorAll('[data-mkt-menu]');
+    if (!menus.length) return;
+    var links = nav.querySelector('.mkt-nav-links');
+    var hoverable = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    var setOpen = function (menu, open) {
+      var btn = menu.querySelector('[data-mkt-menu-btn]');
+      if (open) menu.dataset.open = '1';
+      else delete menu.dataset.open;
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      /* The links row is clipped (overflow: hidden) so a crowded bar never shows
+         a scroll rail before the collapse measurement lands — which would also
+         clip the floating panel. Open it up only while a menu is showing, so
+         initNavCollapse still measures the row in its normal clipped state. */
+      if (links) links.classList.toggle('is-menu-open', !!nav.querySelector('[data-mkt-menu][data-open]'));
+    };
+    var closeAll = function (except) {
+      menus.forEach(function (menu) { if (menu !== except) setOpen(menu, false); });
+    };
+
+    menus.forEach(function (menu) {
+      var btn = menu.querySelector('[data-mkt-menu-btn]');
+      if (!btn) return;
+      var closeTimer = null;
+      var cancelClose = function () { clearTimeout(closeTimer); closeTimer = null; };
+
+      btn.addEventListener('click', function (e) {
+        /* On a pointer device hover has already opened the menu by the time the
+           click lands, so a plain mouse click must not toggle it straight back
+           shut — you'd see it flash open and vanish under your own cursor.
+           Touch and keyboard never had that hover step, so they plainly toggle. */
+        var openedByHover = hoverable && e.pointerType === 'mouse' && menu.dataset.open;
+        closeAll(menu);
+        setOpen(menu, openedByHover ? true : !menu.dataset.open);
+      });
+
+      if (hoverable) {
+        menu.addEventListener('mouseenter', function () {
+          if (nav.classList.contains('is-collapsed')) return;
+          cancelClose();
+          closeAll(menu);
+          setOpen(menu, true);
+        });
+        /* A beat of grace so crossing the gap between trigger and panel — or
+           clipping a corner on the way to an item — doesn't drop the menu. */
+        menu.addEventListener('mouseleave', function () {
+          if (nav.classList.contains('is-collapsed')) return;
+          cancelClose();
+          closeTimer = setTimeout(function () { setOpen(menu, false); }, 180);
+        });
+      }
+
+      /* Tabbing out of the menu closes it, the same as moving the mouse away. */
+      menu.addEventListener('focusout', function (e) {
+        if (!e.relatedTarget || !menu.contains(e.relatedTarget)) setOpen(menu, false);
+      });
+
+      menu.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !menu.dataset.open) return;
+        setOpen(menu, false);
+        btn.focus();
+      });
+    });
+
+    /* Clicking away dismisses — and so does picking an item, since the router
+       swaps the page underneath without ever reloading (or re-rendering) the nav. */
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-mkt-menu]') || e.target.closest('.mkt-nav-menu-item')) closeAll(null);
+    });
   }
 
   /* ---- Overflow-driven collapse ("go mobile the moment it can't fit") ----

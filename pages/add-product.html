@@ -53,11 +53,14 @@
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
 
-    /* ── Center chat column ── */
+    /* ── Center chat column ──
+       Opens at triple width; the header toggle steps down to narrow / wide. */
     .ap-chat {
-      flex: 0 0 var(--chat-pane-w, 380px);
-      width: var(--chat-pane-w, 380px);
-      min-width: 0;
+      /* Shrinkable so a narrow viewport squeezes the chat rather than clipping
+         the Product Details / progress modules beside it. */
+      flex: 0 1 720px;
+      width: 720px;
+      min-width: 380px;
       display: flex;
       flex-direction: column;
       background: var(--bg);
@@ -70,7 +73,10 @@
     .ap-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
     .chat-messages-area { flex: 1; overflow-y: auto; padding: 22px 26px 8px; }
 
-    #welcome-screen.sc-welcome { justify-content: flex-start; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
+    /* Bottom-anchored like the transcript it turns into — the welcome sits just
+       above the input rail and grows upward (`safe` flips back to the top once
+       it's taller than the pane so nothing is clipped behind the rail). */
+    #welcome-screen.sc-welcome { justify-content: safe flex-end; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
     #welcome-screen .ws-heading {
       font-family: 'Noto Serif', serif;
       font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
@@ -79,8 +85,6 @@
     }
     #welcome-screen .ws-sub { max-width: 52ch; }
     #welcome-screen .ws-chips { margin-bottom: 1rem; }
-    .ap-ws-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); text-align: center; margin: 0.75rem 0; }
-
     .chat-input-rail { padding: 14px 26px 18px; }
 
     /* In-chat reply / intent chips row (same as the other WISE chat pages). */
@@ -111,8 +115,9 @@
     .ap-attach-pop .fl-more-group:first-child { padding-top: 3px; }
     .ap-attach-pop .fl-more-sep { height: 1px; background: var(--border); margin: 4px 6px; }
 
-    /* ── Product Details (NFP) module ── */
-    #nfp-panel { flex: 0 0 300px; width: 300px; min-width: 0; display: flex; }
+    /* ── Product Details (NFP) module ──
+       Takes whatever width the chat and progress modules leave behind. */
+    #nfp-panel { flex: 1 1 0%; width: auto; min-width: 300px; display: flex; }
     .nfp-inner {
       display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
       border-radius: 16px; border: 1px solid var(--border);
@@ -194,7 +199,7 @@
     .nfp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-hero-scrim { position: absolute; inset: 0; pointer-events: none;
       background: linear-gradient(180deg, rgba(7,12,26,0.45) 0%, rgba(7,12,26,0) 26%, rgba(7,12,26,0) 40%, rgba(7,12,26,0.92) 100%); }
-    .nfp-hero-stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .nfp-hero-stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
     .nfp-hero--empty .nfp-hero-stack { position: static; }
     .nfp-hero-stack--light { background: var(--surface); padding: 10px 12px 12px; }
     .nfp-hero-name { font-size: 0.95rem; font-weight: 900; color: #fff; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
@@ -202,10 +207,11 @@
     .nfp-hero-name .nfp-edit:focus, .nfp-rcol-name .nfp-edit:focus { color: #111; }
     .nfp-hero-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -4px; }
     .nfp-hero-stack--light .nfp-hero-brand { color: var(--text-muted); }
-    .nfp-hero-cat { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .nfp-hero-upc { align-self: flex-start; max-width: 100%; }
+    .nfp-hero-cat { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .nfp-hero-upc { align-self: center; max-width: 100%; }
     .nfp-hero-upc.nfp-rupc { padding: 7px 10px 6px; }
-    .nfp-cat-chip--onphoto { background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent; }
+    /* Compound selector so this outranks the base .nfp-cat-chip fill below. */
+    .nfp-cat-chip.nfp-cat-chip--onphoto { background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent; }
     .nfp-hero-field-note { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--sec-red); }
     .nfp-hero-field-note .material-icons { font-size: 13px !important; }
 
@@ -235,10 +241,10 @@
 
     /* Food Identity thumbs (multiple product images) */
     .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
-    .nfp-fi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+    .nfp-fi-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 7px; }
     .nfp-fi-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
     .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
-    .nfp-fi-thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nfp-fi-thumbs { display: flex; justify-content: center; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
     .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
     .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
     .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); transform: scale(1.08); }
@@ -266,9 +272,6 @@
     .nfp-width-toggle:hover, .nfp-width-toggle.is-on { opacity: 1; background: rgba(255, 255, 255, 0.24); }
     .nfp-width-toggle .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
 
-    #nfp-panel.nfp-wide { flex-basis: 588px; width: 588px; }
-    @media (max-width: 1200px) { #nfp-panel.nfp-wide { flex-basis: 520px; width: 520px; } }
-
     /* In wide mode the body itself stops scrolling; each pane manages its own
        height (left scrolls internally, right is a fixed full-height image). */
     .nfp-wide .nfp-scroll-body { overflow: hidden; }
@@ -292,7 +295,7 @@
 
     /* Overlaid image gallery (top of the photo). */
     .nfp-rcol-top { position: absolute; top: 0; left: 0; right: 44px; z-index: 2; padding: 10px; }
-    .nfp-rthumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .nfp-rthumbs { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
     .nfp-rthumbs-badge { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.06em; color: #fff; background: rgba(0,0,0,0.45); border-radius: 5px; padding: 3px 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
     .nfp-rthumb { width: 34px; height: 34px; border-radius: 8px; overflow: hidden; padding: 0; cursor: pointer; flex-shrink: 0;
       border: 2px solid rgba(255,255,255,0.55); background: rgba(0,0,0,0.3); transition: border-color 0.12s, transform 0.12s; }
@@ -303,20 +306,20 @@
     .nfp-rthumb-add .material-icons { font-size: 16px !important; }
 
     /* Overlaid product name + UPC (bottom of the photo). */
-    .nfp-rcol-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .nfp-rcol-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
     .nfp-rcol-name { font-size: 0.9rem; font-weight: 900; color: #fff; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
     .nfp-rcol-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -3px; }
-    .nfp-rupc { align-self: flex-start; max-width: 100%; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 7px 10px 6px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
+    .nfp-rupc { align-self: center; max-width: 100%; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 7px 10px 6px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
     .nfp-rupc .nfp-barcode-svg { display: block; margin: 0 auto; }
     .nfp-rupc-num { font-family: 'Courier New', monospace; font-size: 0.66rem; letter-spacing: 0.08em; color: #111; text-align: center; margin-top: 3px; }
-    .nfp-rupc-empty { align-self: flex-start; background: rgba(0,0,0,0.42); box-shadow: none; padding: 6px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .nfp-rupc-empty { align-self: center; background: rgba(0,0,0,0.42); box-shadow: none; padding: 6px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
     .nfp-mini-btn--onphoto { background: rgba(255,255,255,0.94); border-color: transparent; color: var(--primary); }
     .nfp-mini-btn--onphoto:hover { background: #fff; color: var(--primary); }
 
     /* Empty right pane (no photo uploaded yet). */
     .nfp-rcol-empty { background: var(--surface-2); }
     .nfp-hero-empty--fill { height: auto; flex: 1; border-bottom: none; }
-    .nfp-rcol-empty .nfp-rcol-foot { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .nfp-rcol-empty .nfp-rcol-foot { padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
     /* On the light empty pane the name/brand can't use the on-photo white text. */
     .nfp-rcol-empty .nfp-rcol-name { color: var(--text); text-shadow: none; }
     .nfp-rcol-empty .nfp-rcol-brand { color: var(--text-muted); margin-top: 0; }
@@ -341,6 +344,11 @@
     .nfp-nf-rule8 { height: 8px; background: #000; }
     .nfp-nf-no-b { border-bottom: none !important; }
     .nfp-nf-footer { border-top: 8px solid #000; padding: 3px 10px 5px; font-size: 0.56rem; color: #000; line-height: 1.45; }
+    /* The module fills the width left over by the chat, so hold the label itself
+       at a readable column and centre it — the section backgrounds still bleed
+       to the panel edges, only the rules and copy are constrained. */
+    .nfp-nf-panel > *,
+    .nfp-ingred-wrap > * { max-width: 460px; margin-left: auto; margin-right: auto; }
 
     /* Ingredient / allergen section */
     .nfp-ingred-wrap { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; }
@@ -399,19 +407,24 @@
     .vfp-field--err .vfp-field-val { color: var(--sec-red); }
     .vfp-step--err .vfp-step-num { background: var(--sec-red); color: #fff; }
 
+    /* Headerless (header-float) mode collapses the topbar and pins the width +
+       ⋯ controls over the top-right of the card — but the welcome screen is an
+       opaque overlay (z-index 10) that would paint straight over them. wise.css
+       lifts the topbar for the WISEai docks; this chat needs the same. */
+    html.header-float .ap-chat .chat-topbar { z-index: 12; }
+
     /* Full-bleed / width behaviour, matching the other WISE pages. */
     html.full-bleed .ap-chat, html.full-bleed .nfp-inner, html.full-bleed #ap-progress .vfp-inner { border: 0; border-radius: 0; box-shadow: none; }
     html.full-bleed body { padding: 0; }
     html.full-bleed #chat-shell-wrap.menu-brand-integrated #modules-row { gap: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
-    /* Chat width toggle (matches the shared module's 3-step widen). */
+    /* Chat width toggle — steps down from the default triple width. */
+    .ap-chat.panel-narrow { flex-basis: 420px; width: 420px; }
     .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
-    .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
 
     @media (max-width: 1200px) {
-      .ap-chat { flex-basis: 380px; width: 380px; }
-      #nfp-panel { flex-basis: 280px; width: 280px; }
+      .ap-chat { flex-basis: 560px; width: 560px; }
       #ap-progress { flex-basis: 250px; width: 250px; }
     }
   </style>
@@ -449,7 +462,6 @@
             </div>
           </div>
           <div class="sc-topbar-controls">
-            <button type="button" class="panel-width-toggle-btn" id="ap-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
             <div class="panel-more-wrap" id="ap-chat-menu-wrap">
               <button type="button" id="ap-chat-menu-btn" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="ap-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
               <div id="ap-chat-menu" class="topbar-popover hidden" role="menu">
@@ -461,6 +473,7 @@
                 <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="exit"><span class="material-icons topbar-menu-icon">close</span><span>Back to portfolio</span></button>
               </div>
             </div>
+            <button type="button" class="panel-width-toggle-btn" id="ap-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </div>
 
@@ -478,16 +491,6 @@
             </div>
             <h1 class="ws-heading">Let's add a product.</h1>
             <p class="ws-sub">I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in <b>Product Details</b> on the right. It stays a draft until you hit <b>Save to Portfolio</b>.</p>
-            <!-- Large intent cards (mirror the small chips below) — rendered by add-product-flow.js. -->
-            <div class="ws-scorecards-section" id="ap-scorecards-section" hidden>
-              <div class="ws-scorecards-bar"><span class="ws-scorecards-label">Fastest ways to start</span></div>
-              <div class="ws-scorecards-wrap">
-                <div class="ws-scorecards" id="ap-scorecards" role="list" aria-label="Fastest ways to start"></div>
-                <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ap-sc-prev" aria-label="Scroll to previous cards" hidden><span class="material-icons">chevron_left</span></button>
-                <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ap-sc-next" aria-label="Scroll to see more cards" hidden><span class="material-icons">chevron_right</span></button>
-              </div>
-            </div>
-            <div class="ap-ws-eyebrow">Start with what you have</div>
             <div class="ws-chips" id="ws-chips-start"></div>
           </div>
         </div>

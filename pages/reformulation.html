@@ -364,50 +364,6 @@
         </div>
       </main>
 
-      <!-- ═══════════ 2 · Reformulation Dashboard ═══════════ -->
-      <section class="rf-card rf-dash" id="rf-dash">
-        <header class="rf-head">
-          <div class="rf-head-titles">
-            <h2 class="rf-head-title">Reformulation Dashboard</h2>
-            <p class="rf-head-meta" id="rf-dash-meta">Choose a product to reformulate</p>
-          </div>
-          <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-icons">swap_horiz</span>Change product</button>
-        </header>
-        <div class="rf-body">
-
-          <!-- Step 0 · pick a food (rows) -->
-          <div id="rf-dash-pick">
-            <div class="rf-pick-list" id="rf-pick-list" role="list" aria-label="Products to reformulate"></div>
-          </div>
-
-          <!-- Loaded state · the live board -->
-          <div id="rf-dash-loaded">
-            <!-- Disqualification & recommendations -->
-            <div class="rf-sec">
-              <p class="rf-sec-title"><span class="material-icons">flag</span>Disqualification &amp; Recommendations</p>
-              <div id="rf-dq"></div>
-              <div id="rf-steps" style="margin-top:12px"></div>
-            </div>
-
-            <!-- Debits & credits trade-off -->
-            <div class="rf-sec">
-              <p class="rf-sec-title"><span class="material-icons">balance</span>Debits &amp; Credits · the trade-off</p>
-              <div class="rf-tradeoff">
-                <div class="rf-tradeoff-col rf-tradeoff-col--debit">
-                  <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
-                  <div id="rf-debits"></div>
-                </div>
-                <div class="rf-tradeoff-sep" aria-hidden="true"></div>
-                <div class="rf-tradeoff-col rf-tradeoff-col--credit">
-                  <p class="rf-tradeoff-col-label"><span>Credits</span><span class="rf-col-sum" id="rf-credit-sum">0</span></p>
-                  <div id="rf-credits"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- ═══════════ 3 · Reformulation Studio (calculator) ═══════════ -->
       <section class="rf-card rf-studio" id="rf-studio">
         <header class="rf-head">
@@ -462,6 +418,50 @@
           </div>
           <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-icons">restart_alt</span>Reset to original label</button>
           </div><!-- /#rf-studio-loaded -->
+        </div>
+      </section>
+
+      <!-- ═══════════ 2 · Reformulation Dashboard ═══════════ -->
+      <section class="rf-card rf-dash" id="rf-dash">
+        <header class="rf-head">
+          <div class="rf-head-titles">
+            <h2 class="rf-head-title">Reformulation Dashboard</h2>
+            <p class="rf-head-meta" id="rf-dash-meta">Choose a product to reformulate</p>
+          </div>
+          <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-icons">swap_horiz</span>Change product</button>
+        </header>
+        <div class="rf-body">
+
+          <!-- Step 0 · pick a food (rows) -->
+          <div id="rf-dash-pick">
+            <div class="rf-pick-list" id="rf-pick-list" role="list" aria-label="Products to reformulate"></div>
+          </div>
+
+          <!-- Loaded state · the live board -->
+          <div id="rf-dash-loaded">
+            <!-- Disqualification & recommendations -->
+            <div class="rf-sec">
+              <p class="rf-sec-title"><span class="material-icons">flag</span>Disqualification &amp; Recommendations</p>
+              <div id="rf-dq"></div>
+              <div id="rf-steps" style="margin-top:12px"></div>
+            </div>
+
+            <!-- Debits & credits trade-off -->
+            <div class="rf-sec">
+              <p class="rf-sec-title"><span class="material-icons">balance</span>Debits &amp; Credits · the trade-off</p>
+              <div class="rf-tradeoff">
+                <div class="rf-tradeoff-col rf-tradeoff-col--debit">
+                  <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
+                  <div id="rf-debits"></div>
+                </div>
+                <div class="rf-tradeoff-sep" aria-hidden="true"></div>
+                <div class="rf-tradeoff-col rf-tradeoff-col--credit">
+                  <p class="rf-tradeoff-col-label"><span>Credits</span><span class="rf-col-sum" id="rf-credit-sum">0</span></p>
+                  <div id="rf-credits"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -927,6 +927,20 @@
         return `<div class="rf-chips-inline"><p class="rf-chips-inline-label"><span class="material-icons">bolt</span>Reformulation moves · always in sync</p><div class="rf-chips">${inner}</div></div>`;
       }
 
+      /* Food-option chips — the step-0 counterpart of the reformulation chips.
+         Each product in the portfolio gets a tappable chip (with its live
+         Guiding Stars status) so a food can be chosen straight from the chat,
+         mirroring the picker rows in the dashboard. */
+      function pickChipsBlockHtml() {
+        const inner = PRODUCTS.map((p) => {
+          const c = compute({ ...p.baseline });
+          const cls = c.disqualified ? 'rf-chip--dq' : 'rf-chip--credit';
+          const pts = `<span class="rf-chip-pts">${c.disqualified ? 'DQ' : c.stars + '★'}</span>`;
+          return `<button type="button" class="rf-chip ${cls}" data-pick-chip="${p.id}"><span class="material-icons">${p.icon}</span>${esc(p.short)}${pts}</button>`;
+        }).join('');
+        return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
+      }
+
       /* ═══════════ Chat ═══════════ */
       function nowLabel() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
       function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
@@ -940,7 +954,7 @@
       function addWISEai(html, opts) {
         stripChips();
         const meta = opts && opts.noMeta ? '' : metaRow();
-        const chips = opts && opts.chips ? chipsBlockHtml() : '';
+        const chips = opts && opts.chips ? chipsBlockHtml() : (opts && opts.pickChips ? pickChipsBlockHtml() : '');
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + chips + meta + '</div></div>');
         box.scrollTop = box.scrollHeight;
       }
@@ -1048,6 +1062,8 @@
       });
       /* ── Chat chips (embedded inside the transcript turns) ── */
       box.addEventListener('click', (e) => {
+        const pc = e.target.closest('[data-pick-chip]');
+        if (pc) { selectProduct(pc.dataset.pickChip); return; }
         const b = e.target.closest('[data-chip]');
         if (b) applyStep(b.dataset.chip, true);
       });
@@ -1157,7 +1173,7 @@
       /* Chat's step-0 prompt (the picking turn also lives in the chat module). */
       function seedPickPrompt() {
         box.innerHTML = '';
-        addWISEai('<span class="rf-lead">Which food are we reformulating?</span>Pick a product from the list in the dashboard — they come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it onto the Guiding Stars board and we\'ll dial it in together.', { noMeta: true });
+        addWISEai('<span class="rf-lead">Which food are we reformulating?</span>Tap a food below — or pick from the list in the dashboard. They come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it onto the Guiding Stars board and we\'ll dial it in together.', { noMeta: true, pickChips: true });
       }
 
       window.rfShowPicker = function () {

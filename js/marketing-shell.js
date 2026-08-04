@@ -28,8 +28,13 @@ const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#34d39
 
 /* ---------------------------------------------------------------------
    Shared primary navigation — ONE definition for every marketing page.
-   Product links carry data-route so the shell can flag the active one; all
-   internal anchors are routed by the client-side router below regardless.
+
+   The top level is the story ("what is this?" → Products, "is it for me?" →
+   Solutions, "what does it cost?" → Pricing); the five named WISE* products
+   live one level down, inside the "Apps" disclosure menu. Every product link
+   still carries data-route so the shell can flag the active one — and an
+   active product also lights up its parent "Apps" trigger (applyRouteChrome).
+   All internal anchors are routed by the client-side router below regardless.
 --------------------------------------------------------------------- */
 const NAV_HTML = `
   <nav class="mkt-nav" data-mkt-nav aria-label="Primary">
@@ -39,11 +44,51 @@ const NAV_HTML = `
     <a class="mkt-nav-brand" href="index.html" data-mkt-logo data-route="home" aria-label="WISE home"></a>
     <span class="mkt-nav-divider" aria-hidden="true"></span>
     <div class="mkt-nav-links" id="mkt-nav-links">
-      <a class="mkt-nav-link" href="marketing-app.html" data-route="app">WISEcode UPF Detector<sup class="mkt-tm">™</sup></a>
-      <a class="mkt-nav-link" href="marketing-coach.html" data-route="coach">WISEcoach<sup class="mkt-tm">™</sup></a>
-      <a class="mkt-nav-link" href="marketing-enterprise.html" data-route="enterprise">WISEip<sup class="mkt-tm">™</sup></a>
-      <a class="mkt-nav-link" href="marketing-wiseai.html" data-route="wiseai">WISEai<sup class="mkt-tm">™</sup></a>
-      <a class="mkt-nav-link" href="marketing-alliance.html" data-route="alliance">WISEalliance<sup class="mkt-tm">™</sup></a>
+      <a class="mkt-nav-link" href="marketing-products.html" data-route="products">Products</a>
+      <a class="mkt-nav-link" href="marketing-solutions.html" data-route="solutions">Solutions</a>
+      <div class="mkt-nav-menu" data-mkt-menu>
+        <button class="mkt-nav-link mkt-nav-menu-btn" type="button" data-mkt-menu-btn aria-haspopup="true" aria-expanded="false" aria-controls="mkt-nav-apps">
+          Apps
+          <span class="material-symbols-outlined mkt-nav-menu-caret" aria-hidden="true">expand_more</span>
+        </button>
+        <div class="mkt-nav-menu-panel" id="mkt-nav-apps" data-mkt-menu-panel>
+          <a class="mkt-nav-menu-item" href="marketing-app.html" data-route="app">
+            <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">barcode_scanner</span>
+            <span class="mkt-nav-menu-text">
+              <span class="mkt-nav-menu-title">WISEcode UPF Detector<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-desc">Scan any product for an instant ultra-processed verdict.</span>
+            </span>
+          </a>
+          <a class="mkt-nav-menu-item" href="marketing-coach.html" data-route="coach">
+            <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">restaurant_menu</span>
+            <span class="mkt-nav-menu-text">
+              <span class="mkt-nav-menu-title">WISEcoach<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-desc">Your AI nutrition coach, tuned to your goals.</span>
+            </span>
+          </a>
+          <a class="mkt-nav-menu-item" href="marketing-enterprise.html" data-route="enterprise">
+            <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">dataset</span>
+            <span class="mkt-nav-menu-text">
+              <span class="mkt-nav-menu-title">WISEip<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-desc">Verification and the food answer engine for brands.</span>
+            </span>
+          </a>
+          <a class="mkt-nav-menu-item" href="marketing-wiseai.html" data-route="wiseai">
+            <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">forum</span>
+            <span class="mkt-nav-menu-text">
+              <span class="mkt-nav-menu-title">WISEai<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-desc">Ask anything about any food, in plain language.</span>
+            </span>
+          </a>
+          <a class="mkt-nav-menu-item" href="marketing-alliance.html" data-route="alliance">
+            <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">groups</span>
+            <span class="mkt-nav-menu-text">
+              <span class="mkt-nav-menu-title">WISEalliance<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-desc">The scientists who validate every WISE verdict.</span>
+            </span>
+          </a>
+        </div>
+      </div>
       <a class="mkt-nav-link" href="marketing-pricing.html" data-route="pricing">Pricing</a>
       <div class="mkt-authgroup mkt-nav-cta-drawer">
         <div class="mkt-authseg">
@@ -82,6 +127,12 @@ const FOOTER_HTML = `
           <p style="color:var(--text-muted);max-width:32ch;margin:0">AI solutions for decisions about food and health. Find Your Food Truth.™</p>
         </div>
         <div class="mkt-footer-col">
+          <h4>Explore</h4>
+          <a href="marketing-products.html">Products</a>
+          <a href="marketing-solutions.html">Solutions</a>
+          <a href="marketing-pricing.html">Pricing</a>
+        </div>
+        <div class="mkt-footer-col">
           <h4>For Consumers</h4>
           <a href="marketing-app.html">WISEcode UPF Detector™</a>
           <a href="marketing-coach.html">WISEcoach™</a>
@@ -91,7 +142,6 @@ const FOOTER_HTML = `
           <a href="marketing-enterprise.html">WISEip™</a>
           <a href="marketing-nonupf.html">Non-UPF Verified™</a>
           <a href="marketing-gras.html">GRAS Reviewed</a>
-          <a href="marketing-pricing.html">Pricing</a>
         </div>
         <div class="mkt-footer-col">
           <h4>Company</h4>
@@ -187,6 +237,24 @@ const INTENT_REPLIES = {
       <li><strong>Re-scores as you go</strong> so you can watch a product move toward Non-UPF Verified™.</li>
     </ul>
     <p>Want to try it on a product? <a href="pages/create-account.html">Create your brand account →</a></p>`,
+  products: `<p>WISE is one platform with five ways in — all reading from the same NFP+ Food Information™ data and the same Non-UPF standard.</p>
+    <ul>
+      <li><strong>WISEcode UPF Detector™</strong> — scan any product for an instant ultra-processed verdict.</li>
+      <li><strong>WISEcoach™</strong> — an AI nutrition coach that weighs thousands of food attributes against your goals.</li>
+      <li><strong>WISEip™</strong> — verification, reformulation and the food answer engine for brands and retailers.</li>
+      <li><strong>WISEai™</strong> — that's me: ask anything about any food, in plain language.</li>
+      <li><strong>WISEalliance™</strong> — the independent scientists who validate the science underneath all of it.</li>
+    </ul>
+    <p>See them side by side on the <a href="marketing-products.html">Products page →</a>, or tell me your role and I'll point you to the right one.</p>`,
+  solutions: `<p>Tell me who you are and I'll take you to the shortest path:</p>
+    <ul>
+      <li><strong>A brand or manufacturer</strong> — prove what's in your products, then reformulate what isn't working.</li>
+      <li><strong>A retailer or grocer</strong> — screen a whole assortment and build a shelf shoppers trust.</li>
+      <li><strong>A clinician or health program</strong> — turn food data into guidance people can act on.</li>
+      <li><strong>A researcher</strong> — evidence-grade data across a million products.</li>
+      <li><strong>A shopper or parent</strong> — know before you buy, free.</li>
+    </ul>
+    <p>Every path is laid out on the <a href="marketing-solutions.html">Solutions page →</a>. Which one is you?</p>`,
   alliance: `<p><strong>WISEalliance™</strong> is our community of independent scientists, researchers and clinicians who stand behind WISE's food truth.</p>
     <ul>
       <li><strong>Independent experts review the science</strong> — nutrition scientists, toxicologists, food technologists and physicians who validate how we classify and score food.</li>
@@ -218,6 +286,8 @@ const INTENT_ASKS = {
   gras: 'Start GRAS verification',
   reformulate: 'Help me reformulate my food',
   alliance: 'What is WISEalliance™?',
+  products: 'What does WISE actually make?',
+  solutions: 'Which solution fits me?',
 };
 
 /* ---------------------------------------------------------------------
@@ -240,6 +310,8 @@ const WISEAI_SCORECARDS = {
 /* Keyword fallback for free-text questions. */
 function marketingReply(text) {
   const t = String(text || '').toLowerCase();
+  if (/which (product|app|plan|solution)|what do you (make|offer)|use case|for (my|our) (team|company|brand)/.test(t)) return INTENT_REPLIES.solutions;
+  if (/product line|product range|whole platform|everything you|all your (product|app)/.test(t)) return INTENT_REPLIES.products;
   if (/ultra|processed|scan|ingredient/.test(t)) return INTENT_REPLIES.scan;
   if (/non-?upf|verif|shield|gras|certif/.test(t)) return INTENT_REPLIES.nonupf;
   if (/coach|nutrition|goal|sleep|energy|eat/.test(t)) return INTENT_REPLIES.coach;
@@ -269,6 +341,31 @@ const ROUTES = {
       { intent: 'nonupf', label: 'What is Non-UPF Verified™?', icon: 'verified' },
       { intent: 'coach', label: 'How does WISEcoach work?', icon: 'restaurant_menu' },
       { intent: 'getapp', label: 'Get the app', icon: 'get_app' },
+      { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
+    ],
+  },
+  /* The two top-level story pages. Products answers "what is this?" across the
+     whole catalog; Solutions answers "is it for me?" by role and outcome. Both
+     sit above the Apps menu in the nav, so they keep their own highlight. */
+  products: {
+    file: 'marketing-products.html',
+    title: 'Products · WISE',
+    announce: `You're on <strong>Products</strong> — every WISE product in one place, from the free scanner to the enterprise answer engine. Here's where I can take you:`,
+    intents: [
+      { intent: 'products', label: 'What does WISE make?', icon: 'apps' },
+      { intent: 'scan', label: 'Is my food ultra-processed?', icon: 'search' },
+      { intent: 'nonupf', label: 'What is Non-UPF Verified™?', icon: 'verified' },
+      { intent: 'solutions', label: 'Which solution fits me?', icon: 'route' },
+    ],
+  },
+  solutions: {
+    file: 'marketing-solutions.html',
+    title: 'Solutions · WISE',
+    announce: `Now on <strong>Solutions</strong> — the same food truth, pointed at whatever you're trying to solve. Tell me your role and I'll take it from there:`,
+    intents: [
+      { intent: 'solutions', label: 'Which solution fits me?', icon: 'route' },
+      { intent: 'verify', label: 'Start my verification', icon: 'shield' },
+      { intent: 'engine', label: 'The food answer engine', icon: 'dataset' },
       { intent: 'brand', label: "I'm a brand or retailer", icon: 'storefront' },
     ],
   },
@@ -466,6 +563,8 @@ function boot() {
       menuLinksLabel: 'Go to',
       menuLinks: [
         { key: 'home', label: 'Home', icon: 'home' },
+        { key: 'products', label: 'Products', icon: 'apps' },
+        { key: 'solutions', label: 'Solutions', icon: 'route' },
         { key: 'app', label: 'WISEcode UPF Detector', icon: 'search' },
         { key: 'coach', label: 'WISEcoach™', icon: 'restaurant_menu' },
         { key: 'enterprise', label: 'WISEip', icon: 'dataset' },
@@ -723,11 +822,18 @@ function applyRouteChrome(routeKey, setChatOpen) {
   // Sub-pages (e.g. the Non-UPF / GRAS deep-dives) can point their highlight at
   // a parent nav item via route.nav, so the pillar they branch off stays active.
   const activeNav = route.nav || routeKey;
-  document.querySelectorAll('.mkt-nav-link[data-route]').forEach((link) => {
+  document.querySelectorAll('.mkt-nav-link[data-route], .mkt-nav-menu-item[data-route]').forEach((link) => {
     const on = link.dataset.route === activeNav;
     link.classList.toggle('is-active', on);
     if (on) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
+  });
+
+  // A product route lives inside the "Apps" menu, so light up its trigger too —
+  // the collapsed top level should still show you where you are.
+  document.querySelectorAll('[data-mkt-menu]').forEach((menu) => {
+    const trigger = menu.querySelector('[data-mkt-menu-btn]');
+    if (trigger) trigger.classList.toggle('is-active', !!menu.querySelector('.mkt-nav-menu-item.is-active'));
   });
 
   const focus = !!route.focus;
