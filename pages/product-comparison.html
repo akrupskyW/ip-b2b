@@ -3327,7 +3327,8 @@
     .cmp-rail-metric-lead .cmp-rail-metric-name {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 2px; text-align: center; font-weight: 700; min-height: 0;
-      font-size: clamp(8.5px, 0.74vw, 10px); line-height: 1.15;
+      font-family: var(--font-serif);
+      font-size: clamp(12px, 1.05vw, 14px); line-height: 1.2;
       overflow-wrap: anywhere;
     }
     .cmp-rail-body .cmp-rail-metric-desc,
@@ -12826,6 +12827,12 @@
       /* Keep the ⋯ menu switch item (if built) in sync with the new state. */
       document.querySelectorAll('.pf-module-menu').forEach(m => { if (m._syncGsItem) m._syncGsItem(); });
       renderCompare();
+      /* Reflect the flip in the chat module: the intent chips are view-specific
+         (Guiding Stars chips vs. the default action chips), so re-offer them
+         whenever the board flips — including from the ⋯ menu switch, which
+         previously left the chat's chips stale. Guarded on an existing chip row
+         so it only runs during the interactive phase, not the scripted intro. */
+      if (document.getElementById('cmp-follow-chips')) cmpOfferFollowChips();
     }
 
     /* Guiding Stars uses different scoring algorithms per food group; pick one
@@ -13759,25 +13766,27 @@
       if (!box) return;
       document.getElementById('cmp-follow-chips')?.remove();
       const chips = [];
-      if (compareState.stale && !compareState.recalcing)
-        chips.push(`<button type="button" class="chip chip-primary" onclick="cmpRecalculate(this)"><span class="material-icons">calculate</span>Recalculate</button>`);
-      /* Adding an entity is the primary next step. The comparison is LOCKED to
-         its own kind, so there's just one Add chip — of the same kind the board
-         started as. No cross-type mixing. Available in both views. */
-      if (compareState.shown.length < 5) {
-        const lk = cmpLockedKind();
-        chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('${lk}', this)"><span class="material-icons">${cmpKindIcon(lk)}</span>Add a ${cmpKindLabel(lk)}</button>`);
-      }
-      if (compareState.shown.length > 2)
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove an item</button>`);
       if (compareState.guidingStars) {
-        /* Guiding Stars view — only chips that make sense for the rating table.
-           The metric picker, chart types and category average don't apply here,
-           so surface the rating-specific actions instead. */
+        /* Guiding Stars view — the chat surfaces ONLY the rating-specific
+           conversational chips. Every board control (metrics, categories,
+           chart types, add/remove) lives on the board toolbar, so nothing
+           else is echoed into the chat here. */
         chips.push(`<button type="button" class="chip chip-primary chip-gs is-on" onclick="cmpFollow('gs', this)"><span class="material-icons">star</span>Guiding Stars · On</button>`);
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('gs_explain', this)"><span class="material-icons">help_outline</span>How are stars scored?</button>`);
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('gs_dq', this)"><span class="material-icons">gpp_maybe</span>Why disqualified?</button>`);
       } else {
+        /* Default WISEcode view — the standard "things to do" action chips. */
+        if (compareState.stale && !compareState.recalcing)
+          chips.push(`<button type="button" class="chip chip-primary" onclick="cmpRecalculate(this)"><span class="material-icons">calculate</span>Recalculate</button>`);
+        /* Adding an entity is the primary next step. The comparison is LOCKED to
+           its own kind, so there's just one Add chip — of the same kind the board
+           started as. No cross-type mixing. */
+        if (compareState.shown.length < 5) {
+          const lk = cmpLockedKind();
+          chips.push(`<button type="button" class="chip" onclick="cmpPromptAddKind('${lk}', this)"><span class="material-icons">${cmpKindIcon(lk)}</span>Add a ${cmpKindLabel(lk)}</button>`);
+        }
+        if (compareState.shown.length > 2)
+          chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-icons">remove_circle</span>Remove an item</button>`);
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-icons">tune</span>Metrics · ${compareState.metrics.length}</button>`);
         if (scope.categories) {
           const cur = compareState.category === 'all' ? 'All' : compareState.category;
@@ -13787,8 +13796,8 @@
         if (scope.many)
           chips.push(`<button type="button" class="chip" onclick="cmpFollow('rank', this)"><span class="material-icons">leaderboard</span>Rank them</button>`);
         chips.push(`<button type="button" class="chip chip-gs" onclick="cmpFollow('gs', this)"><span class="material-icons">star</span>Guiding Stars · Off</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('switch', this)"><span class="material-icons">swap_horiz</span>Change comparison</button>`);
       }
-      chips.push(`<button type="button" class="chip" onclick="cmpFollow('switch', this)"><span class="material-icons">swap_horiz</span>Change comparison</button>`);
       const row = document.createElement('div');
       row.className = 'sc-reply-chips';
       row.id = 'cmp-follow-chips';
@@ -16097,6 +16106,13 @@
         const widthBtn = controls.querySelector('.panel-width-toggle-btn');
         const closeBtn = controls.querySelector('.panel-close-btn');
         if (!flipBtn && !widthBtn && !closeBtn) return;
+
+        /* Which module is this? Drives the compare-only Guiding Stars row.
+           (Missing here is what threw `key is not defined` and aborted the
+           whole forEach before it reached #compare-panel.) */
+        const key = (widthBtn && widthBtn.dataset.panel)
+          || (flipBtn && flipBtn.closest('.panel-flip') && flipBtn.closest('.panel-flip').dataset.panel)
+          || '';
 
         controls.dataset.menuized = '1';
         controls.classList.add('pf-menuized');

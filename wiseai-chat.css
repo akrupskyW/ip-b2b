@@ -691,10 +691,12 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
 .sc-send .material-icons { font-size: 20px !important; }
 
-/* ===== Brand connectors — a scrollable rail of data-source pills docked right
-   beneath the input (retailer & food-data APIs: Kroger, Instacart, USDA…). ===== */
+/* ===== Brand connectors — a centered, wrapping rail of data-source pills
+   docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
+   USDA…). The label sits centered above the chips, which wrap onto as many
+   centered rows as they need. ===== */
 .sc-connectors {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
   margin-top: 10px; position: relative; min-width: 0;
 }
 .sc-connectors-label {
@@ -705,21 +707,10 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 .sc-connectors-label .material-icons { font-size: 15px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
 html.dark .sc-connectors-label .material-icons { color: var(--primary-bright, #8B9FAF); }
 
-/* The rail scrolls horizontally; a right-edge fade appears when it overflows. */
+/* Chips wrap and stay centered rather than scrolling off to one side. */
 .sc-connectors-rail {
-  display: flex; align-items: center; gap: 7px;
-  overflow-x: auto; scroll-behavior: smooth; min-width: 0; flex: 1 1 auto;
-  padding: 2px 2px; scrollbar-width: none; -ms-overflow-style: none;
-  -webkit-mask-image: none; mask-image: none;
-}
-.sc-connectors-rail::-webkit-scrollbar { display: none; }
-.sc-connectors.has-more .sc-connectors-rail {
-  -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
-  mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
-}
-.sc-connectors.has-more.has-prev .sc-connectors-rail {
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 88%, transparent 100%);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 7px; width: 100%; min-width: 0; padding: 2px;
 }
 
 .sc-connector {
@@ -734,16 +725,27 @@ html.dark .sc-connector { background: rgba(255,255,255,0.05); border-color: rgba
 .sc-connector:active { transform: translateY(1px); }
 .sc-connector-name { white-space: nowrap; }
 
-/* Brand logo puck — a Material icon or a monogram, tinted with the brand color. */
+/* Brand logo puck — a circular badge holding the real brand logo (an <img>),
+   falling back to a monogram or Material icon tinted with the brand color. */
 .sc-connector-logo {
   --cxc: var(--primary);
-  width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px;
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--cxc) 16%, transparent);
-  color: var(--cxc);
+  color: var(--cxc); overflow: hidden;
 }
 .sc-connector-logo .material-icons { font-size: 15px !important; }
 .sc-connector-logo--mono { font-weight: 800; font-size: 0.7rem; letter-spacing: -0.01em; }
+/* When a real logo image is present, sit it on a white circle so full-color
+   brand marks read cleanly in both light and dark themes. */
+.sc-connector-logo--img { background: #fff; }
+html.dark .sc-connector-logo--img { background: #fff; }
+.sc-connector-logo-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sc-connector-logo-fb {
+  display: none; width: 100%; height: 100%; align-items: center; justify-content: center;
+  color: var(--cxc); font-weight: 800; font-size: 0.7rem; letter-spacing: -0.01em;
+}
+.sc-connector-logo-fb .material-icons { font-size: 15px !important; }
 
 /* Trailing add/connected affordance. */
 .sc-connector-tick { font-size: 15px !important; color: var(--text-subtle); margin-left: -1px; transition: color 0.14s ease; }
@@ -764,6 +766,49 @@ html.dark .sc-connector-more:hover { background: rgba(255,255,255,0.06); }
 @media (max-width: 720px) {
   .sc-connectors-label { display: none; }
 }
+
+/* ===== Connection walkthrough — the animated step card posted into the
+   transcript when a connector chip is clicked. Steps advance pending →
+   active → done so the chat visibly walks the user through linking a source. */
+.sc-connect-flow {
+  margin-top: 4px; border: 1px solid var(--border-strong); border-radius: 14px;
+  background: var(--surface-2); overflow: hidden; max-width: 420px;
+}
+html.dark .sc-connect-flow { background: rgba(255,255,255,0.04); }
+.sc-cf-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem; font-weight: 700; color: var(--text);
+}
+.sc-cf-head .material-icons { font-size: 18px !important; color: var(--primary); }
+html.dark .sc-cf-head .material-icons { color: var(--primary-bright, #8B9FAF); }
+.sc-connect-flow.is-complete .sc-cf-head { color: var(--sec-green-text, #1F7A48); }
+.sc-cf-check { color: var(--sec-green, #32A966) !important; }
+.sc-cf-steps { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.sc-cf-step {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px; border-radius: 10px;
+  opacity: 0.5; transition: opacity 0.2s ease, background 0.2s ease;
+}
+.sc-cf-step.is-active { opacity: 1; background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.sc-cf-step.is-done { opacity: 1; }
+.sc-cf-ic {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--text-muted);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.sc-cf-step.is-active .sc-cf-ic { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.sc-cf-step.is-done .sc-cf-ic { background: color-mix(in srgb, var(--sec-green, #32A966) 16%, transparent); color: var(--sec-green, #32A966); }
+.sc-cf-ic .material-icons { font-size: 16px !important; }
+.sc-cf-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.sc-cf-title { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+.sc-cf-desc { font-size: 0.6875rem; line-height: 1.4; color: var(--text-muted); }
+.sc-cf-state { flex-shrink: 0; display: inline-flex; align-items: center; margin-top: 2px; }
+.sc-cf-state .material-icons { font-size: 18px !important; color: var(--text-subtle); }
+.sc-cf-step.is-done .sc-cf-state .material-icons { color: var(--sec-green, #32A966); }
+.sc-cf-spin { animation: scCfSpin 0.9s linear infinite; color: var(--primary) !important; }
+@keyframes scCfSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sc-cf-spin { animation: none; } }
 
 /* =============================================================
    Microcopy & trust

@@ -1332,17 +1332,20 @@
         /* Brand connectors docked beneath the input — retailer & food-data
            sources WISEai can pull verified product data from. */
         connectorsLabel: 'Connect a data source',
+        /* Every source is shown in the centered rail, so the trailing
+           "more connectors" three-dot control is redundant — drop it. */
+        connectorsMore: false,
         connectors: [
-          { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K',  connected: true },
-          { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart' },
-          { id: 'walmart',  name: 'Walmart',             color: '#0071DC', mono: 'W' },
-          { id: 'usda',     name: 'USDA FoodData Central', color: '#1F5C3D', icon: 'eco' },
-          { id: 'off',      name: 'Open Food Facts',      color: '#E64A19', icon: 'public' },
-          { id: 'nielseniq', name: 'NielsenIQ',          color: '#1A2CC0', icon: 'insights' },
-          { id: 'wholefoods', name: 'Whole Foods Market', color: '#00674B', mono: 'W' },
-          { id: 'amazonfresh', name: 'Amazon Fresh',     color: '#FF9900', icon: 'local_grocery_store' },
-          { id: 'spins',    name: 'SPINS',               color: '#6D28D9', icon: 'query_stats' },
-          { id: 'shopify',  name: 'Shopify',             color: '#5A863E', icon: 'storefront' },
+          { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
+          { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },
+          { id: 'walmart',  name: 'Walmart',             color: '#0071DC', mono: 'W', logo: 'https://www.google.com/s2/favicons?domain=walmart.com&sz=128', connected: true },
+          { id: 'usda',     name: 'USDA FoodData Central', color: '#1F5C3D', icon: 'eco', logo: 'https://www.google.com/s2/favicons?domain=fdc.nal.usda.gov&sz=128' },
+          { id: 'off',      name: 'Open Food Facts',      color: '#E64A19', icon: 'public', logo: 'https://www.google.com/s2/favicons?domain=openfoodfacts.org&sz=128' },
+          { id: 'nielseniq', name: 'NielsenIQ',          color: '#1A2CC0', icon: 'insights', logo: 'https://www.google.com/s2/favicons?domain=nielseniq.com&sz=128' },
+          { id: 'wholefoods', name: 'Whole Foods Market', color: '#00674B', mono: 'W', logo: 'https://www.google.com/s2/favicons?domain=wholefoodsmarket.com&sz=128' },
+          { id: 'amazonfresh', name: 'Amazon Fresh',     color: '#FF9900', icon: 'local_grocery_store', logo: 'https://www.google.com/s2/favicons?domain=amazon.com&sz=128' },
+          { id: 'spins',    name: 'SPINS',               color: '#6D28D9', icon: 'query_stats', logo: 'https://www.google.com/s2/favicons?domain=spins.com&sz=128' },
+          { id: 'shopify',  name: 'Shopify',             color: '#5A863E', icon: 'storefront', logo: 'https://www.google.com/s2/favicons?domain=shopify.com&sz=128' },
         ],
         /* Large "at a glance" welcome cards — the big intent chips. */
         scorecards: {

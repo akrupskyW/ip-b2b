@@ -114,6 +114,22 @@ const DEFAULT_AGENTS = [
   },
 ];
 
+/* Generic, source-agnostic connection walkthrough shown in the transcript when
+   a data-source connector chip is clicked. Steps animate pending → active →
+   done so the chat visibly walks the user through linking the source. `{brand}`
+   is swapped for the connector's display name. Kept deliberately generic — the
+   real per-source OAuth/scoping steps can be filled in later. */
+const CONNECTOR_CONNECT_STEPS = [
+  { icon: 'lock_open',   title: 'Authorize access',    desc: 'Open {brand}\u2019s secure sign-in and grant WISEai read-only access.' },
+  { icon: 'tune',        title: 'Choose data scope',   desc: 'Share product catalog, pricing, availability & nutrition fields.' },
+  { icon: 'hub',         title: 'Match to WISE Foods', desc: 'Cross-reference {brand} UPCs against the verified WISE Foods registry.' },
+  { icon: 'inventory_2', title: 'Sync catalog',        desc: 'Import verified products so WISEai can score them in real time.' },
+];
+const CONNECTOR_REFRESH_STEPS = [
+  { icon: 'verified_user', title: 'Verify connection',   desc: 'Confirm {brand}\u2019s authorization is still valid.' },
+  { icon: 'sync',          title: 'Sync latest catalog', desc: 'Pull the newest {brand} products, pricing & availability.' },
+];
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -335,9 +351,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      and, unless the host handles it, posts a "connect" turn into the chat. */
   const connectors = Array.isArray(opts.connectors) ? opts.connectors.filter(Boolean) : [];
   const connectorsLabel = opts.connectorsLabel !== undefined ? opts.connectorsLabel : 'Connect a data source';
-  const connectorLogo = (c) => c.icon
-    ? `<span class="sc-connector-logo" style="--cxc:${esc(c.color || 'var(--primary)')}"><span class="material-icons">${esc(c.icon)}</span></span>`
-    : `<span class="sc-connector-logo sc-connector-logo--mono" style="--cxc:${esc(c.color || 'var(--primary)')}">${esc(c.mono || (c.name || '?').slice(0, 1))}</span>`;
+  /* The trailing "more connectors" three-dot button is opt-out: when every
+     source is already shown in the rail (opts.connectorsMore === false) it's
+     redundant, so callers can drop it. */
+  const showConnectorMore = opts.connectorsMore !== false;
+  const connectorLogo = (c) => {
+    const color = esc(c.color || 'var(--primary)');
+    /* Fallback mark shown if the brand logo image is missing / fails to load. */
+    const fallback = c.icon
+      ? `<span class="material-icons">${esc(c.icon)}</span>`
+      : esc(c.mono || (c.name || '?').slice(0, 1));
+    /* Prefer the real brand logo (an image URL) when provided. */
+    if (c.logo) {
+      return `<span class="sc-connector-logo sc-connector-logo--img" style="--cxc:${color}"><img class="sc-connector-logo-img" src="${esc(c.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="sc-connector-logo-fb">${fallback}</span></span>`;
+    }
+    return c.icon
+      ? `<span class="sc-connector-logo" style="--cxc:${color}"><span class="material-icons">${esc(c.icon)}</span></span>`
+      : `<span class="sc-connector-logo sc-connector-logo--mono" style="--cxc:${color}">${esc(c.mono || (c.name || '?').slice(0, 1))}</span>`;
+  };
   const connectorsHtml = connectors.length
     ? `<div class="sc-connectors" id="${id}-connectors" aria-label="${esc(connectorsLabel || 'Connectors')}">
         ${connectorsLabel ? `<span class="sc-connectors-label"><span class="material-icons">hub</span>${esc(connectorsLabel)}</span>` : ''}
@@ -350,7 +381,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
             </button>`
           ).join('')}
         </div>
-        <button type="button" class="sc-connector-more" id="${id}-connectors-more" title="More connectors" aria-label="More connectors"><span class="material-icons">more_vert</span></button>
+        ${showConnectorMore ? `<button type="button" class="sc-connector-more" id="${id}-connectors-more" title="More connectors" aria-label="More connectors"><span class="material-icons">more_vert</span></button>` : ''}
       </div>`
     : '';
 
@@ -564,15 +595,17 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      @param {object} [meta] { source } — overrides the default grounding caption
      for a single line (pass '' to drop it, e.g. a plain acknowledgement). */
   function addWISEai(html, meta = {}) {
-    if (!messages) return;
+    if (!messages) return null;
     const src = meta.source !== undefined ? meta.source : sourceLabel;
     const footer = `<div class="sc-line-meta">${
       src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
     }<span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+    const line = messages.lastElementChild; /* capture before chips re-park */
     parkInlineChips(); /* trail the latest reply with suggested actions */
     scrollDown();
+    return line;
   }
   function showTyping() {
     if (!messages) return null;
@@ -596,6 +629,90 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (userText) addUser(userText);
     const typing = showTyping();
     setTimeout(() => { typing?.remove(); addWISEai(replyHtml, meta || { source: '' }); }, 600);
+  }
+
+  /* ── Data-source connection walkthrough ──────────────────────────────────
+     Clicking a connector chip runs an animated, generic step-through right in
+     the transcript (connect for new sources, a lighter re-sync for already
+     connected ones), then flips the chip to its connected state. */
+  function connectorChip(cid) {
+    try {
+      const sel = window.CSS && CSS.escape ? CSS.escape(cid) : cid;
+      return rootEl.querySelector(`.sc-connector[data-connector="${sel}"]`);
+    } catch (_) { return null; }
+  }
+  function markConnectorConnected(cid, name) {
+    const c = connectors.find((x) => (x.id || x.name) === cid);
+    if (c) c.connected = true;
+    const chip = connectorChip(cid);
+    if (!chip) return;
+    chip.classList.add('is-connected');
+    chip.title = `Connected \u00b7 ${name}`;
+    const tick = chip.querySelector('.sc-connector-tick');
+    if (tick) tick.textContent = 'check_circle';
+  }
+  function connectFlowCardHtml(name, steps, headline) {
+    const rows = steps.map((s, i) => `
+      <li class="sc-cf-step" data-cf-step="${i}">
+        <span class="sc-cf-ic"><span class="material-icons">${esc(s.icon)}</span></span>
+        <span class="sc-cf-text">
+          <span class="sc-cf-title">${esc(s.title)}</span>
+          <span class="sc-cf-desc">${esc(s.desc.replace(/\{brand\}/g, name))}</span>
+        </span>
+        <span class="sc-cf-state"><span class="material-icons">radio_button_unchecked</span></span>
+      </li>`).join('');
+    return `<div class="sc-connect-flow" role="group" aria-label="${esc(headline)}">
+        <div class="sc-cf-head"><span class="sc-cf-spin material-icons">sync</span><span class="sc-cf-head-text">${esc(headline)}</span></div>
+        <ol class="sc-cf-steps">${rows}</ol>
+      </div>`;
+  }
+  function animateConnectFlow(card, cid, name, steps, doneHead, doneReply) {
+    if (!card) return;
+    const rows = Array.from(card.querySelectorAll('.sc-cf-step'));
+    let i = 0;
+    const step = () => {
+      if (i > 0) {
+        const prev = rows[i - 1];
+        prev.classList.remove('is-active'); prev.classList.add('is-done');
+        const st = prev.querySelector('.sc-cf-state');
+        if (st) st.innerHTML = '<span class="material-icons">check_circle</span>';
+      }
+      if (i < rows.length) {
+        const cur = rows[i];
+        cur.classList.add('is-active');
+        const st = cur.querySelector('.sc-cf-state');
+        if (st) st.innerHTML = '<span class="material-icons sc-cf-spin">sync</span>';
+        i += 1;
+        scrollDown();
+        setTimeout(step, 950);
+      } else {
+        card.classList.add('is-complete');
+        const head = card.querySelector('.sc-cf-head');
+        if (head) head.innerHTML = `<span class="sc-cf-check material-icons">check_circle</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
+        markConnectorConnected(cid, name);
+        if (doneReply) setTimeout(() => addWISEai(doneReply, { source: '' }), 560);
+      }
+    };
+    step();
+  }
+  function runConnectorFlow(cid, c) {
+    const name = c.name || cid;
+    const connected = !!c.connected;
+    const steps = connected ? CONNECTOR_REFRESH_STEPS : CONNECTOR_CONNECT_STEPS;
+    const headline = connected ? `Refreshing ${name}\u2026` : `Connecting ${name}\u2026`;
+    const doneHead = connected ? `${name} is up to date` : `${name} connected`;
+    const doneReply = connected
+      ? `<strong>${esc(name)}</strong> is up to date — its catalog is synced and ready. Ask me to search products, compare WISEscores, or cross-reference UPCs against the WISE Foods registry.`
+      : `<strong>${esc(name)}</strong> is connected. I can now pull live product, pricing, availability, and nutrition data from ${esc(name)} — search its catalog, cross-reference UPCs against the WISE Foods registry, and score any item in real time. What would you like to look up first?`;
+    hideWelcome();
+    addUser(connected ? `Refresh ${name}` : `Connect ${name}`);
+    const typing = showTyping();
+    setTimeout(() => {
+      typing?.remove();
+      const line = addWISEai(connectFlowCardHtml(name, steps, headline), { source: '' });
+      const card = line ? line.querySelector('.sc-connect-flow') : null;
+      animateConnectFlow(card, cid, name, steps, doneHead, doneReply);
+    }, 600);
   }
   /* Hidden file input reused by Attach + Camera; a chosen file posts as a
      message so the action has a visible result in the thread. */
@@ -963,10 +1080,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const c = connectors.find((x) => (x.id || x.name) === cid) || {};
       const handled = typeof opts.onConnector === 'function' ? opts.onConnector(cid, c) : false;
       if (handled) return;
-      const nm = esc(c.name || cid);
-      respondFixed(`Connect ${c.name || cid}`, c.connected
-        ? `<strong>${nm}</strong> is already connected — I can pull live product, pricing, and availability data from it into this conversation. What would you like to look up?`
-        : `Let’s connect <strong>${nm}</strong>. I’ll open the secure authorization flow so WISEai™ can read verified product data from ${nm}. Once it’s linked, I can search its catalog, cross-reference UPCs, and score items in real time.`);
+      /* Walk the user through connecting (or re-syncing) the source. */
+      runConnectorFlow(cid, c);
       return;
     }
     if (e.target.closest('.sc-connector-more')) {
