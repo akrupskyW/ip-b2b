@@ -8,17 +8,19 @@
  * you just left — uniform across the whole app.
  *
  * Persisted state (key `wise-wiseai-dock`):
- *   { wide: boolean, side: 'left' | 'center' | 'right' }
+ *   { wide: number, right: 0 | 1 | 2 }
  *     • wide → the doubled-width column (also bridged to ai-chat.html's
  *              #chat-shell so "WISEai is wide" carries everywhere).
- *     • side → where the Doc chat sits, the Appearance control's three modes:
- *              'left'/'right' LOCK the dock to that edge of the modules row
- *              (single-inset sticky, so it's frozen flush to that edge);
- *              'center' is the DEFAULT "floating in the middle" mode — the chat
- *              keeps its normal width and sits at its natural mid-row spot, but
- *              stays sticky-clamped to BOTH edges so that, as the row scrolls,
- *              it gets stuck to the left or the right edge and never slides
- *              off-screen. All three modes keep WISEai always visible.
+ *     • right → how many module panes sit to the RIGHT of the chat, the
+ *              Appearance control's three modes. WISEai is always the centre
+ *              anchor (nothing ever sits to its LEFT), so instead of a
+ *              left/center/right position the control chooses the pane count:
+ *              0 = chat only (everything else tucked to its left),
+ *              1 = one pane kept to its right,
+ *              2 = a second pane to its right.
+ *              The dock stays sticky-clamped to both edges so it never scrolls
+ *              off-screen, and the count is applied by re-ordering the modules
+ *              row so exactly that many siblings land after the chat.
  *
  *   import { mountWISEaiDock } from './wiseai-dock.js';
  *   mountWISEaiDock(document.getElementById('wiseai-dock-panel'), { ... });
@@ -44,26 +46,31 @@ export function readWISEaiDockState() {
     const raw = JSON.parse(localStorage.getItem(WISEAI_DOCK_KEY) || '{}') || {};
     return {
       wide: widthTierOf(raw.wide),
-      side: normalizeSide(raw),
+      right: normalizeRight(raw),
       collapsed: raw.collapsed === true,
     };
   } catch (_) {
-    return { wide: 0, side: 'right', collapsed: false };
+    return { wide: 0, right: 1, collapsed: false };
   }
 }
 
-/* Normalise stored side into 'left' | 'center' | 'right'. `visible:false` is the
-   legacy spelling of the old "off" mode, which is now simply 'center'. The
-   default is 'right' so the Doc chat keeps showing on the right rail unless the
-   user moves it. */
-function normalizeSide(raw) {
-  if (raw.visible === false || raw.side === 'center') return 'center';
-  return raw.side === 'left' ? 'left' : 'right';
+/* Normalise the stored value into a pane count 0 | 1 | 2. New state persists a
+   numeric `right`; legacy state used a `side` of 'left'/'center'/'right' (with
+   `visible:false` as the old "off" spelling), which we fold into the count:
+   'right' → 0 panes right, 'center'/off → 1, 'left' → 2. The default is 1 so
+   the chat always keeps one pane to its right unless the user changes it. */
+function normalizeRight(raw) {
+  if (typeof raw.right === 'number') return Math.max(0, Math.min(2, raw.right | 0));
+  if (raw.side === 'left') return 2;
+  if (raw.side === 'right') return 0;
+  if (raw.visible === false || raw.side === 'center') return 1;
+  return 1;
 }
 
-/* The Appearance control and the stored state share the same vocabulary now. */
+/* The Appearance control speaks in mode ids ('center'|'right1'|'right2'); map
+   the stored pane count onto them so the right segment lights up. */
 export function wiseaiDockMode(state = readWISEaiDockState()) {
-  return state.side;
+  return ['center', 'right1', 'right2'][state.right] || 'center';
 }
 
 /* Persist a partial patch over the current state and return the result. */
@@ -84,39 +91,80 @@ function isWISEaiSolo(dock) {
   );
 }
 
+/* The real, on-screen sibling modules of the dock, left→right in DOM order.
+   The menu rail (nav chrome) and any hidden module are not panes. */
+function paneSiblings(dock, row) {
+  return Array.from(row.children).filter(
+    (el) => el !== dock && el.id !== 'menu-panel' && el.offsetWidth > 0,
+  );
+}
+
+/* Set an element's inline flex `order` only when it actually differs, so we
+   never write an identical style attribute — that matters because the row's
+   MutationObserver watches sibling style changes, and a no-op write would make
+   it re-run applyWISEaiDockState every frame in a busy loop. */
+function setOrder(el, value) {
+  if (el.style.order !== value) el.style.order = value;
+}
+
+/* Re-order the modules row so exactly `right` sibling panes land AFTER the
+   chat (to its right) and the rest before it (to its left). The chat itself is
+   pinned to order 1, left panes to 0, right panes to 2 — WISEai therefore stays
+   the fixed centre anchor with the chosen number of panes on its right. If the
+   row holds fewer siblings than requested, all of them simply sit to the right. */
+function placeRightPanes(dock, right) {
+  const row = dock.closest('#modules-row');
+  if (!row) return;
+  const sibs = paneSiblings(dock, row);
+  const n = Math.max(0, Math.min(right, sibs.length));
+  const firstRight = sibs.length - n;
+  sibs.forEach((el, i) => setOrder(el, i >= firstRight ? '2' : '0'));
+  setOrder(dock, '1');
+}
+
+/* Drop every inline `order` we set (dock + siblings) so the modules row reflows
+   in natural DOM order — used when the dock collapses out of the row. */
+function clearPaneOrder(dock) {
+  const row = dock.closest('#modules-row');
+  if (!row) return;
+  setOrder(dock, '');
+  paneSiblings(dock, row).forEach((el) => setOrder(el, ''));
+}
+
 /* Reflect the current (or supplied) state onto a dock element: its width
-   class, its side class/flex-order, and the topbar control buttons. */
+   class, the row ordering that puts N panes to its right, and the topbar
+   control buttons. */
 export function applyWISEaiDockState(dock, state = readWISEaiDockState()) {
   if (!dock) return;
 
   /* Collapsed = the whole WISEai module folds away to a floating circle (the
      WISE-owl bug). The dock is pulled out of the modules row entirely so the
      remaining modules re-flow and resize across their single/double/triple
-     widths; the circle reopens it. Everything below (width/side/solo) only
-     matters in the expanded state, so bail early once the circle is shown. */
+     widths; the circle reopens it. Everything below (width/panes/solo) only
+     matters in the expanded state, so bail early once the circle is shown.
+     Clear any pane ordering we imposed so the remaining modules reflow. */
   dock.classList.toggle('wiseai-dock-collapsed', state.collapsed);
   syncWISEaiFab(dock, state.collapsed);
-  if (state.collapsed) return;
+  if (state.collapsed) { clearPaneOrder(dock); return; }
 
-  /* The dock is always shown now; the three modes only change where it sits.
-     'left'/'right' lock it flush to an edge; 'center' floats it mid-row but
-     keeps it sticky-clamped to both edges so it never scrolls off-screen —
-     see the `wiseai-dock-center` CSS. */
+  /* The dock is always shown now; the three modes only change how many module
+     panes sit to its RIGHT. It stays sticky-clamped to both edges (the
+     `wiseai-dock-center` CSS) so it never scrolls off-screen regardless. */
   const tier = widthTierOf(state.wide);
   dock.classList.add('wiseai-dock-open');
   dock.classList.toggle('panel-wide', tier >= 1);
   dock.classList.toggle('panel-triple', tier >= 2);
 
-  /* Width is locked to the single↔double range in CSS. The extra layout rule:
-     when WISEai is the ONLY module left in the row it can't be docked flush to
-     an edge against empty space — it stays capped at (at most) double width and
-     is centre-docked, overriding the stored left/right side until another
-     module returns. */
+  /* When WISEai is the ONLY module left in the row there are no panes to place,
+     so it just centre-docks (capped at double width) until another module
+     returns. Otherwise re-order the row so exactly `right` siblings land after
+     the chat. WISEai always uses the both-edges sticky clamp now — there is no
+     separate left/right edge-lock, since the chat is the fixed centre anchor. */
   const solo = isWISEaiSolo(dock);
-  const side = solo ? 'center' : state.side;
   dock.classList.toggle('wiseai-dock-solo', solo);
-  dock.classList.toggle('wiseai-dock-left', side === 'left');
-  dock.classList.toggle('wiseai-dock-center', side === 'center');
+  dock.classList.remove('wiseai-dock-left');
+  dock.classList.add('wiseai-dock-center');
+  placeRightPanes(dock, solo ? 0 : state.right);
 
   const widthBtn = dock.querySelector('.panel-width-toggle-btn');
   if (widthBtn) {
@@ -128,16 +176,21 @@ export function applyWISEaiDockState(dock, state = readWISEaiDockState()) {
   }
 }
 
+/* Appearance mode id → number of panes kept to the right of the chat. Legacy
+   left/center/right ids are still accepted so older callers keep working. */
+const WISEAI_RIGHT_BY_MODE = { center: 0, right1: 1, right2: 2, right: 0, left: 2 };
+
 /**
- * Set the Doc chat's position from one of the three Appearance modes and apply
- * it everywhere on the page at once. Persisted via `wise-wiseai-dock`, so the
- * choice carries across navigations and syncs to other tabs. Picking the
- * position the chat is already in is a harmless no-op.
- * @param {'left'|'center'|'right'} mode
+ * Set how many module panes sit to the RIGHT of the chat from one of the three
+ * Appearance modes ('center'|'right1'|'right2') and apply it everywhere on the
+ * page at once. Persisted via `wise-wiseai-dock`, so the choice carries across
+ * navigations and syncs to other tabs. Picking the mode the chat is already in
+ * is a harmless no-op.
+ * @param {'center'|'right1'|'right2'} mode
  */
 export function setWISEaiDockPosition(mode) {
-  const side = mode === 'left' || mode === 'center' ? mode : 'right';
-  const state = writeWISEaiDockState({ side });
+  const right = mode in WISEAI_RIGHT_BY_MODE ? WISEAI_RIGHT_BY_MODE[mode] : 1;
+  const state = writeWISEaiDockState({ right });
   document.querySelectorAll('.wiseai-dock').forEach((dock) => applyWISEaiDockState(dock, state));
   return state;
 }
@@ -237,7 +290,7 @@ export function mountWISEaiDock(dock, opts = {}) {
   /* WISEai always loads at its single-pane width on every page. The widened
      (double/triple) tier is a within-session choice and is intentionally NOT
      restored across page loads, so the chat module is the exact same size every
-     time it loads. (Side/position is still restored below.) */
+     time it loads. (The right-pane count is still restored below.) */
   writeWISEaiDockState({ wide: 0 });
 
   /* Restore the persisted place, then keep this dock in sync if the state

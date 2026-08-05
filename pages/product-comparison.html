@@ -706,8 +706,8 @@
     }
 
     .chat-input-rail {
-      border-top: 1px solid var(--border);
-      background: var(--surface-2);
+      border-top: none;
+      background: var(--bg);
       transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
@@ -3328,7 +3328,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 2px; text-align: center; font-weight: 700; min-height: 0;
       font-family: var(--font-serif);
-      font-size: clamp(12px, 1.05vw, 14px); line-height: 1.2;
+      font-size: clamp(10.5px, 0.85vw, 12px); line-height: 1.2;
       overflow-wrap: anywhere;
     }
     .cmp-rail-body .cmp-rail-metric-desc,
@@ -5538,6 +5538,8 @@
     }
     .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
     .fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
+    /* Attach popover opens to the RIGHT of the far-left "+" button. */
+    .fl-more-popover--left { right: auto !important; left: 0 !important; }
 
     #chat-shell .chat-topbar .panel-header-icon svg {
       color: var(--text);
@@ -6455,7 +6457,7 @@
          wise.css `.chat-input-rail`): 12px block, 32px inline. */
       padding: 12px 32px !important;
       background: var(--bg) !important;
-      border-top: 1px solid var(--border) !important;
+      border-top: none !important;
     }
     .chat-input-rail > .flex {
       align-items: center !important;
@@ -7328,7 +7330,7 @@
       import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
-      import { buildAppearanceBody } from '../js/appearance-menu.js';
+      import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -7348,7 +7350,7 @@
         isColorblindOn,
         isJamStripOn,
         applyJamStrip,
-        buildAppearanceBody,
+        buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
       });
       restoreMinimalUi();
       restoreHeaderFloat();
@@ -7521,7 +7523,7 @@
       <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false">
         <span class="material-symbols-outlined">crossword</span>
       </button>
-      <div class="topbar-profile has-dot" id="topbar-profile" title="Maya Chen · Product Intelligence Lead" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">MC</div>
+      <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · Product Intelligence Lead" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
     </div><!-- /topbar-row -->
     <div id="modules-row">
       <div id="panels-row">
@@ -8407,25 +8409,45 @@
 
       <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10">
         <div class="flex gap-2 items-end">
-          <div class="fl-input-wrap">
+          <div class="fl-input-wrap fl-input-wrap--lead">
             <span id="fl-label" class="fl-label">Ask a question or choose an option above</span>
-            <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
             <div class="fl-more-wrap" id="fl-more-wrap">
-              <button type="button" class="fl-icon-btn fl-more-btn" id="fl-more-btn" title="More options" onclick="toggleInputMore(event)">
-                <span class="material-icons">more_horiz</span>
+              <button type="button" class="fl-icon-btn fl-more-btn" id="fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" onclick="toggleInputMore(event)">
+                <span class="material-icons">add</span>
               </button>
-              <div class="fl-more-popover" id="fl-more-popover" role="menu">
-                <button type="button" class="fl-more-item" title="Attach file">
+              <div class="fl-more-popover fl-more-popover--left" id="fl-more-popover" role="menu">
+                <button type="button" class="fl-more-item" title="Attach file" onclick="attachInputFile(event)">
                   <span class="material-icons">attach_file</span>
                   <span>Attach</span>
                 </button>
-                <button type="button" class="fl-more-item" title="Camera">
+                <button type="button" class="fl-more-item" title="Camera" onclick="attachInputFile(event, true)">
                   <span class="material-icons">photo_camera</span>
                   <span>Camera</span>
                 </button>
                 <button type="button" class="fl-more-item" title="Voice">
                   <span class="material-icons">mic</span>
                   <span>Voice</span>
+                </button>
+              </div>
+            </div>
+            <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
+            <div class="fl-model-wrap" id="fl-model-wrap">
+              <button type="button" class="fl-icon-btn fl-model-btn" id="fl-model-btn" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false" onclick="toggleModelMenu(event)">
+                <span class="material-icons">tune</span>
+              </button>
+              <div class="fl-model-popover" id="fl-model-popover" role="menu">
+                <div class="fl-model-head">WISE.ai model</div>
+                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="swift" onclick="selectModel(event, this)">
+                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Swift</span><span class="fl-model-desc">Fast answers for everyday work</span></span>
+                  <span class="fl-model-switch" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="fl-model-item is-active" role="menuitemradio" aria-checked="true" data-model="core" onclick="selectModel(event, this)">
+                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Core</span><span class="fl-model-desc">Balanced depth &amp; speed</span></span>
+                  <span class="fl-model-switch" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="deep" onclick="selectModel(event, this)">
+                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Deep</span><span class="fl-model-desc">Advanced reasoning for reformulation</span></span>
+                  <span class="fl-model-switch" aria-hidden="true"></span>
                 </button>
               </div>
             </div>
@@ -8466,9 +8488,9 @@
           </div>
           <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
             <div class="um-card flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style="background:var(--primary-soft);color:var(--primary)">MC</div>
+              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style="background:var(--primary-soft);color:var(--primary)">AK</div>
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-bold text-oyster-100">Maya Chen</div>
+                <div class="text-sm font-bold text-oyster-100">Arthur Krupsky</div>
                 <div class="text-xs text-oyster-600">Product Intelligence Lead</div>
                 <div class="mt-1"><span class="um-chip"><span class="material-icons" style="font-size:13px">verified</span>WISE Foods</span></div>
               </div>
@@ -8477,7 +8499,7 @@
             <div>
               <div class="um-section-label">Details</div>
               <div class="um-card" style="padding:4px 10px">
-                <div class="um-row"><span class="um-row-ic"><span class="material-icons">mail</span></span><div class="um-row-main"><div class="um-row-title">maya.chen@wisefoods.com</div><div class="um-row-sub">Work email</div></div></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-icons">mail</span></span><div class="um-row-main"><div class="um-row-title">akrupsky@wisecode.ai</div><div class="um-row-sub">Work email</div></div></div>
                 <div class="um-row"><span class="um-row-ic"><span class="material-icons">call</span></span><div class="um-row-main"><div class="um-row-title">+1 (415) 555-0142</div><div class="um-row-sub">Phone</div></div></div>
                 <div class="um-row"><span class="um-row-ic"><span class="material-icons">schedule</span></span><div class="um-row-main"><div class="um-row-title">Pacific Time (UTC−7)</div><div class="um-row-sub">Timezone</div></div></div>
                 <div class="um-row"><span class="um-row-ic"><span class="material-icons">apartment</span></span><div class="um-row-main"><div class="um-row-title">Intelligence · Seat 1 of 12</div><div class="um-row-sub">Organization</div></div></div>
@@ -10167,7 +10189,7 @@
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
        avatar in place of the "You" / "WISEai" name labels. Inherits
        currentColor so the avatar circle's color drives the mark. */
-    /* The "You" avatar mirrors the top-bar profile chip (Maya Chen → "MC"). */
+    /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK"). */
     const WISEAI_USER_AVATAR = 'MC';
     const WISEAI_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
 
@@ -10286,7 +10308,7 @@
       const label = statusLabel || WISEAI_STATUS_LABEL;
       const el = document.createElement('div');
       el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
-      el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">${label}…</span></span></div>`;
+      el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${label}…</span></span></div>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -10322,9 +10344,48 @@
       return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEai layout and controls.';
     }
 
+    /* Pick 1–2 short, human status lines describing what WISEai is doing for
+       this turn (shown ONE AT A TIME in the thinking indicator, in place of the
+       old bouncing dots), based on the intent / question. */
+    function statusStepsFor(text, intent) {
+      const byIntent = {
+        customer_profile: ['Setting up the customer profile', 'Preparing the verification steps'],
+        resume_prompt: ['Finding your work in progress', 'Gathering the details'],
+        faq_intro: ['Gathering the details'],
+        registry_home: ['Opening the WISE Foods registry', 'Pulling product data'],
+        add_food_intro: ['Getting the label parser ready'],
+        edit_food_select: ['Loading your products'],
+      };
+      if (intent && byIntent[intent]) return byIntent[intent];
+      const q = String(text || '').toLowerCase();
+      if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return ['Assembling the comparison', 'Lining up the numbers'];
+      if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return ['Building your dashboard', 'Crunching the numbers'];
+      if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return ['Modeling the reformulation'];
+      if (/(verif|shield|attest|non-upf|clean label|badge)/.test(q)) return ['Preparing the verification flow'];
+      if (/(food|registry|upc|product|search|look ?up|find)/.test(q)) return ['Searching the WISE Foods registry', 'Matching UPCs'];
+      return ['Gathering the details'];
+    }
+    /* Advance the indicator's status message through `steps` one at a time, in
+       the same line, then run `done()` after the last has shown. */
+    function cycleWISEaiStatus(el, steps, done) {
+      const STEP = 620;
+      const lbl = el && el.querySelector('.sc-typing-label');
+      let i = 1;
+      const next = () => {
+        if (Array.isArray(steps) && i < steps.length) {
+          if (lbl) lbl.textContent = steps[i] + '…';
+          i += 1;
+          setTimeout(next, STEP);
+        } else if (typeof done === 'function') {
+          done();
+        }
+      };
+      setTimeout(next, STEP);
+    }
     function wiseaiRespond(text, intent) {
-      const typing = showWISEaiTyping();
-      setTimeout(() => { typing?.remove(); addWISEaiMessage(wiseaiReply(text, intent)); }, 600);
+      const steps = statusStepsFor(text, intent);
+      const typing = showWISEaiTyping(steps[0]);
+      cycleWISEaiStatus(typing, steps, function() { if (typing) typing.remove(); addWISEaiMessage(wiseaiReply(text, intent)); });
     }
 
     /* Each intent chip on the WISEai welcome screen pairs with the side
@@ -14692,7 +14753,7 @@
         '<div class="vf-nutri"><div class="vf-nutri-v">0g</div><div class="vf-nutri-k">ADDED SUGAR</div></div>' +
         '<div class="vf-nutri"><div class="vf-nutri-v">5</div><div class="vf-nutri-k">INGREDIENTS</div></div>' +
         '</div>' +
-        '<div class="vf-sign"><strong>Master attestation</strong> — “I attest to the accuracy of this data and that it matches the physical product packaging and the actual formulation of this UPC.”<div class="vf-sign-name">Maya Chen</div></div>');
+        '<div class="vf-sign"><strong>Master attestation</strong> — “I attest to the accuracy of this data and that it matches the physical product packaging and the actual formulation of this UPC.”<div class="vf-sign-name">Arthur Krupsky</div></div>');
     }
 
     function vfBuildPayment() {
@@ -15116,13 +15177,70 @@
 
     function toggleInputMore(e) {
       e.stopPropagation();
+      document.getElementById('fl-model-popover')?.classList.remove('open');
       const pop = document.getElementById('fl-more-popover');
       pop.classList.toggle('open');
     }
+
+    /* Attach a file from the far-left "+" popover — posts the filename into the
+       thread so the action has a visible result. */
+    function attachInputFile(e, camera) {
+      e.stopPropagation();
+      document.getElementById('fl-more-popover')?.classList.remove('open');
+      let fi = document.getElementById('fl-file-input');
+      if (!fi) {
+        fi = document.createElement('input');
+        fi.type = 'file';
+        fi.id = 'fl-file-input';
+        fi.style.display = 'none';
+        fi.addEventListener('change', function() {
+          const f = fi.files && fi.files[0];
+          if (!f) return;
+          const name = String(f.name).replace(/</g, '&lt;');
+          hideWelcomeScreen(function() {
+            addUserMessage('📎 ' + name);
+            const t = showWISEaiTyping('Reviewing ' + name);
+            setTimeout(function() {
+              if (t) t.remove();
+              addWISEaiMessage('Got it — I’ve received <strong>' + name + '</strong> and can reference it in this conversation.', { source: false });
+            }, 600);
+          });
+          fi.value = '';
+        });
+        document.body.appendChild(fi);
+      }
+      if (camera) { fi.accept = 'image/*'; fi.setAttribute('capture', 'environment'); }
+      else { fi.accept = ''; fi.removeAttribute('capture'); }
+      fi.click();
+    }
+
+    /* Right-side WISE.ai model selector — single-select toggle popover. */
+    function toggleModelMenu(e) {
+      e.stopPropagation();
+      document.getElementById('fl-more-popover')?.classList.remove('open');
+      document.getElementById('fl-model-popover')?.classList.toggle('open');
+    }
+    function selectModel(e, el) {
+      e.stopPropagation();
+      const pop = document.getElementById('fl-model-popover');
+      if (!pop) return;
+      pop.querySelectorAll('.fl-model-item').forEach(function(b) {
+        b.classList.remove('is-active');
+        b.setAttribute('aria-checked', 'false');
+      });
+      el.classList.add('is-active');
+      el.setAttribute('aria-checked', 'true');
+      pop.classList.remove('open');
+    }
+
     document.addEventListener('click', function(e) {
       const wrap = document.getElementById('fl-more-wrap');
       if (wrap && !wrap.contains(e.target)) {
         document.getElementById('fl-more-popover')?.classList.remove('open');
+      }
+      const mwrap = document.getElementById('fl-model-wrap');
+      if (mwrap && !mwrap.contains(e.target)) {
+        document.getElementById('fl-model-popover')?.classList.remove('open');
       }
     });
 
@@ -15660,26 +15778,32 @@
       } catch (_) {}
     }
 
-    /* The Doc chat's position (left / center / right) is shared via the same
-       `wise-wiseai-dock` key. On THIS page the chat IS the centre column, so it
-       is already centered — the 'center' button is the active, do-nothing
-       default here, while 'left'/'right' just persist the choice so it takes
-       effect on the portfolio and agent pages where the chat rides as a side
-       rail. See setWISEaiDockPosition() in js/wiseai-dock.js. */
-    function wiseaiDockMode() {
+    /* WISEai is always the centre anchor; the control chooses how many module
+       panes sit to its RIGHT (0 = chat only, 1 = one pane, 2 = a second pane),
+       shared via the same `wise-wiseai-dock` key. On THIS page the chat IS the
+       centre column, so the count only persists for the portfolio and agent
+       pages where WISEai rides as a dock and actually re-orders the row. See
+       applyWISEaiDockState() in js/wiseai-dock.js. */
+    function wiseaiRightPanes() {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
-        if (raw.visible === false || raw.side === 'center') return 'center';
-        if (raw.side === 'left') return 'left';
-        if (raw.side === 'right') return 'right';
-        /* Nothing chosen yet: the chat is shown centered on this page. */
-        return 'center';
-      } catch (_) { return 'center'; }
+        if (typeof raw.right === 'number') return Math.max(0, Math.min(2, raw.right | 0));
+        /* Legacy left/center/right → pane count. */
+        if (raw.side === 'left') return 2;
+        if (raw.side === 'right') return 0;
+        if (raw.visible === false || raw.side === 'center') return 1;
+        return 1;
+      } catch (_) { return 1; }
+    }
+    function wiseaiDockMode() {
+      return ['center', 'right1', 'right2'][wiseaiRightPanes()] || 'center';
     }
     function setWISEaiDockPosition(mode) {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
-        raw.side = mode === 'left' || mode === 'center' ? mode : 'right';
+        const map = { center: 0, right1: 1, right2: 2, right: 0, left: 2 };
+        raw.right = mode in map ? map[mode] : 1;
+        delete raw.side;
         delete raw.visible;
         localStorage.setItem('wise-wiseai-dock', JSON.stringify(raw));
       } catch (_) {}
@@ -15803,31 +15927,7 @@
       }
 
       function renderAvatarBody(pop) {
-        pop.innerHTML = `
-          <div class="wise-popover-header">${(window.WiseAuth && WiseAuth.getUser() && WiseAuth.getUser().name) || 'Maya Chen'}</div>
-          <div class="wise-popover-actions">
-            <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-              <span class="material-icons">notifications</span>
-              <span>Alerts</span>
-              <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-            </button>
-            <span class="wise-pop-vline" aria-hidden="true"></span>
-            <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-              <span class="material-icons">tune</span>
-              <span>Agents</span>
-              <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-            </button>
-          </div>
-          <div class="wise-popover-divider"></div>
-          <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
-          <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-          <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-          <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-          <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-          <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-          <div class="wise-popover-divider"></div>
-          <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
-        `;
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
       }
 
       function renderAppearanceBody(pop) {
@@ -15887,6 +15987,12 @@
           const utilItem = ev.target.closest('[data-pop-action]');
           if (utilItem && pop.contains(utilItem)) {
             const action = utilItem.dataset.popAction;
+            if (action === 'invoices') {
+              ev.stopPropagation();
+              closePopover();
+              window.location.href = 'invoices.html';
+              return;
+            }
             if (UTIL_PANELS[action]) {
               ev.stopPropagation();
               closePopover();
@@ -15931,81 +16037,13 @@
         anchor.classList.add('is-open');
         anchor.setAttribute('aria-expanded', 'true');
 
-        pop.addEventListener('click', (ev) => {
-          const item = ev.target.closest('[data-layout]');
-          if (item && pop.contains(item)) {
-            ev.stopPropagation();
-            if (typeof setModuleLayout === 'function') setModuleLayout(item.dataset.layout);
-            renderAppearanceBody(pop);
-            return;
-          }
-          const pivotItem = ev.target.closest('[data-pivot]');
-          if (pivotItem && pop.contains(pivotItem)) {
-            ev.stopPropagation();
-            window.toggleMenuPivot?.();
-            renderAppearanceBody(pop);
-            return;
-          }
-          const minimalItem = ev.target.closest('[data-minimal]');
-          if (minimalItem && pop.contains(minimalItem)) {
-            ev.stopPropagation();
-            window.applyMinimalUi?.(!window.isMinimalUiOn?.());
-            renderAppearanceBody(pop);
-            return;
-          }
-          const headerFloatItem = ev.target.closest('[data-headerfloat]');
-          if (headerFloatItem && pop.contains(headerFloatItem)) {
-            ev.stopPropagation();
-            window.applyHeaderFloat?.(!window.isHeaderFloatOn?.());
-            renderAppearanceBody(pop);
-            return;
-          }
-          const fullBleedItem = ev.target.closest('[data-fullbleed]');
-          if (fullBleedItem && pop.contains(fullBleedItem)) {
-            ev.stopPropagation();
-            window.applyFullBleed?.(!window.isFullBleedOn?.());
-            renderAppearanceBody(pop);
-            return;
-          }
-          const jamItem = ev.target.closest('[data-jam]');
-          if (jamItem && pop.contains(jamItem)) {
-            ev.stopPropagation();
-            window.applyJamStrip?.(!window.isJamStripOn?.());
-            renderAppearanceBody(pop);
-            return;
-          }
-          const colorblindItem = ev.target.closest('[data-colorblind]');
-          if (colorblindItem && pop.contains(colorblindItem)) {
-            ev.stopPropagation();
-            window.applyColorblind?.(!window.isColorblindOn?.());
-            renderAppearanceBody(pop);
-            return;
-          }
-          const wiseaiBtn = ev.target.closest('.fz-btn[data-wiseai-dock]');
-          if (wiseaiBtn && pop.contains(wiseaiBtn)) {
-            ev.stopPropagation();
-            setWISEaiDockPosition(wiseaiBtn.dataset.wiseaiDock);
-            renderAppearanceBody(pop);
-            return;
-          }
-          const fzBtn = ev.target.closest('.fz-btn[data-fz]');
-          if (fzBtn && pop.contains(fzBtn)) {
-            ev.stopPropagation();
-            setChatFontSize(fzBtn.dataset.fz);
-            return;
-          }
-          const themeItem = ev.target.closest('[data-pop-action="theme"]');
-          if (themeItem && pop.contains(themeItem)) {
-            ev.stopPropagation();
-            toggleChatTheme();
-            renderAppearanceBody(pop);
-            return;
-          }
-          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) {
-            ev.stopPropagation();
-            return;
-          }
-          closePopover();
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => toggleChatTheme(),
+          setLayout: (m) => { if (typeof setModuleLayout === 'function') setModuleLayout(m); },
+          setDock: (m) => { if (typeof setWISEaiDockPosition === 'function') setWISEaiDockPosition(m); },
         });
       }
 

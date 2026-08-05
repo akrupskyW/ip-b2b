@@ -95,7 +95,7 @@ const AGENT_TRAILING_HTML = `
 export function mountTopbar({
   variant = 'agent',
   logoHref = 'overview.html',
-  profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileTitle = 'Arthur Krupsky · Product Intelligence Lead',
   profileName,
   profileEmail,
   avatarText,
@@ -140,7 +140,7 @@ export function syncMenuTogglePlacement() {
  */
 export function mountMenuBrand({
   logoHref = 'overview.html',
-  profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileTitle = 'Arthur Krupsky · Product Intelligence Lead',
   profileName,
   profileEmail,
   avatarText,
@@ -180,7 +180,7 @@ function deriveInitials(name) {
  * in one place; class changes on the source are mirrored onto the clones.
  */
 export function mountMenuFooter({
-  profileTitle = 'Maya Chen · Product Intelligence Lead',
+  profileTitle = 'Arthur Krupsky · Product Intelligence Lead',
   profileName,
   profileEmail,
   avatarText,

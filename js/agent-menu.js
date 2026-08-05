@@ -867,10 +867,20 @@ function renderAppGroup(prefix, node, activeId) {
     </div>`;
 }
 
+/* Twinkling sparkle mark for the upgrade card — three inline star paths so
+   each one can animate on its own delay (a font glyph can't twinkle). Colored
+   via `currentColor` so the card controls the hue. */
+const UPGRADE_STARS_SVG = `
+      <svg class="menu-nav-upgrade-stars" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--1" d="M9 2 Q9 9 16 9 Q9 9 9 16 Q9 9 2 9 Q9 9 9 2 Z"/>
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--2" d="M18.5 3 Q18.5 6 21.5 6 Q18.5 6 18.5 9 Q18.5 6 15.5 6 Q18.5 6 18.5 3 Z"/>
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--3" d="M18 14 Q18 16.5 20.5 16.5 Q18 16.5 18 19 Q18 16.5 15.5 16.5 Q18 16.5 18 14 Z"/>
+      </svg>`;
+
 function renderAppUpgrade(prefix, node) {
   const locked = node.locked || !pageExists(node.slug);
   const inner = `
-      <span class="menu-nav-upgrade-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
+      <span class="menu-nav-upgrade-icon">${UPGRADE_STARS_SVG}</span>
       <span class="menu-nav-upgrade-text">
         <span class="menu-nav-upgrade-title">${escAttr(node.title)}</span>
         <span class="menu-nav-upgrade-sub">${escAttr(node.sub)}</span>

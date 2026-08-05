@@ -2,7 +2,7 @@ import { workspaceRoutes, savedViewItems, accountRoutes, defaultRouteId } from '
 import { getRouteFromHash, pushRoute, subscribeRoute } from './router.js';
 import { mountApplicationNavigation } from './navigation.js';
 import { createAiChatDrawer } from './ai-chat-drawer.js';
-import { buildAppearanceBody } from './appearance-menu.js';
+import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from './appearance-menu.js';
 import {
   applyMinimalUi, isMinimalUiOn, restoreMinimalUi,
   applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat,
@@ -1737,23 +1737,10 @@ import { setTextSize } from './text-size.js';
       activeAppearanceAnchor = anchor;
       anchor.classList.add('is-open');
       anchor.setAttribute('aria-expanded', 'true');
-      pop.addEventListener('click', (ev) => {
-        const fzBtn = ev.target.closest('.fz-btn[data-fz]');
-        if (fzBtn && pop.contains(fzBtn)) { ev.stopPropagation(); setTextSize(fzBtn.dataset.fz); return; }
-        const minimal = ev.target.closest('[data-minimal]');
-        if (minimal && pop.contains(minimal)) { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn()); renderAppearancePop(pop); return; }
-        const header = ev.target.closest('[data-headerfloat]');
-        if (header && pop.contains(header)) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); renderAppearancePop(pop); return; }
-        const fullbleed = ev.target.closest('[data-fullbleed]');
-        if (fullbleed && pop.contains(fullbleed)) { ev.stopPropagation(); applyFullBleed(!isFullBleedOn()); renderAppearancePop(pop); return; }
-        const jam = ev.target.closest('[data-jam]');
-        if (jam && pop.contains(jam)) { ev.stopPropagation(); applyJamStrip(!isJamStripOn()); renderAppearancePop(pop); return; }
-        const colorblind = ev.target.closest('[data-colorblind]');
-        if (colorblind && pop.contains(colorblind)) { ev.stopPropagation(); applyColorblind(!isColorblindOn()); renderAppearancePop(pop); return; }
-        const theme = ev.target.closest('[data-pop-action="theme"]');
-        if (theme && pop.contains(theme)) { ev.stopPropagation(); applyTheme(STATE.theme === 'light' ? 'dark' : 'light'); renderAppearancePop(pop); return; }
-        if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
-        closeAppearancePop();
+      wireAppearancePopover(pop, {
+        render: () => renderAppearancePop(pop),
+        onClose: closeAppearancePop,
+        toggleTheme: () => applyTheme(STATE.theme === 'light' ? 'dark' : 'light'),
       });
     }
 
@@ -1778,33 +1765,12 @@ import { setTextSize } from './text-size.js';
       closeUserPop();
       closeAppearancePop();
       closePopover();
-      const who = (window.WiseAuth && WiseAuth.getUser && WiseAuth.getUser()?.name) || 'Maya Chen';
+      let rawName = null;
+      try { rawName = (window.WiseAuth && WiseAuth.getUser && WiseAuth.getUser()?.name) || null; } catch (_) { rawName = null; }
+      const who = (rawName && rawName !== 'Demo User') ? rawName : 'Arthur Krupsky';
       const pop = document.createElement('div');
       pop.className = 'wise-popover';
-      pop.innerHTML = `
-        <div class="wise-popover-header">${who}</div>
-        <div class="wise-popover-actions">
-          <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-            <span class="material-icons">notifications</span>
-            <span>Alerts</span>
-            <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-          </button>
-          <span class="wise-pop-vline" aria-hidden="true"></span>
-          <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-            <span class="material-icons">tune</span>
-            <span>Agents</span>
-            <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-          </button>
-        </div>
-        <div class="wise-popover-divider"></div>
-        <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
-        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-        <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-        <div class="wise-popover-divider"></div>
-        <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>`;
+      pop.innerHTML = buildUserMenuBody({ name: who });
       document.body.appendChild(pop);
       positionPopoverForTopbar(pop, anchor);
       requestAnimationFrame(() => pop.classList.add('open'));
@@ -1830,7 +1796,7 @@ import { setTextSize } from './text-size.js';
         if (item && pop.contains(item)) {
           ev.stopPropagation();
           /* Each menu row now opens its own module page (under pages/). */
-          const dest = { profile:'pages/profile.html', prefs:'pages/preferences.html', apikeys:'pages/api-keys.html', help:'pages/help.html', docs:'pages/docs.html' };
+          const dest = { profile:'pages/profile.html', invoices:'pages/invoices.html', prefs:'pages/preferences.html', apikeys:'pages/api-keys.html', help:'pages/help.html', docs:'pages/docs.html' };
           const a = item.dataset.popAction;
           closeUserPop();
           if (dest[a]) { window.location.href = dest[a]; return; }

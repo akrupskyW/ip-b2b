@@ -24,6 +24,8 @@
  *   - "Nokia"            Gran Vals · the Nokia ringtone
  *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
  *   - "Take On Me"       a-ha · the synth hook
+ *   - "Jump Around"      House of Pain · the horn-squeal hook
+ *   - "Sabotage"         Beastie Boys · the fuzz-bass riff
  *   - "Never Gonna…"     Rick Astley · Never Gonna Give You Up
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
@@ -203,6 +205,28 @@ const SONGS = {
       [null, 0.5],
     ],
   },
+  jumparound: {
+    label: 'Jump Around',
+    bpm: 107,
+    type: 'square',
+    notes: [
+      // House of Pain — Jump Around, the squealing horn-sample hook, up high.
+      ['E5', 0.5], ['G5', 0.25], ['E5', 0.25], ['D5', 0.5], ['E5', 0.5], ['G5', 0.5], ['A5', 0.5], ['G5', 0.5], ['E5', 0.5],
+      ['D5', 0.5], ['E5', 0.25], ['D5', 0.25], ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 1.0],
+      [null, 0.5],
+    ],
+  },
+  sabotage: {
+    label: 'Sabotage',
+    bpm: 116,
+    type: 'sawtooth',
+    notes: [
+      // Beastie Boys — Sabotage, the fuzzed-out driving bass riff, key Em.
+      ['E3', 0.5], ['E3', 0.25], ['E3', 0.25], ['G3', 0.5], ['E3', 0.5], ['A3', 0.5], ['G3', 0.5], ['E3', 0.5], ['D3', 0.5],
+      ['E3', 0.5], ['E3', 0.25], ['G3', 0.25], ['A3', 0.5], ['B3', 0.5], ['A3', 0.5], ['G3', 0.5], ['E3', 1.0],
+      [null, 0.5],
+    ],
+  },
   rickroll: {
     label: 'Never Gonna…',
     bpm: 113,
@@ -219,7 +243,8 @@ const SONGS = {
 
 const SONG_ORDER = [
   'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
-  'imperial', 'seven', 'smoke', 'megalovania', 'nokia', 'pirates', 'takeonme', 'rickroll',
+  'imperial', 'seven', 'smoke', 'megalovania', 'nokia', 'pirates', 'takeonme',
+  'jumparound', 'sabotage', 'rickroll',
 ];
 
 /* ---- Tiny synth ----------------------------------------------------- */
@@ -227,6 +252,7 @@ const SONG_ORDER = [
 const player = {
   ctx: null,
   master: null,
+  analyser: null, // taps the master output so the EQ can react to real sound
   songId: null,
   playing: false,
   voices: [],     // live oscillator/gain nodes (for an instant stop)
@@ -247,6 +273,14 @@ function ensureContext() {
   filter.frequency.value = 2600;
   player.master.connect(filter);
   filter.connect(player.ctx.destination);
+  // Analyser taps the master (pre-filter) so the visualizer sees the full,
+  // lively spectrum of whatever is playing. It reads only — it never feeds the
+  // destination, so it can't colour the audio.
+  const analyser = player.ctx.createAnalyser();
+  analyser.fftSize = 1024;            // ~43 Hz/bin — fine enough for the melody
+  analyser.smoothingTimeConstant = 0.72;
+  player.master.connect(analyser);
+  player.analyser = analyser;
   return player.ctx;
 }
 
@@ -304,6 +338,83 @@ function scheduleSong(songId, startAt) {
   return t - startAt;
 }
 
+/* ---- Sound-reactive equalizer -------------------------------------- */
+/* The EQ bars (.jam-pop-eq / .jam-eq) idle on a CSS shimmer, but while a tune
+   is playing we drive them from the AnalyserNode's live frequency data so the
+   levels actually rise and fall with the music. We add an `is-live` class to
+   each bar group (CSS then drops its keyframe animation and reads the per-bar
+   `--lvl` for opacity + glow) and write scaleY inline every frame. */
+
+const viz = { raf: 0, data: null };
+
+function prefersReducedMotion() {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch (_) { return false; }
+}
+
+/** Peak level (0..1) for bar `i` of `n`, from a log-spaced slice of the FFT so
+    low and high bars both feel responsive rather than clumping in the bass. */
+function barLevel(data, i, n) {
+  const lowBin = 2;
+  const highBin = Math.min(data.length - 1, 110);
+  const span = highBin / lowBin;
+  const b0 = Math.floor(lowBin * Math.pow(span, i / n));
+  const b1 = Math.max(b0 + 1, Math.floor(lowBin * Math.pow(span, (i + 1) / n)));
+  let peak = 0;
+  for (let b = b0; b < b1 && b < data.length; b++) {
+    if (data[b] > peak) peak = data[b];
+  }
+  return peak / 255;
+}
+
+function paintEq(container, data) {
+  container.classList.add('is-live');
+  const bars = container.children;
+  const n = bars.length;
+  if (!n) return;
+  for (let i = 0; i < n; i++) {
+    const bar = bars[i];
+    const raw = barLevel(data, i, n);
+    // Gentle curve for punch, then attack fast / release slow so the bars snap
+    // up on a beat and glide back down instead of flickering.
+    const target = 0.16 + 0.84 * Math.pow(raw, 0.72);
+    const prev = bar._lvl || 0.16;
+    const v = prev + (target - prev) * (target > prev ? 0.6 : 0.16);
+    bar._lvl = v;
+    bar.style.transform = `scaleY(${v.toFixed(3)})`;
+    bar.style.setProperty('--lvl', v.toFixed(3));
+  }
+}
+
+function vizFrame() {
+  if (!player.playing || !player.analyser) { viz.raf = 0; return; }
+  player.analyser.getByteFrequencyData(viz.data);
+  const groups = document.querySelectorAll('.jam-pop-eq, .jam-eq');
+  for (const g of groups) paintEq(g, viz.data);
+  viz.raf = requestAnimationFrame(vizFrame);
+}
+
+function startViz() {
+  if (viz.raf || prefersReducedMotion()) return;
+  if (!player.analyser) return;
+  viz.data = new Uint8Array(player.analyser.frequencyBinCount);
+  viz.raf = requestAnimationFrame(vizFrame);
+}
+
+function stopViz() {
+  if (viz.raf) cancelAnimationFrame(viz.raf);
+  viz.raf = 0;
+  // Hand the bars back to the CSS idle shimmer.
+  document.querySelectorAll('.jam-pop-eq.is-live, .jam-eq.is-live').forEach((g) => {
+    g.classList.remove('is-live');
+    for (const bar of g.children) {
+      bar.style.transform = '';
+      bar.style.removeProperty('--lvl');
+      bar._lvl = 0;
+    }
+  });
+}
+
 function stopVoices() {
   const ctx = player.ctx;
   for (const v of player.voices) {
@@ -323,6 +434,8 @@ function play(songId) {
   player.songId = songId;
   player.playing = true;
   player.onState?.(true, songId);
+  emitJamState();
+  startViz();
 
   const loop = () => {
     if (!player.playing) return;
@@ -336,7 +449,9 @@ function stop() {
   player.playing = false;
   clearTimeout(player.loopTimer);
   stopVoices();
+  stopViz();
   player.onState?.(false, player.songId);
+  emitJamState();
 }
 
 function toggle(songId) {
@@ -346,6 +461,32 @@ function toggle(songId) {
     play(songId || player.songId || SONG_ORDER[0]);
   }
 }
+
+/* ---- Popover player API --------------------------------------------- */
+/* The player UI now lives INSIDE the Appearance popover (not the nav module),
+   so the transport + track list are driven from there. These exports give that
+   UI the song catalogue, the play/stop transport, the current state, and a
+   subscription so the open popover can reflect play/stop as it happens. */
+export const JAM_SONGS = SONG_ORDER.map((id) => ({ id, label: SONGS[id].label }));
+
+let jamStateSubs = [];
+function emitJamState() {
+  const snap = { playing: player.playing, songId: player.songId };
+  for (const cb of jamStateSubs) { try { cb(snap); } catch (_) {} }
+}
+/** Subscribe to play/stop/track changes. Returns an unsubscribe function. */
+export function onJamState(cb) {
+  if (typeof cb !== 'function') return () => {};
+  jamStateSubs.push(cb);
+  return () => { jamStateSubs = jamStateSubs.filter((x) => x !== cb); };
+}
+/** Play a track (or resume the last), toggling it off if it's already playing. */
+export function toggleJam(songId) { toggle(songId); }
+export function playJam(songId) { play(songId || player.songId || SONG_ORDER[0]); }
+export function stopJam() { stop(); }
+export function isJamPlaying() { return !!player.playing; }
+export function currentJamSongId() { return player.songId || null; }
+export function currentJamSongLabel() { return player.songId ? SONGS[player.songId].label : ''; }
 
 /* ---- DOM ------------------------------------------------------------ */
 
@@ -459,25 +600,8 @@ export function mountJamStrip() {
   }
 }
 
-if (typeof document !== 'undefined') {
-  const start = () => {
-    mountJamStrip();
-    // The brand bar / panel can be (re)built after load; retry briefly so the
-    // strip lands once .menu-inner exists.
-    if (!document.querySelector('#menu-panel .jam-strip')) {
-      const obs = new MutationObserver(() => {
-        if (document.querySelector('#menu-panel .menu-inner')) {
-          mountJamStrip();
-          if (document.querySelector('#menu-panel .jam-strip')) obs.disconnect();
-        }
-      });
-      obs.observe(document.documentElement, { childList: true, subtree: true });
-      setTimeout(() => obs.disconnect(), 8000);
-    }
-  };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
-}
+/* NOTE: the jam player intentionally no longer auto-mounts into the nav module.
+   Per product direction the transport + track list live inside the Appearance
+   popover (see js/appearance-menu.js → jamPlayerSection), so there's nothing to
+   inject into #menu-panel. mountJamStrip()/buildStrip() are kept only for the
+   legacy Minimal-UI pivot bar should a shell opt back into an inline strip. */

@@ -331,7 +331,7 @@
     function showTyping() {
       var el = document.createElement('div');
       el.className = 'sc-line sc-line-wiseai sc-line-typing';
-      el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISE Assistant">' + OWL_BUG + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">Working on it…</span></span></div>';
+      el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISE Assistant">' + OWL_BUG + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">Working on it…</span></span></div>';
       messages.appendChild(el);
       scrollDown();
       return el;

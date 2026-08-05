@@ -52,7 +52,11 @@
       gap: 8px;
       min-width: 0;
       min-height: 0;
-      overflow: hidden;
+      /* visible (not hidden) so the carded modules' drop-shadow renders into
+         the body's bottom/side padding instead of being clipped flush at the
+         card edge — matches the nav panel, which sits outside this row. Narrow
+         viewports switch to overflow-x:auto below for horizontal scrolling. */
+      overflow: visible;
       margin: 0;
       padding: 0;
     }
@@ -861,7 +865,7 @@
     import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
-    import { buildAppearanceBody } from '../js/appearance-menu.js';
+    import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
@@ -872,7 +876,7 @@
       applyFullBleed, isFullBleedOn,
       applyColorblind, isColorblindOn,
       isJamStripOn, applyJamStrip,
-      buildAppearanceBody,
+      buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
     });
 
     restoreMinimalUi();
@@ -945,18 +949,11 @@
         requestAnimationFrame(() => pop.classList.add('open'));
         activePopover = pop; activeAnchor = anchor;
         anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
-        pop.addEventListener('click', (ev) => {
-          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
-          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
-          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
-          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
-          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
-          closePopover();
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => window.toggleChatTheme?.(),
         });
       }
       function openUserMenu(anchor) {
@@ -965,22 +962,7 @@
         const pop = document.createElement('div');
         pop.className = 'wise-popover';
         document.body.appendChild(pop);
-        pop.innerHTML =
-          '<div class="wise-popover-header">Arthur Krupsky</div>' +
-          '<div class="wise-popover-actions">' +
-            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
-            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
-            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
-          '</div>' +
-          '<div class="wise-popover-divider"></div>' +
-          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-divider"></div>' +
-          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
         positionWisePopover(pop, anchor);
         requestAnimationFrame(() => pop.classList.add('open'));
         activePopover = pop; activeAnchor = anchor;
@@ -988,6 +970,8 @@
         pop.addEventListener('click', (ev) => {
           const profile = ev.target.closest('[data-pop-action="profile"]');
           if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const invoices = ev.target.closest('[data-pop-action="invoices"]');
+          if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
           if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
@@ -1421,7 +1405,7 @@
       function showTyping() {
         const el = document.createElement('div');
         el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
-        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing"><span></span><span></span><span></span></span><span class="sc-typing-label">WISEai is modeling…</span></span></div>';
+        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEai is modeling…</span></span></div>';
         box.appendChild(el); box.scrollTop = box.scrollHeight;
         return el;
       }

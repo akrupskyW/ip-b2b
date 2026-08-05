@@ -21,7 +21,7 @@ import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState, isWISEaiClosed, restartWISEaiChat, setWISEaiCollapsed } from './wiseai-dock.js';
-import { buildAppearanceBody } from './appearance-menu.js';
+import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply, isBrandCompareActive, isStarsViewActive, toggleBrandCompare, toggleStarsView } from './dashboard-home.js';
@@ -422,8 +422,14 @@ function bootstrapBlankPage(productId) {
 function resolveIdentity() {
   let user = null;
   try { user = window.WiseAuth?.getUser?.() || null; } catch (_) { user = null; }
-  const name = (user && user.name) || 'Arthur Krupsky';
-  const email = (user && user.email) || 'akrupsky@wisecode.ai';
+  /* The prototype's demo login seeds a generic "Demo User"; treat that (and an
+     empty name) as the branded demo identity so the footer + avatar menu read
+     "Arthur Krupsky" everywhere, matching the rest of the app. A genuinely
+     different signed-in user keeps their own name + email. */
+  const rawName = user && user.name;
+  const isGenericDemo = !rawName || rawName === 'Demo User';
+  const name = isGenericDemo ? 'Arthur Krupsky' : rawName;
+  const email = (!isGenericDemo && user && user.email) ? user.email : 'akrupsky@wisecode.ai';
   const initials = (user && user.initials)
     || name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     || 'AK';
@@ -791,13 +797,18 @@ function setupWISEaiDock() {
     writeWISEaiDockState({ collapsed: false });
   }
 
-  /* Pages can pin the WISEai dock to a fixed side via `<body data-default-dock>`
-     (left | center | right) so the chat always sits there regardless of the
-     persisted preference — e.g. the Dashboard keeps the chat docked right of the
-     nav. Written before mount so applyWISEaiDockState() picks it up on restore. */
+  /* Pages can pin the WISEai dock to a fixed default via `<body data-default-dock>`
+     so the chat always opens the same way regardless of the persisted preference
+     — e.g. the chat + surface pages (verification, profile, invoices …) pin
+     `left`, which means "keep the surface module(s) to the RIGHT of the chat".
+     Because WISEai is always the centre anchor, the value is read as a pane
+     count: the legacy left/center/right map onto 2/1/0 panes-to-the-right (and
+     the new center/right1/right2 ids are accepted too). Written before mount so
+     applyWISEaiDockState() picks it up on restore. */
   const dockDefault = document.body.dataset.defaultDock;
-  if (dockDefault === 'left' || dockDefault === 'center' || dockDefault === 'right') {
-    writeWISEaiDockState({ side: dockDefault });
+  const DEFAULT_DOCK_RIGHT = { left: 2, center: 1, right: 0, center0: 0, right1: 1, right2: 2 };
+  if (dockDefault in DEFAULT_DOCK_RIGHT) {
+    writeWISEaiDockState({ right: DEFAULT_DOCK_RIGHT[dockDefault] });
   }
 
   let cfg;
@@ -1373,36 +1384,7 @@ function closeAvatarPopover() {
 }
 
 function renderAvatarBody(pop) {
-  const who = APP_IDENTITY?.name || 'Maya Chen';
-  /* This build locks the account menu down to the two live surfaces —
-     My profile (a working link) and Sign out. Everything else
-     (Alerts / Agents quick actions plus Invoices, Preferences, API keys,
-     Help, Docs) renders inert with a trailing lock glyph. */
-  pop.innerHTML = `
-    <div class="wise-popover-header">${escHtml(who)}</div>
-    <div class="wise-popover-actions">
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-        <span class="material-icons">notifications</span>
-        <span>Alerts</span>
-        <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-      </button>
-      <span class="wise-pop-vline" aria-hidden="true"></span>
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon">
-        <span class="material-icons">tune</span>
-        <span>Agents</span>
-        <span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span>
-      </button>
-    </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
-  `;
+  pop.innerHTML = buildUserMenuBody({ name: APP_IDENTITY?.name });
 }
 
 function openAvatarPopover(anchor) {
@@ -1519,83 +1501,15 @@ function openAppearancePopover(anchor) {
   anchor.classList.add('is-open');
   anchor.setAttribute('aria-expanded', 'true');
 
-  pop.addEventListener('click', (ev) => {
-    const wiseaiBtn = ev.target.closest('.fz-btn[data-wiseai-dock]');
-    if (wiseaiBtn && pop.contains(wiseaiBtn)) {
-      ev.stopPropagation();
-      setWISEaiDockPosition(wiseaiBtn.dataset.wiseaiDock);
-      renderAppearanceBody(pop);
-      return;
-    }
-    const fzBtn = ev.target.closest('.fz-btn[data-fz]');
-    if (fzBtn && pop.contains(fzBtn)) {
-      ev.stopPropagation();
-      setTextSize(fzBtn.dataset.fz);
-      return;
-    }
-    const pivotItem = ev.target.closest('[data-pivot]');
-    if (pivotItem && pop.contains(pivotItem)) {
-      ev.stopPropagation();
-      toggleMenuPivot();
-      renderAppearanceBody(pop);
-      return;
-    }
-    const minimalItem = ev.target.closest('[data-minimal]');
-    if (minimalItem && pop.contains(minimalItem)) {
-      ev.stopPropagation();
-      applyMinimalUi(!isMinimalUiOn());
-      renderAppearanceBody(pop);
-      return;
-    }
-    const headerFloatItem = ev.target.closest('[data-headerfloat]');
-    if (headerFloatItem && pop.contains(headerFloatItem)) {
-      ev.stopPropagation();
-      applyHeaderFloat(!isHeaderFloatOn());
-      renderAppearanceBody(pop);
-      return;
-    }
-    const fullBleedItem = ev.target.closest('[data-fullbleed]');
-    if (fullBleedItem && pop.contains(fullBleedItem)) {
-      ev.stopPropagation();
-      applyFullBleed(!isFullBleedOn());
-      renderAppearanceBody(pop);
-      return;
-    }
-    const jamItem = ev.target.closest('[data-jam]');
-    if (jamItem && pop.contains(jamItem)) {
-      ev.stopPropagation();
-      applyJamStrip(!isJamStripOn());
-      renderAppearanceBody(pop);
-      return;
-    }
-    const colorblindItem = ev.target.closest('[data-colorblind]');
-    if (colorblindItem && pop.contains(colorblindItem)) {
-      ev.stopPropagation();
-      applyColorblind(!isColorblindOn());
-      renderAppearanceBody(pop);
-      return;
-    }
-    const wiseaiChatItem = ev.target.closest('[data-wiseai-chat]');
-    if (wiseaiChatItem && pop.contains(wiseaiChatItem)) {
-      ev.stopPropagation();
-      /* Off → fresh-restart the chat back into its welcome state; on → close it
-         (folds to the floating owl, same as "Close conversation"). */
-      if (isWISEaiClosed()) restartWISEaiChat();
-      else setWISEaiCollapsed(true);
-      renderAppearanceBody(pop);
-      return;
-    }
-    const themeItem = ev.target.closest('[data-pop-action="theme"]');
-    if (themeItem && pop.contains(themeItem)) {
-      ev.stopPropagation();
-      setDarkMode(!isDarkMode());
-      return;
-    }
-    if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) {
-      ev.stopPropagation();
-      return;
-    }
-    closeAppearancePopover();
+  wireAppearancePopover(pop, {
+    render: () => renderAppearanceBody(pop),
+    onClose: closeAppearancePopover,
+    togglePivot: () => toggleMenuPivot(),
+    toggleTheme: () => setDarkMode(!isDarkMode()),
+    setDock: (m) => setWISEaiDockPosition(m),
+    /* Off → fresh-restart the chat back into its welcome state; on → close it
+       (folds to the floating owl, same as "Close conversation"). */
+    toggleWiseaiChat: () => { if (isWISEaiClosed()) restartWISEaiChat(); else setWISEaiCollapsed(true); },
   });
 }
 

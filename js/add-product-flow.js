@@ -174,7 +174,7 @@
     hideWelcome();
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing';
-    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">WISEai is thinking…</span></span></div>`;
+    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEai is thinking…</span></span></div>`;
     messagesEl.appendChild(el);
     scrollDown();
     return el;

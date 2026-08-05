@@ -47,7 +47,11 @@
       gap: 8px;
       min-width: 0;
       min-height: 0;
-      overflow: hidden;
+      /* visible (not hidden) so the carded modules' drop-shadow renders into
+         the body's bottom/side padding instead of being clipped flush at the
+         card edge — matches the nav panel, which sits outside this row. Narrow
+         viewports switch to overflow-x:auto below for horizontal scrolling. */
+      overflow: visible;
       margin: 0;
       padding: 0;
     }
@@ -159,6 +163,30 @@
     .wa-pane-meta { font-size: 11.5px; color: var(--text-muted); margin: 5px 0 0; line-height: 1.4; }
     .wa-pane-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
 
+    /* ── Broken-out History module ──
+       When History pops out of the in-chat overlay into its own left-docked
+       module, dress it as a first-class pane: same surface color, border, radius
+       & shadow as .wa-pane, and an editorial serif masthead with NO boxed icon. */
+    #modules-row .wch-sidebar.wch-docked {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+    }
+    #modules-row .wch-sidebar.wch-docked .wch-head {
+      padding: 20px 16px 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    #modules-row .wch-sidebar.wch-docked .wch-head-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: -.01em;
+      line-height: 1.16;
+      color: var(--text);
+    }
+    #modules-row .wch-sidebar.wch-docked .wch-head-title .material-icons { display: none; }
+
     .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; }
     .wa-pane-body > .wa-block { animation: waBlockIn .34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
     @keyframes waBlockIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -184,13 +212,9 @@
     html.dark .wa-sec-title .material-icons { color: var(--primary-bright, #8B9FAF); }
     .wa-caption { font-size: 11.5px; color: var(--text-subtle); margin: 0 0 12px; font-style: italic; }
 
-    /* ── Result "table" (grid rows, head + body columns line up) ── */
-    .wa-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .wa-thead, .wa-trow { display: grid; align-items: center; gap: 10px; padding: 9px 14px; }
-    .wa-thead { background: var(--surface-2); border-bottom: 1px solid var(--border); }
-    html.dark .wa-thead { background: rgba(255,255,255,0.04); }
-    .wa-th { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
-    .wa-th--end, .wa-td--end { text-align: right; justify-self: end; }
+    /* ── Result "table" rows (head + pager live under .wa-tbl below) ── */
+    .wa-trow { display: grid; align-items: center; gap: 10px; padding: 9px 14px; }
+    .wa-td--end { text-align: right; justify-self: end; }
     .wa-trow { border-bottom: 1px solid var(--border); transition: background .14s; }
     .wa-trow:last-child { border-bottom: 0; }
     .wa-trow:hover { background: var(--surface-2); }
@@ -242,8 +266,7 @@
     /* ── Sortable results table (real column headers, click-to-sort) ── */
     .wa-tbl { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
     .wa-tbl-head, .wa-trow { display: grid; align-items: center; gap: 12px; padding: 10px 14px; }
-    .wa-tbl-head { background: var(--surface-2); border-bottom: 1px solid var(--border); }
-    html.dark .wa-tbl-head { background: rgba(255,255,255,0.04); }
+    .wa-tbl-head { border-bottom: 1px solid var(--border); }
     .wa-tbl-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; white-space: nowrap; }
     button.wa-tbl-th { cursor: pointer; transition: color .14s; }
     button.wa-tbl-th:hover { color: var(--text); }
@@ -282,31 +305,31 @@
     .wa-empty-row { padding: 22px 14px; text-align: center; color: var(--text-subtle); font-size: 12px; border-top: 1px solid var(--border); }
 
     /* ── Table pagination (bottom of the sortable table) ── */
-    .wa-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 9px 14px; border-top: 1px solid var(--border); background: var(--surface-2); }
-    html.dark .wa-pager { background: rgba(255,255,255,0.03); }
+    .wa-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px 6px; font-size: 12px; color: var(--text-subtle); }
     .wa-pager[hidden] { display: none; }
-    .wa-pager-range { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .wa-pager-ctrls { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
-    .wa-pager-page { font-size: 11.5px; font-weight: 700; color: var(--text-muted); min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
-    .wa-pager-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted); cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
-    html.dark .wa-pager-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-    .wa-pager-btn .material-icons { font-size: 18px; }
-    .wa-pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-    .wa-pager-btn:disabled { opacity: .4; cursor: default; }
+    .wa-pager-range { font-size: 12px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .wa-loadmore { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; background: transparent; border: none; color: var(--primary); font-family: inherit; font-size: 12px; font-weight: 700; }
+    .wa-loadmore .material-icons { font-size: 16px; }
+    .wa-loadmore[hidden] { display: none; }
 
-    /* ── Food-detail card (with a failed-lookup notice state) ── */
-    .wa-detail { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .wa-detail-top { display: flex; align-items: center; gap: 14px; padding: 18px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
-    html.dark .wa-detail-top { background: rgba(255,255,255,0.04); }
-    .wa-detail-thumb { width: 52px; height: 52px; flex: 0 0 auto; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
-    html.dark .wa-detail-thumb { color: var(--primary-bright, #8B9FAF); }
-    .wa-detail-thumb .material-icons { font-size: 26px; }
-    .wa-detail-name { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.25; }
-    .wa-detail-brand { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 3px; }
-    .wa-detail-score { margin-left: auto; text-align: center; flex: 0 0 auto; }
-    .wa-detail-score .n { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 24px; color: var(--sec-red-text); line-height: 1; }
-    .wa-detail-score .l { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); margin-top: 3px; }
-    .wa-detail-body { padding: 16px 18px 18px; }
+    /* ── Food-detail hero (failed-lookup notice state) ──
+       A clean editorial header rather than a boxed card: the product photo +
+       name + brand on the left, with a large, prominent WISEscore on the right.
+       No shaded background / card chrome (the pane header already carries the
+       title), just a hairline rule beneath so the hero doesn't read as a second
+       header. */
+    .wa-dhero { display: flex; align-items: center; gap: 16px; padding: 2px 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+    .wa-dhero-thumb { width: 66px; height: 66px; flex: 0 0 auto; border-radius: 14px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+    .wa-dhero-thumb .wa-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wa-dhero-thumb .wa-thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
+    html.dark .wa-dhero-thumb .wa-thumb-fallback { color: var(--primary-bright, #8B9FAF); }
+    .wa-dhero-thumb .wa-thumb-fallback .material-icons { font-size: 30px; }
+    .wa-dhero-info { flex: 1 1 auto; min-width: 0; }
+    .wa-dhero-name { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 18px; line-height: 1.22; color: var(--text); letter-spacing: -.01em; }
+    .wa-dhero-brand { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 6px; }
+    .wa-dhero-score { flex: 0 0 auto; text-align: center; padding-left: 10px; }
+    .wa-dhero-score-n { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 46px; line-height: .9; color: var(--sec-red-text); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+    .wa-dhero-score-l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-subtle); margin-top: 6px; }
     .wa-notice { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: 11px; font-size: 12px; line-height: 1.45; margin-bottom: 14px; background: var(--ter-amber-10); border: 1px solid color-mix(in srgb, var(--ter-amber) 34%, transparent); color: var(--ter-amber-text); }
     .wa-notice .material-icons { font-size: 17px; flex: 0 0 auto; margin-top: 1px; }
     .wa-detail-sub { font-size: 12px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
@@ -333,8 +356,11 @@
     .wa-cand-note { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .wa-cand-score { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 16px; color: var(--sec-green-text); flex: 0 0 auto; }
 
-    /* ── Charts (SVG + div bars, app tokens only) ── */
-    .wa-chart-card { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); }
+    /* ── Charts (SVG + div bars, app tokens only) ──
+       Charts sit flush in the pane — no bordered card. Adjacent .wa-blocks are
+       already separated by the hairline rule above, so each chart just needs
+       breathing room, not a rounded container. */
+    .wa-chart-card { border: 0; border-radius: 0; padding: 0; background: transparent; }
     .wa-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--text-muted); }
     .wa-chart-legend .k { display: inline-flex; align-items: center; gap: 6px; }
     .wa-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
@@ -346,9 +372,47 @@
     html.dark .wa-bar-fill { background: var(--primary-bright, #8B9FAF); }
     .wa-bars-thin .wa-bar-track { height: 6px; }
     .wa-bar-val { font-size: 11.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-    .wa-radar-wrap { display: flex; gap: 18px; align-items: center; justify-content: center; flex-wrap: wrap; }
-    .wa-radar-scores { flex: 1 1 220px; min-width: 200px; }
+    /* Stacked score rows: name on its own line, bar + value beneath it so each
+       ranked item gets vertical room to breathe. */
+    .wa-scorebars { display: flex; flex-direction: column; gap: 14px; }
+    .wa-scorebar { display: flex; flex-direction: column; gap: 7px; }
+    .wa-scorebar-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .wa-scorebar-line { display: flex; align-items: center; gap: 12px; }
+    .wa-scorebar-line .wa-bar-track { flex: 1 1 auto; height: 8px; }
+    .wa-scorebar-line .wa-bar-val { flex: 0 0 auto; }
+    .wa-radar-wrap { display: flex; flex-direction: column; gap: 18px; align-items: stretch; }
+    .wa-radar-scores { width: 100%; }
+    /* Let axis labels render past the SVG box instead of being clipped. */
+    .wa-radar-svg { overflow: visible; }
     .wa-nd-tag { display: inline-block; padding: 1px 7px; border-radius: 9999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--ter-amber-10); color: var(--ter-amber-text); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); }
+
+    /* ═══════════ Inline surface preview chip ═══════════
+       When a turn opens a Results/Visuals module on the right, a small chip is
+       dropped INTO the transcript: a tiny thumbnail preview of that content on
+       the left, with the chart/result name to its right. Tapping it re-opens the
+       full module. It's a <div role="button"> (not a <button>) so it can safely
+       wrap the inner content of the surfaced view. */
+    .sc-surface-card {
+      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: 340px;
+      text-align: left; margin: 4px 0 0; padding: 6px 12px 6px 6px;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 12px; cursor: pointer; font-family: inherit;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    }
+    .sc-surface-card:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+    .sc-surface-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .sc-surface-card:active { transform: translateY(1px); }
+    /* Small clipped snapshot of the surfaced content, scaled way down. */
+    .sc-surface-thumb {
+      width: 44px; height: 44px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+    }
+    .sc-surface-thumb-inner {
+      position: absolute; top: 0; left: 0; width: 360px;
+      transform: scale(0.122); transform-origin: top left; pointer-events: none;
+    }
+    .sc-surface-thumb-inner > * { margin: 0 !important; }
+    .sc-surface-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Full bleed — mirror the shared treatment (wise.css): open every module
        top-to-bottom (drop top/bottom borders, corner rounding, shadow + the
@@ -443,7 +507,7 @@
     import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
-    import { buildAppearanceBody } from '../js/appearance-menu.js';
+    import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
@@ -454,7 +518,7 @@
       applyFullBleed, isFullBleedOn,
       applyColorblind, isColorblindOn,
       isJamStripOn, applyJamStrip,
-      buildAppearanceBody,
+      buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
     });
 
     restoreMinimalUi();
@@ -529,18 +593,11 @@
         activePopover = pop; activeAnchor = anchor;
         anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
 
-        pop.addEventListener('click', (ev) => {
-          const hit = (sel, fn) => { const el = ev.target.closest(sel); if (el && pop.contains(el)) { ev.stopPropagation(); fn(el); return true; } return false; };
-          if (hit('[data-pivot]', () => { window.toggleMenuPivot?.(); renderAppearanceBody(pop); })) return;
-          if (hit('[data-minimal]', () => { window.applyMinimalUi?.(!window.isMinimalUiOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-headerfloat]', () => { window.applyHeaderFloat?.(!window.isHeaderFloatOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-fullbleed]', () => { window.applyFullBleed?.(!window.isFullBleedOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-jam]', () => { window.applyJamStrip?.(!window.isJamStripOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('[data-colorblind]', () => { window.applyColorblind?.(!window.isColorblindOn?.()); renderAppearanceBody(pop); })) return;
-          if (hit('.fz-btn[data-fz]', (el) => { window.setChatFontSize?.(el.dataset.fz); renderAppearanceBody(pop); })) return;
-          if (hit('[data-pop-action="theme"]', () => { window.toggleChatTheme?.(); renderAppearanceBody(pop); })) return;
-          if (ev.target.closest('.fz-row, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
-          closePopover();
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => window.toggleChatTheme?.(),
         });
       }
 
@@ -550,22 +607,7 @@
         const pop = document.createElement('div');
         pop.className = 'wise-popover';
         document.body.appendChild(pop);
-        pop.innerHTML =
-          '<div class="wise-popover-header">Arthur Krupsky</div>' +
-          '<div class="wise-popover-actions">' +
-            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
-            '<span class="wise-pop-vline" aria-hidden="true"></span>' +
-            '<button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>' +
-          '</div>' +
-          '<div class="wise-popover-divider"></div>' +
-          '<div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span>Preferences<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">key</span>API keys<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">help</span>Help<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">menu_book</span>Docs<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>' +
-          '<div class="wise-popover-divider"></div>' +
-          '<div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>';
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
         positionWisePopover(pop, anchor);
         requestAnimationFrame(() => pop.classList.add('open'));
         activePopover = pop; activeAnchor = anchor;
@@ -573,6 +615,8 @@
         pop.addEventListener('click', (ev) => {
           const profile = ev.target.closest('[data-pop-action="profile"]');
           if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const invoices = ev.target.closest('[data-pop-action="invoices"]');
+          if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
           if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
@@ -745,8 +789,8 @@
 
     /* ── Results-table controller: live search + click-to-sort + pagination ──
        Search (per result-set), the column headers, and the clickable score cards
-       all funnel through applySort()/renderTable() so ranking, paging and the
-       "showing X–Y of N" footer always stay in sync. */
+       all funnel through applySort()/renderTable() so ranking, the "load more"
+       window and the "Showing X of N" footer always stay in sync. */
     function tableQuery(tbl) {
       const set = tbl.closest('.wa-resultset');
       const inp = set && set.querySelector('.wa-search');
@@ -775,13 +819,10 @@
       filtered.forEach((r, i) => { const rk = r.querySelector('.wa-rank'); if (rk) rk.textContent = i + 1; });
       const total = filtered.length;
       const size = parseInt(tbl.dataset.pageSize, 10) || 0;
-      const pages = size > 0 ? Math.max(1, Math.ceil(total / size)) : 1;
-      let page = parseInt(tbl.dataset.page, 10) || 1;
-      page = Math.min(Math.max(1, page), pages);
-      tbl.dataset.page = page;
-      const start = size > 0 ? (page - 1) * size : 0;
-      const end = size > 0 ? start + size : total;
-      const visible = new Set(filtered.slice(start, end));
+      let shown = size > 0 ? (parseInt(tbl.dataset.shown, 10) || size) : total;
+      shown = Math.min(Math.max(size || total, shown), total);
+      tbl.dataset.shown = shown;
+      const visible = new Set(filtered.slice(0, shown));
       rows.forEach((r) => { r.style.display = visible.has(r) ? '' : 'none'; });
 
       const set = tbl.closest('.wa-resultset');
@@ -791,16 +832,10 @@
       const pager = tbl.querySelector('[data-pager-bar]');
       if (pager) {
         pager.hidden = total === 0;
-        const from = total === 0 ? 0 : start + 1;
-        const to = Math.min(end, total);
         const range = pager.querySelector('[data-pager-range]');
-        if (range) range.textContent = `Showing ${from}\u2013${to} of ${total}`;
-        const lbl = pager.querySelector('[data-pager-page]');
-        if (lbl) lbl.textContent = `${page} / ${pages}`;
-        const prev = pager.querySelector('[data-pager="prev"]');
-        const next = pager.querySelector('[data-pager="next"]');
-        if (prev) prev.disabled = page <= 1;
-        if (next) next.disabled = page >= pages;
+        if (range) range.textContent = `Showing ${Math.min(shown, total)} of ${total} foods`;
+        const more = pager.querySelector('[data-loadmore]');
+        if (more) more.hidden = shown >= total;
       }
     }
 
@@ -825,7 +860,7 @@
         return 0;
       });
       rows.forEach((r) => tb.appendChild(r));
-      tbl.dataset.page = 1;
+      tbl.dataset.shown = parseInt(tbl.dataset.pageSize, 10) || 0;
       syncStatCards(tbl);
       renderTable(tbl);
     }
@@ -844,7 +879,7 @@
         if (!inp) return;
         const set = inp.closest('.wa-resultset');
         const tbl = set && set.querySelector('.wa-tbl');
-        if (tbl) { tbl.dataset.page = 1; renderTable(tbl); }
+        if (tbl) { tbl.dataset.shown = parseInt(tbl.dataset.pageSize, 10) || 0; renderTable(tbl); }
       });
       body.addEventListener('click', (e) => {
         const th = e.target.closest('button.wa-tbl-th[data-sort]');
@@ -869,15 +904,14 @@
           applySort(tbl, key, dir);
           return;
         }
-        const pg = e.target.closest('[data-pager]');
-        if (pg && !pg.disabled) {
-          const tbl = pg.closest('.wa-tbl');
+        const more = e.target.closest('[data-loadmore]');
+        if (more) {
+          const tbl = more.closest('.wa-tbl');
           if (!tbl) return;
-          let page = parseInt(tbl.dataset.page, 10) || 1;
-          page += pg.dataset.pager === 'next' ? 1 : -1;
-          tbl.dataset.page = page;
+          const size = parseInt(tbl.dataset.pageSize, 10) || 0;
+          const shown = parseInt(tbl.dataset.shown, 10) || size;
+          tbl.dataset.shown = shown + size;
           renderTable(tbl);
-          tbl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
       });
     }
@@ -965,13 +999,9 @@
       const paginate = pageSize > 0 && rows.length > pageSize;
       const pager = paginate ? `<div class="wa-pager" data-pager-bar>
           <span class="wa-pager-range" data-pager-range></span>
-          <div class="wa-pager-ctrls">
-            <button type="button" class="wa-pager-btn" data-pager="prev" aria-label="Previous page"><span class="material-icons">chevron_left</span></button>
-            <span class="wa-pager-page" data-pager-page></span>
-            <button type="button" class="wa-pager-btn" data-pager="next" aria-label="Next page"><span class="material-icons">chevron_right</span></button>
-          </div>
+          <button type="button" class="wa-loadmore" data-loadmore>Load more <span class="material-icons">expand_more</span></button>
         </div>` : '';
-      return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}" data-page="1" data-page-size="${paginate ? pageSize : 0}">
+      return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}" data-shown="${paginate ? pageSize : 0}" data-page-size="${paginate ? pageSize : 0}">
           ${head}
           <div class="wa-tbl-body">${body}</div>
           <div class="wa-empty-row" data-empty hidden>No foods match your search.</div>
@@ -1013,23 +1043,19 @@
       const badIngredients = ['Refined sugars & syrups', 'Multiple refined oils', 'Emulsifiers & stabilizers', 'Artificial colors', 'Multiple preservatives'];
       return `
         <div class="wa-block">
-          <div class="wa-detail">
-            <div class="wa-detail-top">
-              <span class="wa-detail-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/frosted_toaster_pastries.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">cake</span></span></span>
-              <div style="min-width:0">
-                <div class="wa-detail-name">Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</div>
-                <div class="wa-detail-brand">Member\u2019s Mark</div>
-              </div>
-              <div class="wa-detail-score"><div class="n">0.06</div><div class="l">WISEscore</div></div>
+          <div class="wa-dhero">
+            <span class="wa-dhero-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/frosted_toaster_pastries.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">cake</span></span></span>
+            <div class="wa-dhero-info">
+              <div class="wa-dhero-name">Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</div>
+              <div class="wa-dhero-brand">Member\u2019s Mark</div>
             </div>
-            <div class="wa-detail-body">
-              <div class="wa-notice"><span class="material-icons">error_outline</span><span>The full food-detail card couldn\u2019t be fetched — the detail lookup failed. Below is what\u2019s confirmed from the search result.</span></div>
-              <p class="wa-detail-sub">Its ingredient list is extremely long and dense with:</p>
-              <div class="wa-chiplist">${badIngredients.map((t) => `<span class="wa-ing-chip"><span class="material-icons" style="font-size:13px">close</span>${esc(t)}</span>`).join('')}</div>
-              <p class="wa-detail-sub" style="margin-top:16px">Why it ranks last</p>
-              <p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:0">That combination — not simply being \u201ca dessert\u201d — is why it surfaced at the very bottom of the ranking.</p>
-            </div>
+            <div class="wa-dhero-score"><div class="wa-dhero-score-n">0.06</div><div class="wa-dhero-score-l">WISEscore</div></div>
           </div>
+          <div class="wa-notice"><span class="material-icons">error_outline</span><span>The full food-detail card couldn\u2019t be fetched — the detail lookup failed. Below is what\u2019s confirmed from the search result.</span></div>
+          <p class="wa-detail-sub">Its ingredient list is extremely long and dense with:</p>
+          <div class="wa-chiplist">${badIngredients.map((t) => `<span class="wa-ing-chip"><span class="material-icons" style="font-size:13px">close</span>${esc(t)}</span>`).join('')}</div>
+          <p class="wa-detail-sub" style="margin-top:16px">Why it ranks last</p>
+          <p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:0">That combination — not simply being \u201ca dessert\u201d — is why it surfaced at the very bottom of the ranking.</p>
         </div>`;
     }
 
@@ -1050,25 +1076,32 @@
 
     /* ── Charts ── */
     function radarChart() {
-      const W = 360, H = 280, cx = 180, cy = 140, R = 100;
+      // Square viewBox with generous margin so the outer labels (left/right)
+      // never clip. R is kept well inside the box; labels sit just outside the
+      // outer ring. Modeled on the product-comparison spider chart.
+      const size = 300, cx = size / 2, cy = size / 2, R = size / 2 - 62;
+      // Five metrics laid out evenly. Only WISEscore returned values for this
+      // set; the rest came back empty, so their spokes are drawn dashed.
       const axes = [
-        { label: 'WISEscore', ang: -90, data: true },
-        { label: 'Gut Health', ang: 30, data: false },
-        { label: 'Excellent Source', ang: 150, data: false },
+        { label: 'WISEscore', data: true },
+        { label: 'Gut Health', data: false },
+        { label: 'Immune Support', data: false },
+        { label: 'Additive Load', data: false },
+        { label: 'Excellent Source', data: false },
       ];
-      const pt = (ang, t) => {
-        const r = (ang * Math.PI) / 180;
-        return [cx + R * t * Math.cos(r), cy + R * t * Math.sin(r)];
-      };
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:340px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods">`;
+      const M = axes.length;
+      const ang = (i) => (Math.PI * 2 * i) / M - Math.PI / 2;
+      const pt = (i, t) => [cx + R * t * Math.cos(ang(i)), cy + R * t * Math.sin(ang(i))];
+      const ptsAt = (t) => axes.map((_, i) => pt(i, t).map((v) => v.toFixed(1)).join(',')).join(' ');
+
+      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" class="wa-radar-svg" style="max-width:300px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods across five health metrics">`;
       // rings
-      [0.33, 0.66, 1].forEach((t) => {
-        const poly = axes.map((a) => pt(a.ang, t).map((v) => v.toFixed(1)).join(',')).join(' ');
-        svg += `<polygon points="${poly}" fill="none" stroke="var(--border-strong)" stroke-width="1" opacity="0.7"/>`;
+      [0.25, 0.5, 0.75, 1].forEach((t) => {
+        svg += `<polygon points="${ptsAt(t)}" fill="none" stroke="var(--border-strong)" stroke-width="1" opacity="0.7"/>`;
       });
       // spokes
-      axes.forEach((a) => {
-        const [x, y] = pt(a.ang, 1);
+      axes.forEach((a, i) => {
+        const [x, y] = pt(i, 1);
         svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-strong)" stroke-width="1" ${a.data ? '' : 'stroke-dasharray="4 4"'} opacity="0.8"/>`;
       });
       // spread of the 10 normalized WISEscores along the data axis
@@ -1076,28 +1109,30 @@
       const mn = Math.min(...scores), mx = Math.max(...scores);
       const norm = (s) => 0.16 + 0.72 * ((s - mn) / (mx - mn || 1));
       const avgT = norm(scores.reduce((a, b) => a + b, 0) / scores.length);
-      // collapsed polygon: real data on axis 1, near-zero on the two empty axes
-      const polyPts = [pt(-90, avgT), pt(30, 0.05), pt(150, 0.05)].map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+      // collapsed polygon: real data on the WISEscore axis, near-zero elsewhere
+      const polyPts = axes.map((a, i) => pt(i, a.data ? avgT : 0.05).map((v) => v.toFixed(1)).join(',')).join(' ');
       svg += `<polygon points="${polyPts}" fill="var(--primary)" fill-opacity="0.18" stroke="var(--primary)" stroke-width="2"/>`;
       // dots for each food on the data axis
       scores.forEach((s) => {
-        const [x, y] = pt(-90, norm(s));
+        const [x, y] = pt(0, norm(s));
         svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="var(--primary)"/>`;
       });
       // axis labels
-      axes.forEach((a) => {
-        const [x, y] = pt(a.ang, 1.16);
-        const anchor = Math.abs(a.ang + 90) < 1 ? 'middle' : a.ang === 30 ? 'start' : 'end';
+      axes.forEach((a, i) => {
+        const [x, y] = pt(i, 1.2);
+        const anchor = Math.abs(x - cx) < 6 ? 'middle' : x > cx ? 'start' : 'end';
         svg += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" font-size="10.5" font-weight="700" fill="var(--text)">${a.label}</text>`;
       });
       svg += `</svg>`;
 
       const scoreBars = WORST_FOODS.slice(0, 10).map((r) => {
         const w = (norm(r[2]) * 100).toFixed(0);
-        return `<div class="wa-bar-row" style="grid-template-columns:1fr 90px 44px">
-            <div class="wa-bar-label" style="text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r[0])}</div>
-            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${w}%"></div></div>
-            <div class="wa-bar-val">${fmtScore(r[2])}</div>
+        return `<div class="wa-scorebar">
+            <div class="wa-scorebar-name">${esc(r[0])}</div>
+            <div class="wa-scorebar-line">
+              <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${w}%"></div></div>
+              <div class="wa-bar-val">${fmtScore(r[2])}</div>
+            </div>
           </div>`;
       }).join('');
 
@@ -1105,10 +1140,10 @@
         <div class="wa-block">
           <div class="wa-chart-card">
             <div class="wa-radar-wrap">
-              <div style="flex:0 0 340px;max-width:340px">${svg}</div>
+              <div style="align-self:center;width:100%;max-width:300px">${svg}</div>
               <div class="wa-radar-scores">
-                <div style="margin-bottom:8px"><span class="wa-nd-tag">No data</span> <span style="font-size:11px;color:var(--text-muted)">Gut Health · Excellent Source came back empty across the set.</span></div>
-                <div class="wa-bars wa-bars-thin">${scoreBars}</div>
+                <div style="margin-bottom:8px"><span class="wa-nd-tag">No data</span> <span style="font-size:11px;color:var(--text-muted)">Gut Health, Immune Support, Additive Load &amp; Excellent Source came back empty across the set.</span></div>
+                <div class="wa-scorebars">${scoreBars}</div>
               </div>
             </div>
           </div>
@@ -1241,8 +1276,8 @@
 
     const INTENT_REPLIES = {
       upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
-      worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br><em>Opened the full ranking in Results &amp; Details \u2192</em>',
-      spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, <strong>Gut Health</strong> and <strong>Excellent Source</strong> are missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br><em>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details</em>',
+      worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br>Opened the full ranking in Results &amp; Details \u2192',
+      spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details',
       cupcake: 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d',
       cookie: 'I pulled the highest-WISEscore chocolate chip cookies first, but the result quality is noisy: several top rows have clearly broken or incomplete ingredient lists, so they don\u2019t really answer your \u201cleast amount of chocolate\u201d criterion reliably.<br><br>Among the credible top-scoring matches, the strongest candidates look like the ones where chocolate chips appear later in the ingredient list, which usually means less chocolate by weight. The cleanest examples near the top are <strong>Paleo, Vegan Chocolate Chip Cookie</strong> and <strong>Emmy\u2019s Organics Coconut Cookies</strong>. By contrast, products like the Overjoyed biscotti put chocolate ingredients much earlier and even add a drizzle, so they\u2019re clearly more chocolate-heavy.',
       report: 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.',
@@ -1262,46 +1297,101 @@
       return DEFAULT_REPLY;
     }
 
+    /* ── Inline surface previews ──────────────────────────────────────────
+       Every block we open on the right ALSO drops a medium preview card into
+       the transcript. The card carries a clamped copy of the same content and
+       remembers how to re-open its module, so closing a pane never loses the
+       answer — it lives on inline and re-opens on tap. */
+    let surfaceSeq = 0;
+    const SURFACED = {}; /* blockId → { which, title, meta, html } */
+
+    /* Tag the first .wa-block in a view's html so we can later tell whether that
+       exact block is still present in its pane (i.e. not closed/cleared). */
+    function tagBlock(html, id) {
+      return html.replace('<div class="wa-block', `<div data-block-id="${id}" class="wa-block`);
+    }
+
+    function surfaceCardHtml(blockId, which, icon, title, previewHtml) {
+      const paneName = which === 'visuals' ? 'Visuals' : 'Results & Details';
+      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel">
+          <div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>
+          <div class="sc-surface-title">${esc(title)}</div>
+        </div>`;
+    }
+
+    /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
+    function surfaceBlock(which, { icon, title, meta, html }) {
+      const blockId = 'blk' + (++surfaceSeq);
+      const tagged = tagBlock(html, blockId);
+      openPane(which, { title, meta, html: tagged });
+      SURFACED[blockId] = { which, title, meta, html: tagged };
+      if (chat && typeof chat.addWISEai === 'function') {
+        chat.addWISEai(surfaceCardHtml(blockId, which, icon, title, html), { source: '', feedback: false });
+      }
+    }
+
+    /* Re-open a surfaced block from its inline preview. If the block is still in
+       its pane, just bring the pane forward + scroll to it; otherwise re-add it. */
+    function reopenSurface(blockId) {
+      const e = SURFACED[blockId];
+      if (!e) return;
+      const pane = paneEl[e.which];
+      const present = paneBody[e.which] && paneBody[e.which].querySelector(`[data-block-id="${blockId}"]`);
+      if (present) {
+        if (pane && !pane.classList.contains('is-open')) pane.classList.add('is-open');
+        requestAnimationFrame(() => present.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+      } else {
+        openPane(e.which, { title: e.title, meta: e.meta, html: e.html });
+      }
+    }
+
     /* When a turn surfaces data, open/refresh the right panes shortly after the
        reply lands (so the transcript reads first, then the pane resolves). */
     function surface(intent) {
       setTimeout(() => {
         if (intent === 'worst') {
-          openPane('results', {
+          surfaceBlock('results', {
+            icon: 'trending_down',
             title: 'Worst foods in the database',
             meta: '25 of 943,428 matches — all foods, sorted by WISEscore ascending',
             html: worstFoodsView(),
           });
         } else if (intent === 'spider') {
-          openPane('results', {
+          surfaceBlock('results', {
+            icon: 'format_list_numbered',
             title: '10 worst foods · gut & immune request',
             meta: '10 of 943,428 matches — sorted by WISEscore ascending · Gut Health & Excellent Source requested',
             html: tenWorstView(),
           });
-          openPane('visuals', {
+          surfaceBlock('visuals', {
+            icon: 'radar',
             title: 'Spider chart · 10 worst foods',
             meta: 'Requested sort: gut health & immune-system support. Only WISEscore returned data.',
             html: radarChart(),
           });
         } else if (intent === 'cupcake') {
-          openPane('results', {
+          surfaceBlock('results', {
+            icon: 'cake',
             title: 'Worst-ranked cupcake · detail',
-            meta: 'Member’s Mark Christmas Gourmet Cupcakes, 8 Ct. — detail lookup',
+            meta: 'What the search result confirms — full detail lookup failed',
             html: cupcakeDetailView(),
           });
         } else if (intent === 'cookie') {
-          openPane('results', {
+          surfaceBlock('results', {
+            icon: 'cookie',
             title: 'Best chocolate chip cookies',
             meta: "25 of 3,010 matches — category 'snacks,cookies' & name 'chocolate chip', sorted by WISEscore descending",
             html: cookiesView(),
           });
         } else if (intent === 'report') {
-          openPane('results', {
+          surfaceBlock('results', {
+            icon: 'summarize',
             title: 'Finding the best chocolate chip cookie',
             meta: 'WISEai report · ranked views, candidate shortlist & trend-style slopes',
             html: reportView(),
           });
-          openPane('visuals', {
+          surfaceBlock('visuals', {
+            icon: 'insights',
             title: 'Report visuals · cookie ranking',
             meta: 'Distribution, score curve & trend-style slopes built from the current data',
             html: reportVisualsView(),
@@ -1326,15 +1416,69 @@
         statusLabel: 'WISEai is searching',
         userInitials: 'AK',
         historyKey: 'wise-chat-history:wiseai',
+        /* Let History "break out" of the in-chat overlay into its own module,
+           docked to the left of the chat (toggled from the pane's header). */
+        historyBreakout: true,
+        /* Preload a few past conversations so the three-dot → History pane opens
+           on an established workspace you can jump back into (seeded once). Each
+           reuses the same verbatim replies the live transcript uses. */
+        historySeed: [
+          {
+            title: 'What\u2019s the worst food in our database?',
+            msAgo: 2 * 3600000,
+            turns: [
+              { role: 'you', text: 'What\u2019s the worst food in our database?' },
+              { role: 'wiseai', html: INTENT_REPLIES.worst },
+              { role: 'you', text: 'Tell me more about the worst-ranked cupcake' },
+              { role: 'wiseai', html: INTENT_REPLIES.cupcake },
+            ],
+          },
+          {
+            title: 'Best chocolate chip cookie with the least chocolate',
+            daysAgo: 1,
+            turns: [
+              { role: 'you', text: 'Best chocolate chip cookie with the least chocolate' },
+              { role: 'wiseai', html: INTENT_REPLIES.cookie },
+              { role: 'you', text: 'Show me a pretty report — all the charts & trends' },
+              { role: 'wiseai', html: INTENT_REPLIES.report },
+            ],
+          },
+          {
+            title: 'Is this ingredient list ultra-processed?',
+            daysAgo: 4,
+            turns: [
+              { role: 'you', text: 'Is this ingredient list ultra-processed?' },
+              { role: 'wiseai', html: INTENT_REPLIES.upf },
+              { role: 'you', text: 'Spider-chart the 10 worst foods by gut & immune health' },
+              { role: 'wiseai', html: INTENT_REPLIES.spider },
+            ],
+          },
+        ],
         intents: INTENTS,
         intentReplies: INTENT_REPLIES,
         reply,
-        /* Brand connectors docked beneath the input — retailer & food-data
-           sources WISEai can pull verified product data from. */
+        /* Retailer & food-data sources WISEai can pull verified product data
+           from. The docked below-input rail is dropped (connectorsRail:false);
+           sources now live in the three-dot "Connect a data source" side panel. */
         connectorsLabel: 'Connect a data source',
-        /* Every source is shown in the centered rail, so the trailing
-           "more connectors" three-dot control is redundant — drop it. */
+        connectorsRail: false,
+        /* Every source is shown in the panel, so the trailing "more connectors"
+           three-dot control is redundant — drop it. */
         connectorsMore: false,
+        /* Show the MCP-server toggle in the chat's three-dot menu (visual only). */
+        mcpToggle: true,
+        /* Enable the Turns Module — the three-dot "View turns" toggle opens a
+           panel listing every turn, each with a "Fork from here" button that
+           branches the conversation up to that point into a new chat of your
+           own (the original is never touched; forks show a fork badge in
+           History and a "Forked from …" banner). */
+        turns: true,
+        /* Let the Turns overlay "break out" into its own module docked to the
+           right of the chat — a real flex sibling in #modules-row, dressed like
+           the Results & Details / Visuals panes (same surface, border, radius,
+           shadow & serif masthead via the #modules-row .wch-docked rules). */
+        turnsBreakout: true,
+        turnsBreakoutWidth: 380,
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
           { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },
@@ -1357,6 +1501,8 @@
             { variant: 'wiseai', icon: 'cake', title: 'Worst-ranked cupcake', desc: 'Dig into the single lowest-scoring cupcake and why it landed there.', action: 'Explain', intent: 'cupcake', ask: 'Tell me more about the worst-ranked cupcake' },
             { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
+            { variant: 'wiseai', icon: 'hub', title: 'Connect a data source', desc: 'Link Kroger, Instacart, USDA FoodData Central & more so WISEai can pull verified product data.', action: 'Connect', intent: 'connect_source' },
+            { variant: 'wiseai', icon: 'explore', title: 'Take a tour', desc: 'A quick guided walkthrough of WISEai — the panes, prompts & reports.', locked: true },
           ],
         },
         /* Open the right panes when a turn surfaces data; return false so the
@@ -1365,6 +1511,22 @@
           surface(intent);
           return false;
         },
+      });
+
+      /* Tapping an inline surface preview card re-opens its module on the right
+         (delegated on the chat root so it covers every card in the transcript,
+         including ones parked further up the conversation). */
+      host.addEventListener('click', (e) => {
+        const card = e.target.closest('.sc-surface-card[data-surface]');
+        if (!card) return;
+        reopenSurface(card.getAttribute('data-surface'));
+      });
+      host.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest('.sc-surface-card[data-surface]');
+        if (!card) return;
+        e.preventDefault();
+        reopenSurface(card.getAttribute('data-surface'));
       });
 
       /* History is toggled from the chat's own three-dot menu — inject the entry
