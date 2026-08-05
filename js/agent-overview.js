@@ -1224,7 +1224,7 @@ function mainPanelControlsHTML() {
   return `
     <div class="panel-controls">
       <div class="panel-more-wrap">
-        <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-icons">more_horiz</span></button>
+        <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-icons">more_vert</span></button>
         <div class="topbar-popover hidden" id="agent-main-more-pop" role="menu">${renderMorePopover()}</div>
       </div>
       <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[0])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[0]}</span></button>

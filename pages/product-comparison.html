@@ -6693,7 +6693,7 @@
     }
     /* ===== Consolidated module-header overflow menu =====
        One horizontal-dots (more_horiz) trigger that gathers every per-module
-       control — move side, width toggle, and an Off / On switch — into a single
+       control — move side and width toggle — into a single
        dropdown. Built by consolidatePanelControls() so every module header on
        the page reads the same (WISEai excepted). */
     .panel-controls.pf-menuized { flex-direction: row; min-width: 0; gap: 0; }
@@ -16059,23 +16059,12 @@
   </script>
 
   <!-- Consolidates every module header's flip / width / close icons into a
-       single horizontal-dots (more_horiz) dropdown, plus an Off / On switch.
+       single horizontal-dots (more_horiz) dropdown.
        WISEai is intentionally left untouched. The original control buttons are
        kept (hidden) in the DOM so the existing per-panel state-sync keeps
        working; the menu rows simply delegate clicks to them. -->
   <script>
     (function consolidatePanelControlsInit() {
-      /* For modules without their own close button, "Off / On" turns the panel
-         off via its existing global toggle (force = false). */
-      const OFF_FN = {
-        upf:    () => window.toggleUpfPanel    && window.toggleUpfPanel(false),
-        tier:   () => window.toggleTierPanel   && window.toggleTierPanel(false),
-        shield: () => window.toggleShieldPanel && window.toggleShieldPanel(false),
-        lens:   () => window.toggleLensPanel   && window.toggleLensPanel(false),
-        vault:  () => window.toggleVaultPanel  && window.toggleVaultPanel(false),
-        nfp:    () => window.toggleNfpPanel    && window.toggleNfpPanel(false),
-      };
-
       function closeAllModuleMenus() {
         document.querySelectorAll('.pf-module-menu.is-open').forEach((m) => {
           m.classList.remove('is-open');
@@ -16109,10 +16098,6 @@
         const closeBtn = controls.querySelector('.panel-close-btn');
         if (!flipBtn && !widthBtn && !closeBtn) return;
 
-        const key = (widthBtn && widthBtn.dataset.panel)
-          || (flipBtn && flipBtn.closest('.panel-flip') && flipBtn.closest('.panel-flip').dataset.panel)
-          || '';
-
         controls.dataset.menuized = '1';
         controls.classList.add('pf-menuized');
         controls.classList.remove('panel-controls--stacked');
@@ -16130,7 +16115,7 @@
         trigger.setAttribute('aria-expanded', 'false');
         trigger.title = 'Module options';
         trigger.setAttribute('aria-label', 'Module options');
-        trigger.innerHTML = '<span class="material-symbols-outlined">more_horiz</span>';
+        trigger.innerHTML = '<span class="material-symbols-outlined">more_vert</span>';
         const pop = document.createElement('div');
         pop.className = 'pf-module-menu-pop';
         pop.setAttribute('role', 'menu');
@@ -16179,15 +16164,6 @@
           });
           pop.appendChild(widthItem);
         }
-
-        const sep = document.createElement('div');
-        sep.className = 'pf-module-menu-sep';
-        pop.appendChild(sep);
-
-        const offClick = closeBtn ? () => closeBtn.click() : (OFF_FN[key] || (() => {}));
-        pop.appendChild(makeItem({
-          icon: 'toggle_off', label: 'Off / On', danger: true, onClick: offClick,
-        }));
 
         function syncWidthItem() {
           if (!widthItem || !widthBtn) return;

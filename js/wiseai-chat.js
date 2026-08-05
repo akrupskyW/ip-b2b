@@ -326,6 +326,34 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     : null;
   const scorecardsHtml = scorecards ? buildScorecardsHtml(scorecards, id) : '';
 
+  /* Optional brand-connector rail (opt-in) — a horizontally scrolling row of
+     data-source connectors docked right beneath the input, e.g. retailer &
+     food-data APIs (Kroger, Instacart, USDA FoodData Central…). Each entry:
+       { id, name, color, mono, icon, connected }
+     `mono` renders a brand-colored monogram badge; `icon` (a Material icon
+     name) is used instead when present. Clicking one fires opts.onConnector(id)
+     and, unless the host handles it, posts a "connect" turn into the chat. */
+  const connectors = Array.isArray(opts.connectors) ? opts.connectors.filter(Boolean) : [];
+  const connectorsLabel = opts.connectorsLabel !== undefined ? opts.connectorsLabel : 'Connect a data source';
+  const connectorLogo = (c) => c.icon
+    ? `<span class="sc-connector-logo" style="--cxc:${esc(c.color || 'var(--primary)')}"><span class="material-icons">${esc(c.icon)}</span></span>`
+    : `<span class="sc-connector-logo sc-connector-logo--mono" style="--cxc:${esc(c.color || 'var(--primary)')}">${esc(c.mono || (c.name || '?').slice(0, 1))}</span>`;
+  const connectorsHtml = connectors.length
+    ? `<div class="sc-connectors" id="${id}-connectors" aria-label="${esc(connectorsLabel || 'Connectors')}">
+        ${connectorsLabel ? `<span class="sc-connectors-label"><span class="material-icons">hub</span>${esc(connectorsLabel)}</span>` : ''}
+        <div class="sc-connectors-rail" id="${id}-connectors-rail" role="list">
+          ${connectors.map((c) =>
+            `<button type="button" class="sc-connector${c.connected ? ' is-connected' : ''}" role="listitem" data-connector="${esc(c.id || c.name)}" title="${c.connected ? 'Connected · ' : 'Connect '}${esc(c.name)}">
+              ${connectorLogo(c)}
+              <span class="sc-connector-name">${esc(c.name)}</span>
+              <span class="sc-connector-tick material-icons" aria-hidden="true">${c.connected ? 'check_circle' : 'add'}</span>
+            </button>`
+          ).join('')}
+        </div>
+        <button type="button" class="sc-connector-more" id="${id}-connectors-more" title="More connectors" aria-label="More connectors"><span class="material-icons">more_vert</span></button>
+      </div>`
+    : '';
+
   /* 'carousel' (default) = horizontal scroll row with scroll buttons + edge
      fades; 'wrap' = plain wrapped flex grid, no controls, no overflow. */
   const chipsFlow = opts.chipsFlow === 'wrap' ? 'wrap' : 'carousel';
@@ -453,6 +481,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         </div>
         <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-icons">send</span></button>
       </div>
+      ${connectorsHtml}
       ${disclaimer ? `<p class="sc-disclaimer"><span class="material-icons">shield</span>${esc(disclaimer)}</p>` : ''}
     </div>`;
 
@@ -558,6 +587,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function wiseaiRespond(text, intent) {
     const typing = showTyping();
     setTimeout(() => { typing?.remove(); addWISEai(reply(text, intent)); }, 600);
+  }
+  /* Post a user line followed by a FIXED WISEai reply (bypasses the reply
+     resolver) — used by controls like the brand connectors where the answer is
+     the action's own confirmation, not a routed intent response. */
+  function respondFixed(userText, replyHtml, meta) {
+    hideWelcome();
+    if (userText) addUser(userText);
+    const typing = showTyping();
+    setTimeout(() => { typing?.remove(); addWISEai(replyHtml, meta || { source: '' }); }, 600);
   }
   /* Hidden file input reused by Attach + Camera; a chosen file posts as a
      message so the action has a visible result in the thread. */
@@ -913,6 +951,43 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const flMoreBtn = rootEl.querySelector(`#${id}-fl-more`);
   const flPop = rootEl.querySelector(`#${id}-fl-pop`);
   flMoreBtn?.addEventListener('click', (e) => { e.stopPropagation(); flPop.classList.toggle('open'); });
+
+  /* Brand connectors — clicking a source hands its id to the host (which can
+     open a real OAuth/connect flow), then, unless handled, posts a connect turn
+     into the chat so the action always has a visible result in the thread. */
+  const connectorsEl = rootEl.querySelector(`#${id}-connectors`);
+  connectorsEl?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sc-connector[data-connector]');
+    if (btn) {
+      const cid = btn.getAttribute('data-connector');
+      const c = connectors.find((x) => (x.id || x.name) === cid) || {};
+      const handled = typeof opts.onConnector === 'function' ? opts.onConnector(cid, c) : false;
+      if (handled) return;
+      const nm = esc(c.name || cid);
+      respondFixed(`Connect ${c.name || cid}`, c.connected
+        ? `<strong>${nm}</strong> is already connected — I can pull live product, pricing, and availability data from it into this conversation. What would you like to look up?`
+        : `Let’s connect <strong>${nm}</strong>. I’ll open the secure authorization flow so WISEai™ can read verified product data from ${nm}. Once it’s linked, I can search its catalog, cross-reference UPCs, and score items in real time.`);
+      return;
+    }
+    if (e.target.closest('.sc-connector-more')) {
+      if (typeof opts.onConnectorMore === 'function') { opts.onConnectorMore(); return; }
+      respondFixed('Show me all available connectors', 'WISEai™ can connect to retailer and food-data platforms — Kroger, Instacart, Walmart, USDA FoodData Central, Open Food Facts, NielsenIQ and more. Pick one from the rail beneath the input to start a secure connection, or tell me which source you’d like to link.');
+    }
+  });
+
+  /* Connector rail — horizontal scroll with a fading right edge that hints at
+     more sources when the row overflows. */
+  const connectorsRail = rootEl.querySelector(`#${id}-connectors-rail`);
+  if (connectorsEl && connectorsRail) {
+    const updateFade = () => {
+      const max = connectorsRail.scrollWidth - connectorsRail.clientWidth - 1;
+      connectorsEl.classList.toggle('has-more', connectorsRail.scrollLeft < max && connectorsRail.scrollWidth > connectorsRail.clientWidth + 1);
+      connectorsEl.classList.toggle('has-prev', connectorsRail.scrollLeft > 1);
+    };
+    connectorsRail.addEventListener('scroll', updateFade, { passive: true });
+    window.addEventListener('resize', updateFade);
+    requestAnimationFrame(updateFade);
+  }
 
   /* Menu + chip actions */
   rootEl.addEventListener('click', (e) => {

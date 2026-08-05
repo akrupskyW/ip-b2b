@@ -1329,6 +1329,21 @@
         intents: INTENTS,
         intentReplies: INTENT_REPLIES,
         reply,
+        /* Brand connectors docked beneath the input — retailer & food-data
+           sources WISEai can pull verified product data from. */
+        connectorsLabel: 'Connect a data source',
+        connectors: [
+          { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K',  connected: true },
+          { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart' },
+          { id: 'walmart',  name: 'Walmart',             color: '#0071DC', mono: 'W' },
+          { id: 'usda',     name: 'USDA FoodData Central', color: '#1F5C3D', icon: 'eco' },
+          { id: 'off',      name: 'Open Food Facts',      color: '#E64A19', icon: 'public' },
+          { id: 'nielseniq', name: 'NielsenIQ',          color: '#1A2CC0', icon: 'insights' },
+          { id: 'wholefoods', name: 'Whole Foods Market', color: '#00674B', mono: 'W' },
+          { id: 'amazonfresh', name: 'Amazon Fresh',     color: '#FF9900', icon: 'local_grocery_store' },
+          { id: 'spins',    name: 'SPINS',               color: '#6D28D9', icon: 'query_stats' },
+          { id: 'shopify',  name: 'Shopify',             color: '#5A863E', icon: 'storefront' },
+        ],
         /* Large "at a glance" welcome cards — the big intent chips. */
         scorecards: {
           label: 'Start a conversation',

@@ -79,11 +79,20 @@
     /* Chat width toggle (matches the shared module's 3-step widen). */
     .rf-chat.panel-wide { flex-basis: 520px; width: 520px; }
     .rf-chat.panel-triple { flex-basis: 700px; width: 700px; }
+    /* Studio + dashboard each get the same 3-step widen from their own header
+       control. The studio is fixed-width so it visibly grows (shrinking the
+       dashboard beside it); the dashboard is the flexible filler, so its tiers
+       raise its min-width — meaningful when the row is tight, harmless wide. */
+    .rf-studio.panel-wide { flex-basis: 480px; width: 480px; }
+    .rf-studio.panel-triple { flex-basis: 600px; width: 600px; }
+    .rf-dash.panel-wide { min-width: 620px; }
+    .rf-dash.panel-triple { min-width: 820px; }
     .rf-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
     .rf-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
     .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
     .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
     .rf-lead { display: block; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
+    .rf-lead--lg { font-size: 1.5rem; line-height: 1.18; margin-bottom: 10px; }
     .rf-lead .rf-accent { color: var(--primary); }
 
     /* Intent chips live INLINE in the conversation — they trail the latest
@@ -101,13 +110,38 @@
     .rf-chip:hover { background: var(--surface-3); transform: translateY(-1px); }
     .rf-chip:active { transform: translateY(0); }
     .rf-chip .material-icons { font-size: 14px; flex: 0 0 auto; }
-    .rf-chip .rf-chip-pts { font-weight: 800; font-size: 10.5px; }
-    .rf-chip--dq { background: var(--sec-red-10); border-color: color-mix(in srgb, var(--sec-red) 40%, transparent); color: var(--sec-red-text); }
-    .rf-chip--dq:hover { background: color-mix(in srgb, var(--sec-red) 20%, transparent); }
-    .rf-chip--credit { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 40%, transparent); color: var(--sec-green-text); }
-    .rf-chip--credit:hover { background: color-mix(in srgb, var(--sec-green) 20%, transparent); }
-    .rf-chip--qualified { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 40%, transparent); color: var(--sec-green-text); cursor: default; }
-    .rf-chip--qualified:hover { transform: none; }
+    /* Every intent chip — reformulation moves AND the food-picker options — is a
+       neutral ghost pill (the shared intent-chip look). No status red/green: the
+       WISE brand only shows in the hover border and the trailing point pill that
+       carries the chip's value (a credit +N, a debit it clears −N, or a food's
+       DQ / N★ status). */
+    .rf-chip--move { color: var(--text); }
+    .rf-chip--move:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); background: var(--surface-3); }
+    html.dark .rf-chip--move:hover { border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 50%, var(--border-strong)); }
+    /* Trailing point pill — brand-tinted, pinned to the chip's right edge. */
+    .rf-chip .rf-chip-pts {
+      margin-left: 2px; padding: 1px 7px; border-radius: 9999px;
+      font-weight: 800; font-size: 10px; letter-spacing: .01em;
+      color: var(--primary); background: var(--primary-soft);
+    }
+    html.dark .rf-chip .rf-chip-pts { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent); }
+    .rf-chip--qualified { color: var(--text); cursor: default; }
+    .rf-chip--qualified:hover { transform: none; border-color: var(--border-strong); background: var(--surface-2); }
+    /* Food-picker chips carry the real product photo in a circle (mirrors the
+       dashboard row thumbs) instead of a generic glyph, and give the thumb room
+       by hugging the left edge. */
+    /* Keep the food chip the same height as a plain intent chip — the thumb is
+       sized to the chip's line box and the vertical padding is trimmed so the
+       photo never grows the pill. */
+    .rf-chip--food { padding: 3px 12px 3px 3px; gap: 7px; font-size: 12px; }
+    .rf-chip-thumb {
+      width: 20px; height: 20px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface-3); border: 1px solid var(--border); color: var(--primary);
+    }
+    html.dark .rf-chip-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+    .rf-chip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rf-chip-thumb .material-icons { font-size: 13px !important; }
 
     /* ── Module headers ──
        Mirrors the product-portfolio board header (.pf-head): a serif headline
@@ -159,13 +193,47 @@
     .rf-head-badge img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .rf-head-badge .material-icons { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary); }
 
+    /* ── Module header controls ──
+       The studio and dashboard now carry the same chrome the chat does: a width
+       changer + a three-dot menu, pinned to the header's top-right. They reuse
+       the shared .panel-* / .topbar-popover classes so they match every other
+       module. When the dashboard wears a product badge the cluster slides left
+       of it, and on the brand banner the icons go light against the scrim. */
+    .rf-head-controls { position: absolute; top: 14px; right: 16px; z-index: 3; display: inline-flex; align-items: center; gap: 4px; }
+    .rf-head-titles { padding-right: 74px; }
+    .rf-head--badged .rf-head-controls { right: 84px; }
+    .rf-head--badged .rf-head-titles { padding-right: 150px; }
+    .rf-head-controls .panel-more-wrap { position: relative; }
+    .rf-head--brand .rf-head-controls .panel-more-btn,
+    .rf-head--brand .rf-head-controls .panel-width-toggle-btn { color: rgba(255,255,255,.92); }
+    .rf-head--brand .rf-head-controls .panel-more-btn:hover,
+    .rf-head--brand .rf-head-controls .panel-more-btn.is-open,
+    .rf-head--brand .rf-head-controls .panel-width-toggle-btn:hover,
+    .rf-head--brand .rf-head-controls .panel-width-toggle-btn.is-on { background: rgba(255,255,255,.18); color: #fff; }
+
+    /* Guiding Stars mode is an admin opt-in that lives in these modules'
+       three-dot menus. It's OFF by default — the studio then reformulates any
+       product against a generic nutrition score — so the Guiding-Stars-only
+       chrome (the star readout and the GS algorithm picker) stays hidden until
+       the switch is flipped on. */
+    #modules-row:not(.rf-gs-on) .rf-gs-only { display: none !important; }
+
     .rf-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 26px 26px; }
 
     /* Center studio column */
     .rf-studio { flex: 0 0 var(--studio-pane-w, 392px); width: var(--studio-pane-w, 392px); }
 
     /* Right dashboard column */
-    .rf-dash { flex: 1 1 auto; min-width: 380px; }
+    .rf-dash { flex: 1 1 auto; min-width: 300px; }
+
+    /* ── Pane-level responsiveness ──
+       Studio + dashboard live to the right of the chat and can be dragged to any
+       width. Media queries only see the viewport, so we make each pane its own
+       query container and reflow its content by the PANE's width — a narrow pane
+       becomes a real mobile layout instead of a crushed desktop one. The floor
+       keeps a pane phone-sized at its smallest rather than collapsing to nothing. */
+    .rf-studio, .rf-dash { container: rfpane / inline-size; }
+    .rf-studio { min-width: 300px; }
 
     /* ── Module entrance ──
        The same staggered bounce every other WISE module uses (panelBounceLeft /
@@ -536,6 +604,27 @@
       #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
       .rf-dash { min-width: 460px; }
     }
+
+    /* ── Mobile reflow, driven by each pane's own width (see container setup above).
+       Tablet band first, then a tighter phone band. */
+    @container rfpane (max-width: 480px) {
+      .rf-body { padding-left: 15px; padding-right: 15px; }
+      /* Debit/credit trade-off: stack the two halves, drop the vertical rule. */
+      .rf-tradeoff { grid-template-columns: 1fr; gap: 18px 0; }
+      .rf-tradeoff-sep { display: none; }
+      /* Dense grid tables keep their columns but scroll horizontally instead of
+         crushing — the standard mobile pattern for wide tables. */
+      .rf-table { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+      .rf-thead, .rf-trow { min-width: 560px; }
+      .rf-table--moves .rf-thead, .rf-table--moves .rf-trow { min-width: 460px; }
+      /* Segmented basis control keeps 3 equal cells but tightens up. */
+      .rf-basis-btn { padding: 8px 4px; font-size: 11px; }
+    }
+    @container rfpane (max-width: 360px) {
+      .rf-body { padding-left: 12px; padding-right: 12px; }
+      .rf-sec { margin-bottom: 20px; }
+      .rf-sec-title { font-size: 15.5px; }
+    }
   </style>
 </head>
 <body>
@@ -571,7 +660,7 @@
             </div>
             <div class="sc-topbar-titles">
               <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
-              <span class="rf-topbar-tag">Reformulation · Guiding Stars</span>
+              <span class="rf-topbar-tag" id="rf-topbar-tag">Reformulation · Any product</span>
             </div>
           </div>
           <div class="sc-topbar-controls">
@@ -608,21 +697,32 @@
       <!-- ═══════════ 2 · Reformulation Studio (calculator) ═══════════ -->
       <section class="rf-card rf-studio" id="rf-studio">
         <header class="rf-head">
+          <div class="rf-head-controls">
+            <div class="panel-more-wrap" id="rf-studio-menu-wrap">
+              <button type="button" id="rf-studio-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-studio-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-studio-menu" aria-label="Module options"><span class="material-icons">more_vert</span></button>
+              <div id="rf-studio-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-icons topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfResetProduct(); rfCloseModuleMenus()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset to original label</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" id="rf-studio-width" aria-pressed="false" title="Widen studio" aria-label="Studio width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title">Reformulation Studio</h2>
-            <p class="rf-head-meta">Dial in the WISE controls · live Guiding Stars</p>
+            <p class="rf-head-meta" id="rf-studio-meta">Dial in the WISE controls · generic nutrition score</p>
           </div>
         </header>
         <div class="rf-body">
           <div id="rf-studio-loaded">
           <!-- Score readout leads the studio: the number the controls below move -->
           <div class="rf-score" id="rf-score">
-            <div class="rf-stars" id="rf-stars" aria-label="Guiding Stars rating"></div>
+            <div class="rf-stars rf-gs-only" id="rf-stars" aria-label="Guiding Stars rating"></div>
             <div class="rf-score-net" id="rf-score-net">—</div>
             <div class="rf-score-path" id="rf-score-path"></div>
           </div>
 
-          <div class="rf-algo">
+          <div class="rf-algo rf-gs-only">
             <span class="rf-algo-label">Algorithm</span>
             <select id="rf-algo" aria-label="Guiding Stars algorithm">
               <option value="G">G — General Foods</option>
@@ -670,6 +770,17 @@
           <!-- Brand banner + product badge — dressed by dressDashHead() once a food loads -->
           <div class="rf-head-bg" id="rf-dash-head-bg" aria-hidden="true"></div>
           <div class="rf-head-scrim" aria-hidden="true"></div>
+          <div class="rf-head-controls">
+            <div class="panel-more-wrap" id="rf-dash-menu-wrap">
+              <button type="button" id="rf-dash-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-dash-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-dash-menu" aria-label="Module options"><span class="material-icons">more_vert</span></button>
+              <div id="rf-dash-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-icons topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-icons topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" id="rf-dash-width" aria-pressed="false" title="Widen dashboard" aria-label="Dashboard width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title">Reformulation Dashboard</h2>
             <p class="rf-head-meta"><span class="rf-head-brand" id="rf-dash-brand"></span><span id="rf-dash-meta">Choose a product to reformulate</span></p>
@@ -945,6 +1056,11 @@
       let ORIGINAL = null;  // its per-serving baseline (for reset)
       let state = null;     // the live, editable copy
       let basis = 'serving';
+      /* Guiding Stars mode is an admin opt-in (three-dot menu on the studio +
+         dashboard). OFF by default: the tool reformulates any product against a
+         generic nutrition score. ON: the full Guiding Stars framing (star
+         rating, GS algorithm, disqualification) comes forward. */
+      let GS = false;
 
       /* Slider config — ranges are per SERVING (canonical); labels convert. */
       const SLIDERS = [
@@ -1035,11 +1151,11 @@
       function recommendations(c) {
         const recs = [];
         if (c.dq.find((d) => d.id === 'dq-sugar')) {
-          recs.push({ id: 'dq-sugar', kind: 'dq', icon: 'block', title: `Cut added sugar below ${sugarCapG()} g/serving to exit disqualification`, note: '40% of calories cap', effort: 'high', chip: `Exit sugar DQ`, keys: ['addedSugar'],
+          recs.push({ id: 'dq-sugar', kind: 'dq', icon: 'block', title: `Cut added sugar below ${sugarCapG()} g/serving to exit disqualification`, note: '40% of calories cap', effort: 'high', chip: `Cut added sugar`, keys: ['addedSugar'],
             apply: () => { state.addedSugar = Math.max(0, sugarCapG() - 1); } });
         }
         if (c.dq.find((d) => d.id === 'dq-additives')) {
-          recs.push({ id: 'dq-additives', kind: 'dq', icon: 'block', title: `Remove ${state.additives - 1} of ${state.additives} flagged additives to exit disqualification`, note: '2+ additives disqualifies', effort: 'med', chip: `Clear additive DQ`, keys: ['additives'],
+          recs.push({ id: 'dq-additives', kind: 'dq', icon: 'block', title: `Remove ${state.additives - 1} of ${state.additives} flagged additives to exit disqualification`, note: '2+ additives disqualifies', effort: 'med', chip: `Remove additives`, keys: ['additives'],
             apply: () => { state.additives = 1; } });
         }
         // Fiber tiers — only offered when the algorithm will actually bank the
@@ -1050,31 +1166,31 @@
           const g = fiberServingFor(FIBER_TIERS[i]);
           const gain = compute({ ...state, fiber: g }).credits.fiber - c.credits.fiber;
           if (gain <= 0) break;
-          recs.push({ id: 'fiber-' + i, kind: 'credit', icon: 'grass', pts: `+${gain}`, title: `Raise fiber to ≥${fmt(g)} g/serving (now ${fmt(state.fiber)} g) → +${gain} credit`, note: 'oat/legume flour · inulin · whole grains', effort: 'low', chip: `Fiber → +${gain}`, keys: ['fiber'],
+          recs.push({ id: 'fiber-' + i, kind: 'credit', icon: 'grass', pts: `+${gain}`, title: `Raise fiber to ≥${fmt(g)} g/serving (now ${fmt(state.fiber)} g) → +${gain} credit`, note: 'oat/legume flour · inulin · whole grains', effort: 'low', chip: `Add fiber`, keys: ['fiber'],
             apply: () => { state.fiber = g; } });
           break;
         }
         // Vitamins/minerals (+1 each up to 3)
         if (c.credits.vitamins < 3) {
-          recs.push({ id: 'vit', kind: 'credit', icon: 'medication', pts: '+1', title: `Fortify one more vitamin/mineral to ≥5% DV per 100 kcal (${c.credits.vitamins} credited) → +1`, note: 'fortification', effort: 'low', chip: `Fortify → +1`, keys: ['vitamins'],
+          recs.push({ id: 'vit', kind: 'credit', icon: 'medication', pts: '+1', title: `Fortify one more vitamin/mineral to ≥5% DV per 100 kcal (${c.credits.vitamins} credited) → +1`, note: 'fortification', effort: 'low', chip: `Fortify nutrients`, keys: ['vitamins'],
             apply: () => { state.vitamins = Math.min(3, state.vitamins + 1); } });
         }
         // Whole grain (+1, grain algo only)
         if (c.grainAlgo && !state.wholeGrain) {
-          recs.push({ id: 'wg', kind: 'credit', icon: 'grain', pts: '+1', title: 'Use a named whole-grain ingredient → +1 whole-grain bonus', note: 'grain-based foods', effort: 'low', chip: `Whole grain → +1`, keys: ['wholeGrain'],
+          recs.push({ id: 'wg', kind: 'credit', icon: 'grain', pts: '+1', title: 'Use a named whole-grain ingredient → +1 whole-grain bonus', note: 'grain-based foods', effort: 'low', chip: `Add whole grain`, keys: ['wholeGrain'],
             apply: () => { state.wholeGrain = true; } });
         }
         // Debit reductions
         if (c.debits.sodium < 0) {
           const gain = -c.debits.sodium;
           const target = snapTo('sodium', 119.9 * state.calories / 100, -1);
-          recs.push({ id: 'sodium', kind: 'debit', icon: 'trending_down', pts: `+${gain}`, title: `Cut sodium below 120 mg/100 kcal (${fmt(c.s100.sodium, 0)} now) → +${gain}`, note: 'reduce salt · potassium salt', effort: 'med', chip: `Sodium → +${gain}`, keys: ['sodium'],
+          recs.push({ id: 'sodium', kind: 'debit', icon: 'trending_down', pts: `+${gain}`, title: `Cut sodium below 120 mg/100 kcal (${fmt(c.s100.sodium, 0)} now) → +${gain}`, note: 'reduce salt · potassium salt', effort: 'med', chip: `Cut sodium`, keys: ['sodium'],
             apply: () => { state.sodium = Math.min(state.sodium, target); } });
         }
         if (c.debits.satFat < 0) {
           const gain = -c.debits.satFat;
           const target = snapTo('satFat', 0.99 * state.calories / 100, -1);
-          recs.push({ id: 'satfat', kind: 'debit', icon: 'trending_down', pts: `+${gain}`, title: `Cut saturated fat below 1 g/100 kcal (${fmt(c.s100.satFat)} now) → +${gain}`, note: 'unsaturated oil swap', effort: 'med', chip: `Sat. fat → +${gain}`, keys: ['satFat'],
+          recs.push({ id: 'satfat', kind: 'debit', icon: 'trending_down', pts: `+${gain}`, title: `Cut saturated fat below 1 g/100 kcal (${fmt(c.s100.satFat)} now) → +${gain}`, note: 'unsaturated oil swap', effort: 'med', chip: `Cut saturated fat`, keys: ['satFat'],
             apply: () => { state.satFat = Math.min(state.satFat, target); } });
         }
         return recs;
@@ -1129,22 +1245,39 @@
         scoreBox.classList.toggle('is-dq', c.disqualified);
         const netEl = document.getElementById('rf-score-net');
         netEl.classList.toggle('is-dq', c.disqualified);
-        netEl.innerHTML = c.disqualified
-          ? `Disqualified · ${c.net >= 0 ? '+' : ''}${c.net} net pts (blocked)`
-          : `${c.stars}★ · ${c.net >= 0 ? '+' : ''}${c.net} net points`;
-        document.getElementById('rf-score-path').innerHTML = pathToNextStar(c).msg;
+        const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
+        if (GS) {
+          netEl.innerHTML = c.disqualified
+            ? `Disqualified · ${signed} net pts (blocked)`
+            : `${c.stars}★ · ${signed} net points`;
+          document.getElementById('rf-score-path').innerHTML = pathToNextStar(c).msg;
+        } else {
+          netEl.innerHTML = c.disqualified
+            ? `Needs attention · ${signed} net nutrition points`
+            : `${signed} net nutrition points`;
+          document.getElementById('rf-score-path').innerHTML = c.disqualified
+            ? `Clear the <b>${c.dq.length}</b> flag${c.dq.length > 1 ? 's' : ''}, then keep adding credits to lift the score.`
+            : `Apply the moves below — each credit lifts the score, each debit cleared removes a penalty.`;
+        }
       }
 
       function renderDashboard(c) {
-        document.getElementById('rf-dash-meta').textContent = `${product.name} · ${ALGO_NAME[state.algo]} algorithm`;
+        document.getElementById('rf-dash-meta').textContent = GS
+          ? `${product.name} · ${ALGO_NAME[state.algo]} algorithm`
+          : product.name;
 
-        // Disqualification banners
+        // Disqualification / issue banners
         const dqEl = document.getElementById('rf-dq');
         if (c.disqualified) {
+          const lead = GS
+            ? `Recommendations to reach <b>★ 1 star</b> — apply any step to model it live.`
+            : `Recommendations to clear the flags and lift the score — apply any step to model it live.`;
           dqEl.innerHTML = c.dq.map((d) => `<div class="rf-dq-banner is-dq"><span class="material-icons">block</span><span>${d.text}</span></div>`).join('')
-            + `<div class="rf-dq-banner is-dq" style="background:transparent;border:0;padding:2px 2px 0;font-size:11.5px"><span class="material-icons" style="font-size:15px">arrow_forward</span><span>Recommendations to reach <b>★ 1 star</b> — apply any step to model it live.</span></div>`;
-        } else {
+            + `<div class="rf-dq-banner is-dq" style="background:transparent;border:0;padding:2px 2px 0;font-size:11.5px"><span class="material-icons" style="font-size:15px">arrow_forward</span><span>${lead}</span></div>`;
+        } else if (GS) {
           dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-icons">verified</span><span>Qualifies — earns <b>${c.stars}★</b>. ${c.stars < 3 ? 'Keep going for the next star.' : 'Top Guiding Stars rating.'}</span></div>`;
+        } else {
+          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-icons">verified</span><span>No blocking flags — this product is clear. Apply moves to keep improving the profile.</span></div>`;
         }
 
         // Actionable steps
@@ -1212,16 +1345,27 @@
       /* Intent chips — built as a block that is embedded INSIDE a WISEai turn
          (part of the transcript), never a sticky bottom dock. Derived from the
          live recommendations so whichever turn carries them is always current. */
+      /* Each intent chip carries the point delta the move is worth: credits show
+         the positive points they add; debits and disqualifiers show the negative
+         points they currently cost (and therefore clear). Colours are WISE brand,
+         never status red/green. */
+      function chipPts(r, c) {
+        if (r.kind === 'credit') {
+          const n = parseInt(r.pts, 10) || 0;
+          return { txt: '+' + n, cls: 'rf-chip-pts--pos' };
+        }
+        const n = (r.keys || []).reduce((sum, k) => sum + (c.debits[k] || 0), 0);
+        return { txt: n < 0 ? '−' + Math.abs(n) : '+' + n, cls: n < 0 ? 'rf-chip-pts--neg' : 'rf-chip-pts--pos' };
+      }
       function chipsBlockHtml() {
         if (!product) return '';
         const c = compute();
         const recs = recommendations(c);
         const inner = !recs.length
-          ? `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized — ${c.stars}★</span>`
+          ? `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized${GS ? ' — ' + c.stars + '★' : ''}</span>`
           : recs.slice(0, 6).map((r) => {
-              const cls = r.kind === 'dq' ? 'rf-chip--dq' : r.kind === 'credit' ? 'rf-chip--credit' : '';
-              const pts = r.pts ? `<span class="rf-chip-pts">${r.pts}</span>` : '';
-              return `<button type="button" class="rf-chip ${cls}" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}${pts}</button>`;
+              const p = chipPts(r, c);
+              return `<button type="button" class="rf-chip rf-chip--move" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}<span class="rf-chip-pts ${p.cls}">${p.txt}</span></button>`;
             }).join('');
         return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
       }
@@ -1233,9 +1377,17 @@
       function pickChipsBlockHtml() {
         const inner = PRODUCTS.map((p) => {
           const c = compute({ ...p.baseline });
-          const cls = c.disqualified ? 'rf-chip--dq' : 'rf-chip--credit';
-          const pts = `<span class="rf-chip-pts">${c.disqualified ? 'DQ' : c.stars + '★'}</span>`;
-          return `<button type="button" class="rf-chip ${cls}" data-pick-chip="${p.id}"><span class="material-icons">${p.icon}</span>${esc(p.short)}${pts}</button>`;
+          const thumb = p.img
+            ? `<span class="rf-chip-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-icons').style.display='flex'"><span class="material-icons" style="display:none">${p.icon}</span></span>`
+            : `<span class="rf-chip-thumb"><span class="material-icons">${p.icon}</span></span>`;
+          // The picker pill reads out the food's current standing in the numbers
+          // that matter for reformulation — how many blockers it must clear, or
+          // its net points once it's clear — instead of a cryptic "DQ".
+          const label = GS ? 'blocker' : 'flag';
+          const pts = c.dq.length
+            ? `<span class="rf-chip-pts">${c.dq.length} ${label}${c.dq.length > 1 ? 's' : ''}</span>`
+            : `<span class="rf-chip-pts">${c.net >= 0 ? '+' : ''}${c.net} pts</span>`;
+          return `<button type="button" class="rf-chip rf-chip--move rf-chip--food" data-pick-chip="${p.id}">${thumb}${esc(p.short)}${pts}</button>`;
         }).join('');
         return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
       }
@@ -1245,6 +1397,15 @@
       function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
       /* Only the newest turn carries the chips, so old turns stay clean history. */
       function stripChips() { box.querySelectorAll('.rf-chips-inline').forEach((n) => n.remove()); }
+      /* Rebuild the chips on the newest turn in place — used when Guiding Stars
+         mode flips, so the "Fully optimized" chip's ★ suffix tracks the mode
+         without posting a fresh turn. */
+      function refreshChips() {
+        const existing = box.querySelector('.rf-chips-inline');
+        if (!existing) return;
+        const html = chipsBlockHtml();
+        if (html) existing.outerHTML = html; else existing.remove();
+      }
       function addUser(text) {
         stripChips();
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
@@ -1271,8 +1432,13 @@
       }
 
       function scoreSentence(c) {
-        if (c.disqualified) return `It's still <b>disqualified</b> (${c.dq.length} blocker${c.dq.length > 1 ? 's' : ''}) at <b>${c.net >= 0 ? '+' : ''}${c.net}</b> net points.`;
-        return `It now earns <b>${c.stars}★</b> at <b>${c.net >= 0 ? '+' : ''}${c.net}</b> net points.`;
+        const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
+        if (GS) {
+          if (c.disqualified) return `It's still <b>disqualified</b> (${c.dq.length} blocker${c.dq.length > 1 ? 's' : ''}) at <b>${signed}</b> net points.`;
+          return `It now earns <b>${c.stars}★</b> at <b>${signed}</b> net points.`;
+        }
+        if (c.disqualified) return `It still has <b>${c.dq.length} flag${c.dq.length > 1 ? 's' : ''}</b> to clear at <b>${signed}</b> net nutrition points.`;
+        return `It now sits at <b>${signed}</b> net nutrition points.`;
       }
 
       /* ═══════════ The one update path ═══════════ */
@@ -1412,11 +1578,12 @@
         respond(reply);
       };
 
-      /* ── More-menu ── */
+      /* ── Chat more-menu ── */
       window.rfToggleChatMenu = function (e) {
         if (e) e.stopPropagation();
         const m = document.getElementById('rf-chat-menu');
         const btn = document.getElementById('rf-chat-menu-btn');
+        window.rfCloseModuleMenus();
         const open = m.classList.toggle('hidden') === false;
         btn.setAttribute('aria-expanded', String(open));
       };
@@ -1426,26 +1593,77 @@
       };
       document.addEventListener('click', (e) => { if (!e.target.closest('#rf-chat-menu-wrap')) window.rfCloseChatMenu(); });
 
-      /* ── Chat width toggle — 3-step widen (single → wide → triple), mirrors the shared module ── */
-      (function () {
-        const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-        const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Reset chat width'];
-        let tier = 0;
-        const wBtn = document.getElementById('rf-width');
-        const chat = document.querySelector('.rf-chat');
-        if (wBtn && chat) {
-          wBtn.addEventListener('click', () => {
-            tier = (tier + 1) % 3;
-            chat.classList.toggle('panel-wide', tier >= 1);
-            chat.classList.toggle('panel-triple', tier >= 2);
-            const ic = wBtn.querySelector('.material-symbols-outlined');
-            if (ic) ic.textContent = WIDTH_ICONS[tier];
-            wBtn.classList.toggle('is-on', tier >= 1);
-            wBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-            wBtn.title = WIDTH_TITLES[tier];
-          });
+      /* ── Module three-dot menus (studio + dashboard) — reuse the shared
+         .topbar-popover, so the studio and dashboard carry the same overflow
+         chrome the chat already has. ── */
+      window.rfCloseModuleMenus = function () {
+        ['rf-studio-menu', 'rf-dash-menu'].forEach((id) => {
+          const m = document.getElementById(id);
+          if (!m) return;
+          m.classList.add('hidden');
+          m.closest('.panel-more-wrap')?.querySelector('.panel-more-btn')?.setAttribute('aria-expanded', 'false');
+        });
+      };
+      window.rfToggleModuleMenu = function (e, id) {
+        if (e) e.stopPropagation();
+        const m = document.getElementById(id);
+        if (!m) return;
+        const willOpen = m.classList.contains('hidden');
+        window.rfCloseModuleMenus();
+        window.rfCloseChatMenu();
+        if (willOpen) {
+          m.classList.remove('hidden');
+          m.closest('.panel-more-wrap')?.querySelector('.panel-more-btn')?.setAttribute('aria-expanded', 'true');
         }
-      })();
+      };
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#rf-studio-menu-wrap') && !e.target.closest('#rf-dash-menu-wrap')) window.rfCloseModuleMenus();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { window.rfCloseModuleMenus(); window.rfCloseChatMenu(); } });
+
+      /* ── Width toggles — 3-step widen (single → wide → triple) on the chat,
+         studio and dashboard, each mirroring the shared module control. ── */
+      function wireWidthToggle(btnId, moduleEl, labels) {
+        const wBtn = document.getElementById(btnId);
+        if (!wBtn || !moduleEl) return;
+        const ICONS = ['width_normal', 'width_wide', 'width_full'];
+        let tier = 0;
+        wBtn.addEventListener('click', () => {
+          tier = (tier + 1) % 3;
+          moduleEl.classList.toggle('panel-wide', tier >= 1);
+          moduleEl.classList.toggle('panel-triple', tier >= 2);
+          const ic = wBtn.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = ICONS[tier];
+          wBtn.classList.toggle('is-on', tier >= 1);
+          wBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+          wBtn.title = labels[tier];
+        });
+      }
+      wireWidthToggle('rf-width', document.querySelector('.rf-chat'), ['Widen chat', 'Widen chat further', 'Reset chat width']);
+      wireWidthToggle('rf-studio-width', document.getElementById('rf-studio'), ['Widen studio', 'Widen studio further', 'Reset studio width']);
+      wireWidthToggle('rf-dash-width', document.getElementById('rf-dash'), ['Widen dashboard', 'Widen dashboard further', 'Reset dashboard width']);
+
+      /* ── Guiding Stars mode (admin toggle in the studio + dashboard menus) ──
+         OFF by default: reformulate any product against a generic nutrition
+         score. ON: the full Guiding Stars framing (stars, GS algorithm, DQ)
+         comes forward. Flipping it re-renders both boards and syncs both
+         switches so the two menus never disagree. */
+      function applyGsMode() {
+        const row = document.getElementById('modules-row');
+        if (row) row.classList.toggle('rf-gs-on', GS);
+        document.querySelectorAll('.rf-gs-toggle').forEach((el) => el.setAttribute('aria-checked', GS ? 'true' : 'false'));
+        const tag = document.getElementById('rf-topbar-tag');
+        if (tag) tag.textContent = GS ? 'Reformulation · Guiding Stars' : 'Reformulation · Any product';
+        const smeta = document.getElementById('rf-studio-meta');
+        if (smeta) smeta.textContent = GS ? 'Dial in the WISE controls · live Guiding Stars' : 'Dial in the WISE controls · generic nutrition score';
+        if (product) { render(); refreshChips(); }
+      }
+      window.rfToggleGsMode = function (e) {
+        if (e) e.stopPropagation(); // settings-style: keep the menu open
+        GS = !GS;
+        applyGsMode();
+      };
+      applyGsMode();
 
       window.rfCopyTranscript = function (el) {
         const text = Array.from(box.querySelectorAll('.sc-line')).map((l) => {
@@ -1474,11 +1692,14 @@
       }
       function seed() {
         const c = compute();
-        const opener = c.disqualified
-          ? `Right now it's <b>disqualified</b> — ${dqClause(c)}.`
-          : `Right now it <b>qualifies</b> at <b>${c.stars}★</b>.`;
-        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> onto the Guiding Stars board.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, { noMeta: true });
-        addWISEai(`${scoreSentence(c)} ${pathToNextStar(c).msg} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true });
+        const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
+        const opener = GS
+          ? (c.disqualified ? `Right now it's <b>disqualified</b> — ${dqClause(c)}.` : `Right now it <b>qualifies</b> at <b>${c.stars}★</b>.`)
+          : (c.disqualified ? `Right now it has <b>${c.dq.length}</b> flag${c.dq.length > 1 ? 's' : ''} to clear — ${dqClause(c)}.` : `Right now it sits at <b>${signed}</b> net nutrition points.`);
+        const lead = GS ? 'onto the Guiding Stars board' : 'reformulated';
+        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, { noMeta: true });
+        const next = GS ? pathToNextStar(c).msg : 'Tap a move below to lift the score.';
+        addWISEai(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true });
       }
 
       /* ═══════════ Step 0 · Product picker (rows, in-module) ═══════════ */
@@ -1523,16 +1744,21 @@
       }
 
       function renderLoadedStats(c) {
-        statsEl.innerHTML = [
-          statHtml({
-            num: c.disqualified ? '<span class="material-icons">block</span>' : `${c.stars}<span class="material-icons">star</span>`,
-            label: 'Guiding Stars', tone: c.disqualified ? 'alert' : 'stars',
-          }),
-          statHtml({ num: (c.net >= 0 ? '+' : '') + c.net, label: 'Net points', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
+        const signed = (c.net >= 0 ? '+' : '') + c.net;
+        const cards = GS
+          ? [
+              statHtml({ num: c.disqualified ? '<span class="material-icons">block</span>' : `${c.stars}<span class="material-icons">star</span>`, label: 'Guiding Stars', tone: c.disqualified ? 'alert' : 'stars' }),
+              statHtml({ num: signed, label: 'Net points', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
+            ]
+          : [
+              statHtml({ num: signed, label: 'Nutrition score', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
+            ];
+        cards.push(
           statHtml({ num: c.debitSum, label: 'Debits', tone: c.debitSum < 0 ? 'alert' : 'muted' }),
           statHtml({ num: '+' + c.creditSum, label: 'Credits', tone: c.creditSum > 0 ? 'good' : 'muted' }),
-          statHtml({ num: c.dq.length, label: 'Blockers', tone: c.dq.length ? 'warn' : 'good' }),
-        ].join('');
+          statHtml({ num: c.dq.length, label: GS ? 'Blockers' : 'Flags', tone: c.dq.length ? 'warn' : 'good' })
+        );
+        statsEl.innerHTML = cards.join('');
       }
 
       /* Tapping the same card again clears the filter back to "all". */
@@ -1700,7 +1926,8 @@
       /* Chat's step-0 prompt (the picking turn also lives in the chat module). */
       function seedPickPrompt() {
         box.innerHTML = '';
-        addWISEai('<span class="rf-lead">Which food are we reformulating?</span>Tap a food below — or pick from the list in the dashboard. They come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it onto the Guiding Stars board and we\'ll dial it in together.', { noMeta: true, pickChips: true });
+        const board = GS ? 'onto the Guiding Stars board' : 'into the studio';
+        addWISEai('<span class="rf-lead rf-lead--lg">Which food are we reformulating?</span>Tap a food below — or pick from the list in the dashboard. They come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it ' + board + ' and we\'ll dial it in together.', { noMeta: true, pickChips: true });
       }
 
       /* Dress the dashboard header in the loaded food's brand banner and photo,
@@ -1764,6 +1991,11 @@
       }
       (function boot() {
         const params = new URLSearchParams(location.search);
+        /* Guiding Stars is an admin opt-in and off by default, but a deep-link
+           from the portfolio's Guiding Stars view can arrive with ?gs=1 so the
+           board opens already framed for Guiding Stars. */
+        GS = params.get('gs') === '1';
+        applyGsMode();
         const q = params.get('product');
         const match = findProduct(q);
         if (match) { selectProduct(match); return; }

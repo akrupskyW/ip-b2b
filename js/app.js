@@ -686,7 +686,7 @@ import { setTextSize } from './text-size.js';
           })}
           ${panelHtml({
             icon:'science', color:'var(--ter-amber)', title:'Ingredient Intelligence', sub:'Flag frequency, last 30 days',
-            headerRight:`<button class="icon-btn" title="More" data-action="ingredient-more" id="ingredientMoreBtn"><span class="material-symbols-rounded">more_horiz</span></button>`,
+            headerRight:`<button class="icon-btn" title="More" data-action="ingredient-more" id="ingredientMoreBtn"><span class="material-symbols-rounded">more_vert</span></button>`,
             body:`<div id="ingredientBars"></div>`
           })}
         </div>

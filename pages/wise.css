@@ -942,7 +942,32 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 #verification-sidebar .vs-inner > :not(.vs-header),
 #chat-shell > div:not(.chat-topbar),
 .wiseai-dock .sc-body,
-.wiseai-dock .chat-input-rail {
+.wiseai-dock .chat-input-rail,
+/* Chat + workspace pages that mount in #modules-row (reformulation,
+   report-guiding-stars, add-product, wiseai, studio-ai) each roll their own
+   card layout, so their readable bodies never matched the selectors above and
+   the Text-size control did nothing on them. Zoom only the bodies + composer
+   rails here — every card keeps its own header (.chat-topbar / .rf-head /
+   .gs-head / .nfp-panel-header / .wa-pane-head / .sa-panel-head) at authored
+   size, same header-stays-put rule as every module above. */
+.rf-chat-body,
+.rf-body,
+.gs-chat-body,
+.gs-body,
+.ap-chat-body,
+.nfp-scroll-body,
+.wa-pane-body,
+.sa-panel-body,
+/* Shared WISEai chat (js/wiseai-chat.js) when it's hosted outside the portfolio
+   dock — the wiseai + studio-ai pages mount it in .wa-chat / .sa-chat. */
+.wa-chat .sc-body,
+.sa-chat .sc-body,
+/* Composer rails for those bespoke + shared chats. */
+.rf-chat .chat-input-rail,
+.gs-chat .chat-input-rail,
+.ap-chat .chat-input-rail,
+.wa-chat .chat-input-rail,
+.sa-chat .chat-input-rail {
   zoom: var(--wise-text-scale);
 }
 
@@ -3743,6 +3768,80 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 }
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
 .sc-send .material-icons { font-size: 20px !important; }
+
+/* ===== Brand connectors — a scrollable rail of data-source pills docked right
+   beneath the input (retailer & food-data APIs: Kroger, Instacart, USDA…). ===== */
+.sc-connectors {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px; position: relative; min-width: 0;
+}
+.sc-connectors-label {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.01em;
+  color: var(--text-subtle); white-space: nowrap;
+}
+.sc-connectors-label .material-icons { font-size: 15px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
+html.dark .sc-connectors-label .material-icons { color: var(--primary-bright, #8B9FAF); }
+
+/* The rail scrolls horizontally; a right-edge fade appears when it overflows. */
+.sc-connectors-rail {
+  display: flex; align-items: center; gap: 7px;
+  overflow-x: auto; scroll-behavior: smooth; min-width: 0; flex: 1 1 auto;
+  padding: 2px 2px; scrollbar-width: none; -ms-overflow-style: none;
+  -webkit-mask-image: none; mask-image: none;
+}
+.sc-connectors-rail::-webkit-scrollbar { display: none; }
+.sc-connectors.has-more .sc-connectors-rail {
+  -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
+}
+.sc-connectors.has-more.has-prev .sc-connectors-rail {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 88%, transparent 100%);
+}
+
+.sc-connector {
+  display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+  padding: 5px 11px 5px 6px; border-radius: 9999px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  color: var(--text); font-family: inherit; font-size: 0.75rem; font-weight: 600;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, transform 0.05s ease;
+}
+html.dark .sc-connector { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+.sc-connector:hover { border-color: color-mix(in srgb, var(--cxc, var(--primary)) 60%, var(--border-strong)); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.sc-connector:active { transform: translateY(1px); }
+.sc-connector-name { white-space: nowrap; }
+
+/* Brand logo puck — a Material icon or a monogram, tinted with the brand color. */
+.sc-connector-logo {
+  --cxc: var(--primary);
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--cxc) 16%, transparent);
+  color: var(--cxc);
+}
+.sc-connector-logo .material-icons { font-size: 15px !important; }
+.sc-connector-logo--mono { font-weight: 800; font-size: 0.7rem; letter-spacing: -0.01em; }
+
+/* Trailing add/connected affordance. */
+.sc-connector-tick { font-size: 15px !important; color: var(--text-subtle); margin-left: -1px; transition: color 0.14s ease; }
+.sc-connector:hover .sc-connector-tick { color: var(--cxc, var(--primary)); }
+.sc-connector.is-connected { border-color: color-mix(in srgb, var(--sec-green, #32A966) 45%, var(--border-strong)); }
+.sc-connector.is-connected .sc-connector-tick { color: var(--sec-green, #32A966); }
+
+.sc-connector-more {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 9999px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid transparent; color: var(--text-muted);
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.sc-connector-more:hover { background: var(--surface); border-color: var(--border-strong); color: var(--primary); }
+html.dark .sc-connector-more:hover { background: rgba(255,255,255,0.06); }
+.sc-connector-more .material-icons { font-size: 18px !important; }
+
+@media (max-width: 720px) {
+  .sc-connectors-label { display: none; }
+}
 
 /* =============================================================
    Microcopy & trust
