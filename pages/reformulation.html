@@ -522,9 +522,14 @@
     .rf-none { color: var(--text-subtle); font-size: 11px; }
     .rf-table-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 2px; font-size: 12px; color: var(--text-subtle); }
 
-    html.full-bleed .rf-card { border: 0; border-radius: 0; box-shadow: none; }
-    html.full-bleed #modules-row { gap: 0; }
-    html.full-bleed body { padding: 0; }
+    /* Full bleed — open every module top-to-bottom (drop top/bottom borders,
+       corner rounding, shadow + bounce-in) so it runs the full height of the
+       window, keeping the surface + left/right borders + the row gutter.
+       Mirrors the shared treatment (wise.css). */
+    html.full-bleed .rf-card {
+      border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
+    }
+    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
 
     /* Narrow viewports: let the three modules scroll horizontally rather than crush. */
     @media (max-width: 1180px) {

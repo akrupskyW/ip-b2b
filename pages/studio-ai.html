@@ -100,11 +100,15 @@
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
     html.header-float .sa-chat .chat-topbar { z-index: 12 !important; }
+    /* Full bleed — open every module top-to-bottom (drop top/bottom borders,
+       corner rounding, shadow + bounce-in) so it runs the full height of the
+       window, while keeping the surface + left/right borders + the row gutter so
+       the columns stay separated. Mirrors the shared treatment (wise.css). */
     html.full-bleed .sa-chat,
-    html.full-bleed .sa-panel { border: 0; border-radius: 0; box-shadow: none; }
-    html.full-bleed .sa-panel { background: transparent; }
-    html.full-bleed #modules-row { gap: 0; }
-    html.full-bleed body { padding: 0; }
+    html.full-bleed .sa-panel {
+      border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
+    }
+    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
 
     /* ── Right "coming soon" module — fills remaining space, carded ── */
     .sa-panel {

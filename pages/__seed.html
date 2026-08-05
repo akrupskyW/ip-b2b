@@ -3,7 +3,6 @@
 </head><body>
 <script>
 const q=new URLSearchParams(location.search);
-const layout=q.get('layout')||'col';
 const st=parseInt(q.get('st')||'0',10);
 const sl=parseInt(q.get('sl')||'0',10);
 const open=(q.get('open')||'command-deck,ledger,intake,verified,identity,recipes').split(',');
@@ -11,7 +10,7 @@ const wide=(q.get('wide')||'').split(',').filter(Boolean);
 const wmap={}; wide.forEach(w=>wmap[w]=true);
 localStorage.setItem('pf-open-modules', JSON.stringify(open));
 localStorage.setItem('pf-module-wide', JSON.stringify(wmap));
-localStorage.setItem('wise-module-layout',layout);
+localStorage.setItem('wise-module-layout','col');
 localStorage.setItem('wise-theme',q.get('theme')||'dark');
 const f=document.createElement('iframe');
 f.src='portfolio.html';

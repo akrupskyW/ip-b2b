@@ -212,14 +212,23 @@
        block just carries its scorecards, a search, and a proper sortable table. */
     .wa-resultset { margin: 0; }
 
-    /* ── Scorecards ── */
-    .wa-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
-    .wa-stat { flex: 1 1 118px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-1); text-align: center; }
-    html.dark .wa-stat { background: rgba(255,255,255,0.04); }
-    .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
-    .wa-stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .wa-stat--alert .wa-stat-num { color: var(--sec-red-text); }
-    .wa-stat--good .wa-stat-num { color: var(--sec-green-text); }
+    /* ── Scorecards (result-set) — scoped to .wa-resultset so the report's own
+       scorecard styling below can't bleed in and vice-versa. ── */
+    .wa-resultset .wa-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+    .wa-resultset .wa-stat { flex: 1 1 118px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-1); text-align: center; }
+    html.dark .wa-resultset .wa-stat { background: rgba(255,255,255,0.04); }
+    .wa-resultset .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-resultset .wa-stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .wa-resultset .wa-stat--alert .wa-stat-num { color: var(--sec-red-text); }
+    .wa-resultset .wa-stat--good .wa-stat-num { color: var(--sec-green-text); }
+    /* Clickable stat = a sort/filter control for the table below it. */
+    .wa-resultset button.wa-stat { cursor: pointer; font-family: inherit; position: relative; transition: border-color .14s, box-shadow .14s, transform .05s; }
+    .wa-resultset button.wa-stat:hover { border-color: var(--border-strong); box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
+    .wa-resultset button.wa-stat:active { transform: translateY(1px); }
+    .wa-resultset button.wa-stat .wa-stat-sort { position: absolute; top: 7px; right: 8px; font-size: 13px !important; color: var(--text-subtle); opacity: .55; transition: opacity .14s, color .14s; }
+    .wa-resultset button.wa-stat:hover .wa-stat-sort { opacity: 1; }
+    .wa-resultset .wa-stat.is-active { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .wa-resultset .wa-stat.is-active .wa-stat-sort { opacity: 1; color: var(--primary); }
 
     /* ── Toolbar + inline search ── */
     .wa-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
@@ -272,6 +281,19 @@
     .wa-score-num--good { color: var(--sec-green-text); }
     .wa-empty-row { padding: 22px 14px; text-align: center; color: var(--text-subtle); font-size: 12px; border-top: 1px solid var(--border); }
 
+    /* ── Table pagination (bottom of the sortable table) ── */
+    .wa-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 9px 14px; border-top: 1px solid var(--border); background: var(--surface-2); }
+    html.dark .wa-pager { background: rgba(255,255,255,0.03); }
+    .wa-pager[hidden] { display: none; }
+    .wa-pager-range { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .wa-pager-ctrls { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+    .wa-pager-page { font-size: 11.5px; font-weight: 700; color: var(--text-muted); min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
+    .wa-pager-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted); cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
+    html.dark .wa-pager-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-pager-btn .material-icons { font-size: 18px; }
+    .wa-pager-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .wa-pager-btn:disabled { opacity: .4; cursor: default; }
+
     /* ── Food-detail card (with a failed-lookup notice state) ── */
     .wa-detail { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
     .wa-detail-top { display: flex; align-items: center; gap: 14px; padding: 18px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
@@ -295,12 +317,12 @@
     .wa-report-hero { margin-bottom: 20px; }
     .wa-report-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 900; font-size: 1.55rem; line-height: 1.15; letter-spacing: -.015em; color: var(--text); margin: 0 0 10px; }
     .wa-report-lede { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); margin: 0; max-width: 640px; }
-    .wa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 22px; }
-    .wa-stat { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
-    html.dark .wa-stat { background: rgba(255,255,255,0.04); }
-    .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 26px; line-height: 1; color: var(--text); }
-    .wa-stat-num .u { font-size: 14px; color: var(--text-muted); font-weight: 700; }
-    .wa-stat-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 7px; }
+    .wa-report .wa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 22px; }
+    .wa-report .wa-stat { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+    html.dark .wa-report .wa-stat { background: rgba(255,255,255,0.04); }
+    .wa-report .wa-stat-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 26px; line-height: 1; color: var(--text); }
+    .wa-report .wa-stat-num .u { font-size: 14px; color: var(--text-muted); font-weight: 700; }
+    .wa-report .wa-stat-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 7px; }
     .wa-shortlist { display: flex; flex-direction: column; gap: 8px; }
     .wa-cand { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); }
     html.dark .wa-cand { background: rgba(255,255,255,0.03); }
@@ -322,14 +344,20 @@
     .wa-bar-track { height: 16px; border-radius: 9999px; background: var(--surface-3); overflow: hidden; }
     .wa-bar-fill { height: 100%; border-radius: 9999px; background: var(--primary); }
     html.dark .wa-bar-fill { background: var(--primary-bright, #8B9FAF); }
+    .wa-bars-thin .wa-bar-track { height: 6px; }
     .wa-bar-val { font-size: 11.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-    .wa-radar-wrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .wa-radar-wrap { display: flex; gap: 18px; align-items: center; justify-content: center; flex-wrap: wrap; }
     .wa-radar-scores { flex: 1 1 220px; min-width: 200px; }
     .wa-nd-tag { display: inline-block; padding: 1px 7px; border-radius: 9999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--ter-amber-10); color: var(--ter-amber-text); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); }
 
-    html.full-bleed .wa-chat, html.full-bleed .wa-pane { border: 0; border-radius: 0; box-shadow: none; }
-    html.full-bleed #modules-row { gap: 0; }
-    html.full-bleed body { padding: 0; }
+    /* Full bleed — mirror the shared treatment (wise.css): open every module
+       top-to-bottom (drop top/bottom borders, corner rounding, shadow + the
+       bounce-in) so it runs the full height of the window, while keeping the
+       left/right borders + the row gutter so the columns stay separated. */
+    html.full-bleed .wa-chat, html.full-bleed .wa-pane {
+      border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
+    }
+    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
 
     /* Narrow viewports: let the modules scroll horizontally rather than crush. */
     @media (max-width: 1180px) {
@@ -642,6 +670,8 @@
           if (!firstAdded && node.nodeType === 1) firstAdded = node;
         }
       }
+      /* Activate search/sort/pagination on any table that just landed. */
+      paneBody[which].querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
       if (!el.classList.contains('is-open')) {
         el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
         el.classList.add('is-open');
@@ -713,64 +743,146 @@
       document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
     });
 
-    /* Live search — filters the rows of whichever result-set the input belongs to. */
-    function wireResultSearch(body) {
+    /* ── Results-table controller: live search + click-to-sort + pagination ──
+       Search (per result-set), the column headers, and the clickable score cards
+       all funnel through applySort()/renderTable() so ranking, paging and the
+       "showing X–Y of N" footer always stay in sync. */
+    function tableQuery(tbl) {
+      const set = tbl.closest('.wa-resultset');
+      const inp = set && set.querySelector('.wa-search');
+      return inp ? inp.value.trim().toLowerCase() : '';
+    }
+
+    /* Highlight whichever score card matches the table's active sort. */
+    function syncStatCards(tbl) {
+      const set = tbl.closest('.wa-resultset');
+      if (!set) return;
+      set.querySelectorAll('[data-stat-sort-col]').forEach((c) => {
+        const on = c.dataset.statSortCol === tbl.dataset.sortCol && c.dataset.statSortDir === tbl.dataset.sortDir;
+        c.classList.toggle('is-active', on);
+      });
+    }
+
+    /* Apply the current search + page window to the rows, renumber the rank over
+       the filtered ranking, and refresh the empty-state and pagination footer. */
+    function renderTable(tbl) {
+      if (!tbl) return;
+      const tb = tbl.querySelector('.wa-tbl-body');
+      if (!tb) return;
+      const rows = Array.from(tb.querySelectorAll('.wa-trow'));
+      const q = tableQuery(tbl);
+      const filtered = rows.filter((r) => !q || (r.dataset.search || '').includes(q));
+      filtered.forEach((r, i) => { const rk = r.querySelector('.wa-rank'); if (rk) rk.textContent = i + 1; });
+      const total = filtered.length;
+      const size = parseInt(tbl.dataset.pageSize, 10) || 0;
+      const pages = size > 0 ? Math.max(1, Math.ceil(total / size)) : 1;
+      let page = parseInt(tbl.dataset.page, 10) || 1;
+      page = Math.min(Math.max(1, page), pages);
+      tbl.dataset.page = page;
+      const start = size > 0 ? (page - 1) * size : 0;
+      const end = size > 0 ? start + size : total;
+      const visible = new Set(filtered.slice(start, end));
+      rows.forEach((r) => { r.style.display = visible.has(r) ? '' : 'none'; });
+
+      const set = tbl.closest('.wa-resultset');
+      const empty = set && set.querySelector('[data-empty]');
+      if (empty) empty.hidden = total !== 0;
+
+      const pager = tbl.querySelector('[data-pager-bar]');
+      if (pager) {
+        pager.hidden = total === 0;
+        const from = total === 0 ? 0 : start + 1;
+        const to = Math.min(end, total);
+        const range = pager.querySelector('[data-pager-range]');
+        if (range) range.textContent = `Showing ${from}\u2013${to} of ${total}`;
+        const lbl = pager.querySelector('[data-pager-page]');
+        if (lbl) lbl.textContent = `${page} / ${pages}`;
+        const prev = pager.querySelector('[data-pager="prev"]');
+        const next = pager.querySelector('[data-pager="next"]');
+        if (prev) prev.disabled = page <= 1;
+        if (next) next.disabled = page >= pages;
+      }
+    }
+
+    /* Re-order rows for the given column/direction, reset to page 1, sync UI. */
+    function applySort(tbl, key, dir) {
+      tbl.dataset.sortCol = key;
+      tbl.dataset.sortDir = dir;
+      tbl.querySelectorAll('.wa-tbl-th').forEach((h) => {
+        const ic = h.querySelector('.wa-sort-ic');
+        const on = h.dataset.sort === key;
+        h.classList.toggle('is-sorted', on);
+        if (ic && h.dataset.sort) ic.textContent = on ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+      });
+      const tb = tbl.querySelector('.wa-tbl-body');
+      const rows = Array.from(tb.querySelectorAll('.wa-trow'));
+      rows.sort((a, b) => {
+        let av, bv;
+        if (key === 'score') { av = parseFloat(a.dataset.score); bv = parseFloat(b.dataset.score); }
+        else { av = a.dataset.name || ''; bv = b.dataset.name || ''; }
+        if (av < bv) return dir === 'asc' ? -1 : 1;
+        if (av > bv) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+      rows.forEach((r) => tb.appendChild(r));
+      tbl.dataset.page = 1;
+      syncStatCards(tbl);
+      renderTable(tbl);
+    }
+
+    function initTable(tbl) {
+      if (!tbl || tbl.dataset.ready) return;
+      tbl.dataset.ready = '1';
+      syncStatCards(tbl);
+      renderTable(tbl);
+    }
+
+    function wireResults(body) {
       if (!body) return;
       body.addEventListener('input', (e) => {
         const inp = e.target.closest('.wa-search');
         if (!inp) return;
         const set = inp.closest('.wa-resultset');
-        if (!set) return;
-        const q = inp.value.trim().toLowerCase();
-        let shown = 0;
-        set.querySelectorAll('.wa-trow').forEach((row) => {
-          const hit = !q || (row.dataset.search || '').includes(q);
-          row.style.display = hit ? '' : 'none';
-          if (hit) shown += 1;
-        });
-        const empty = set.querySelector('[data-empty]');
-        if (empty) empty.hidden = shown !== 0;
+        const tbl = set && set.querySelector('.wa-tbl');
+        if (tbl) { tbl.dataset.page = 1; renderTable(tbl); }
       });
-    }
-    wireResultSearch(paneBody.results);
-    wireResultSearch(paneBody.visuals);
-
-    /* Click-to-sort on the table column headers. Re-orders the rows in place and
-       renumbers the rank column so the ranking follows the active sort. */
-    function wireSort(body) {
-      if (!body) return;
       body.addEventListener('click', (e) => {
         const th = e.target.closest('button.wa-tbl-th[data-sort]');
-        if (!th) return;
-        const tbl = th.closest('.wa-tbl');
-        if (!tbl) return;
-        const key = th.dataset.sort;
-        const dir = tbl.dataset.sortCol === key
-          ? (tbl.dataset.sortDir === 'asc' ? 'desc' : 'asc')
-          : (key === 'score' ? 'desc' : 'asc');
-        tbl.dataset.sortCol = key;
-        tbl.dataset.sortDir = dir;
-        tbl.querySelectorAll('.wa-tbl-th').forEach((h) => {
-          const ic = h.querySelector('.wa-sort-ic');
-          const on = h.dataset.sort === key;
-          h.classList.toggle('is-sorted', on);
-          if (ic && h.dataset.sort) ic.textContent = on ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
-        });
-        const tb = tbl.querySelector('.wa-tbl-body');
-        const rows = Array.from(tb.querySelectorAll('.wa-trow'));
-        rows.sort((a, b) => {
-          let av, bv;
-          if (key === 'score') { av = parseFloat(a.dataset.score); bv = parseFloat(b.dataset.score); }
-          else { av = a.dataset.name || ''; bv = b.dataset.name || ''; }
-          if (av < bv) return dir === 'asc' ? -1 : 1;
-          if (av > bv) return dir === 'asc' ? 1 : -1;
-          return 0;
-        });
-        rows.forEach((r, i) => { tb.appendChild(r); const rk = r.querySelector('.wa-rank'); if (rk) rk.textContent = i + 1; });
+        if (th) {
+          const tbl = th.closest('.wa-tbl');
+          if (!tbl) return;
+          const key = th.dataset.sort;
+          const dir = tbl.dataset.sortCol === key
+            ? (tbl.dataset.sortDir === 'asc' ? 'desc' : 'asc')
+            : (key === 'score' ? 'desc' : 'asc');
+          applySort(tbl, key, dir);
+          return;
+        }
+        const stat = e.target.closest('[data-stat-sort-col]');
+        if (stat) {
+          const set = stat.closest('.wa-resultset');
+          const tbl = set && set.querySelector('.wa-tbl');
+          if (!tbl) return;
+          const key = stat.dataset.statSortCol;
+          let dir = stat.dataset.statSortDir || 'asc';
+          if (tbl.dataset.sortCol === key && tbl.dataset.sortDir === dir) dir = dir === 'asc' ? 'desc' : 'asc';
+          applySort(tbl, key, dir);
+          return;
+        }
+        const pg = e.target.closest('[data-pager]');
+        if (pg && !pg.disabled) {
+          const tbl = pg.closest('.wa-tbl');
+          if (!tbl) return;
+          let page = parseInt(tbl.dataset.page, 10) || 1;
+          page += pg.dataset.pager === 'next' ? 1 : -1;
+          tbl.dataset.page = page;
+          renderTable(tbl);
+          tbl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
       });
     }
-    wireSort(paneBody.results);
-    wireSort(paneBody.visuals);
+    wireResults(paneBody.results);
+    wireResults(paneBody.visuals);
 
     /* ═════════ Content builders ═════════ */
     /* Representative food photos pulled from the app's asset library. The exact
@@ -793,8 +905,17 @@
       return `<span class="wa-thumb"><img class="wa-thumb-img" src="${IMG}${imgRel}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">${fallbackIcon}</span></span></span>`;
     }
 
+    /* Scorecards. A card with a `sort` descriptor renders as a button that sorts
+       the table below it (the score cards double as filters/sorters). */
     function scoreCards(cards) {
-      return `<div class="wa-stats">${cards.map((c) => `<div class="wa-stat${c.tone ? ' wa-stat--' + c.tone : ''}"><span class="wa-stat-num">${c.num}</span><span class="wa-stat-label">${esc(c.label)}</span></div>`).join('')}</div>`;
+      return `<div class="wa-stats">${cards.map((c) => {
+        const tone = c.tone ? ' wa-stat--' + c.tone : '';
+        const inner = `<span class="wa-stat-num">${c.num}</span><span class="wa-stat-label">${esc(c.label)}</span>`;
+        if (c.sort) {
+          return `<button type="button" class="wa-stat wa-stat--btn${tone}" data-stat-sort-col="${c.sort.col}" data-stat-sort-dir="${c.sort.dir}" title="Sort the table by ${esc(c.label)}"><span class="material-icons wa-stat-sort">${c.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>${inner}</button>`;
+        }
+        return `<div class="wa-stat${tone}">${inner}</div>`;
+      }).join('')}</div>`;
     }
 
     function searchToolbar(placeholder) {
@@ -805,7 +926,7 @@
        a real food photo per row, the brand tucked under the name, and — when the
        data has it — ingredients in their own column. Score is a plain numeric
        column value, not a pill. */
-    function sortTable(rows, { images, fallbackIcon = 'restaurant', tone = 'bad', showIngredients = false, sortCol = 'score', sortDir = 'desc' } = {}) {
+    function sortTable(rows, { images, fallbackIcon = 'restaurant', tone = 'bad', showIngredients = false, sortCol = 'score', sortDir = 'desc', pageSize = 0 } = {}) {
       const cols = showIngredients
         ? '28px minmax(0,1.5fr) minmax(0,1.35fr) 74px'
         : '28px minmax(0,1fr) 74px';
@@ -841,10 +962,20 @@
             <div class="wa-td--end"><span class="wa-score-num ${scoreCls}">${fmtScore(score)}</span></div>
           </div>`;
       }).join('');
-      return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}">
+      const paginate = pageSize > 0 && rows.length > pageSize;
+      const pager = paginate ? `<div class="wa-pager" data-pager-bar>
+          <span class="wa-pager-range" data-pager-range></span>
+          <div class="wa-pager-ctrls">
+            <button type="button" class="wa-pager-btn" data-pager="prev" aria-label="Previous page"><span class="material-icons">chevron_left</span></button>
+            <span class="wa-pager-page" data-pager-page></span>
+            <button type="button" class="wa-pager-btn" data-pager="next" aria-label="Next page"><span class="material-icons">chevron_right</span></button>
+          </div>
+        </div>` : '';
+      return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}" data-page="1" data-page-size="${paginate ? pageSize : 0}">
           ${head}
           <div class="wa-tbl-body">${body}</div>
           <div class="wa-empty-row" data-empty hidden>No foods match your search.</div>
+          ${pager}
         </div>`;
     }
 
@@ -854,11 +985,11 @@
           ${scoreCards([
             { num: '943,428', label: 'Foods searched' },
             { num: '25', label: 'Matches' },
-            { num: '0.06', label: 'Lowest score', tone: 'alert' },
-            { num: '20', label: 'Shown' },
+            { num: '0.06', label: 'Lowest score', tone: 'alert', sort: { col: 'score', dir: 'asc' } },
+            { num: 'A\u2013Z', label: 'Food name', sort: { col: 'name', dir: 'asc' } },
           ])}
           ${searchToolbar('Search food or brand\u2026')}
-          ${sortTable(WORST_FOODS, { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc' })}
+          ${sortTable(WORST_FOODS, { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc', pageSize: 8 })}
           <div class="wa-table-foot"><span class="material-icons">south</span>Lower WISEscore = further from the WISE standard. The bottom of the database clusters around decorated cakes, cupcakes &amp; dessert kits.</div>
         </div>`;
     }
@@ -867,8 +998,8 @@
       return `
         <div class="wa-block wa-resultset">
           ${scoreCards([
-            { num: '10', label: 'Shown' },
-            { num: '0.06', label: 'Lowest score', tone: 'alert' },
+            { num: '10', label: 'Matches' },
+            { num: '0.06', label: 'Lowest score', tone: 'alert', sort: { col: 'score', dir: 'asc' } },
             { num: '0', label: 'Gut Health', tone: 'alert' },
             { num: '0', label: 'Excellent Src', tone: 'alert' },
           ])}
@@ -907,19 +1038,19 @@
         <div class="wa-block wa-resultset">
           ${scoreCards([
             { num: '3,010', label: 'Cookies matched' },
-            { num: '15', label: 'Shown' },
-            { num: '100', label: 'Top score', tone: 'good' },
-            { num: '12', label: 'Perfect scores', tone: 'good' },
+            { num: '100', label: 'Top score', tone: 'good', sort: { col: 'score', dir: 'desc' } },
+            { num: '12', label: 'Perfect scores', tone: 'good', sort: { col: 'score', dir: 'desc' } },
+            { num: 'A\u2013Z', label: 'Food name', sort: { col: 'name', dir: 'asc' } },
           ])}
           ${searchToolbar('Search cookies or brand\u2026')}
-          ${sortTable(COOKIES, { images: COOKIE_IMGS, fallbackIcon: 'cookie', tone: 'good', showIngredients: true, sortCol: 'score', sortDir: 'desc' })}
+          ${sortTable(COOKIES, { images: COOKIE_IMGS, fallbackIcon: 'cookie', tone: 'good', showIngredients: true, sortCol: 'score', sortDir: 'desc', pageSize: 8 })}
           <div class="wa-table-foot"><span class="material-icons">warning_amber</span>Several top rows have broken or incomplete ingredient lists, so read the ranking as strong candidates, not a final answer.</div>
         </div>`;
     }
 
     /* ── Charts ── */
     function radarChart() {
-      const size = 280, cx = 140, cy = 140, R = 100;
+      const W = 360, H = 280, cx = 180, cy = 140, R = 100;
       const axes = [
         { label: 'WISEscore', ang: -90, data: true },
         { label: 'Gut Health', ang: 30, data: false },
@@ -929,7 +1060,7 @@
         const r = (ang * Math.PI) / 180;
         return [cx + R * t * Math.cos(r), cy + R * t * Math.sin(r)];
       };
-      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" style="max-width:300px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:340px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods">`;
       // rings
       [0.33, 0.66, 1].forEach((t) => {
         const poly = axes.map((a) => pt(a.ang, t).map((v) => v.toFixed(1)).join(',')).join(' ');
@@ -972,14 +1103,12 @@
 
       return `
         <div class="wa-block">
-          <p class="wa-sec-title">Spider chart · 10 worst foods</p>
-          <p class="wa-caption">Requested sort: gut health &amp; immune-system support. Only WISEscore returned data.</p>
           <div class="wa-chart-card">
             <div class="wa-radar-wrap">
-              <div style="flex:0 0 300px;max-width:300px">${svg}</div>
+              <div style="flex:0 0 340px;max-width:340px">${svg}</div>
               <div class="wa-radar-scores">
                 <div style="margin-bottom:8px"><span class="wa-nd-tag">No data</span> <span style="font-size:11px;color:var(--text-muted)">Gut Health · Excellent Source came back empty across the set.</span></div>
-                <div class="wa-bars">${scoreBars}</div>
+                <div class="wa-bars wa-bars-thin">${scoreBars}</div>
               </div>
             </div>
           </div>
@@ -1071,7 +1200,7 @@
         ['Get Back To Human Grain-Free Cookies', 'Almond / cacao base, short clean ingredient list.', 100],
       ];
       return `
-        <div class="wa-block">
+        <div class="wa-block wa-report">
           <div class="wa-report-hero">
             <h1 class="wa-report-title">Finding the best chocolate chip cookie with the least chocolate load</h1>
             <p class="wa-report-lede">A full visual read of the chocolate chip cookie ranking — ranked views, a candidate shortlist, and trend-style slopes built from the current data rather than invented time trends. The set still contains noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates.</p>
@@ -1140,7 +1269,7 @@
         if (intent === 'worst') {
           openPane('results', {
             title: 'Worst foods in the database',
-            meta: '25 of 943,428 matches — all foods, sorted by WISEscore ascending (showing top 20)',
+            meta: '25 of 943,428 matches — all foods, sorted by WISEscore ascending',
             html: worstFoodsView(),
           });
         } else if (intent === 'spider') {
@@ -1163,7 +1292,7 @@
         } else if (intent === 'cookie') {
           openPane('results', {
             title: 'Best chocolate chip cookies',
-            meta: "25 of 3,010 matches — category 'snacks,cookies' & name 'chocolate chip', sorted by WISEscore descending (showing top 15)",
+            meta: "25 of 3,010 matches — category 'snacks,cookies' & name 'chocolate chip', sorted by WISEscore descending",
             html: cookiesView(),
           });
         } else if (intent === 'report') {
@@ -1186,7 +1315,7 @@
     if (host) {
       chat = mountWISEaiChat(host, {
         title: 'WISEai\u2122',
-        heading: 'Ask your verified food data anything',
+        heading: 'WISEai\u2122, the intelligence for food truth',
         sub: 'Search 943,428 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
         placeholder: 'Ask WISEai about any food\u2026',
         chipsFlow: 'wrap',
@@ -1206,6 +1335,8 @@
           cards: [
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },
             { variant: 'metric', icon: 'trending_down', pill: { tone: 'alert', icon: 'south', text: 'Lowest' }, metric: '0.06', title: 'Worst food in the database', desc: 'The bottom of the WISEscore ranking across 943,428 foods.', action: 'Show ranking', intent: 'worst', ask: 'What\u2019s the worst food in our database?' },
+            { variant: 'wiseai', icon: 'radar', title: 'Spider-chart the 10 worst foods', desc: 'Compare the bottom of the ranking by gut & immune health.', action: 'Chart it', intent: 'spider', ask: 'Spider-chart the 10 worst foods by gut & immune health' },
+            { variant: 'wiseai', icon: 'cake', title: 'Worst-ranked cupcake', desc: 'Dig into the single lowest-scoring cupcake and why it landed there.', action: 'Explain', intent: 'cupcake', ask: 'Tell me more about the worst-ranked cupcake' },
             { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
           ],

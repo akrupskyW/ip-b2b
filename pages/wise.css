@@ -757,6 +757,23 @@ html.dark .wise-popover-item.is-locked:hover { background: none; color: var(--te
 a.wise-popover-item { text-decoration: none; }
 .wise-popover-item .wise-popover-ext { margin-left: auto; font-size: 14px; opacity: 0.65; }
 .wise-popover-item:hover .wise-popover-ext { opacity: 1; }
+/* Pink "Admin" badge for rows that lead to an admin-only surface (e.g. the
+   Accessibility review). It owns the right-push, so a trailing "leaves this
+   page" glyph trails it with a small gap instead of its own auto-margin. */
+.wise-popover-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgb(219, 39, 119);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.wise-popover-item .wise-popover-badge + .wise-popover-ext { margin-left: 6px; }
 .wise-popover-item .material-icons { font-size: 17px; color: var(--text-subtle); }
 .wise-popover-item:hover .material-icons,
 .wise-popover-item.is-active .material-icons { color: var(--primary); }
@@ -1033,17 +1050,9 @@ html.dark .topbar-trailing .lir-btn.lir-active {
 }
 
 /* The canonical fixed chat width (var(--chat-pane-w)) is meant for the DEFAULT
-   horizontal modules row. The alternate stack/grid/tab layouts and the phone
-   breakpoint override the chat's `flex` but not its `width`/`min-width`, so
-   release the rigid width there and let the chat stretch or stack normally. */
-#modules-row.modules-stack > #chat-shell,
-#modules-row.modules-grid > #chat-shell,
-#modules-row.modules-tab > #chat-shell,
-#modules-row.modules-split > #chat-shell,
-#modules-tabbed > #chat-shell {
-  width: auto;
-  min-width: 0;
-}
+   horizontal modules row. The phone breakpoint overrides the chat's `flex` but
+   not its `width`/`min-width`, so release the rigid width there and let the chat
+   stretch normally. */
 @media (max-width: 767px) {
   #modules-row > #chat-shell { flex: 1 1 auto; width: auto; min-width: 0; }
 }
@@ -2740,25 +2749,29 @@ html.header-float .vs-header > button {
   z-index: 6;
 }
 
-/* Full bleed — strip every module's card container (background, border, shadow,
-   radius, bounce-in) so the module body fills the full height of the screen with
-   no chrome around it. WISEai (.sc-card / #chat-shell / #pf-chat-panel /
-   #wiseai-dock-panel) is deliberately left untouched: it keeps its container.
-   Loaded on every page (agent-page.css is shared), so it reaches the portfolio
-   modules, the agent-overview / dashboard module, the verification + settings
-   panels, the alerts rail, and the ai-chat side panels alike. The modules stay
-   switchable from the rail — only their visual container is removed. */
+/* Full bleed — open EVERY module top-to-bottom so it runs the full height of the
+   browser window. Each module keeps its surface + left/right borders (so the
+   columns stay separated and aligned with the rail), but loses its TOP + BOTTOM
+   borders, all corner rounding, its drop shadow, and its bounce-in — and every
+   vertical gap around it is collapsed. Applied UNIFORMLY to every module: the
+   nav rail (.menu-inner), WISEai (.sc-card), the portfolio modules, the
+   agent-overview / dashboard module, the verification + settings panels, the
+   alerts rail, and the ai-chat side panels. Loaded on every page (shared) and
+   mirrored by the bespoke wiseai.html panes, so full bleed reads identically
+   everywhere. The modules stay switchable from the rail. */
 html.full-bleed .agent-main-inner,
 html.full-bleed .pf-module-inner,
 html.full-bleed .pf-history-inner,
 html.full-bleed #alerts-panel .alerts-inner,
 html.full-bleed #verification-sidebar .vs-inner,
 html.full-bleed #settings-screen .ss-inner,
-html.full-bleed .side-panel {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
+html.full-bleed .side-panel,
+html.full-bleed .menu-inner,
+html.full-bleed .sc-card {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
   border-radius: 0 !important;
+  box-shadow: none !important;
   animation: none !important;
 }
 /* …and collapse every vertical gap so the modules run edge-to-edge from the
@@ -2779,26 +2792,23 @@ html.full-bleed .menu-brand-integrated #modules-row {
   margin-top: 0 !important;
   padding-bottom: 0 !important;
 }
-/* …but full bleed must NOT swallow the navigation or WISEai. The two rules above
-   opened the whole shell to the window edges; re-inset the nav panel and the
-   WISEai dock so they stay contained, floating cards exactly like normal — only
-   every OTHER module runs edge-to-edge. */
+/* Every module — including the nav rail and WISEai — now fills the full height
+   with no re-inset. The nav panel drops its vertical padding so .menu-inner
+   reaches both window edges, and the WISEai dock stretches top-to-bottom exactly
+   like every other module. */
 html.full-bleed .menu-brand-integrated #menu-panel {
   box-sizing: border-box !important;
-  padding-top: 0.375rem !important;
-  padding-bottom: var(--modules-bottom-pad) !important;
-}
-@media (min-width: 1280px) {
-  html.full-bleed .menu-brand-integrated #menu-panel { padding-top: 0.75rem !important; }
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 html.full-bleed #chat-shell,
 html.full-bleed #pf-chat-panel,
 html.full-bleed #wiseai-dock-panel {
-  margin-top: 8px !important;
-  margin-bottom: var(--modules-bottom-pad) !important;
-  height: calc(100% - 8px - var(--modules-bottom-pad)) !important;
-  max-height: calc(100% - 8px - var(--modules-bottom-pad)) !important;
-  align-self: flex-start !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  align-self: stretch !important;
 }
 
 .agent-hero {

@@ -355,10 +355,12 @@ export function restoreHeaderFloat() {
   applyHeaderFloat(isHeaderFloatOn());
 }
 
-/* Full bleed — strip the card container (background, border, shadow, radius) from
-   every module EXCEPT WISEai, so those modules fill the full height of the screen
-   while staying switchable from the rail. Driven by a `full-bleed` class on <html>
-   so it reaches every module on every page; persisted so it survives navigation. */
+/* Full bleed — open EVERY module top-to-bottom (drop its top/bottom borders,
+   corner rounding, shadow and bounce-in, and collapse the vertical gaps around
+   it) so every module — the nav rail, WISEai, and every content module alike —
+   fills the full height of the screen while staying switchable from the rail.
+   Driven by a `full-bleed` class on <html> so it reaches every module on every
+   page; persisted so it survives navigation. */
 const FULL_BLEED_KEY = 'wise-full-bleed';
 
 /** True when full-bleed (containerless modules) was last left on. */

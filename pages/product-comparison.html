@@ -204,24 +204,6 @@
        this inline rule — same specificity as the shared pivot rule but later in
        the cascade — stretches the bar taller than the portfolio/agent pages. */
     .menu-brand-integrated > #menu-panel:not(.mp-pivot) .menu-inner { height: 100%; min-height: 100%; }
-    /* Stacked / Grid module layouts turn #modules-row into a scroller. If the
-       page root ever picks up a stray horizontal scroll (e.g. a scrollIntoView
-       on a freshly opened module, or content overflow), the fixed-width nav
-       column — which lives in the shell grid, not inside #modules-row — could
-       be dragged off the left edge and appear to vanish. Pin it to the left so
-       it can never scroll out of view, and hard-guarantee it stays rendered.
-       In the column carousel (no stack/grid class) this rule does not apply, so
-       that layout is unchanged; on mobile the `position: relative !important`
-       card rule wins via !important, so mobile is unaffected too. */
-    #chat-shell-wrap.menu-brand-integrated:has(#modules-row.modules-stack) > #menu-panel.mp-open,
-    #chat-shell-wrap.menu-brand-integrated:has(#modules-row.modules-grid) > #menu-panel.mp-open {
-      position: sticky;
-      left: 0;
-      z-index: 40;
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
     .menu-brand-integrated > #topbar-row {
       grid-area: topbar;
       margin-bottom: 0;
@@ -588,17 +570,17 @@
        and is fully responsive, so it only ever scrolls vertically inside
        its own body. Scoped to the horizontal (desktop) layout — the
        stacked/grid mobile layouts keep their own vertical behaviour. */
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) {
+    #modules-row.report-mode {
       overflow-x: hidden;
     }
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell {
+    #modules-row.report-mode > #chat-shell {
       flex: 0 0 380px !important;
       width: 380px !important;
       min-width: 380px !important;
       max-width: 380px !important;
     }
     @media (max-width: 1100px) {
-      #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell {
+      #modules-row.report-mode > #chat-shell {
         flex-basis: 330px !important;
         width: 330px !important;
         min-width: 330px !important;
@@ -608,22 +590,22 @@
     /* The chat can still be widened with its own width toggle — single stays a
        true single pane, double/triple step up to definite viewport-capped
        widths — without ever forcing the modules row to scroll horizontally. */
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell.panel-wide {
+    #modules-row.report-mode > #chat-shell.panel-wide {
       --chat-w: min(760px, 92vw);
       flex: 0 0 var(--chat-w) !important;
       width: var(--chat-w) !important;
       min-width: var(--chat-w) !important;
       max-width: var(--chat-w) !important;
     }
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #chat-shell.panel-wide.panel-triple {
+    #modules-row.report-mode > #chat-shell.panel-wide.panel-triple {
       --chat-w: min(1080px, 96vw);
     }
     /* The open report board fills the space to the right of the chat.
        Its fixed pixel widths are overridden so it can shrink to fit any
        viewport — never forcing a horizontal scrollbar on the row. */
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #compare-panel.cp-open,
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #workflow-panel.wf-open,
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #verify-flow-panel.vf-open {
+    #modules-row.report-mode > #compare-panel.cp-open,
+    #modules-row.report-mode > #workflow-panel.wf-open,
+    #modules-row.report-mode > #verify-flow-panel.vf-open {
       /* Report boards dock as direct children of #modules-row; force them past
          the chat (order 2) so the chat ALWAYS stays left and the board right. */
       order: 4 !important;
@@ -632,9 +614,9 @@
       min-width: 0 !important;
       max-width: none !important;
     }
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #compare-panel.cp-open .cmp-inner,
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #workflow-panel.wf-open .wf-inner,
-    #modules-row.report-mode:not(.modules-stack):not(.modules-grid):not(.modules-tab) > #verify-flow-panel.vf-open .vf-inner {
+    #modules-row.report-mode > #compare-panel.cp-open .cmp-inner,
+    #modules-row.report-mode > #workflow-panel.wf-open .wf-inner,
+    #modules-row.report-mode > #verify-flow-panel.vf-open .vf-inner {
       width: 100% !important;
       min-width: 0 !important;
     }
@@ -814,14 +796,6 @@
       min-width: 280px;
       visibility: visible !important;
       opacity: 1 !important;
-    }
-    /* In grid mode the modules row scrolls vertically (not horizontally) and
-       the menu card occupies its own grid cell — sticky horizontal pinning
-       isn't needed and would interfere with grid placement. */
-    #modules-row.modules-grid #menu-panel {
-      position: relative;
-      left: auto;
-      right: auto;
     }
     /* When the user docks the agents module to the right side of the chat:
        mirror the sticky pin and place the panel last in the flex order so it
@@ -1072,36 +1046,6 @@
     .um-link .material-icons { font-size: 18px; color: var(--primary); }
     .um-link-arrow { margin-left: auto; color: var(--text-subtle); font-size: 18px !important; }
 
-    /* Grid layout — account modules become rectangular cards like every other module. */
-    #modules-row.modules-grid .util-panel:not(.open) { display: none !important; }
-    #modules-row.modules-grid .util-panel.open {
-      display: flex !important;
-      flex-direction: column;
-      width: auto !important;
-      max-width: none !important;
-      min-width: 0 !important;
-      height: auto !important;
-      min-height: 0;
-      margin: 0 !important;
-      flex: none !important;
-      align-self: stretch;
-      overflow: hidden;
-    }
-    /* Stack layout — full-width stacked rows. */
-    #modules-row.modules-stack .util-panel:not(.open) { display: none !important; }
-    #modules-row.modules-stack .util-panel.open {
-      display: flex !important;
-      flex-direction: column;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      height: auto !important;
-      min-height: 440px;
-      margin: 0 !important;
-      flex: none !important;
-      align-self: stretch;
-      overflow: hidden;
-    }
     /* Mobile / tablet — single full-width stacked card. */
     @media (max-width: 1023px) {
       .util-panel:not(.open) { display: none !important; }
@@ -5644,8 +5588,7 @@
       .lir-rail-trailing { gap: 4px; }
 
       /* ── Modules row — vertical single-column stack ─────────────── */
-      #modules-row,
-      #modules-row.modules-grid {
+      #modules-row {
         display: flex !important;
         flex-direction: column !important;
         flex-wrap: nowrap !important;
@@ -7014,9 +6957,11 @@
        .wiseai-inner, .cmp-inner, …). We override both so the toggle behaves like
        the containerless full bleed on every other shell. */
 
-    /* 1) Collapse the outer window frame so the shell fills the viewport. */
+    /* 1) Collapse the outer window frame's top/bottom so the shell fills the full
+       viewport height (side gutters stay so modules keep aligning with the rail). */
     html.full-bleed body.ai-chat-page {
-      padding: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
     /* 2) Nav becomes a flush, full-height sidebar (undo the shared re-inset). */
     html.full-bleed .menu-brand-integrated > #menu-panel {
@@ -7033,10 +6978,10 @@
       max-height: 100% !important;
       align-self: stretch !important;
     }
-    /* 4) Drop the card container (background, border, shadow, radius) from the
-       chat and every WISEai module so they read as containerless — this is the
-       visible effect of the toggle. Each module's frame lives on its inner
-       element, so we target those directly. */
+    /* 4) Open every module top-to-bottom: drop its TOP + BOTTOM borders, corner
+       rounding and drop shadow (keeping its surface + left/right borders) so the
+       module runs the full height of the window — identical to every other shell.
+       Each module's frame lives on its inner element, so we target those. */
     html.full-bleed #chat-shell,
     html.full-bleed #compare-panel .cmp-inner,
     html.full-bleed #history-panel .panel-inner,
@@ -7050,10 +6995,11 @@
     html.full-bleed #notif-panel .notif-inner,
     html.full-bleed #settings-screen .ss-inner,
     html.full-bleed #nfp-panel .nfp-inner {
-      background: transparent !important;
-      border: 0 !important;
+      border-top: 0 !important;
+      border-bottom: 0 !important;
       box-shadow: none !important;
       border-radius: 0 !important;
+      animation: none !important;
     }
 
     /* Panel width expand — doubles the module column when .panel-wide is set */
@@ -7291,299 +7237,6 @@
     }
     /* Empty right rail collapses cleanly so it doesn't add a phantom 8px gap. */
     #panels-row-right:not(.pr-has-panels) { display: none; }
-    /* Grid mode — ALL modules (panels + chat + progress) become rectangular cards */
-    #modules-row.modules-grid {
-      display: grid !important;
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: minmax(440px, 1fr);
-      gap: 8px;
-      overflow-y: auto;
-      align-content: stretch;
-      height: 100%;
-      max-height: 100%;
-    }
-    /* Split mode — WISEai (#chat-shell) docks full-width across the bottom half.
-       setModuleLayout() wraps every other module in #modules-top, which becomes
-       a shorter horizontally-scrolling strip on top (column-view behaviour),
-       while #chat-shell pins below it taking at least half the screen height. */
-    #modules-row.modules-split {
-      display: flex !important;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      overflow: hidden;
-      gap: 8px;
-    }
-    #modules-row.modules-split > #modules-top {
-      order: 0;
-      flex: 1 1 0%;
-      min-height: 0;
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      align-items: stretch;
-      gap: 8px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
-    }
-    #modules-row.modules-split > #modules-top::-webkit-scrollbar { height: 8px; }
-    #modules-row.modules-split > #modules-top::-webkit-scrollbar-track { background: transparent; }
-    #modules-row.modules-split > #modules-top::-webkit-scrollbar-thumb {
-      background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
-      border-radius: 999px;
-    }
-    #modules-row.modules-split > #modules-top > * {
-      height: 100%;
-      max-height: 100%;
-      align-self: stretch;
-    }
-    #modules-row.modules-split > #chat-shell {
-      order: 1;
-      flex: 0 0 52vh !important;
-      height: 52vh !important;
-      min-height: 50vh;
-      width: 100%;
-      min-width: 0;
-      max-width: 100%;
-    }
-    @media (max-width: 720px) {
-      #modules-row.modules-split > #chat-shell {
-        flex-basis: 50vh !important;
-        height: 50vh !important;
-      }
-    }
-    /* Make panel wrapper divs transparent — children participate directly in the grid */
-    #modules-row.modules-grid #panels-row,
-    #modules-row.modules-grid #panels-row-right {
-      display: contents !important;
-    }
-    /* Hide panels that are closed so they don't take a grid slot */
-    #modules-row.modules-grid #menu-panel:not(.mp-open),
-    #modules-row.modules-grid #history-panel:not(.open),
-    #modules-row.modules-grid #wiseai-panel:not(.sp-open),
-    #modules-row.modules-grid #upf-panel:not(.up-open),
-    #modules-row.modules-grid #tier-panel:not(.tp-open),
-    #modules-row.modules-grid #shield-panel:not(.sd-open),
-    #modules-row.modules-grid #lens-panel:not(.ln-open),
-    #modules-row.modules-grid #vault-panel:not(.vt-open),
-    #modules-row.modules-grid #nfp-panel:not(.nfp-open),
-    #modules-row.modules-grid #notif-panel:not(.notif-open),
-    #modules-row.modules-grid #compare-panel:not(.cp-open),
-    #modules-row.modules-grid #intent-stack-column:not(.is-active) {
-      display: none !important;
-    }
-    /* Every visible module — uniform card sizing */
-    #modules-row.modules-grid #menu-panel.mp-open,
-    #modules-row.modules-grid #history-panel.open,
-    #modules-row.modules-grid #wiseai-panel.sp-open,
-    #modules-row.modules-grid #upf-panel.up-open,
-    #modules-row.modules-grid #tier-panel.tp-open,
-    #modules-row.modules-grid #shield-panel.sd-open,
-    #modules-row.modules-grid #lens-panel.ln-open,
-    #modules-row.modules-grid #vault-panel.vt-open,
-    #modules-row.modules-grid #nfp-panel.nfp-open,
-    #modules-row.modules-grid #workflow-panel.wf-open,
-    #modules-row.modules-grid #verify-flow-panel.vf-open,
-    #modules-row.modules-grid #compare-panel.cp-open,
-    #modules-row.modules-grid #intent-stack-column.is-active,
-    #modules-row.modules-grid #notif-panel.notif-open,
-    #modules-row.modules-grid #chat-shell,
-    #modules-row.modules-grid #verification-sidebar {
-      display: flex !important;
-      flex-direction: column;
-      width: auto !important;
-      max-width: none !important;
-      min-width: 0 !important;
-      height: auto !important;
-      min-height: 0;
-      margin: 0 !important;
-      flex: none !important;
-      align-self: stretch;
-      overflow: hidden;
-    }
-    /* Inner panel containers fill their card height */
-    #modules-row.modules-grid .menu-inner,
-    #modules-row.modules-grid .panel-inner,
-    #modules-row.modules-grid .wiseai-inner,
-    #modules-row.modules-grid .upf-inner,
-    #modules-row.modules-grid .tier-inner,
-    #modules-row.modules-grid .shield-inner,
-    #modules-row.modules-grid .lens-inner,
-    #modules-row.modules-grid .vault-inner,
-    #modules-row.modules-grid .notif-inner,
-    #modules-row.modules-grid #verification-sidebar .vs-inner {
-      width: 100% !important;
-      min-height: 0 !important;
-      flex: 1 1 0%;
-    }
-    /* Stack mode — every module becomes a full-width row stacked vertically,
-       so the whole surface is one long top-to-bottom scroll instead of the
-       horizontal column carousel. Mirrors grid's module-flattening (panels-row
-       wrappers go display:contents, closed panels collapse) but lays the cards
-       out in a single column. */
-    #modules-row.modules-stack {
-      display: flex !important;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      gap: 8px;
-      overflow-x: hidden;
-      overflow-y: auto;
-      align-items: stretch;
-      height: 100%;
-      max-height: 100%;
-    }
-    #modules-row.modules-stack #panels-row,
-    #modules-row.modules-stack #panels-row-right {
-      display: contents !important;
-    }
-    #modules-row.modules-stack #menu-panel:not(.mp-open),
-    #modules-row.modules-stack #history-panel:not(.open),
-    #modules-row.modules-stack #wiseai-panel:not(.sp-open),
-    #modules-row.modules-stack #upf-panel:not(.up-open),
-    #modules-row.modules-stack #tier-panel:not(.tp-open),
-    #modules-row.modules-stack #shield-panel:not(.sd-open),
-    #modules-row.modules-stack #lens-panel:not(.ln-open),
-    #modules-row.modules-stack #vault-panel:not(.vt-open),
-    #modules-row.modules-stack #nfp-panel:not(.nfp-open),
-    #modules-row.modules-stack #notif-panel:not(.notif-open),
-    #modules-row.modules-stack #compare-panel:not(.cp-open),
-    #modules-row.modules-stack #intent-stack-column:not(.is-active) {
-      display: none !important;
-    }
-    #modules-row.modules-stack #menu-panel.mp-open,
-    #modules-row.modules-stack #history-panel.open,
-    #modules-row.modules-stack #wiseai-panel.sp-open,
-    #modules-row.modules-stack #upf-panel.up-open,
-    #modules-row.modules-stack #tier-panel.tp-open,
-    #modules-row.modules-stack #shield-panel.sd-open,
-    #modules-row.modules-stack #lens-panel.ln-open,
-    #modules-row.modules-stack #vault-panel.vt-open,
-    #modules-row.modules-stack #nfp-panel.nfp-open,
-    #modules-row.modules-stack #workflow-panel.wf-open,
-    #modules-row.modules-stack #verify-flow-panel.vf-open,
-    #modules-row.modules-stack #compare-panel.cp-open,
-    #modules-row.modules-stack #intent-stack-column.is-active,
-    #modules-row.modules-stack #notif-panel.notif-open,
-    #modules-row.modules-stack #chat-shell,
-    #modules-row.modules-stack #verification-sidebar {
-      display: flex !important;
-      flex-direction: column;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      height: auto !important;
-      min-height: 440px;
-      margin: 0 !important;
-      flex: none !important;
-      align-self: stretch;
-      overflow: hidden;
-    }
-    #modules-row.modules-stack .menu-inner,
-    #modules-row.modules-stack .panel-inner,
-    #modules-row.modules-stack .wiseai-inner,
-    #modules-row.modules-stack .upf-inner,
-    #modules-row.modules-stack .tier-inner,
-    #modules-row.modules-stack .shield-inner,
-    #modules-row.modules-stack .lens-inner,
-    #modules-row.modules-stack .vault-inner,
-    #modules-row.modules-stack .notif-inner,
-    #modules-row.modules-stack #verification-sidebar .vs-inner {
-      width: 100% !important;
-      min-height: 0 !important;
-      flex: 1 1 0%;
-    }
-    /* WISEai (#chat-shell) stays docked at the bottom of the stack: it's ordered
-       last and made position:sticky so the modules scroll behind it while the
-       chat remains visible and reachable across the bottom of the surface. Its
-       opaque surface background masks the content scrolling underneath. */
-    #modules-row.modules-stack > #chat-shell {
-      order: 999;
-      position: sticky;
-      bottom: 0;
-      z-index: 30;
-      flex: 0 0 auto !important;
-      height: 46vh !important;
-      min-height: 320px;
-      max-height: 60vh;
-      box-shadow: var(--shadow-card), 0 -12px 28px -16px rgba(0, 0, 0, 0.55);
-    }
-
-    /* ── Tabbed layout ───────────────────────────────────────────────────────
-       Every open side module is collapsed into #modules-tabbed; a tab strip sits
-       across the top and only the active module's body shows. The main chat
-       (#chat-shell) stays docked beside the tabbed pane. */
-    #modules-tabbed {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 0%;
-      min-width: 0;
-      height: 100%;
-      max-height: 100%;
-      gap: 8px;
-      overflow: hidden;
-    }
-    /* Nothing open → let the chat fill the row. */
-    #modules-tabbed:not(:has(.mod-tab-pane)) { display: none; }
-    #mod-tab-strip {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex: 0 0 auto;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 6px;
-      border-radius: 14px;
-      background: color-mix(in srgb, var(--text-subtle) 7%, transparent);
-      scrollbar-width: none;
-    }
-    #mod-tab-strip::-webkit-scrollbar { height: 0; display: none; }
-    .mod-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      flex: 0 0 auto;
-      padding: 6px 12px;
-      border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--text-subtle);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      white-space: nowrap;
-      cursor: pointer;
-      transition: background 0.14s, color 0.14s;
-    }
-    .mod-tab .material-icons,
-    .mod-tab .material-symbols-outlined { font-size: 18px; }
-    .mod-tab:hover { color: var(--text); background: color-mix(in srgb, var(--primary) 8%, transparent); }
-    .mod-tab.is-active { color: #fff; background: var(--primary); }
-    html:not(.dark) .mod-tab.is-active { color: #fff; background: var(--primary); }
-
-    /* The collapsed modules: one visible at a time, filling the pane. */
-    #modules-tabbed > .mod-tab-pane {
-      display: none !important;
-      flex: 1 1 0% !important;
-      width: auto !important;
-      min-width: 0 !important;
-      min-height: 0;
-      height: auto;
-    }
-    #modules-tabbed > .mod-tab-pane.tab-active { display: flex !important; }
-    /* Each module's inner card stretches to fill the tabbed pane (override the
-       fixed per-panel widths used in the column carousel). */
-    #modules-tabbed > .mod-tab-pane > * {
-      width: 100% !important;
-      max-width: none !important;
-      flex: 1 1 auto !important;
-      min-height: 0;
-      animation: none !important;
-    }
-    @media (max-width: 900px) {
-      #modules-row.modules-tab { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
-      #modules-tabbed { flex: 0 0 auto; min-height: 60vh; }
-      .mod-tab-label { display: none; }
-    }
 
     /* Light-mode overrides for flip + layout */
     html:not(.dark) .lir-flip-btn { color: var(--text-subtle); }
@@ -7620,10 +7273,9 @@
        authored last and match the most specific places `#verification-sidebar`
        is forced to `display: flex !important` elsewhere in this stylesheet,
        so adding `.vs-hidden` reliably hides the sidebar in every layout
-       (desktop column, stacked mobile card, and modules-grid carousel). */
+       (desktop column and stacked mobile card). */
     #verification-sidebar.vs-hidden,
-    #modules-row > #verification-sidebar.vs-hidden,
-    #modules-row.modules-grid #verification-sidebar.vs-hidden {
+    #modules-row > #verification-sidebar.vs-hidden {
       display: none !important;
     }
 
@@ -10139,10 +9791,7 @@
     function scrollPanelIntoView(panelId) {
       const panel = panelId && document.getElementById(panelId);
       if (!panel) return;
-      const row = document.getElementById('modules-row');
-      const isVerticalLayout =
-        (row && (row.classList.contains('modules-stack') || row.classList.contains('modules-grid'))) ||
-        window.matchMedia('(max-width: 1023px)').matches;
+      const isVerticalLayout = window.matchMedia('(max-width: 1023px)').matches;
       requestAnimationFrame(() => {
         panel.scrollIntoView({
           behavior: 'smooth',
@@ -15721,203 +15370,16 @@
       svg.innerHTML = rects;
     })();
 
-    /* ── Layout toggle: column view vs grid view vs split view ──────────
-       Split docks WISEai (#chat-shell) full-width across the bottom half of the
-       screen. Since the chat sits mid-row between sibling panels, every
-       non-chat child is gathered into a #modules-top wrapper so the row can
-       become two stacked regions (modules on top, WISEai below). Removing the
-       wrapper restores the panels; visual order is driven by CSS `order`, so
-       the chat's DOM position landing last is harmless. */
-    function applySplitWrap(on) {
-      const row = document.getElementById('modules-row');
-      const wiseai = document.getElementById('chat-shell');
-      if (!row || !wiseai) return;
-      const wrapped = row.classList.contains('modules-split');
-      if (on && !wrapped) {
-        const top = document.createElement('div');
-        top.id = 'modules-top';
-        Array.from(row.children).forEach((child) => {
-          if (child !== wiseai) top.appendChild(child);
-        });
-        row.appendChild(top);
-        row.appendChild(wiseai);
-        row.classList.add('modules-split');
-      } else if (!on && wrapped) {
-        const top = document.getElementById('modules-top');
-        row.classList.remove('modules-split');
-        if (top) {
-          while (top.firstChild) row.insertBefore(top.firstChild, top);
-          top.remove();
-        }
-      }
-    }
-    function setModuleLayout(mode) {
-      if (mode !== 'grid' && mode !== 'split' && mode !== 'stack' && mode !== 'tab') mode = 'col';
+    /* Only the Column module layout remains; Grid / Split / Stacked / Tabbed
+       were removed. setModuleLayout is kept as a thin shim so existing callers
+       (the Appearance popover, the persisted-layout restore) stay valid, and it
+       clears any layout class a stale localStorage value might have left behind. */
+    function setModuleLayout(_mode) {
       const row = document.getElementById('modules-row');
       if (!row) return;
-      applySplitWrap(mode === 'split');
-      applyTabWrap(mode === 'tab');
-      row.classList.toggle('modules-grid', mode === 'grid');
-      row.classList.toggle('modules-stack', mode === 'stack');
-      row.classList.toggle('modules-tab', mode === 'tab');
-      try { localStorage.setItem('wise-module-layout', mode); } catch (_) {}
+      row.classList.remove('modules-grid', 'modules-stack', 'modules-tab', 'modules-split');
+      try { localStorage.setItem('wise-module-layout', 'col'); } catch (_) {}
     }
-
-    /* ── Tabbed layout ───────────────────────────────────────────────
-       Mirrors the Portfolio workspace: every OPEN side module is collapsed
-       into a single #modules-tabbed container with a tab strip across the top;
-       only the selected module shows. The main WISEai chat (#chat-shell) and the
-       navigation (#menu-panel) stay docked beside it. Opening a module from the
-       rail adds a tab and brings it to the front; closing it drops the tab and
-       returns the module to its home column. */
-    (function initTabbedLayout() {
-      /* Modules eligible to become tabs, each with the class that marks it
-         "open". The persistent chat (#chat-shell) and nav (#menu-panel) are
-         intentionally excluded so they stay docked, exactly like Portfolio
-         keeps WISEai docked beside the tabbed pane. */
-      const TAB_MODULES = [
-        { id: 'history-panel',       open: 'open' },
-        { id: 'wiseai-panel',         open: 'sp-open' },
-        { id: 'upf-panel',           open: 'up-open' },
-        { id: 'tier-panel',          open: 'tp-open' },
-        { id: 'shield-panel',        open: 'sd-open' },
-        { id: 'lens-panel',          open: 'ln-open' },
-        { id: 'vault-panel',         open: 'vt-open' },
-        { id: 'nfp-panel',           open: 'nfp-open' },
-        { id: 'notif-panel',         open: 'notif-open' },
-        { id: 'workflow-panel',      open: 'wf-open' },
-        { id: 'verify-flow-panel',   open: 'vf-open' },
-        { id: 'intent-stack-column', open: 'is-active' },
-        { id: 'settings-screen',     open: 'open' },
-        { id: 'compare-panel',       open: 'cp-open' },
-        { id: 'profile-panel',       open: 'open' },
-        { id: 'prefs-panel',         open: 'open' },
-        { id: 'apikeys-panel',       open: 'open' },
-        { id: 'help-panel',          open: 'open' },
-        { id: 'docs-panel',          open: 'open' },
-      ];
-
-      /* Remembers each module's home slot so it can be returned in place. */
-      const TAB_HOME = new WeakMap();
-
-      const byId = (id) => document.getElementById(id);
-      const isTabMode = () => document.getElementById('modules-row')?.classList.contains('modules-tab');
-      const isOpenModule = (m) => { const el = byId(m.id); return !!el && el.classList.contains(m.open); };
-
-      /* Short label + icon for a module's tab, read from its own header so the
-         tabs stay in sync with the module chrome (with a safe fallback). */
-      function tabMetaFor(el) {
-        const head = el.querySelector('.side-panel-header, .wiseai-panel-header, .panel-header, .ss-inner .side-panel-header');
-        const iconEl = (head || el).querySelector('.panel-header-icon .material-icons, .panel-header-icon .material-symbols-outlined, .material-symbols-outlined, .material-icons');
-        const labelEl = (head || el).querySelector('.font-bold, .panel-title, h1, h2, h3');
-        const sym = iconEl ? iconEl.classList.contains('material-symbols-outlined') : true;
-        const icon = iconEl ? iconEl.textContent.trim() : 'widgets';
-        let label = labelEl ? labelEl.textContent.trim() : '';
-        if (!label) label = el.id.replace(/-panel$|-screen$|-column$/,'').replace(/-/g,' ');
-        if (label.length > 22) label = label.slice(0, 21).trim() + '…';
-        return { icon, sym, label };
-      }
-
-      function rebuildTabStrip(preferId) {
-        const wrap = byId('modules-tabbed');
-        if (!wrap) return;
-        const strip = byId('mod-tab-strip');
-        const panes = Array.from(wrap.querySelectorAll('.mod-tab-pane'));
-        if (!strip) return;
-        if (!panes.length) { strip.innerHTML = ''; return; }
-
-        let active = preferId ? byId(preferId) : null;
-        if (!active || active.parentNode !== wrap) active = wrap.querySelector('.mod-tab-pane.tab-active');
-        if (!active || active.parentNode !== wrap) active = panes[panes.length - 1];
-        panes.forEach((p) => p.classList.toggle('tab-active', p === active));
-
-        strip.innerHTML = panes.map((p) => {
-          const meta = tabMetaFor(p);
-          const on = p === active;
-          const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-          return `<button type="button" class="mod-tab${on ? ' is-active' : ''}" role="tab"
-            aria-selected="${on ? 'true' : 'false'}" data-tab-id="${esc(p.id)}" title="${esc(meta.label)}">
-            <span class="${meta.sym ? 'material-symbols-outlined' : 'material-icons'}">${esc(meta.icon)}</span>
-            <span class="mod-tab-label">${esc(meta.label)}</span>
-          </button>`;
-        }).join('');
-      }
-
-      function setActiveTab(id) {
-        const wrap = byId('modules-tabbed');
-        const target = byId(id);
-        if (!wrap || !target || target.parentNode !== wrap) return;
-        rebuildTabStrip(id);
-      }
-
-      function moveIntoWrap(wrap, el) {
-        if (!el || el.parentNode === wrap) return;
-        TAB_HOME.set(el, { parent: el.parentNode, next: el.nextElementSibling });
-        el.classList.add('mod-tab-pane');
-        wrap.appendChild(el);
-      }
-
-      function moveHome(el) {
-        const home = TAB_HOME.get(el);
-        el.classList.remove('mod-tab-pane', 'tab-active');
-        if (home && home.parent) {
-          if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
-          else home.parent.appendChild(el);
-        }
-        TAB_HOME.delete(el);
-      }
-
-      /* Move newly-opened modules into the tabbed container and evict
-         newly-closed ones. Safe to call repeatedly. */
-      function syncTabModules(preferId) {
-        const wrap = byId('modules-tabbed');
-        if (!wrap) return;
-        TAB_MODULES.forEach((m) => {
-          const el = byId(m.id);
-          if (!el) return;
-          const open = el.classList.contains(m.open);
-          const inWrap = el.parentNode === wrap;
-          if (open && !inWrap) { moveIntoWrap(wrap, el); preferId = preferId || m.id; }
-          else if (!open && inWrap) { moveHome(el); }
-        });
-        rebuildTabStrip(preferId);
-      }
-
-      window.applyTabWrap = function applyTabWrap(on) {
-        const row = document.getElementById('modules-row');
-        const chat = document.getElementById('chat-shell');
-        if (!row) return;
-        let wrap = document.getElementById('modules-tabbed');
-        if (on && !wrap) {
-          wrap = document.createElement('div');
-          wrap.id = 'modules-tabbed';
-          const strip = document.createElement('div');
-          strip.id = 'mod-tab-strip';
-          strip.setAttribute('role', 'tablist');
-          strip.setAttribute('aria-label', 'Open modules');
-          wrap.appendChild(strip);
-          if (chat) row.insertBefore(wrap, chat);
-          else row.appendChild(wrap);
-          TAB_MODULES.forEach((m) => { if (isOpenModule(m)) moveIntoWrap(wrap, byId(m.id)); });
-          rebuildTabStrip();
-        } else if (!on && wrap) {
-          Array.from(wrap.querySelectorAll('.mod-tab-pane')).forEach(moveHome);
-          wrap.remove();
-        }
-      };
-
-      /* Keep the strip live as modules open/close from the rail or elsewhere. */
-      const mo = new MutationObserver(() => { if (isTabMode()) syncTabModules(); });
-      TAB_MODULES.forEach((m) => { const el = byId(m.id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
-
-      document.addEventListener('click', (e) => {
-        const tab = e.target.closest('.mod-tab[data-tab-id]');
-        if (tab && document.getElementById('modules-tabbed')?.contains(tab)) {
-          e.preventDefault();
-          setActiveTab(tab.dataset.tabId);
-        }
-      });
-    })();
 
     /* Relocate #settings-screen out of #chat-shell and into #panels-row so it
        behaves as a sibling panel (history / wiseai / upf), not a chat overlay.
@@ -16440,10 +15902,6 @@
       /* Appearance popover — module layout, text size, and theme (crossword icon). */
       const LAYOUTS = [
         { mode: 'col',   sym: false, icon: 'view_column',        label: 'Column' },
-        { mode: 'grid',  sym: false, icon: 'grid_view',          label: 'Grid' },
-        { mode: 'split', sym: true,  icon: 'splitscreen_bottom', label: 'Split' },
-        { mode: 'stack', sym: true,  icon: 'horizontal_split',   label: 'Stacked' },
-        { mode: 'tab',   sym: true,  icon: 'tab',                label: 'Tabbed' },
       ];
 
       function currentLayout() {
@@ -16575,11 +16033,8 @@
       });
     })();
     /* ===== end profile popover ===== */
-    /* Restore persisted layout mode */
-    try {
-      const savedLayout = localStorage.getItem('wise-module-layout');
-      if (savedLayout === 'grid' || savedLayout === 'col' || savedLayout === 'split' || savedLayout === 'stack' || savedLayout === 'tab') setModuleLayout(savedLayout);
-    } catch (_) {}
+    /* Column is the only module layout now; clear any stale persisted mode. */
+    setModuleLayout('col');
     selectAgent('wise');
     updateAgentsCount();
     /* Pre-fill History with a couple of restorable conversations (inline +

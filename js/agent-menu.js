@@ -1,5 +1,20 @@
 import { applyMinimalUi } from './topbar.js';
 
+/* Load the module/pane drag-resize behaviour on every page that renders the WISE
+   nav (i.e. every page with a #modules-row). Injected here — rather than via a
+   per-page <script> tag — so it loads uniformly and survives HTML edits. The
+   loaded file self-guards and is a no-op on pages without a #modules-row. */
+(function loadPaneResize() {
+  try {
+    if (typeof document === 'undefined' || window.__wisePaneResizeLoaded) return;
+    window.__wisePaneResizeLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./pane-resize.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /**
  * Single source of truth for the agent hierarchy and product navigation.
  *

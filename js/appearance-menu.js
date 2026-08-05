@@ -33,8 +33,8 @@ import {
 import { isJamStripOn } from './jam-strip.js';
 import { getStoredFontSize } from './text-size.js';
 
-/** Module-layout rows (column / grid / split / stack / tabbed). Shells without
-    multiple modules (e.g. a single agent page) pass no list and get nothing. */
+/** Module-layout rows (only Column remains). Shells without a layout list
+    (e.g. a single agent page) pass no list and get nothing. */
 function layoutsSection(layouts, currentLayout) {
   if (!Array.isArray(layouts) || !layouts.length) return '';
   const items = layouts
@@ -99,6 +99,7 @@ function accessibilityReviewSection() {
   return `
     <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review">
       <span class="material-icons">accessibility_new</span>Accessibility review
+      <span class="wise-popover-badge">Admin</span>
       <span class="wise-popover-ext material-icons" aria-hidden="true">arrow_outward</span>
     </a>`;
 }

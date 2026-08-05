@@ -418,10 +418,16 @@
        lifts the topbar for the WISEai docks; this chat needs the same. */
     html.header-float .ap-chat .chat-topbar { z-index: 12; }
 
-    /* Full-bleed / width behaviour, matching the other WISE pages. */
-    html.full-bleed .ap-chat, html.full-bleed .nfp-inner, html.full-bleed #ap-progress .vfp-inner { border: 0; border-radius: 0; box-shadow: none; }
-    html.full-bleed body { padding: 0; }
-    html.full-bleed #chat-shell-wrap.menu-brand-integrated #modules-row { gap: 0; }
+    /* Full bleed — open every module top-to-bottom (drop top/bottom borders,
+       corner rounding, shadow + bounce-in) so it runs the full height of the
+       window, keeping the surface + left/right borders + the row gutter.
+       Mirrors the shared treatment (wise.css). */
+    html.full-bleed .ap-chat,
+    html.full-bleed .nfp-inner,
+    html.full-bleed #ap-progress .vfp-inner {
+      border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
+    }
+    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
     /* Chat width toggle (matches the shared module's 3-step widen). */
