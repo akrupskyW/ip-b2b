@@ -12901,6 +12901,21 @@
       if (img) params.set('img', img);
       return 'reformulation.html?' + params.toString();
     }
+    /* Deep-link into the read/edit product page — a fully filled-in, editable
+       NFP module for the product opened from the row (name / UPC / thumbnail
+       travel over in the URL, exactly like the Reformulate link). */
+    function pfViewHref(row) {
+      if (!row) return 'view-product.html';
+      const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
+      const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
+      const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+      const params = new URLSearchParams();
+      if (name) params.set('name', name);
+      if (upc) params.set('upc', upc);
+      if (img) params.set('img', img);
+      const qs = params.toString();
+      return 'view-product.html' + (qs ? ('?' + qs) : '');
+    }
     function pfInjectReformulate(pop) {
       if (!pop || pop.querySelector('.pf-rowmenu-item--reformulate')) return;
       const row = pop.closest('.pf-trow');
@@ -13503,6 +13518,9 @@
       const clone = item.cloneNode(true);
       clone.querySelectorAll('.material-icons').forEach((n) => n.remove());
       const label = (clone.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      /* View opens the product's own page — a fully filled-in, editable Product
+         Details (NFP) module — rather than narrating in chat. */
+      if (label === 'view') { window.location.href = pfViewHref(row); return; }
       const M = {
         'edit':           ['Edit ' + name, 'Opening <strong>' + name + '</strong> to edit. Update its ingredients, packaging, or details and I’ll re-run verification the moment you save.'],
         'view':           ['View ' + name, 'Here’s <strong>' + name + '</strong>. Its full report unlocks once ingredients are verified — want me to start verification now?'],

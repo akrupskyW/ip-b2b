@@ -1123,6 +1123,37 @@
     wiseSay('Here\'s a fully filled example so you can see the finished shape. Edit anything on the panel, then save — or start your own.',
       [{ label: 'Save this example', icon: 'save', action: 'goto:save' }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
   }
+  /* View mode — used by view-product.html. Opens with a fully filled-in,
+     editable Product Details card (the same finished example loadSample builds),
+     but with no "Show me an example" chatter, and reflecting whichever product
+     the user opened from the portfolio (name / UPC / photo travel over in the
+     URL). Everything on the panel stays editable so they can keep working. */
+  function openFilledProduct() {
+    const p = SAMPLE_PARSE;
+    const params = new URLSearchParams(location.search);
+    state.image = p.image; state.category = p.category;
+    state.ingredients = p.ingredients; state.contains = p.contains;
+    state.allergens = p.allergens.slice(); state.done.allergens = true;
+    state.upc = '853620006279';
+    Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
+    ['vitaminD', 'calcium', 'iron', 'potassium'].forEach((k) => {
+      state.nf[k] = { amt: k === 'vitaminD' ? '0mcg' : k === 'calcium' ? '40mg' : k === 'iron' ? '2mg' : '95mg', dv: k === 'vitaminD' ? '0%' : k === 'calcium' ? '3%' : k === 'iron' ? '10%' : '2%' };
+    });
+    // Reflect the specific product opened from the portfolio, when provided.
+    const nm = params.get('name'); const upc = params.get('upc'); const img = params.get('img');
+    state.productName = (nm && nm.trim()) || p.productName;
+    if (upc) { const d = upc.replace(/\D/g, ''); if (d) state.upc = d; }
+    if (img) state.image = img;
+    state.errors = {};
+    hideWelcome();
+    renderNFP(); renderProgress();
+    addWISEai(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right and every field is editable. Click any value to change it, swap the photo, or update the Nutrition Facts, then save your changes back to the portfolio.`,
+      [
+        { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
+        { label: 'Save changes', icon: 'save', action: 'goto:save' },
+        { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
+      ]);
+  }
   function restart() {
     Object.assign(state, {
       step: null, productName: '', image: null, images: [], activeImage: 0,
@@ -1304,6 +1335,13 @@
         menu.classList.add('hidden'); menuBtn.classList.remove('is-open');
       }
     });
+
+    // View mode (view-product.html) — skip the welcome and open straight into a
+    // fully filled-in, editable product instead of the blank builder.
+    if (document.body.dataset.apMode === 'view' || new URLSearchParams(location.search).get('view') === '1') {
+      openFilledProduct();
+      return;
+    }
 
     // Opening line
     setTimeout(() => {
