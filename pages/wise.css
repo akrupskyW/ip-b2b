@@ -7274,6 +7274,31 @@ html.dark .dash-ing-level--pl3 { color: #d4a830; }
   font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 24;
   line-height: 1;
 }
+/* Dark mode — the disc's deboss is tuned for the light paper surface (a faint
+   dark top-shadow + a bright white bottom highlight). On navy that 7%-dark
+   top-shadow vanishes and the white edges glow, so the "pressed-in" read
+   breaks and the glyph goes muddy. Re-cut it for dark: a real dark top-inset
+   carves the pit, a soft (non-glowing) light bottom highlight rounds the lip,
+   and a brighter glyph keeps the stamp legible while still reading as engraved
+   rather than drawn. Scoped away from the rank/photo number stamps, which
+   already carry their own dark treatment. */
+html.dark .dash-stamp-icon:not(.dash-stamp-num) {
+  border-color: color-mix(in srgb, #fff 9%, transparent);
+  color: color-mix(in srgb, var(--primary-bright) 58%, var(--surface-3));
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.09),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+html.dark .dash-stamp-icon:not(.dash-stamp-num) .material-symbols-outlined {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+/* Interactive pillar-card stamps brighten on hover — match that in dark, where
+   the light-mode hover mix (primary → surface-3) barely moves. */
+html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
+  color: color-mix(in srgb, var(--primary-bright) 82%, var(--surface-3));
+  border-color: color-mix(in srgb, #fff 16%, transparent);
+}
 
 .dash-pillars-cta {
   display: flex;
