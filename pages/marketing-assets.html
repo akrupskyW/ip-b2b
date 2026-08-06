@@ -43,7 +43,7 @@
     /* Zero the shell's default 8px top margin + bottom padding on #modules-row so
        the Marketing Assets Module and the WISEai chat dock line up flush with the
        full-height navigation rail (matches verification / gras-verification). */
-    body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; padding-bottom: 0; }
+    body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
 
     /* ---------- Head (serif title + subtitle + sort) ---------- */
     .ma-head { padding: 26px 40px 0; }

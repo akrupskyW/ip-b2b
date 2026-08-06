@@ -119,11 +119,18 @@
       if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
     };
 
-    /* Pages that request it (sign up / account creation) start collapsed by
-       default; otherwise honor the saved rail preference. */
-    var railed = defaultCollapsed === true;
-    if (!defaultCollapsed) {
-      try { railed = localStorage.getItem(MENU_RAIL_STORE_KEY) === '1'; } catch (_) {}
+    /* The nav opens collapsed to its bare icon rail by DEFAULT (matching the
+       app nav in agent-menu.js and isIconRailOn()), so "minimal UI" is the
+       default way the primary navigation module is shown everywhere. An explicit
+       saved choice under the shared `wise-menu-rail` key is still honored; only
+       the absence of a stored value falls back to collapsed. Pages that force it
+       (sign up / account creation) also start collapsed. */
+    var railed = true;
+    if (defaultCollapsed !== true) {
+      try {
+        var v = localStorage.getItem(MENU_RAIL_STORE_KEY);
+        if (v !== null) railed = v === '1';
+      } catch (_) {}
     }
     apply(railed);
 

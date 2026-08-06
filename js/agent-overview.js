@@ -43,6 +43,12 @@ import { renderNonUpfDashboard, NON_UPF_WISEAI, setNonUpfChat } from './non-upf-
 import { renderAuditQueue, AUDIT_QUEUE_WISEAI, setAuditQueueChat } from './audit-queue-flow.js';
 import { renderAdminUtils, ADMIN_UTILS_WISEAI, setAdminUtilsChat } from './admin-utils-flow.js';
 
+/* App-wide, self-initialising table helpers: consistent sortable headers
+   (up/down chevron) + a matching "load more" pagination footer on every data
+   table. Both are side-effecting IIFE modules — importing runs them. */
+import './sortable-tables.js';
+import './table-pagination.js';
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')

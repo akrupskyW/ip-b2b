@@ -3334,6 +3334,9 @@
     /* Large "at a glance" overview cards are hidden by default; the three-dot
        "Show overview cards" toggle reveals them. */
     .sc-cards-hidden .ws-scorecards-section { display: none; }
+    /* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the
+       small suggested-action chips right below the overview cards. */
+    .sc-intent-chips-hidden .ws-chips-wrap { display: none; }
     .ws-scorecards-bar {
       display: flex;
       align-items: center;
@@ -6350,6 +6353,10 @@
               <span class="material-icons topbar-menu-icon" id="wiseai-cards-icon">visibility</span>
               <span id="wiseai-cards-label">Show overview cards</span>
             </button>
+            <button type="button" class="topbar-menu-item" onclick="toggleIntentChips(); closeAllMoreMenus()">
+              <span class="material-icons topbar-menu-icon" id="wiseai-chips-icon">visibility_off</span>
+              <span id="wiseai-chips-label">Hide intent chips</span>
+            </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item topbar-menu-item--danger" onclick="restartConversation(); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">close</span>
@@ -6856,8 +6863,14 @@
                   <span class="material-icons">mic</span>
                   <span>Voice</span>
                 </button>
+                <div class="fl-more-divider" role="separator"></div>
+                <button type="button" class="fl-more-item" title="Load 3 example images" onclick="loadExampleAttachments(event)">
+                  <span class="material-icons">burst_mode</span>
+                  <span>Load 3 example images</span>
+                </button>
               </div>
             </div>
+            <div class="fl-attachments" id="fl-attachments" aria-label="Pending attachments"></div>
             <input id="chat-input" type="text" placeholder="Type a message... Grounded in your WISEcode data, private and encrypted, and every action is logged." class="fl-input" autocomplete="off" />
             <div class="fl-model-wrap" id="fl-model-wrap">
               <button type="button" class="fl-icon-btn fl-model-btn" id="fl-model-btn" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false" onclick="toggleModelMenu(event)">
@@ -7935,6 +7948,31 @@
     }
     applyOverviewCards();
 
+    /* Welcome intent chips (the small suggested-action chips right below the
+       overview cards): shown by default, toggled from the three-dot menu, with
+       the choice remembered per surface. */
+    var INTENT_CHIPS_KEY = 'wise-chips-hidden:ai-chat';
+    function applyIntentChips() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var stored;
+      try { stored = localStorage.getItem(INTENT_CHIPS_KEY); } catch (_) { stored = null; }
+      var hidden = stored === '1';
+      ws.classList.toggle('sc-intent-chips-hidden', hidden);
+      var icon = document.getElementById('wiseai-chips-icon');
+      var label = document.getElementById('wiseai-chips-label');
+      if (icon) icon.textContent = hidden ? 'visibility' : 'visibility_off';
+      if (label) label.textContent = hidden ? 'Show intent chips' : 'Hide intent chips';
+    }
+    function toggleIntentChips() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var willHide = !ws.classList.contains('sc-intent-chips-hidden');
+      try { localStorage.setItem(INTENT_CHIPS_KEY, willHide ? '1' : '0'); } catch (_) {}
+      applyIntentChips();
+    }
+    applyIntentChips();
+
     function applyChatTheme(theme) {
       const isDark = theme === 'dark';
       document.documentElement.classList.toggle('dark', isDark);
@@ -8769,13 +8807,23 @@
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${wiseaiNowLabel()}</span></div>`;
     }
 
-    function addUserMessage(text) {
+    function addUserMessage(text, atts) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
-      const safe = String(text).replace(/</g, '&lt;');
+      const safe = String(text || '').replace(/</g, '&lt;');
+      let attHtml = '';
+      if (Array.isArray(atts) && atts.length) {
+        const items = atts.map(function(a) {
+          const thumb = a.src
+            ? `<span class="sc-att-thumb" style="background-image:url('${String(a.src).replace(/'/g, '%27')}')"></span>`
+            : `<span class="sc-att-thumb sc-att-thumb--icon"><span class="material-icons">image</span></span>`;
+          return `<span class="sc-att-chip" title="${String(a.name).replace(/</g, '&lt;')}">${thumb}<span class="sc-att-name">${String(a.name).replace(/</g, '&lt;')}</span></span>`;
+        }).join('');
+        attHtml = `<div class="sc-att-row">${items}</div>`;
+      }
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
+        `<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${attHtml}${safe}${wiseaiMetaRow(false)}</div></div>`
       );
       box.scrollTop = box.scrollHeight;
     }
@@ -9959,7 +10007,7 @@
         `<tr><td>${f.name}</td><td class="vf-amt">$100.00</td></tr>`
       ).join('');
       vfAddSection('gpp_good', 'Payment', 'Authorized',
-        '<table class="vf-table"><thead><tr><th>UPC</th><th style="text-align:right;">Price</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="vf-table" data-no-sort data-wtp-skip><thead><tr><th>UPC</th><th style="text-align:right;">Price</th></tr></thead><tbody>' + rows + '</tbody></table>' +
         '<div class="vf-total-row"><span class="vf-total-label">Total · 7 items × $100</span><span class="vf-total-amt" data-count="700" data-prefix="$" data-decimals="2">$0</span></div>' +
         '<div class="vf-pay-method"><span class="material-icons">credit_card</span>Visa ending 4242 · charged securely</div>');
       vfAnimateCounts(document.getElementById('vf-body'));
@@ -10381,6 +10429,94 @@
 
     /* Attach a file from the far-left "+" popover — posts the filename into the
        thread so the action has a visible result. */
+    /* ── Pending attachments ────────────────────────────────────────────────
+       Files picked via "+" become removable previews INSIDE the input (a circle
+       thumbnail + label, inline directly before the placeholder) and only enter
+       the thread when the message is sent. You can keep typing throughout. */
+    let flAttachments = [];
+    let flAttachSeq = 0;
+    function flEsc(s) { return String(s).replace(/</g, '&lt;').replace(/'/g, '%27'); }
+    function syncAttachState() {
+      const wrap = document.querySelector('#chat-input-bar .fl-input-wrap');
+      const input = document.getElementById('chat-input');
+      const has = flAttachments.length > 0;
+      wrap?.classList.toggle('has-attachments', has);
+      if (input) {
+        if (has) {
+          if (input.getAttribute('placeholder')) {
+            input.dataset.phCache = input.getAttribute('placeholder');
+            input.setAttribute('placeholder', '');
+          }
+        } else if (input.dataset.phCache != null) {
+          input.setAttribute('placeholder', input.dataset.phCache);
+          delete input.dataset.phCache;
+        }
+      }
+    }
+    function renderAttachChip(att) {
+      const box = document.getElementById('fl-attachments');
+      if (!box) return;
+      const thumb = att.src
+        ? `<span class="fl-attach-thumb" style="background-image:url('${flEsc(att.src)}')"></span>`
+        : `<span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-icons">image</span></span>`;
+      const chip = document.createElement('span');
+      chip.className = 'fl-attach-chip';
+      chip.dataset.attachId = att.id;
+      chip.title = att.name;
+      chip.innerHTML = `${thumb}<span class="fl-attach-name">${String(att.name).replace(/</g, '&lt;')}</span>` +
+        `<button type="button" class="fl-attach-x" aria-label="Remove ${String(att.name).replace(/</g, '&lt;')}"><span class="material-icons">close</span></button>`;
+      box.appendChild(chip);
+    }
+    function addAttachment(att) {
+      const rec = { id: 'att-' + (++flAttachSeq), name: att.name || 'attachment', src: att.src || '', revoke: !!att.revoke };
+      flAttachments.push(rec);
+      renderAttachChip(rec);
+      syncAttachState();
+      document.getElementById('chat-input')?.focus();
+      return rec;
+    }
+    function removeAttachment(id) {
+      const rec = flAttachments.find((a) => a.id === id);
+      if (rec && rec.revoke) { try { URL.revokeObjectURL(rec.src); } catch (_) {} }
+      flAttachments = flAttachments.filter((a) => a.id !== id);
+      document.querySelector(`#fl-attachments [data-attach-id="${id}"]`)?.remove();
+      syncAttachState();
+    }
+    function clearAttachments() {
+      flAttachments.forEach((a) => { if (a.revoke) { try { URL.revokeObjectURL(a.src); } catch (_) {} } });
+      flAttachments = [];
+      const box = document.getElementById('fl-attachments');
+      if (box) box.innerHTML = '';
+      syncAttachState();
+    }
+    document.getElementById('fl-attachments')?.addEventListener('click', function(e) {
+      const x = e.target.closest('.fl-attach-x');
+      if (!x) return;
+      const chip = x.closest('.fl-attach-chip');
+      if (chip) removeAttachment(chip.dataset.attachId);
+      document.getElementById('chat-input')?.focus();
+    });
+
+    /* Three self-contained SVG sample thumbnails for the "Load 3 example images"
+       demo — no backend needed. */
+    function sampleThumb(bg, fg, glyph) {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'>` +
+        `<rect width='96' height='96' fill='${bg}'/>` +
+        `<text x='50%' y='54%' font-size='46' text-anchor='middle' dominant-baseline='middle' fill='${fg}' font-family='sans-serif'>${glyph}</text>` +
+        `</svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+    function loadExampleAttachments(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('fl-more-popover')?.classList.remove('open');
+      const imgs = [
+        { name: 'front-label.png', src: sampleThumb('#25507C', '#ffffff', '\uD83C\uDFF7') },
+        { name: 'nutrition-panel.jpg', src: sampleThumb('#32A966', '#ffffff', '\uD83D\uDCCA') },
+        { name: 'ingredients.jpg', src: sampleThumb('#DC7A38', '#ffffff', '\uD83E\uDDFE') },
+      ];
+      imgs.forEach((img) => addAttachment(img));
+    }
+
     function attachInputFile(e, camera) {
       e.stopPropagation();
       document.getElementById('fl-more-popover')?.classList.remove('open');
@@ -10389,18 +10525,14 @@
         fi = document.createElement('input');
         fi.type = 'file';
         fi.id = 'fl-file-input';
+        fi.multiple = true;
         fi.style.display = 'none';
         fi.addEventListener('change', function() {
-          const f = fi.files && fi.files[0];
-          if (!f) return;
-          const name = String(f.name).replace(/</g, '&lt;');
-          hideWelcomeScreen(function() {
-            addUserMessage('📎 ' + name);
-            const t = showWISEaiTyping('Reviewing ' + name);
-            setTimeout(function() {
-              if (t) t.remove();
-              addWISEaiMessage('Got it — I’ve received <strong>' + name + '</strong> and can reference it in this conversation.', { source: false });
-            }, 600);
+          const files = fi.files ? Array.from(fi.files) : [];
+          files.forEach(function(f) {
+            const isImg = /^image\//.test(f.type);
+            const src = isImg ? URL.createObjectURL(f) : '';
+            addAttachment({ name: f.name, src: src, revoke: isImg });
           });
           fi.value = '';
         });
@@ -10574,11 +10706,14 @@
     document.getElementById('send-btn')?.addEventListener('click', () => {
       const input = document.getElementById('chat-input');
       const v = (input?.value || '').trim();
-      if (!v) return;
+      const atts = flAttachments.slice();
+      if (!v && !atts.length) return;
+      clearAttachments();
       hideWelcomeScreen(() => {
-        addUserMessage(v);
+        addUserMessage(v, atts);
         if (input) input.value = '';
-        wiseaiRespond(v);
+        const noun = atts.length === 1 ? 'attachment' : 'attachments';
+        wiseaiRespond(v || ('Reviewing ' + atts.length + ' ' + noun));
       });
     });
     document.getElementById('chat-input')?.addEventListener('keydown', (e) => {

@@ -491,6 +491,9 @@ html.dark .sc-welcome { background: transparent; }
 }
 .ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.4rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
+/* Trademark mark in the welcome heading: dropped a size and nudged up so it
+   reads as a superscript ™ rather than a full-height glyph. */
+.ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
 .ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
@@ -553,6 +556,11 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 /* Overview cards hidden (three-dot menu → "Hide overview cards") — drop the
    large "at a glance" card rail from the welcome; everything else stays. */
 .sc-cards-hidden .ws-scorecards-section { display: none; }
+/* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the small
+   suggested-action chips right below the overview cards on the welcome; the
+   overview cards and everything else stay. */
+.sc-intent-chips-hidden .sc-welcome .ws-chips-wrap,
+.sc-intent-chips-hidden .sc-welcome > .ws-chips { display: none; }
 .ws-scorecards-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .ws-scorecards-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .ws-scorecards-wrap { position: relative; width: 100%; }
@@ -646,8 +654,9 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 .chip .material-icons { font-size: 16px !important; }
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
-.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
-.ws-intent-chip .material-icons { font-size: 20px !important; }
+.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px;
+  white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.ws-intent-chip .material-icons { font-size: 20px !important; flex: 0 0 auto; }
 .ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: faint-white chip fills get our royal-blue border so they don't
    read as white-bordered pills on the navy chrome. */
@@ -698,6 +707,69 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 }
 .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
 .fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
+.fl-more-divider { height: 1px; background: var(--border); margin: 4px 6px; }
+html.dark .fl-more-divider { background: rgba(255,255,255,0.08); }
+
+/* ===== Pending attachment previews — live INSIDE the input, inline directly
+   before the placeholder/caret. Each is a circle thumbnail + a label to its
+   right, with a hover remove button. They wrap onto a second row if several are
+   added and push the caret/placeholder along so you can keep typing. ===== */
+.fl-attachments { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.fl-attachments:empty { display: none; }
+.fl-attach-chip {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 190px;
+  padding: 3px 8px 3px 3px; border-radius: 999px;
+  background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
+  animation: flAttachPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); }
+@keyframes flAttachPop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .fl-attach-chip { animation: none; } }
+.fl-attach-thumb {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  background-color: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.fl-attach-thumb--icon { color: var(--text-muted); }
+.fl-attach-thumb--icon .material-icons { font-size: 14px !important; }
+.fl-attach-name {
+  font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.fl-attach-x {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--text-subtle); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.fl-attach-x:hover { background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); color: var(--sec-red, #DC3038); }
+.fl-attach-x .material-icons { font-size: 13px !important; }
+/* With chips present the input shrinks to hug the caret so the previews sit
+   directly before where you type; the placeholder is blanked in JS. */
+.fl-input-wrap.has-attachments .fl-input { flex: 1 1 80px; min-width: 80px; }
+
+/* ===== Sent attachments — the same previews carried into a user's transcript
+   line, above the message text. ===== */
+.sc-att-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sc-att-chip {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 220px;
+  padding: 4px 10px 4px 4px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+}
+html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); }
+.sc-att-thumb {
+  width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  background-color: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.sc-att-thumb--icon { color: var(--text-muted); }
+.sc-att-thumb--icon .material-icons { font-size: 15px !important; }
+.sc-att-name {
+  font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
 
 /* ===== In-input controls — "+" attach floated far LEFT, model selector
    ("tune") floated far RIGHT where the old three-dot lived. ===== */

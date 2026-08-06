@@ -28,7 +28,7 @@
     /* Invoices & Downloads — billing surface rendered by js/invoices-flow.js. */
     body[data-nav-id="invoices"] #agent-main-header { display: none; }
     body[data-nav-id="invoices"] .agent-main-scroll { padding: 0; }
-    body[data-nav-id="invoices"] #modules-row { margin-top: 0; padding-bottom: 0; }
+    body[data-nav-id="invoices"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
 
     /* WISEai chat on this surface reads bottom-up: the welcome anchors to the
        bottom of the pane (just above the input) and grows upward, so there's no

@@ -401,6 +401,7 @@ export const WISE_APP_NAV = [
   { type: 'section', label: 'Portfolio' },
   { type: 'item', id: 'product-portfolio', label: 'Product Portfolio', icon: 'handyman', slug: 'product-portfolio.html' },
   { type: 'item', id: 'comparison', label: 'Comparison', icon: 'compare', slug: 'product-comparison.html' },
+  { type: 'item', id: 'non-upf-dashboard', label: 'NON-UPF Dashboard', icon: 'dashboard', slug: 'non-upf-dashboard.html' },
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },
@@ -421,7 +422,6 @@ export const WISE_APP_NAV = [
       { id: 'organizations', label: 'Organizations', icon: 'apartment', slug: 'organizations.html' },
       { id: 'quick-invite', label: 'Quick Invite', icon: 'bolt', slug: 'quick-invite.html' },
       { id: 'user-management', label: 'User Management', icon: 'group', slug: 'user-management.html' },
-      { id: 'non-upf-dashboard', label: 'Non-UPF Dashboard', icon: 'dashboard', slug: 'non-upf-dashboard.html' },
       { id: 'audit-queue', label: 'Audit Queue', icon: 'shield', slug: 'audit-queue.html' },
       { id: 'admin-utils', label: 'Admin Utils', icon: 'build', slug: 'admin-utils.html' },
     ],
@@ -872,9 +872,9 @@ function renderAppGroup(prefix, node, activeId) {
    via `currentColor` so the card controls the hue. */
 const UPGRADE_STARS_SVG = `
       <svg class="menu-nav-upgrade-stars" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--1" d="M9 2 Q9 9 16 9 Q9 9 9 16 Q9 9 2 9 Q9 9 9 2 Z"/>
-        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--2" d="M18.5 3 Q18.5 6 21.5 6 Q18.5 6 18.5 9 Q18.5 6 15.5 6 Q18.5 6 18.5 3 Z"/>
-        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--3" d="M18 14 Q18 16.5 20.5 16.5 Q18 16.5 18 19 Q18 16.5 15.5 16.5 Q18 16.5 18 14 Z"/>
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--1" d="M10 5.5 Q10 12 16.5 12 Q10 12 10 18.5 Q10 12 3.5 12 Q10 12 10 5.5 Z"/>
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--2" d="M17.5 6 Q17.5 9 20.5 9 Q17.5 9 17.5 12 Q17.5 9 14.5 9 Q17.5 9 17.5 6 Z"/>
+        <path class="menu-nav-upgrade-star menu-nav-upgrade-star--3" d="M16.5 15.5 Q16.5 18 19 18 Q16.5 18 16.5 20.5 Q16.5 18 14 18 Q16.5 18 16.5 15.5 Z"/>
       </svg>`;
 
 function renderAppUpgrade(prefix, node) {
@@ -959,10 +959,17 @@ function setupMenuRail(navEl) {
     }
   };
 
-  /* The leftmost navigation module always opens collapsed to its icon rail —
-     on every page and every load. The toggle still expands it within the
-     session; the expanded state simply isn't restored on the next load. */
-  apply(true);
+  /* The leftmost navigation module opens collapsed to its icon rail by default,
+     but an explicit choice — made from the collapse chevron OR the Appearance
+     popover's "Icons only" toggle, both persisted under the same key — is
+     honored on load, so the nav round-trips the user's preference like the
+     other Appearance toggles. No stored value = collapsed, as before. */
+  let railed = true;
+  try {
+    const v = localStorage.getItem(MENU_RAIL_STORE_KEY);
+    if (v !== null) railed = v === '1';
+  } catch (_) {}
+  apply(railed);
   refreshToggleSkin();
 
   if (!btn.dataset.railBound) {
@@ -994,6 +1001,9 @@ function setupMenuRail(navEl) {
     btn.dataset.minimalBound = '1';
     document.addEventListener('wise:minimal-ui', refreshToggleSkin);
     document.addEventListener('wise:menu-pivot', refreshToggleSkin);
+    /* The Appearance popover's "Icons only" toggle flips `.mp-rail` directly;
+       re-skin the chevron so it reflects the new collapsed/expanded state. */
+    document.addEventListener('wise:menu-rail', refreshToggleSkin);
   }
 
   brand.appendChild(btn);

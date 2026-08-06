@@ -23,16 +23,23 @@ const GREEN = () => cssVar('--sec-green', '#32A966');
 const RED = () => cssVar('--sec-red', '#DC3038');
 const AMBER = () => cssVar('--ter-amber', '#FFC434');
 const BLUE = () => cssVar('--primary', '#25507C');
+/* The two intermediate tiers of the canonical five-status palette (mirrors the
+   C palette in js/dashboard-home.js): a lighter "Good" green and a "Fair"
+   orange, so the processing spectrum runs green → light-green → amber → orange
+   → red, worst-to-best like every other status chart in the app. */
+const GREEN_LIGHT = () => '#7DC470';
+const ORANGE = () => '#D27326';
 
 /* ---- Portfolio split (donut) ---------------------------------------- */
 const PORTFOLIO = { nonUpf: 9, upf: 3 };
 
 /* ---- Processing spectrum (vertical bars) ---------------------------- */
 const SPECTRUM = [
-  { label: 'Minimally Processed',  value: 5, color: () => GREEN() },
-  { label: 'Lightly Processed',    value: 2, color: () => cssVar('--sec-green-10', 'rgba(50,169,102,.35)') },
-  { label: 'Moderately Processed', value: 2, color: () => 'color-mix(in srgb, var(--sec-green) 45%, var(--surface-3))' },
-  { label: 'Ultra-Processed',      value: 3, color: () => RED() },
+  { label: 'Minimally Processed',   value: 5, color: () => GREEN() },
+  { label: 'Lightly Processed',     value: 2, color: () => GREEN_LIGHT() },
+  { label: 'Moderately Processed',  value: 2, color: () => AMBER() },
+  { label: 'Ultra-Processed',       value: 2, color: () => ORANGE() },
+  { label: 'Super Ultra-Processed', value: 1, color: () => RED() },
 ];
 
 /* ---- Verification-status progress list + filter tiles --------------- */
@@ -43,7 +50,7 @@ const STATUSES = [
   { key: 'att_complete',  label: 'Attestation Complete', num: 2,  icon: 'verified_user',  color: () => BLUE(),  sub: 'Attested, ready for payment', action: 'Pay' },
   { key: 'pending_pay',   label: 'Pending Payment',      num: 0,  icon: 'payments',       color: () => AMBER(), sub: 'Invoice sent, awaiting payment' },
   { key: 'ineligible',    label: 'Ineligible',           num: 51, icon: 'do_not_disturb', color: () => AMBER(), sub: 'Does not meet criteria', action: 'Edit' },
-  { key: 'verified',      label: 'Verified',             num: 8,  icon: 'verified',       color: () => BLUE(),  sub: 'Fully verified (shield verification)' },
+  { key: 'verified',      label: 'Verified',             num: 8,  icon: 'verified',       color: () => GREEN(), sub: 'Fully verified (shield verification)' },
 ];
 const TOTAL_PRODUCTS = 90;
 
@@ -124,31 +131,74 @@ function toast(msg, icon = 'check_circle') {
 /* Charts                                                               */
 /* ==================================================================== */
 
-/* Segmented SVG donut — parts drawn as rounded arcs with a gap between,
-   grown from length 0 on mount (see animateCharts). */
-function donutSvg(parts) {
-  const size = 120, cx = 60, cy = 60, r = 46, sw = 15;
-  const C = 2 * Math.PI * r;
+/* Segmented donut — ported from the shared dashboard donut (js/dashboard-home.js)
+   so the design + entrance animation match analytics-types / overview exactly.
+   Slices are rounded annular-sector <path>s (not thin strokes) that sweep around
+   the ring on mount (see sweepDonut in animateCharts). */
+function polarPt(cx, cy, r, deg) {
+  const a = (deg * Math.PI) / 180;
+  return `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+}
+
+/* Annular-sector path with gently rounded corners — a softer end than a fully
+   round stroke cap. `cr` is the corner radius, clamped so it never exceeds the
+   slice's radial or angular room. */
+function roundedSector(cx, cy, ri, ro, a0, a1, cr) {
+  const spanRad = ((a1 - a0) * Math.PI) / 180;
+  const r = Math.max(0, Math.min(cr, (ro - ri) / 2, (ri * spanRad) / 2));
+  const offO = (r / ro) * (180 / Math.PI);
+  const offI = (r / ri) * (180 / Math.PI);
+  const big = a1 - offO - (a0 + offO) > 180 ? 1 : 0;
+  const P = (rad, deg) => polarPt(cx, cy, rad, deg);
+  return [
+    `M ${P(ro, a0 + offO)}`,
+    `A ${ro} ${ro} 0 ${big} 1 ${P(ro, a1 - offO)}`,
+    `A ${r} ${r} 0 0 1 ${P(ro - r, a1)}`,
+    `L ${P(ri + r, a1)}`,
+    `A ${r} ${r} 0 0 1 ${P(ri, a1 - offI)}`,
+    `A ${ri} ${ri} 0 ${big} 0 ${P(ri, a0 + offI)}`,
+    `A ${r} ${r} 0 0 1 ${P(ri + r, a0)}`,
+    `L ${P(ro - r, a0)}`,
+    `A ${r} ${r} 0 0 1 ${P(ro, a0 + offO)}`,
+    'Z',
+  ].join(' ');
+}
+
+function donutRing(parts, cx, cy, r, sw, gapPx) {
+  const circ = 2 * Math.PI * r;
   const total = parts.reduce((a, p) => a + p.value, 0) || 1;
-  const gap = 9;
+  const ro = r + sw / 2;
+  const ri = r - sw / 2;
+  const gapDeg = (gapPx / circ) * 360;
+  const minDeg = (4 / circ) * 360; /* floor so a tiny sliver still shows */
+  const cr = 7;
   let acc = 0;
-  const segs = parts.filter((p) => p.value > 0).map((p) => {
-    const frac = p.value / total;
-    const startLen = (acc / total) * C;
-    acc += p.value;
-    const len = Math.max(0, frac * C - gap);
-    const start = startLen + gap / 2;
-    return `<circle class="adm-donut-seg" cx="${cx}" cy="${cy}" r="${r}" stroke="${p.color}" stroke-width="${sw}" stroke-dasharray="0 ${C.toFixed(2)}" data-len="${len.toFixed(2)}" data-rest="${(C - len).toFixed(2)}" stroke-dashoffset="${(-start).toFixed(2)}"></circle>`;
-  }).join('');
-  return `<svg class="adm-donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Non-UPF portfolio split">${segs}</svg>`;
+  return parts
+    .filter((p) => p.value > 0)
+    .map((p) => {
+      const startDeg = (acc / total) * 360;
+      const endDeg = ((acc + p.value) / total) * 360;
+      acc += p.value;
+      let a0 = startDeg + gapDeg / 2;
+      let a1 = endDeg - gapDeg / 2;
+      if (a1 - a0 < minDeg) {
+        const mid = (startDeg + endDeg) / 2;
+        a0 = mid - minDeg / 2;
+        a1 = mid + minDeg / 2;
+      }
+      const pct = Math.round((p.value / total) * 100);
+      const d = roundedSector(cx, cy, ri, ro, a0, a1, cr);
+      return `<path class="adm-donut-arc" d="" data-full-d="${esc(d)}" data-a0="${a0}" data-a1="${a1}" data-ri="${ri}" data-ro="${ro}" data-cr="${cr}" data-cx="${cx}" data-cy="${cy}" fill="${p.color}" data-label="${esc(p.label)}" data-value="${p.value}" data-pct="${pct}"></path>`;
+    })
+    .join('');
 }
 
 function donutCard() {
   const total = PORTFOLIO.nonUpf + PORTFOLIO.upf;
   const pct = Math.round((PORTFOLIO.nonUpf / total) * 100);
   const parts = [
-    { value: PORTFOLIO.nonUpf, color: GREEN() },
-    { value: PORTFOLIO.upf, color: RED() },
+    { label: 'NON-UPF', value: PORTFOLIO.nonUpf, color: GREEN() },
+    { label: 'UPF', value: PORTFOLIO.upf, color: RED() },
   ];
   return `
     <div class="adm-chart-card">
@@ -156,8 +206,14 @@ function donutCard() {
       <div class="adm-chart-body">
         <div class="adm-donut-wrap">
           <div class="adm-donut">
-            ${donutSvg(parts)}
-            <div class="adm-donut-center"><span class="adm-donut-num">${pct}%</span></div>
+            <svg class="adm-donut-svg" viewBox="0 0 300 300" role="img" aria-label="Non-UPF portfolio split">
+              <g transform="rotate(-90 150 150)">${donutRing(parts, 150, 150, 124, 26, 11)}</g>
+            </svg>
+            <div class="adm-donut-center">
+              <span class="adm-donut-num" data-count-to="${pct}">0%</span>
+              <span class="adm-donut-label">Non-UPF</span>
+              <span class="adm-donut-sub">${PORTFOLIO.nonUpf} of ${total} products</span>
+            </div>
           </div>
         </div>
         <div class="adm-legend">
@@ -222,10 +278,10 @@ function statCardsHtml() {
     const chipCls = STAT_CHIP[c.key == null ? '' : c.key] || 'adm-chip--muted';
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
-      <span class="adm-vf-stat-num" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'verified' || c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' ? 'color:var(--sec-green)' : ''}">${c.num}</span>
-      <span class="adm-chip ${chipCls}"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span>
+      <span class="adm-vf-stat-num" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">${c.num}</span>
+      <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
-      ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}" style="margin-top:2px">${esc(c.action)}</button>` : ''}
+      ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -316,7 +372,6 @@ function paint() {
         <div class="adm-head-row">
           <div>
             <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
-            <p class="adm-lede" style="display:flex;align-items:center;gap:10px;margin-top:8px"><span class="adm-chip adm-chip--blue"><span class="material-icons">inventory_2</span>Nutrient Survival</span></p>
           </div>
           <div class="adm-head-actions">
             <a class="adm-btn adm-btn--ghost" href="invoices.html"><span class="material-icons">receipt_long</span>View invoices</a>
@@ -356,15 +411,78 @@ function paint() {
   animateCharts();
 }
 
+function easeOutCubic(t) { return 1 - (1 - t) ** 3; }
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* Sweep each donut segment around the ring on entrance — the exact motion the
+   shared dashboard donut uses (animateDonutSweep in js/dashboard-home.js). */
+function sweepDonut(duration = 1400) {
+  if (!hostEl) return;
+  const arcs = hostEl.querySelectorAll('.adm-donut-arc');
+  if (!arcs.length) return;
+  if (prefersReducedMotion()) {
+    arcs.forEach((arc) => arc.setAttribute('d', arc.getAttribute('data-full-d') || ''));
+    return;
+  }
+  const start = performance.now();
+  const tick = (now) => {
+    const t = easeOutCubic(Math.min(1, (now - start) / duration));
+    const sweep = t * 360;
+    arcs.forEach((arc) => {
+      const fullD = arc.getAttribute('data-full-d');
+      const a0 = parseFloat(arc.dataset.a0);
+      const a1 = parseFloat(arc.dataset.a1);
+      if (!fullD || !Number.isFinite(a0) || !Number.isFinite(a1)) return;
+      if (sweep <= a0) { arc.setAttribute('d', ''); return; }
+      if (sweep >= a1) { arc.setAttribute('d', fullD); return; }
+      arc.setAttribute('d', roundedSector(+arc.dataset.cx, +arc.dataset.cy, +arc.dataset.ri, +arc.dataset.ro, a0, sweep, +arc.dataset.cr));
+    });
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+/* Count the center percentage up from 0, easing in sync with the ring sweep. */
+function countUpDonut(duration = 1400) {
+  if (!hostEl) return;
+  const el = hostEl.querySelector('.adm-donut-num[data-count-to]');
+  if (!el) return;
+  const to = parseInt(el.dataset.countTo, 10);
+  if (!Number.isFinite(to)) return;
+  if (prefersReducedMotion()) { el.textContent = `${to}%`; return; }
+  const start = performance.now();
+  const tick = (now) => {
+    const t = easeOutCubic(Math.min(1, (now - start) / duration));
+    el.textContent = `${Math.round(to * t)}%`;
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = `${to}%`;
+  };
+  requestAnimationFrame(tick);
+}
+
 function animateCharts() {
   if (!hostEl) return;
   requestAnimationFrame(() => {
-    hostEl.querySelectorAll('.adm-donut-seg[data-len]').forEach((seg) => {
-      seg.setAttribute('stroke-dasharray', `${seg.dataset.len} ${seg.dataset.rest}`);
-    });
+    sweepDonut();
+    countUpDonut();
     hostEl.querySelectorAll('.adm-bar-fill[data-h]').forEach((b) => { b.style.height = b.dataset.h + '%'; });
     hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = s.dataset.w + '%'; });
   });
+}
+
+/* Clicking a chart card replays its entrance animation — mirrors the
+   click-to-replay on the shared dashboard charts (setupChartReplay). */
+function replayCharts() {
+  if (!hostEl) return;
+  hostEl.querySelectorAll('.adm-donut-arc').forEach((arc) => arc.setAttribute('d', ''));
+  hostEl.querySelectorAll('.adm-bar-fill[data-h]').forEach((b) => { b.style.height = '0'; });
+  hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = '0'; });
+  const num = hostEl.querySelector('.adm-donut-num[data-count-to]');
+  if (num) num.textContent = '0%';
+  animateCharts();
 }
 
 function applyProductFilter() {
@@ -506,6 +624,8 @@ export function renderNonUpfDashboard(mainEl) {
   paint();
 
   mainEl.addEventListener('click', (e) => {
+    const chartCard = e.target.closest('.adm-chart-card');
+    if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');

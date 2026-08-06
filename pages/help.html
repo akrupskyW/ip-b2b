@@ -28,7 +28,7 @@
     /* Help center — rendered by js/help-flow.js. */
     body[data-nav-id="help"] #agent-main-header { display: none; }
     body[data-nav-id="help"] .agent-main-scroll { padding: 0; }
-    body[data-nav-id="help"] #modules-row { margin-top: 0; padding-bottom: 0; }
+    body[data-nav-id="help"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
 
     .hc-wrap { padding: 26px 40px 56px; max-width: 940px; }
     .hc-hero { text-align: left; padding: 0 0 24px; }

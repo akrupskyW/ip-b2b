@@ -314,6 +314,40 @@ export function restoreMinimalUi() {
   applyMinimalUi(isMinimalUiOn());
 }
 
+/* Icons only — collapse the navigation to an icons-only rail (all icons, no
+   labels) via the `mp-rail` class on #menu-panel. This is the SAME icon rail
+   the nav's collapse chevron produces; the Appearance toggle just exposes it as
+   a persisted preference. It shares the chevron's `wise-menu-rail` key so the
+   two controls stay in sync. Mirrors Minimal UI's shape (is/apply/restore). */
+const ICON_RAIL_KEY = 'wise-menu-rail';
+
+/** True when the icons-only nav rail is on. Defaults to ON (no stored value)
+    to match the nav module, which opens collapsed to its icon rail by default —
+    so the Appearance toggle reflects the real nav state out of the box. */
+export function isIconRailOn() {
+  try {
+    const v = localStorage.getItem(ICON_RAIL_KEY);
+    return v === null ? true : v === '1';
+  } catch { return true; }
+}
+
+/** Reflect icons-only-rail state onto the navigation panel and persist it. The
+    Appearance popover reads isIconRailOn() to render its own toggle state; the
+    dispatched event lets the nav's collapse chevron re-skin itself to match. */
+export function applyIconRail(on) {
+  const panel = document.getElementById('menu-panel');
+  if (panel) panel.classList.toggle('mp-rail', !!on);
+  try { localStorage.setItem(ICON_RAIL_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted icons-only-rail state onto the panel. */
+export function restoreIconRail() {
+  applyIconRail(isIconRailOn());
+}
+
 /** Read a page-level appearance default from `<body data-default-…>`.
     Returns `null` when the attribute is absent so callers can skip the override. */
 export function pageAppearanceDefault(dataKey) {

@@ -1762,6 +1762,7 @@ function renderClaim(d) {
         <div class="dash-btn-row">
           <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start Non&#8209;UPF Verification</button>
         </div>
+        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="nonupf-dashboard"><span class="material-icons">dashboard</span>Non&#8209;UPF Dashboard</button>
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-col dash-claim-col--nudge">
@@ -3120,6 +3121,7 @@ export function renderDashboardHome(host) {
         'dispute-upc': 'portfolio.html',
         'claim-upcs': 'product-portfolio.html',
         'verify-upf': 'verification.html',
+        'nonupf-dashboard': 'non-upf-dashboard.html',
         'verify-gras': 'gras-verification.html',
         'topproduct-report': 'portfolio.html',
         'ask-ai': 'ai-chat.html',

@@ -233,12 +233,12 @@
        which leaves both modules visibly shorter than the nav column. On this
        page we drop those insets so all three columns are the same height. */
     .menu-brand-integrated #modules-row { margin-top: 0 !important; }
-    /* Drop the bottom inset so the modules match the nav column's height, but
-       keep overflow visible so each module's drop-shadow still renders into the
-       body's bottom padding instead of being clipped flush at the card edge
-       (the nav rail, which sits outside this row, already shows its full
-       shadow). The reports carousels own their horizontal scroll via .rp-grid. */
-    #modules-row { padding-bottom: 0 !important; overflow: visible !important; }
+    /* Keep a bottom padding as a SHADOW GUTTER and pull the row back down by the
+       same amount (negative margin), so the modules still match the nav column's
+       full height AND their drop-shadow renders into that gutter instead of
+       being clipped flush at the card edge (the nav rail, which sits outside this
+       row, already shows its full shadow). */
+    #modules-row { padding-bottom: var(--modules-bottom-pad) !important; margin-bottom: calc(-1 * var(--modules-bottom-pad)) !important; }
     #modules-row #wiseai-dock-panel.wiseai-dock-open,
     #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
     /* The Reports module owns its own scroll; each section is a horizontal

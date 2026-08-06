@@ -112,8 +112,14 @@
   }
 
   function applyStored(row) {
+    var ps = panes(row);
+    // A single visible pane always fills the row — never restore a saved fixed
+    // width onto it (a lone pane has no drag handle, so any stored width is a
+    // leftover from a multi-pane layout, e.g. the WISEai chat after its result
+    // panes were closed). Re-pinning it would wrongly hold it narrow.
+    if (ps.length < 2) return;
     var stored = readPage();
-    panes(row).forEach(function (el) {
+    ps.forEach(function (el) {
       if (hasPreset(el)) return;            // preset width button owns this pane
       var w = stored[keyOf(row, el)];
       if (w != null && isFinite(w)) pin(el, w);
@@ -467,6 +473,23 @@
     reset: function () {
       var a = readAll(); delete a[pageId()]; writeAll(a);
       rows.forEach(function (entry) { panes(entry.row).forEach(clearInline); layout(entry); });
+    },
+    // Release the pinned/saved drag width for specific element(s) so they fall
+    // back to their stylesheet sizing (used e.g. when a pane closes and the
+    // remaining modules must reflow to fill the freed space). Clears the inline
+    // pin even for elements that are currently hidden (a just-closed pane), which
+    // panes()/reset() skip because they only touch visible panes.
+    release: function (els) {
+      els = [].concat(els).filter(Boolean);
+      if (!els.length) return;
+      rows.forEach(function (entry) {
+        els.forEach(function (el) {
+          if (!entry.row.contains(el)) return;
+          clearWidth(keyOf(entry.row, el));
+          clearInline(el);
+        });
+      });
+      schedule();
     }
   };
 

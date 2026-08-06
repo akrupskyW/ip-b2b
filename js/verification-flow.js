@@ -474,7 +474,7 @@ function selectStepHTML() {
     <div class="vf-board">
       ${glanceHTML('Select foods to review & attest')}
       <div class="vf-board-divider"></div>
-      <table class="vf-table">
+      <table class="vf-table" data-no-sort data-wtp-skip>
         <thead>
           <tr>
             <th class="vf-col-check">
@@ -516,7 +516,7 @@ function attestStepHTML() {
     <div class="vf-board">
       ${glanceHTML('Review & attest your selections')}
       <div class="vf-board-divider"></div>
-      <table class="vf-table vf-table--attest">
+      <table class="vf-table vf-table--attest" data-no-sort data-wtp-skip>
         <thead>
           <tr>
             <th class="vf-col-expand"></th>

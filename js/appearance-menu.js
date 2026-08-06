@@ -25,6 +25,8 @@
 import {
   isMinimalUiOn,
   applyMinimalUi,
+  isIconRailOn,
+  applyIconRail,
   isHeaderFloatOn,
   applyHeaderFloat,
   isFullBleedOn,
@@ -234,7 +236,8 @@ export function buildAppearanceBody({
     ${layoutsSection(layouts, currentLayout)}
     ${pivotSection(showPivot, isPivoted)}
     ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
-    ${toggleRow('data-headerfloat="1"', isHeaderFloatOn(), 'Header')}
+    ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
+    ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header')}
     ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
     ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip')}
     ${jamPlayerSection()}
@@ -352,6 +355,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Universal on/off toggles — handled here so no shell can miss one. */
     if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
+    if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
     if (within('[data-headerfloat]')) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); applyFullBleed(!isFullBleedOn());   render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }

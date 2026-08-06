@@ -9,6 +9,7 @@
   <script src="../js/auth.js"></script>
   <script src="../js/text-size-fouc.js"></script>
   <script src="../js/sortable-tables.js" defer></script>
+  <script src="../js/table-pagination.js" defer></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
        font, e.g. `side_navigation` used by the menu toggle and panel-dock controls. -->
@@ -442,12 +443,14 @@
       align-items: stretch;
       overflow-x: auto;
       overflow-y: hidden;
-      /* No bottom padding: the nav column is a grid SIBLING of #modules-row (not
-         inside it), so any bottom padding here makes every module pane end
-         short of the nav's bottom edge. The body already supplies the bottom
-         gap (--modules-bottom-pad), so the modules now fill the full height and
-         match the navigation column exactly, top and bottom. */
-      padding: 0 16px 0;
+      /* The nav column is a grid SIBLING of #modules-row (not inside it). We
+         keep a bottom padding as a SHADOW GUTTER and pull the row back down by
+         the same amount (negative margin), so the module panes still fill the
+         nav column's full height AND their drop-shadow renders into that gutter
+         instead of being clipped flush at the card edge. Preserves the
+         horizontal scroll (overflow-x:auto) that opening panes relies on. */
+      padding: 0 16px var(--modules-bottom-pad);
+      margin-bottom: calc(-1 * var(--modules-bottom-pad));
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -4522,6 +4525,9 @@
     /* Large "at a glance" overview cards are hidden by default; the three-dot
        "Show overview cards" toggle reveals them. */
     .sc-cards-hidden .ws-scorecards-section { display: none; }
+    /* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the
+       small suggested-action chips right below the overview cards. */
+    .sc-intent-chips-hidden .ws-chips-wrap { display: none; }
     .ws-scorecards-bar {
       display: flex;
       align-items: center;
@@ -8449,6 +8455,10 @@
               <span class="material-icons topbar-menu-icon" id="wiseai-cards-icon">visibility</span>
               <span id="wiseai-cards-label">Show overview cards</span>
             </button>
+            <button type="button" class="topbar-menu-item" onclick="toggleIntentChips(); closeAllMoreMenus()">
+              <span class="material-icons topbar-menu-icon" id="wiseai-chips-icon">visibility_off</span>
+              <span id="wiseai-chips-label">Hide intent chips</span>
+            </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item topbar-menu-item--danger" onclick="restartConversation(); closeAllMoreMenus()">
               <span class="material-icons topbar-menu-icon">close</span>
@@ -10319,6 +10329,31 @@
       applyOverviewCards();
     }
     applyOverviewCards();
+
+    /* Welcome intent chips (the small suggested-action chips right below the
+       overview cards): shown by default, toggled from the three-dot menu, with
+       the choice remembered per surface. */
+    var INTENT_CHIPS_KEY = 'wise-chips-hidden:product-portfolio';
+    function applyIntentChips() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var stored;
+      try { stored = localStorage.getItem(INTENT_CHIPS_KEY); } catch (_) { stored = null; }
+      var hidden = stored === '1';
+      ws.classList.toggle('sc-intent-chips-hidden', hidden);
+      var icon = document.getElementById('wiseai-chips-icon');
+      var label = document.getElementById('wiseai-chips-label');
+      if (icon) icon.textContent = hidden ? 'visibility' : 'visibility_off';
+      if (label) label.textContent = hidden ? 'Show intent chips' : 'Hide intent chips';
+    }
+    function toggleIntentChips() {
+      var ws = document.getElementById('welcome-screen');
+      if (!ws) return;
+      var willHide = !ws.classList.contains('sc-intent-chips-hidden');
+      try { localStorage.setItem(INTENT_CHIPS_KEY, willHide ? '1' : '0'); } catch (_) {}
+      applyIntentChips();
+    }
+    applyIntentChips();
 
     function applyChatTheme(theme) {
       const isDark = theme === 'dark';
@@ -16270,7 +16305,7 @@
         `<tr><td>${f.name}</td><td class="vf-amt">$100.00</td></tr>`
       ).join('');
       vfAddSection('gpp_good', 'Payment', 'Authorized',
-        '<table class="vf-table"><thead><tr><th>UPC</th><th style="text-align:right;">Price</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="vf-table" data-no-sort data-wtp-skip><thead><tr><th>UPC</th><th style="text-align:right;">Price</th></tr></thead><tbody>' + rows + '</tbody></table>' +
         '<div class="vf-total-row"><span class="vf-total-label">Total · 7 items × $100</span><span class="vf-total-amt" data-count="700" data-prefix="$" data-decimals="2">$0</span></div>' +
         '<div class="vf-pay-method"><span class="material-icons">credit_card</span>Visa ending 4242 · charged securely</div>');
       vfAnimateCounts(document.getElementById('vf-body'));

@@ -68,6 +68,7 @@
        Once a result pane opens, it collapses to a fixed-width side column so the
        layout reads as a double pane. */
     .wa-chat {
+      position: relative;
       flex: 1 1 auto;
       width: auto;
       min-width: 0;
@@ -273,8 +274,14 @@
     .wa-tbl-th--end { justify-content: flex-end; text-align: right; }
     .wa-tbl-th.is-sorted { color: var(--primary); }
     html.dark .wa-tbl-th.is-sorted { color: var(--primary-bright, #8B9FAF); }
-    .wa-sort-ic { font-size: 14px !important; opacity: .5; }
+    /* Shared chevron sort arrow (matches srt-arrow / adm-sort-arrow app-wide):
+       a faint down-chevron that turns primary and flips to point up on asc. */
+    .wa-sort-ic { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-left: 2px; flex: none; opacity: .3; transition: opacity .12s ease, transform .12s ease; }
+    .wa-sort-ic svg { width: 12px; height: 12px; display: block; }
+    button.wa-tbl-th:hover .wa-sort-ic { opacity: .6; }
     .wa-tbl-th.is-sorted .wa-sort-ic { opacity: 1; }
+    .wa-tbl-th[data-wa-dir="asc"] .wa-sort-ic { transform: rotate(180deg); }
+    @media (prefers-reduced-motion: reduce) { .wa-sort-ic { transition: none; } }
     .wa-tbl-body { display: block; }
     .wa-trow { border-bottom: 1px solid var(--border); transition: background .14s; }
     .wa-tbl-body .wa-trow:last-child { border-bottom: 0; }
@@ -393,7 +400,7 @@
        full module. It's a <div role="button"> (not a <button>) so it can safely
        wrap the inner content of the surfaced view. */
     .sc-surface-card {
-      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: 340px;
+      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: min(340px, 100%);
       text-align: left; margin: 4px 0 0; padding: 6px 12px 6px 6px;
       background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: 12px; cursor: pointer; font-family: inherit;
@@ -412,7 +419,163 @@
       transform: scale(0.122); transform-origin: top left; pointer-events: none;
     }
     .sc-surface-thumb-inner > * { margin: 0 !important; }
-    .sc-surface-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-surface-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+
+    /* ═══════════ Conversation manifest (floating Outputs / Sources) ═══════════
+       A floating summary card pinned to the chat's top-right, just below the
+       width-toggle. It lists every OUTPUT surfaced into the result panes and the
+       verified SOURCES this transcript draws on, so a long conversation always
+       keeps a jump-list of what it produced. Open by default when the chat is
+       wide (≈triple width); otherwise it collapses to a slim icon rail that
+       expands on hover. When wide it can also be manually collapsed or closed. */
+    .wa-manifest {
+      position: absolute;
+      top: calc(var(--panel-header-h, 60px) + 10px);
+      right: 14px;
+      z-index: 24;
+      width: auto;               /* hug whichever child is visible, right-anchored */
+      max-width: calc(100% - 28px);
+      font-family: inherit;
+      /* Stack the full panel, the icon rail and the re-open button in one grid
+         cell so they can cross-fade in place without any reflow. */
+      display: grid;
+      justify-items: end;
+      align-items: start;
+    }
+    .wa-manifest.is-empty { display: none; }
+
+    /* Expanded panel — the default when the chat is wide. */
+    .wa-manifest-full {
+      display: flex; flex-direction: column;
+      width: 266px; max-width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.05);
+      padding: 12px 12px 14px;
+      max-height: calc(100vh - var(--panel-header-h, 60px) - 60px);
+      overflow: hidden;
+    }
+    html.dark .wa-manifest-full { box-shadow: 0 14px 36px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4); }
+
+    /* Smooth open/close. The panel, rail and re-open button share one grid cell
+       and cross-fade with a small scale from the top-right. transition-behavior:
+       allow-discrete + @starting-style animate the display:none <-> shown flip in
+       BOTH directions, so the box eases open and closed instead of popping. */
+    .wa-manifest-full,
+    .wa-manifest-rail,
+    .wa-manifest-reopen {
+      grid-area: 1 / 1;
+      transform-origin: top right;
+      transition: opacity .17s ease,
+                  transform .24s cubic-bezier(0.22, 0.61, 0.36, 1),
+                  display .24s allow-discrete;
+    }
+    @starting-style {
+      .wa-manifest-full,
+      .wa-manifest-rail,
+      .wa-manifest-reopen { opacity: 0; transform: scale(0.97) translateY(-5px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-manifest-full,
+      .wa-manifest-rail,
+      .wa-manifest-reopen { transition: none; }
+    }
+
+    /* Collapse / close controls — floated in the panel's top-right corner. Only
+       meaningful (and shown) when the chat is wide enough to be open by default. */
+    .wa-manifest-ctrls { display: flex; justify-content: flex-end; gap: 2px; height: 0; overflow: visible; }
+    .wa-manifest:not(.is-wide) .wa-manifest-ctrls { display: none; }
+    .wa-manifest-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background .14s, color .14s;
+    }
+    .wa-manifest-btn:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .wa-manifest-btn:hover { background: rgba(255,255,255,0.06); }
+    .wa-manifest-btn .material-icons { font-size: 17px; }
+
+    .wa-manifest-section { min-height: 0; display: flex; flex-direction: column; }
+    .wa-manifest-section[hidden] { display: none; }
+    .wa-manifest-label { font-size: 12.5px; font-weight: 700; color: var(--text); margin: 2px 4px 7px; flex: 0 0 auto; }
+    .wa-manifest-list { display: flex; flex-direction: column; gap: 1px; overflow-y: auto; min-height: 0; }
+    .wa-manifest-div { height: 1px; background: var(--border); margin: 11px 2px; flex: 0 0 auto; }
+
+    .wa-manifest-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 7px 8px; border: 0; border-radius: 9px; background: transparent;
+      cursor: pointer; text-align: left; font-family: inherit; color: var(--text);
+      transition: background .14s;
+    }
+    .wa-manifest-item--static { cursor: default; }
+    .wa-manifest-item[role="button"]:hover,
+    button.wa-manifest-item:hover { background: var(--surface-2); }
+    html.dark .wa-manifest-item[role="button"]:hover,
+    html.dark button.wa-manifest-item:hover { background: rgba(255,255,255,0.05); }
+    .wa-manifest-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .wa-manifest-ic {
+      width: 27px; height: 27px; flex: 0 0 auto; border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary-soft); color: var(--primary); overflow: hidden;
+    }
+    html.dark .wa-manifest-ic { color: var(--primary-bright, #8B9FAF); }
+    .wa-manifest-ic .material-icons { font-size: 16px; }
+    .wa-manifest-ic img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+    .wa-manifest-name { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Collapsed icon rail — the slim state on narrow widths. */
+    .wa-manifest-rail {
+      display: none; opacity: 0; transform: scale(0.97) translateY(-5px);
+      flex-direction: column; align-items: center; gap: 5px;
+      margin-left: auto; width: max-content; padding: 8px 7px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 14px; box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+      max-height: calc(100vh - var(--panel-header-h, 60px) - 60px); overflow-y: auto;
+    }
+    html.dark .wa-manifest-rail { box-shadow: 0 10px 26px rgba(0,0,0,0.5); }
+    .wa-manifest-rail-ic {
+      width: 26px; height: 26px; flex: 0 0 auto; border: 0; border-radius: 50%; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+      background: var(--primary-soft); color: var(--primary); overflow: hidden;
+      transition: transform .12s, box-shadow .14s;
+    }
+    html.dark .wa-manifest-rail-ic { color: var(--primary-bright, #8B9FAF); }
+    .wa-manifest-rail-ic:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.14); }
+    .wa-manifest-rail-ic--static { cursor: default; background: var(--surface-2); color: var(--text-muted); }
+    html.dark .wa-manifest-rail-ic--static { background: rgba(255,255,255,0.06); }
+    .wa-manifest-rail-ic .material-icons { font-size: 14px; }
+    .wa-manifest-rail-ic img { width: 14px; height: 14px; object-fit: contain; border-radius: 50%; }
+    .wa-manifest-rail-div { width: 18px; height: 1px; background: var(--border); margin: 2px 0; flex: 0 0 auto; }
+
+    /* State toggling: collapsed shows the rail; hovering the rail peeks the full
+       panel; hidden shows only a small reopen button. Each shown/hidden variant
+       carries its own opacity + transform so the shared transition has real
+       start/end values to ease between. */
+    .wa-manifest.is-collapsed .wa-manifest-full { display: none; opacity: 0; transform: scale(0.97) translateY(-5px); }
+    .wa-manifest.is-collapsed .wa-manifest-rail { display: flex; opacity: 1; transform: none; }
+    .wa-manifest.is-collapsed:hover .wa-manifest-full { display: flex; opacity: 1; transform: none; }
+    .wa-manifest.is-collapsed:hover .wa-manifest-rail { display: none; opacity: 0; transform: scale(0.97) translateY(-5px); }
+
+    .wa-manifest.is-hidden .wa-manifest-full,
+    .wa-manifest.is-hidden .wa-manifest-rail { display: none; opacity: 0; transform: scale(0.97) translateY(-5px); }
+    .wa-manifest-reopen {
+      display: none; opacity: 0; margin-left: auto; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--primary); cursor: pointer;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+    }
+    html.dark .wa-manifest-reopen { color: var(--primary-bright, #8B9FAF); box-shadow: 0 10px 26px rgba(0,0,0,0.5); }
+    .wa-manifest-reopen:hover { transform: translateY(-1px); }
+    .wa-manifest.is-hidden .wa-manifest-reopen { display: inline-flex; opacity: 1; transform: none; }
+    .wa-manifest-reopen .material-icons { font-size: 20px; }
+    .wa-manifest-reopen-badge {
+      position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px;
+      border-radius: 9999px; background: var(--primary); color: #fff; font-size: 9.5px; font-weight: 800;
+      display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+    }
+    html.dark .wa-manifest-reopen-badge { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .wa-manifest-reopen { position: relative; }
 
     /* Full bleed — mirror the shared treatment (wise.css): open every module
        top-to-bottom (drop top/bottom borders, corner rounding, shadow + the
@@ -729,6 +892,15 @@
       if (paneBody[which]) paneBody[which].innerHTML = '';
       const wb = document.querySelector(`[data-pane-width="${which}"]`);
       if (wb) syncPaneWidthBtn(wb, 0);
+      /* Drop any drag-pinned widths so the remaining modules reflow to fill the
+         freed space — and once the last pane is gone, the chat expands back to
+         full-screen (its stylesheet default) instead of staying docked at the
+         width it was dragged to. */
+      window.WisePaneResize?.release?.([
+        document.getElementById('wa-chat'),
+        paneEl.results,
+        paneEl.visuals,
+      ]);
     }
 
     /* Per-pane three-dot menu + width control (their own, independent of the chat) */
@@ -844,10 +1016,12 @@
       tbl.dataset.sortCol = key;
       tbl.dataset.sortDir = dir;
       tbl.querySelectorAll('.wa-tbl-th').forEach((h) => {
-        const ic = h.querySelector('.wa-sort-ic');
         const on = h.dataset.sort === key;
         h.classList.toggle('is-sorted', on);
-        if (ic && h.dataset.sort) ic.textContent = on ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+        if (h.dataset.sort) {
+          if (on) h.setAttribute('data-wa-dir', dir);
+          else h.removeAttribute('data-wa-dir');
+        }
       });
       const tb = tbl.querySelector('.wa-tbl-body');
       const rows = Array.from(tb.querySelectorAll('.wa-trow'));
@@ -965,16 +1139,14 @@
         ? '28px minmax(0,1.5fr) minmax(0,1.35fr) 74px'
         : '28px minmax(0,1fr) 74px';
       const scoreCls = tone === 'good' ? 'wa-score-num--good' : 'wa-score-num--bad';
-      const arrow = (key) => {
-        const on = key === sortCol;
-        return on ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
-      };
+      const CHEVRON = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const dirAttr = (key) => (key === sortCol ? ` data-wa-dir="${sortDir}"` : '');
       const cls = (key, end) => `wa-tbl-th${end ? ' wa-tbl-th--end' : ''}${key === sortCol ? ' is-sorted' : ''}`;
       const head = `<div class="wa-tbl-head" style="grid-template-columns:${cols}">
           <span class="wa-tbl-th">#</span>
-          <button type="button" class="${cls('name')}" data-sort="name">Food<span class="material-icons wa-sort-ic">${arrow('name')}</span></button>
+          <button type="button" class="${cls('name')}" data-sort="name"${dirAttr('name')}>Food<span class="wa-sort-ic" aria-hidden="true">${CHEVRON}</span></button>
           ${showIngredients ? '<span class="wa-tbl-th">Ingredients</span>' : ''}
-          <button type="button" class="${cls('score', true)}" data-sort="score">Score<span class="material-icons wa-sort-ic">${arrow('score')}</span></button>
+          <button type="button" class="${cls('score', true)}" data-sort="score"${dirAttr('score')}>Score<span class="wa-sort-ic" aria-hidden="true">${CHEVRON}</span></button>
         </div>`;
       const body = rows.map((r, i) => {
         const [food, brand, score] = r;
@@ -1319,12 +1491,149 @@
         </div>`;
     }
 
+    /* ── Conversation manifest (floating Outputs / Sources box) ───────────────
+       A running jump-list pinned to the chat's top-right (below the width
+       toggle). Every surfaced OUTPUT registers here, and the verified SOURCES
+       this transcript draws on are seeded on first surface. Open by default when
+       the chat is wide (≈triple width); collapses to a slim icon rail otherwise,
+       peeking open on hover. When wide it can be manually collapsed or closed. */
+    const MANIFEST_OPEN_W = 800;          /* chat width (px) at/above which it opens by default */
+    const MANIFEST_SOURCES = [
+      { icon: 'verified', title: 'WISE Verified Food Data' },
+      { logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', icon: 'storefront', title: 'Kroger' },
+      { logo: 'https://www.google.com/s2/favicons?domain=walmart.com&sz=128', icon: 'storefront', title: 'Walmart' },
+    ];
+    const manifestOutputs = [];           /* { blockId, which, icon, title } */
+    let manifestBuilt = false, manifestUserCollapsed = false, manifestUserHidden = false, manifestSourcesSeeded = false;
+    let manifestEl, manifestOutListEl, manifestSrcListEl, manifestRailEl, manifestOutSecEl, manifestSrcSecEl, manifestBadgeEl;
+
+    function buildManifest() {
+      if (manifestBuilt || !host) return;
+      manifestBuilt = true;
+      manifestEl = document.createElement('div');
+      manifestEl.className = 'wa-manifest is-empty';
+      manifestEl.innerHTML = `
+        <div class="wa-manifest-full">
+          <div class="wa-manifest-ctrls">
+            <button type="button" class="wa-manifest-btn" data-mf="collapse" title="Collapse to icons" aria-label="Collapse outputs & sources to icons"><span class="material-icons">unfold_less</span></button>
+            <button type="button" class="wa-manifest-btn" data-mf="close" title="Hide" aria-label="Hide outputs & sources"><span class="material-icons">close</span></button>
+          </div>
+          <div class="wa-manifest-section" data-mf-out hidden>
+            <div class="wa-manifest-label">Outputs</div>
+            <div class="wa-manifest-list" data-mf-outlist></div>
+          </div>
+          <div class="wa-manifest-div" data-mf-div hidden></div>
+          <div class="wa-manifest-section" data-mf-src hidden>
+            <div class="wa-manifest-label">Sources</div>
+            <div class="wa-manifest-list" data-mf-srclist></div>
+          </div>
+        </div>
+        <div class="wa-manifest-rail" data-mf-rail></div>
+        <button type="button" class="wa-manifest-reopen" data-mf="reopen" title="Show outputs & sources" aria-label="Show outputs & sources"><span class="material-icons">dashboard_customize</span><span class="wa-manifest-reopen-badge" data-mf-badge>0</span></button>`;
+      host.appendChild(manifestEl);
+      manifestOutListEl = manifestEl.querySelector('[data-mf-outlist]');
+      manifestSrcListEl = manifestEl.querySelector('[data-mf-srclist]');
+      manifestRailEl = manifestEl.querySelector('[data-mf-rail]');
+      manifestOutSecEl = manifestEl.querySelector('[data-mf-out]');
+      manifestSrcSecEl = manifestEl.querySelector('[data-mf-src]');
+      manifestBadgeEl = manifestEl.querySelector('[data-mf-badge]');
+
+      manifestEl.addEventListener('click', (e) => {
+        const ctrl = e.target.closest('[data-mf]');
+        if (ctrl) {
+          const act = ctrl.dataset.mf;
+          if (act === 'collapse') { manifestUserCollapsed = !manifestUserCollapsed; }
+          else if (act === 'close') { manifestUserHidden = true; }
+          else if (act === 'reopen') { manifestUserHidden = false; manifestUserCollapsed = false; }
+          syncManifestState();
+          return;
+        }
+        const item = e.target.closest('[data-mf-block]');
+        if (item) reopenSurface(item.dataset.mfBlock);
+      });
+
+      /* Track the chat module's width so the box opens/collapses with it. */
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => syncManifestState()).observe(host);
+      } else {
+        window.addEventListener('resize', syncManifestState);
+      }
+    }
+
+    function iconMarkup(item, cls) {
+      if (item.logo) {
+        return `<span class="${cls}"><img src="${item.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span style="display:none;align-items:center;justify-content:center"><span class="material-icons">${esc(item.icon || 'public')}</span></span></span>`;
+      }
+      return `<span class="${cls}"><span class="material-icons">${esc(item.icon || 'insights')}</span></span>`;
+    }
+
+    function renderManifest() {
+      if (!manifestBuilt) return;
+      const hasOut = manifestOutputs.length > 0;
+      const hasSrc = manifestSourcesSeeded && MANIFEST_SOURCES.length > 0;
+
+      manifestOutSecEl.hidden = !hasOut;
+      manifestSrcSecEl.hidden = !hasSrc;
+      manifestEl.querySelector('[data-mf-div]').hidden = !(hasOut && hasSrc);
+      manifestEl.classList.toggle('is-empty', !hasOut && !hasSrc);
+      if (manifestBadgeEl) manifestBadgeEl.textContent = String(manifestOutputs.length + (hasSrc ? MANIFEST_SOURCES.length : 0));
+
+      manifestOutListEl.innerHTML = manifestOutputs.map((o) =>
+        `<button type="button" class="wa-manifest-item" data-mf-block="${o.blockId}" title="Open “${esc(o.title)}”">
+          ${iconMarkup(o, 'wa-manifest-ic')}
+          <span class="wa-manifest-name">${esc(o.title)}</span>
+        </button>`).join('');
+
+      manifestSrcListEl.innerHTML = (hasSrc ? MANIFEST_SOURCES : []).map((s) =>
+        `<div class="wa-manifest-item wa-manifest-item--static">
+          ${iconMarkup(s, 'wa-manifest-ic')}
+          <span class="wa-manifest-name">${esc(s.title)}</span>
+        </div>`).join('');
+
+      /* Collapsed icon rail: output icons (clickable) · divider · source icons. */
+      manifestRailEl.innerHTML =
+        manifestOutputs.map((o) =>
+          `<button type="button" class="wa-manifest-rail-ic" data-mf-block="${o.blockId}" title="${esc(o.title)}" aria-label="Open “${esc(o.title)}”"><span class="material-icons">${esc(o.icon || 'insights')}</span></button>`
+        ).join('') +
+        (hasOut && hasSrc ? '<span class="wa-manifest-rail-div"></span>' : '') +
+        (hasSrc ? MANIFEST_SOURCES.map((s) =>
+          `<span class="wa-manifest-rail-ic wa-manifest-rail-ic--static" title="${esc(s.title)}">${s.logo ? `<img src="${s.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none" class="material-icons">${esc(s.icon || 'public')}</span>` : `<span class="material-icons">${esc(s.icon || 'public')}</span>`}</span>`
+        ).join('') : '');
+    }
+
+    function syncManifestState() {
+      if (!manifestBuilt || !host) return;
+      const w = host.getBoundingClientRect().width;
+      const wide = w >= MANIFEST_OPEN_W;
+      manifestEl.classList.toggle('is-wide', wide);
+      manifestEl.classList.toggle('is-hidden', manifestUserHidden);
+      /* Narrow → always the icon rail (hover to peek). Wide → open unless the
+         user manually collapsed it. */
+      const collapsed = manifestUserHidden ? false : (wide ? manifestUserCollapsed : true);
+      manifestEl.classList.toggle('is-collapsed', collapsed);
+      /* The collapse control doubles as a pin-open toggle when collapsed. */
+      const cBtn = manifestEl.querySelector('[data-mf="collapse"]');
+      if (cBtn) {
+        cBtn.querySelector('.material-icons').textContent = collapsed ? 'unfold_more' : 'unfold_less';
+        cBtn.title = collapsed ? 'Pin open' : 'Collapse to icons';
+      }
+    }
+
+    function addManifestOutput(o) {
+      buildManifest();
+      if (!manifestSourcesSeeded) manifestSourcesSeeded = true;
+      manifestOutputs.push(o);
+      renderManifest();
+      syncManifestState();
+    }
+
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
     function surfaceBlock(which, { icon, title, meta, html }) {
       const blockId = 'blk' + (++surfaceSeq);
       const tagged = tagBlock(html, blockId);
       openPane(which, { title, meta, html: tagged });
       SURFACED[blockId] = { which, title, meta, html: tagged };
+      addManifestOutput({ blockId, which, icon, title });
       if (chat && typeof chat.addWISEai === 'function') {
         chat.addWISEai(surfaceCardHtml(blockId, which, icon, title, html), { source: '', feedback: false });
       }
@@ -1405,8 +1714,9 @@
     if (host) {
       chat = mountWISEaiChat(host, {
         title: 'WISEai\u2122',
-        heading: 'WISEai\u2122, the intelligence for food truth',
+        heading: 'WISEai\u2122, the intelligence for Food Truth\u2122.',
         sub: 'Search 943,428 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
+        subCounter: true,
         placeholder: 'Ask WISEai about any food\u2026',
         chipsFlow: 'wrap',
         inlineChips: true,
@@ -1414,6 +1724,10 @@
         cardsHiddenDefault: false,
         sourceLabel: '',
         statusLabel: 'WISEai is searching',
+        /* Small animated "thinking" dots docked under the input that pulse while
+           WISEai is working, with a hover read-out of live token/cache/cost
+           telemetry for the current turn and the whole conversation. */
+        activity: true,
         userInitials: 'AK',
         historyKey: 'wise-chat-history:wiseai',
         /* Let History "break out" of the in-chat overlay into its own module,
