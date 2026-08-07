@@ -92,6 +92,22 @@
       'html:not(.dark) .wch-search-clear:hover{background:rgba(0,0,0,0.08);}',
       '.wch-search-clear .material-icons{font-size:16px;}',
       '.wch-search.has-q .wch-search-clear{display:flex;}',
+      /* Search row can host a trailing filter toggle (e.g. MCP-usage). */
+      '.wch-search-row{display:flex;align-items:center;gap:8px;margin:10px 12px 2px;flex-shrink:0;}',
+      '.wch-search-row .wch-search{margin:0;flex:1 1 auto;min-width:0;}',
+      '.wch-mcp{flex:0 0 auto;height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:12px;font-weight:700;color:inherit;',
+        'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);transition:background .15s ease,border-color .15s ease,color .15s ease;}',
+      'html:not(.dark) .wch-mcp{background:rgba(20,40,80,0.04);border-color:rgba(0,0,0,0.10);}',
+      '.wch-mcp .material-icons{font-size:17px;}',
+      '.wch-mcp:hover{border-color:var(--primary,#2F6DF6);}',
+      '.wch-mcp.is-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);border-color:color-mix(in srgb,var(--primary,#2F6DF6) 48%,transparent);color:var(--primary,#2F6DF6);}',
+      '.wch-mcp-label{letter-spacing:.02em;}',
+      /* Small "used MCP" chip on a conversation row. */
+      '.wch-mcp-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:5px;',
+        'background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);color:var(--primary,#2F6DF6);}',
+      '.wch-mcp-badge .material-icons{font-size:12px;}',
+      /* Pane-style header controls cluster for the broken-out module. */
+      '.wch-controls{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;margin-left:auto;}',
       /* ── Broken-out "own module" mode: the pane detaches from the messages
          overlay and docks as a standalone card to the LEFT of the chat (a real
          flex sibling in the modules row), no scrim, always in-flow. ── */
@@ -100,7 +116,78 @@
         'animation:wchDockIn .38s cubic-bezier(.34,1.4,.64,1) both;}',
       'html:not(.dark) .wch-sidebar.wch-docked{border-color:var(--border,rgba(0,0,0,0.08));box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));}',
       '.wch-sidebar.wch-docked.wch-docked-hidden{display:none;}',
-      '@keyframes wchDockIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}'
+      '@keyframes wchDockIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}',
+      /* ── Projects (chat grouping) ── */
+      '.wch-item-actions{position:absolute;top:50%;right:6px;transform:translateY(-50%);display:none;align-items:center;gap:2px;}',
+      '.wch-item:hover .wch-item-actions,.wch-item:focus-within .wch-item-actions{display:flex;}',
+      '.wch-iact{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;}',
+      '.wch-iact:hover{background:rgba(255,255,255,0.12);opacity:1;}',
+      'html:not(.dark) .wch-iact:hover{background:rgba(0,0,0,0.08);}',
+      '.wch-iact .material-icons{font-size:16px;}',
+      /* Item needs room for the two hover actions. */
+      '.wch-item{padding-right:60px;}',
+      /* Projects section header + add button. */
+      '.wch-projects{margin:2px 0 4px;}',
+      '.wch-projects-head{display:flex;align-items:center;gap:6px;padding:12px 8px 4px 12px;}',
+      '.wch-projects-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.5;flex:1;}',
+      '.wch-proj-add{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
+      '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary,#2F6DF6);}',
+      'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
+      '.wch-proj-add .material-icons{font-size:18px;}',
+      /* A single project block. */
+      '.wch-project{border-radius:10px;margin:1px 0;}',
+      '.wch-project.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 55%,transparent);}',
+      '.wch-project-head{position:relative;display:flex;align-items:center;gap:6px;padding:8px 34px 8px 6px;border-radius:10px;cursor:pointer;}',
+      '.wch-project-head:hover{background:rgba(255,255,255,0.06);}',
+      'html:not(.dark) .wch-project-head:hover{background:rgba(20,40,80,0.05);}',
+      '.wch-proj-toggle{width:22px;height:22px;flex:0 0 auto;border:0;border-radius:6px;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
+      '.wch-proj-toggle .material-icons{font-size:18px;transition:transform .18s ease;}',
+      '.wch-project.wch-collapsed .wch-proj-toggle .material-icons{transform:rotate(-90deg);}',
+      '.wch-proj-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:currentColor;}',
+      '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.wch-proj-count{flex:0 0 auto;font-size:11px;font-weight:600;opacity:.55;padding:0 4px;}',
+      '.wch-proj-menu{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
+      '.wch-project-head:hover .wch-proj-menu{display:flex;}',
+      '.wch-proj-menu:hover{background:rgba(255,255,255,0.12);opacity:1;}',
+      'html:not(.dark) .wch-proj-menu:hover{background:rgba(0,0,0,0.08);}',
+      '.wch-proj-menu .material-icons{font-size:16px;}',
+      '.wch-project-body{padding-left:8px;}',
+      '.wch-project.wch-collapsed .wch-project-body{display:none;}',
+      '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
+      /* Inline name editor (create + rename). */
+      '.wch-proj-edit{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 8px;}',
+      '.wch-proj-edit-input{flex:1;min-width:0;height:30px;box-sizing:border-box;padding:0 10px;border-radius:8px;font:inherit;font-size:13px;color:inherit;outline:none;background:rgba(255,255,255,0.06);border:1px solid var(--primary,#2F6DF6);}',
+      'html:not(.dark) .wch-proj-edit-input{background:rgba(20,40,80,0.05);}',
+      '.wch-item.wch-dragging{opacity:.45;}',
+      '.wch-ungrouped{border-radius:10px;min-height:20px;}',
+      '.wch-ungrouped.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 12%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 50%,transparent);}',
+      /* Floating action popover (per-chat "move to project"). */
+      '.wch-pop{position:fixed;z-index:80;min-width:210px;max-width:260px;padding:6px;border-radius:12px;',
+        'background:var(--card,var(--surface,#0F1830));color:var(--text,#C5CFD7);border:1px solid rgba(255,255,255,0.12);box-shadow:0 14px 38px rgba(0,0,0,0.42);}',
+      'html:not(.dark) .wch-pop{background:#fff;color:#1F2733;border-color:rgba(0,0,0,0.10);box-shadow:0 14px 38px rgba(20,30,60,0.18);}',
+      '.wch-pop-head{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.5;padding:6px 10px 4px;}',
+      '.wch-pop-list{max-height:220px;overflow-y:auto;}',
+      '.wch-pop-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:13px;text-align:left;}',
+      '.wch-pop-item:hover{background:rgba(255,255,255,0.08);}',
+      'html:not(.dark) .wch-pop-item:hover{background:rgba(20,40,80,0.06);}',
+      '.wch-pop-item .material-icons{font-size:17px;opacity:.8;}',
+      '.wch-pop-item .wch-proj-dot{width:9px;height:9px;}',
+      '.wch-pop-item.is-current{color:var(--primary,#2F6DF6);font-weight:600;}',
+      '.wch-pop-item--danger{color:#E5484D;}',
+      '.wch-pop-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.wch-pop-div{height:1px;margin:5px 6px;background:rgba(255,255,255,0.10);}',
+      'html:not(.dark) .wch-pop-div{background:rgba(0,0,0,0.08);}',
+      /* Styled hover/focus tooltip for module controls — a small dark card
+         floated just above the control, matching the chat's thumbs-up/down
+         (.sc-tip) tooltips. Replaces the native title bubble. */
+      '.wch-tip{position:fixed;z-index:5000;pointer-events:none;max-width:240px;background:#1f2430;color:#fff;',
+        'font-size:11.5px;font-weight:600;line-height:1.25;letter-spacing:0.01em;padding:5px 9px;border-radius:7px;',
+        'white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.08);opacity:0;',
+        'transform:translate(-50%,calc(-100% - 4px)) scale(0.96);transform-origin:bottom center;',
+        'transition:opacity .12s ease,transform .12s ease;}',
+      '.wch-tip.is-vis{opacity:1;transform:translate(-50%,-100%) scale(1);}',
+      '.wch-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);',
+        'border:5px solid transparent;border-top-color:#1f2430;}'
     ].join('\n');
     var style = document.createElement('style');
     style.id = STYLE_ID;
@@ -112,6 +199,81 @@
     if (!elOrSel) return null;
     if (typeof elOrSel === 'string') return (scope || document).querySelector(elOrSel);
     return elOrSel;
+  }
+
+  /* ── Styled control tooltip (shared, once) ──────────────────────────────────
+     Gives every control inside a History / Turns module (both `.wch-sidebar`)
+     the same dark hover/focus tooltip the chat's thumbs-up/down buttons use,
+     instead of the browser's native `title` bubble. The element's `title` is
+     stashed + removed while hovered (so the OS tip is suppressed) and restored
+     on leave; `data-tip` is honoured too when present. */
+  var TIP_SEL = '.wch-sidebar button, .wch-sidebar [role="button"], .wch-sidebar .wch-fork-badge, .wch-sidebar .wch-mcp-badge, .wch-sidebar [data-tip]';
+  function initTooltip() {
+    if (global.__wchTipInit) return;
+    global.__wchTipInit = true;
+    injectStyles();
+    var tip = document.createElement('div');
+    tip.className = 'wch-tip';
+    tip.setAttribute('aria-hidden', 'true');
+    (document.body || document.documentElement).appendChild(tip);
+    var forEl = null;
+    function tipText(el) {
+      if (el.hasAttribute('data-tip')) return el.getAttribute('data-tip');
+      if (el.hasAttribute('title')) {
+        var t = el.getAttribute('title');
+        el.setAttribute('data-wch-title', t);   /* stash + suppress native */
+        el.removeAttribute('title');
+        return t;
+      }
+      if (el.hasAttribute('data-wch-title')) return el.getAttribute('data-wch-title');
+      return '';
+    }
+    function place(el) {
+      var r = el.getBoundingClientRect();
+      tip.style.left = Math.round(r.left + r.width / 2) + 'px';
+      tip.style.top = Math.round(r.top - 8) + 'px';
+    }
+    function show(el) {
+      var label = tipText(el);
+      if (!label) return;
+      forEl = el;
+      tip.textContent = label;
+      place(el);
+      void tip.offsetWidth;                     /* reflow so the enter plays */
+      tip.classList.add('is-vis');
+    }
+    function hide() {
+      if (forEl && forEl.hasAttribute('data-wch-title')) {
+        forEl.setAttribute('title', forEl.getAttribute('data-wch-title'));
+        forEl.removeAttribute('data-wch-title');
+      }
+      forEl = null;
+      tip.classList.remove('is-vis');
+    }
+    function candidate(node) {
+      return node && node.closest ? node.closest(TIP_SEL) : null;
+    }
+    document.addEventListener('mouseover', function (e) {
+      var el = candidate(e.target);
+      if (!el || el === forEl) return;
+      if (!el.hasAttribute('title') && !el.hasAttribute('data-tip') && !el.hasAttribute('data-wch-title')) return;
+      if (forEl) hide();
+      show(el);
+    });
+    document.addEventListener('mouseout', function (e) {
+      if (!forEl) return;
+      if ((e.target === forEl || forEl.contains(e.target)) && (!e.relatedTarget || !forEl.contains(e.relatedTarget))) hide();
+    });
+    document.addEventListener('focusin', function (e) {
+      var el = candidate(e.target);
+      if (!el) return;
+      if (!el.hasAttribute('title') && !el.hasAttribute('data-tip') && !el.hasAttribute('data-wch-title')) return;
+      show(el);
+    });
+    document.addEventListener('focusout', hide);
+    document.addEventListener('click', hide, true);
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
   }
 
   function esc(s) {
@@ -149,6 +311,7 @@
     if (!root) return null;
     opts = opts || {};
     injectStyles();
+    initTooltip();
 
     var side = opts.side === 'right' ? 'right' : 'left';
     var titleText = opts.title || 'History';
@@ -172,13 +335,41 @@
        reloads. */
     var breakout = opts.breakout === true;
     var breakoutWidth = opts.breakoutWidth || 300;
+    /* Optional narrower base width used while the host has the module in "sticky"
+       mode (tucked behind the chat). Lets History + Turns share one equal width;
+       drag-resize still overrides it as usual. */
+    var stickyWidth = opts.stickyWidth || null;
+    var stickyActive = false;
+    /* When true the broken-out module wears pane-style header chrome (a serif
+       masthead + three-dot menu + width changer) instead of the overlay's
+       break-out / close buttons, so it reads like the result panes. */
+    var dockedControls = opts.dockedControls === true;
+    /* Optional MCP-usage filter toggle beside the search. */
+    var mcpFilter = opts.mcpFilter === true;
+
+    /* Palette new projects cycle through so each reads distinctly. Declared up
+       here so normalizeProject() can use it while hydrating stored projects. */
+    var PROJ_COLORS = ['#2F6DF6', '#12B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#84CC16'];
 
     var stored = readStoreRaw();
     var items = Array.isArray(stored.items) ? stored.items : [];
+    /* Projects are user-defined buckets that chats can be filed into. Each is
+       { id, name, color, ts, collapsed }; a chat belongs to a project via its
+       own `projectId` (null/absent = ungrouped). */
+    var projects = Array.isArray(stored.projects) ? stored.projects.map(normalizeProject) : [];
     var seeded = !!stored.seeded;
-    var docked = breakout && !!stored.docked;
+    /* Default to broken-out on first load when the host opts in (no stored
+       preference yet), so History opens as its own module rather than an
+       in-chat overlay. */
+    var docked = breakout && (stored.docked != null ? !!stored.docked : opts.breakoutDefault === true);
     var activeId = null;
     var query = '';
+    var mcpOnly = false;
+    var widthTier = 0;
+    /* Transient project-editing UI state (never persisted). */
+    var editingProjectId = null;   /* project row shown as an inline name input */
+    var creatingProject = false;   /* the "new project" inline input is shown */
+    var pendingMoveItemId = null;  /* chat awaiting a project pick from the popover */
 
     /* Preload a few sample conversations on first mount so the History pane
        reads as an established workspace (not an empty shell). Seeds are written
@@ -191,7 +382,8 @@
           title: s.title || 'Conversation',
           html: s.html || '',
           count: s.count || 0,
-          ts: s.ts || (Date.now() - (i + 1) * 3600000)
+          ts: s.ts || (Date.now() - (i + 1) * 3600000),
+          mcp: s.mcp === true
         };
       });
       seeded = true;
@@ -202,19 +394,43 @@
     var scrim = document.createElement('div');
     scrim.className = 'wch-scrim';
 
+    /* Header controls. In dockedControls mode the module carries pane-style
+       chrome (three-dot menu + width changer) like the result panes; otherwise
+       the classic overlay break-out + close buttons. */
+    var headControlsHtml = dockedControls
+      ? '<div class="wch-controls">' +
+          '<div class="panel-more-wrap wch-more-wrap">' +
+            '<button type="button" class="panel-more-btn wch-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
+            '<div class="topbar-popover hidden wch-more-pop" role="menu">' +
+              '<button type="button" class="topbar-menu-item" data-wch-act="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>New conversation</span></button>' +
+              '<div class="topbar-menu-divider"></div>' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-wch-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close panel</span></button>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" class="panel-width-toggle-btn wch-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="History module width"><span class="material-symbols-outlined">width_normal</span></button>' +
+        '</div>'
+      : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-icons">vertical_split</span></button>' : '') +
+        '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-icons">close</span></button>';
+
+    var mcpToggleHtml = mcpFilter
+      ? '<button type="button" class="wch-mcp" aria-pressed="false" title="Show only conversations that used the MCP server" aria-label="Filter to conversations that used the MCP server"><span class="material-icons">dns</span><span class="wch-mcp-label">MCP</span></button>'
+      : '';
+
     var sidebar = document.createElement('aside');
     sidebar.className = 'wch-sidebar' + (side === 'right' ? ' wch-right' : '');
     sidebar.setAttribute('aria-label', titleText);
     sidebar.innerHTML =
       '<div class="wch-head">' +
         '<span class="wch-head-title"><span class="material-icons">history</span>' + esc(titleText) + '</span>' +
-        (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-icons">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-icons">close</span></button>' +
+        headControlsHtml +
       '</div>' +
-      '<div class="wch-search">' +
-        '<span class="material-icons">search</span>' +
-        '<input type="text" class="wch-search-input" placeholder="Search conversations…" aria-label="Search conversations" autocomplete="off">' +
-        '<button type="button" class="wch-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>' +
+      '<div class="wch-search-row">' +
+        '<div class="wch-search">' +
+          '<span class="material-icons">search</span>' +
+          '<input type="text" class="wch-search-input" placeholder="Search conversations…" aria-label="Search conversations" autocomplete="off">' +
+          '<button type="button" class="wch-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>' +
+        '</div>' +
+        mcpToggleHtml +
       '</div>' +
       '<button type="button" class="wch-new"><span class="material-icons">add</span>New conversation</button>' +
       '<div class="wch-list" role="list"></div>';
@@ -283,9 +499,80 @@
       if (!storageKey) return;
       /* Strip the transient search cache so it never bloats the store. */
       var clean = items.map(function (it) {
-        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null };
+        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null, mcp: it.mcp === true, projectId: it.projectId || null };
       });
-      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, items: clean, seeded: seeded, docked: docked })); } catch (_) {}
+      var cleanProjects = projects.map(function (p) {
+        return { id: p.id, name: p.name, color: p.color, ts: p.ts, collapsed: p.collapsed === true };
+      });
+      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, items: clean, projects: cleanProjects, seeded: seeded, docked: docked })); } catch (_) {}
+    }
+
+    /* ── Projects (chat grouping) — full CRUD ── */
+    function normalizeProject(p) {
+      p = p || {};
+      return {
+        id: p.id || genId('p'),
+        name: (p.name || 'Untitled project').toString(),
+        color: p.color || PROJ_COLORS[0],
+        ts: p.ts || Date.now(),
+        collapsed: p.collapsed === true
+      };
+    }
+    function genId(prefix) {
+      return (prefix || 'id') + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    }
+    function findProject(id) {
+      for (var i = 0; i < projects.length; i++) { if (projects[i].id === id) return projects[i]; }
+      return null;
+    }
+    function projectItems(id) {
+      return items.filter(function (it) { return it.projectId === id; });
+    }
+    /* CREATE — a fresh project. `color` auto-cycles through the palette so new
+       projects read distinctly. Returns the created project. */
+    function createProject(name, color) {
+      var proj = normalizeProject({
+        name: (name || '').trim() || 'New project',
+        color: color || PROJ_COLORS[projects.length % PROJ_COLORS.length]
+      });
+      projects.unshift(proj);
+      writeStore();
+      return proj;
+    }
+    /* UPDATE — rename (and optionally recolor). No-op if the project is gone. */
+    function renameProject(id, name) {
+      var proj = findProject(id);
+      if (!proj) return;
+      var next = (name || '').trim();
+      if (next) proj.name = next;
+      writeStore();
+    }
+    /* DELETE — remove the project; its chats fall back to ungrouped (never
+       destroyed, so grouping is a safe, reversible organisation layer). */
+    function deleteProject(id) {
+      projects = projects.filter(function (p) { return p.id !== id; });
+      items.forEach(function (it) { if (it.projectId === id) it.projectId = null; });
+      if (editingProjectId === id) editingProjectId = null;
+      writeStore();
+      render();
+    }
+    function toggleProjectCollapse(id) {
+      var proj = findProject(id);
+      if (!proj) return;
+      proj.collapsed = !proj.collapsed;
+      writeStore();
+      render();
+    }
+    /* Assign a chat to a project (projId=null removes it from any project). */
+    function moveToProject(itemId, projId) {
+      var it = null;
+      for (var i = 0; i < items.length; i++) { if (items[i].id === itemId) { it = items[i]; break; } }
+      if (!it) return;
+      it.projectId = projId || null;
+      /* Un-collapse the destination so the moved chat is visible right away. */
+      if (projId) { var p = findProject(projId); if (p) p.collapsed = false; }
+      writeStore();
+      render();
     }
 
     function metaFor(item) {
@@ -348,7 +635,9 @@
         html: data.html || '',
         count: data.count || 0,
         ts: Date.now(),
-        fork: data.fork || null
+        fork: data.fork || null,
+        mcp: data.mcp === true,
+        projectId: data.projectId || null
       };
       items.unshift(item);
       if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
@@ -413,33 +702,309 @@
     }
 
     /* ── Render ── */
-    function render() {
-      if (!items.length) {
-        listEl.innerHTML = '<div class="wch-empty">No saved conversations yet.<br>Start chatting, then use “New conversation” to file this one here.</div>';
-        return;
-      }
-      var q = query.trim().toLowerCase();
-      var visible = q ? items.filter(function (it) { return itemText(it).indexOf(q) !== -1; }) : items;
-      if (!visible.length) {
-        listEl.innerHTML = '<div class="wch-empty">No conversations match “' + esc(query.trim()) + '”.</div>';
-        return;
-      }
-      var lastGroup = null;
-      var html = '';
-      visible.forEach(function (it) {
-        var g = dayLabel(it.ts);
-        if (g !== lastGroup) { html += '<div class="wch-group">' + esc(g) + '</div>'; lastGroup = g; }
-        var forkBadge = it.fork
-          ? '<span class="wch-fork-badge" title="Forked from ' + esc(it.fork.from || 'a conversation') + '"><span class="material-icons">alt_route</span></span>'
-          : '';
-        html += '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + '" role="listitem" tabindex="0" data-wch-id="' + esc(it.id) + '">' +
-          '<div class="wch-item-title">' + forkBadge + esc(it.title) + '</div>' +
-          '<div class="wch-item-meta">' + esc(metaFor(it)) + '</div>' +
-          '<button type="button" class="wch-del" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-icons">delete_outline</span></button>' +
-        '</div>';
-      });
-      listEl.innerHTML = html;
+    /* One conversation row — draggable (drop it onto a project), with hover
+       actions for "move to project" and delete. */
+    function itemHtml(it) {
+      var forkBadge = it.fork
+        ? '<span class="wch-fork-badge" title="Forked from ' + esc(it.fork.from || 'a conversation') + '"><span class="material-icons">alt_route</span></span>'
+        : '';
+      var mcpBadge = it.mcp
+        ? '<span class="wch-mcp-badge" title="Used the MCP server"><span class="material-icons">dns</span></span>'
+        : '';
+      return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '">' +
+        '<div class="wch-item-title">' + forkBadge + mcpBadge + esc(it.title) + '</div>' +
+        '<div class="wch-item-meta">' + esc(metaFor(it)) + '</div>' +
+        '<div class="wch-item-actions">' +
+          '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-icons">drive_file_move</span></button>' +
+          '<button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-icons">delete_outline</span></button>' +
+        '</div>' +
+      '</div>';
     }
+
+    /* Inline name editor used for both creating and renaming a project. */
+    function projEditRowHtml(name, id) {
+      return '<div class="wch-proj-edit" data-proj-edit="' + esc(id || 'new') + '">' +
+        '<span class="wch-proj-dot" style="color:' + esc((findProject(id) || {}).color || PROJ_COLORS[projects.length % PROJ_COLORS.length]) + '"></span>' +
+        '<input type="text" class="wch-proj-edit-input" maxlength="60" placeholder="Project name…" value="' + esc(name || '') + '">' +
+      '</div>';
+    }
+
+    function render() {
+      var q = query.trim().toLowerCase();
+      var filtering = !!(q || mcpOnly);
+      function matches(it) {
+        if (mcpOnly && it.mcp !== true) return false;
+        if (q && itemText(it).indexOf(q) === -1) return false;
+        return true;
+      }
+
+      var html = '';
+
+      /* ── Projects section (always present so projects can be created even on an
+         empty history) ── */
+      html += '<div class="wch-projects">' +
+        '<div class="wch-projects-head">' +
+          '<span class="wch-projects-title">Projects</span>' +
+          '<button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-icons">create_new_folder</span></button>' +
+        '</div>';
+      if (creatingProject) html += projEditRowHtml('', 'new');
+      projects.forEach(function (p) {
+        var kids = items.filter(function (it) { return it.projectId === p.id; });
+        var visKids = kids.filter(matches);
+        /* While filtering, hide projects with no matching chats (unless it's the
+           one being renamed). Filtered view is always expanded for discovery. */
+        if (filtering && !visKids.length && editingProjectId !== p.id) return;
+        var collapsed = p.collapsed && !filtering;
+        html += '<div class="wch-project' + (collapsed ? ' wch-collapsed' : '') + '" data-proj-id="' + esc(p.id) + '">';
+        if (editingProjectId === p.id) {
+          html += projEditRowHtml(p.name, p.id);
+        } else {
+          html += '<div class="wch-project-head" data-proj-head="' + esc(p.id) + '" role="button" tabindex="0" aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
+            '<button type="button" class="wch-proj-toggle" data-proj-toggle="' + esc(p.id) + '" tabindex="-1" aria-label="Expand or collapse project"><span class="material-icons">expand_more</span></button>' +
+            '<span class="wch-proj-dot" style="color:' + esc(p.color) + '"></span>' +
+            '<span class="wch-proj-name">' + esc(p.name) + '</span>' +
+            '<span class="wch-proj-count">' + kids.length + '</span>' +
+            '<button type="button" class="wch-proj-menu" data-proj-menu="' + esc(p.id) + '" title="Project options" aria-label="Project options"><span class="material-icons">more_horiz</span></button>' +
+          '</div>';
+        }
+        html += '<div class="wch-project-body" data-proj-body="' + esc(p.id) + '">';
+        var show = filtering ? visKids : kids;
+        if (!show.length) {
+          html += '<div class="wch-project-empty">' + (filtering ? 'No matches here.' : 'Empty — drag a chat here, or use a chat’s move button.') + '</div>';
+        } else {
+          show.forEach(function (it) { html += itemHtml(it); });
+        }
+        html += '</div></div>';
+      });
+      html += '</div>';
+
+      /* ── Ungrouped conversations (day-grouped, as before) ── */
+      var ungrouped = items.filter(function (it) { return !it.projectId && matches(it); });
+      var ungroupedHtml = '';
+      var lastGroup = null;
+      ungrouped.forEach(function (it) {
+        var g = dayLabel(it.ts);
+        if (g !== lastGroup) { ungroupedHtml += '<div class="wch-group">' + esc(g) + '</div>'; lastGroup = g; }
+        ungroupedHtml += itemHtml(it);
+      });
+
+      if (!items.length) {
+        ungroupedHtml = '<div class="wch-empty">No saved conversations yet.<br>Start chatting, then use “New conversation” to file this one here.</div>';
+      } else if (filtering && !items.some(matches)) {
+        var why = mcpOnly && !q
+          ? 'No conversations used the MCP server.'
+          : mcpOnly
+            ? 'No MCP-server conversations match “' + esc(query.trim()) + '”.'
+            : 'No conversations match “' + esc(query.trim()) + '”.';
+        ungroupedHtml = '<div class="wch-empty">' + why + '</div>';
+      }
+
+      /* When projects exist, wrap the ungrouped list in a drop zone so a chat can
+         be dragged back out of a project (dropping here clears its projectId). */
+      if (projects.length && !filtering) {
+        var zoneBody = items.length && !ungrouped.length
+          ? '<div class="wch-group">Ungrouped</div><div class="wch-project-empty">All chats are in projects. Drop one here to ungroup it.</div>'
+          : ungroupedHtml;
+        html += '<div class="wch-ungrouped" data-ungrouped-zone>' + zoneBody + '</div>';
+      } else {
+        html += ungroupedHtml;
+      }
+
+      listEl.innerHTML = html;
+
+      /* Focus any open inline name editor (create / rename). */
+      var editInput = listEl.querySelector('.wch-proj-edit-input');
+      if (editInput) { wireEditInput(editInput); try { editInput.focus(); editInput.select(); } catch (_) {} }
+    }
+
+    /* ── Inline project name editor (create + rename) ── */
+    function commitEdit(input, save) {
+      if (!input || input._done) return;
+      input._done = true;
+      var row = input.closest('.wch-proj-edit');
+      var target = row ? row.getAttribute('data-proj-edit') : 'new';
+      var val = input.value;
+      if (target === 'new') {
+        creatingProject = false;
+        if (save && val.trim()) createProject(val);
+      } else {
+        editingProjectId = null;
+        if (save) renameProject(target, val);
+      }
+      render();
+    }
+    function wireEditInput(input) {
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); commitEdit(input, true); }
+        else if (e.key === 'Escape') { e.preventDefault(); commitEdit(input, false); }
+      });
+      input.addEventListener('blur', function () { commitEdit(input, true); });
+    }
+    function startCreateProject() {
+      closePopover();
+      editingProjectId = null;
+      creatingProject = true;
+      /* Projects live at the top of the list — make sure they're in view. */
+      listEl.scrollTop = 0;
+      render();
+    }
+    function startRenameProject(id) {
+      closePopover();
+      creatingProject = false;
+      editingProjectId = id;
+      render();
+    }
+
+    /* ── Floating popover (chat "move to project" + project options) ── */
+    var popEl = null;
+    function closePopover() {
+      pendingMoveItemId = null;
+      if (popEl && popEl.parentNode) popEl.parentNode.removeChild(popEl);
+      popEl = null;
+      document.removeEventListener('mousedown', onPopOutside, true);
+      document.removeEventListener('keydown', onPopKey, true);
+      window.removeEventListener('scroll', closePopover, true);
+      window.removeEventListener('resize', closePopover, true);
+    }
+    function onPopOutside(e) { if (popEl && !popEl.contains(e.target)) closePopover(); }
+    function onPopKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closePopover(); } }
+    function placePopover(anchor) {
+      var r = anchor.getBoundingClientRect();
+      var pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+      var left = Math.min(r.left, window.innerWidth - pw - 8);
+      left = Math.max(8, left);
+      var top = r.bottom + 6;
+      if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+      popEl.style.left = left + 'px';
+      popEl.style.top = top + 'px';
+    }
+    function openPopover(html, anchor) {
+      closePopover();
+      popEl = document.createElement('div');
+      popEl.className = 'wch-pop';
+      /* Match the host's theme (dark class lives on <html>). */
+      popEl.innerHTML = html;
+      document.body.appendChild(popEl);
+      placePopover(anchor);
+      setTimeout(function () {
+        document.addEventListener('mousedown', onPopOutside, true);
+        document.addEventListener('keydown', onPopKey, true);
+        window.addEventListener('scroll', closePopover, true);
+        window.addEventListener('resize', closePopover, true);
+      }, 0);
+    }
+    function openMovePopover(itemId, anchor) {
+      var it = null;
+      for (var i = 0; i < items.length; i++) { if (items[i].id === itemId) { it = items[i]; break; } }
+      if (!it) return;
+      var h = '<div class="wch-pop-head">Move to project</div><div class="wch-pop-list">';
+      if (!projects.length) {
+        h += '<div class="wch-pop-head" style="opacity:.5;font-weight:400;text-transform:none;letter-spacing:0">No projects yet.</div>';
+      }
+      projects.forEach(function (p) {
+        var cur = it.projectId === p.id;
+        h += '<button type="button" class="wch-pop-item' + (cur ? ' is-current' : '') + '" data-move="' + esc(p.id) + '">' +
+          '<span class="wch-proj-dot" style="color:' + esc(p.color) + '"></span>' +
+          '<span class="wch-pop-name">' + esc(p.name) + '</span>' +
+          (cur ? '<span class="material-icons">check</span>' : '') +
+        '</button>';
+      });
+      if (it.projectId) {
+        h += '<button type="button" class="wch-pop-item" data-move="">' +
+          '<span class="material-icons">remove_circle_outline</span><span class="wch-pop-name">Remove from project</span></button>';
+      }
+      h += '</div><div class="wch-pop-div"></div>' +
+        '<button type="button" class="wch-pop-item" data-move-new><span class="material-icons">create_new_folder</span><span class="wch-pop-name">New project…</span></button>';
+      openPopover(h, anchor);
+      /* Set AFTER openPopover — it calls closePopover() first, which would
+         otherwise clear the chat we're about to file. */
+      pendingMoveItemId = itemId;
+    }
+    function openProjectPopover(projId, anchor) {
+      var p = findProject(projId);
+      if (!p) return;
+      var h = '<div class="wch-pop-head">' + esc(p.name) + '</div>' +
+        '<button type="button" class="wch-pop-item" data-pmenu="rename" data-pid="' + esc(projId) + '"><span class="material-icons">edit</span><span class="wch-pop-name">Rename</span></button>' +
+        '<button type="button" class="wch-pop-item" data-pmenu="collapse" data-pid="' + esc(projId) + '"><span class="material-icons">' + (p.collapsed ? 'unfold_more' : 'unfold_less') + '</span><span class="wch-pop-name">' + (p.collapsed ? 'Expand' : 'Collapse') + '</span></button>' +
+        '<div class="wch-pop-div"></div>' +
+        '<button type="button" class="wch-pop-item wch-pop-item--danger" data-pmenu="delete" data-pid="' + esc(projId) + '"><span class="material-icons">delete_outline</span><span class="wch-pop-name">Delete project</span></button>';
+      openPopover(h, anchor);
+    }
+    /* Popover click routing (single listener; popEl is recreated per open). */
+    document.addEventListener('click', function (e) {
+      if (!popEl || !popEl.contains(e.target)) return;
+      var mv = e.target.closest('[data-move]');
+      if (mv && popEl.contains(mv)) {
+        e.preventDefault();
+        var id = pendingMoveItemId;
+        var pid = mv.getAttribute('data-move');
+        closePopover();
+        if (id) moveToProject(id, pid || null);
+        return;
+      }
+      if (e.target.closest('[data-move-new]')) {
+        e.preventDefault();
+        var mid = pendingMoveItemId;
+        closePopover();
+        var proj = createProject('');
+        if (mid) moveToProject(mid, proj.id);
+        startRenameProject(proj.id);
+        return;
+      }
+      var pm = e.target.closest('[data-pmenu]');
+      if (pm) {
+        e.preventDefault();
+        var act = pm.getAttribute('data-pmenu');
+        var pid2 = pm.getAttribute('data-pid');
+        closePopover();
+        if (act === 'rename') startRenameProject(pid2);
+        else if (act === 'collapse') toggleProjectCollapse(pid2);
+        else if (act === 'delete') deleteProject(pid2);
+      }
+    });
+
+    /* ── Drag & drop: file a chat into a project (or back to ungrouped) ── */
+    var dragItemId = null;
+    function clearDropHints() {
+      listEl.querySelectorAll('.wch-drop-on').forEach(function (n) { n.classList.remove('wch-drop-on'); });
+    }
+    listEl.addEventListener('dragstart', function (e) {
+      var item = e.target.closest('.wch-item');
+      if (!item) return;
+      dragItemId = item.getAttribute('data-wch-id');
+      item.classList.add('wch-dragging');
+      try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragItemId); } catch (_) {}
+    });
+    listEl.addEventListener('dragend', function () {
+      dragItemId = null;
+      clearDropHints();
+      listEl.querySelectorAll('.wch-dragging').forEach(function (n) { n.classList.remove('wch-dragging'); });
+    });
+    listEl.addEventListener('dragover', function (e) {
+      if (!dragItemId) return;
+      var proj = e.target.closest('.wch-project');
+      var zone = e.target.closest('[data-ungrouped-zone]');
+      if (!proj && !zone) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      clearDropHints();
+      (proj || zone).classList.add('wch-drop-on');
+    });
+    listEl.addEventListener('dragleave', function (e) {
+      var t = e.target.closest('.wch-project, [data-ungrouped-zone]');
+      if (t && !t.contains(e.relatedTarget)) t.classList.remove('wch-drop-on');
+    });
+    listEl.addEventListener('drop', function (e) {
+      if (!dragItemId) return;
+      var proj = e.target.closest('.wch-project');
+      var zone = e.target.closest('[data-ungrouped-zone]');
+      if (!proj && !zone) return;
+      e.preventDefault();
+      var id = dragItemId;
+      dragItemId = null;
+      clearDropHints();
+      moveToProject(id, proj ? proj.getAttribute('data-proj-id') : null);
+    });
 
     /* ── Search ── */
     function applyQuery(v) {
@@ -455,11 +1020,39 @@
 
     /* ── Open / close ── */
     var closeTimer = null;
+    var concealTimer = null;
+    var revealTimer = null;
     function isOpen() { return sidebar.classList.contains('wch-open'); }
+    /* ── Docked reveal / conceal ──
+       A docked module sits a layer below the chat, so revealing it slides it out
+       from behind the chat card and concealing it tucks it back in behind before
+       it's hidden. (Overlay mode keeps its own scrim slide.) */
+    function revealDocked() {
+      clearTimeout(concealTimer);
+      clearTimeout(revealTimer);
+      sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+      void sidebar.offsetWidth;               /* restart the animation */
+      sidebar.classList.add('wch-dock-reveal');
+      revealTimer = setTimeout(function () { sidebar.classList.remove('wch-dock-reveal'); }, 480);
+    }
+    function concealDocked() {
+      clearTimeout(concealTimer);
+      sidebar.classList.remove('wch-dock-reveal');
+      void sidebar.offsetWidth;
+      sidebar.classList.add('wch-dock-conceal');
+      concealTimer = setTimeout(function () {
+        sidebar.classList.add('wch-docked-hidden');
+        sidebar.classList.remove('wch-dock-conceal');
+      }, 300);
+    }
+    function isDockedHidden() {
+      return sidebar.classList.contains('wch-docked-hidden') || sidebar.classList.contains('wch-dock-conceal');
+    }
     function open() {
-      /* Broken-out mode is a persistent module, not an overlay — "open" just
-         un-hides it in place (no scrim, no slide-in overlay). */
-      if (docked) { sidebar.classList.remove('wch-docked-hidden'); render(); return; }
+      /* Broken-out mode is a persistent module, not an overlay — "open" re-renders
+         it (so it reflects the latest threads) and slides it out from behind the
+         chat. No scrim, no overlay slide. */
+      if (docked) { render(); revealDocked(); return; }
       render();
       /* Cancel any in-flight exit animation so re-opening is instant + clean. */
       clearTimeout(closeTimer);
@@ -492,15 +1085,16 @@
        in broken-out mode it shows/hides the standalone module. */
     function toggle() {
       if (docked) {
-        if (sidebar.classList.contains('wch-docked-hidden')) open();
-        else sidebar.classList.add('wch-docked-hidden');
+        if (isDockedHidden()) open();
+        else concealDocked();
         return;
       }
       if (isOpen()) close(); else open();
     }
-    /* The header × button: hide the module when broken out, else close the overlay. */
+    /* The header × button: tuck the module back behind the chat when broken out,
+       else close the overlay. */
     function onCloseBtn() {
-      if (docked) { sidebar.classList.add('wch-docked-hidden'); return; }
+      if (docked) { concealDocked(); return; }
       close();
     }
     /* Escape clears an active search first, then closes the pane. */
@@ -542,9 +1136,9 @@
           if (anchor && anchor.parentElement === container) container.insertBefore(sidebar, anchor);
           else container.appendChild(sidebar);
         }
-        sidebar.style.flex = '0 0 ' + breakoutWidth + 'px';
-        sidebar.style.width = breakoutWidth + 'px';
         sidebar.classList.add('wch-docked');
+        if (dockedControls) applyDockWidth();
+        else { sidebar.style.flex = '0 0 ' + breakoutWidth + 'px'; sidebar.style.width = breakoutWidth + 'px'; }
         updateDockButton();
         writeStore();
         render();
@@ -559,22 +1153,146 @@
       }
     }
 
+    /* ── Width changer (docked module) ── */
+    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full'];
+    var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+    var WCH_W = [breakoutWidth, Math.round(breakoutWidth * 1.5), breakoutWidth * 2];
+    function applyDockWidth() {
+      /* In sticky mode the base narrows to stickyWidth (shared with Turns so the
+         two read as an equal pair); tiers scale from whichever base is active. */
+      var baseW = (stickyActive && stickyWidth) ? stickyWidth : breakoutWidth;
+      var tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
+      var w = tiers[widthTier] || baseW;
+      /* Release any drag-pinned width so the preset wins (mirrors how the panes'
+         width buttons stand down the resize splitter). */
+      try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
+      sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+      sidebar.style.setProperty('width', w + 'px', 'important');
+      sidebar.style.setProperty('max-width', 'none', 'important');
+      var btn = sidebar.querySelector('.wch-width-btn');
+      if (btn) {
+        btn.classList.toggle('is-on', widthTier >= 1);
+        btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+        btn.title = WCH_W_TITLES[widthTier];
+        var ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = WCH_W_ICONS[widthTier];
+      }
+    }
+    function cycleWidth() { widthTier = (widthTier + 1) % 3; applyDockWidth(); }
+    /* Host toggles this when it tucks the docked module in behind the chat. */
+    function setSticky(on) {
+      stickyActive = !!on;
+      if (!docked) return;
+      if (dockedControls) { applyDockWidth(); return; }
+      var w = (stickyActive && stickyWidth) ? stickyWidth : breakoutWidth;
+      try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
+      sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+      sidebar.style.setProperty('width', w + 'px', 'important');
+    }
+
+    /* ── MCP-usage filter toggle ── */
+    function setMcpOnly(on) {
+      mcpOnly = !!on;
+      var btn = sidebar.querySelector('.wch-mcp');
+      if (btn) {
+        btn.classList.toggle('is-on', mcpOnly);
+        btn.setAttribute('aria-pressed', mcpOnly ? 'true' : 'false');
+      }
+      render();
+    }
+
+    /* ── Header three-dot menu (docked module) ── */
+    var moreWrap = sidebar.querySelector('.wch-more-wrap');
+    var moreBtn = sidebar.querySelector('.wch-more-btn');
+    var morePop = sidebar.querySelector('.wch-more-pop');
+    function closeMore() {
+      if (!morePop) return;
+      morePop.classList.add('hidden');
+      if (moreBtn) { moreBtn.classList.remove('is-open'); moreBtn.setAttribute('aria-expanded', 'false'); }
+    }
+    /* Portal a docked-module popover to <body> and pin it (fixed) under its
+       trigger, so the module's overflow:hidden (which clips its rounded corners)
+       can't cut the popover off where it faces the chat. Right edges align. */
+    function positionDockedPop(pop, btn) {
+      if (!pop || !btn) return;
+      if (pop.parentElement !== document.body) document.body.appendChild(pop);
+      pop.style.transition = 'none';
+      pop.style.position = 'fixed';
+      pop.style.left = '-9999px';
+      pop.style.top = '-9999px';
+      pop.style.right = 'auto';
+      pop.style.zIndex = '3000';
+      var w = pop.offsetWidth || 240;
+      var r = btn.getBoundingClientRect();
+      var left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6));
+      pop.style.top = (r.bottom + 6) + 'px';
+      pop.style.left = left + 'px';
+      requestAnimationFrame(function () { pop.style.transition = ''; });
+    }
+    if (moreBtn && morePop) {
+      moreBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var willOpen = morePop.classList.contains('hidden');
+        morePop.classList.toggle('hidden', !willOpen);
+        moreBtn.classList.toggle('is-open', willOpen);
+        moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if (willOpen && docked) positionDockedPop(morePop, moreBtn);
+      });
+      morePop.addEventListener('click', function (e) {
+        var it = e.target.closest('[data-wch-act]');
+        if (!it) return;
+        closeMore();
+        var act = it.getAttribute('data-wch-act');
+        if (act === 'new') startNew();
+        else if (act === 'close') onCloseBtn();
+      });
+      document.addEventListener('click', function (e) {
+        if (morePop.classList.contains('hidden')) return;
+        if (!moreWrap.contains(e.target) && !morePop.contains(e.target)) closeMore();
+      });
+    }
+
     /* ── Events ── */
     var dockBtn = breakout ? sidebar.querySelector('.wch-dock') : null;
+    var closeBtn = sidebar.querySelector('.wch-close');
+    var widthBtn = sidebar.querySelector('.wch-width-btn');
+    var mcpBtn = sidebar.querySelector('.wch-mcp');
     scrim.addEventListener('click', close);
-    sidebar.querySelector('.wch-close').addEventListener('click', onCloseBtn);
+    if (closeBtn) closeBtn.addEventListener('click', onCloseBtn);
     if (dockBtn) dockBtn.addEventListener('click', function () { setDocked(!docked); });
+    if (widthBtn) widthBtn.addEventListener('click', function (e) { e.stopPropagation(); cycleWidth(); });
+    if (mcpBtn) mcpBtn.addEventListener('click', function (e) { e.stopPropagation(); setMcpOnly(!mcpOnly); });
     sidebar.querySelector('.wch-new').addEventListener('click', startNew);
     if (searchInput) searchInput.addEventListener('input', function () { applyQuery(searchInput.value); });
     if (searchClear) searchClear.addEventListener('click', clearQuery);
     listEl.addEventListener('click', function (e) {
+      /* New project */
+      if (e.target.closest('.wch-proj-add')) { e.stopPropagation(); startCreateProject(); return; }
+      /* Project options menu */
+      var pMenu = e.target.closest('[data-proj-menu]');
+      if (pMenu) { e.stopPropagation(); openProjectPopover(pMenu.getAttribute('data-proj-menu'), pMenu); return; }
+      /* Expand / collapse a project (toggle button or clicking the header) */
+      var pToggle = e.target.closest('[data-proj-toggle]');
+      if (pToggle) { e.stopPropagation(); toggleProjectCollapse(pToggle.getAttribute('data-proj-toggle')); return; }
+      var pHead = e.target.closest('[data-proj-head]');
+      if (pHead) { toggleProjectCollapse(pHead.getAttribute('data-proj-head')); return; }
+      /* Ignore clicks inside the inline name editor. */
+      if (e.target.closest('.wch-proj-edit')) return;
+      /* Move a chat to a project */
+      var mv = e.target.closest('[data-wch-move]');
+      if (mv) { e.stopPropagation(); openMovePopover(mv.getAttribute('data-wch-move'), mv); return; }
+      /* Delete a chat */
       var del = e.target.closest('[data-wch-del]');
       if (del) { e.stopPropagation(); remove(del.getAttribute('data-wch-del')); return; }
+      /* Restore a chat */
       var item = e.target.closest('[data-wch-id]');
       if (item) restore(item.getAttribute('data-wch-id'));
     });
     listEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target.closest('.wch-proj-edit-input')) return;
+      var pHead = e.target.closest('[data-proj-head]');
+      if (pHead) { e.preventDefault(); toggleProjectCollapse(pHead.getAttribute('data-proj-head')); return; }
       var item = e.target.closest('[data-wch-id]');
       if (item) { e.preventDefault(); restore(item.getAttribute('data-wch-id')); }
     });
@@ -590,7 +1308,14 @@
       saveCurrent: saveCurrent, startNew: startNew, restore: restore,
       remove: remove, markNew: markNew, refresh: render, root: sidebar,
       add: add, currentTitle: currentTitle,
-      setDocked: setDocked, isDocked: function () { return docked; }
+      setDocked: setDocked, isDocked: function () { return docked; },
+      setSticky: setSticky,
+      /* Projects (chat grouping) CRUD, exposed for host integrations. */
+      createProject: function (name, color) { var p = createProject(name, color); render(); return p; },
+      renameProject: function (id, name) { renameProject(id, name); render(); },
+      deleteProject: deleteProject,
+      moveToProject: moveToProject,
+      listProjects: function () { return projects.map(function (p) { return { id: p.id, name: p.name, color: p.color, count: projectItems(p.id).length }; }); }
     };
   }
 

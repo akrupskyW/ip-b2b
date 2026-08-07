@@ -1,4 +1,20 @@
 import { applyMinimalUi } from './topbar.js';
+import { initLirTooltip } from './lir-tooltip.js';
+
+/* Give every page that renders the WISE nav the shared floating tooltip. This
+   covers the per-module header controls uniformly — the three-dot "More
+   options" menu, the width changer, move-side and close — on the WISEai chat,
+   result panes and all agent modules, without each page wiring it up. It is
+   idempotent (guards on window.__lirTooltipReady) and uses document-level
+   delegation, so it also covers modules rendered after load. */
+(function bootLirTooltip() {
+  try {
+    if (typeof document === 'undefined') return;
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', initLirTooltip);
+    else initLirTooltip();
+  } catch (_) {}
+})();
 
 /* Load the module/pane drag-resize behaviour on every page that renders the WISE
    nav (i.e. every page with a #modules-row). Injected here — rather than via a

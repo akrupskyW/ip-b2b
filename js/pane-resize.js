@@ -78,6 +78,12 @@
   function hasPreset(el) {
     return !!(el.classList && (el.classList.contains('panel-wide') || el.classList.contains('panel-triple')));
   }
+  // A "fill" pane (marked data-pr-fill) is the flexible middle module that must
+  // always absorb the row's remaining space (e.g. the WISEai chat between the
+  // broken-out History / Turns modules). We never pin it or restore a saved
+  // width onto it, and drags adjust its NEIGHBOUR instead — so there's never
+  // dead space left beside it.
+  function isFill(el) { return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-fill')); }
 
   /* ── width helpers ────────────────────────────────────────────────────── */
   function rectW(el) { return el.getBoundingClientRect().width; }
@@ -121,6 +127,7 @@
     var stored = readPage();
     ps.forEach(function (el) {
       if (hasPreset(el)) return;            // preset width button owns this pane
+      if (isFill(el)) { clearInline(el); return; }  // flexible filler: stays fluid
       var w = stored[keyOf(row, el)];
       if (w != null && isFinite(w)) pin(el, w);
     });
@@ -224,6 +231,12 @@
     var moved = false;
     var mode = sp.mode, left = sp.left || null, right = sp.right || null;
 
+    // When the row can scroll horizontally, a split drag is allowed to push a
+    // neighbour to its min and then keep GROWING — expanding the row past the
+    // viewport so it scrolls — instead of hard-stopping at a zero-sum trade.
+    // On non-scrolling rows we keep the classic zero-sum splitter (no regression).
+    var scrollable = /(auto|scroll)/.test(getComputedStyle(row).overflowX);
+
     // 'split' freezes the whole row so the trade between the two neighbours is
     // exact; outer drags pin only the target and let a flexible pane absorb.
     var isSplit = mode === 'split';
@@ -255,9 +268,20 @@
       var dx = e.clientX - startX;
       if (Math.abs(dx) > 1) moved = true;
       if (mode === 'split') {
-        var newL = Math.max(minL, Math.min(lw0 + dx, lw0 + rw0 - minR));
+        var newL, newR;
+        if (scrollable) {
+          // Each side follows the cursor down to its own min; once a side hits
+          // its min it stops shrinking and the other side keeps growing, so the
+          // row total expands and scrolls. When both sides have slack this is
+          // still an exact zero-sum trade (newL + newR === lw0 + rw0).
+          newL = Math.max(minL, lw0 + dx);
+          newR = Math.max(minR, rw0 - dx);
+        } else {
+          newL = Math.max(minL, Math.min(lw0 + dx, lw0 + rw0 - minR));
+          newR = lw0 + rw0 - newL;
+        }
         pin(left, newL);
-        pin(right, lw0 + rw0 - newL);
+        pin(right, newR);
         place((left.getBoundingClientRect().right + right.getBoundingClientRect().left) / 2);
       } else if (mode === 'outerL') {
         pin(right, Math.max(minR, Math.min(rw0 - dx, capMax)));   // drag right → narrower
@@ -287,12 +311,18 @@
 
       var keep = [];
       if (isSplit) {
-        var gl = fInfo(left).grow > 0, gr = fInfo(right).grow > 0;
-        if (gl && gr) keep = [left];                  // both flexible → pin the left
+        // Treat a fill pane as flexible so we pin its NEIGHBOUR and let the
+        // filler re-absorb whatever's left — it must never be pinned or saved.
+        var gl = fInfo(left).grow > 0 || isFill(left), gr = fInfo(right).grow > 0 || isFill(right);
+        // Both flexible: normally pin one side and let the other re-absorb. But on
+        // a scrollable row we may have GROWN the total, so pin both sides (minus any
+        // fill pane) to persist the dragged widths and keep the row scrolled.
+        if (gl && gr) keep = scrollable ? [left, right] : [isFill(left) ? right : left];
         else { if (!gl) keep.push(left); if (!gr) keep.push(right); }
+        keep = keep.filter(function (el) { return !isFill(el); });
         frozen.forEach(function (o) { if (keep.indexOf(o.el) === -1) restore(o.el, o.s); });
       } else {
-        keep = [target];
+        keep = isFill(target) ? [] : [target];
       }
       keep.forEach(function (el) { var w = rectW(el); pin(el, w); saveWidth(keyOf(row, el), w); });
 

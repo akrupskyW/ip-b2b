@@ -45,6 +45,27 @@ const INVITES = [
 
 const SALESPEOPLE = ['All salespeople', 'Kelly Swanzy', 'Rob Simmermon'];
 
+const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* A sortable timestamp built from the invite's day (has the year) + the time
+   portion of `when`, e.g. "Jul 30, 2026" + "1:55 PM" → a parseable datetime. */
+function whenTs(i) {
+  const time = String(i.when).split(', ').slice(1).join(' ');
+  const ms = Date.parse(`${i.day} ${time}`);
+  return isNaN(ms) ? 0 : ms;
+}
+
+const STATUS_ORDER = { pending: 0, sent: 1, accepted: 2, expired: 3, cancelled: 4 };
+
+const COLS = [
+  { key: 'name',   label: 'Invitee',      sortable: true,  value: (i) => i.name.toLowerCase(), type: 'text' },
+  { key: 'org',    label: 'Organization', sortable: true,  value: (i) => i.org.toLowerCase(),  type: 'text' },
+  { key: 'status', label: 'Status',       sortable: true,  value: (i) => STATUS_ORDER[i.status] ?? 9, type: 'num' },
+  { key: 'when',   label: 'Sent',         sortable: true,  value: (i) => whenTs(i), type: 'num' },
+  { key: 'actions', label: 'Actions',     sortable: false, end: true },
+];
+const GRID_COLS = 'minmax(220px, 2.4fr) minmax(150px, 1.3fr) 118px minmax(150px, 1fr) 132px';
+
 function initials(name) {
   return String(name).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 }
@@ -53,6 +74,7 @@ let hostEl = null;
 let activeStatus = null;
 let query = '';
 let salesperson = 'All salespeople';
+let sortKey = null, sortDir = 1;
 
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
@@ -80,41 +102,71 @@ function filteredInvites() {
   });
 }
 
+function theadHtml() {
+  return COLS.map((c) => {
+    const cls = `adm-th${c.end ? ' adm-th--end' : ''}`;
+    if (!c.sortable) return `<span class="${cls}">${esc(c.label)}</span>`;
+    const active = c.key === sortKey;
+    const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+    return `<span class="${cls} adm-th--sortable" role="button" tabindex="0" data-adm-sort="${esc(c.key)}"${dir}>${esc(c.label)}<span class="adm-sort-arrow">${ARROW_SVG}</span></span>`;
+  }).join('');
+}
+
 function inviteRowHtml(i) {
   const chip = STATUS_CHIP[i.status];
   const canCancel = i.status === 'sent' || i.status === 'pending';
   return `
-    <div class="adm-invite-row" data-adm-invite="${esc(i.email)}">
-      <span class="adm-avatar adm-avatar--round">${esc(initials(i.name))}</span>
-      <div class="adm-invite-id">
-        <span class="adm-idcell-name">${esc(i.name)}</span>
-        <span class="adm-idcell-sub">${esc(i.email)}</span>
-      </div>
-      <div class="adm-invite-tools">
-        <button type="button" class="adm-icon-btn" title="Copy invite link" data-adm-action="copy" data-adm-org="${esc(i.org)}"><span class="material-icons">link</span></button>
-        <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Resend invite" data-adm-action="resend" data-adm-org="${esc(i.org)}"><span class="material-icons">send</span></button>
-        <button type="button" class="adm-icon-btn adm-icon-btn--danger" title="Cancel invite" data-adm-action="cancel" data-adm-org="${esc(i.org)}"${canCancel ? '' : ' disabled style="opacity:.4;pointer-events:none"'}><span class="material-icons">cancel</span></button>
-      </div>
-      <div class="adm-invite-org"><span class="material-icons" style="font-size:15px;color:var(--text-subtle)">apartment</span>${esc(i.org)}</div>
-      <span class="adm-chip ${chip.cls}">${esc(chip.label)}</span>
-      <div class="adm-invite-meta">
-        <span class="adm-invite-when">${esc(i.when)}</span>
-        <span class="adm-invite-by">by <strong>${esc(i.by)}</strong></span>
-      </div>
+    <div class="adm-trow" data-adm-row="${esc(i.email)}">
+      <span class="adm-td">
+        <span class="adm-idcell">
+          <span class="adm-avatar adm-avatar--round">${esc(initials(i.name))}</span>
+          <span class="adm-idcell-body">
+            <span class="adm-idcell-name">${esc(i.name)}</span>
+            <span class="adm-idcell-sub">${esc(i.email)}</span>
+          </span>
+        </span>
+      </span>
+      <span class="adm-td"><span class="adm-idcell" style="gap:6px"><span class="material-icons" style="font-size:15px;color:var(--text-subtle)">apartment</span>${esc(i.org)}</span></span>
+      <span class="adm-td"><span class="adm-chip ${chip.cls}">${esc(chip.label)}</span></span>
+      <span class="adm-td">
+        <span class="adm-idcell-body">
+          <span class="adm-idcell-name" style="font-weight:600;font-size:0.8rem">${esc(i.when)}</span>
+          <span class="adm-idcell-sub">by ${esc(i.by)}</span>
+        </span>
+      </span>
+      <span class="adm-td adm-td--end">
+        <span class="adm-actions">
+          <button type="button" class="adm-icon-btn" title="Copy invite link" data-adm-action="copy" data-adm-org="${esc(i.org)}"><span class="material-icons">link</span></button>
+          <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Resend invite" data-adm-action="resend" data-adm-org="${esc(i.org)}"><span class="material-icons">send</span></button>
+          <button type="button" class="adm-icon-btn adm-icon-btn--danger" title="Cancel invite" data-adm-action="cancel" data-adm-org="${esc(i.org)}"${canCancel ? '' : ' disabled style="opacity:.4;pointer-events:none"'}><span class="material-icons">cancel</span></button>
+        </span>
+      </span>
     </div>`;
 }
 
-function historyHtml() {
+function orderedInvites() {
   const rows = filteredInvites();
+  if (!sortKey) return rows;
+  const col = COLS.find((c) => c.key === sortKey);
+  if (!col) return rows;
+  const idx = rows.map((i, n) => ({ i, n }));
+  idx.sort((a, b) => {
+    const av = col.value(a.i), bv = col.value(b.i);
+    const r = col.type === 'text' ? String(av).localeCompare(String(bv), undefined, { numeric: true }) : (av - bv);
+    return (r * sortDir) || (a.n - b.n);
+  });
+  return idx.map((x) => x.i);
+}
+
+function historyHtml() {
+  const rows = orderedInvites();
   if (!rows.length) return '<div class="adm-empty">No invitations match these filters.</div>';
-  const groups = [];
-  const byDay = new Map();
-  rows.forEach((i) => { if (!byDay.has(i.day)) { byDay.set(i.day, []); groups.push(i.day); } byDay.get(i.day).push(i); });
-  return groups.map((day) => `
-    <div class="adm-invite-daygroup">
-      <div class="adm-invite-dayhead"><span>${esc(day.toUpperCase())}</span><span class="adm-idcell-sub">${byDay.get(day).length} invite${byDay.get(day).length === 1 ? '' : 's'}</span></div>
-      ${byDay.get(day).map(inviteRowHtml).join('')}
-    </div>`).join('');
+  return `
+    <div class="adm-table" style="--adm-cols:${GRID_COLS}">
+      <div class="adm-thead">${theadHtml()}</div>
+      <div data-adm-rows>${rows.map(inviteRowHtml).join('')}</div>
+      <div class="adm-table-foot">Showing ${rows.length} of ${INVITES.length} invitations</div>
+    </div>`;
 }
 
 function statsHtml() {
@@ -165,8 +217,10 @@ function paint() {
         <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-icons">download</span>Export CSV</button>
       </div>
 
-      <div class="adm-card adm-card--pad">
-        <div data-adm-history>${historyHtml()}</div>
+      <div class="adm-card">
+        <div class="adm-table-card">
+          <div data-adm-history>${historyHtml()}</div>
+        </div>
       </div>
     </div>`;
 }
@@ -182,6 +236,13 @@ function applyFilter() {
 }
 
 export function setInviteFilter(status) { activeStatus = status || null; applyFilter(); }
+
+function toggleSort(key) {
+  const col = COLS.find((c) => c.key === key);
+  if (!col || !col.sortable) return;
+  if (sortKey === key) sortDir = -sortDir; else { sortKey = key; sortDir = 1; }
+  applyFilter();
+}
 
 function suggestOrgs(text) {
   const box = hostEl?.querySelector('#qi-suggest');
@@ -216,14 +277,22 @@ function runAction(action, org) {
 
 export function renderQuickInvite(mainEl) {
   hostEl = mainEl;
-  activeStatus = null; query = ''; salesperson = 'All salespeople';
+  activeStatus = null; query = ''; salesperson = 'All salespeople'; sortKey = null; sortDir = 1;
   paint();
 
   mainEl.addEventListener('click', (e) => {
+    const sortH = e.target.closest('[data-adm-sort]');
+    if (sortH) { toggleSort(sortH.dataset.admSort); return; }
     const filter = e.target.closest('[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setInviteFilter(s && s === activeStatus ? null : s); return; }
     const act = e.target.closest('[data-adm-action]');
     if (act) { runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
+  });
+  mainEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const sortH = e.target.closest('[data-adm-sort]');
+    if (!sortH) return;
+    e.preventDefault(); toggleSort(sortH.dataset.admSort);
   });
   mainEl.addEventListener('input', (e) => {
     const orgSearch = e.target.closest('[data-adm-org-search]');

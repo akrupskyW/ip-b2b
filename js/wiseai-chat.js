@@ -278,7 +278,7 @@ function injectChatExtras() {
     .ws-sc-action--locked { color: var(--text-subtle); align-self: flex-end; }
 
     .sc-mcp-item { justify-content: flex-start; }
-    .sc-mcp-item > span:not(.material-icons):not(.sc-switch) { flex: 1 1 auto; }
+    .sc-mcp-item > span:not(.material-icons):not(.sc-switch) { flex: 1 1 auto; white-space: nowrap; }
     .sc-switch { position: relative; flex: 0 0 auto; width: 34px; height: 19px; border-radius: 999px;
       background: var(--surface-3, #cdd3da); border: 1px solid var(--border-strong); transition: background .15s ease, border-color .15s ease; }
     html.dark .sc-switch { background: rgba(255,255,255,0.14); }
@@ -401,6 +401,44 @@ function injectChatExtras() {
       font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted, inherit); opacity: .8; padding: 6px 4px; }
     .wt-jump:hover { opacity: 1; color: var(--primary, #2F6DF6); }
     .wt-jump .material-icons { font-size: 15px; }
+
+    /* Search box pinned above the turn list (mirrors the History search). */
+    .wt-search { position: relative; display: flex; align-items: center; margin: 2px 16px 6px; flex-shrink: 0; }
+    .wt-search > .material-icons { position: absolute; left: 11px; font-size: 18px; opacity: .5; pointer-events: none; }
+    .wt-search-input { width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 36px; border-radius: 999px; font: inherit; font-size: 13px; color: inherit; outline: none;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); transition: border-color .15s ease, box-shadow .15s ease; }
+    html:not(.dark) .wt-search-input { background: rgba(20,40,80,0.04); border-color: rgba(0,0,0,0.10); }
+    .wt-search-input::placeholder { opacity: .6; }
+    .wt-search-input:focus { border-color: var(--primary, #2F6DF6); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent); }
+    .wt-search-clear { position: absolute; right: 8px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: none; align-items: center; justify-content: center; opacity: .6; }
+    .wt-search-clear:hover { background: rgba(255,255,255,0.12); opacity: 1; }
+    html:not(.dark) .wt-search-clear:hover { background: rgba(0,0,0,0.08); }
+    .wt-search-clear .material-icons { font-size: 16px; }
+    .wt-search.has-q .wt-search-clear { display: flex; }
+
+    /* Per-turn Share + Note controls, tucked beside Fork/Jump. */
+    .wt-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--text-muted, inherit); cursor: pointer; opacity: .82; transition: background .14s ease, color .14s ease, opacity .14s ease; }
+    .wt-iconbtn:hover { opacity: 1; color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 12%, transparent); }
+    .wt-iconbtn .material-icons { font-size: 17px; }
+    .wt-iconbtn.is-on { color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); opacity: 1; }
+    .wt-note { margin: 9px 0 0; }
+    .wt-note[hidden] { display: none; }
+    .wt-note-input { width: 100%; box-sizing: border-box; min-height: 54px; resize: vertical; font: inherit; font-size: 12px; line-height: 1.45; color: inherit;
+      padding: 8px 10px; border-radius: 10px; outline: none; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14); }
+    html:not(.dark) .wt-note-input { background: rgba(20,40,80,0.03); border-color: rgba(0,0,0,0.12); }
+    .wt-note-input:focus { border-color: var(--primary, #2F6DF6); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 16%, transparent); }
+    /* Saved-note preview shown on turns that already carry an annotation. */
+    .wt-note-saved { display: flex; align-items: flex-start; gap: 6px; margin: 9px 0 0; padding: 8px 10px; border-radius: 10px; font-size: 12px; line-height: 1.4;
+      background: color-mix(in srgb, var(--ter-amber-10, rgba(255,196,52,0.14)) 100%, transparent); border: 1px solid color-mix(in srgb, #E0A100 30%, transparent); color: var(--text); }
+    .wt-note-saved[hidden] { display: none; }
+    .wt-note-saved .material-icons { font-size: 15px; color: #C98A00; flex: 0 0 auto; margin-top: 1px; }
+    .wt-note-saved-txt { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+    /* Tiny transient "copied / shared" toast anchored to the turns module. */
+    .wt-toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) translateY(8px); z-index: 70; pointer-events: none;
+      background: #1f2430; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 999px; box-shadow: 0 8px 22px rgba(0,0,0,0.32);
+      opacity: 0; transition: opacity .18s ease, transform .18s ease; }
+    .wt-toast.is-vis { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* Live-activity indicator — a small trio of dots docked under the input.
        Idle: three faint, still dots. Working (.is-thinking, driven by the
@@ -719,6 +757,26 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      panes) — mirroring the History breakout, but on the opposite side. */
   const turnsBreakout = opts.turnsBreakout === true;
   const turnsBreakoutWidth = opts.turnsBreakoutWidth || 360;
+  /* Shared narrower width for both docked modules while "sticky" (tucked behind
+     the chat) — History + Turns adopt the same base so they read as an equal
+     pair; drag-resize still overrides it per side. */
+  const STICKY_MODULE_W = opts.stickyModulesWidth || 280;
+  /* WISEai opts: open Turns docked from the start (its own module, never an
+     in-chat popover), dress its header like the result panes (three-dot menu +
+     width changer), pin a search box above the list, and give each turn Share +
+     Note (annotate) controls. */
+  const turnsBreakoutDefault = opts.turnsBreakoutDefault === true;
+  const turnsDockedControls = opts.turnsDockedControls === true;
+  const turnsSearchOn = opts.turnsSearch === true;
+  const turnsShareOn = opts.turnsShare === true;
+  const turnsNotesOn = opts.turnsNotes === true;
+  /* Per-turn annotations, keyed by a stable hash of the turn's question so they
+     survive re-renders and conversation growth. */
+  const turnNotes = Object.create(null);
+  let turnsQuery = '';
+  /* Whether the docked History / Turns modules are tucked in "sticky" behind the
+     chat (toggled from the three-dot menu; host applies the actual layout). */
+  let stickyOn = opts.stickyModulesDefault === true;
 
   /* Answer-quality feedback — a thumbs up / thumbs down (+ copy) row trailing
      each WISEai answer. Thumbs down reveals a "what was wrong?" chip set so the
@@ -859,7 +917,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-icons topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item" data-sc="turns"><span class="material-icons topbar-menu-icon">alt_route</span><span>View turns</span></button>` : ''}
+          <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">alt_route</span><span>Turns</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-icons topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -1430,13 +1489,32 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     return chips;
   }
 
+  /* Stable-ish key for a turn's annotation: its ordinal plus a slice of the
+     question, so notes stay attached as the list re-renders. */
+  function turnKey(turn, i) {
+    const q = turn && turn.you ? lineText(turn.you) : '';
+    return i + '::' + q.slice(0, 60);
+  }
+
   function turnRowHtml(turn, i) {
     const q = turn.you ? lineText(turn.you) : '';
     const a = turn.replies.length ? lineText(turn.replies[0]) : '';
     const chips = turnArtifacts(turn.replies)
       .map((c) => `<span class="wt-chip"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span>`)
       .join('');
-    return `<div class="wt-turn" data-turn="${i}">
+    const key = turnKey(turn, i);
+    const note = turnsNotesOn ? (turnNotes[key] || '') : '';
+    const shareBtn = turnsShareOn
+      ? `<button type="button" class="wt-iconbtn wt-share" data-share="${i}" title="Share this turn" aria-label="Share this turn"><span class="material-icons">ios_share</span></button>`
+      : '';
+    const noteBtn = turnsNotesOn
+      ? `<button type="button" class="wt-iconbtn wt-note-btn${note ? ' is-on' : ''}" data-note="${i}" title="${note ? 'Edit note' : 'Add a note'}" aria-label="${note ? 'Edit note on this turn' : 'Add a note to this turn'}" aria-pressed="false"><span class="material-icons">edit_note</span></button>`
+      : '';
+    const noteBlock = turnsNotesOn
+      ? `<div class="wt-note-saved" data-note-saved="${i}"${note ? '' : ' hidden'}><span class="material-icons">sticky_note_2</span><span class="wt-note-saved-txt">${esc(note)}</span></div>
+        <div class="wt-note" data-note-area="${i}" hidden><textarea class="wt-note-input" data-note-input="${i}" placeholder="Leave a note on this turn…" rows="2">${esc(note)}</textarea></div>`
+      : '';
+    return `<div class="wt-turn" data-turn="${i}" data-key="${esc(key)}">
         <div class="wt-turn-head">
           <span class="wt-turn-num">${i + 1}</span>
           <span class="wt-turn-q">${q ? esc(q) : `<em>${esc(title)} opened the conversation</em>`}</span>
@@ -1445,8 +1523,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         ${chips ? `<div class="wt-chips">${chips}</div>` : ''}
         <div class="wt-actions">
           <button type="button" class="wt-fork" data-fork="${i}"><span class="material-icons">alt_route</span>Fork from here</button>
+          ${shareBtn}
+          ${noteBtn}
           <button type="button" class="wt-jump" data-jump="${i}" title="Jump to this turn"><span class="material-icons">my_location</span>Jump</button>
         </div>
+        ${noteBlock}
       </div>`;
   }
 
@@ -1463,7 +1544,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       turnsList.innerHTML = '<div class="wt-empty">No turns yet.<br>Ask a question, then fork any turn from here to branch the conversation into a new chat of your own.</div>';
       return;
     }
-    turnsList.innerHTML = turns.map(turnRowHtml).join('');
+    const q = (turnsQuery || '').trim().toLowerCase();
+    /* Keep original indices so fork/jump/share/note stay aligned to the live
+       transcript even when the list is filtered. */
+    let rows = turns.map((t, i) => ({ t, i }));
+    if (q) {
+      rows = rows.filter(({ t, i }) => {
+        const hay = (lineText(t.you) + ' ' +
+          (t.replies || []).map(lineText).join(' ') + ' ' +
+          turnArtifacts(t.replies).map((c) => c.label).join(' ') + ' ' +
+          (turnsNotesOn ? (turnNotes[turnKey(t, i)] || '') : '')).toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+    }
+    if (!rows.length) {
+      turnsList.innerHTML = '<div class="wt-empty">No turns match “' + esc((turnsQuery || '').trim()) + '”.</div>';
+      return;
+    }
+    turnsList.innerHTML = rows.map(({ t, i }) => turnRowHtml(t, i)).join('');
   }
 
   /* Fork the conversation at a turn: copy every line up to and including it
@@ -1563,7 +1661,117 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }, 260);
   }
 
-  function onTurnsKey(e) { if (e.key === 'Escape') closeTurns(); }
+  function onTurnsKey(e) {
+    if (e.key !== 'Escape') return;
+    if (turnsQuery && turnsQuery.trim()) { clearTurnsQuery(); return; }
+    closeTurns();
+  }
+
+  /* A small transient toast anchored inside the turns module (Share feedback). */
+  let turnsToastTimer = null;
+  function turnsToast(msg) {
+    if (!turnsPanel) return;
+    let t = turnsPanel.querySelector('.wt-toast');
+    if (!t) { t = document.createElement('div'); t.className = 'wt-toast'; turnsPanel.appendChild(t); }
+    t.textContent = msg;
+    requestAnimationFrame(() => t.classList.add('is-vis'));
+    clearTimeout(turnsToastTimer);
+    turnsToastTimer = setTimeout(() => t.classList.remove('is-vis'), 1600);
+  }
+
+  /* Share a single turn — copies a deep-ish link (page URL + turn ordinal) to
+     the clipboard, or hands off to the native share sheet when available. */
+  function shareTurn(index) {
+    const turns = collectTurns();
+    if (index < 0 || index >= turns.length) return;
+    const q = turns[index].you ? lineText(turns[index].you) : (title + ' — turn ' + (index + 1));
+    let url = location.href.split('#')[0] + '#turn-' + (index + 1);
+    const shareData = { title: 'WISEai™ turn', text: q, url };
+    if (navigator.share) { navigator.share(shareData).catch(() => {}); turnsToast('Shared'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => turnsToast('Link copied')).catch(() => turnsToast('Link copied'));
+    } else { turnsToast('Link copied'); }
+  }
+
+  /* Toggle the inline note editor for a turn (annotate). */
+  function toggleTurnNote(index) {
+    if (!turnsList) return;
+    const row = turnsList.querySelector('.wt-turn[data-turn="' + index + '"]');
+    if (!row) return;
+    const area = row.querySelector('[data-note-area]');
+    const saved = row.querySelector('[data-note-saved]');
+    if (!area) return;
+    const opening = area.hasAttribute('hidden');
+    if (opening) {
+      area.removeAttribute('hidden');
+      if (saved) saved.setAttribute('hidden', '');
+      const ta = area.querySelector('.wt-note-input');
+      if (ta) { ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (_) {} }
+    } else {
+      area.setAttribute('hidden', '');
+      commitTurnNote(index);
+    }
+  }
+
+  /* Persist a turn's note (in-memory, keyed stably) and refresh its preview. */
+  function commitTurnNote(index) {
+    if (!turnsList) return;
+    const row = turnsList.querySelector('.wt-turn[data-turn="' + index + '"]');
+    if (!row) return;
+    const ta = row.querySelector('.wt-note-input');
+    const key = row.getAttribute('data-key');
+    if (!ta || key == null) return;
+    const val = ta.value.trim();
+    if (val) turnNotes[key] = val; else delete turnNotes[key];
+    const saved = row.querySelector('[data-note-saved]');
+    const savedTxt = row.querySelector('.wt-note-saved-txt');
+    const btn = row.querySelector('.wt-note-btn');
+    if (savedTxt) savedTxt.textContent = val;
+    if (saved) { if (val && row.querySelector('[data-note-area]').hasAttribute('hidden')) saved.removeAttribute('hidden'); else saved.setAttribute('hidden', ''); }
+    if (btn) { btn.classList.toggle('is-on', !!val); btn.title = val ? 'Edit note' : 'Add a note'; }
+  }
+
+  function applyTurnsQuery(v) {
+    turnsQuery = v || '';
+    const wrap = turnsPanel && turnsPanel.querySelector('.wt-search');
+    if (wrap) wrap.classList.toggle('has-q', !!turnsQuery.trim());
+    renderTurns();
+  }
+  function clearTurnsQuery() {
+    const inp = turnsPanel && turnsPanel.querySelector('.wt-search-input');
+    if (inp) inp.value = '';
+    applyTurnsQuery('');
+    if (inp) inp.focus();
+  }
+
+  /* Width changer for the broken-out Turns module (mirrors the History /
+     result-pane width buttons: single → double → triple). */
+  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full'];
+  const TURNS_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+  const TURNS_W = [turnsBreakoutWidth, Math.round(turnsBreakoutWidth * 1.5), turnsBreakoutWidth * 2];
+  let turnsWidthTier = 0;
+  function applyTurnsWidth() {
+    if (!turnsPanel) return;
+    /* Sticky mode narrows the base to STICKY_MODULE_W (matching History) so the
+       two flanking modules are equal; tiers scale from whichever base is live. */
+    const baseW = stickyOn ? STICKY_MODULE_W : turnsBreakoutWidth;
+    const tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
+    const w = tiers[turnsWidthTier] || baseW;
+    try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([turnsPanel]); } catch (_) {}
+    turnsPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+    turnsPanel.style.setProperty('width', w + 'px', 'important');
+    turnsPanel.style.setProperty('max-width', 'none', 'important');
+    const btn = turnsPanel.querySelector('.wt-width-btn');
+    if (btn) {
+      btn.classList.toggle('is-on', turnsWidthTier >= 1);
+      btn.setAttribute('aria-pressed', turnsWidthTier >= 1 ? 'true' : 'false');
+      btn.title = TURNS_W_TITLES[turnsWidthTier];
+      const ic = btn.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = TURNS_W_ICONS[turnsWidthTier];
+    }
+  }
+  function cycleTurnsWidth() { turnsWidthTier = (turnsWidthTier + 1) % 3; applyTurnsWidth(); }
+
   function ensureTurnsPanel() {
     if (turnsPanel) return;
     const paneHost = rootEl.querySelector('.sc-body') || rootEl;
@@ -1573,27 +1781,95 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     turnsPanel = document.createElement('aside');
     turnsPanel.className = 'wch-sidebar wch-right';
     turnsPanel.setAttribute('aria-label', 'Turns');
+
+    const headControls = turnsDockedControls
+      ? '<div class="wch-controls">' +
+          '<div class="panel-more-wrap wt-more-wrap">' +
+            '<button type="button" class="panel-more-btn wt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
+            '<div class="topbar-popover hidden wt-more-pop" role="menu">' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-turns-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close panel</span></button>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" class="panel-width-toggle-btn wt-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Turns module width"><span class="material-symbols-outlined">width_normal</span></button>' +
+        '</div>'
+      : (turnsBreakout ? '<button type="button" class="wch-dock" title="Break out as a side module" aria-label="Break turns out as a side module"><span class="material-icons">vertical_split</span></button>' : '') +
+        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-icons">close</span></button>';
+
+    const searchHtml = turnsSearchOn
+      ? '<div class="wt-search">' +
+          '<span class="material-icons">search</span>' +
+          '<input type="text" class="wt-search-input" placeholder="Search turns…" aria-label="Search turns" autocomplete="off">' +
+          '<button type="button" class="wt-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>' +
+        '</div>'
+      : '';
+
     turnsPanel.innerHTML =
       '<div class="wch-head">' +
         '<span class="wch-head-title"><span class="material-icons">alt_route</span>Turns</span>' +
-        (turnsBreakout ? '<button type="button" class="wch-dock" title="Break out as a side module" aria-label="Break turns out as a side module"><span class="material-icons">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-icons">close</span></button>' +
+        headControls +
       '</div>' +
       '<p class="wt-intro">Fork any turn into a brand-new chat of your own — the whole conversation up to that point is copied verbatim (nothing is re-run). The original is never touched.</p>' +
+      searchHtml +
       '<div class="wt-list" role="list"></div>';
     paneHost.appendChild(turnsScrim);
     paneHost.appendChild(turnsPanel);
     turnsList = turnsPanel.querySelector('.wt-list');
     turnsScrim.addEventListener('click', closeTurns);
-    turnsPanel.querySelector('.wch-close').addEventListener('click', closeTurns);
-    turnsDockBtn = turnsBreakout ? turnsPanel.querySelector('.wch-dock') : null;
+    const tClose = turnsPanel.querySelector('.wch-close');
+    if (tClose) tClose.addEventListener('click', closeTurns);
+    turnsDockBtn = (turnsBreakout && !turnsDockedControls) ? turnsPanel.querySelector('.wch-dock') : null;
     if (turnsDockBtn) turnsDockBtn.addEventListener('click', () => setTurnsDocked(!turnsDocked));
     updateTurnsDockBtn();
+
+    /* Search wiring. */
+    const tSearchInput = turnsPanel.querySelector('.wt-search-input');
+    const tSearchClear = turnsPanel.querySelector('.wt-search-clear');
+    if (tSearchInput) tSearchInput.addEventListener('input', () => applyTurnsQuery(tSearchInput.value));
+    if (tSearchClear) tSearchClear.addEventListener('click', clearTurnsQuery);
+
+    /* Width changer. */
+    const tWidthBtn = turnsPanel.querySelector('.wt-width-btn');
+    if (tWidthBtn) tWidthBtn.addEventListener('click', (e) => { e.stopPropagation(); cycleTurnsWidth(); });
+
+    /* Three-dot menu. */
+    const tMoreWrap = turnsPanel.querySelector('.wt-more-wrap');
+    const tMoreBtn = turnsPanel.querySelector('.wt-more-btn');
+    const tMorePop = turnsPanel.querySelector('.wt-more-pop');
+    if (tMoreBtn && tMorePop) {
+      const closeTMore = () => { tMorePop.classList.add('hidden'); tMoreBtn.classList.remove('is-open'); tMoreBtn.setAttribute('aria-expanded', 'false'); };
+      tMoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = tMorePop.classList.contains('hidden');
+        tMorePop.classList.toggle('hidden', !willOpen);
+        tMoreBtn.classList.toggle('is-open', willOpen);
+        tMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        /* When docked, the module clips its own overflow (rounded corners), so
+           pin the popover to the viewport under the button to let it escape. */
+        if (willOpen && turnsDocked) positionDockedPop(tMorePop, tMoreBtn);
+      });
+      tMorePop.addEventListener('click', (e) => {
+        const it = e.target.closest('[data-turns-act]');
+        if (!it) return;
+        closeTMore();
+        if (it.getAttribute('data-turns-act') === 'close') closeTurns();
+      });
+      document.addEventListener('click', (e) => { if (!tMorePop.classList.contains('hidden') && !tMoreWrap.contains(e.target) && !tMorePop.contains(e.target)) closeTMore(); });
+    }
+
+    /* Row actions: fork / jump / share / note. */
     turnsPanel.addEventListener('click', (e) => {
       const fork = e.target.closest('[data-fork]');
       if (fork) { forkFromTurn(Number(fork.getAttribute('data-fork'))); return; }
       const jump = e.target.closest('[data-jump]');
       if (jump) { jumpToTurn(Number(jump.getAttribute('data-jump'))); return; }
+      const share = e.target.closest('[data-share]');
+      if (share) { shareTurn(Number(share.getAttribute('data-share'))); return; }
+      const note = e.target.closest('[data-note]');
+      if (note) { toggleTurnNote(Number(note.getAttribute('data-note'))); return; }
+    });
+    turnsPanel.addEventListener('input', (e) => {
+      const ta = e.target.closest('[data-note-input]');
+      if (ta) commitTurnNote(Number(ta.getAttribute('data-note-input')));
     });
   }
 
@@ -1616,6 +1892,26 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   const resolveEl = (v) => (!v ? null : (typeof v === 'string' ? document.querySelector(v) : v));
 
+  /* Portal a docked-module popover to <body> and pin it (fixed) under its
+     trigger, so the module's overflow:hidden (which clips its rounded corners)
+     can't cut the popover off where it faces the chat. Right edges align. */
+  function positionDockedPop(pop, btn) {
+    if (!pop || !btn) return;
+    if (pop.parentElement !== document.body) document.body.appendChild(pop);
+    pop.style.transition = 'none';
+    pop.style.position = 'fixed';
+    pop.style.left = '-9999px';
+    pop.style.top = '-9999px';
+    pop.style.right = 'auto';
+    pop.style.zIndex = '3000';
+    const w = pop.offsetWidth || 240;
+    const r = btn.getBoundingClientRect();
+    const left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6));
+    pop.style.top = (r.bottom + 6) + 'px';
+    pop.style.left = left + 'px';
+    requestAnimationFrame(() => { pop.style.transition = ''; });
+  }
+
   /* Move the Turns panel between the in-chat overlay and a standalone module
      docked to the RIGHT of the chat (a real flex sibling in the modules row,
      inserted right after the chat's mount element). Mirrors the History
@@ -1636,9 +1932,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         else if (anchor && anchor.parentElement === container) container.appendChild(turnsPanel);
         else container.appendChild(turnsPanel);
       }
-      turnsPanel.style.flex = '0 0 ' + turnsBreakoutWidth + 'px';
-      turnsPanel.style.width = turnsBreakoutWidth + 'px';
       turnsPanel.classList.add('wch-docked');
+      if (turnsDockedControls) applyTurnsWidth();
+      else { turnsPanel.style.flex = '0 0 ' + turnsBreakoutWidth + 'px'; turnsPanel.style.width = turnsBreakoutWidth + 'px'; }
       updateTurnsDockBtn();
       renderTurns();
     } else {
@@ -1656,11 +1952,39 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      the fork/jump flows). A broken-out module is a first-class sibling of the
      chat, so it's left in place. */
   function dismissTurnsOverlay() { if (turnsPanel && !turnsDocked) closeTurns(); }
+
+  /* ── Docked reveal / conceal ──────────────────────────────────────────────
+     A docked module lives a layer below the chat, so revealing it slides it out
+     from behind the chat card and concealing it tucks it back in behind before
+     it's removed from view. (Overlay mode keeps its own scrim animation.) */
+  let turnsConcealTimer = null;
+  let turnsRevealTimer = null;
+  function revealTurnsDocked() {
+    if (!turnsPanel) return;
+    clearTimeout(turnsRevealTimer);
+    turnsPanel.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+    void turnsPanel.offsetWidth;               /* restart the animation */
+    turnsPanel.classList.add('wch-dock-reveal');
+    turnsRevealTimer = setTimeout(() => { if (turnsPanel) turnsPanel.classList.remove('wch-dock-reveal'); }, 480);
+  }
+  function concealTurnsDocked() {
+    if (!turnsPanel) return;
+    clearTimeout(turnsConcealTimer);
+    turnsPanel.classList.remove('wch-dock-reveal');
+    void turnsPanel.offsetWidth;
+    turnsPanel.classList.add('wch-dock-conceal');
+    turnsConcealTimer = setTimeout(() => {
+      if (!turnsPanel) return;
+      turnsPanel.classList.add('wch-docked-hidden');
+      turnsPanel.classList.remove('wch-dock-conceal');
+    }, 300);
+  }
+
   function openTurns() {
     ensureTurnsPanel();
     if (!turnsPanel) return;
-    /* Broken-out module: just make sure it's shown (and refreshed) in the row. */
-    if (turnsDocked) { turnsPanel.classList.remove('wch-docked-hidden'); renderTurns(); return; }
+    /* Broken-out module: show it and slide it out from behind the chat. */
+    if (turnsDocked) { clearTimeout(turnsConcealTimer); renderTurns(); revealTurnsDocked(); syncTurnsMenu(); return; }
     /* Never let two overlays sit open at once. */
     chatHistory?.close?.();
     closeConnectors();
@@ -1671,12 +1995,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     turnsPanel.classList.add('wch-open');
     turnsScrim.classList.add('wch-open');
     document.addEventListener('keydown', onTurnsKey);
+    syncTurnsMenu();
   }
   function closeTurns() {
     if (!turnsPanel) return;
-    /* Broken-out module: "close" hides the module (bring it back via the menu
-       or the merge-back control) rather than running the overlay animation. */
-    if (turnsDocked) { turnsPanel.classList.add('wch-docked-hidden'); return; }
+    /* Broken-out module: "close" tucks the module back in behind the chat (via
+       the conceal animation) rather than running the overlay animation. */
+    if (turnsDocked) { concealTurnsDocked(); syncTurnsMenu(); return; }
     if (!turnsPanel.classList.contains('wch-open') && !turnsPanel.classList.contains('wch-closing')) return;
     turnsPanel.classList.remove('wch-open');
     turnsScrim.classList.remove('wch-open');
@@ -1688,15 +2013,40 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       turnsPanel.classList.remove('wch-closing');
       turnsScrim.classList.remove('wch-closing');
     }, 300);
+    syncTurnsMenu();
   }
   function toggleTurns() {
     if (turnsDocked) {
-      if (turnsPanel && turnsPanel.classList.contains('wch-docked-hidden')) openTurns();
+      if (turnsPanel && (turnsPanel.classList.contains('wch-docked-hidden') || turnsPanel.classList.contains('wch-dock-conceal'))) openTurns();
       else closeTurns();
+      syncTurnsMenu();
       return;
     }
     if (turnsPanel && turnsPanel.classList.contains('wch-open')) closeTurns();
     else openTurns();
+    syncTurnsMenu();
+  }
+
+  /* Whether the Turns module is currently visible (docked-and-shown, or the
+     overlay is open). Drives the on/off switch in the chat's three-dot menu. */
+  function isTurnsVisible() {
+    if (!turnsPanel) return false;
+    if (turnsPanel.classList.contains('wch-dock-conceal')) return false;
+    if (turnsDocked) return !turnsPanel.classList.contains('wch-docked-hidden');
+    return turnsPanel.classList.contains('wch-open');
+  }
+  function syncTurnsMenu() {
+    const item = rootEl.querySelector('[data-sc="turns"]');
+    if (!item) return;
+    const on = isTurnsVisible();
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  /* Re-flow both flanking modules to the sticky (equal, narrower) or normal base
+     width. Drag-resize still overrides per side afterwards. */
+  function applyStickyLayout() {
+    if (turnsPanel && turnsDocked) applyTurnsWidth();
+    try { chatHistory && chatHistory.setSticky && chatHistory.setSticky(stickyOn); } catch (_) {}
   }
 
   /* ── Pending attachments ─────────────────────────────────────────────────
@@ -1958,6 +2308,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         html: buildSeedTranscript(turns, ts),
         count: turns.length,
         ts,
+        mcp: conv.mcp === true,
       };
     });
   }
@@ -1977,7 +2328,17 @@ export function mountWISEaiChat(rootEl, opts = {}) {
          module is inserted as a flex sibling before the chat's mount element. */
       breakout: opts.historyBreakout === true,
       breakoutWidth: opts.historyBreakoutWidth || 300,
+      /* Narrower shared width used while sticky (equal to Turns). */
+      stickyWidth: STICKY_MODULE_W,
+      /* WISEai opts: start docked as a first-class module, dress the docked
+         header like a result pane (three-dot menu + width changer), and add an
+         MCP-usage filter toggle beside the search. */
+      breakoutDefault: opts.historyBreakoutDefault === true,
+      dockedControls: opts.historyDockedControls === true,
+      mcpFilter: opts.historyMcpFilter === true,
       onNew: () => reset(),
+      /* Keep a broken-out Turns module in sync when a saved thread is restored. */
+      onRestore: () => refreshDockedTurns(),
       stripSelectors: ['.sc-inline-chips', '.sc-line-typing'],
       setHTML: (html) => {
         messages.innerHTML = html || '';
@@ -1986,6 +2347,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         closeAgents();
         if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
         scrollDown();
+        refreshDockedTurns();
       },
     });
   }
@@ -2462,14 +2824,25 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       openConnectors();
     }
     else if (action === 'turns') {
-      closeMore();
+      /* On/off switch: flip the Turns module's visibility and keep the menu open
+         so the switch state reads back immediately. */
       toggleTurns();
+      syncTurnsMenu();
     }
     else if (action === 'mcp-toggle') {
       /* Visual-only toggle for now — flips the switch + a11y state, no wiring. */
       const on = !item.classList.contains('is-on');
       item.classList.toggle('is-on', on);
       item.setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+    else if (action === 'sticky') {
+      /* Tuck the docked History / Turns modules in behind the chat. Keep the menu
+         open so the switch state reads back; the host applies the layout change. */
+      stickyOn = !item.classList.contains('is-on');
+      item.classList.toggle('is-on', stickyOn);
+      item.setAttribute('aria-checked', stickyOn ? 'true' : 'false');
+      applyStickyLayout();
+      try { opts.onStickyModules && opts.onStickyModules(stickyOn); } catch (_) {}
     }
     else if (action === 'toggle-cards') {
       closeMore();
@@ -2575,6 +2948,31 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   /* Apply the remembered overview-cards + intent-chips preferences now the DOM exists. */
   syncCards();
   syncChips();
+
+  /* WISEai: pre-dock the Turns module so it lives as its own broken-out module
+     from the start (never an in-chat popover) — a real flex sibling docked to
+     the right of the chat, shown and ready like the History module. */
+  if (turnsBreakout) {
+    ensureTurnsPanel();
+    setTurnsDocked(true);
+    /* Off by default: the module is built + docked but starts tucked behind the
+       chat (hidden). The chat's three-dot "Turns" switch reveals it. */
+    if (!turnsBreakoutDefault) turnsPanel.classList.add('wch-docked-hidden');
+    renderTurns();
+  }
+  syncTurnsMenu();
+
+  /* Sticky-modules toggle: reflect the initial state onto the switch and let the
+     host apply the layout so a persisted preference survives reloads. */
+  if (opts.stickyModules === true) {
+    const stickyItem = rootEl.querySelector('[data-sc="sticky"]');
+    if (stickyItem) {
+      stickyItem.classList.toggle('is-on', stickyOn);
+      stickyItem.setAttribute('aria-checked', stickyOn ? 'true' : 'false');
+    }
+    applyStickyLayout();
+    try { opts.onStickyModules && opts.onStickyModules(stickyOn); } catch (_) {}
+  }
 
   return { addUser, addWISEai, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, root: rootEl };
 }

@@ -99,7 +99,15 @@ const COLS = [
   { key: 'products', label: 'Products',       sortable: true,  value: (o) => o.products, type: 'num', num: true },
   { key: 'actions',  label: 'Actions',        sortable: false, end: true },
 ];
-const GRID_COLS = 'minmax(210px, 2.2fr) 128px 148px 80px 96px 132px';
+const GRID_COLS = 'minmax(210px, 2.2fr) 128px 148px 80px 96px 72px';
+
+/* ---- Per-row actions (collapsed into a three-dot menu) -------------- */
+const ROW_ACTIONS = [
+  { action: 'manage', icon: 'dashboard_customize', label: 'Manage organization' },
+  { action: 'users',  icon: 'group',               label: 'Manage users' },
+  { action: 'invite', icon: 'bolt',  variant: 'primary', label: 'Quick invite' },
+  { action: 'edit',   icon: 'edit',                label: 'Edit' },
+];
 
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -159,6 +167,13 @@ function theadHtml() {
   }).join('');
 }
 
+function rowMenuHtml(o) {
+  const items = ROW_ACTIONS.map((a) =>
+    `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(o.name)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+  ).join('');
+  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+}
+
 function rowHtml(o) {
   const chip = STATUS_CHIP[o.status];
   const joined = o.joined === '—'
@@ -171,14 +186,7 @@ function rowHtml(o) {
       <span class="adm-td" style="font-size:0.8rem">${joined}</span>
       <span class="adm-td adm-td--num${o.users ? ' is-hot' : ''}">${o.users}</span>
       <span class="adm-td adm-td--num${o.products ? ' is-hot' : ''}">${o.products}</span>
-      <span class="adm-td adm-td--end">
-        <span class="adm-actions">
-          <button type="button" class="adm-icon-btn" title="Manage organization" data-adm-action="manage" data-adm-org="${esc(o.name)}"><span class="material-icons">dashboard_customize</span></button>
-          <button type="button" class="adm-icon-btn" title="Manage users" data-adm-action="users" data-adm-org="${esc(o.name)}"><span class="material-icons">group</span></button>
-          <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Quick invite" data-adm-action="invite" data-adm-org="${esc(o.name)}"><span class="material-icons">bolt</span></button>
-          <button type="button" class="adm-icon-btn" title="Edit" data-adm-action="edit" data-adm-org="${esc(o.name)}"><span class="material-icons">edit</span></button>
-        </span>
-      </span>
+      <span class="adm-td adm-td--end">${rowMenuHtml(o)}</span>
     </div>`;
 }
 
@@ -301,6 +309,18 @@ function runAction(action, org) {
 
 let dragId = null;
 
+function closeRowMenus(keep) {
+  if (!hostEl) return;
+  hostEl.querySelectorAll('.adm-rowmenu.is-open').forEach((menu) => {
+    if (menu === keep) return;
+    menu.classList.remove('is-open');
+    const btn = menu.querySelector('.adm-rowmenu-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    const pop = menu.querySelector('.adm-rowmenu-pop');
+    if (pop) pop.hidden = true;
+  });
+}
+
 function repaintMetrics() {
   const grid = hostEl?.querySelector('.adm-metrics');
   if (grid) grid.innerHTML = metricsHtml();
@@ -353,12 +373,28 @@ export function renderOrganizations(mainEl) {
   wireMetricDnD(mainEl);
 
   mainEl.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.adm-rowmenu-btn');
+    if (menuBtn) {
+      const menu = menuBtn.closest('.adm-rowmenu');
+      const open = !menu.classList.contains('is-open');
+      closeRowMenus(open ? menu : null);
+      menu.classList.toggle('is-open', open);
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const pop = menu.querySelector('.adm-rowmenu-pop');
+      if (pop) pop.hidden = !open;
+      return;
+    }
     const filter = e.target.closest('[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setOrgFilter(s && s === activeStatus ? null : s); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
     const act = e.target.closest('[data-adm-action]');
-    if (act) { runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
+    if (act) { closeRowMenus(null); runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
+  });
+  document.addEventListener('click', (e) => {
+    if (!hostEl) return;
+    if (e.target.closest && e.target.closest('.adm-rowmenu')) return;
+    closeRowMenus(null);
   });
   mainEl.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;

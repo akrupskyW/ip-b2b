@@ -47,13 +47,21 @@
       gap: 8px;
       min-width: 0;
       min-height: 0;
-      /* visible (not hidden) so the carded modules' drop-shadow renders into
-         the body's bottom/side padding instead of being clipped flush at the
-         card edge — matches the nav panel, which sits outside this row. Narrow
-         viewports switch to overflow-x:auto below for horizontal scrolling. */
-      overflow: visible;
-      margin: 0;
-      padding: 0;
+      /* Scroll horizontally whenever the modules (chat + broken-out History /
+         Turns + result panes) total wider than the row, so nothing is stranded
+         off-screen with no way to reach it. overflow-y is hidden (not visible)
+         because a single overflow axis can't stay `visible` alongside a
+         scrolling one; a little vertical padding gives the card shadows room so
+         they aren't cut hard at the box edge. */
+      overflow-x: auto;
+      overflow-y: hidden;
+      /* Match the nav module's height exactly. The shared shell adds
+         margin-top:8px to the modules row and we used to inset it another 4px
+         top/bottom — together that made the middle chat card read ~16px shorter
+         than the nav (and, in sticky mode, visibly off). Zero both so the chat
+         (and every module) spans the same top-to-bottom band as the nav. */
+      margin-top: 0;
+      padding: 0 2px;
     }
 
     /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
@@ -71,7 +79,11 @@
       position: relative;
       flex: 1 1 auto;
       width: auto;
-      min-width: 0;
+      /* Floor so the chat never collapses to nothing when several fixed-width
+         modules (broken-out History / Turns + result panes) push the row past
+         the viewport — instead the row scrolls horizontally and the chat keeps
+         a usable width. When modules close, its flex-grow refills the space. */
+      min-width: 380px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -160,23 +172,30 @@
       background: var(--surface);
     }
     .wa-pane-head-titles { flex: 1 1 auto; min-width: 0; }
-    .wa-pane-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.16; }
+    .wa-pane-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.16;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .wa-pane-meta { font-size: 11.5px; color: var(--text-muted); margin: 5px 0 0; line-height: 1.4; }
     .wa-pane-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
 
-    /* ── Broken-out History module ──
-       When History pops out of the in-chat overlay into its own left-docked
-       module, dress it as a first-class pane: same surface color, border, radius
-       & shadow as .wa-pane, and an editorial serif masthead with NO boxed icon. */
+    /* ── Broken-out History / Turns modules ──
+       When History or Turns live as their own docked modules (real flex siblings
+       in #modules-row), dress them as first-class panes: same surface color,
+       border, radius & shadow as .wa-pane, an editorial serif masthead with NO
+       boxed icon, and the same header chrome the panes carry (a three-dot menu +
+       a width changer). */
     #modules-row .wch-sidebar.wch-docked {
       background: var(--surface);
       color: var(--text);
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
     }
     #modules-row .wch-sidebar.wch-docked .wch-head {
-      padding: 20px 16px 16px 24px;
+      padding: 18px 14px 16px 24px;
       border-bottom: 1px solid var(--border);
+      align-items: flex-start;
     }
     #modules-row .wch-sidebar.wch-docked .wch-head-title {
       font-family: 'Noto Serif', Georgia, serif;
@@ -185,8 +204,82 @@
       letter-spacing: -.01em;
       line-height: 1.16;
       color: var(--text);
+      align-items: center;
     }
     #modules-row .wch-sidebar.wch-docked .wch-head-title .material-icons { display: none; }
+    /* Header controls cluster (three-dot + width) sits top-right, like the panes. */
+    #modules-row .wch-sidebar.wch-docked .wch-controls { margin-top: 1px; }
+
+    /* ── Sticky modules mode ──────────────────────────────────────────────────
+       A toggle in the chat's three-dot menu (data-sc="sticky") turns the docked
+       History (left) and Turns (right) modules into "drawers" that tuck in behind
+       the chat: they butt right up against it (no gap), lose the corners that face
+       the chat, slide a few px UNDER it (the chat overlays their inner edge), take
+       a calmer, non-white surface, and sit a little shorter top & bottom so they
+       read as sliding out from underneath the chat card. */
+    #modules-row.modules-sticky { position: relative; }
+    /* Chat rides above the tucked drawers (z-index 1) and keeps casting its shadow
+       onto them — but must sit BELOW the resize-handle overlay (z-index 60) so the
+       drag handles at the chat↔module seams stay grabbable. (The shared pane-resize
+       rule otherwise lifts the chat to z-index 500 because the input's always-present
+       role="menu" popovers trip its "menu open" test, which would bury the handles.) */
+    #modules-row.modules-sticky #wa-chat { position: relative; z-index: 2 !important; }
+    #modules-row.modules-sticky .wch-sidebar.wch-docked {
+      z-index: 1;
+      background: var(--surface-2);
+      box-shadow: none;
+      align-self: center;
+      height: calc(100% - 30px);
+    }
+    /* History (left of chat): flush + tucked under the chat's LEFT edge. */
+    #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right) {
+      margin-right: -22px;                 /* cancels the 8px row gap + ~14px tuck */
+      padding-right: 14px;                 /* keep content clear of the tucked edge */
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: 0;
+      animation: stickySlideLeft .42s cubic-bezier(.34, 1.45, .64, 1) both;
+    }
+    /* Turns (right of chat): flush + tucked under the chat's RIGHT edge. */
+    #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right {
+      margin-left: -22px;
+      padding-left: 14px;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-left: 0;
+      animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+    }
+    /* Emerge from behind the chat: start mostly hidden under it, slide outward. */
+    @keyframes stickySlideLeft  { from { transform: translateX(26px); opacity: .35; } to { transform: none; opacity: 1; } }
+    @keyframes stickySlideRight { from { transform: translateX(-26px); opacity: .35; } to { transform: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      #modules-row.modules-sticky .wch-sidebar.wch-docked { animation: none !important; }
+    }
+
+    /* ── Stacking: the chat always rides ABOVE the docked History / Turns
+       modules, so when they slide in/out they read as tucking behind the chat
+       card (never on top of it). Kept well under the resize-handle overlay
+       (z-index 60) so the drag grips at the seams stay grabbable. */
+    #modules-row #wa-chat { position: relative; z-index: 3; }
+    #modules-row .wch-sidebar.wch-docked { position: relative; z-index: 1; }
+
+    /* ── Docked module reveal / conceal ──────────────────────────────────────
+       Showing a docked module (History on the left, Turns on the right) slides
+       it out from behind the chat; hiding it slides it back in behind the chat
+       and then removes it. Because the modules sit a layer below the chat, the
+       motion always reads as emerging from / disappearing under the chat card. */
+    #modules-row .wch-sidebar.wch-docked.wch-dock-reveal { animation: waDockRevealL .44s cubic-bezier(.34, 1.4, .64, 1) both !important; }
+    #modules-row .wch-sidebar.wch-docked.wch-right.wch-dock-reveal { animation: waDockRevealR .44s cubic-bezier(.34, 1.4, .64, 1) both !important; }
+    #modules-row .wch-sidebar.wch-docked.wch-dock-conceal { animation: waDockConcealL .3s cubic-bezier(.4, 0, .75, .25) both !important; }
+    #modules-row .wch-sidebar.wch-docked.wch-right.wch-dock-conceal { animation: waDockConcealR .3s cubic-bezier(.4, 0, .75, .25) both !important; }
+    @keyframes waDockRevealL { from { opacity: 0; transform: translateX(46px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes waDockRevealR { from { opacity: 0; transform: translateX(-46px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes waDockConcealL { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(46px) scale(.97); } }
+    @keyframes waDockConcealR { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-46px) scale(.97); } }
+    @media (prefers-reduced-motion: reduce) {
+      #modules-row .wch-sidebar.wch-docked.wch-dock-reveal,
+      #modules-row .wch-sidebar.wch-docked.wch-dock-conceal { animation: none !important; }
+    }
 
     .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; }
     .wa-pane-body > .wa-block { animation: waBlockIn .34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
@@ -208,6 +301,81 @@
        appended into the pane so it keeps growing. Separate stacked blocks with
        a hairline rule so each result reads as its own section. */
     .wa-pane-body > .wa-block + .wa-block { margin-top: 4px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+    /* ── Carousel mode: one output at a time + a horizontal thumbnail rail ──
+       Once a pane holds 2+ blocks we stop stacking them in a long vertical
+       scroll. A horizontal strip of scaled "output visual" thumbnails (the same
+       surface-card preview idea used in the chat) sits at the top of the pane,
+       and only the selected block renders below it. Tap a thumbnail to switch. */
+    .wa-pane-body.is-carousel > .wa-block { display: none; margin: 0; padding-top: 0; border-top: 0; }
+    .wa-pane-body.is-carousel > .wa-block.is-active { display: block; }
+
+    .wa-pane-nav {
+      display: none; flex: 0 0 auto; flex-direction: column; gap: 8px;
+      padding: 12px 24px; border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .wa-pane-nav.is-on { display: flex; }
+    /* Top bar of the rail: an "N of M" position counter + prev/next arrows so
+       it's obvious the outputs are a navigable carousel. */
+    .wa-pane-nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; }
+    .wa-pane-nav-count b { color: var(--text); font-weight: 800; }
+    .wa-pane-nav-arrows { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+    .wa-pane-nav-arrow {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
+      background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text);
+      transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+    }
+    .wa-pane-nav-arrow:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--surface); }
+    .wa-pane-nav-arrow:disabled { opacity: .38; cursor: default; }
+    .wa-pane-nav-arrow .material-icons { font-size: 18px; }
+    /* Horizontal, scrollable track of output thumbnails. A right-edge fade hints
+       that more thumbnails scroll off-screen. */
+    .wa-pane-nav-track {
+      display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: thin; padding-bottom: 2px;
+      scroll-snap-type: x proximity;
+    }
+    .wa-pane-thumb-item {
+      position: relative; scroll-snap-align: start;
+      flex: 0 0 auto; width: 118px;
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 6px; border-radius: 12px; cursor: pointer;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      font-family: inherit; text-align: left;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    }
+    /* Turn/output number, top-left of each thumbnail. */
+    .wa-pane-thumb-num {
+      position: absolute; top: 4px; left: 4px; z-index: 2;
+      min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9999px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border-strong);
+    }
+    .wa-pane-thumb-item.is-active .wa-pane-thumb-num { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .wa-pane-thumb-item:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+    .wa-pane-thumb-item:active { transform: translateY(1px); }
+    .wa-pane-thumb-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .wa-pane-thumb-item.is-active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--surface); }
+    /* Small clipped snapshot of the block, scaled way down (matches .sc-surface-thumb). */
+    .wa-pane-thumb-preview {
+      width: 100%; height: 66px; border-radius: 8px; overflow: hidden;
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+    }
+    .wa-pane-thumb-inner {
+      position: absolute; top: 0; left: 0; width: 360px;
+      transform: scale(0.283); transform-origin: top left; pointer-events: none;
+    }
+    .wa-pane-thumb-inner > * { margin: 0 !important; }
+    .wa-pane-thumb-label {
+      font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.25;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .wa-pane-thumb-item.is-active .wa-pane-thumb-label { color: var(--primary); }
+
     .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-icons { font-size: 18px; color: var(--primary); }
     html.dark .wa-sec-title .material-icons { color: var(--primary-bright, #8B9FAF); }
@@ -581,7 +749,8 @@
        top-to-bottom (drop top/bottom borders, corner rounding, shadow + the
        bounce-in) so it runs the full height of the window, while keeping the
        left/right borders + the row gutter so the columns stay separated. */
-    html.full-bleed .wa-chat, html.full-bleed .wa-pane {
+    html.full-bleed .wa-chat, html.full-bleed .wa-pane,
+    html.full-bleed #modules-row .wch-sidebar.wch-docked {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
     html.full-bleed body { padding-top: 0; padding-bottom: 0; }
@@ -614,7 +783,7 @@
     <!-- Chat + result panes share the shell's "modules" grid area -->
     <div id="modules-row">
       <!-- 1 · WISEai chat — the ONE shared WISEai chat module (js/wiseai-chat.js). -->
-      <main class="wa-chat" id="wa-chat"></main>
+      <main class="wa-chat" id="wa-chat" data-pr-fill></main>
 
       <!-- 2 · Results & Details pane — food results, food-detail cards, reports. -->
       <section class="wa-pane" id="wa-results" aria-label="Results & Details">
@@ -636,6 +805,7 @@
             <button type="button" class="panel-width-toggle-btn" data-pane-width="results" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Results pane width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </header>
+        <div class="wa-pane-nav" id="wa-results-nav" role="tablist" aria-label="Results outputs"></div>
         <div class="wa-pane-body" id="wa-results-body"></div>
       </section>
 
@@ -659,6 +829,7 @@
             <button type="button" class="panel-width-toggle-btn" data-pane-width="visuals" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Visuals pane width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
         </header>
+        <div class="wa-pane-nav" id="wa-visuals-nav" role="tablist" aria-label="Visuals outputs"></div>
         <div class="wa-pane-body" id="wa-visuals-body"></div>
       </section>
     </div><!-- /#modules-row -->
@@ -856,6 +1027,7 @@
     const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body') };
     const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title') };
     const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta') };
+    const paneNav = { results: document.getElementById('wa-results-nav'), visuals: document.getElementById('wa-visuals-nav') };
 
     /* Append a result/chart into a pane so the module keeps GROWING as the
        conversation surfaces more — each answer stacks below the previous one.
@@ -883,13 +1055,157 @@
         el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
         el.classList.add('is-open');
       }
-      /* Scroll the newest result into view so growth is visible. */
-      if (firstAdded) requestAnimationFrame(() => firstAdded.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+      /* Rebuild the thumbnail rail; make the just-surfaced block the active slide
+         once the pane holds 2+ outputs. */
+      refreshPaneCarousel(which, { activate: firstAdded });
+      /* In carousel mode only one block shows, so reset the scroll to its top;
+         otherwise scroll the newest result into view so growth stays visible. */
+      if (firstAdded) {
+        if (paneBody[which].classList.contains('is-carousel')) {
+          paneBody[which].scrollTop = 0;
+        } else {
+          requestAnimationFrame(() => firstAdded.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        }
+      }
     }
+
+    /* ── Pane carousel: horizontal thumbnail rail + one-at-a-time output ──
+       Treat every top-level .wa-block in a pane body as a slide. With a single
+       block the pane behaves exactly as before; with 2+ the rail turns on and
+       only the active block renders. */
+    function paneSlideLabel(block, which, i) {
+      const pick = (sel, stripIcons) => {
+        const el = block.querySelector(sel);
+        if (!el) return '';
+        if (stripIcons) {
+          const c = el.cloneNode(true);
+          c.querySelectorAll('.material-icons, .material-symbols-outlined').forEach((n) => n.remove());
+          return c.textContent.trim();
+        }
+        return el.textContent.trim();
+      };
+      return pick('.wa-report-title') || pick('.wa-dhero-name') || pick('.wa-sec-title', true)
+        || block.dataset.slideTitle || ((which === 'visuals' ? 'Chart ' : 'Result ') + (i + 1));
+    }
+
+    function paneBlocks(which) {
+      const body = paneBody[which];
+      if (!body) return [];
+      return Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
+    }
+
+    function setPaneSlide(which, idx, { animate = true, scrollNav = false } = {}) {
+      const blocks = paneBlocks(which);
+      const nav = paneNav[which];
+      if (!blocks.length) return;
+      idx = Math.max(0, Math.min(idx, blocks.length - 1));
+      blocks.forEach((b, i) => b.classList.toggle('is-active', i === idx));
+      if (paneBody[which]) paneBody[which].scrollTop = 0;
+      /* Keep the editorial masthead in sync with the visible output. */
+      if (paneBody[which] && paneBody[which].classList.contains('is-carousel')) {
+        const active = blocks[idx];
+        if (paneTitle[which]) paneTitle[which].textContent = paneSlideLabel(active, which, idx);
+        if (paneMeta[which]) paneMeta[which].textContent = active.dataset.slideMeta || '';
+      }
+      if (animate) {
+        const active = blocks[idx];
+        active.style.animation = 'none'; void active.offsetWidth; active.style.animation = '';
+      }
+      if (nav) {
+        const items = nav.querySelectorAll('[data-slide]');
+        items.forEach((it) => {
+          const on = Number(it.dataset.slide) === idx;
+          it.classList.toggle('is-active', on);
+          it.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        if (scrollNav && items[idx]) items[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        /* Position counter (e.g. "Chart 2 / 4") + prev/next availability. */
+        const noun = which === 'visuals' ? 'Chart' : 'Result';
+        const count = nav.querySelector('[data-nav-count]');
+        if (count) count.innerHTML = `${noun} <b>${idx + 1}</b> / ${blocks.length}`;
+        const prev = nav.querySelector('[data-nav="prev"]');
+        const next = nav.querySelector('[data-nav="next"]');
+        if (prev) prev.disabled = idx <= 0;
+        if (next) next.disabled = idx >= blocks.length - 1;
+      }
+    }
+
+    function refreshPaneCarousel(which, { activate } = {}) {
+      const body = paneBody[which];
+      const nav = paneNav[which];
+      if (!body || !nav) return;
+      const blocks = paneBlocks(which);
+      if (blocks.length < 2) {
+        body.classList.remove('is-carousel');
+        nav.classList.remove('is-on');
+        nav.innerHTML = '';
+        blocks.forEach((b) => b.classList.remove('is-active'));
+        return;
+      }
+      body.classList.add('is-carousel');
+      nav.classList.add('is-on');
+      blocks.forEach((b, i) => { b.dataset.slideIndex = i; });
+      /* Preserve the current slide unless the caller points at a new block. */
+      let activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
+      if (activate instanceof Element) {
+        const idx = blocks.indexOf(activate);
+        if (idx >= 0) activeIdx = idx;
+      }
+      if (activeIdx < 0) activeIdx = blocks.length - 1;
+      /* NOTE: the preview clones the block's own HTML, which for result blocks
+         contains <button>/<input> controls. A <button> may not nest interactive
+         content, so the wrapper is a <div role="button"> (same trick as the
+         in-chat .sc-surface-card) and the clone is made `inert` so its controls
+         can't be focused or spill out of the wrapper. */
+      const thumbs = blocks.map((b, i) =>
+        `<div class="wa-pane-thumb-item" data-slide="${i}" role="tab" tabindex="0" aria-selected="false" title="${esc(paneSlideLabel(b, which, i))}">
+          <span class="wa-pane-thumb-num">${i + 1}</span>
+          <span class="wa-pane-thumb-preview"><span class="wa-pane-thumb-inner" inert>${b.innerHTML}</span></span>
+          <span class="wa-pane-thumb-label">${esc(paneSlideLabel(b, which, i))}</span>
+        </div>`).join('');
+      nav.innerHTML =
+        `<div class="wa-pane-nav-bar">
+          <span class="wa-pane-nav-count" data-nav-count aria-live="polite"></span>
+          <span class="wa-pane-nav-arrows">
+            <button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-icons">chevron_left</span></button>
+            <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-icons">chevron_right</span></button>
+          </span>
+        </div>
+        <div class="wa-pane-nav-track" data-nav-track role="tablist">${thumbs}</div>`;
+      setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
+    }
+
+    /* Tapping a thumbnail switches the visible output. */
+    Object.keys(paneNav).forEach((which) => {
+      const nav = paneNav[which];
+      if (!nav) return;
+      const curSlide = () => Number(nav.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
+      nav.addEventListener('click', (e) => {
+        const arrow = e.target.closest('[data-nav]');
+        if (arrow) {
+          setPaneSlide(which, curSlide() + (arrow.dataset.nav === 'next' ? 1 : -1), { animate: true, scrollNav: true });
+          return;
+        }
+        const it = e.target.closest('[data-slide]');
+        if (!it) return;
+        setPaneSlide(which, Number(it.dataset.slide), { animate: true, scrollNav: true });
+      });
+      nav.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); setPaneSlide(which, curSlide() + 1, { animate: true, scrollNav: true }); return; }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); setPaneSlide(which, curSlide() - 1, { animate: true, scrollNav: true }); return; }
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const it = e.target.closest('[data-slide]');
+        if (!it) return;
+        e.preventDefault();
+        setPaneSlide(which, Number(it.dataset.slide), { animate: true, scrollNav: true });
+      });
+    });
+
     function closePane(which) {
       const el = paneEl[which];
       if (el) el.classList.remove('is-open', 'pane-wide', 'pane-triple');
-      if (paneBody[which]) paneBody[which].innerHTML = '';
+      if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
+      if (paneNav[which]) { paneNav[which].innerHTML = ''; paneNav[which].classList.remove('is-on'); }
       const wb = document.querySelector(`[data-pane-width="${which}"]`);
       if (wb) syncPaneWidthBtn(wb, 0);
       /* Drop any drag-pinned widths so the remaining modules reflow to fill the
@@ -1479,8 +1795,11 @@
 
     /* Tag the first .wa-block in a view's html so we can later tell whether that
        exact block is still present in its pane (i.e. not closed/cleared). */
-    function tagBlock(html, id) {
-      return html.replace('<div class="wa-block', `<div data-block-id="${id}" class="wa-block`);
+    function tagBlock(html, id, title, meta) {
+      const attrs = `data-block-id="${id}"`
+        + (title ? ` data-slide-title="${esc(title)}"` : '')
+        + (meta ? ` data-slide-meta="${esc(meta)}"` : '');
+      return html.replace('<div class="wa-block', `<div ${attrs} class="wa-block`);
     }
 
     function surfaceCardHtml(blockId, which, icon, title, previewHtml) {
@@ -1630,7 +1949,7 @@
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
     function surfaceBlock(which, { icon, title, meta, html }) {
       const blockId = 'blk' + (++surfaceSeq);
-      const tagged = tagBlock(html, blockId);
+      const tagged = tagBlock(html, blockId, title, meta);
       openPane(which, { title, meta, html: tagged });
       SURFACED[blockId] = { which, title, meta, html: tagged };
       addManifestOutput({ blockId, which, icon, title });
@@ -1648,7 +1967,12 @@
       const present = paneBody[e.which] && paneBody[e.which].querySelector(`[data-block-id="${blockId}"]`);
       if (present) {
         if (pane && !pane.classList.contains('is-open')) pane.classList.add('is-open');
-        requestAnimationFrame(() => present.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        if (paneBody[e.which].classList.contains('is-carousel')) {
+          const idx = Number(present.dataset.slideIndex);
+          setPaneSlide(e.which, Number.isNaN(idx) ? 0 : idx, { animate: true, scrollNav: true });
+        } else {
+          requestAnimationFrame(() => present.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+        }
       } else {
         openPane(e.which, { title: e.title, meta: e.meta, html: e.html });
       }
@@ -1730,9 +2054,20 @@
         activity: true,
         userInitials: 'AK',
         historyKey: 'wise-chat-history:wiseai',
-        /* Let History "break out" of the in-chat overlay into its own module,
-           docked to the left of the chat (toggled from the pane's header). */
+        /* History is a first-class, broken-out module on WISEai (docked to the
+           left of the chat as a real flex sibling in #modules-row) rather than
+           an in-chat overlay popover. It carries pane-style header chrome (a
+           three-dot menu + width changer) and stays open as its own module. */
         historyBreakout: true,
+        /* Open History docked from the very first load (no overlay step). */
+        historyBreakoutDefault: true,
+        /* Dress the broken-out History header like the result panes: serif
+           masthead + three-dot menu + width changer (instead of the overlay's
+           break-out / close buttons). */
+        historyDockedControls: true,
+        /* Add an MCP-server filter toggle to the right of the History search
+           that narrows the list to conversations that used the MCP server. */
+        historyMcpFilter: true,
         /* Preload a few past conversations so the three-dot → History pane opens
            on an established workspace you can jump back into (seeded once). Each
            reuses the same verbatim replies the live transcript uses. */
@@ -1740,6 +2075,7 @@
           {
             title: 'What\u2019s the worst food in our database?',
             msAgo: 2 * 3600000,
+            mcp: true,
             turns: [
               { role: 'you', text: 'What\u2019s the worst food in our database?' },
               { role: 'wiseai', html: INTENT_REPLIES.worst },
@@ -1750,6 +2086,7 @@
           {
             title: 'Best chocolate chip cookie with the least chocolate',
             daysAgo: 1,
+            mcp: false,
             turns: [
               { role: 'you', text: 'Best chocolate chip cookie with the least chocolate' },
               { role: 'wiseai', html: INTENT_REPLIES.cookie },
@@ -1760,6 +2097,7 @@
           {
             title: 'Is this ingredient list ultra-processed?',
             daysAgo: 4,
+            mcp: true,
             turns: [
               { role: 'you', text: 'Is this ingredient list ultra-processed?' },
               { role: 'wiseai', html: INTENT_REPLIES.upf },
@@ -1779,8 +2117,6 @@
         /* Every source is shown in the panel, so the trailing "more connectors"
            three-dot control is redundant — drop it. */
         connectorsMore: false,
-        /* Show the MCP-server toggle in the chat's three-dot menu (visual only). */
-        mcpToggle: true,
         /* Enable the Turns Module — the three-dot "View turns" toggle opens a
            panel listing every turn, each with a "Fork from here" button that
            branches the conversation up to that point into a new chat of your
@@ -1793,6 +2129,31 @@
            shadow & serif masthead via the #modules-row .wch-docked rules). */
         turnsBreakout: true,
         turnsBreakoutWidth: 380,
+        /* Turns is OFF by default — the module is pre-built and docked to the
+           right of the chat but starts hidden. Flipping the "Turns" switch in
+           the chat's three-dot menu reveals it (it animates out from behind the
+           chat); flipping it off tucks it back behind the chat. */
+        turnsBreakoutDefault: false,
+        /* Dress the broken-out Turns header like the result panes (serif
+           masthead + three-dot menu + width changer). */
+        turnsDockedControls: true,
+        /* Search box pinned above the turn list to filter turns by question,
+           answer text or artifact. */
+        turnsSearch: true,
+        /* Per-turn Share + Note (annotate) controls in addition to Fork/Jump. */
+        turnsShare: true,
+        turnsNotes: true,
+        /* "Sticky modules" toggle in the chat's three-dot menu — tucks the docked
+           History (left) and Turns (right) modules in behind the chat card
+           (flush, square inner corners, calmer surface, slightly shorter). The
+           preference persists across reloads via localStorage. */
+        stickyModules: true,
+        stickyModulesDefault: (() => { try { return localStorage.getItem('wiseai-sticky-modules') === '1'; } catch (_) { return false; } })(),
+        onStickyModules: (on) => {
+          const row = document.getElementById('modules-row');
+          if (row) row.classList.toggle('modules-sticky', on);
+          try { localStorage.setItem('wiseai-sticky-modules', on ? '1' : '0'); } catch (_) {}
+        },
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
           { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },

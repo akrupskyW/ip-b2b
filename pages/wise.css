@@ -9470,6 +9470,24 @@ html.dark .adm-chip--canon { color: #6FE0A0; }
 
 .adm-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
+/* Per-row three-dot (kebab) menu — collapses the row's actions into a popover. */
+.adm-rowmenu { display: inline-flex; position: relative; }
+.adm-rowmenu-btn { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+html.dark .adm-rowmenu-btn { background: rgba(255,255,255,0.04); }
+.adm-rowmenu-btn:hover, .adm-rowmenu.is-open .adm-rowmenu-btn { color: var(--text); border-color: var(--border-strong); background: var(--surface-3, var(--surface-2)); }
+.adm-rowmenu-btn .material-icons { font-size: 19px; }
+.adm-rowmenu-pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
+.adm-rowmenu-pop[hidden] { display: none; }
+.adm-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
+.adm-rowmenu-item:hover { background: var(--surface-2); }
+html.dark .adm-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
+.adm-rowmenu-item .material-icons { font-size: 17px; color: var(--text-subtle); flex-shrink: 0; }
+.adm-rowmenu-item--primary .material-icons { color: var(--primary); }
+.adm-rowmenu-item--danger { color: var(--sec-red); }
+html.dark .adm-rowmenu-item--danger { color: #FF9E96; }
+.adm-rowmenu-item--danger .material-icons { color: var(--sec-red); }
+html.dark .adm-rowmenu-item--danger .material-icons { color: #FF9E96; }
+
 .adm-empty { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
 /* ---- Charts (Non-UPF Dashboard — mirrors analytics-types donuts/bars) */
@@ -9981,6 +9999,7 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
   .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
   .adm-actions { justify-content: flex-start; }
   .adm-td--num { justify-content: flex-start; text-align: left; }
+  .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
 }
 @media (max-width: 640px) {
   .adm-wrap { padding: 20px 20px 48px; }
