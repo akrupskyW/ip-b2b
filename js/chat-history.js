@@ -106,6 +106,14 @@
       '.wch-mcp-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:5px;',
         'background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);color:var(--primary,#2F6DF6);}',
       '.wch-mcp-badge .material-icons{font-size:12px;}',
+      /* MCP-usage filter as a switch row inside the three-dot menu (docked). */
+      '.wch-mcp-item{justify-content:flex-start;}',
+      '.wch-mcp-item > span:not(.material-icons):not(.wch-switch){flex:1 1 auto;white-space:nowrap;}',
+      '.wch-switch{position:relative;flex:0 0 auto;width:34px;height:19px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);transition:background .15s ease,border-color .15s ease;}',
+      'html:not(.dark) .wch-switch{background:rgba(20,40,80,0.16);border-color:rgba(0,0,0,0.16);}',
+      '.wch-switch::after{content:"";position:absolute;top:1px;left:1px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.28);transition:transform .18s ease;}',
+      '.wch-mcp-item.is-on .wch-switch{background:var(--primary,#2F6DF6);border-color:var(--primary,#2F6DF6);}',
+      '.wch-mcp-item.is-on .wch-switch::after{transform:translateX(15px);}',
       /* Pane-style header controls cluster for the broken-out module. */
       '.wch-controls{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;margin-left:auto;}',
       /* ── Broken-out "own module" mode: the pane detaches from the messages
@@ -397,12 +405,20 @@
     /* Header controls. In dockedControls mode the module carries pane-style
        chrome (three-dot menu + width changer) like the result panes; otherwise
        the classic overlay break-out + close buttons. */
+    /* MCP-usage filter surfaced as a switch item inside the three-dot menu when
+       the module carries pane chrome (docked / broken-out beside the chat). */
+    var mcpMenuItemHtml = mcpFilter
+      ? '<div class="topbar-menu-divider"></div>' +
+        '<button type="button" class="topbar-menu-item wch-mcp-item" data-wch-act="mcp" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dns</span><span>MCP conversations only</span><span class="wch-switch" aria-hidden="true"></span></button>'
+      : '';
+
     var headControlsHtml = dockedControls
       ? '<div class="wch-controls">' +
           '<div class="panel-more-wrap wch-more-wrap">' +
             '<button type="button" class="panel-more-btn wch-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
             '<div class="topbar-popover hidden wch-more-pop" role="menu">' +
               '<button type="button" class="topbar-menu-item" data-wch-act="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>New conversation</span></button>' +
+              mcpMenuItemHtml +
               '<div class="topbar-menu-divider"></div>' +
               '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-wch-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close panel</span></button>' +
             '</div>' +
@@ -412,7 +428,10 @@
       : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-icons">vertical_split</span></button>' : '') +
         '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-icons">close</span></button>';
 
-    var mcpToggleHtml = mcpFilter
+    /* Only keep the standalone search-row MCP pill when there is no three-dot
+       menu to host it (i.e. the classic overlay mode). Docked modules get the
+       switch inside the menu instead. */
+    var mcpToggleHtml = (mcpFilter && !dockedControls)
       ? '<button type="button" class="wch-mcp" aria-pressed="false" title="Show only conversations that used the MCP server" aria-label="Filter to conversations that used the MCP server"><span class="material-icons">dns</span><span class="wch-mcp-label">MCP</span></button>'
       : '';
 
@@ -1198,6 +1217,14 @@
         btn.classList.toggle('is-on', mcpOnly);
         btn.setAttribute('aria-pressed', mcpOnly ? 'true' : 'false');
       }
+      /* The three-dot popover is portaled to <body> when docked, so look there
+         too rather than only inside the sidebar. */
+      var item = sidebar.querySelector('.wch-mcp-item') ||
+        (morePop && morePop.querySelector ? morePop.querySelector('.wch-mcp-item') : null);
+      if (item) {
+        item.classList.toggle('is-on', mcpOnly);
+        item.setAttribute('aria-checked', mcpOnly ? 'true' : 'false');
+      }
       render();
     }
 
@@ -1241,8 +1268,11 @@
       morePop.addEventListener('click', function (e) {
         var it = e.target.closest('[data-wch-act]');
         if (!it) return;
-        closeMore();
         var act = it.getAttribute('data-wch-act');
+        /* The MCP filter is a toggle — flip it in place and keep the menu open
+           so its switch state is visible, rather than dismissing on each tap. */
+        if (act === 'mcp') { e.stopPropagation(); setMcpOnly(!mcpOnly); return; }
+        closeMore();
         if (act === 'new') startNew();
         else if (act === 'close') onCloseBtn();
       });

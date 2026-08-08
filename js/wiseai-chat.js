@@ -393,10 +393,13 @@ function injectChatExtras() {
     html:not(.dark) .wt-chip { background: rgba(20,40,80,0.06); }
     .wt-chip .material-icons { font-size: 13px; }
     .wt-actions { display: flex; align-items: center; gap: 6px; }
-    .wt-fork { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700;
-      padding: 7px 13px; border-radius: 999px; background: var(--primary, #2F6DF6); color: #fff; }
-    .wt-fork:hover { filter: brightness(1.06); }
-    .wt-fork .material-icons { font-size: 16px; }
+    .wt-fork { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--primary, #2F6DF6); cursor: pointer; opacity: .9; transition: background .14s ease, color .14s ease, opacity .14s ease; }
+    .wt-fork:hover { opacity: 1; background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); }
+    .wt-fork .material-icons { font-size: 17px; }
+    /* The forked turn's handle (#id), sat right beside its fork icon. */
+    .wt-fork-id { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--primary, #2F6DF6);
+      font-variant-numeric: tabular-nums; margin: 0 2px 0 -1px; }
     .wt-jump { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; border: 0; background: transparent; cursor: pointer;
       font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted, inherit); opacity: .8; padding: 6px 4px; }
     .wt-jump:hover { opacity: 1; color: var(--primary, #2F6DF6); }
@@ -777,6 +780,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   /* Whether the docked History / Turns modules are tucked in "sticky" behind the
      chat (toggled from the three-dot menu; host applies the actual layout). */
   let stickyOn = opts.stickyModulesDefault === true;
+  /* Whether the chat's floating "Outputs & Sources" manifest is hidden via the
+     three-dot menu switch (on = hidden). Off by default; the host applies the
+     actual show/hide through onToggleOutputs. */
+  let outputsHidden = opts.outputsToggleDefault === true;
 
   /* Answer-quality feedback — a thumbs up / thumbs down (+ copy) row trailing
      each WISEai answer. Thumbs down reveals a "what was wrong?" chip set so the
@@ -919,6 +926,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">alt_route</span><span>Turns</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-icons topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -1496,6 +1504,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     return i + '::' + q.slice(0, 60);
   }
 
+  /* The turn's handle (e.g. "#6d7a") — the same id shown on the answer's
+     feedback row (`.sc-fb-id`). Surfaced beside the fork icon so a forked turn
+     is traceable back to the exact answer it branched from. */
+  function forkIdOf(turn) {
+    const rs = (turn && turn.replies) || [];
+    for (let k = 0; k < rs.length; k++) {
+      const el = rs[k] && rs[k].querySelector ? rs[k].querySelector('.sc-fb-id') : null;
+      const t = el && el.textContent ? el.textContent.trim() : '';
+      if (t) return t;
+    }
+    return '';
+  }
+
   function turnRowHtml(turn, i) {
     const q = turn.you ? lineText(turn.you) : '';
     const a = turn.replies.length ? lineText(turn.replies[0]) : '';
@@ -1503,6 +1524,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       .map((c) => `<span class="wt-chip"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span>`)
       .join('');
     const key = turnKey(turn, i);
+    const fid = forkIdOf(turn);
     const note = turnsNotesOn ? (turnNotes[key] || '') : '';
     const shareBtn = turnsShareOn
       ? `<button type="button" class="wt-iconbtn wt-share" data-share="${i}" title="Share this turn" aria-label="Share this turn"><span class="material-icons">ios_share</span></button>`
@@ -1522,7 +1544,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         ${a ? `<div class="wt-turn-a">${esc(a)}</div>` : ''}
         ${chips ? `<div class="wt-chips">${chips}</div>` : ''}
         <div class="wt-actions">
-          <button type="button" class="wt-fork" data-fork="${i}"><span class="material-icons">alt_route</span>Fork from here</button>
+          <button type="button" class="wt-fork" data-fork="${i}" title="Fork from here" aria-label="Fork from here"><span class="material-icons">alt_route</span></button>
+          ${fid ? `<span class="wt-fork-id" title="Fork ID">${esc(fid)}</span>` : ''}
           ${shareBtn}
           ${noteBtn}
           <button type="button" class="wt-jump" data-jump="${i}" title="Jump to this turn"><span class="material-icons">my_location</span>Jump</button>
@@ -2844,6 +2867,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       applyStickyLayout();
       try { opts.onStickyModules && opts.onStickyModules(stickyOn); } catch (_) {}
     }
+    else if (action === 'outputs') {
+      /* On/off switch (on = hidden): show/hide the floating Outputs & Sources
+         manifest. Keep the menu open so the switch state reads back; the host
+         applies the actual visibility via onToggleOutputs. */
+      outputsHidden = !item.classList.contains('is-on');
+      item.classList.toggle('is-on', outputsHidden);
+      item.setAttribute('aria-checked', outputsHidden ? 'true' : 'false');
+      try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
+    }
     else if (action === 'toggle-cards') {
       closeMore();
       cardsHidden = !cardsHidden;
@@ -2972,6 +3004,17 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }
     applyStickyLayout();
     try { opts.onStickyModules && opts.onStickyModules(stickyOn); } catch (_) {}
+  }
+
+  /* Outputs & sources toggle: reflect the initial (off = shown) state onto the
+     switch and let the host apply the matching visibility. */
+  if (opts.outputsToggle === true) {
+    const outItem = rootEl.querySelector('[data-sc="outputs"]');
+    if (outItem) {
+      outItem.classList.toggle('is-on', outputsHidden);
+      outItem.setAttribute('aria-checked', outputsHidden ? 'true' : 'false');
+    }
+    try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
   return { addUser, addWISEai, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, root: rootEl };

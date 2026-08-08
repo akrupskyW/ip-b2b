@@ -23,7 +23,7 @@
   window.__wisePaneResize = true;
 
   var STORE_KEY = 'wise-pane-widths-v1';
-  var MIN_W = 160;      // px floor when a pane declares no min-width
+  var MIN_W = 300;      // px hard floor for every module — never resize below this
   var HIT = 16;         // px width of the (invisible) grab strip
   var STACK_BP = 560;   // px — row stacks vertically below this (wise.css)
 
@@ -88,7 +88,9 @@
   /* ── width helpers ────────────────────────────────────────────────────── */
   function rectW(el) { return el.getBoundingClientRect().width; }
   function growOf(el) { var g = parseFloat(getComputedStyle(el).flexGrow); return isNaN(g) ? 0 : g; }
-  function minOf(el) { var m = parseFloat(getComputedStyle(el).minWidth); return (!isNaN(m) && m > 0) ? Math.max(60, m) : MIN_W; }
+  // Every module has a hard 300px floor. A pane may declare a LARGER min-width
+  // (which we honour), but never a smaller one — MIN_W always wins.
+  function minOf(el) { var m = parseFloat(getComputedStyle(el).minWidth); return (!isNaN(m) && m > 0) ? Math.max(MIN_W, m) : MIN_W; }
   // We pin with !important so a pane's stylesheet rule (e.g. a `width` bound to a
   // CSS variable, or a `.panel-wide` class) can never out-specify a dragged size.
   function snap(el) {
@@ -129,7 +131,9 @@
       if (hasPreset(el)) return;            // preset width button owns this pane
       if (isFill(el)) { clearInline(el); return; }  // flexible filler: stays fluid
       var w = stored[keyOf(row, el)];
-      if (w != null && isFinite(w)) pin(el, w);
+      // Clamp any previously-saved width up to the hard floor so a width stored
+      // before the floor existed can never hold a module below MIN_W.
+      if (w != null && isFinite(w)) pin(el, Math.max(minOf(el), w));
     });
   }
 

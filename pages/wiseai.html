@@ -310,18 +310,30 @@
     .wa-pane-body.is-carousel > .wa-block { display: none; margin: 0; padding-top: 0; border-top: 0; }
     .wa-pane-body.is-carousel > .wa-block.is-active { display: block; }
 
+    /* Rail is TWO stacked rows: a control row on top (position counter on the
+       left, minimize + prev/next on the right) and, beneath it, the thumbnail
+       track running EDGE-TO-EDGE so the controls never eat into — or overlap —
+       the carousel's horizontal scroll. */
     .wa-pane-nav {
-      display: none; flex: 0 0 auto; flex-direction: column; gap: 8px;
-      padding: 12px 24px; border-bottom: 1px solid var(--border);
+      display: none; flex: 0 0 auto; flex-direction: column; align-items: stretch; gap: 8px;
+      padding: 10px 0 10px 0; border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
     .wa-pane-nav.is-on { display: flex; }
-    /* Top bar of the rail: an "N of M" position counter + prev/next arrows so
-       it's obvious the outputs are a navigable carousel. */
-    .wa-pane-nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; }
+    /* Scrollable thumbnail track — full-width row of its own, flush to the
+       module's left edge with nothing sharing its horizontal space. */
+    .wa-pane-nav-track {
+      flex: 0 0 auto; min-width: 0; width: 100%;
+      display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: thin; padding: 2px 14px 4px 0;
+      scroll-snap-type: x proximity;
+    }
+    /* Control row (above the track): counter on the left, minimize + prev/next
+       on the right, spanning the full module width. */
+    .wa-pane-nav-ctrls { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; }
+    .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; white-space: nowrap; }
     .wa-pane-nav-count b { color: var(--text); font-weight: 800; }
-    .wa-pane-nav-arrows { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+    .wa-pane-nav-btns { display: inline-flex; gap: 4px; }
     .wa-pane-nav-arrow {
       display: inline-flex; align-items: center; justify-content: center;
       width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
@@ -331,13 +343,9 @@
     .wa-pane-nav-arrow:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--surface); }
     .wa-pane-nav-arrow:disabled { opacity: .38; cursor: default; }
     .wa-pane-nav-arrow .material-icons { font-size: 18px; }
-    /* Horizontal, scrollable track of output thumbnails. A right-edge fade hints
-       that more thumbnails scroll off-screen. */
-    .wa-pane-nav-track {
-      display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
-      scrollbar-width: thin; padding-bottom: 2px;
-      scroll-snap-type: x proximity;
-    }
+    /* Keep the very first thumbnail off the pane's left border by a hair without
+       losing the edge-to-edge scroll (the strip still begins at the module edge). */
+    .wa-pane-thumb-item:first-child { margin-left: 16px; }
     .wa-pane-thumb-item {
       position: relative; scroll-snap-align: start;
       flex: 0 0 auto; width: 118px;
@@ -372,9 +380,27 @@
     .wa-pane-thumb-inner > * { margin: 0 !important; }
     .wa-pane-thumb-label {
       font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.25;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     .wa-pane-thumb-item.is-active .wa-pane-thumb-label { color: var(--primary); }
+
+    /* ── Minimized (intent-chip) mode ──
+       The minimize control collapses the thumbnail cards into compact intent-
+       style chips: a small circular preview image + the output's label. */
+    .wa-pane-nav.is-min .wa-pane-nav-track { align-items: center; padding-top: 4px; padding-bottom: 4px; }
+    .wa-pane-nav.is-min .wa-pane-thumb-item {
+      flex-direction: row; align-items: center; gap: 8px;
+      width: auto; max-width: 190px; padding: 4px 12px 4px 4px; border-radius: 9999px;
+    }
+    .wa-pane-nav.is-min .wa-pane-thumb-num { display: none; }
+    .wa-pane-nav.is-min .wa-pane-thumb-preview {
+      width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
+    }
+    .wa-pane-nav.is-min .wa-pane-thumb-inner { transform: scale(0.1056); } /* 38 / 360 */
+    .wa-pane-nav.is-min .wa-pane-thumb-label {
+      display: block; -webkit-line-clamp: none; line-clamp: none;
+      font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
+    }
 
     .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-icons { font-size: 18px; color: var(--primary); }
@@ -727,6 +753,9 @@
 
     .wa-manifest.is-hidden .wa-manifest-full,
     .wa-manifest.is-hidden .wa-manifest-rail { display: none; opacity: 0; transform: scale(0.97) translateY(-5px); }
+    /* Turned off from the chat's three-dot "Hide outputs & sources" switch —
+       removes the whole component (panel, rail AND re-open button). */
+    .wa-manifest.is-off { display: none !important; }
     .wa-manifest-reopen {
       display: none; opacity: 0; margin-left: auto; align-items: center; justify-content: center;
       width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border-strong);
@@ -1028,6 +1057,7 @@
     const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title') };
     const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta') };
     const paneNav = { results: document.getElementById('wa-results-nav'), visuals: document.getElementById('wa-visuals-nav') };
+    const paneMin = { results: false, visuals: false };  /* rail minimized to intent chips */
 
     /* Append a result/chart into a pane so the module keeps GROWING as the
        conversation surfaces more — each answer stacks below the previous one.
@@ -1092,6 +1122,19 @@
       const body = paneBody[which];
       if (!body) return [];
       return Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
+    }
+
+    /* Sync the minimize/expand toggle icon with the rail's current mode. */
+    function updateMinBtn(which) {
+      const nav = paneNav[which];
+      if (!nav) return;
+      const btn = nav.querySelector('[data-nav="min"]');
+      if (!btn) return;
+      const min = !!paneMin[which];
+      const ic = btn.querySelector('.material-icons');
+      if (ic) ic.textContent = min ? 'open_in_full' : 'close_fullscreen';
+      btn.title = min ? 'Expand output cards' : 'Minimize to chips';
+      btn.setAttribute('aria-label', btn.title);
     }
 
     function setPaneSlide(which, idx, { animate = true, scrollNav = false } = {}) {
@@ -1164,14 +1207,17 @@
           <span class="wa-pane-thumb-label">${esc(paneSlideLabel(b, which, i))}</span>
         </div>`).join('');
       nav.innerHTML =
-        `<div class="wa-pane-nav-bar">
+        `<div class="wa-pane-nav-ctrls">
           <span class="wa-pane-nav-count" data-nav-count aria-live="polite"></span>
-          <span class="wa-pane-nav-arrows">
+          <span class="wa-pane-nav-btns">
+            <button type="button" class="wa-pane-nav-arrow" data-nav="min" aria-label="Minimize to chips"><span class="material-icons">close_fullscreen</span></button>
             <button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-icons">chevron_left</span></button>
             <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-icons">chevron_right</span></button>
           </span>
         </div>
         <div class="wa-pane-nav-track" data-nav-track role="tablist">${thumbs}</div>`;
+      nav.classList.toggle('is-min', !!paneMin[which]);
+      updateMinBtn(which);
       setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
     }
 
@@ -1181,9 +1227,18 @@
       if (!nav) return;
       const curSlide = () => Number(nav.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
       nav.addEventListener('click', (e) => {
-        const arrow = e.target.closest('[data-nav]');
-        if (arrow) {
-          setPaneSlide(which, curSlide() + (arrow.dataset.nav === 'next' ? 1 : -1), { animate: true, scrollNav: true });
+        const ctrl = e.target.closest('[data-nav]');
+        if (ctrl) {
+          const act = ctrl.dataset.nav;
+          if (act === 'min') {
+            paneMin[which] = !paneMin[which];
+            nav.classList.toggle('is-min', paneMin[which]);
+            updateMinBtn(which);
+            /* Re-scroll the active chip/card into view after the layout change. */
+            setPaneSlide(which, curSlide(), { animate: false, scrollNav: true });
+            return;
+          }
+          setPaneSlide(which, curSlide() + (act === 'next' ? 1 : -1), { animate: true, scrollNav: true });
           return;
         }
         const it = e.target.closest('[data-slide]');
@@ -1824,6 +1879,10 @@
     ];
     const manifestOutputs = [];           /* { blockId, which, icon, title } */
     let manifestBuilt = false, manifestUserCollapsed = false, manifestUserHidden = false, manifestSourcesSeeded = false;
+    /* Turned off entirely from the chat's "Hide outputs & sources" menu switch
+       (off by default). Unlike the panel's own "close" — which hides the box but
+       leaves a floating re-open button — this removes the whole component. */
+    let manifestMenuOff = false;
     let manifestEl, manifestOutListEl, manifestSrcListEl, manifestRailEl, manifestOutSecEl, manifestSrcSecEl, manifestBadgeEl;
 
     function buildManifest() {
@@ -1920,10 +1979,19 @@
         ).join('') : '');
     }
 
+    /* Chat three-dot "Hide outputs & sources" switch — fully show/hide the
+       whole manifest (panel, rail AND re-open button). Applied lazily so it
+       works whether or not the box has been built yet. */
+    function setManifestOff(off) {
+      manifestMenuOff = !!off;
+      if (manifestBuilt) syncManifestState();
+    }
+
     function syncManifestState() {
       if (!manifestBuilt || !host) return;
       const w = host.getBoundingClientRect().width;
       const wide = w >= MANIFEST_OPEN_W;
+      manifestEl.classList.toggle('is-off', manifestMenuOff);
       manifestEl.classList.toggle('is-wide', wide);
       manifestEl.classList.toggle('is-hidden', manifestUserHidden);
       /* Narrow → always the icon rail (hover to peek). Wide → open unless the
@@ -2154,6 +2222,13 @@
           if (row) row.classList.toggle('modules-sticky', on);
           try { localStorage.setItem('wiseai-sticky-modules', on ? '1' : '0'); } catch (_) {}
         },
+        /* "Hide outputs & sources" switch in the chat's three-dot menu — fully
+           hides the floating Outputs / Sources manifest pinned to the chat's
+           top-right. OFF by default (the manifest shows as before); flipping it
+           on removes the whole component. */
+        outputsToggle: true,
+        outputsToggleDefault: false,
+        onToggleOutputs: (hidden) => setManifestOff(hidden),
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
           { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },

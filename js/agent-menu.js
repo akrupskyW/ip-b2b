@@ -31,6 +31,22 @@ import { initLirTooltip } from './lir-tooltip.js';
   } catch (_) {}
 })();
 
+/* Load the popover layer on every page that renders the WISE nav — it lifts any
+   open module/menu popover to a fixed layer so it escapes the carded modules'
+   overflow clipping and always sits on top of everything (see popover-layer.js).
+   Injected here so it loads uniformly across the app and survives HTML edits;
+   the loaded file self-guards and is a no-op on pages with no popovers. */
+(function loadPopoverLayer() {
+  try {
+    if (typeof document === 'undefined' || window.__wisePopoverLayerLoaded) return;
+    window.__wisePopoverLayerLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./popover-layer.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /**
  * Single source of truth for the agent hierarchy and product navigation.
  *
