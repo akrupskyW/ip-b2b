@@ -2991,6 +2991,28 @@ html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-m
 html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
   display: inline-flex !important;
 }
+/* Scrolling underneath: when the header is floated the ⋯ + width controls sit
+   on top of the scrolling message list. Give them a persistent opaque circle
+   (not just on hover) so the glyphs never read through the moving content. */
+html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  background: var(--surface-2);
+  opacity: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
+html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
+html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
+html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn:hover {
+  background: var(--surface-3);
+}
+
 /* The WISEai welcome screen is an opaque overlay (z-index 10, background
    var(--bg)) that covers the whole card — in LIGHT mode it would paint right
    over the header-float controls and hide them (in dark mode the overlay is
@@ -3648,13 +3670,15 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-more-wrap { position: relative; margin-left: auto; display: inline-flex; align-items: center; }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
   color: var(--text-muted); cursor: pointer; opacity: 0.85;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 .panel-more-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
-.panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
-.panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+/* Opaque circle behind the icon on hover so content scrolling underneath a
+   floated header never bleeds through the glyph. */
+.panel-more-btn:hover { opacity: 1; background: var(--surface-3); color: var(--text); }
+.panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
 .sc-card .topbar-popover { position: absolute; top: calc(100% + 6px); right: 0; left: auto; }
 
 /* Header controls cluster — groups the width toggle with the more menu and
@@ -3666,13 +3690,15 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
    modules — doubles the module column when active). */
 .panel-width-toggle-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
+  width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
   color: var(--text-muted); opacity: 0.75; cursor: pointer; padding: 0; flex-shrink: 0;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .panel-width-toggle-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
-.panel-width-toggle-btn:hover,
-.panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+/* Opaque circle behind the icon on hover / active so scrolling content under a
+   floated header never shows through. */
+.panel-width-toggle-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
+.panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
 
 /* Wide state — legacy hook when panel-wide is applied to an inner card; the
    dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
@@ -3764,6 +3790,19 @@ html.dark .chat-messages-area { background: transparent; }
 }
 @keyframes scSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-typing-spin { animation: none; } }
+/* Conversation-in-progress indicator — a light-blue progress ring wrapped
+   around the WISEai owl avatar (the owl chip rides on top as a layer above the
+   ring), replacing the separate inline spinner. The status label sits directly
+   to its right (the flex .sc-line-body column). */
+.sc-line-typing .sc-avatar-wiseai { position: relative; }
+.sc-line-typing .sc-avatar-wiseai::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%; box-sizing: border-box;
+  border: 3px solid color-mix(in srgb, #8CB8FF 26%, transparent);
+  border-top-color: #8CB8FF; pointer-events: none;
+  animation: scSpin 0.8s linear infinite;
+}
+.sc-line-typing .sc-typing-spin { display: none; }
+@media (prefers-reduced-motion: reduce) { .sc-line-typing .sc-avatar-wiseai::after { animation: none; } }
 
 /* ===== Welcome screen ===== */
 .sc-welcome {

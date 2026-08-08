@@ -295,7 +295,8 @@
     var sendBtn = root.querySelector('#ac-send');
 
     var flow = { qi: 0, answers: {}, done: false, questions: baseQuestions(), invite: null, delegatedFields: {},
-      route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false };
+      route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false,
+      paneHidden: true };
     /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
     var progressMin = true;
 
@@ -1052,7 +1053,8 @@
     function restartFlow() {
       stopForage();
       flow = { qi: 0, answers: {}, done: false, questions: baseQuestions(), invite: null, delegatedFields: {},
-        route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false };
+        route: null, forage: { brand: 0, comps: {} }, forageTimer: null, compTimer: null, releasing: false, releaseWait: false,
+        paneHidden: true };
       if (messages) messages.innerHTML = '';
       setInputEnabled(false);
       input.value = '';

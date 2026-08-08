@@ -268,6 +268,19 @@ html.dark .auth-nav .menu-nav-icon .material-symbols-outlined { color: var(--pri
 /* ── Icon-rail collapse (.mp-rail) — identical behaviour to #menu-panel.mp-rail ── */
 .auth-nav.mp-rail { flex-basis: 66px; width: 66px; }
 .auth-nav.mp-rail .menu-inner { width: 66px; }
+/* Icons only is the default minimal view on the auth pages: strip the nav
+   module's background container so the icon rail floats bare (no fill, border,
+   corner rounding, or drop shadow) — matching the app's icons-only rail
+   (#menu-panel.mp-rail). `!important` beats the dark-mode `.menu-inner` fill. */
+.auth-nav.mp-rail .menu-inner {
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+/* With the container gone the brand strip's divider would float on its own, so
+   drop it in the rail (the app's icons-only brand strip is borderless too). */
+.auth-nav.mp-rail .menu-brand-bar { border-bottom: 0; }
 .auth-nav.mp-rail .menu-brand-bar {
   flex-direction: row; justify-content: center; align-items: center;
   padding: 0 !important; gap: 0; position: relative; overflow: visible;
@@ -605,6 +618,19 @@ html.dark .sc-line-body a { color: var(--primary-bright); }
 }
 @keyframes scSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-typing-spin { animation: none; } }
+/* Conversation-in-progress indicator — a light-blue progress ring wrapped
+   around the WISEai owl avatar (the owl chip rides on top as a layer above the
+   ring), replacing the separate inline spinner. The status label sits directly
+   to its right (the flex .sc-line-body column). */
+.sc-line-typing .sc-avatar-wiseai { position: relative; }
+.sc-line-typing .sc-avatar-wiseai::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%; box-sizing: border-box;
+  border: 3px solid color-mix(in srgb, #8CB8FF 26%, transparent);
+  border-top-color: #8CB8FF; pointer-events: none;
+  animation: scSpin 0.8s linear infinite;
+}
+.sc-line-typing .sc-typing-spin { display: none; }
+@media (prefers-reduced-motion: reduce) { .sc-line-typing .sc-avatar-wiseai::after { animation: none; } }
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
 .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
 

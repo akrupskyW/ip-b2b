@@ -170,6 +170,16 @@
     .wa-pane.is-open.pane-triple { flex-grow: 3; }
     @media (prefers-reduced-motion: reduce) { .wa-chat, .wa-pane.is-open { animation: none !important; } }
 
+    /* Shared vertical rhythm — EVERY non-chat module (result panes + docked
+       History / Turns) sits ~15px shorter top & bottom, centered in the row, to
+       match the sticky modules' inset. The chat is the sole exception: it still
+       spans the full row height. */
+    #modules-row .wa-pane.is-open,
+    #modules-row .wch-sidebar.wch-docked {
+      align-self: center;
+      height: calc(100% - 30px);
+    }
+
     /* Pane header — a Noto Serif title + muted meta, controls floated right.
        Mirrors the product-portfolio board header (no boxed icon, no shaded strip). */
     /* Pane header — a plain editorial masthead like reports.html (.rp-title-main):

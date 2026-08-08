@@ -138,6 +138,40 @@ function moduleCard(m) {
     </a>`;
 }
 
+/* One rail pane = the ACTUAL module, rendered live in an iframe and scaled down
+   to a tall preview so you can see the real screen. The frame is non-interactive
+   (pointer-events:none); the whole pane links out to open the real page. Carries
+   the same data-search / data-area hooks so the search + area filters apply. */
+function paneCard(m) {
+  const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''}`.toLowerCase();
+  return `
+    <div class="mi-pane" data-pane data-search="${esc(search)}" data-area="${esc(m.area)}">
+      <div class="mi-pane-head">
+        <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(m.icon || 'widgets')}</span>
+        <span class="mi-pane-name">${esc(m.label)}</span>
+        <span class="mi-pane-area">${esc(m.areaTitle)}</span>
+      </div>
+      <a class="mi-pane-viewport" href="${esc(m.href)}" aria-label="Open ${esc(m.label)}">
+        <iframe class="mi-pane-frame" src="${esc(m.href)}" title="${esc(m.label)} preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
+      </a>
+    </div>`;
+}
+
+/* The rail: one horizontal track of every module rendered live as a tall pane,
+   side by side, with prev/next arrows — the whole app on a single page. */
+function renderRail(mods) {
+  return `
+    <div class="mi-rail" id="mi-rail" hidden>
+      <button type="button" class="mi-rail-nav" data-rail-prev aria-label="Scroll left"><span class="material-symbols-outlined">chevron_left</span></button>
+      <div class="mi-rail-track" id="mi-rail-track">
+        ${mods.map(paneCard).join('')}
+      </div>
+      <button type="button" class="mi-rail-nav" data-rail-next aria-label="Scroll right"><span class="material-symbols-outlined">chevron_right</span></button>
+      <div class="mi-rail-empty" id="mi-rail-empty" hidden>No modules match your search.</div>
+    </div>`;
+}
+
 /* Material icon per directory area, used on the segment scorecards. */
 const AREA_ICONS = {
   workspace: 'workspaces',
@@ -183,6 +217,10 @@ function renderDirectory() {
     ),
   ].join('');
 
+  /* Flat list (every module tagged with its area) that feeds the rail. */
+  const flat = [];
+  sections.forEach((s) => s.modules.forEach((m) => flat.push({ ...m, area: s.tone, areaTitle: s.title })));
+
   return `
     <section class="mi-module" id="mi-directory">
       <header class="mi-module-head">
@@ -209,6 +247,7 @@ function renderDirectory() {
       <div id="mi-dir-sections">
         ${sections.map(directorySection).join('')}
       </div>
+      ${renderRail(flat)}
     </section>`;
 }
 
@@ -337,12 +376,106 @@ function moduleStyles() {
   return `<style id="mi-styles">
     .mi-wrap { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 64px; }
 
-    .mi-hero { margin-bottom: 8px; }
+    .mi-hero {
+      margin-bottom: 8px; display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 20px; flex-wrap: wrap;
+    }
+    .mi-hero-text { min-width: 0; flex: 1 1 360px; }
     .mi-hero-title {
       font-family: 'Noto Serif', Georgia, serif;
       margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
     }
     .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 8px 0 0; max-width: 74ch; }
+
+    /* ---- View toggle (Grid ⇄ Carousel) ---- */
+    .mi-view {
+      display: inline-flex; gap: 4px; flex: 0 0 auto;
+      padding: 4px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .mi-view { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .mi-view-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 0; background: transparent; cursor: pointer;
+      padding: 8px 15px; border-radius: 999px;
+      font: inherit; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted);
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mi-view-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+    .mi-view-btn:hover { color: var(--text); }
+    .mi-view-btn.is-active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-1); }
+    html.dark .mi-view-btn.is-active { color: var(--primary-bright, #93C5FD); }
+    .mi-view-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+
+    /* ---- Rail view: live previews of every actual module, side by side ---- */
+    .mi-rail {
+      position: relative; margin-top: 22px; display: flex; align-items: stretch; gap: 8px;
+      --frame-w: 1280px; --frame-h: 1900px; --pane-scale: 0.34;
+      --pane-w: calc(var(--frame-w) * var(--pane-scale));
+      --pane-h: calc(var(--frame-h) * var(--pane-scale));
+    }
+    .mi-rail[hidden], .mi-rail-empty[hidden], .mi-pane[hidden] { display: none; }
+    .mi-rail-track {
+      display: flex; gap: 18px; flex: 1; min-width: 0;
+      overflow-x: auto; scroll-snap-type: x proximity; scroll-behavior: smooth;
+      padding: 6px 4px 18px; scrollbar-width: thin;
+    }
+    .mi-rail-track::-webkit-scrollbar { height: 8px; }
+    .mi-rail-track::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+    .mi-rail-nav {
+      flex: 0 0 auto; align-self: center; width: 42px; height: 42px; border-radius: 999px;
+      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+      cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow-1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .mi-rail-nav:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--primary); color: var(--primary); }
+    .mi-rail-nav:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-rail-nav .material-symbols-outlined { font-size: 22px !important; }
+    .mi-rail-empty {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--text-muted); font-size: 0.9rem;
+    }
+
+    .mi-pane {
+      scroll-snap-align: start; flex: 0 0 auto; width: var(--pane-w);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .mi-pane-head { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+    .mi-pane-ic { font-size: 20px !important; color: var(--primary); flex: 0 0 auto; }
+    html.dark .mi-pane-ic { color: var(--primary-bright, #93C5FD); }
+    .mi-pane-name {
+      font-weight: 800; font-size: 0.9rem; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mi-pane-area {
+      margin-left: auto; flex: 0 0 auto;
+      font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .mi-pane-viewport {
+      position: relative; display: block; width: var(--pane-w); height: var(--pane-h);
+      overflow: hidden; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--surface); box-shadow: var(--shadow-1); text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .mi-pane-viewport:hover {
+      transform: translateY(-4px); box-shadow: var(--shadow-2);
+      border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    }
+    .mi-pane-frame {
+      position: absolute; top: 0; left: 0; border: 0; background: var(--surface);
+      width: var(--frame-w); height: var(--frame-h);
+      transform: scale(var(--pane-scale)); transform-origin: top left;
+      pointer-events: none;
+    }
+    .mi-pane-open {
+      position: absolute; top: 10px; right: 10px; z-index: 2;
+      display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text);
+      box-shadow: var(--shadow-1); font-size: 16px !important;
+      opacity: 0; transform: translateY(-4px); transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .mi-pane-viewport:hover .mi-pane-open { opacity: 1; transform: translateY(0); }
 
     .mi-module { margin-top: 40px; }
     .mi-module-head { margin-bottom: 20px; }
@@ -389,12 +522,11 @@ function moduleStyles() {
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
     }
     .mi-card-ic {
-      display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px;
-      border-radius: 11px; background: var(--surface-2); color: var(--text);
+      display: grid; place-items: center; flex: 0 0 28px; width: 28px; color: var(--text);
     }
     .mi-dir-section[data-area="ai"] .mi-card-ic,
     .mi-dir-section[data-area="marketing"] .mi-card-ic { color: var(--primary); }
-    .mi-card-ic .material-symbols-outlined { font-size: 22px; }
+    .mi-card-ic .material-symbols-outlined { font-size: 24px; }
     .mi-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
     .mi-card-name {
       display: flex; align-items: center; gap: 7px;
@@ -515,8 +647,8 @@ function moduleStyles() {
       padding: 14px; border: 0; background: transparent; cursor: pointer; text-align: left; font: inherit;
     }
     .ii-glyph {
-      display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px;
-      border-radius: 12px; background: var(--surface-2); color: var(--text);
+      display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px;
+      color: var(--text);
     }
     .ii-glyph .material-symbols-outlined, .ii-glyph .material-symbols-outlined { font-size: 26px !important; }
     .ii-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
@@ -574,17 +706,91 @@ export function renderAllModules(mainEl) {
     ${moduleStyles()}
     <div class="mi-wrap">
       <header class="mi-hero">
-        <h1 class="mi-hero-title">All Modules</h1>
-        <p class="mi-hero-lede">An admin index of every module in the WISE app, plus the Icon Inventory —
-          a live catalog of every icon, its label, and where it is placed. Use it as a design-system map and
-          a jumping-off point to any screen.</p>
+        <div class="mi-hero-text">
+          <h1 class="mi-hero-title">All Modules</h1>
+          <p class="mi-hero-lede">An admin index of every module in the WISE app, plus the Icon Inventory —
+            a live catalog of every icon, its label, and where it is placed. Use it as a design-system map and
+            a jumping-off point to any screen.</p>
+        </div>
+        <div class="mi-view" role="group" aria-label="Directory view">
+          <button type="button" class="mi-view-btn is-active" data-view="grid" aria-pressed="true"><span class="material-symbols-outlined">grid_view</span>Grid</button>
+          <button type="button" class="mi-view-btn" data-view="rail" aria-pressed="false"><span class="material-symbols-outlined">view_column</span>Rail</button>
+        </div>
       </header>
       ${renderDirectory()}
       ${renderIconInventory()}
     </div>`;
 
+  wireView(mainEl);
   wireDirectory(mainEl);
+  wireRailFrames(mainEl);
   wireIconInventory(mainEl);
+}
+
+/* Rail previews should show ONLY the module itself — not the repeated left nav,
+   top bar, or WISEai chat dock that every app screen shares. The previews are
+   same-origin iframes, so on load we inject a small "embed" stylesheet that
+   hides that shared chrome and lets the main module fill the pane. Wrapped in
+   try/catch so a cross-origin frame just falls back to the full page. */
+const RAIL_EMBED_CSS = `
+  #menu-panel, #topbar-row, #wiseai-dock-panel, #alerts-panel, #ag-toast-wrap { display: none !important; }
+  #agent-shell-wrap { display: block !important; }
+  #modules-row { display: block !important; margin: 0 !important; padding: 0 !important; }
+  #agent-main { width: 100% !important; max-width: none !important; margin: 0 !important; border-radius: 0 !important; }
+  html, body { overflow-x: hidden !important; }
+`;
+
+function embedRailFrame(frame) {
+  try {
+    const doc = frame.contentDocument;
+    if (!doc || doc.getElementById('mi-embed-style')) return;
+    const style = doc.createElement('style');
+    style.id = 'mi-embed-style';
+    style.textContent = RAIL_EMBED_CSS;
+    (doc.head || doc.documentElement).appendChild(style);
+  } catch (e) { /* cross-origin frame — leave the full page as-is */ }
+}
+
+function wireRailFrames(root) {
+  root.querySelectorAll('.mi-pane-frame').forEach((f) => {
+    f.addEventListener('load', () => embedRailFrame(f));
+    // Handle the case where the frame finished loading before we attached.
+    try {
+      if (f.contentDocument && f.contentDocument.readyState === 'complete') embedRailFrame(f);
+    } catch (e) { /* not ready / cross-origin */ }
+  });
+}
+
+/* The Grid ⇄ Rail toggle. Grid shows the grouped link sections; Rail swaps in
+   the horizontal track of live module previews. Remembered across visits. */
+function wireView(root) {
+  const dir = root.querySelector('#mi-directory');
+  const sections = root.querySelector('#mi-dir-sections');
+  const rail = root.querySelector('#mi-rail');
+  const btns = Array.from(root.querySelectorAll('[data-view]'));
+  if (!dir || !btns.length) return;
+
+  const setView = (view) => {
+    const railOn = view === 'rail';
+    dir.classList.toggle('is-rail', railOn);
+    if (sections) sections.hidden = railOn;
+    if (rail) rail.hidden = !railOn;
+    btns.forEach((b) => {
+      const on = b.dataset.view === view;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    try { localStorage.setItem('mi-view', view); } catch (e) {}
+  };
+
+  btns.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+
+  let initial = 'grid';
+  try {
+    const v = localStorage.getItem('mi-view');
+    if (v === 'rail' || v === 'grid') initial = v;
+  } catch (e) {}
+  setView(initial);
 }
 
 function wireDirectory(root) {
@@ -596,15 +802,22 @@ function wireDirectory(root) {
 
   const cards = Array.from(sectionsRoot.querySelectorAll('[data-mod-card]'));
   const sections = Array.from(sectionsRoot.querySelectorAll('.mi-dir-section'));
+  const panes = Array.from(root.querySelectorAll('[data-pane]'));
+  const railEmpty = root.querySelector('#mi-rail-empty');
   const state = { q: '', area: 'all' };
+
+  const matches = (c) => {
+    const matchQ = !state.q || c.dataset.search.indexOf(state.q) !== -1;
+    const sec = c.closest('.mi-dir-section');
+    const area = sec ? sec.dataset.area : c.dataset.area;
+    const matchA = state.area === 'all' || area === state.area;
+    return matchQ && matchA;
+  };
 
   const apply = () => {
     let shown = 0;
     cards.forEach((c) => {
-      const matchQ = !state.q || c.dataset.search.indexOf(state.q) !== -1;
-      const sec = c.closest('.mi-dir-section');
-      const matchA = state.area === 'all' || (sec && sec.dataset.area === state.area);
-      const vis = matchQ && matchA;
+      const vis = matches(c);
       c.hidden = !vis;
       if (vis) shown++;
     });
@@ -613,7 +826,10 @@ function wireDirectory(root) {
       const any = Array.from(sec.querySelectorAll('[data-mod-card]')).some((c) => !c.hidden);
       sec.hidden = !any;
     });
+    // The rail mirrors the same filter so both views stay in lock-step.
+    panes.forEach((p) => { p.hidden = !matches(p); });
     if (emptyEl) emptyEl.hidden = shown !== 0;
+    if (railEmpty) railEmpty.hidden = shown !== 0;
   };
 
   if (searchInput) {
@@ -636,6 +852,12 @@ function wireDirectory(root) {
       apply();
     });
   }
+
+  // Rail prev/next — scroll roughly one viewport of panes at a time.
+  const track = root.querySelector('#mi-rail-track');
+  const step = () => Math.max(280, (track ? track.clientWidth : 600) * 0.8);
+  root.querySelector('[data-rail-prev]')?.addEventListener('click', () => track?.scrollBy({ left: -step(), behavior: 'smooth' }));
+  root.querySelector('[data-rail-next]')?.addEventListener('click', () => track?.scrollBy({ left: step(), behavior: 'smooth' }));
 
   apply();
 }
