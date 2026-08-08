@@ -81,7 +81,7 @@ function resolveOptions(items, ro = {}) {
 function rowHtml(item, i, o) {
   return `
     <button type="button" class="${o.itemClass}" data-notif="${i}">
-      <span class="${o.itemIconClass} ${o.tonePrefix}${esc(toneClass(item.tone))}"><span class="material-icons">${esc(item.icon || 'notifications')}</span></span>
+      <span class="${o.itemIconClass} ${o.tonePrefix}${esc(toneClass(item.tone))}"><span class="material-symbols-outlined">${esc(item.icon || 'notifications')}</span></span>
       <div class="${o.itemBodyClass}">
         <div class="${o.itemTitleClass}">${esc(item.title)}</div>
         <div class="${o.itemSubClass}">${esc(item.sub)}</div>
@@ -97,14 +97,14 @@ function innerHtml(items, o) {
     : `
       <div class="${o.footerClass}">
         <button type="button" class="${o.footerBtnClass}" data-action="mark-all-read">
-          ${o.footerIcon ? `<span class="material-icons">${esc(o.footerIcon)}</span>` : ''}
+          ${o.footerIcon ? `<span class="material-symbols-outlined">${esc(o.footerIcon)}</span>` : ''}
           ${esc(o.footerLabel)}
         </button>
       </div>`;
   return `
     <div class="${o.innerClass}">
       <header class="${o.headerClass}">
-        <div class="${o.iconClass}"><span class="material-icons">${esc(o.headerIcon)}</span></div>
+        <div class="${o.iconClass}"><span class="material-symbols-outlined">${esc(o.headerIcon)}</span></div>
         <div class="${o.titlesWrapClass}">
           <div class="${o.titleClass}">${esc(o.title)}</div>
           ${o.subtitle === '' ? '' : `<div class="${o.subtitleClass}">${esc(o.subtitle)}</div>`}

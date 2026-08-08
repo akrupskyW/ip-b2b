@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISEai — Reformulation Studio · Guiding Stars</title>
   <script src="../js/text-size-fouc.js"></script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -113,7 +112,7 @@
     }
     .rf-chip:hover { background: var(--surface-3); transform: translateY(-1px); }
     .rf-chip:active { transform: translateY(0); }
-    .rf-chip .material-icons { font-size: 14px; flex: 0 0 auto; }
+    .rf-chip .material-symbols-outlined { font-size: 14px; flex: 0 0 auto; }
     /* Every intent chip — reformulation moves AND the food-picker options — is a
        neutral ghost pill (the shared intent-chip look). No status red/green: the
        WISE brand only shows in the hover border and the trailing point pill that
@@ -145,7 +144,7 @@
     }
     html.dark .rf-chip-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
     .rf-chip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .rf-chip-thumb .material-icons { font-size: 13px !important; }
+    .rf-chip-thumb .material-symbols-outlined { font-size: 13px !important; }
 
     /* ── Module headers ──
        Mirrors the product-portfolio board header (.pf-head): a serif headline
@@ -195,7 +194,7 @@
     }
     .rf-head--badged .rf-head-titles { padding-right: 70px; }
     .rf-head-badge img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .rf-head-badge .material-icons { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary); }
+    .rf-head-badge .material-symbols-outlined { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary); }
 
     /* ── Module header controls ──
        The studio and dashboard now carry the same chrome the chat does: a width
@@ -293,7 +292,7 @@
     .rf-dq-banner { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.4; }
     .rf-dq-banner.is-dq { background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 30%, transparent); color: var(--sec-red-text); }
     .rf-dq-banner.is-ok { background: var(--sec-green-10); border: 1px solid color-mix(in srgb, var(--sec-green) 30%, transparent); color: var(--sec-green-text); }
-    .rf-dq-banner .material-icons { font-size: 18px; flex: 0 0 auto; margin-top: 1px; }
+    .rf-dq-banner .material-symbols-outlined { font-size: 18px; flex: 0 0 auto; margin-top: 1px; }
     .rf-dq-banner b { font-weight: 800; }
 
     /* ── Actionable recommendation steps ──
@@ -314,7 +313,7 @@
     .rf-col-move { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.35; }
     .rf-col-apply { display: flex; justify-content: flex-start; }
     .rf-step-badge { width: 22px; height: 22px; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10.5px; }
-    .rf-step-badge .material-icons { font-size: 14px; }
+    .rf-step-badge .material-symbols-outlined { font-size: 14px; }
     .rf-step-badge--dq { background: var(--sec-red-10); color: var(--sec-red-text); }
     .rf-step-badge--credit { background: var(--sec-green-10); color: var(--sec-green-text); }
     .rf-step-badge--debit { background: var(--primary-soft); color: var(--primary); }
@@ -337,7 +336,7 @@
     html.dark .rf-apply { border-color: var(--primary-bright, #8B9FAF); background: var(--primary-bright, #8B9FAF); color: var(--surface); }
     .rf-apply:hover { background: color-mix(in srgb, var(--primary) 86%, #000); border-color: color-mix(in srgb, var(--primary) 86%, #000); }
     html.dark .rf-apply:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 88%, #fff); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 88%, #fff); }
-    .rf-apply .material-icons { font-size: 13px; }
+    .rf-apply .material-symbols-outlined { font-size: 13px; }
     .rf-empty { font-size: 12.5px; color: var(--text-muted); padding: 14px; text-align: center; border: 1px dashed var(--border-strong); border-radius: 12px; }
 
     /* ── Debits / Credits trade-off ── */
@@ -415,15 +414,15 @@
     .rf-score { margin: 0 0 16px; padding: 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); text-align: center; }
     .rf-score.is-dq { border-color: color-mix(in srgb, var(--sec-red) 34%, transparent); background: var(--sec-red-10); }
     .rf-stars { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; }
-    .rf-stars .material-icons { font-size: 34px; color: var(--surface-3); transition: color .2s, transform .2s; }
-    .rf-stars .material-icons.is-on { color: var(--ter-amber); transform: scale(1.04); }
+    .rf-stars .material-symbols-outlined { font-size: 34px; color: var(--surface-3); transition: color .2s, transform .2s; }
+    .rf-stars .material-symbols-outlined.is-on { color: var(--ter-amber); transform: scale(1.04); }
     .rf-score-net { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); }
     .rf-score-net.is-dq { color: var(--sec-red-text); }
     .rf-score-path { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
     .rf-score-path b { color: var(--text); font-weight: 800; }
     .rf-reset { margin-top: 14px; width: 100%; height: 40px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; padding: 0 18px; border-radius: 9999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .16s, color .16s, border-color .16s; }
     .rf-reset:hover { background: var(--surface-2); color: var(--text); border-color: var(--text-muted); }
-    .rf-reset .material-icons { font-size: 15px; }
+    .rf-reset .material-symbols-outlined { font-size: 15px; }
 
     /* ═══════════ Step 0 · Product picker ═══════════
        The flow always starts by picking which food you're reformulating. The
@@ -449,7 +448,7 @@
     /* ── Toolbar — the search pill fills the row, actions sit to its right ── */
     .rf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 0; }
     .rf-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
-    .rf-search-inline > .material-icons { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .rf-search-inline > .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
     .rf-search {
       width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
       font-family: inherit; font-size: 0.8125rem; color: var(--text);
@@ -470,7 +469,7 @@
     .rf-search-inline.has-query .rf-search-clear { display: inline-flex; }
     .rf-search-clear:hover { background: var(--surface-3); color: var(--text); }
     html.dark .rf-search-clear:hover { background: rgba(255,255,255,0.08); }
-    .rf-search-clear .material-icons { font-size: 17px; }
+    .rf-search-clear .material-symbols-outlined { font-size: 17px; }
 
     /* "Change product" — the toolbar's trailing action (portfolio's Add Product slot). */
     .rf-change-btn {
@@ -482,7 +481,7 @@
       transition: background .16s, color .16s, border-color .16s;
     }
     .rf-change-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--primary); }
-    .rf-change-btn .material-icons { font-size: 16px; }
+    .rf-change-btn .material-symbols-outlined { font-size: 16px; }
 
     /* ── Score cards — at-a-glance numbers; the picker's also filter the list ── */
     .rf-stats { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -503,9 +502,9 @@
     .rf-stat:disabled { cursor: default; }
     .rf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
     .rf-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
-    .rf-stat-num .material-icons { font-size: 19px; }
+    .rf-stat-num .material-symbols-outlined { font-size: 19px; }
     .rf-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .rf-stat-label .material-icons { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .rf-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
     .rf-stat--alert .rf-stat-num { color: var(--sec-red); }
     .rf-stat--warn .rf-stat-num { color: #8a6400; }
     html.dark .rf-stat--warn .rf-stat-num { color: #FFD98A; }
@@ -571,20 +570,20 @@
     html.dark .rf-reformulate { border-color: var(--primary-bright, #8B9FAF); background: var(--primary-bright, #8B9FAF); color: var(--surface); }
     .rf-reformulate:hover { background: color-mix(in srgb, var(--primary) 86%, #000); border-color: color-mix(in srgb, var(--primary) 86%, #000); }
     html.dark .rf-reformulate:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 88%, #fff); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 88%, #fff); }
-    .rf-reformulate .material-icons { font-size: 14px; }
+    .rf-reformulate .material-symbols-outlined { font-size: 14px; }
     .rf-thumb { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; }
     .rf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
-    .rf-thumb .material-icons { font-size: 20px; }
+    .rf-thumb .material-symbols-outlined { font-size: 20px; }
     html.dark .rf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
     .rf-pcell-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
     .rf-pname { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rf-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
     .rf-stars-glyph { display: inline-flex; align-items: center; gap: 1px; color: var(--ter-amber); }
-    .rf-stars-glyph .material-icons { font-size: var(--rf-star-icon, 15px); line-height: 1; }
+    .rf-stars-glyph .material-symbols-outlined { font-size: var(--rf-star-icon, 15px); line-height: 1; }
     .rf-stars-glyph .is-empty { color: var(--text-subtle); opacity: .4; }
     /* Row status tag — distinct from .rf-chip, which is the chat's intent pill. */
     .rf-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px var(--rf-tag-pad-x, 9px); border-radius: 9999px; font-size: 10px; font-weight: 700; white-space: nowrap; }
-    .rf-tag .material-icons { font-size: var(--rf-tag-icon, 12px); }
+    .rf-tag .material-symbols-outlined { font-size: var(--rf-tag-icon, 12px); }
     .rf-tag--dq { background: color-mix(in srgb, var(--sec-red) 14%, transparent); color: var(--sec-red-text); }
     .rf-tag--ok { background: color-mix(in srgb, var(--sec-green) 16%, transparent); color: var(--sec-green-text); }
     html.dark .rf-tag--dq { background: color-mix(in srgb, var(--sec-red) 26%, transparent); }
@@ -605,7 +604,15 @@
 
     /* Narrow viewports: let the three modules scroll horizontally rather than crush. */
     @media (max-width: 1180px) {
-      #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
+      /* overflow-x:auto forces overflow-y to compute non-visible, which would
+         clip the module cards' drop-shadow at the row edge; keep a bottom shadow
+         gutter inside the row and pull it back with a negative margin so the
+         shadow still renders and the panes keep full height. */
+      #chat-shell-wrap.menu-brand-integrated #modules-row {
+        overflow-x: auto;
+        padding-bottom: var(--modules-bottom-pad);
+        margin-bottom: calc(-1 * var(--modules-bottom-pad));
+      }
       .rf-dash { min-width: 460px; }
     }
 
@@ -634,7 +641,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -669,13 +676,13 @@
           </div>
           <div class="sc-topbar-controls">
             <div class="panel-more-wrap" id="rf-chat-menu-wrap">
-              <button type="button" id="rf-chat-menu-btn" class="panel-more-btn" onclick="rfToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <button type="button" id="rf-chat-menu-btn" class="panel-more-btn" onclick="rfToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-chat-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="rf-chat-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfCopyTranscript(this)"><span class="material-symbols-outlined topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset product &amp; chat</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset product &amp; chat</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="rf-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -692,7 +699,7 @@
               <input id="chat-input" type="text" placeholder="Ask WISEai to reformulate this product…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();rfSend();}" />
             </div>
             <button type="button" id="rf-send" class="rf-send-btn" onclick="rfSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
-              <span class="material-icons">send</span>
+              <span class="material-symbols-outlined">send</span>
             </button>
           </div>
         </div>
@@ -703,11 +710,11 @@
         <header class="rf-head">
           <div class="rf-head-controls">
             <div class="panel-more-wrap" id="rf-studio-menu-wrap">
-              <button type="button" id="rf-studio-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-studio-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-studio-menu" aria-label="Module options"><span class="material-icons">more_vert</span></button>
+              <button type="button" id="rf-studio-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-studio-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-studio-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="rf-studio-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-icons topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-symbols-outlined topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfResetProduct(); rfCloseModuleMenus()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset to original label</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfResetProduct(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset to original label</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="rf-studio-width" aria-pressed="false" title="Widen studio" aria-label="Studio width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -763,7 +770,7 @@
             <button type="button" class="rf-switch" id="rf-wg" role="switch" aria-checked="false" aria-label="Whole grain"></button>
           </div>
 
-          <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-icons">restart_alt</span>Reset to original label</button>
+          <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-symbols-outlined">restart_alt</span>Reset to original label</button>
           </div><!-- /#rf-studio-loaded -->
         </div>
       </section>
@@ -776,11 +783,11 @@
           <div class="rf-head-scrim" aria-hidden="true"></div>
           <div class="rf-head-controls">
             <div class="panel-more-wrap" id="rf-dash-menu-wrap">
-              <button type="button" id="rf-dash-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-dash-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-dash-menu" aria-label="Module options"><span class="material-icons">more_vert</span></button>
+              <button type="button" id="rf-dash-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-dash-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-dash-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="rf-dash-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-icons topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle rf-gs-toggle" role="menuitemcheckbox" aria-checked="false" onclick="rfToggleGsMode(event)"><span class="material-symbols-outlined topbar-menu-icon">star_border</span><span>Reformulate for Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-icons topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="rf-dash-width" aria-pressed="false" title="Widen dashboard" aria-label="Dashboard width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -796,11 +803,11 @@
           <!-- Toolbar · one search box serves both board states -->
           <div class="rf-toolbar">
             <div class="rf-search-inline" id="rf-search-wrap">
-              <span class="material-icons">search</span>
+              <span class="material-symbols-outlined">search</span>
               <input type="text" class="rf-search" id="rf-search" placeholder="Search by product name or UPC" aria-label="Search products" autocomplete="off" />
-              <button type="button" class="rf-search-clear" id="rf-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>
+              <button type="button" class="rf-search-clear" id="rf-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>
             </div>
-            <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-icons">swap_horiz</span>Change product</button>
+            <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-symbols-outlined">swap_horiz</span>Change product</button>
           </div>
 
           <!-- Score cards · rebuilt per state by renderPickStats / renderLoadedStats -->
@@ -1224,7 +1231,7 @@
 
         // Score readout
         const starsEl = document.getElementById('rf-stars');
-        starsEl.innerHTML = [0, 1, 2].map((i) => `<span class="material-icons ${i < c.stars ? 'is-on' : ''}">${i < c.stars ? 'star' : 'star_border'}</span>`).join('');
+        starsEl.innerHTML = [0, 1, 2].map((i) => `<span class="material-symbols-outlined ${i < c.stars ? 'is-on' : ''}">${i < c.stars ? 'star' : 'star_border'}</span>`).join('');
         const scoreBox = document.getElementById('rf-score');
         scoreBox.classList.toggle('is-dq', c.disqualified);
         const netEl = document.getElementById('rf-score-net');
@@ -1256,12 +1263,12 @@
           const lead = GS
             ? `Recommendations to reach <b>★ 1 star</b> — apply any step to model it live.`
             : `Recommendations to clear the flags and lift the score — apply any step to model it live.`;
-          dqEl.innerHTML = c.dq.map((d) => `<div class="rf-dq-banner is-dq"><span class="material-icons">block</span><span>${d.text}</span></div>`).join('')
-            + `<div class="rf-dq-banner is-dq" style="background:transparent;border:0;padding:2px 2px 0;font-size:11.5px"><span class="material-icons" style="font-size:15px">arrow_forward</span><span>${lead}</span></div>`;
+          dqEl.innerHTML = c.dq.map((d) => `<div class="rf-dq-banner is-dq"><span class="material-symbols-outlined">block</span><span>${d.text}</span></div>`).join('')
+            + `<div class="rf-dq-banner is-dq" style="background:transparent;border:0;padding:2px 2px 0;font-size:11.5px"><span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span><span>${lead}</span></div>`;
         } else if (GS) {
-          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-icons">verified</span><span>Qualifies — earns <b>${c.stars}★</b>. ${c.stars < 3 ? 'Keep going for the next star.' : 'Top Guiding Stars rating.'}</span></div>`;
+          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-symbols-outlined">verified</span><span>Qualifies — earns <b>${c.stars}★</b>. ${c.stars < 3 ? 'Keep going for the next star.' : 'Top Guiding Stars rating.'}</span></div>`;
         } else {
-          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-icons">verified</span><span>No blocking flags — this product is clear. Apply moves to keep improving the profile.</span></div>`;
+          dqEl.innerHTML = `<div class="rf-dq-banner is-ok"><span class="material-symbols-outlined">verified</span><span>No blocking flags — this product is clear. Apply moves to keep improving the profile.</span></div>`;
         }
 
         // Actionable steps
@@ -1273,13 +1280,13 @@
         } else {
           stepsEl.innerHTML = recs.map((r) => {
             const badge = r.kind === 'dq'
-              ? '<span class="rf-step-badge rf-step-badge--dq"><span class="material-icons">block</span></span>'
+              ? '<span class="rf-step-badge rf-step-badge--dq"><span class="material-symbols-outlined">block</span></span>'
               : `<span class="rf-step-badge rf-step-badge--${r.kind}">${r.pts}</span>`;
             return '<div class="rf-trow">'
               + `<span class="rf-td rf-col-impact">${badge}</span>`
               + `<span class="rf-td rf-col-move">${r.title}</span>`
               + `<span class="rf-td rf-col-effort"><span class="rf-effort rf-effort--${r.effort}">${effortLabel[r.effort]}</span></span>`
-              + `<span class="rf-td rf-col-apply"><button type="button" class="rf-apply" data-apply="${r.id}"><span class="material-icons">check</span>Apply</button></span>`
+              + `<span class="rf-td rf-col-apply"><button type="button" class="rf-apply" data-apply="${r.id}"><span class="material-symbols-outlined">check</span>Apply</button></span>`
               + '</div>';
           }).join('');
         }
@@ -1346,10 +1353,10 @@
         const c = compute();
         const recs = recommendations(c);
         const inner = !recs.length
-          ? `<span class="rf-chip rf-chip--qualified"><span class="material-icons">verified</span>Fully optimized${GS ? ' — ' + c.stars + '★' : ''}</span>`
+          ? `<span class="rf-chip rf-chip--qualified"><span class="material-symbols-outlined">verified</span>Fully optimized${GS ? ' — ' + c.stars + '★' : ''}</span>`
           : recs.slice(0, 6).map((r) => {
               const p = chipPts(r, c);
-              return `<button type="button" class="rf-chip rf-chip--move" data-chip="${r.id}"><span class="material-icons">${r.icon}</span>${esc(r.chip)}<span class="rf-chip-pts ${p.cls}">${p.txt}</span></button>`;
+              return `<button type="button" class="rf-chip rf-chip--move" data-chip="${r.id}"><span class="material-symbols-outlined">${r.icon}</span>${esc(r.chip)}<span class="rf-chip-pts ${p.cls}">${p.txt}</span></button>`;
             }).join('');
         return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
       }
@@ -1362,8 +1369,8 @@
         const inner = PRODUCTS.map((p) => {
           const c = compute({ ...p.baseline });
           const thumb = p.img
-            ? `<span class="rf-chip-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-icons').style.display='flex'"><span class="material-icons" style="display:none">${p.icon}</span></span>`
-            : `<span class="rf-chip-thumb"><span class="material-icons">${p.icon}</span></span>`;
+            ? `<span class="rf-chip-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-symbols-outlined').style.display='flex'"><span class="material-symbols-outlined" style="display:none">${p.icon}</span></span>`
+            : `<span class="rf-chip-thumb"><span class="material-symbols-outlined">${p.icon}</span></span>`;
           // The picker pill reads out the food's current standing in the numbers
           // that matter for reformulation — how many blockers it must clear, or
           // its net points once it's clear — instead of a cryptic "DQ".
@@ -1706,12 +1713,12 @@
       function statHtml(o) {
         const cls = ['rf-stat', o.tone ? 'rf-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
         const attrs = o.filter ? ` data-filter="${o.filter}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
-        const icon = o.icon ? `<span class="material-icons">${o.icon}</span>` : '';
+        const icon = o.icon ? `<span class="material-symbols-outlined">${o.icon}</span>` : '';
         return `<button type="button" class="${cls}"${attrs}><span class="rf-stat-num">${o.num}</span><span class="rf-stat-label">${icon}${o.label}</span></button>`;
       }
       function starsGlyph(n) {
         return `<span class="rf-stars-glyph" role="img" aria-label="${n} of 3 Guiding Stars">`
-          + [0, 1, 2].map((i) => `<span class="material-icons${i < n ? '' : ' is-empty'}">${i < n ? 'star' : 'star_border'}</span>`).join('')
+          + [0, 1, 2].map((i) => `<span class="material-symbols-outlined${i < n ? '' : ' is-empty'}">${i < n ? 'star' : 'star_border'}</span>`).join('')
           + '</span>';
       }
 
@@ -1731,7 +1738,7 @@
         const signed = (c.net >= 0 ? '+' : '') + c.net;
         const cards = GS
           ? [
-              statHtml({ num: c.disqualified ? '<span class="material-icons">block</span>' : `${c.stars}<span class="material-icons">star</span>`, label: 'Guiding Stars', tone: c.disqualified ? 'alert' : 'stars' }),
+              statHtml({ num: c.disqualified ? '<span class="material-symbols-outlined">block</span>' : `${c.stars}<span class="material-symbols-outlined">star</span>`, label: 'Guiding Stars', tone: c.disqualified ? 'alert' : 'stars' }),
               statHtml({ num: signed, label: 'Net points', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
             ]
           : [
@@ -1878,15 +1885,15 @@
       function renderPickList() {
         pickList.innerHTML = sortedRows().map(({ p, c }) => {
           const thumb = p.img
-            ? `<span class="rf-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-icons').style.display='flex'"><span class="material-icons" style="display:none">${p.icon}</span></span>`
-            : `<span class="rf-thumb"><span class="material-icons">${p.icon}</span></span>`;
+            ? `<span class="rf-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-symbols-outlined').style.display='flex'"><span class="material-symbols-outlined" style="display:none">${p.icon}</span></span>`
+            : `<span class="rf-thumb"><span class="material-symbols-outlined">${p.icon}</span></span>`;
           /* Always the star glyph now — a disqualified food simply shows three
              empty (gray) stars. The rating stacks on top of the qualify /
              disqualify status in the one combined column. */
           const rating = starsGlyph(c.disqualified ? 0 : c.stars);
           const status = c.disqualified
-            ? '<span class="rf-tag rf-tag--dq"><span class="material-icons">block</span>Disqualified</span>'
-            : '<span class="rf-tag rf-tag--ok"><span class="material-icons">verified</span>Qualifying</span>';
+            ? '<span class="rf-tag rf-tag--dq"><span class="material-symbols-outlined">block</span>Disqualified</span>'
+            : '<span class="rf-tag rf-tag--ok"><span class="material-symbols-outlined">verified</span>Qualifying</span>';
           const blockers = c.dq.length
             ? `<span class="rf-blockers-text">${c.dq.map((d) => esc(d.tag)).join(', ')}</span>`
             : '<span class="rf-none">None</span>';
@@ -1896,7 +1903,7 @@
             + `<span class="rf-td rf-col-stars"><span class="rf-stars-stack">${rating}${status}</span></span>`
             + `<span class="rf-td rf-col-blockers">${blockers}</span>`
             + `<span class="rf-td rf-col-action"><button type="button" class="rf-reformulate" data-pick="${p.id}" aria-label="Reformulate ${esc(p.name)}">`
-            + '<span class="material-icons">tune</span>Reformulate</button></span>'
+            + '<span class="material-symbols-outlined">tune</span>Reformulate</button></span>'
             + '</div>';
         }).join('');
       }
@@ -1933,7 +1940,7 @@
         badge.innerHTML = !p ? ''
           : p.img
             ? `<img src="${esc(p.img)}" alt="" onerror="this.remove()">`
-            : `<span class="material-icons">${esc(p.icon)}</span>`;
+            : `<span class="material-symbols-outlined">${esc(p.icon)}</span>`;
       }
 
       window.rfShowPicker = function () {

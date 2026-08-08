@@ -78,7 +78,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'prefs-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'prefs-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -115,12 +115,12 @@ function paint() {
   const ts = textSize();
   hostEl.innerHTML = `
     <div class="prefs-wrap">
-      <div class="prefs-breadcrumb"><span>Account</span><span class="material-icons">chevron_right</span><span class="prefs-breadcrumb-here">Preferences</span></div>
+      <div class="prefs-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="prefs-breadcrumb-here">Preferences</span></div>
       <h1 class="prefs-title">Preferences</h1>
       <p class="prefs-lede">Tune how WISE looks, notifies you, and behaves across your workspace.</p>
 
       <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-icons">palette</span>Appearance</h2>
+        <h2 class="prefs-group-title"><span class="material-symbols-outlined">palette</span>Appearance</h2>
         <div class="prefs-card">
           ${segRow({ key: 'theme', label: 'Theme', sub: 'Light or dark across the whole app', options: [{ v: 'light', label: 'Light' }, { v: 'dark', label: 'Dark' }], value: dark ? 'dark' : 'light' })}
           <div class="prefs-row">
@@ -129,8 +129,8 @@ function paint() {
               <div class="prefs-row-sub">Scale all interface text · <strong data-prefs-ts>${ts}%</strong></div>
             </div>
             <div class="prefs-stepper">
-              <button type="button" class="prefs-step" data-prefs-ts-step="-5" aria-label="Smaller"><span class="material-icons">remove</span></button>
-              <button type="button" class="prefs-step" data-prefs-ts-step="5" aria-label="Larger"><span class="material-icons">add</span></button>
+              <button type="button" class="prefs-step" data-prefs-ts-step="-5" aria-label="Smaller"><span class="material-symbols-outlined">remove</span></button>
+              <button type="button" class="prefs-step" data-prefs-ts-step="5" aria-label="Larger"><span class="material-symbols-outlined">add</span></button>
             </div>
           </div>
           ${segRow({ key: 'density', label: 'Density', sub: 'Spacing of lists and tables', options: [{ v: 'comfortable', label: 'Comfortable' }, { v: 'compact', label: 'Compact' }], value: p.density })}
@@ -138,7 +138,7 @@ function paint() {
       </section>
 
       <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-icons">notifications</span>Notifications</h2>
+        <h2 class="prefs-group-title"><span class="material-symbols-outlined">notifications</span>Notifications</h2>
         <div class="prefs-card" data-prefs-anchor="notifications">
           ${toggleRow({ key: 'notif_alerts', label: 'In-app alerts', sub: 'Agent activity, verifications, and flags', on: p.notif_alerts })}
           ${toggleRow({ key: 'notif_email', label: 'Email notifications', sub: 'A summary when something needs you', on: p.notif_email })}
@@ -148,7 +148,7 @@ function paint() {
       </section>
 
       <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-icons">tune</span>Workspace</h2>
+        <h2 class="prefs-group-title"><span class="material-symbols-outlined">tune</span>Workspace</h2>
         <div class="prefs-card">
           ${segRow({ key: 'dock', label: 'WISEai chat position', sub: 'Where the assistant docks', options: [{ v: 'left', label: 'Left' }, { v: 'center', label: 'Center' }, { v: 'right', label: 'Right' }], value: p.dock })}
           <div class="prefs-row">
@@ -173,7 +173,7 @@ function paint() {
       </section>
 
       <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-icons">accessibility_new</span>Accessibility</h2>
+        <h2 class="prefs-group-title"><span class="material-symbols-outlined">accessibility_new</span>Accessibility</h2>
         <div class="prefs-card">
           ${toggleRow({ key: 'reduce_motion', label: 'Reduce motion', sub: 'Minimize animations and transitions', on: p.reduce_motion })}
           ${toggleRow({ key: 'high_contrast', label: 'Increase contrast', sub: 'Stronger borders and text contrast', on: p.high_contrast })}

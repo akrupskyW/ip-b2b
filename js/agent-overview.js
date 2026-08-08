@@ -42,6 +42,7 @@ import { renderUserManagement, USER_MANAGEMENT_WISEAI, setUserManagementChat } f
 import { renderNonUpfDashboard, NON_UPF_WISEAI, setNonUpfChat } from './non-upf-dashboard-flow.js';
 import { renderAuditQueue, AUDIT_QUEUE_WISEAI, setAuditQueueChat } from './audit-queue-flow.js';
 import { renderAdminUtils, ADMIN_UTILS_WISEAI, setAdminUtilsChat } from './admin-utils-flow.js';
+import { renderAllModules, ALL_MODULES_WISEAI } from './all-modules-flow.js';
 
 /* App-wide, self-initialising table helpers: consistent sortable headers
    (up/down chevron) + a matching "load more" pagination footer on every data
@@ -69,7 +70,7 @@ function agToast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'ag-toast';
-  t.innerHTML = `<span class="material-icons">${escHtml(icon)}</span><span>${escHtml(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${escHtml(icon)}</span><span>${escHtml(msg)}</span>`;
   wrap.appendChild(t);
   setTimeout(() => {
     t.style.transition = 'opacity .3s ease, transform .3s ease';
@@ -114,12 +115,12 @@ function openAgSheet({ eyebrow = 'WISEcode AI', title = '', icon = 'bolt' } = {}
   sheet.innerHTML = `
     <div class="ag-sheet-handle" aria-hidden="true"></div>
     <header class="ag-sheet-head">
-      <span class="ag-sheet-icon"><span class="material-icons">${escHtml(icon)}</span></span>
+      <span class="ag-sheet-icon"><span class="material-symbols-outlined">${escHtml(icon)}</span></span>
       <div class="ag-sheet-titles">
         <div class="ag-sheet-eyebrow">${escHtml(eyebrow)}</div>
         <div class="ag-sheet-title">${escHtml(title)}</div>
       </div>
-      <button class="ag-sheet-close" data-sheet-close="1" aria-label="Close"><span class="material-icons">close</span></button>
+      <button class="ag-sheet-close" data-sheet-close="1" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
     </header>
     <div class="ag-sheet-body" id="ag-sheet-body"></div>`;
   requestAnimationFrame(() => { scrim.classList.add('is-open'); sheet.classList.add('is-open'); });
@@ -139,7 +140,7 @@ function runAgProgress(host, cfg = {}) {
       <div class="ag-flow-bar"><span class="ag-flow-fill" id="ag-flow-fill"></span></div>
       <div class="ag-flow-pct" id="ag-flow-pct">0%</div>
       <ul class="ag-flow-steps">
-        ${steps.map((s) => `<li class="ag-flow-step"><span class="ag-flow-dot"><span class="material-icons">radio_button_unchecked</span></span><span>${escHtml(s)}</span></li>`).join('')}
+        ${steps.map((s) => `<li class="ag-flow-step"><span class="ag-flow-dot"><span class="material-symbols-outlined">radio_button_unchecked</span></span><span>${escHtml(s)}</span></li>`).join('')}
       </ul>
     </div>`;
   const fill = host.querySelector('#ag-flow-fill');
@@ -153,13 +154,13 @@ function runAgProgress(host, cfg = {}) {
         const prev = stepEls[i - 1];
         prev?.classList.remove('is-active');
         prev?.classList.add('is-done');
-        const ic = prev?.querySelector('.material-icons');
+        const ic = prev?.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = 'check_circle';
       }
       if (i < n) {
         const cur = stepEls[i];
         cur?.classList.add('is-active');
-        const ic = cur?.querySelector('.material-icons');
+        const ic = cur?.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = 'autorenew';
         const target = Math.round(((i + 1) / n) * 100);
         if (fill) fill.style.width = target + '%';
@@ -169,11 +170,11 @@ function runAgProgress(host, cfg = {}) {
       } else {
         host.innerHTML = `
           <div class="ag-flow-done">
-            <div class="ag-flow-done-icon"><span class="material-icons">${escHtml(doneIcon)}</span></div>
+            <div class="ag-flow-done-icon"><span class="material-symbols-outlined">${escHtml(doneIcon)}</span></div>
             <div class="ag-flow-done-title">${escHtml(doneTitle)}</div>
             ${doneText ? `<p class="ag-flow-done-text">${doneText}</p>` : ''}
             <div class="ag-sheet-actions">
-              ${cta ? `<button class="agent-cta agent-cta--primary" data-sheet-nav="${escHtml(cta.href)}"><span class="material-icons">${escHtml(cta.icon || 'chat')}</span>${escHtml(cta.label)}</button>` : ''}
+              ${cta ? `<button class="agent-cta agent-cta--primary" data-sheet-nav="${escHtml(cta.href)}"><span class="material-symbols-outlined">${escHtml(cta.icon || 'chat')}</span>${escHtml(cta.label)}</button>` : ''}
               <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Close</button>
             </div>
           </div>`;
@@ -207,7 +208,7 @@ function openAgentDetailSheet(agentId) {
   const kidsHtml = kids.length
     ? `<div class="ag-detail-label">Sub-agents</div>${kids.map((k) => `
         <div class="ag-detail-row">
-          <span class="ag-detail-ic"><span class="material-icons">${escHtml(k.icon)}</span></span>
+          <span class="ag-detail-ic"><span class="material-symbols-outlined">${escHtml(k.icon)}</span></span>
           <div><div class="ag-detail-name">${escHtml(k.label)}</div><div class="ag-detail-sub">${escHtml(k.description)}</div></div>
         </div>`).join('')}`
     : '<p class="ag-sheet-lead">This agent operates on its own — capabilities are delivered directly.</p>';
@@ -216,7 +217,7 @@ function openAgentDetailSheet(agentId) {
     <p class="ag-sheet-lead">${escHtml(a.description)}</p>
     ${kidsHtml}
     <div class="ag-sheet-actions">
-      <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
+      <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
       <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Close</button>
     </div>`;
 }
@@ -230,7 +231,7 @@ function openAddMemberSheet() {
       <select class="ag-input" id="ag-mem-role"><option>Viewer</option><option>Editor</option><option>Admin</option></select>
     </label>
     <div class="ag-sheet-actions">
-      <button class="agent-cta agent-cta--primary" id="ag-mem-send"><span class="material-icons">send</span>Send invite</button>
+      <button class="agent-cta agent-cta--primary" id="ag-mem-send"><span class="material-symbols-outlined">send</span>Send invite</button>
       <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Cancel</button>
     </div>`;
   const email = body.querySelector('#ag-mem-email');
@@ -267,7 +268,7 @@ function renderChildCard(agent) {
         ${grandkids
           .map(
             (gk) => `<div class="agent-child" id="${escHtml(gk.id)}" role="button" tabindex="0" aria-label="View ${escHtml(gk.label)}">
-              <span class="agent-child-icon"><span class="material-icons">${escHtml(gk.icon)}</span></span>
+              <span class="agent-child-icon"><span class="material-symbols-outlined">${escHtml(gk.icon)}</span></span>
               <div class="agent-child-body">
                 <span class="agent-child-name">${escHtml(gk.label)}</span>
                 <span class="agent-child-desc">${escHtml(gk.description)}</span>
@@ -280,7 +281,7 @@ function renderChildCard(agent) {
   return `
     <article class="agent-card is-interactive" id="${escHtml(agent.id)}" role="button" tabindex="0" aria-label="View ${escHtml(agent.label)}">
       <div class="agent-card-head">
-        <span class="agent-card-icon"><span class="material-icons">${escHtml(agent.icon)}</span></span>
+        <span class="agent-card-icon"><span class="material-symbols-outlined">${escHtml(agent.icon)}</span></span>
         <div>
           <h3 class="agent-card-title">${escHtml(agent.label)}</h3>
         </div>
@@ -297,13 +298,13 @@ function renderHero(agent) {
       <h1 class="agent-hero-title">${escHtml(agent.label)}</h1>
       <p class="agent-hero-desc">${escHtml(agent.description)}</p>
       <div class="agent-hero-meta">
-        <span class="agent-hero-pill"><span class="material-icons">${escHtml(agent.icon)}</span>${escHtml(agent.label)}</span>
-        <span class="agent-hero-pill"><span class="material-icons">hub</span>${childCount} agent${childCount === 1 ? '' : 's'}</span>
-        <span class="agent-hero-pill"><span class="material-icons">workspaces</span>WISEcode AI orchestrator</span>
+        <span class="agent-hero-pill"><span class="material-symbols-outlined">${escHtml(agent.icon)}</span>${escHtml(agent.label)}</span>
+        <span class="agent-hero-pill"><span class="material-symbols-outlined">hub</span>${childCount} agent${childCount === 1 ? '' : 's'}</span>
+        <span class="agent-hero-pill"><span class="material-symbols-outlined">workspaces</span>WISEcode AI orchestrator</span>
       </div>
       <div class="agent-cta-row">
         <a class="agent-cta agent-cta--primary" href="ai-chat.html">
-          <span class="material-icons">chat</span>
+          <span class="material-symbols-outlined">chat</span>
           Open WISEowl chat
         </a>
       </div>
@@ -338,7 +339,7 @@ function collapseNavRail() {
     btn.setAttribute('aria-pressed', 'true');
     btn.setAttribute('aria-label', 'Expand menu');
     btn.setAttribute('title', 'Expand menu');
-    const icon = btn.querySelector('.material-icons');
+    const icon = btn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = 'chevron_right';
   }
 }
@@ -379,7 +380,7 @@ function bootstrapBlankPage(productId) {
   const headerEl = document.getElementById('agent-main-header');
   if (headerEl) {
     headerEl.innerHTML = isDashboard
-      ? `<span class="agent-main-icon"><span class="material-icons">dashboard</span></span>
+      ? `<span class="agent-main-icon"><span class="material-symbols-outlined">dashboard</span></span>
          <div class="agent-main-titles">
            <div class="agent-main-title">Dashboard</div>
            <div class="agent-main-sub">Brand Intelligence</div>
@@ -542,6 +543,10 @@ function bootstrapAppNavPage(navId) {
     /* WISEcode Admin · Admin Utilities (maintenance + seeding tools). */
     document.title = 'WISE · Admin Utilities';
     if (mainEl) renderAdminUtils(mainEl);
+  } else if (navId === 'all-modules') {
+    /* Admin · All Modules — the app-wide module directory + Icon Inventory. */
+    document.title = 'WISE · All Modules';
+    if (mainEl) renderAllModules(mainEl);
   } else if (mainEl && !mainEl.innerHTML.trim()) {
     mainEl.innerHTML = `
       <div class="agent-empty" data-module-placeholder>
@@ -596,7 +601,7 @@ export function bootstrapAgentPage() {
   const headerEl = document.getElementById('agent-main-header');
   if (headerEl) {
     headerEl.innerHTML = `
-      <span class="agent-main-icon"><span class="material-icons">${escHtml(agent.icon)}</span></span>
+      <span class="agent-main-icon"><span class="material-symbols-outlined">${escHtml(agent.icon)}</span></span>
       <div class="agent-main-titles">
         <div class="agent-main-title">${escHtml(agent.label)}</div>
         <div class="agent-main-sub">Overview</div>
@@ -790,6 +795,7 @@ function setupWISEaiDock() {
     'non-upf-dashboard': NON_UPF_WISEAI,
     'audit-queue': AUDIT_QUEUE_WISEAI,
     'admin-utils': ADMIN_UTILS_WISEAI,
+    'all-modules': ALL_MODULES_WISEAI,
   };
   const accountWiseai = ACCOUNT_WISEAI[document.body.dataset.navId];
 
@@ -1043,7 +1049,7 @@ function mountAlertsPanel(notifBtn) {
         <p class="ag-sheet-lead">${escHtmlSafe(item.sub)}</p>
         <p class="ag-sheet-lead">Open the WISEowl chat to act on this alert with the relevant agent.</p>
         <div class="ag-sheet-actions">
-          <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-icons">chat</span>Open in WISEowl chat</button>
+          <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
           <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Dismiss</button>
         </div>`;
     },
@@ -1075,7 +1081,7 @@ function renderMorePopover() {
   const bannerItem = isDashboard
     ? `
     <button type="button" class="topbar-menu-item" data-action="update-banner">
-      <span class="material-icons topbar-menu-icon">image</span>
+      <span class="material-symbols-outlined topbar-menu-icon">image</span>
       <span>Update brand banner</span>
     </button>
     <div class="topbar-menu-divider"></div>`
@@ -1085,13 +1091,13 @@ function renderMorePopover() {
   const adminItems = isDashboard
     ? `
     <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isBrandCompareActive()}" data-action="toggle-brand">
-      <span class="material-icons topbar-menu-icon">insights</span>
+      <span class="material-symbols-outlined topbar-menu-icon">insights</span>
       <span>Bad Scores / High Numbers</span>
       <span class="topbar-menu-badge">ADMIN</span>
       <span class="topbar-menu-switch" aria-hidden="true"><span class="topbar-menu-switch-thumb"></span></span>
     </button>
     <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isStarsViewActive()}" data-action="toggle-stars">
-      <span class="material-icons topbar-menu-icon">star</span>
+      <span class="material-symbols-outlined topbar-menu-icon">star</span>
       <span>Guiding Stars</span>
       <span class="topbar-menu-badge">ADMIN</span>
       <span class="topbar-menu-switch" aria-hidden="true"><span class="topbar-menu-switch-thumb"></span></span>
@@ -1101,16 +1107,16 @@ function renderMorePopover() {
   return `
     ${bannerItem}
     <button type="button" class="topbar-menu-item" data-action="invite-member">
-      <span class="material-icons topbar-menu-icon">person_add</span>
+      <span class="material-symbols-outlined topbar-menu-icon">person_add</span>
       <span>Invite team member</span>
     </button>
     ${adminItems}
     <button type="button" class="topbar-menu-item" data-action="export">
-      <span class="material-icons topbar-menu-icon">download</span>
+      <span class="material-symbols-outlined topbar-menu-icon">download</span>
       <span>Export overview</span>
     </button>
     <button type="button" class="topbar-menu-item" data-action="share">
-      <span class="material-icons topbar-menu-icon">share</span>
+      <span class="material-symbols-outlined topbar-menu-icon">share</span>
       <span>Share</span>
     </button>`;
 }
@@ -1241,7 +1247,7 @@ function mainPanelControlsHTML() {
   return `
     <div class="panel-controls">
       <div class="panel-more-wrap">
-        <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-icons">more_vert</span></button>
+        <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="agent-main-more-pop" role="menu">${renderMorePopover()}</div>
       </div>
       <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[0])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[0]}</span></button>

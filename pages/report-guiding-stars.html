@@ -14,7 +14,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISEai — Guiding Stars Action Plan · Mondelēz International</title>
   <script src="../js/text-size-fouc.js"></script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -101,8 +100,8 @@
     }
     .gs-chip:hover { background: var(--surface-3); transform: translateY(-1px); }
     .gs-chip:active { transform: translateY(0); }
-    .gs-chip .material-icons { font-size: 14px; flex: 0 0 auto; color: var(--primary); }
-    html.dark .gs-chip .material-icons { color: var(--primary-bright, #8B9FAF); }
+    .gs-chip .material-symbols-outlined { font-size: 14px; flex: 0 0 auto; color: var(--primary); }
+    html.dark .gs-chip .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
     .gs-chip--go { background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary) 40%, transparent); color: var(--primary); }
     html.dark .gs-chip--go { color: var(--primary-bright, #8B9FAF); }
     .gs-chip--go:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); }
@@ -195,12 +194,12 @@
     .gs-exec b { font-weight: 800; }
     .gs-exec-lead { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #8a6400; margin-bottom: 8px; }
     html.dark .gs-exec-lead { color: #FFD98A; }
-    .gs-exec-lead .material-icons { font-size: 16px; }
+    .gs-exec-lead .material-symbols-outlined { font-size: 16px; }
 
     /* ── Toolbar / search ── */
     .gs-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     .gs-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; }
-    .gs-search-inline > .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .gs-search-inline > .material-symbols-outlined { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
     .gs-search {
       width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
       font-family: inherit; font-size: 13px; color: var(--text);
@@ -241,20 +240,20 @@
     }
     html.dark .gs-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
     .gs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .gs-thumb .material-icons { font-size: 22px; }
+    .gs-thumb .material-symbols-outlined { font-size: 22px; }
     .gs-prod { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .gs-prod-name { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.25; }
     .gs-prod-brand { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle); }
 
     .gs-stars { display: inline-flex; align-items: center; gap: 1px; color: var(--ter-amber); }
-    .gs-stars .material-icons { font-size: 15px; }
+    .gs-stars .material-symbols-outlined { font-size: 15px; }
     .gs-stars .is-empty { color: var(--text-subtle); opacity: .38; }
 
     /* Move cell — the move on top, impact directly below */
     .gs-move { font-size: 12px; color: var(--text); line-height: 1.4; }
     .gs-move-impact { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; font-weight: 800; color: var(--primary); }
     html.dark .gs-move-impact { color: var(--primary-bright, #8B9FAF); }
-    .gs-move-impact .material-icons { font-size: 14px; }
+    .gs-move-impact .material-symbols-outlined { font-size: 14px; }
 
     /* Row CTA — blue (primary) pill */
     .gs-cta {
@@ -266,7 +265,7 @@
     }
     html.dark .gs-cta { border-color: var(--primary-bright, #8B9FAF); background: var(--primary-bright, #8B9FAF); color: var(--surface); }
     .gs-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
-    .gs-cta .material-icons { font-size: 14px; }
+    .gs-cta .material-symbols-outlined { font-size: 14px; }
     .gs-cta--ghost { background: transparent; color: var(--primary); }
     html.dark .gs-cta--ghost { background: transparent; color: var(--primary-bright, #8B9FAF); }
     .gs-cta--ghost:hover { background: var(--primary-soft); }
@@ -311,7 +310,7 @@
     .gs-comp-bars { display: flex; flex-direction: column; gap: 7px; }
     .gs-cbar { display: grid; grid-template-columns: 116px 1fr; align-items: center; gap: 12px; }
     .gs-cbar-key { font-size: 11px; font-weight: 700; color: var(--text-muted); }
-    .gs-cbar-key .material-icons { font-size: 12px; vertical-align: -2px; margin-right: 3px; }
+    .gs-cbar-key .material-symbols-outlined { font-size: 12px; vertical-align: -2px; margin-right: 3px; }
 
     /* ── Pillar cards ── */
     .gs-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
@@ -319,7 +318,7 @@
     html.dark .gs-pillar { background: rgba(255,255,255,0.03); }
     .gs-pillar-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); margin-bottom: 10px; }
     html.dark .gs-pillar-icon { color: var(--primary-bright, #8B9FAF); }
-    .gs-pillar-icon .material-icons { font-size: 18px; }
+    .gs-pillar-icon .material-symbols-outlined { font-size: 18px; }
     .gs-pillar-title { font-size: 13px; font-weight: 800; color: var(--text); margin: 0 0 4px; }
     .gs-pillar-body { font-size: 11.5px; line-height: 1.55; color: var(--text-muted); margin: 0; }
 
@@ -339,7 +338,15 @@
     }
     html.full-bleed body { padding-top: 0; padding-bottom: 0; }
     @media (max-width: 1180px) {
-      #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
+      /* overflow-x:auto forces overflow-y to compute non-visible, which would
+         clip the module cards' drop-shadow at the row edge; keep a bottom shadow
+         gutter inside the row and pull it back with a negative margin so the
+         shadow still renders and the panes keep full height. */
+      #chat-shell-wrap.menu-brand-integrated #modules-row {
+        overflow-x: auto;
+        padding-bottom: var(--modules-bottom-pad);
+        margin-bottom: calc(-1 * var(--modules-bottom-pad));
+      }
       .gs-report { min-width: 620px; }
     }
   </style>
@@ -347,7 +354,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -378,13 +385,13 @@
           </div>
           <div class="sc-topbar-controls">
             <div class="panel-more-wrap" id="gs-chat-menu-wrap">
-              <button type="button" id="gs-chat-menu-btn" class="panel-more-btn" onclick="gsToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="gs-chat-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <button type="button" id="gs-chat-menu-btn" class="panel-more-btn" onclick="gsToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="gs-chat-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="gs-chat-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsCopyTranscript(this)"><span class="material-icons topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsCopyTranscript(this)"><span class="material-symbols-outlined topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsExportPlan(); gsCloseChatMenu()"><span class="material-icons topbar-menu-icon">download</span><span>Export action plan</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsExportPlan(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export action plan</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-icons topbar-menu-icon">restart_alt</span><span>Reset conversation</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset conversation</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="gs-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -401,7 +408,7 @@
               <input id="chat-input" type="text" placeholder="Ask WISEai about the action plan…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();gsSend();}" />
             </div>
             <button type="button" id="gs-send" onclick="gsSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
-              <span class="material-icons">send</span>
+              <span class="material-symbols-outlined">send</span>
             </button>
           </div>
         </div>
@@ -458,7 +465,7 @@
               </div>
 
               <div class="gs-exec">
-                <div class="gs-exec-lead"><span class="material-icons">lightbulb</span>Executive summary — where the stars are</div>
+                <div class="gs-exec-lead"><span class="material-symbols-outlined">lightbulb</span>Executive summary — where the stars are</div>
                 <p style="margin:0">
                   <b>78% of the portfolio (491 SKUs) earns no star today</b>, but the gap is thinner than it looks. <b>113 products are a single reformulation away</b> from their first star — most just need added sugar under the 40%-of-calories cap or one debit trimmed below its per-100&nbsp;kcal threshold. Clear those and portfolio star-earning products jump from <b>137 → 250 (+82%)</b>. A further <b>26 near-misses</b> reach a star with two light moves. The heaviest concentration of zero-star SKUs sits in the <b>Cookies &amp; Crackers</b> lines, which is also where you trail the category leader most.
                 </p>
@@ -474,7 +481,7 @@
 
               <div class="gs-toolbar">
                 <div class="gs-search-inline" id="gs-search-wrap">
-                  <span class="material-icons">search</span>
+                  <span class="material-symbols-outlined">search</span>
                   <input type="text" class="gs-search" id="gs-search" placeholder="Filter by product or brand…" aria-label="Filter products" autocomplete="off" />
                 </div>
               </div>
@@ -504,17 +511,17 @@
 
               <div class="gs-pillars">
                 <div class="gs-pillar">
-                  <span class="gs-pillar-icon"><span class="material-icons">bolt</span></span>
+                  <span class="gs-pillar-icon"><span class="material-symbols-outlined">bolt</span></span>
                   <p class="gs-pillar-title">Sugar is the #1 lever</p>
                   <p class="gs-pillar-body">Added sugar over the 40%-of-calories cap disqualifies 61% of zero-star SKUs. It's the single most common blocker — and the easiest to model.</p>
                 </div>
                 <div class="gs-pillar">
-                  <span class="gs-pillar-icon"><span class="material-icons">grass</span></span>
+                  <span class="gs-pillar-icon"><span class="material-symbols-outlined">grass</span></span>
                   <p class="gs-pillar-title">Fiber earns cheap credits</p>
                   <p class="gs-pillar-body">A named whole-grain ingredient plus fiber to 2.8&nbsp;g/100&nbsp;kcal adds up to +3 credits — enough to flip 40 near-zero products.</p>
                 </div>
                 <div class="gs-pillar">
-                  <span class="gs-pillar-icon"><span class="material-icons">science</span></span>
+                  <span class="gs-pillar-icon"><span class="material-symbols-outlined">science</span></span>
                   <p class="gs-pillar-title">Cut the additive count</p>
                   <p class="gs-pillar-body">Dropping to zero additives-to-limit removes a standing −1 debit on 220 SKUs and clears a clean-label blocker at the same time.</p>
                 </div>
@@ -683,7 +690,7 @@
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
       const stars = (n) => {
         let out = '';
-        for (let i = 0; i < 3; i++) out += `<span class="material-icons${i < n ? '' : ' is-empty'}">star${i < n ? '' : '_border'}</span>`;
+        for (let i = 0; i < 3; i++) out += `<span class="material-symbols-outlined${i < n ? '' : ' is-empty'}">star${i < n ? '' : '_border'}</span>`;
         return `<span class="gs-stars" aria-label="${n} of 3 stars">${out}</span>`;
       };
 
@@ -756,10 +763,10 @@
 
       /* ── Render the report ── */
       function studioLink(label) {
-        return `<a class="gs-cta" href="${STUDIO}"><span class="material-icons">tune</span>${label}</a>`;
+        return `<a class="gs-cta" href="${STUDIO}"><span class="material-symbols-outlined">tune</span>${label}</a>`;
       }
       function thumb(icon) {
-        return `<span class="gs-thumb"><span class="material-icons">${icon || 'inventory_2'}</span></span>`;
+        return `<span class="gs-thumb"><span class="material-symbols-outlined">${icon || 'inventory_2'}</span></span>`;
       }
       function prodCell(p) {
         return `<div class="gs-prodcell">${thumb(p.icon)}<div class="gs-prod"><span class="gs-prod-brand">${esc(p.brand)}</span><span class="gs-prod-name">${esc(p.name)}</span></div></div>`;
@@ -778,7 +785,7 @@
       function recCell(p) {
         const sub = p.blockers
           ? `<div class="gs-blockers">${p.blockers.map((b) => `<span class="gs-blocker">${esc(b)}</span>`).join('')}</div>`
-          : `<span class="gs-move-impact"><span class="material-icons">${p.seg === 'earn' ? 'check_circle' : 'trending_up'}</span>${esc(p.tag || '')}</span>`;
+          : `<span class="gs-move-impact"><span class="material-symbols-outlined">${p.seg === 'earn' ? 'check_circle' : 'trending_up'}</span>${esc(p.tag || '')}</span>`;
         return `<div><div class="gs-move">${esc(p.rec)}</div>${sub}</div>`;
       }
       function renderTable() {
@@ -817,11 +824,11 @@
             <div class="gs-comp-head"><span class="gs-comp-cat">${esc(c.cat)}</span><span class="gs-comp-gap">Gap −${gap}★</span></div>
             <div class="gs-comp-bars">
               <div class="gs-cbar">
-                <span class="gs-cbar-key"><span class="material-icons">storefront</span>Your portfolio</span>
+                <span class="gs-cbar-key"><span class="material-symbols-outlined">storefront</span>Your portfolio</span>
                 <div class="gs-hbar-track" style="--bar-color:#c98a2e"><div class="gs-hbar-fill" style="--bar-color:#c98a2e;width:0" data-w="${w(c.you)}"><span class="gs-hbar-num">${c.you.toFixed(1)}★</span></div></div>
               </div>
               <div class="gs-cbar">
-                <span class="gs-cbar-key"><span class="material-icons">emoji_events</span>Category leader</span>
+                <span class="gs-cbar-key"><span class="material-symbols-outlined">emoji_events</span>Category leader</span>
                 <div class="gs-hbar-track"><div class="gs-hbar-fill" style="width:0" data-w="${w(c.them)}"><span class="gs-hbar-num">${c.them.toFixed(1)}★</span></div></div>
               </div>
             </div>
@@ -918,7 +925,7 @@
       ];
       function chipsHtml() {
         const inner = CHIPS.map((c) =>
-          `<button type="button" class="gs-chip ${c.cls || ''}" data-chip="${c.id}"><span class="material-icons">${c.icon}</span>${esc(c.label)}</button>`
+          `<button type="button" class="gs-chip ${c.cls || ''}" data-chip="${c.id}"><span class="material-symbols-outlined">${c.icon}</span>${esc(c.label)}</button>`
         ).join('');
         return `<div class="gs-chips-inline"><div class="gs-chips">${inner}</div></div>`;
       }

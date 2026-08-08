@@ -39,7 +39,7 @@ function vfToast(msg, icon = 'check_circle') {
   }
   const t = document.createElement('div');
   t.className = 'vf-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => {
@@ -285,7 +285,7 @@ function progressPaneHTML() {
     const done = stepDone(s.id);
     const isActive = i === active;
     const cls = done ? 'vfp-step--done' : isActive ? 'vfp-step--active' : '';
-    const num = done ? '<span class="material-icons">check</span>' : String(i + 1);
+    const num = done ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
     let sub = '';
     if (done) sub = 'Completed';
     else if (isActive) sub = 'In progress';
@@ -296,7 +296,7 @@ function progressPaneHTML() {
       const rows = stepFields(s.id).map((f) => {
         const icon = f.done ? 'check_circle' : 'radio_button_unchecked';
         const st = f.done ? 'vfp-field--done' : 'vfp-field--active';
-        return `<div class="vfp-field ${st}"><span class="material-icons">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
+        return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
       }).join('');
       fieldsHtml = `<div class="vfp-fields">${rows}</div>`;
     }
@@ -339,7 +339,7 @@ function progressPaneHTML() {
           <div class="vfp-title">Verification progress</div>
           <div class="vfp-subtitle">Non-UPF · ${STEPS.length} steps</div>
         </div>
-        <button type="button" class="vfp-min-btn" data-vf="togglemin" aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-icons">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
+        <button type="button" class="vfp-min-btn" data-vf="togglemin" aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-symbols-outlined">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
       </div>
       <div class="vfp-progress">
         <div class="vfp-progress-head"><span>${completed} of ${STEPS.length} steps</span><span class="vfp-progress-pct">${pct}%</span></div>
@@ -358,11 +358,11 @@ function headCtaHTML() {
   if (state.step === 'select') {
     const n = selectedCount();
     return `<button class="vf-cta" type="button" data-vf="open-confirm" ${n ? '' : 'disabled'}>
-      Continue to Review &amp; Attest <span class="material-icons">arrow_forward</span></button>`;
+      Continue to Review &amp; Attest <span class="material-symbols-outlined">arrow_forward</span></button>`;
   }
   if (state.step === 'attest') {
     return `<button class="vf-cta" type="button" data-vf="to-payment" ${state.attested ? '' : 'disabled'}>
-      Next <span class="material-icons">arrow_forward</span></button>`;
+      Next <span class="material-symbols-outlined">arrow_forward</span></button>`;
   }
   return '';
 }
@@ -370,7 +370,7 @@ function headCtaHTML() {
 function headerHTML() {
   const idx = stepIndex(state.step);
   const back = idx > 0
-    ? `<button class="vf-back" type="button" data-vf="go-back" aria-label="Back to ${esc(STEPS[idx - 1].label)}" title="Back to ${esc(STEPS[idx - 1].label)}"><span class="material-icons">arrow_back</span></button>`
+    ? `<button class="vf-back" type="button" data-vf="go-back" aria-label="Back to ${esc(STEPS[idx - 1].label)}" title="Back to ${esc(STEPS[idx - 1].label)}"><span class="material-symbols-outlined">arrow_back</span></button>`
     : '';
   return `
     <header class="vf-head">
@@ -387,7 +387,7 @@ function toolbarHTML(cta) {
   return `
     <div class="vf-toolbar">
       <div class="vf-search-inline">
-        <span class="material-icons">search</span>
+        <span class="material-symbols-outlined">search</span>
         <input id="vf-search" class="vf-search" type="text" placeholder="Search by product name or UPC" value="${esc(state.search)}" data-vf="search" autocomplete="off" aria-label="Search foods" />
       </div>
       <span class="vf-tool-spacer"></span>
@@ -402,7 +402,7 @@ function glanceHTML(label) {
   const tile = (num, cap, mod, icon) =>
     `<div class="vf-stat${mod ? ' ' + mod : ''}">` +
     `<span class="vf-stat-num">${esc(num)}</span>` +
-    `<span class="vf-stat-label">${icon ? `<span class="material-icons">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
+    `<span class="vf-stat-label">${icon ? `<span class="material-symbols-outlined">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
     `</div>`;
   return `
     <div class="vf-stats-bar"><span class="vf-stats-label">${esc(label)}</span></div>
@@ -430,7 +430,7 @@ const SHIELD_META = {
 };
 function statusPill(f) {
   const m = SHIELD_META[f.shield] || SHIELD_META.prequal;
-  return `<span class="vf-chip ${m.cls}"><span class="material-icons">${m.icon}</span>${esc(m.label)}</span>`;
+  return `<span class="vf-chip ${m.cls}"><span class="material-symbols-outlined">${m.icon}</span>${esc(m.label)}</span>`;
 }
 
 /* Dates cell — the product-portfolio two-line "Updated / Last edited" stack,
@@ -448,7 +448,7 @@ function datesCell(f) {
 function thumb(f) {
   return `<span class="vf-thumb">` +
     `<img class="vf-thumb-img" src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">` +
-    `<span class="material-icons" style="display:none">${esc(f.thumbIcon)}</span></span>`;
+    `<span class="material-symbols-outlined" style="display:none">${esc(f.thumbIcon)}</span></span>`;
 }
 
 /* Product cell — thumbnail + a name / UPC stack (UPC sits directly under the
@@ -479,7 +479,7 @@ function selectStepHTML() {
           <tr>
             <th class="vf-col-check">
               <button class="vf-check vf-check--head" type="button" data-vf="toggle-all" aria-label="Select all foods">
-                <span class="material-icons">${headState}</span>
+                <span class="material-symbols-outlined">${headState}</span>
               </button>
             </th>
             <th>Product</th>
@@ -492,7 +492,7 @@ function selectStepHTML() {
             <tr class="vf-row ${f.selected ? 'is-selected' : ''}" data-food="${f.id}">
               <td class="vf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Select ${esc(f.name)}" aria-pressed="${f.selected}">
-                  <span class="material-icons">${f.selected ? 'check_box' : 'check_box_outline_blank'}</span>
+                  <span class="material-symbols-outlined">${f.selected ? 'check_box' : 'check_box_outline_blank'}</span>
                 </button>
               </td>
               <td>${productCell(f)}</td>
@@ -520,7 +520,7 @@ function attestStepHTML() {
         <thead>
           <tr>
             <th class="vf-col-expand"></th>
-            <th class="vf-col-check"><span class="material-icons vf-head-glyph">check_box</span></th>
+            <th class="vf-col-check"><span class="material-symbols-outlined vf-head-glyph">check_box</span></th>
             <th>Product</th>
             <th class="vf-col-status">Non-UPF Shield</th>
             <th class="vf-col-updated">Updated</th>
@@ -529,13 +529,13 @@ function attestStepHTML() {
         <tbody>
           ${rows.map((f) => {
             const open = state.expanded.has(f.id);
-            const expandBtn = `<button class="vf-expand ${open ? 'is-open' : ''}" type="button" data-vf="toggle-expand" data-food="${f.id}" aria-label="Toggle ingredients" aria-expanded="${open}"><span class="material-icons">expand_more</span></button>`;
+            const expandBtn = `<button class="vf-expand ${open ? 'is-open' : ''}" type="button" data-vf="toggle-expand" data-food="${f.id}" aria-label="Toggle ingredients" aria-expanded="${open}"><span class="material-symbols-outlined">expand_more</span></button>`;
             return `
             <tr class="vf-row is-selected" data-food="${f.id}">
               <td class="vf-col-expand">${expandBtn}</td>
               <td class="vf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Deselect ${esc(f.name)}" aria-pressed="true">
-                  <span class="material-icons">check_box</span>
+                  <span class="material-symbols-outlined">check_box</span>
                 </button>
               </td>
               <td>${productCell(f)}</td>
@@ -558,7 +558,7 @@ function attestStepHTML() {
 
     <label class="vf-attest vf-attest--sticky ${state.attested ? 'is-checked' : ''}">
       <button class="vf-check vf-check--attest" type="button" data-vf="toggle-attest" role="checkbox" aria-checked="${state.attested}">
-        <span class="material-icons">${state.attested ? 'check_box' : 'check_box_outline_blank'}</span>
+        <span class="material-symbols-outlined">${state.attested ? 'check_box' : 'check_box_outline_blank'}</span>
       </button>
       <span class="vf-attest-text">I attest to the accuracy of the data for the above selected foods and that it matches the physical product packaging and the actual formulation of each SKU.</span>
     </label>`;
@@ -586,7 +586,7 @@ function paymentStepHTML() {
             <option>Non-UPF Verification – Expo West Price: $99.00/year - Yearly</option>
             <option>Non-UPF Verification – Standard: $149.00/year - Yearly</option>
           </select>
-          <span class="material-icons vf-select-chevron">expand_more</span>
+          <span class="material-symbols-outlined vf-select-chevron">expand_more</span>
         </div>
 
         <label class="vf-field-label">Payment Method</label>
@@ -594,24 +594,24 @@ function paymentStepHTML() {
           ${methods.map((m) => `
             <button type="button" class="vf-method ${state.payMethod === m.id ? 'is-active' : ''} ${m.enabled ? '' : 'is-disabled'}"
               data-vf="pay-method" data-method="${m.id}" ${m.enabled ? '' : 'disabled'}>
-              <span class="material-icons">${m.enabled ? m.icon : 'lock'}</span>${esc(m.label)}
+              <span class="material-symbols-outlined">${m.enabled ? m.icon : 'lock'}</span>${esc(m.label)}
             </button>`).join('')}
         </div>
 
         ${state.payMethod === 'card' ? `
         <label class="vf-field-label">Card Details</label>
         <div class="vf-card-input">
-          <span class="material-icons vf-card-glyph">credit_card</span>
+          <span class="material-symbols-outlined vf-card-glyph">credit_card</span>
           <input class="vf-input" type="text" inputmode="numeric" placeholder="Card number" aria-label="Card number" />
         </div>
         <div class="vf-note">
-          <span class="material-icons">info</span>
+          <span class="material-symbols-outlined">info</span>
           <div><strong>Immediate Payment</strong><br>Your card will be charged immediately upon submission. Your verification process will begin right away.</div>
         </div>` : ''}
 
         ${state.payMethod === 'invoice' ? `
         <div class="vf-note">
-          <span class="material-icons">receipt_long</span>
+          <span class="material-symbols-outlined">receipt_long</span>
           <div><strong>Request an Invoice</strong><br>We'll email a net-30 invoice for this verification. Your assets unlock once payment clears.</div>
         </div>` : ''}
 
@@ -622,7 +622,7 @@ function paymentStepHTML() {
         </div>
 
         <div class="vf-admin">
-          <div class="vf-admin-head"><span class="material-icons">sell</span>Admin Discount (Internal Use Only)</div>
+          <div class="vf-admin-head"><span class="material-symbols-outlined">sell</span>Admin Discount (Internal Use Only)</div>
           <div class="vf-admin-grid">
             <label class="vf-admin-field">
               <span>Discount Amount ($)</span>
@@ -637,15 +637,15 @@ function paymentStepHTML() {
 
         <label class="vf-attest ${state.vsa ? 'is-checked' : ''}">
           <button class="vf-check vf-check--attest" type="button" data-vf="toggle-vsa" role="checkbox" aria-checked="${state.vsa}">
-            <span class="material-icons">${state.vsa ? 'check_box' : 'check_box_outline_blank'}</span>
+            <span class="material-symbols-outlined">${state.vsa ? 'check_box' : 'check_box_outline_blank'}</span>
           </button>
           <span class="vf-attest-text">I have read and agree to the <a href="#" data-vf="noop">Verification Service Agreement (VSA)</a>, the legally binding terms for this verification.</span>
         </label>
 
         <button class="vf-pay-btn" type="button" data-vf="process-payment" ${state.vsa ? '' : 'disabled'}>
-          <span class="material-icons">verified_user</span> Get my shield &amp; Process Payment
+          <span class="material-symbols-outlined">verified_user</span> Get my shield &amp; Process Payment
         </button>
-        <div class="vf-secure"><span class="material-icons">lock</span> Your payment information is secure and encrypted</div>
+        <div class="vf-secure"><span class="material-symbols-outlined">lock</span> Your payment information is secure and encrypted</div>
       </section>
     </div>`;
 }
@@ -659,7 +659,7 @@ function modalHTML() {
   return `
     <div class="vf-modal-overlay">
       <div class="vf-modal" role="dialog" aria-modal="true" aria-labelledby="vf-modal-title">
-        <button class="vf-modal-x" type="button" data-vf="close-confirm" aria-label="Close"><span class="material-icons">close</span></button>
+        <button class="vf-modal-x" type="button" data-vf="close-confirm" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
         <h2 class="vf-modal-title" id="vf-modal-title">Proceed to Attestation?</h2>
         <p class="vf-modal-text">You are about to proceed to the <strong>Review &amp; Attest</strong> step with <strong>${n} selected food${n === 1 ? '' : 's'}</strong>. This is a critical stage where you will review and formally attest to the accuracy of your selected food items.</p>
         <div class="vf-modal-callout">

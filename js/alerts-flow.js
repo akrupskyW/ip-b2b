@@ -62,7 +62,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'al-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'al-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -78,13 +78,13 @@ function paint() {
 
   hostEl.innerHTML = `
     <div class="al-wrap">
-      <div class="al-breadcrumb"><span>Account</span><span class="material-icons">chevron_right</span><span class="al-breadcrumb-here">Alerts</span></div>
+      <div class="al-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="al-breadcrumb-here">Alerts</span></div>
       <div class="al-head-row">
         <div>
           <h1 class="al-title">Alerts</h1>
           <p class="al-lede">${unread ? `You have <strong>${unread}</strong> unread alert${unread === 1 ? '' : 's'} across your agents.` : 'You\u2019re all caught up.'}</p>
         </div>
-        <button type="button" class="al-btn al-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-icons">done_all</span>Mark all read</button>
+        <button type="button" class="al-btn al-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-symbols-outlined">done_all</span>Mark all read</button>
       </div>
 
       <div class="al-filters" role="tablist">
@@ -101,18 +101,18 @@ function paint() {
           <div class="al-list">
             ${g.items.map((a) => `
               <div class="al-item${a.read ? '' : ' is-unread'}" data-al-id="${a.id}"${a.href ? ` data-al-href="${esc(a.href)}"` : ''}>
-                <span class="al-item-ic" style="--ic:${toneColor(a.tone)}"><span class="material-icons">${esc(a.icon)}</span></span>
+                <span class="al-item-ic" style="--ic:${toneColor(a.tone)}"><span class="material-symbols-outlined">${esc(a.icon)}</span></span>
                 <div class="al-item-body">
                   <div class="al-item-title">${esc(a.title)}</div>
                   <div class="al-item-sub">${esc(a.sub)} · ${esc(a.time)}</div>
                 </div>
                 ${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}
-                <button type="button" class="al-item-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-icons">close</span></button>
+                <button type="button" class="al-item-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-symbols-outlined">close</span></button>
               </div>`).join('')}
           </div>
         </div>`).join('') : `
         <div class="al-empty">
-          <span class="material-icons">notifications_off</span>
+          <span class="material-symbols-outlined">notifications_off</span>
           <div>No ${filter === 'unread' ? 'unread ' : ''}alerts${filter !== 'all' && filter !== 'unread' ? ` in ${esc(filter)}` : ''}.</div>
         </div>`}
     </div>`;

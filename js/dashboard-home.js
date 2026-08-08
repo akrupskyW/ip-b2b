@@ -36,7 +36,7 @@ function agToastLocal(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'ag-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   setTimeout(() => {
     t.style.transition = 'opacity .3s ease, transform .3s ease';
@@ -656,12 +656,12 @@ function starKeyLegend() {
    `level`'s color; level 0 (no stars) renders a single hollow/muted star. */
 function starIcons(count, level) {
   if (!count) {
-    return `<span class="dash-star-ico-row"><span class="material-icons dash-star-ico dash-star-ico--empty">star_border</span></span>`;
+    return `<span class="dash-star-ico-row"><span class="material-symbols-outlined dash-star-ico dash-star-ico--empty">star_border</span></span>`;
   }
   const color = STAR_LEVEL_C[level] || STAR_C.s3;
   let out = '';
   for (let i = 0; i < count; i++) {
-    out += `<span class="material-icons dash-star-ico" style="color:${color}">star</span>`;
+    out += `<span class="material-symbols-outlined dash-star-ico" style="color:${color}">star</span>`;
   }
   return `<span class="dash-star-ico-row">${out}</span>`;
 }
@@ -670,14 +670,14 @@ function starIcons(count, level) {
 function trendBadge(tr) {
   if (!tr) return '';
   const up = tr.dir === 'up';
-  return `<span class="dash-star-tile-trend dash-star-tile-trend--${up ? 'up' : 'down'}"><span class="material-icons">${up ? 'trending_up' : 'trending_down'}</span>${esc(tr.val)}</span>`;
+  return `<span class="dash-star-tile-trend dash-star-tile-trend--${up ? 'up' : 'down'}"><span class="material-symbols-outlined">${up ? 'trending_up' : 'trending_down'}</span>${esc(tr.val)}</span>`;
 }
 
 /* A star-mover card title, rendered as colored star icons (from → to). */
 function moverTitle(m) {
-  const arrow = `<span class="material-icons dash-star-mover-arrow">arrow_forward</span>`;
+  const arrow = `<span class="material-symbols-outlined dash-star-mover-arrow">arrow_forward</span>`;
   if (m.special === 'dq') {
-    return `<span class="dash-star-mover-title"><span class="material-icons dash-star-mover-lock">${esc(m.icon)}</span>Fix DQ ${arrow} instant ${starIcons(1, m.to)}</span>`;
+    return `<span class="dash-star-mover-title"><span class="material-symbols-outlined dash-star-mover-lock">${esc(m.icon)}</span>Fix DQ ${arrow} instant ${starIcons(1, m.to)}</span>`;
   }
   return `<span class="dash-star-mover-title">${starIcons(m.from, m.from)} ${arrow} ${starIcons(m.to, m.to)}</span>`;
 }
@@ -694,7 +694,7 @@ function renderStarMovers(s) {
       <div class="dash-star-mover-head">${moverTitle(m)}</div>
       ${countUpMarkup(m.value, { className: 'dash-star-mover-num' })}
       <span class="dash-star-mover-note">${esc(m.note)}</span>
-      <span class="dash-star-mover-cta">View products <span class="material-icons">north_east</span></span>
+      <span class="dash-star-mover-cta">View products <span class="material-symbols-outlined">north_east</span></span>
     </button>`;
   }).join('');
   return `
@@ -826,9 +826,9 @@ function renderStarsBrandBarsInner() {
   return `
     ${bars}
     <div class="dash-stars-pager">
-      <button type="button" class="dash-text-link" data-dash-action="stars-prev"${_starsBrandPage === 0 ? ' disabled' : ''}><span class="material-icons">chevron_left</span>Prev ${STARS_BRAND_PAGE_SIZE}</button>
+      <button type="button" class="dash-text-link" data-dash-action="stars-prev"${_starsBrandPage === 0 ? ' disabled' : ''}><span class="material-symbols-outlined">chevron_left</span>Prev ${STARS_BRAND_PAGE_SIZE}</button>
       <span class="dash-stars-pager-info">${list.length ? `${start + 1}–${rangeEnd}` : '0'} of ${list.length} · Page ${_starsBrandPage + 1} of ${pages}</span>
-      <button type="button" class="dash-text-link" data-dash-action="stars-next"${_starsBrandPage >= pages - 1 ? ' disabled' : ''}>Next ${STARS_BRAND_PAGE_SIZE}<span class="material-icons">chevron_right</span></button>
+      <button type="button" class="dash-text-link" data-dash-action="stars-next"${_starsBrandPage >= pages - 1 ? ' disabled' : ''}>Next ${STARS_BRAND_PAGE_SIZE}<span class="material-symbols-outlined">chevron_right</span></button>
     </div>`;
 }
 
@@ -847,7 +847,7 @@ function renderStarsByBrand() {
             <button type="button" class="dash-stars-tab${_starsBrandMode === 'owners' ? ' is-active' : ''}" data-dash-tab data-stars-brandmode="owners">Brand Owners</button>
           </div>
           <label class="dash-stars-search">
-            <span class="material-icons">search</span>
+            <span class="material-symbols-outlined">search</span>
             <input type="text" id="stars-brand-search" placeholder="Search ${_starsBrandMode === 'owners' ? 'brand owners' : 'brands'}…" value="${esc(_starsBrandQuery)}" autocomplete="off">
           </label>
         </div>
@@ -1145,14 +1145,14 @@ function cardMenu(key, label) {
   return `
     <div class="dash-kebab-wrap">
       <button class="dash-kebab" type="button" data-dash-menu="${key}" aria-haspopup="true" aria-expanded="false" aria-label="${esc(label)} options" title="More">
-        <span class="material-icons">more_vert</span>
+        <span class="material-symbols-outlined">more_vert</span>
       </button>
       <div class="dash-kebab-menu" data-dash-menu-for="${key}" role="menu" hidden>
-        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="${key}-report"><span class="material-icons">description</span>View full report</button>
+        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="${key}-report"><span class="material-symbols-outlined">description</span>View full report</button>
         <div class="dash-kebab-sep" role="separator"></div>
-        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="share-${key}"><span class="material-icons">ios_share</span>Share</button>
-        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="export-${key}"><span class="material-icons">download</span>Export</button>
-        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="chat-${key}"><span class="material-icons">forum</span>Insert into chat</button>
+        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="share-${key}"><span class="material-symbols-outlined">ios_share</span>Share</button>
+        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="export-${key}"><span class="material-symbols-outlined">download</span>Export</button>
+        <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="chat-${key}"><span class="material-symbols-outlined">forum</span>Insert into chat</button>
       </div>
     </div>`;
 }
@@ -1211,26 +1211,26 @@ function openImageModal(cfg) {
         <span class="dash-modal-eyebrow">${esc(eyebrow)}</span>
         <h2 class="dash-modal-title">${esc(title)}</h2>
       </div>
-      <button class="dash-modal-close" type="button" data-banner-close aria-label="Close"><span class="material-icons">close</span></button>
+      <button class="dash-modal-close" type="button" data-banner-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
     </header>
     <div class="dash-modal-body">
       <div class="dash-banner-preview${previewMod ? ` ${previewMod}` : ''}">
         <div class="dash-banner-preview-img" id="dash-banner-preview-img"></div>
-        <span class="dash-banner-preview-empty" id="dash-banner-preview-empty"><span class="material-icons">image</span>${esc(emptyLabel)}</span>
+        <span class="dash-banner-preview-empty" id="dash-banner-preview-empty"><span class="material-symbols-outlined">image</span>${esc(emptyLabel)}</span>
       </div>
       <label class="dash-banner-drop" id="dash-banner-drop">
         <input type="file" accept="image/*" id="dash-banner-file" hidden>
-        <span class="material-icons">cloud_upload</span>
+        <span class="material-symbols-outlined">cloud_upload</span>
         <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">${esc(dropHint)}</span></span>
       </label>
       <div class="dash-banner-or"><span>or paste a URL</span></div>
       <input type="url" class="dash-banner-url" id="dash-banner-url" placeholder="${esc(urlPlaceholder)}" autocomplete="off">
     </div>
     <footer class="dash-modal-foot">
-      <button class="dash-btn dash-btn--ghost" type="button" data-banner-remove><span class="material-icons">delete</span>Remove</button>
+      <button class="dash-btn dash-btn--ghost" type="button" data-banner-remove><span class="material-symbols-outlined">delete</span>Remove</button>
       <div class="dash-modal-foot-right">
         <button class="dash-btn dash-btn--ghost" type="button" data-banner-close>Cancel</button>
-        <button class="dash-btn dash-btn--primary" type="button" data-banner-save><span class="material-icons">check</span>${esc(saveLabel)}</button>
+        <button class="dash-btn dash-btn--primary" type="button" data-banner-save><span class="material-symbols-outlined">check</span>${esc(saveLabel)}</button>
       </div>
     </footer>`;
 
@@ -1307,8 +1307,8 @@ function heroLogoInner(url, brandName = DATA.brand.name) {
   return `
     ${url
       ? `<img src="${esc(url)}" alt="${esc(brandName)} logo" loading="lazy" />`
-      : `<span class="material-icons dash-hero-logo-ph">add_photo_alternate</span>`}
-    <span class="dash-hero-logo-edit" aria-hidden="true"><span class="material-icons">edit</span></span>`;
+      : `<span class="material-symbols-outlined dash-hero-logo-ph">add_photo_alternate</span>`}
+    <span class="dash-hero-logo-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span>`;
 }
 
 /* Reflect a saved/removed logo onto the hero badge without a full re-render. */
@@ -1443,14 +1443,14 @@ function reportSurfaceHTML(cfg, d) {
     <section class="dash-report-view" aria-label="${esc(cfg.title)}">
       <header class="dash-report-view-head">
         <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-dash-action="report-back">
-          <span class="material-icons">arrow_back</span>Back to dashboard
+          <span class="material-symbols-outlined">arrow_back</span>Back to dashboard
         </button>
         <div class="dash-report-view-titles">
           <span class="dash-modal-eyebrow">${esc(cfg.eyebrow)}</span>
           <h2 class="dash-modal-title">${esc(cfg.title)}</h2>
         </div>
         <button class="dash-btn dash-btn--primary dash-report-view-export" type="button" data-dash-action="report-export">
-          <span class="material-icons">download</span>Export
+          <span class="material-symbols-outlined">download</span>Export
         </button>
       </header>
       <div class="dash-report-view-body">
@@ -1458,7 +1458,7 @@ function reportSurfaceHTML(cfg, d) {
         <div class="dash-report-stats">${stats}</div>
         <div class="dash-report-groups">${groups}</div>
         <div class="dash-report-pending">
-          <span class="material-icons">hourglass_top</span>
+          <span class="material-symbols-outlined">hourglass_top</span>
           <div>
             <div class="dash-report-pending-title">The full report is on its way</div>
             <div class="dash-report-pending-sub">Per-product breakdowns, ingredient-level detail and exportable tables will appear here once the report is finalized.</div>
@@ -1508,7 +1508,7 @@ function renderHero(d, isAlt = false) {
         <p class="dash-hero-desc" id="dash-hero-desc">${heroDesc}</p>
         <button class="dash-hero-learn" type="button" data-dash-action="hero-learn"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="dash-hero-learn-pop">
-          <span class="material-icons">info</span>Learn more
+          <span class="material-symbols-outlined">info</span>Learn more
         </button>
       </div>
     </section>`;
@@ -1531,7 +1531,7 @@ function renderDiscovery() {
       <div class="dash-discovery-track"><span class="dash-discovery-fill" id="dash-discovery-fill"></span></div>
       <div class="dash-discovery-meta">
         <span class="dash-discovery-label">
-          <span class="material-icons dash-discovery-spin" aria-hidden="true">autorenew</span>
+          <span class="material-symbols-outlined dash-discovery-spin" aria-hidden="true">autorenew</span>
           <span id="dash-discovery-status">${DISCOVERY_STAGES[0]}</span>
         </span>
         <span class="dash-discovery-stats">
@@ -1613,9 +1613,9 @@ function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) 
     <article class="dash-card dash-score-card">
       <div class="dash-score-top">
         <div class="dash-score-num"><span class="n">${esc(String(num))}${pct ? '<span class="dash-pct">%</span>' : ''}</span><span class="d">${esc(denom)}</span></div>
-        ${icon ? `<span class="dash-score-icon"><span class="material-icons">${esc(icon)}</span></span>` : ''}
+        ${icon ? `<span class="dash-score-icon"><span class="material-symbols-outlined">${esc(icon)}</span></span>` : ''}
       </div>
-      <span class="dash-badge dash-badge--${ratingTone}"><span class="material-icons" style="font-size:13px;">check_circle</span>${esc(rating)}</span>
+      <span class="dash-badge dash-badge--${ratingTone}"><span class="material-symbols-outlined" style="font-size:13px;">check_circle</span>${esc(rating)}</span>
       <p class="dash-score-note">${note}</p>
     </article>`;
 }
@@ -1662,7 +1662,7 @@ function renderTopPerformers(d) {
             <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
           </div>
           <div class="dash-btn-row">
-            <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-icons">description</span>View report</button>
+            <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
           </div>
         </div>`;
     })
@@ -1700,7 +1700,7 @@ function renderTopPerformersHero(d) {
               <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
             </div>
             <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-icons">description</span>View report</button>
+              <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
             </div>
           </div>
         </div>`;
@@ -1727,7 +1727,7 @@ function renderClaim(d) {
           ${stampIcon('Products Discovered')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-icons">verified_user</span>Claim your products</button>
+          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
         </div>
       </div>
       <div class="dash-claim-divider"></div>
@@ -1738,21 +1738,21 @@ function renderClaim(d) {
           ${stampIcon('Products Claimed')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-icons">inventory_2</span>Review your food portfolio</button>
+          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-symbols-outlined">inventory_2</span>Review your food portfolio</button>
         </div>
-        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-icons">add</span>Add food</button>
+        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-symbols-outlined">add</span>Add food</button>
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-col dash-claim-col--nudge">
         ${u.nonCount > 0 ? `
         <div class="dash-score-toast" role="status">
-          <span class="dash-score-toast-icon"><span class="material-icons">verified</span></span>
+          <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
           <div class="dash-score-toast-body">
             <div class="dash-score-toast-title">${u.nonCount} products are ready to verify</div>
             <p class="dash-score-toast-text">Earn the Non&#8209;UPF verification shield on these products so they stand out on retail listings — it only takes a moment to start.</p>
-            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start Non&#8209;UPF Verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start Non&#8209;UPF Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
           </div>
-          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
         </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(u.nonCount, { className: 'dash-bignum' })}
@@ -1760,21 +1760,21 @@ function renderClaim(d) {
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-icons">verified</span>Start Non&#8209;UPF Verification</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
         </div>
-        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="nonupf-dashboard"><span class="material-icons">dashboard</span>Non&#8209;UPF Dashboard</button>
+        <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="nonupf-dashboard"><span class="material-symbols-outlined">dashboard</span>Non&#8209;UPF Dashboard</button>
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-col dash-claim-col--nudge">
         ${d.gras.grasCount > 0 ? `
         <div class="dash-score-toast" role="status">
-          <span class="dash-score-toast-icon"><span class="material-icons">verified</span></span>
+          <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
           <div class="dash-score-toast-body">
             <div class="dash-score-toast-title">${d.gras.grasCount} products are ready to verify</div>
             <p class="dash-score-toast-text">Earn the GRAS verification shield on these products so their ingredient safety stands out on retail listings — it only takes a moment to start.</p>
-            <button class="dash-score-toast-link" type="button" data-dash-action="verify-gras">Start GRAS Verification<span class="material-icons dash-score-toast-link-arrow">arrow_outward</span></button>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-gras">Start GRAS Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
           </div>
-          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-icons">close</span></button>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
         </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(d.gras.grasCount, { className: 'dash-bignum' })}
@@ -1782,7 +1782,7 @@ function renderClaim(d) {
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-icons">verified</span>Start GRAS Verification</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-symbols-outlined">verified</span>Start GRAS Verification</button>
         </div>
       </div>
     </section>`;
@@ -1804,8 +1804,8 @@ function renderUpf(d) {
         </div>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="upf-report">
-        <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} UPF Report</span>
-        <span class="dash-report-right">View Report<span class="material-icons">arrow_outward</span></span>
+        <span class="dash-report-left"><span class="material-symbols-outlined">description</span>Review the full ${esc(d.brand.name)} UPF Report</span>
+        <span class="dash-report-right">View Report<span class="material-symbols-outlined">arrow_outward</span></span>
       </button>
     </section>`;
 }
@@ -1830,8 +1830,8 @@ function renderGras(d) {
         </div>
       </div>
       <button class="dash-report-link" type="button" data-dash-action="gras-report">
-        <span class="dash-report-left"><span class="material-icons">description</span>Review the full ${esc(d.brand.name)} GRAS Report</span>
-        <span class="dash-report-right">View Report<span class="material-icons">arrow_outward</span></span>
+        <span class="dash-report-left"><span class="material-symbols-outlined">description</span>Review the full ${esc(d.brand.name)} GRAS Report</span>
+        <span class="dash-report-right">View Report<span class="material-symbols-outlined">arrow_outward</span></span>
       </button>
     </section>`;
 }
@@ -1916,7 +1916,7 @@ function renderWisescore(d) {
       const c = scoreColor(p.score);
       return `
       <div class="dash-pillar-row">
-        <span class="dash-pillar-name"><span class="material-icons" style="color:${c}">${esc(p.icon)}</span>${esc(p.name)}</span>
+        <span class="dash-pillar-name"><span class="material-symbols-outlined" style="color:${c}">${esc(p.icon)}</span>${esc(p.name)}</span>
         <div class="dash-pillar-track" style="--bar-color:${c}"><div class="dash-pillar-fill" style="width:${p.score}%;background:${c}"></div></div>
         <span class="dash-pillar-score">${p.score}</span>
       </div>`;
@@ -1930,7 +1930,7 @@ function renderWisescore(d) {
       <div class="dash-card dash-wisescore" style="margin-top:14px;">
         <div>
           <div class="dash-wisescore-num"><span class="n">${w.average}</span><span class="d">/100</span></div>
-          <span class="dash-badge dash-badge--${badgeMod}"><span class="material-icons" style="font-size:13px;">check_circle</span>${rating}</span>
+          <span class="dash-badge dash-badge--${badgeMod}"><span class="material-symbols-outlined" style="font-size:13px;">check_circle</span>${rating}</span>
           <p class="dash-wisescore-note">Average score across all <strong>${d.claim.discovered} discovered products</strong> · 12 carry a verified NON-UPF shield.</p>
         </div>
         <div class="dash-claim-divider"></div>
@@ -1991,9 +1991,9 @@ function renderPillarCards(d) {
           <div class="dash-pillars-cta-inner">
             <h2 class="dash-pillars-cta-headline">Every metric, distribution &amp; flagged product across all 3 pillars</h2>
             <button class="dash-btn dash-cta-banner-btn dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
-              <span class="material-icons">description</span>
+              <span class="material-symbols-outlined">description</span>
               <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
-              <span class="material-icons dash-pillars-cta-arrow">arrow_outward</span>
+              <span class="material-symbols-outlined dash-pillars-cta-arrow">arrow_outward</span>
             </button>
           </div>
         </div>
@@ -2438,7 +2438,7 @@ function renderTopProducts(d) {
           </div>
           <button class="dash-ing-report" type="button" data-dash-action="antiinflammatory-report" aria-label="View report for ${esc(it.name)}">
             <span class="dash-ing-report-label">View report</span>
-            <span class="dash-ing-report-icon"><span class="material-icons">chevron_right</span></span>
+            <span class="dash-ing-report-icon"><span class="material-symbols-outlined">chevron_right</span></span>
           </button>
         </div>`;
     })
@@ -2527,7 +2527,7 @@ function renderMetricSpotlight(d) {
           <div class="dash-mrow-chips">
             <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.low.score))}</span></span>
             <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--high">High</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${esc(String(m.top.score))}</span></span>
-            <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-icons dash-mrow-report-icon">chevron_right</span></button>
+            <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-symbols-outlined dash-mrow-report-icon">chevron_right</span></button>
           </div>
         </div>
         <div class="dash-seg-row dash-mrow-row">

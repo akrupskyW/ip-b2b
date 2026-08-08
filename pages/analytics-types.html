@@ -21,7 +21,6 @@
       }
     })();
   </script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -331,7 +330,7 @@
       border-radius: 2px 0 0 0;
     }
     .pmx-fix-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 0; }
-    .pmx-fix-toast-icon .material-icons { font-size: 17px; color: #fff; }
+    .pmx-fix-toast-icon .material-symbols-outlined { font-size: 17px; color: #fff; }
     .pmx-fix-toast-body { min-width: 0; }
     /* Type authored at the page's 12px floor so the min-font-size clamp leaves it
        untouched (it used to bump 10/11px up to 12px and break the layout). */
@@ -363,7 +362,7 @@
       transition: background 0.15s ease, transform 0.1s ease;
     }
     .pmx-fix-toast-close:hover { background: rgba(255, 255, 255, 0.42); transform: scale(1.08); }
-    .pmx-fix-toast-close .material-icons { font-size: 14px; line-height: 1; }
+    .pmx-fix-toast-close .material-symbols-outlined { font-size: 14px; line-height: 1; }
     @media (prefers-reduced-motion: reduce) {
       .pmx-fix-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
     }
@@ -405,7 +404,7 @@
     }
     html.dark .att-more { color: var(--primary-bright, var(--primary)); }
     .att-more:hover { text-decoration: underline; }
-    .att-more .material-icons { font-size: 16px; }
+    .att-more .material-symbols-outlined { font-size: 16px; }
 
     /* =====================================================================
        Matrix responsiveness — keyed to the dashboard column width via the
@@ -1295,7 +1294,7 @@
     }
     .att-hero-product-ph { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .att-hero-product img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .att-hero-product .material-icons { font-size: 30px; opacity: 0.7; }
+    .att-hero-product .material-symbols-outlined { font-size: 30px; opacity: 0.7; }
     .att-hero-product-label {
       font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
       text-transform: uppercase; text-align: center; line-height: 1.25;
@@ -1310,7 +1309,7 @@
       background: linear-gradient(180deg, rgba(7, 12, 26, 0) 0%, rgba(7, 12, 26, 0.64) 100%);
       color: #fff; opacity: 0; transition: opacity 0.18s ease;
     }
-    .att-hero-product-edit .material-icons { font-size: 18px; opacity: 1; margin-bottom: 6px; color: #fff; }
+    .att-hero-product-edit .material-symbols-outlined { font-size: 18px; opacity: 1; margin-bottom: 6px; color: #fff; }
     .att-hero-product:hover .att-hero-product-edit,
     .att-hero-product:focus-visible .att-hero-product-edit { opacity: 1; }
     /* Body (center) — brand line, product name, status pills. */
@@ -1338,14 +1337,14 @@
       display: flex; align-items: center; justify-content: center;
       width: 100%; height: 100%; color: var(--primary);
     }
-    .att-hero-logo-ph .material-icons { font-size: 16px; }
+    .att-hero-logo-ph .material-symbols-outlined { font-size: 16px; }
     .att-hero-logo-edit {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
       background: rgba(7, 12, 26, 0.52); color: #fff;
       opacity: 0; transition: opacity 0.18s ease;
     }
-    .att-hero-logo-edit .material-icons { font-size: 14px; }
+    .att-hero-logo-edit .material-symbols-outlined { font-size: 14px; }
     .att-hero-logo:hover .att-hero-logo-edit,
     .att-hero-logo:focus-visible .att-hero-logo-edit { opacity: 1; }
     .att-hero-eyebrow {
@@ -1365,7 +1364,7 @@
       font-size: 12.5px; font-weight: 700; line-height: 1; white-space: nowrap;
       -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     }
-    .att-hero-pill .material-icons { font-size: 16px; }
+    .att-hero-pill .material-symbols-outlined { font-size: 16px; }
     .att-hero-pill sup { font-size: 0.62em; font-weight: 700; }
     .att-hero-pill--claimed {
       background: rgba(255, 255, 255, 0.16);
@@ -1377,7 +1376,7 @@
       border: 1px solid rgba(157, 193, 255, 0.5);
       color: #EAF1FF;
     }
-    .att-hero-pill--verified .material-icons { color: #9DC1FF; }
+    .att-hero-pill--verified .material-symbols-outlined { color: #9DC1FF; }
     /* Aside (right) — the UPC/GTIN in its own card with a real, scannable
        UPC-A barcode (rendered as SVG) above the human-readable digits. */
     .att-hero-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
@@ -1790,8 +1789,8 @@
       function productInner(url) {
         var body = url
           ? '<img src="' + escAttr(url) + '" alt="Cashew Lime Crisp product image" />'
-          : '<span class="att-hero-product-ph"><span class="material-icons">add_photo_alternate</span><span class="att-hero-product-label">Add Product Image</span></span>';
-        return body + '<span class="att-hero-product-edit" aria-hidden="true"><span class="material-icons">edit</span></span>';
+          : '<span class="att-hero-product-ph"><span class="material-symbols-outlined">add_photo_alternate</span><span class="att-hero-product-label">Add Product Image</span></span>';
+        return body + '<span class="att-hero-product-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span>';
       }
       function applyProductImage(url) {
         var btn = document.getElementById('att-hero-product');
@@ -1828,8 +1827,8 @@
       function logoInner(url) {
         var body = url
           ? '<img src="' + escAttr(url) + '" alt="Date Better Snacks logo" />'
-          : '<span class="att-hero-logo-ph"><span class="material-icons">add_photo_alternate</span></span>';
-        return body + '<span class="att-hero-logo-edit" aria-hidden="true"><span class="material-icons">edit</span></span>';
+          : '<span class="att-hero-logo-ph"><span class="material-symbols-outlined">add_photo_alternate</span></span>';
+        return body + '<span class="att-hero-logo-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span>';
       }
       function applyBrandLogo(url) {
         var btn = document.getElementById('att-hero-logo');
@@ -1870,26 +1869,26 @@
               '<span class="dash-modal-eyebrow">' + escAttr(cfg.eyebrow) + '</span>' +
               '<h2 class="dash-modal-title">' + escAttr(cfg.title) + '</h2>' +
             '</div>' +
-            '<button class="dash-modal-close" type="button" data-img-close aria-label="Close"><span class="material-icons">close</span></button>' +
+            '<button class="dash-modal-close" type="button" data-img-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
           '</header>' +
           '<div class="dash-modal-body">' +
             '<div class="dash-banner-preview' + (cfg.previewMod ? ' ' + cfg.previewMod : '') + '">' +
               '<div class="dash-banner-preview-img" id="att-img-preview-img"></div>' +
-              '<span class="dash-banner-preview-empty" id="att-img-preview-empty"><span class="material-icons">image</span>' + escAttr(cfg.emptyLabel) + '</span>' +
+              '<span class="dash-banner-preview-empty" id="att-img-preview-empty"><span class="material-symbols-outlined">image</span>' + escAttr(cfg.emptyLabel) + '</span>' +
             '</div>' +
             '<label class="dash-banner-drop" id="att-img-drop">' +
               '<input type="file" accept="image/*" id="att-img-file" hidden>' +
-              '<span class="material-icons">cloud_upload</span>' +
+              '<span class="material-symbols-outlined">cloud_upload</span>' +
               '<span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">' + escAttr(cfg.dropHint) + '</span></span>' +
             '</label>' +
             '<div class="dash-banner-or"><span>or paste a URL</span></div>' +
             '<input type="url" class="dash-banner-url" id="att-img-url" placeholder="' + escAttr(cfg.urlPlaceholder) + '" autocomplete="off">' +
           '</div>' +
           '<footer class="dash-modal-foot">' +
-            '<button class="dash-btn dash-btn--ghost" type="button" data-img-remove><span class="material-icons">delete</span>Remove</button>' +
+            '<button class="dash-btn dash-btn--ghost" type="button" data-img-remove><span class="material-symbols-outlined">delete</span>Remove</button>' +
             '<div class="dash-modal-foot-right">' +
               '<button class="dash-btn dash-btn--ghost" type="button" data-img-close>Cancel</button>' +
-              '<button class="dash-btn dash-btn--primary" type="button" data-img-save><span class="material-icons">check</span>' + escAttr(cfg.saveLabel) + '</button>' +
+              '<button class="dash-btn dash-btn--primary" type="button" data-img-save><span class="material-symbols-outlined">check</span>' + escAttr(cfg.saveLabel) + '</button>' +
             '</div>' +
           '</footer>';
 
@@ -1982,8 +1981,8 @@
             '</div>' +
             '<h1 class="att-hero-title">Cashew Lime Crisp</h1>' +
             '<div class="att-hero-pills">' +
-              '<span class="att-hero-pill att-hero-pill--claimed"><span class="material-icons">check_circle</span>Brand Claimed</span>' +
-              '<span class="att-hero-pill att-hero-pill--verified"><span class="material-icons">verified</span>Non-UPF Verified<sup>&trade;</sup></span>' +
+              '<span class="att-hero-pill att-hero-pill--claimed"><span class="material-symbols-outlined">check_circle</span>Brand Claimed</span>' +
+              '<span class="att-hero-pill att-hero-pill--verified"><span class="material-symbols-outlined">verified</span>Non-UPF Verified<sup>&trade;</sup></span>' +
             '</div>' +
           '</div>' +
           '<div class="att-hero-aside">' +
@@ -2333,7 +2332,7 @@
         'Diabetes': { title: 'Stabilize blood sugar', text: 'Lower glycemic load by cutting added sugar and pairing carbs with protein and fiber.' },
       };
 
-      const PH_FALLBACK = '<span class="material-icons pmx-avatar-ph">photo_camera</span>';
+      const PH_FALLBACK = '<span class="material-symbols-outlined pmx-avatar-ph">photo_camera</span>';
       function skuImgUrl(name) {
         return 'https://picsum.photos/seed/' + encodeURIComponent('pmx-' + name) + '/72/72';
       }
@@ -2358,12 +2357,12 @@
         const tierLabel = 'Poor';
         return `
           <div class="pmx-fix-toast" role="status">
-            <span class="pmx-fix-toast-icon"><span class="material-icons">build</span></span>
+            <span class="pmx-fix-toast-icon"><span class="material-symbols-outlined">build</span></span>
             <div class="pmx-fix-toast-body">
               <div class="pmx-fix-toast-title">${esc(tip.title)} (${tierLabel})</div>
               <p class="pmx-fix-toast-text">${esc(tip.text)}</p>
             </div>
-            <button class="pmx-fix-toast-close" type="button" aria-label="Dismiss"><span class="material-icons">close</span></button>
+            <button class="pmx-fix-toast-close" type="button" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
           </div>`;
       }
 
@@ -2646,8 +2645,8 @@
         const hidden = SKUS.length - COLLAPSED_ROWS;
         if (hidden <= 0) { btn.style.display = 'none'; return; }
         btn.innerHTML = expanded
-          ? `<span class="material-icons">expand_less</span>Show less`
-          : `<span class="material-icons">expand_more</span>See ${hidden} more`;
+          ? `<span class="material-symbols-outlined">expand_less</span>Show less`
+          : `<span class="material-symbols-outlined">expand_more</span>See ${hidden} more`;
       }
 
       function mount() {
@@ -2833,13 +2832,13 @@
       const REPORT_BTN =
         '<button type="button" class="dash-mrow-report" aria-label="View report">' +
         '<span class="dash-mrow-report-label">View report</span>' +
-        '<span class="material-icons dash-mrow-report-icon">north_east</span></button>';
+        '<span class="material-symbols-outlined dash-mrow-report-icon">north_east</span></button>';
 
       /* Circular product thumbnail for the leading (titleless) column. Uses the
          row's `img` URL when supplied, otherwise a deterministic seeded
          placeholder photo (same product → same image across re-renders). Error
          fallback is wired in JS after render (see wireAvatars). */
-      const PH_FALLBACK = '<span class="material-icons upf-avatar-ph">photo_camera</span>';
+      const PH_FALLBACK = '<span class="material-symbols-outlined upf-avatar-ph">photo_camera</span>';
       function imgSrc(r) {
         return r.img || ('https://picsum.photos/seed/' + encodeURIComponent('upf-' + r.upc) + '/72/72');
       }
@@ -3573,7 +3572,7 @@
          row's `img` URL when supplied, otherwise a deterministic seeded
          placeholder photo (same product → same image across re-renders). Error
          fallback is wired in JS after render (see wireAvatars). */
-      const PH_FALLBACK = '<span class="material-icons upf-avatar-ph">photo_camera</span>';
+      const PH_FALLBACK = '<span class="material-symbols-outlined upf-avatar-ph">photo_camera</span>';
       function imgSrc(r) {
         return r.img || ('https://picsum.photos/seed/' + encodeURIComponent('gras-' + r.upc) + '/72/72');
       }
@@ -3592,7 +3591,7 @@
       const REPORT_BTN =
         '<button type="button" class="dash-mrow-report" aria-label="View report">' +
         '<span class="dash-mrow-report-label">View report</span>' +
-        '<span class="material-icons dash-mrow-report-icon">north_east</span></button>';
+        '<span class="material-symbols-outlined dash-mrow-report-icon">north_east</span></button>';
 
       function arrowSvg() {
         return '<span class="upf-th-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
@@ -4435,9 +4434,9 @@
       function rowHTML(m) {
         const t = TIER[m.tone];
         const icon = m.kind === 'composite'
-          ? '<span class="material-icons att-mhc-icon att-mhc-icon--composite" title="Composite metric">widgets</span>'
+          ? '<span class="material-symbols-outlined att-mhc-icon att-mhc-icon--composite" title="Composite metric">widgets</span>'
           : m.kind === 'component'
-            ? '<span class="material-icons att-mhc-icon" title="Component metric">extension</span>'
+            ? '<span class="material-symbols-outlined att-mhc-icon" title="Component metric">extension</span>'
             : '';
         return `
           <div class="att-mhc-row">
@@ -4453,7 +4452,7 @@
               <div class="dash-mrow-chips">
                 <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--top">Top</span><span class="dash-mrow-chip-name">${esc(m.top.name)}</span><span class="dash-mrow-chip-score">${m.top.score}</span></span>
                 <span class="dash-mrow-chip"><span class="dash-mrow-chip-tag dash-mrow-chip-tag--low">Low</span><span class="dash-mrow-chip-name">${esc(m.low.name)}</span><span class="dash-mrow-chip-score">${m.low.score}</span></span>
-                <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-icons dash-mrow-report-icon">north_east</span></button>
+                <button class="dash-mrow-report" type="button" data-dash-action="metricspotlight-report" aria-label="View report for ${esc(m.name)}"><span class="dash-mrow-report-label">View report</span><span class="material-symbols-outlined dash-mrow-report-icon">north_east</span></button>
               </div>
             </div>
             <div class="dash-seg-row dash-mrow-row">

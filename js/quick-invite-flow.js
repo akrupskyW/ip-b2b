@@ -86,7 +86,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -126,7 +126,7 @@ function inviteRowHtml(i) {
           </span>
         </span>
       </span>
-      <span class="adm-td"><span class="adm-idcell" style="gap:6px"><span class="material-icons" style="font-size:15px;color:var(--text-subtle)">apartment</span>${esc(i.org)}</span></span>
+      <span class="adm-td"><span class="adm-idcell" style="gap:6px"><span class="material-symbols-outlined" style="font-size:15px;color:var(--text-subtle)">apartment</span>${esc(i.org)}</span></span>
       <span class="adm-td"><span class="adm-chip ${chip.cls}">${esc(chip.label)}</span></span>
       <span class="adm-td">
         <span class="adm-idcell-body">
@@ -136,9 +136,9 @@ function inviteRowHtml(i) {
       </span>
       <span class="adm-td adm-td--end">
         <span class="adm-actions">
-          <button type="button" class="adm-icon-btn" title="Copy invite link" data-adm-action="copy" data-adm-org="${esc(i.org)}"><span class="material-icons">link</span></button>
-          <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Resend invite" data-adm-action="resend" data-adm-org="${esc(i.org)}"><span class="material-icons">send</span></button>
-          <button type="button" class="adm-icon-btn adm-icon-btn--danger" title="Cancel invite" data-adm-action="cancel" data-adm-org="${esc(i.org)}"${canCancel ? '' : ' disabled style="opacity:.4;pointer-events:none"'}><span class="material-icons">cancel</span></button>
+          <button type="button" class="adm-icon-btn" title="Copy invite link" data-adm-action="copy" data-adm-org="${esc(i.org)}"><span class="material-symbols-outlined">link</span></button>
+          <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Resend invite" data-adm-action="resend" data-adm-org="${esc(i.org)}"><span class="material-symbols-outlined">send</span></button>
+          <button type="button" class="adm-icon-btn adm-icon-btn--danger" title="Cancel invite" data-adm-action="cancel" data-adm-org="${esc(i.org)}"${canCancel ? '' : ' disabled style="opacity:.4;pointer-events:none"'}><span class="material-symbols-outlined">cancel</span></button>
         </span>
       </span>
     </div>`;
@@ -175,7 +175,7 @@ function statsHtml() {
     return `
       <button type="button" class="adm-stat${f.accent ? ' ' + f.accent : ''}${active ? ' is-active' : ''}" data-adm-filter="${f.key == null ? '' : esc(f.key)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="adm-stat-num">${f.num}</span>
-        <span class="adm-stat-label"><span class="material-icons">${esc(f.icon)}</span>${esc(f.label)}</span>
+        <span class="adm-stat-label"><span class="material-symbols-outlined">${esc(f.icon)}</span>${esc(f.label)}</span>
         <span class="adm-stat-sub">${esc(f.sub)}</span>
       </button>`;
   }).join('');
@@ -185,36 +185,36 @@ function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
     <div class="adm-wrap">
-      <a class="adm-back" href="organizations.html"><span class="material-icons">arrow_back</span>Back to Organizations</a>
+      <a class="adm-back" href="organizations.html"><span class="material-symbols-outlined">arrow_back</span>Back to Organizations</a>
 
       <div class="adm-card adm-card--pad" style="max-width:520px;margin-bottom:26px">
-        <div class="adm-util-title" style="font-family:'Noto Serif',Georgia,serif;font-size:1.15rem"><span class="material-icons" style="color:var(--primary)">bolt</span>Quick Invite</div>
+        <div class="adm-util-title" style="font-family:'Noto Serif',Georgia,serif;font-size:1.15rem"><span class="material-symbols-outlined" style="color:var(--primary)">bolt</span>Quick Invite</div>
         <p class="adm-lede" style="margin:2px 0 16px">Find or create an org, activate it, and send the invite in one step.</p>
         <div class="adm-field" style="min-width:0">
           <label class="adm-field-label" for="qi-org">Organization</label>
           <div class="adm-search-inline" style="min-width:0">
-            <span class="material-icons">search</span>
+            <span class="material-symbols-outlined">search</span>
             <input type="text" id="qi-org" class="adm-search" data-adm-org-search placeholder="Search organizations by name…" aria-label="Search organizations by name" />
           </div>
         </div>
         <div id="qi-suggest" class="adm-qi-suggest" hidden></div>
       </div>
 
-      <div class="adm-section-label"><span class="material-icons">history</span>Invite History</div>
+      <div class="adm-section-label"><span class="material-symbols-outlined">history</span>Invite History</div>
       <p class="adm-lede" style="margin:-6px 2px 14px">Invitations across all organizations, most recent first.</p>
 
       <div class="adm-stats" style="margin-bottom:14px">${statsHtml()}</div>
 
       <div class="adm-toolbar">
         <div class="adm-search-inline">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search name, email, org…" aria-label="Search invites" value="${esc(query)}" />
         </div>
         <select class="adm-select" data-adm-salesperson aria-label="Filter by salesperson">
           ${SALESPEOPLE.map((s) => `<option${s === salesperson ? ' selected' : ''}>${esc(s)}</option>`).join('')}
         </select>
-        <button type="button" class="adm-icon-btn" title="Refresh" data-adm-action="refresh"><span class="material-icons">refresh</span></button>
-        <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-icons">download</span>Export CSV</button>
+        <button type="button" class="adm-icon-btn" title="Refresh" data-adm-action="refresh"><span class="material-symbols-outlined">refresh</span></button>
+        <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
       </div>
 
       <div class="adm-card">
@@ -254,7 +254,7 @@ function suggestOrgs(text) {
   box.hidden = false;
   box.innerHTML = hits.length
     ? hits.map((n) => `<button type="button" class="adm-qi-suggest-row" data-adm-action="pick-org" data-adm-org="${esc(n)}"><span class="adm-avatar" style="width:26px;height:26px;font-size:0.62rem">${esc(initials(n))}</span><span>${esc(n)}</span><span class="adm-idcell-sub" style="margin-left:auto">Send invite</span></button>`).join('')
-    : `<button type="button" class="adm-qi-suggest-row" data-adm-action="create-org" data-adm-org="${esc(text.trim())}"><span class="material-icons" style="color:var(--primary)">add_business</span><span>Create <strong>${esc(text.trim())}</strong></span><span class="adm-idcell-sub" style="margin-left:auto">New org</span></button>`;
+    : `<button type="button" class="adm-qi-suggest-row" data-adm-action="create-org" data-adm-org="${esc(text.trim())}"><span class="material-symbols-outlined" style="color:var(--primary)">add_business</span><span>Create <strong>${esc(text.trim())}</strong></span><span class="adm-idcell-sub" style="margin-left:auto">New org</span></button>`;
 }
 
 function runAction(action, org) {

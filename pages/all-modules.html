@@ -4,11 +4,11 @@
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISE · GRAS Verification</title>
+  <title>WISE · All Modules</title>
   <script src="../js/text-size-fouc.js"></script>
   <script>
-    /* FOUC guard — apply the persisted theme before first paint so the page
-       never flashes dark→light (or vice versa). Mirrors verification.html. */
+    /* FOUC guard — apply the persisted theme before first paint. Mirrors the
+       other app pages so the shell never flashes the wrong theme. */
     (function () {
       try {
         var t = localStorage.getItem('wise-theme');
@@ -16,9 +16,7 @@
           t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
         }
         document.documentElement.classList.toggle('dark', t === 'dark');
-      } catch (e) {
-        document.documentElement.classList.add('dark');
-      }
+      } catch (e) { document.documentElement.classList.add('dark'); }
     })();
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -28,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
 </head>
-<body data-nav-id="gras-verification" data-default-dock="left" data-default-nav-collapsed="1">
+<body data-nav-id="all-modules" data-adm-page data-default-dock="left" data-default-nav-collapsed="1">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
@@ -37,9 +35,7 @@
         </div>
       </div>
     </div>
-    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
     <div id="topbar-row" hidden aria-hidden="true"></div>
-
     <div id="modules-row">
       <main id="agent-main">
         <div class="agent-main-inner">
@@ -47,11 +43,8 @@
           <div class="agent-main-scroll" id="agent-main-scroll"></div>
         </div>
       </main>
-      <!-- The persistent WISEai chat dock is injected here (docked LEFT via
-           data-default-dock) by agent-overview.js → setupWISEaiDock(). -->
     </div>
   </div>
-
   <script type="module" src="../js/agent-overview.js"></script>
   <script src="/livereload.js?snipver=1"></script>
 </body>

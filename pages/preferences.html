@@ -17,7 +17,6 @@
       } catch (e) { document.documentElement.classList.add('dark'); }
     })();
   </script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,14 +31,14 @@
 
     .prefs-wrap { padding: 26px 40px 56px; max-width: 860px; }
     .prefs-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; }
-    .prefs-breadcrumb .material-icons { font-size: 16px; opacity: 0.6; }
+    .prefs-breadcrumb .material-symbols-outlined { font-size: 16px; opacity: 0.6; }
     .prefs-breadcrumb-here { color: var(--text); }
     .prefs-title { font-family: var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
     .prefs-lede { font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 26px; max-width: 62ch; }
 
     .prefs-group { margin-bottom: 30px; }
     .prefs-group-title { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px; }
-    .prefs-group-title .material-icons { font-size: 19px; color: var(--primary); }
+    .prefs-group-title .material-symbols-outlined { font-size: 19px; color: var(--primary); }
 
     .prefs-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); overflow: hidden; }
     .prefs-row { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-top: 1px solid var(--border); }
@@ -66,7 +65,7 @@
     .prefs-step { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
     html.dark .prefs-step { background: rgba(255,255,255,0.05); }
     .prefs-step:hover { border-color: var(--primary); color: var(--primary); }
-    .prefs-step .material-icons { font-size: 18px; }
+    .prefs-step .material-symbols-outlined { font-size: 18px; }
 
     /* Select */
     .prefs-select { height: 38px; padding: 0 34px 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 0.84rem; cursor: pointer; flex-shrink: 0; }
@@ -76,7 +75,7 @@
     #prefs-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
     .prefs-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
     .prefs-toast.is-in { opacity: 1; transform: none; }
-    .prefs-toast .material-icons { font-size: 17px; }
+    .prefs-toast .material-symbols-outlined { font-size: 17px; }
 
     @media (max-width: 720px) {
       .prefs-wrap { padding: 20px 20px 48px; }

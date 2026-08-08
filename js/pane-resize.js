@@ -78,12 +78,21 @@
   function hasPreset(el) {
     return !!(el.classList && (el.classList.contains('panel-wide') || el.classList.contains('panel-triple')));
   }
-  // A "fill" pane (marked data-pr-fill) is the flexible middle module that must
-  // always absorb the row's remaining space (e.g. the WISEai chat between the
-  // broken-out History / Turns modules). We never pin it or restore a saved
-  // width onto it, and drags adjust its NEIGHBOUR instead — so there's never
-  // dead space left beside it.
-  function isFill(el) { return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-fill')); }
+  // A "fill" pane (marked data-pr-fill) is the flexible middle module that
+  // absorbs the row's remaining space (e.g. the WISEai chat between the
+  // broken-out History / Turns modules) — we never pin it or restore a saved
+  // width onto it; drags adjust its NEIGHBOUR instead. BUT the flag is only a
+  // hint: a page may pin that same element to a FIXED column via CSS in some
+  // states (e.g. WISEai fixes the chat to a 420px column once a result pane
+  // opens, making the RESULT panes the flexible fillers). If we still treated
+  // it as the absorber there, a drag on an adjacent seam would "restore" it to
+  // its CSS width on release — snapping it back to its original place. So a
+  // data-pr-fill pane only counts as fill while it is ACTUALLY flexible
+  // (flex-grow > 0); when CSS has pinned it fixed we let it be dragged/pinned
+  // like any other fixed pane and let the truly-flexible panes absorb.
+  function isFill(el) {
+    return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-fill')) && growOf(el) > 0;
+  }
 
   /* ── width helpers ────────────────────────────────────────────────────── */
   function rectW(el) { return el.getBoundingClientRect().width; }

@@ -48,7 +48,7 @@ function gvToast(msg, icon = 'check_circle') {
   }
   const t = document.createElement('div');
   t.className = 'gv-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => {
@@ -397,15 +397,15 @@ function headerHTML() {
 
   if (state.screen === 'wizard') {
     const ing = ingredientById(state.activeIngredientId);
-    back = `<button class="gv-back" type="button" data-gv="wizard-back" aria-label="Back" title="Back"><span class="material-icons">arrow_back</span></button>`;
+    back = `<button class="gv-back" type="button" data-gv="wizard-back" aria-label="Back" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>`;
     title = `Verify · ${esc(ing ? ing.name : '')}`;
     meta = `Nutrient Survival · ${esc(ing ? ing.kind : 'Ingredient')} · ${ing ? ing.products : 0} products affected`;
   } else if (state.screen === 'submissions') {
-    back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-icons">arrow_back</span></button>`;
+    back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-symbols-outlined">arrow_back</span></button>`;
     title = 'GRAS Submissions';
     meta = 'Nutrient Survival · Review queue';
   } else if (state.screen === 'confirm' || state.screen === 'result') {
-    back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-icons">arrow_back</span></button>`;
+    back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-symbols-outlined">arrow_back</span></button>`;
   } else {
     /* Report screen — the Submissions / Review-queue action floats right on the
        headline row, so the search below can span the full width. */
@@ -427,8 +427,8 @@ function headerHTML() {
 function headActionHTML() {
   const m = metrics();
   return m.inReview
-    ? `<button class="gv-cta gv-head-action" type="button" data-gv="go-submissions"><span class="material-icons">assignment_turned_in</span>Review queue · ${m.inReview}</button>`
-    : `<button class="gv-cta gv-cta--ghost gv-head-action" type="button" data-gv="go-submissions"><span class="material-icons">assignment_turned_in</span>Submissions</button>`;
+    ? `<button class="gv-cta gv-head-action" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>Review queue · ${m.inReview}</button>`
+    : `<button class="gv-cta gv-cta--ghost gv-head-action" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>Submissions</button>`;
 }
 
 /* Report toolbar — now just the search pill, spanning the full width (the
@@ -437,7 +437,7 @@ function toolbarHTML() {
   return `
     <div class="gv-toolbar">
       <div class="gv-search-inline">
-        <span class="material-icons">search</span>
+        <span class="material-symbols-outlined">search</span>
         <input id="gv-search" class="gv-search" type="text" placeholder="Search ingredients or type" value="${esc(state.search)}" data-gv="search" autocomplete="off" aria-label="Search ingredients" />
       </div>
     </div>`;
@@ -450,7 +450,7 @@ function glanceHTML(label) {
   const tile = (num, cap, mod, icon) =>
     `<div class="gv-stat${mod ? ' ' + mod : ''}">` +
     `<span class="gv-stat-num">${esc(num)}</span>` +
-    `<span class="gv-stat-label">${icon ? `<span class="material-icons">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
+    `<span class="gv-stat-label">${icon ? `<span class="material-symbols-outlined">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
     `</div>`;
   return `
     <div class="gv-stats-bar"><span class="gv-stats-label">${esc(label)}</span></div>
@@ -470,7 +470,7 @@ const STATUS_META = {
 };
 function statusPill(status) {
   const m = STATUS_META[status] || STATUS_META.unclear;
-  return `<span class="gv-chip ${m.cls}"><span class="material-icons">${m.icon}</span>${esc(m.label)}</span>`;
+  return `<span class="gv-chip ${m.cls}"><span class="material-symbols-outlined">${m.icon}</span>${esc(m.label)}</span>`;
 }
 
 /* Round ingredient glyph, echoing the Non-UPF circular thumb but flavour-coded
@@ -484,7 +484,7 @@ const KIND_ICON = {
 };
 function ingredientGlyph(ing) {
   const icon = KIND_ICON[ing.kind] || 'science';
-  return `<span class="gv-glyph"><span class="material-icons">${esc(icon)}</span></span>`;
+  return `<span class="gv-glyph"><span class="material-symbols-outlined">${esc(icon)}</span></span>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -497,10 +497,10 @@ function reportHTML() {
     const status = statusOf(ing.id);
     const rec = docTypeById(ing.rec);
     const action = status === 'unclear'
-      ? `<button class="gv-row-cta" type="button" data-gv="verify" data-ing="${ing.id}">Verify<span class="material-icons">arrow_forward</span></button>`
+      ? `<button class="gv-row-cta" type="button" data-gv="verify" data-ing="${ing.id}">Verify<span class="material-symbols-outlined">arrow_forward</span></button>`
       : status === 'pending'
-        ? `<button class="gv-row-cta gv-row-cta--ghost" type="button" data-gv="go-submissions"><span class="material-icons">hourglass_top</span>In review</button>`
-        : `<span class="gv-row-done"><span class="material-icons">check_circle</span>Verified</span>`;
+        ? `<button class="gv-row-cta gv-row-cta--ghost" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">hourglass_top</span>In review</button>`
+        : `<span class="gv-row-done"><span class="material-symbols-outlined">check_circle</span>Verified</span>`;
     return `
       <tr class="gv-row" data-ing="${ing.id}">
         <td>
@@ -564,8 +564,8 @@ function wizardTopHTML() {
   const st = state.wizardStep;
   const disabled = !canProceed();
   const primary = st < STEP_DEFS.length - 1
-    ? `<button class="gv-cta" type="button" data-gv="next" ${disabled ? 'disabled' : ''}>Continue<span class="material-icons">arrow_forward</span></button>`
-    : `<button class="gv-cta" type="button" data-gv="submit"><span class="material-icons">verified_user</span>Submit for review</button>`;
+    ? `<button class="gv-cta" type="button" data-gv="next" ${disabled ? 'disabled' : ''}>Continue<span class="material-symbols-outlined">arrow_forward</span></button>`
+    : `<button class="gv-cta" type="button" data-gv="submit"><span class="material-symbols-outlined">verified_user</span>Submit for review</button>`;
   return `<div class="gv-toolbar gv-toolbar--wizard">${primary}</div>`;
 }
 
@@ -583,7 +583,7 @@ function stepImpactHTML() {
   const rows = ing.samples.map((s) => `
     <div class="gv-prod-row">
       <div class="gv-prod-main">
-        <span class="material-icons gv-prod-ic">inventory_2</span>
+        <span class="material-symbols-outlined gv-prod-ic">inventory_2</span>
         <div class="gv-prod-text">
           <span class="gv-prod-name">${esc(s.n)}</span>
           <span class="gv-prod-upc">UPC · ${esc(s.upc)}</span>
@@ -641,7 +641,7 @@ function stepDocsHTML() {
     return `
       <button type="button" class="gv-doc-card ${active ? 'is-active' : ''}" data-gv="pick-doc" data-doc="${d.id}">
         ${recommended ? '<span class="gv-doc-rec">Recommended</span>' : ''}
-        <span class="gv-doc-ic"><span class="material-icons">${d.icon}</span></span>
+        <span class="gv-doc-ic"><span class="material-symbols-outlined">${d.icon}</span></span>
         <span class="gv-doc-text">
           <span class="gv-doc-name">${esc(d.name)}</span>
           <span class="gv-doc-for">For: ${esc(d.forText)}</span>
@@ -676,12 +676,12 @@ function stepDocsHTML() {
 
   const upload = hasFile
     ? `<div class="gv-file gv-file--done">
-         <span class="gv-file-ic"><span class="material-icons">description</span></span>
+         <span class="gv-file-ic"><span class="material-symbols-outlined">description</span></span>
          <div class="gv-file-text"><span class="gv-file-name">${esc(state.fields.fileName)}</span><span class="gv-file-sub">Attached · PDF</span></div>
-         <button class="gv-file-x" type="button" data-gv="remove-file" aria-label="Remove file"><span class="material-icons">close</span></button>
+         <button class="gv-file-x" type="button" data-gv="remove-file" aria-label="Remove file"><span class="material-symbols-outlined">close</span></button>
        </div>`
     : `<button type="button" class="gv-file gv-file--drop" data-gv="upload">
-         <span class="gv-file-ic"><span class="material-icons">upload_file</span></span>
+         <span class="gv-file-ic"><span class="material-symbols-outlined">upload_file</span></span>
          <div class="gv-file-text"><span class="gv-file-name">Attach your ${esc(doc ? doc.name : 'GRAS')} document</span><span class="gv-file-sub">PDF up to 25 MB</span></div>
        </button>`;
 
@@ -708,7 +708,7 @@ function stepAttestHTML() {
     return `
       <label class="gv-attest ${on ? 'is-checked' : ''}">
         <button class="gv-check" type="button" data-gv="attest" data-key="${it.key}" role="checkbox" aria-checked="${on}">
-          <span class="material-icons">${on ? 'check_box' : 'check_box_outline_blank'}</span>
+          <span class="material-symbols-outlined">${on ? 'check_box' : 'check_box_outline_blank'}</span>
         </button>
         <span class="gv-attest-text">${esc(it.label)}</span>
       </label>`;
@@ -750,12 +750,12 @@ function confirmHTML() {
   const ing = ingredientById(state.activeIngredientId);
   return `
     <div class="gv-outcome gv-step-anim">
-      <div class="gv-outcome-icon gv-outcome-icon--info"><span class="material-icons">hourglass_top</span></div>
+      <div class="gv-outcome-icon gv-outcome-icon--info"><span class="material-symbols-outlined">hourglass_top</span></div>
       <h2 class="gv-outcome-title">Submission received</h2>
       <p class="gv-outcome-text">Your GRAS documentation for <strong>${esc(ing ? ing.name : '')}</strong> is in the WISEcode review queue as <strong>${esc(state.lastSubmissionId)}</strong>. Once cleared it will flip <strong>${ing ? ing.products : 0} products</strong> to GRAS automatically.</p>
       <div class="gv-outcome-actions">
         <button class="gv-btn gv-btn--ghost" type="button" data-gv="go-report">Verify another ingredient</button>
-        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-submissions"><span class="material-icons">assignment_turned_in</span>View submissions</button>
+        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>View submissions</button>
       </div>
     </div>`;
 }
@@ -769,9 +769,9 @@ function submissionsHTML() {
     return `
       <div class="gv-board">
         <div class="gv-empty gv-empty--pad">
-          <span class="material-icons">inbox</span>
+          <span class="material-symbols-outlined">inbox</span>
           <p>No submissions yet. Verify a flagged ingredient to start a GRAS submission.</p>
-          <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-icons">arrow_back</span>Back to ingredients</button>
+          <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">arrow_back</span>Back to ingredients</button>
         </div>
       </div>`;
   }
@@ -781,8 +781,8 @@ function submissionsHTML() {
     const status = s.status;
     const chip = status === 'verified' ? statusPill('verified') : statusPill('pending');
     const action = status === 'pending'
-      ? `<button class="gv-row-cta" type="button" data-gv="review-sub" data-sub="${s.id}"><span class="material-icons">rule</span>Run WISEcode review</button>`
-      : `<button class="gv-row-cta gv-row-cta--ghost" type="button" data-gv="open-result" data-ing="${s.ingredientId}"><span class="material-icons">visibility</span>View result</button>`;
+      ? `<button class="gv-row-cta" type="button" data-gv="review-sub" data-sub="${s.id}"><span class="material-symbols-outlined">rule</span>Run WISEcode review</button>`
+      : `<button class="gv-row-cta gv-row-cta--ghost" type="button" data-gv="open-result" data-ing="${s.ingredientId}"><span class="material-symbols-outlined">visibility</span>View result</button>`;
     return `
       <tr class="gv-row">
         <td>
@@ -830,22 +830,22 @@ function resultHTML() {
   const rows = ing.samples.map((s) => `
     <div class="gv-prod-row">
       <div class="gv-prod-main">
-        <span class="material-icons gv-prod-ic">inventory_2</span>
+        <span class="material-symbols-outlined gv-prod-ic">inventory_2</span>
         <div class="gv-prod-text">
           <span class="gv-prod-name">${esc(s.n)}</span>
           <span class="gv-prod-upc">UPC · ${esc(s.upc)}</span>
         </div>
       </div>
-      <span class="gv-prod-status gv-prod-status--ok"><span class="material-icons">verified_user</span>GRAS</span>
+      <span class="gv-prod-status gv-prod-status--ok"><span class="material-symbols-outlined">verified_user</span>GRAS</span>
     </div>`).join('');
   return `
     <div class="gv-outcome gv-step-anim">
-      <div class="gv-outcome-icon gv-outcome-icon--ok"><span class="material-icons">verified_user</span></div>
+      <div class="gv-outcome-icon gv-outcome-icon--ok"><span class="material-symbols-outlined">verified_user</span></div>
       <h2 class="gv-outcome-title">${esc(ing.name)} is now GRAS</h2>
       <p class="gv-outcome-text">WISEcode reviewed your documentation and established a GRAS basis for <strong>${esc(ing.name)}</strong>. <strong>${ing.products} products</strong> just moved to GRAS across your portfolio.</p>
       <div class="gv-outcome-jump">
         <span class="gv-jump-from">${prevPct}%</span>
-        <span class="material-icons">trending_flat</span>
+        <span class="material-symbols-outlined">trending_flat</span>
         <span class="gv-jump-to">${m.grasPct}%</span>
         <span class="gv-jump-cap">portfolio GRAS coverage</span>
       </div>
@@ -856,7 +856,7 @@ function resultHTML() {
       </div>
       <div class="gv-outcome-actions">
         <button class="gv-btn gv-btn--ghost" type="button" data-gv="go-submissions">Back to submissions</button>
-        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-icons">verified</span>Verify another ingredient</button>
+        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">verified</span>Verify another ingredient</button>
       </div>
     </div>`;
 }
@@ -899,7 +899,7 @@ function progressWizardHTML() {
     const done = i < ws;
     const isActive = i === ws;
     const cls = done ? 'gvp-step--done' : isActive ? 'gvp-step--active' : '';
-    const num = done ? '<span class="material-icons">check</span>' : String(i + 1);
+    const num = done ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
     let sub = '';
     if (done) sub = 'Completed';
     else if (isActive) sub = 'In progress';
@@ -910,7 +910,7 @@ function progressWizardHTML() {
       const rows = stepFields(i).map((f) => {
         const icon = f.done ? 'check_circle' : 'radio_button_unchecked';
         const st = f.done ? 'gvp-field--done' : 'gvp-field--active';
-        return `<div class="gvp-field ${st}"><span class="material-icons">${icon}</span><span class="gvp-field-label">${esc(f.label)}</span><span class="gvp-field-val">${esc(f.val)}</span></div>`;
+        return `<div class="gvp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="gvp-field-label">${esc(f.label)}</span><span class="gvp-field-val">${esc(f.val)}</span></div>`;
       }).join('');
       fieldsHtml = `<div class="gvp-fields">${rows}</div>`;
     }
@@ -934,7 +934,7 @@ function progressWizardHTML() {
           <div class="gvp-title">Verification progress</div>
           <div class="gvp-subtitle">GRAS · ${STEP_DEFS.length} steps</div>
         </div>
-        <button type="button" class="gvp-min-btn" data-gv-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-icons">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
+        <button type="button" class="gvp-min-btn" data-gv-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-symbols-outlined">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
       </div>
       <div class="gvp-progress">
         <div class="gvp-progress-head"><span>${completed} of ${STEP_DEFS.length} steps</span><span class="gvp-progress-pct">${pct}%</span></div>

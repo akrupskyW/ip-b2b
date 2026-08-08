@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
 <style>
 /* =============================================================
@@ -129,7 +129,7 @@ html.dark a { color: var(--primary-bright); }
   background: linear-gradient(135deg, var(--primary), var(--ter-cyan));
   box-shadow: 0 4px 14px rgba(37, 80, 124,0.35);
 }
-.topbar-logo .material-icons { font-size: 20px; }
+.topbar-logo .material-symbols-outlined { font-size: 20px; }
 .topbar-titles { min-width: 0; }
 .topbar-kicker { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); }
 html.dark .topbar-kicker { color: var(--primary-bright); }
@@ -144,7 +144,7 @@ html.dark .topbar-kicker { color: var(--primary-bright); }
 }
 .theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
 html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
-.theme-toggle .material-icons { font-size: 18px; }
+.theme-toggle .material-symbols-outlined { font-size: 18px; }
 
 /* Back to the app — this page has no nav rail, so it carries its own exit. */
 .back-btn {
@@ -157,9 +157,9 @@ html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(
 .back-btn:hover { border-color: var(--primary); color: var(--primary); }
 html.dark .back-btn { color: var(--text); }
 html.dark .back-btn:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
-.back-btn:hover .material-icons { transform: translateX(-2px); }
-.back-btn .material-icons { font-size: 18px; transition: transform 0.15s; }
-@media (max-width: 640px) { .back-btn span:not(.material-icons) { display: none; } .back-btn { padding: 9px 11px; } }
+.back-btn:hover .material-symbols-outlined { transform: translateX(-2px); }
+.back-btn .material-symbols-outlined { font-size: 18px; transition: transform 0.15s; }
+@media (max-width: 640px) { .back-btn span:not(.material-symbols-outlined) { display: none; } .back-btn { padding: 9px 11px; } }
 
 /* ===== Re-evaluate against source ===== */
 .reeval-btn {
@@ -171,8 +171,8 @@ html.dark .back-btn:hover { color: var(--primary-bright); border-color: var(--pr
 }
 .reeval-btn:hover { filter: brightness(1.06); }
 .reeval-btn:disabled { opacity: 0.6; cursor: progress; }
-.reeval-btn .material-icons { font-size: 18px; }
-.reeval-btn.is-loading .material-icons { animation: reevalSpin 0.8s linear infinite; }
+.reeval-btn .material-symbols-outlined { font-size: 18px; }
+.reeval-btn.is-loading .material-symbols-outlined { animation: reevalSpin 0.8s linear infinite; }
 @keyframes reevalSpin { to { transform: rotate(360deg); } }
 
 .reeval-status {
@@ -181,14 +181,14 @@ html.dark .back-btn:hover { color: var(--primary-bright); border-color: var(--pr
   font-size: 0.8125rem; font-weight: 500; line-height: 1.45;
   border: 1px solid var(--border);
 }
-.reeval-status .material-icons { font-size: 17px; flex-shrink: 0; }
+.reeval-status .material-symbols-outlined { font-size: 17px; flex-shrink: 0; }
 .reeval-status code { font-family: 'Courier New', monospace; font-size: 0.9em; }
 .reeval-status.ok { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, transparent); color: color-mix(in srgb, var(--pass) 92%, var(--text)); }
-.reeval-status.ok .material-icons { color: var(--pass); }
+.reeval-status.ok .material-symbols-outlined { color: var(--pass); }
 .reeval-status.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); color: color-mix(in srgb, var(--warn) 92%, var(--text)); }
-.reeval-status.warn .material-icons { color: var(--warn); }
+.reeval-status.warn .material-symbols-outlined { color: var(--warn); }
 .reeval-status.is-busy { background: var(--surface-2); color: var(--text-muted); }
-.reeval-status.is-busy .material-icons { color: var(--text-muted); }
+.reeval-status.is-busy .material-symbols-outlined { color: var(--text-muted); }
 
 /* ===== Hero ===== */
 .hero {
@@ -213,8 +213,8 @@ html.dark .hero-eyebrow { color: var(--primary-bright); }
   border: 1px solid var(--border); font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
 }
 html.dark .hero-pill { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
-.hero-pill .material-icons { font-size: 15px; color: var(--primary); }
-html.dark .hero-pill .material-icons { color: var(--primary-bright); }
+.hero-pill .material-symbols-outlined { font-size: 15px; color: var(--primary); }
+html.dark .hero-pill .material-symbols-outlined { color: var(--primary-bright); }
 
 /* ===== Scorecard ===== */
 .scorecard {
@@ -253,10 +253,10 @@ html.dark .concerns-head { background: rgba(255,255,255,0.035); }
 .concerns.has-warn .concerns-head { background: var(--warn-bg); border-bottom-color: color-mix(in srgb, var(--warn) 22%, transparent); }
 .concerns.all-clear .concerns-head { background: var(--pass-bg); border-bottom: 0; }
 .concerns-title { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; }
-.concerns-title .material-icons { font-size: 20px; }
-.concerns.has-fail .concerns-title, .concerns.has-fail .concerns-title .material-icons { color: var(--fail); }
-.concerns.has-warn .concerns-title, .concerns.has-warn .concerns-title .material-icons { color: var(--warn); }
-.concerns.all-clear .concerns-title, .concerns.all-clear .concerns-title .material-icons { color: var(--pass); }
+.concerns-title .material-symbols-outlined { font-size: 20px; }
+.concerns.has-fail .concerns-title, .concerns.has-fail .concerns-title .material-symbols-outlined { color: var(--fail); }
+.concerns.has-warn .concerns-title, .concerns.has-warn .concerns-title .material-symbols-outlined { color: var(--warn); }
+.concerns.all-clear .concerns-title, .concerns.all-clear .concerns-title .material-symbols-outlined { color: var(--pass); }
 .concerns-tally { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
 .concerns-note { font-size: 0.75rem; color: var(--text-muted); width: 100%; margin-top: -2px; }
 
@@ -268,9 +268,9 @@ html.dark .concerns-head { background: rgba(255,255,255,0.035); }
 .concern:last-child { border-bottom: 0; }
 .concern:hover { background: var(--surface-2); }
 html.dark .concern:hover { background: rgba(255,255,255,0.03); }
-.concern > .material-icons { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-.concern.sev-fail > .material-icons { color: var(--fail); }
-.concern.sev-warn > .material-icons { color: var(--warn); }
+.concern > .material-symbols-outlined { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.concern.sev-fail > .material-symbols-outlined { color: var(--fail); }
+.concern.sev-warn > .material-symbols-outlined { color: var(--warn); }
 .concern-body { min-width: 0; flex: 1; }
 .concern-title { font-size: 0.8125rem; font-weight: 700; line-height: 1.4; }
 .concern-detail { font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; margin-top: 2px; }
@@ -289,7 +289,7 @@ html.dark .concern:hover { background: rgba(255,255,255,0.03); }
 html.dark .concern-jump { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
 .concern-jump:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
 html.dark .concern-jump:hover { color: var(--primary-bright); }
-.concern-jump .material-icons { font-size: 13px; }
+.concern-jump .material-symbols-outlined { font-size: 13px; }
 @media (max-width: 640px) {
   .concern { flex-wrap: wrap; }
   .concern-side { margin-left: 30px; }
@@ -300,8 +300,8 @@ section { margin-top: 56px; scroll-margin-top: 80px; }
 .section-head { margin-bottom: 18px; }
 .section-kicker { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-subtle); }
 .section-head h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 6px 0 8px; display: flex; align-items: center; gap: 10px; }
-.section-head h2 .material-icons { font-size: 24px; color: var(--primary); }
-html.dark .section-head h2 .material-icons { color: var(--primary-bright); }
+.section-head h2 .material-symbols-outlined { font-size: 24px; color: var(--primary); }
+html.dark .section-head h2 .material-symbols-outlined { color: var(--primary-bright); }
 .section-head p { font-size: 0.9375rem; color: var(--text-muted); margin: 0; max-width: 800px; }
 
 /* ===== Badges ===== */
@@ -310,7 +310,7 @@ html.dark .section-head h2 .material-icons { color: var(--primary-bright); }
   padding: 3px 9px; border-radius: var(--radius-pill);
   font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap;
 }
-.badge .material-icons { font-size: 13px; }
+.badge .material-symbols-outlined { font-size: 13px; }
 .badge.pass { background: var(--pass-bg); color: var(--pass); }
 .badge.warn { background: var(--warn-bg); color: var(--warn); }
 .badge.fail { background: var(--fail-bg); color: var(--fail); }
@@ -362,8 +362,8 @@ html.dark tbody tr:hover { background: rgba(255,255,255,0.04); }
 }
 html.dark .card { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.card-head .material-icons { font-size: 20px; color: var(--primary); }
-html.dark .card-head .material-icons { color: var(--primary-bright); }
+.card-head .material-symbols-outlined { font-size: 20px; color: var(--primary); }
+html.dark .card-head .material-symbols-outlined { color: var(--primary-bright); }
 .card h3 { font-size: 0.9375rem; font-weight: 800; margin: 0; }
 .card p { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 4px; line-height: 1.55; }
 .card ul { margin: 8px 0 0; padding-left: 18px; }
@@ -373,18 +373,18 @@ html.dark .card-head .material-icons { color: var(--primary-bright); }
   display: flex; gap: 12px; padding: 16px 18px; border-radius: var(--r-md);
   border: 1px solid var(--border); margin-top: 14px;
 }
-.callout .material-icons { flex-shrink: 0; font-size: 22px; }
+.callout .material-symbols-outlined { flex-shrink: 0; font-size: 22px; }
 .callout-body { min-width: 0; }
 .callout-title { font-size: 0.875rem; font-weight: 800; margin-bottom: 2px; }
 .callout-body p { font-size: 0.8125rem; margin: 0; line-height: 1.55; }
 .callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
-.callout.warn .material-icons, .callout.warn .callout-title { color: var(--warn); }
+.callout.warn .material-symbols-outlined, .callout.warn .callout-title { color: var(--warn); }
 .callout.warn p { color: color-mix(in srgb, var(--warn) 92%, var(--text)); }
 .callout.fail { background: var(--fail-bg); border-color: color-mix(in srgb, var(--fail) 30%, transparent); }
-.callout.fail .material-icons, .callout.fail .callout-title { color: var(--fail); }
+.callout.fail .material-symbols-outlined, .callout.fail .callout-title { color: var(--fail); }
 .callout.fail p { color: color-mix(in srgb, var(--fail) 92%, var(--text)); }
 .callout.pass { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, transparent); }
-.callout.pass .material-icons, .callout.pass .callout-title { color: var(--pass); }
+.callout.pass .material-symbols-outlined, .callout.pass .callout-title { color: var(--pass); }
 .callout.pass p { color: color-mix(in srgb, var(--pass) 92%, var(--text)); }
 
 /* ===== Type scale specimens ===== */
@@ -432,7 +432,7 @@ html.dark .demo-btn:focus-visible { outline-color: var(--primary-bright); }
 html.dark .toc a { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
 .toc a:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
 html.dark .toc a:hover { color: var(--primary-bright); }
-.toc a .material-icons { font-size: 15px; }
+.toc a .material-symbols-outlined { font-size: 15px; }
 
 footer {
   margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
@@ -499,17 +499,17 @@ html.dark .page-bar.g-b > span { background: var(--primary-bright); }
   font-size: 0.625rem; font-weight: 700; color: var(--primary);
 }
 html.dark .page-updated-tag { color: var(--primary-bright); }
-.page-updated-tag .material-icons { font-size: 13px; }
+.page-updated-tag .material-symbols-outlined { font-size: 13px; }
 
 .page-checks { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 5px; }
 .page-checks li {
   display: flex; align-items: flex-start; gap: 7px;
   font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;
 }
-.page-checks .material-icons { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-.page-checks li.ok .material-icons { color: var(--pass); }
-.page-checks li.warn .material-icons { color: var(--warn); }
-.page-checks li.fail .material-icons { color: var(--fail); }
+.page-checks .material-symbols-outlined { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.page-checks li.ok .material-symbols-outlined { color: var(--pass); }
+.page-checks li.warn .material-symbols-outlined { color: var(--warn); }
+.page-checks li.fail .material-symbols-outlined { color: var(--fail); }
 .page-check-detail { color: var(--text-subtle); }
 .page-card-err { font-size: 0.75rem; color: var(--warn); margin-top: 10px; line-height: 1.45; }
 
@@ -527,10 +527,10 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
 
 <header class="topbar">
   <a class="back-btn" id="backBtn" href="overview.html" title="Back to the app">
-    <span class="material-icons">arrow_back</span><span>Back</span>
+    <span class="material-symbols-outlined">arrow_back</span><span>Back</span>
   </a>
   <div class="topbar-brand">
-    <div class="topbar-logo" aria-hidden="true"><span class="material-icons">accessibility_new</span></div>
+    <div class="topbar-logo" aria-hidden="true"><span class="material-symbols-outlined">accessibility_new</span></div>
     <div class="topbar-titles">
       <div class="topbar-kicker">WISE Design System</div>
       <div class="topbar-name">Accessibility Review</div>
@@ -538,11 +538,11 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   </div>
   <div class="topbar-spacer"></div>
   <button class="reeval-btn" id="reevalBtn" type="button" title="Re-read the design tokens from pages/agent-page.css and recompute every ratio">
-    <span class="material-icons">sync</span>
+    <span class="material-symbols-outlined">sync</span>
     <span>Re-evaluate against source</span>
   </button>
   <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
-    <span class="material-icons" id="themeIcon">dark_mode</span>
+    <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
     <span id="themeLabel">Dark theme</span>
   </button>
 </header>
@@ -563,21 +563,21 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
       the dark palette.
     </p>
     <div class="hero-meta">
-      <span class="hero-pill"><span class="material-icons">contrast</span>SC 1.4.6 Contrast (Enhanced)</span>
-      <span class="hero-pill"><span class="material-icons">text_fields</span>SC 1.4.4 Resize Text</span>
-      <span class="hero-pill"><span class="material-icons">touch_app</span>SC 2.5.8 Target Size</span>
-      <span class="hero-pill"><span class="material-icons">center_focus_strong</span>SC 2.4.7 Focus Visible</span>
+      <span class="hero-pill"><span class="material-symbols-outlined">contrast</span>SC 1.4.6 Contrast (Enhanced)</span>
+      <span class="hero-pill"><span class="material-symbols-outlined">text_fields</span>SC 1.4.4 Resize Text</span>
+      <span class="hero-pill"><span class="material-symbols-outlined">touch_app</span>SC 2.5.8 Target Size</span>
+      <span class="hero-pill"><span class="material-symbols-outlined">center_focus_strong</span>SC 2.4.7 Focus Visible</span>
     </div>
     <nav class="toc" aria-label="Sections">
-      <a href="#summary"><span class="material-icons">summarize</span>Summary</a>
-      <a href="#pages"><span class="material-icons">grade</span>Page grades</a>
-      <a href="#palette"><span class="material-icons">palette</span>Palette</a>
-      <a href="#contrast"><span class="material-icons">contrast</span>Text contrast</a>
-      <a href="#nontext"><span class="material-icons">category</span>Non-text contrast</a>
-      <a href="#type"><span class="material-icons">text_fields</span>Typography</a>
-      <a href="#spacing"><span class="material-icons">space_bar</span>Spacing &amp; radius</a>
-      <a href="#targets"><span class="material-icons">touch_app</span>Targets &amp; focus</a>
-      <a href="#findings"><span class="material-icons">fact_check</span>Findings</a>
+      <a href="#summary"><span class="material-symbols-outlined">summarize</span>Summary</a>
+      <a href="#pages"><span class="material-symbols-outlined">grade</span>Page grades</a>
+      <a href="#palette"><span class="material-symbols-outlined">palette</span>Palette</a>
+      <a href="#contrast"><span class="material-symbols-outlined">contrast</span>Text contrast</a>
+      <a href="#nontext"><span class="material-symbols-outlined">category</span>Non-text contrast</a>
+      <a href="#type"><span class="material-symbols-outlined">text_fields</span>Typography</a>
+      <a href="#spacing"><span class="material-symbols-outlined">space_bar</span>Spacing &amp; radius</a>
+      <a href="#targets"><span class="material-symbols-outlined">touch_app</span>Targets &amp; focus</a>
+      <a href="#findings"><span class="material-symbols-outlined">fact_check</span>Findings</a>
     </nav>
   </div>
 
@@ -585,13 +585,13 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="summary">
     <div class="section-head">
       <div class="section-kicker">At a glance</div>
-      <h2><span class="material-icons">summarize</span>Conformance scorecard</h2>
+      <h2><span class="material-symbols-outlined">summarize</span>Conformance scorecard</h2>
       <p>Live tallies for the current theme. Each text pairing is graded against <strong>AAA (7:1 normal / 4.5:1 large)</strong>, with the AA baseline (4.5:1 / 3:1) shown for reference.</p>
     </div>
     <div class="scorecard" id="scorecard"><!-- injected --></div>
     <div class="concerns" id="concerns" role="region" aria-live="polite" aria-label="Open concerns"><!-- injected --></div>
     <div class="reeval-status is-busy" id="reevalStatus" role="status" aria-live="polite">
-      <span class="material-icons">hourglass_top</span> Reading tokens from source…
+      <span class="material-symbols-outlined">hourglass_top</span> Reading tokens from source…
     </div>
   </section>
 
@@ -599,7 +599,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="pages">
     <div class="section-head">
       <div class="section-kicker">Live page audit</div>
-      <h2><span class="material-icons">grade</span>HTML pages reviewed &amp; graded</h2>
+      <h2><span class="material-symbols-outlined">grade</span>HTML pages reviewed &amp; graded</h2>
       <p>Every shipping HTML page is fetched live and run through a set of automated WCAG checks
       (document language, page title, zoomable viewport, image alt text, accessible names on
       controls, labelled form fields, heading structure and landmarks). Each page gets a letter
@@ -617,7 +617,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="palette">
     <div class="section-head">
       <div class="section-kicker">Foundations</div>
-      <h2><span class="material-icons">palette</span>Color palette</h2>
+      <h2><span class="material-symbols-outlined">palette</span>Color palette</h2>
       <p>Every surface, text and accent token for the active theme. The label chip shows the recommended text color where one applies.</p>
     </div>
     <div class="swatch-grid" id="swatchGrid"><!-- injected --></div>
@@ -627,7 +627,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="contrast">
     <div class="section-head">
       <div class="section-kicker">SC 1.4.6 (Enhanced)</div>
-      <h2><span class="material-icons">contrast</span>Text contrast matrix</h2>
+      <h2><span class="material-symbols-outlined">contrast</span>Text contrast matrix</h2>
       <p>Foreground text over the backgrounds it actually appears on. Ratios are computed live; semantic colors used as text are blended over their tinted badge background first. <strong>Normal text is graded at the AAA 7:1 threshold</strong>; large text at 4.5:1.</p>
     </div>
     <div class="table-wrap">
@@ -646,7 +646,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="nontext">
     <div class="section-head">
       <div class="section-kicker">SC 1.4.11</div>
-      <h2><span class="material-icons">category</span>Non-text &amp; UI contrast</h2>
+      <h2><span class="material-symbols-outlined">category</span>Non-text &amp; UI contrast</h2>
       <p>Borders, focus rings, icons and component boundaries must reach <strong>3:1</strong> against their adjacent color to be perceivable.</p>
     </div>
     <div class="table-wrap">
@@ -663,14 +663,14 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="type">
     <div class="section-head">
       <div class="section-kicker">SC 1.4.4 / 1.4.12</div>
-      <h2><span class="material-icons">text_fields</span>Typography scale</h2>
+      <h2><span class="material-symbols-outlined">text_fields</span>Typography scale</h2>
       <p>The UI is set in <strong>DM Sans</strong>. The base UI size is small (<code>--fs-ui: 0.75rem</code> = 12px), which is the single biggest accessibility risk in the system — see findings.</p>
     </div>
     <div class="card" style="padding:22px 24px;">
       <div id="typeScale"><!-- injected --></div>
     </div>
     <div class="callout pass">
-      <span class="material-icons">check_circle</span>
+      <span class="material-symbols-outlined">check_circle</span>
       <div class="callout-body">
         <div class="callout-title">12px base is dense but fully zoomable to 200%</div>
         <p>WCAG has no hard minimum font size. The 12px (<code>--fs-ui</code>) and 11px (<code>--fs-label</code>) labels stay legible because their text colors now carry AAA-level contrast (≥7:1, see findings 1–2), and the text-scale control (<code>--wise-text-scale</code>) plus browser zoom both reach 200% without clipping — satisfying SC 1.4.4.</p>
@@ -682,7 +682,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="spacing">
     <div class="section-head">
       <div class="section-kicker">Foundations</div>
-      <h2><span class="material-icons">space_bar</span>Spacing &amp; radius scale</h2>
+      <h2><span class="material-symbols-outlined">space_bar</span>Spacing &amp; radius scale</h2>
       <p>Radii tokens drive every card, pill and module. Spacing is applied ad-hoc (4 / 8 / 12 / 14 / 18 / 28 / 32px) rather than via named tokens.</p>
     </div>
     <h3 style="font-size:0.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-subtle);margin:6px 0 12px;">Corner radius tokens</h3>
@@ -695,16 +695,16 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="targets">
     <div class="section-head">
       <div class="section-kicker">SC 2.5.8 / 2.4.7 / 2.4.11</div>
-      <h2><span class="material-icons">touch_app</span>Target size &amp; focus visibility</h2>
+      <h2><span class="material-symbols-outlined">touch_app</span>Target size &amp; focus visibility</h2>
       <p>WCAG 2.2 asks for <strong>24×24 CSS px</strong> minimum targets (AA) and a visible, sufficiently-contrasting focus indicator.</p>
     </div>
     <div class="cards">
       <div class="card">
-        <div class="card-head"><span class="material-icons">touch_app</span><h3>Touch target sizes</h3></div>
+        <div class="card-head"><span class="material-symbols-outlined">touch_app</span><h3>Touch target sizes</h3></div>
         <ul id="targetList"><!-- injected --></ul>
       </div>
       <div class="card">
-        <div class="card-head"><span class="material-icons">center_focus_strong</span><h3>Focus indicator</h3></div>
+        <div class="card-head"><span class="material-symbols-outlined">center_focus_strong</span><h3>Focus indicator</h3></div>
         <p>The system uses <code>outline: 2px solid var(--primary)</code> with a 2px offset. Tab through the buttons below to verify it is visible in both themes.</p>
         <div class="focus-demo" style="margin-top:12px;">
           <button class="demo-btn primary" type="button">Primary action</button>
@@ -719,7 +719,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
   <section id="findings">
     <div class="section-head">
       <div class="section-kicker">Verdict</div>
-      <h2><span class="material-icons">fact_check</span>Findings &amp; recommendations</h2>
+      <h2><span class="material-symbols-outlined">fact_check</span>Findings &amp; recommendations</h2>
       <p>Prioritized issues found across both themes, with concrete fixes that keep the WISE look intact.</p>
     </div>
     <div id="findingsList"><!-- injected --></div>
@@ -796,7 +796,7 @@ function badge(ratio, threshold) {
   const cls = ok ? 'pass' : (near ? 'warn' : 'fail');
   const icon = ok ? 'check_circle' : (near ? 'error' : 'cancel');
   const word = ok ? 'Pass' : (near ? 'Close' : 'Fail');
-  return `<span class="badge ${cls}"><span class="material-icons">${icon}</span>${word}</span>`;
+  return `<span class="badge ${cls}"><span class="material-symbols-outlined">${icon}</span>${word}</span>`;
 }
 
 /* =====================================================================
@@ -1140,7 +1140,7 @@ function staticConcerns() {
 
 function concernRow(c) {
   return '<li class="concern sev-' + c.sev + '">' +
-    '<span class="material-icons">' + (c.sev === 'fail' ? 'cancel' : 'error') + '</span>' +
+    '<span class="material-symbols-outlined">' + (c.sev === 'fail' ? 'cancel' : 'error') + '</span>' +
     '<div class="concern-body">' +
       '<div class="concern-title">' + c.title + '</div>' +
       '<div class="concern-detail">' + c.detail + '</div>' +
@@ -1149,7 +1149,7 @@ function concernRow(c) {
     '</div>' +
     '<div class="concern-side">' +
       (c.metric ? '<span class="concern-metric">' + c.metric + '</span>' : '') +
-      '<a class="concern-jump" href="' + c.href + '">View<span class="material-icons">arrow_forward</span></a>' +
+      '<a class="concern-jump" href="' + c.href + '">View<span class="material-symbols-outlined">arrow_forward</span></a>' +
     '</div>' +
   '</li>';
 }
@@ -1165,8 +1165,8 @@ function renderConcerns() {
   if (!fails.length && !warns.length) {
     el.className = 'concerns all-clear';
     el.innerHTML = '<div class="concerns-head">' +
-      '<div class="concerns-title"><span class="material-icons">verified</span>Nothing in the red</div>' +
-      '<div class="concerns-tally"><span class="badge pass"><span class="material-icons">check_circle</span>0 open concerns</span></div>' +
+      '<div class="concerns-title"><span class="material-symbols-outlined">verified</span>Nothing in the red</div>' +
+      '<div class="concerns-tally"><span class="badge pass"><span class="material-symbols-outlined">check_circle</span>0 open concerns</span></div>' +
       '<div class="concerns-note">Every contrast pairing, page check, target and finding passes in the ' + theme +
       ' theme. Toggle the theme to re-run against the other palette.</div>' +
     '</div>';
@@ -1179,18 +1179,18 @@ function renderConcerns() {
 
   el.className = 'concerns ' + (fails.length ? 'has-fail' : 'has-warn');
   el.innerHTML = '<div class="concerns-head">' +
-      '<div class="concerns-title"><span class="material-icons">' + (fails.length ? 'report' : 'warning') + '</span>' +
+      '<div class="concerns-title"><span class="material-symbols-outlined">' + (fails.length ? 'report' : 'warning') + '</span>' +
         (fails.length ? 'In the red — fix first' : 'Worth a look') + '</div>' +
       '<div class="concerns-tally">' +
-        (fails.length ? '<span class="badge fail"><span class="material-icons">cancel</span>' + plural(fails.length, 'failure') + '</span>' : '') +
-        (warns.length ? '<span class="badge warn"><span class="material-icons">error</span>' + plural(warns.length, 'warning') + '</span>' : '') +
+        (fails.length ? '<span class="badge fail"><span class="material-symbols-outlined">cancel</span>' + plural(fails.length, 'failure') + '</span>' : '') +
+        (warns.length ? '<span class="badge warn"><span class="material-symbols-outlined">error</span>' + plural(warns.length, 'warning') + '</span>' : '') +
       '</div>' +
       '<div class="concerns-note">Every failing and near-miss result from the sections below, raised here for the ' +
         theme + ' theme. Ordered worst first.</div>' +
     '</div>' +
     '<ul class="concern-list">' + shown.map(concernRow).join('') +
       (hidden > 0
-        ? '<li class="concern sev-warn"><span class="material-icons">more_horiz</span>' +
+        ? '<li class="concern sev-warn"><span class="material-symbols-outlined">more_horiz</span>' +
           '<div class="concern-body"><div class="concern-title">' + hidden + ' further warning' + (hidden === 1 ? '' : 's') + ' not shown</div>' +
           '<div class="concern-detail">Open the sections below for the full breakdown.</div></div></li>'
         : '') +
@@ -1199,8 +1199,8 @@ function renderConcerns() {
 
 function renderType() {
   document.getElementById('typeScale').innerHTML = TYPE_SCALE.map(t => {
-    const flag = t.px < 12 ? `<span class="badge warn"><span class="material-icons">error</span>Dense</span>`
-               : `<span class="badge pass"><span class="material-icons">check_circle</span>OK</span>`;
+    const flag = t.px < 12 ? `<span class="badge warn"><span class="material-symbols-outlined">error</span>Dense</span>`
+               : `<span class="badge pass"><span class="material-symbols-outlined">check_circle</span>OK</span>`;
     return `<div class="type-row">
       <div class="type-specimen" style="font-size:${t.px}px;font-weight:${t.px>=20?800:600};">${t.use}</div>
       <div class="type-info">
@@ -1231,8 +1231,8 @@ function renderSpacing() {
 
 function renderTargets() {
   document.getElementById('targetList').innerHTML = TARGETS.map(t => {
-    const b = t.ok === true ? `<span class="badge pass"><span class="material-icons">check_circle</span></span>`
-            : `<span class="badge warn"><span class="material-icons">error</span></span>`;
+    const b = t.ok === true ? `<span class="badge pass"><span class="material-symbols-outlined">check_circle</span></span>`
+            : `<span class="badge warn"><span class="material-symbols-outlined">error</span></span>`;
     return `<li><strong>${t.name}</strong> — ${t.size} ${b}${t.note?`<br><span style="font-size:0.6875rem;color:var(--text-subtle);">${t.note}</span>`:''}</li>`;
   }).join('');
 }
@@ -1267,7 +1267,7 @@ const FINDINGS = [
 function renderFindings() {
   document.getElementById('findingsList').innerHTML = FINDINGS.map(f => `
     <div class="callout ${f.sev}">
-      <span class="material-icons">${f.icon}</span>
+      <span class="material-symbols-outlined">${f.icon}</span>
       <div class="callout-body">
         <div class="callout-title">${f.title}</div>
         <p>${f.body}</p>
@@ -1341,7 +1341,7 @@ const pageState = {};
 // NOT a real accessible name and must not count as one).
 function accessibleName(el) {
   const clone = el.cloneNode(true);
-  clone.querySelectorAll('.material-icons, [class*="material-symbols"]').forEach(n => n.remove());
+  clone.querySelectorAll('.material-symbols-outlined, [class*="material-symbols"]').forEach(n => n.remove());
   const text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
   if (text) return true;
   const attr = a => (el.getAttribute(a) || '').trim();
@@ -1491,7 +1491,7 @@ function renderPageCard(page, result) {
   const updated = pageState[page.path] && pageState[page.path].justUpdated;
   const items = checks.map(c => {
     const v = checkVerdict(c);
-    return '<li class="' + v + '"><span class="material-icons">' + VERDICT_ICON[v] + '</span>' +
+    return '<li class="' + v + '"><span class="material-symbols-outlined">' + VERDICT_ICON[v] + '</span>' +
       '<span><strong>' + c.label + '</strong>' +
       (c.sc !== '—' ? ' <span class="page-check-detail">· SC ' + c.sc + '</span>' : '') +
       '<br><span class="page-check-detail">' + c.detail + '</span></span></li>';
@@ -1507,7 +1507,7 @@ function renderPageCard(page, result) {
           '<span class="page-bar ' + cls + '"><span style="width:' + pct + '%"></span></span>' +
         '</div>' +
       '</div>' +
-      (updated ? '<span class="page-updated-tag"><span class="material-icons">bolt</span>Updated</span>' : '') +
+      (updated ? '<span class="page-updated-tag"><span class="material-symbols-outlined">bolt</span>Updated</span>' : '') +
     '</div>' +
     '<ul class="page-checks">' + items + '</ul>' +
   '</div>';
@@ -1678,7 +1678,7 @@ async function reevaluate() {
   const btn = document.getElementById('reevalBtn');
   btn.disabled = true;
   btn.classList.add('is-loading');
-  setStatus('is-busy', '<span class="material-icons">hourglass_top</span> Reading tokens from <code>' + SOURCE_CSS + '</code>…');
+  setStatus('is-busy', '<span class="material-symbols-outlined">hourglass_top</span> Reading tokens from <code>' + SOURCE_CSS + '</code>…');
   try {
     const res = await fetch(SOURCE_CSS + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1711,9 +1711,9 @@ async function reevaluate() {
     const driftNote = changed.length
       ? ' · <strong>' + changed.length + ' token' + (changed.length > 1 ? 's' : '') + ' changed</strong> (' + changed.slice(0, 6).join(', ') + (changed.length > 6 ? '…' : '') + ')'
       : ' · in sync';
-    setStatus('ok', '<span class="material-icons">verified</span> Re-evaluated against <code>' + SOURCE_CSS + '</code> — ' + n + ' tokens · ' + t + driftNote);
+    setStatus('ok', '<span class="material-symbols-outlined">verified</span> Re-evaluated against <code>' + SOURCE_CSS + '</code> — ' + n + ' tokens · ' + t + driftNote);
   } catch (err) {
-    setStatus('warn', '<span class="material-icons">info</span> Couldn\u2019t read <code>' + SOURCE_CSS + '</code> (' + err.message + '). Showing the page\u2019s mirrored tokens — serve this folder over http (e.g. <code>python3 -m http.server</code>) to evaluate against the live source.');
+    setStatus('warn', '<span class="material-symbols-outlined">info</span> Couldn\u2019t read <code>' + SOURCE_CSS + '</code> (' + err.message + '). Showing the page\u2019s mirrored tokens — serve this folder over http (e.g. <code>python3 -m http.server</code>) to evaluate against the live source.');
   } finally {
     btn.disabled = false;
     btn.classList.remove('is-loading');

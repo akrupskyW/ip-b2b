@@ -529,23 +529,17 @@ function formatProductNavLabel(label) {
   return `${escAttr(parts[0])} ${escAttr(parts[1])}<sup class="tagline-tm">TM</sup>`;
 }
 
-/* The legacy "Material Icons" font lacks some newer glyphs that only ship in
-   "Material Symbols Outlined" (e.g. `cadence`). Render those with the symbols
-   class so they resolve instead of showing a tofu box. */
-const SYMBOLS_ONLY_ICONS = new Set([
-  'cadence',
-  /* Sectioned workspace-nav glyphs — render from the modern Symbols set so
-     none fall back to a tofu box on pages that only link legacy Material Icons. */
-  'space_dashboard', 'handyman', 'photo_library', 'description', 'account_circle',
-  'receipt_long', 'shield', 'apartment', 'bolt', 'group', 'auto_awesome', 'compare',
-]);
+/* The whole app renders icons from the Material Symbols Outlined set, so every
+   glyph uses the same CSS class. Kept as a helper (rather than inlining the
+   string) so the icon family lives in one place if it ever changes again. */
 export function iconClassFor(name) {
-  return SYMBOLS_ONLY_ICONS.has(name) ? 'material-symbols-outlined' : 'material-icons';
+  void name;
+  return 'material-symbols-outlined';
 }
 
-/* Make sure the Material Symbols Outlined webfont is loaded. Agent pages only
-   link the legacy Material Icons font, so any symbols-only glyph used in the
-   shared menu would otherwise render as a blank box. Idempotent. */
+/* Make sure the Material Symbols Outlined webfont is loaded, even on any page
+   that somehow didn't link it, so nothing renders as a blank tofu box.
+   Idempotent. */
 export function ensureSymbolsFont() {
   if (typeof document === 'undefined') return;
   if (document.querySelector('link[data-wise-symbols]')) return;
@@ -598,7 +592,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     const indentStyle = indent > 0 ? ` style="padding-left:${10 + indent}px;"` : '';
     return `
       <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}" data-depth="${depth}"${indentStyle}>
-        <span class="menu-nav-subicon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+        <span class="menu-nav-subicon"><span class="material-symbols-outlined">${escAttr(node.icon)}</span></span>
         <span class="menu-nav-label">${escAttr(node.label)}</span>
       </a>`;
   };
@@ -613,7 +607,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     if (!node.children || node.children.length === 0) {
       return `
         <a class="menu-nav-item${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}">
-          <span class="menu-nav-icon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+          <span class="menu-nav-icon"><span class="material-symbols-outlined">${escAttr(node.icon)}</span></span>
           <span class="menu-nav-label">${escAttr(node.label)}</span>
         </a>`;
     }
@@ -629,10 +623,10 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     return `
       <div class="menu-nav-group" data-tier="agent" data-group="${escAttr(id)}" data-open="${isOpen ? 'true' : 'false'}">
         <a class="menu-nav-item menu-nav-toggle${isActive}" href="${escAttr(href)}" data-agent-id="${escAttr(id)}" data-toggle-group="${escAttr(id)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(id)}">
-          <span class="menu-nav-icon"><span class="material-icons">${escAttr(node.icon)}</span></span>
+          <span class="menu-nav-icon"><span class="material-symbols-outlined">${escAttr(node.icon)}</span></span>
           <span class="menu-nav-label">${escAttr(node.label)}</span>
           <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(id)}" aria-label="Toggle ${escAttr(node.label)} children">
-            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+            <span class="menu-nav-chevron"><span class="material-symbols-outlined">expand_more</span></span>
           </button>
         </a>
         <div class="menu-nav-children" id="menu-nav-${escAttr(id)}" role="region" aria-label="${escAttr(node.label)} agents"${collapsedAttrs}>
@@ -672,7 +666,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
           <span class="menu-nav-subicon"><span class="${iconClassFor(sec.icon)}">${escAttr(sec.icon)}</span></span>
           <span class="menu-nav-label">${escAttr(sec.label)}</span>
           <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(sectionId)}" aria-label="Toggle ${escAttr(sec.label)} reports">
-            <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+            <span class="menu-nav-chevron"><span class="material-symbols-outlined">expand_more</span></span>
           </button>
         </a>
         <div class="menu-nav-children" id="menu-nav-${escAttr(sectionId)}" role="region" aria-label="${escAttr(sec.label)}"${collapsedAttrs}>
@@ -699,10 +693,10 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
       return `
         <div class="menu-nav-group menu-nav-product-group" data-tier="product" data-group="${escAttr(productId)}" data-open="${isOpen ? 'true' : 'false'}">
           <a class="menu-nav-item menu-nav-toggle menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}" data-toggle-group="${escAttr(productId)}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(productId)}">
-            <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+            <span class="menu-nav-icon"><span class="material-symbols-outlined">${escAttr(product.icon)}</span></span>
             <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
             <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(productId)}" aria-label="Toggle ${escAttr(product.label)} sections">
-              <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+              <span class="menu-nav-chevron"><span class="material-symbols-outlined">expand_more</span></span>
             </button>
           </a>
           <div class="menu-nav-children" id="menu-nav-${escAttr(productId)}" role="region" aria-label="${escAttr(product.label)} sections"${collapsedAttrs}>
@@ -718,9 +712,9 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
     if (product.locked) {
       return `
         <div class="menu-nav-item menu-nav-product menu-nav-locked" data-product-id="${escAttr(productId)}" aria-disabled="true">
-          <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+          <span class="menu-nav-icon"><span class="material-symbols-outlined">${escAttr(product.icon)}</span></span>
           <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
-          <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+          <span class="menu-nav-lock" aria-hidden="true"><span class="material-symbols-outlined">lock</span></span>
         </div>`;
     }
 
@@ -728,7 +722,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
        longer expandable from the menu, so it stays closed (no children). */
     return `
       <a class="menu-nav-item menu-nav-product${isActive}" href="${escAttr(href)}" data-product-id="${escAttr(productId)}">
-        <span class="menu-nav-icon"><span class="material-icons">${escAttr(product.icon)}</span></span>
+        <span class="menu-nav-icon"><span class="material-symbols-outlined">${escAttr(product.icon)}</span></span>
         <span class="menu-nav-label">${formatProductNavLabel(product.label)}</span>
       </a>`;
   };
@@ -815,6 +809,7 @@ const EXISTING_PAGES = new Set([
   'non-upf-dashboard.html',
   'audit-queue.html',
   'admin-utils.html',
+  'all-modules.html',
 ]);
 
 /** True when a nav slug maps to a page that exists under `pages/`. Slugless
@@ -833,7 +828,7 @@ function renderAppLocked(node, rowClass) {
     <div class="${rowClass} menu-nav-locked" data-nav-id="${escAttr(node.id)}" aria-disabled="true" title="Coming soon">
       <span class="${iconWrapCls}"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
       <span class="menu-nav-label">${escAttr(node.label)}</span>
-      <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+      <span class="menu-nav-lock" aria-hidden="true"><span class="material-symbols-outlined">lock</span></span>
     </div>`;
 }
 
@@ -888,7 +883,7 @@ function renderAppGroup(prefix, node, activeId) {
         <span class="menu-nav-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
         <span class="menu-nav-label">${escAttr(node.label)}</span>
         <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(node.id)}" aria-label="Toggle ${escAttr(node.label)}">
-          <span class="menu-nav-chevron"><span class="material-icons">expand_more</span></span>
+          <span class="menu-nav-chevron"><span class="material-symbols-outlined">expand_more</span></span>
         </button>
       </a>
       <div class="menu-nav-children" id="menu-nav-${escAttr(node.id)}" role="region" aria-label="${escAttr(node.label)}"${collapsedAttrs}>
@@ -921,7 +916,7 @@ function renderAppUpgrade(prefix, node) {
     return `
     <div class="menu-nav-upgrade menu-nav-locked" data-nav-id="${escAttr(node.id)}" aria-disabled="true" title="Coming soon">
       ${inner}
-      <span class="menu-nav-lock" aria-hidden="true"><span class="material-icons">lock</span></span>
+      <span class="menu-nav-lock" aria-hidden="true"><span class="material-symbols-outlined">lock</span></span>
     </div>`;
   }
   const href = node.slug ? `${prefix}${node.slug}` : '#';
@@ -960,7 +955,7 @@ function setupMenuRail(navEl) {
     const label = railed ? 'Expand menu' : 'Collapse menu to icons';
     btn.setAttribute('aria-label', label);
     btn.setAttribute('title', label);
-    const icon = btn.querySelector('.material-icons');
+    const icon = btn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
   };
 
@@ -972,7 +967,7 @@ function setupMenuRail(navEl) {
          collapses the bar back to minimal (turns Minimal UI on).
        • Vertical column, Minimal UI OFF → the usual rail-collapse chevron. */
   const refreshToggleSkin = () => {
-    const icon = btn.querySelector('.material-icons');
+    const icon = btn.querySelector('.material-symbols-outlined');
     if (panel.classList.contains('minimal-ui')) {
       const label = 'Show navigation';
       btn.setAttribute('aria-label', label);

@@ -53,7 +53,7 @@ export const TOPBAR_LOGO_HTML = `
    on every page. */
 const MENU_TOGGLE_HTML = `
   <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false">
-    <span class="material-icons">chevron_left</span>
+    <span class="material-symbols-outlined">chevron_left</span>
     <span class="lir-label">Menu</span>
   </button>`;
 

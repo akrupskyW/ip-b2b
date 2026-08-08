@@ -233,7 +233,7 @@ function buildModelSelectorHtml(id) {
       + `<span class="fl-model-switch" aria-hidden="true"></span></button>`;
   }).join('');
   return `<div class="fl-model-wrap">
-            <button type="button" class="fl-icon-btn fl-model-btn" id="${id}-fl-model" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false"><span class="material-icons">tune</span></button>
+            <button type="button" class="fl-icon-btn fl-model-btn" id="${id}-fl-model" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">tune</span></button>
             <div class="fl-model-popover" id="${id}-fl-model-pop" role="menu">
               <div class="fl-model-head">WISE.ai model</div>
               ${items}
@@ -278,7 +278,13 @@ function injectChatExtras() {
     .ws-sc-action--locked { color: var(--text-subtle); align-self: flex-end; }
 
     .sc-mcp-item { justify-content: flex-start; }
-    .sc-mcp-item > span:not(.material-icons):not(.sc-switch) { flex: 1 1 auto; white-space: nowrap; }
+    /* Label sits left after the icon; the switch is pinned to the row's right
+       edge with an auto margin. This is deterministic regardless of which child
+       flex-grows, so the label can't get dragged right when the row is
+       re-measured on hover / active state or once the popover is re-floated to
+       a fixed layer. */
+    .sc-mcp-item > span:not(.material-symbols-outlined):not(.sc-switch) { flex: 0 1 auto; min-width: 0; text-align: left; white-space: nowrap; }
+    .sc-mcp-item .sc-switch { margin-left: auto; }
     .sc-switch { position: relative; flex: 0 0 auto; width: 34px; height: 19px; border-radius: 999px;
       background: var(--surface-3, #cdd3da); border: 1px solid var(--border-strong); transition: background .15s ease, border-color .15s ease; }
     html.dark .sc-switch { background: rgba(255,255,255,0.14); }
@@ -297,7 +303,7 @@ function injectChatExtras() {
     .wch-conn-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wch-conn-status { font-size: 11px; opacity: .6; }
     .wch-conn-cta { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 11.5px; font-weight: 700; color: var(--primary, #2F6DF6); }
-    .wch-conn-cta .material-icons { font-size: 15px; }
+    .wch-conn-cta .material-symbols-outlined { font-size: 15px; }
     .wch-conn-row.is-connected .wch-conn-cta { color: var(--sec-green-text, #2E7D32); }
 
     /* Feedback actions (copy / thumbs) sit INLINE, directly to the right of the
@@ -391,23 +397,23 @@ function injectChatExtras() {
     .wt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
       background: var(--surface-3, rgba(255,255,255,0.06)); color: var(--text-muted, inherit); }
     html:not(.dark) .wt-chip { background: rgba(20,40,80,0.06); }
-    .wt-chip .material-icons { font-size: 13px; }
+    .wt-chip .material-symbols-outlined { font-size: 13px; }
     .wt-actions { display: flex; align-items: center; gap: 6px; }
     .wt-fork { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
       background: transparent; color: var(--primary, #2F6DF6); cursor: pointer; opacity: .9; transition: background .14s ease, color .14s ease, opacity .14s ease; }
     .wt-fork:hover { opacity: 1; background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); }
-    .wt-fork .material-icons { font-size: 17px; }
+    .wt-fork .material-symbols-outlined { font-size: 17px; }
     /* The forked turn's handle (#id), sat right beside its fork icon. */
     .wt-fork-id { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--primary, #2F6DF6);
       font-variant-numeric: tabular-nums; margin: 0 2px 0 -1px; }
     .wt-jump { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; border: 0; background: transparent; cursor: pointer;
       font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted, inherit); opacity: .8; padding: 6px 4px; }
     .wt-jump:hover { opacity: 1; color: var(--primary, #2F6DF6); }
-    .wt-jump .material-icons { font-size: 15px; }
+    .wt-jump .material-symbols-outlined { font-size: 15px; }
 
     /* Search box pinned above the turn list (mirrors the History search). */
     .wt-search { position: relative; display: flex; align-items: center; margin: 2px 16px 6px; flex-shrink: 0; }
-    .wt-search > .material-icons { position: absolute; left: 11px; font-size: 18px; opacity: .5; pointer-events: none; }
+    .wt-search > .material-symbols-outlined { position: absolute; left: 11px; font-size: 18px; opacity: .5; pointer-events: none; }
     .wt-search-input { width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 36px; border-radius: 999px; font: inherit; font-size: 13px; color: inherit; outline: none;
       background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); transition: border-color .15s ease, box-shadow .15s ease; }
     html:not(.dark) .wt-search-input { background: rgba(20,40,80,0.04); border-color: rgba(0,0,0,0.10); }
@@ -416,14 +422,14 @@ function injectChatExtras() {
     .wt-search-clear { position: absolute; right: 8px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: none; align-items: center; justify-content: center; opacity: .6; }
     .wt-search-clear:hover { background: rgba(255,255,255,0.12); opacity: 1; }
     html:not(.dark) .wt-search-clear:hover { background: rgba(0,0,0,0.08); }
-    .wt-search-clear .material-icons { font-size: 16px; }
+    .wt-search-clear .material-symbols-outlined { font-size: 16px; }
     .wt-search.has-q .wt-search-clear { display: flex; }
 
     /* Per-turn Share + Note controls, tucked beside Fork/Jump. */
     .wt-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
       background: transparent; color: var(--text-muted, inherit); cursor: pointer; opacity: .82; transition: background .14s ease, color .14s ease, opacity .14s ease; }
     .wt-iconbtn:hover { opacity: 1; color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 12%, transparent); }
-    .wt-iconbtn .material-icons { font-size: 17px; }
+    .wt-iconbtn .material-symbols-outlined { font-size: 17px; }
     .wt-iconbtn.is-on { color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); opacity: 1; }
     .wt-note { margin: 9px 0 0; }
     .wt-note[hidden] { display: none; }
@@ -435,7 +441,7 @@ function injectChatExtras() {
     .wt-note-saved { display: flex; align-items: flex-start; gap: 6px; margin: 9px 0 0; padding: 8px 10px; border-radius: 10px; font-size: 12px; line-height: 1.4;
       background: color-mix(in srgb, var(--ter-amber-10, rgba(255,196,52,0.14)) 100%, transparent); border: 1px solid color-mix(in srgb, #E0A100 30%, transparent); color: var(--text); }
     .wt-note-saved[hidden] { display: none; }
-    .wt-note-saved .material-icons { font-size: 15px; color: #C98A00; flex: 0 0 auto; margin-top: 1px; }
+    .wt-note-saved .material-symbols-outlined { font-size: 15px; color: #C98A00; flex: 0 0 auto; margin-top: 1px; }
     .wt-note-saved-txt { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; }
     /* Tiny transient "copied / shared" toast anchored to the turns module. */
     .wt-toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) translateY(8px); z-index: 70; pointer-events: none;
@@ -541,7 +547,7 @@ function buildAgentsPanelHtml(agents, id) {
   const row = (a) => `
     <div class="ss-agent-row${a.on ? ' ssr-on' : ''}${a.required ? ' ssr-required' : ''}" id="${id}-ssr-${esc(a.id)}">
       <div class="ss-agent-icon" style="${a.bg ? `background:${esc(a.bg)};` : ''}">
-        <span class="material-icons" style="color:${esc(a.color || 'var(--primary)')}">${esc(a.icon || 'smart_toy')}</span>
+        <span class="material-symbols-outlined" style="color:${esc(a.color || 'var(--primary)')}">${esc(a.icon || 'smart_toy')}</span>
       </div>
       <div class="ss-agent-body">
         <div class="ss-agent-name${a.on ? '' : ' ssa-off'}" id="${id}-ssn-${esc(a.id)}">
@@ -562,8 +568,8 @@ function buildAgentsPanelHtml(agents, id) {
 
   return `
     <div class="ss-header">
-      <button type="button" class="ss-back-btn" data-sc="agents-close" title="Back to chat" aria-label="Back to chat"><span class="material-icons">arrow_back</span></button>
-      <div class="ss-header-icon"><span class="material-icons">tune</span></div>
+      <button type="button" class="ss-back-btn" data-sc="agents-close" title="Back to chat" aria-label="Back to chat"><span class="material-symbols-outlined">arrow_back</span></button>
+      <div class="ss-header-icon"><span class="material-symbols-outlined">tune</span></div>
       <div class="ss-header-titles">
         <h2 class="ss-header-title">Agent Settings</h2>
         <p class="ss-header-subtitle"><span id="${id}-ss-active">0</span> of ${agents.length} active · Manage AI agents</p>
@@ -571,7 +577,7 @@ function buildAgentsPanelHtml(agents, id) {
     </div>
     <div class="ss-body">
       <div class="ss-info-card">
-        <div class="ss-info-icon"><span class="material-icons">info</span></div>
+        <div class="ss-info-icon"><span class="material-symbols-outlined">info</span></div>
         <div>
           <p class="ss-info-title">How agents work together</p>
           <p class="ss-info-desc">WISEai™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEai™ is always required.</p>
@@ -603,9 +609,9 @@ function buildScorecardsHtml(sc, id) {
     /* A locked card swaps its pill for a lock badge so the "coming soon" state
        reads instantly. */
     const topRight = locked
-      ? `<span class="ws-sc-lock material-icons" title="Coming soon" aria-hidden="true">lock</span>`
+      ? `<span class="ws-sc-lock material-symbols-outlined" title="Coming soon" aria-hidden="true">lock</span>`
       : (c.pill
-        ? `<span class="ws-sc-pill ws-sc-pill--${esc(c.pill.tone || 'up')}">${c.pill.icon ? `<span class="material-icons">${esc(c.pill.icon)}</span>` : ''}${esc(c.pill.text || '')}</span>`
+        ? `<span class="ws-sc-pill ws-sc-pill--${esc(c.pill.tone || 'up')}">${c.pill.icon ? `<span class="material-symbols-outlined">${esc(c.pill.icon)}</span>` : ''}${esc(c.pill.text || '')}</span>`
         : '');
     const lead = isIntro
       ? `<div class="ws-sc-intro-title">${esc(c.title || '')}</div>`
@@ -613,12 +619,12 @@ function buildScorecardsHtml(sc, id) {
     const action = locked
       ? `<div class="ws-sc-action ws-sc-action--locked">Coming soon</div>`
       : (c.action
-        ? `<div class="ws-sc-action">${esc(c.action)}<span class="material-icons">arrow_outward</span></div>`
+        ? `<div class="ws-sc-action">${esc(c.action)}<span class="material-symbols-outlined">arrow_outward</span></div>`
         : '');
     return `
       <button type="button" class="ws-scorecard${variantClass}" role="listitem" data-card="${i}"${locked ? ' aria-disabled="true" data-locked="1"' : ''}>
         <div class="ws-sc-top">
-          <span class="ws-sc-icon ${iconTone}"><span class="material-icons">${esc(c.icon || 'insights')}</span></span>
+          <span class="ws-sc-icon ${iconTone}"><span class="material-symbols-outlined">${esc(c.icon || 'insights')}</span></span>
           ${topRight}
         </div>
         ${lead}
@@ -630,8 +636,8 @@ function buildScorecardsHtml(sc, id) {
     <div class="ws-scorecards-section">
       <div class="ws-scorecards-wrap">
         <div class="ws-scorecards" id="${id}-scorecards" role="list" aria-label="${esc(label)}">${sc.cards.map(cardHtml).join('')}</div>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-sc-scroll="-1" aria-label="Scroll to previous cards" hidden><span class="material-icons">chevron_left</span></button>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-sc-scroll="1" aria-label="Scroll to see more cards"><span class="material-icons">chevron_right</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-sc-scroll="-1" aria-label="Scroll to previous cards" hidden><span class="material-symbols-outlined">chevron_left</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-sc-scroll="1" aria-label="Scroll to see more cards"><span class="material-symbols-outlined">chevron_right</span></button>
       </div>
     </div>`;
 }
@@ -802,29 +808,29 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const color = esc(c.color || 'var(--primary)');
     /* Fallback mark shown if the brand logo image is missing / fails to load. */
     const fallback = c.icon
-      ? `<span class="material-icons">${esc(c.icon)}</span>`
+      ? `<span class="material-symbols-outlined">${esc(c.icon)}</span>`
       : esc(c.mono || (c.name || '?').slice(0, 1));
     /* Prefer the real brand logo (an image URL) when provided. */
     if (c.logo) {
       return `<span class="sc-connector-logo sc-connector-logo--img" style="--cxc:${color}"><img class="sc-connector-logo-img" src="${esc(c.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="sc-connector-logo-fb">${fallback}</span></span>`;
     }
     return c.icon
-      ? `<span class="sc-connector-logo" style="--cxc:${color}"><span class="material-icons">${esc(c.icon)}</span></span>`
+      ? `<span class="sc-connector-logo" style="--cxc:${color}"><span class="material-symbols-outlined">${esc(c.icon)}</span></span>`
       : `<span class="sc-connector-logo sc-connector-logo--mono" style="--cxc:${color}">${esc(c.mono || (c.name || '?').slice(0, 1))}</span>`;
   };
   const connectorsHtml = (connectors.length && showConnectorsRail)
     ? `<div class="sc-connectors" id="${id}-connectors" aria-label="${esc(connectorsLabel || 'Connectors')}">
-        ${connectorsLabel ? `<span class="sc-connectors-label"><span class="material-icons">hub</span>${esc(connectorsLabel)}</span>` : ''}
+        ${connectorsLabel ? `<span class="sc-connectors-label"><span class="material-symbols-outlined">hub</span>${esc(connectorsLabel)}</span>` : ''}
         <div class="sc-connectors-rail" id="${id}-connectors-rail" role="list">
           ${connectors.map((c) =>
             `<button type="button" class="sc-connector${c.connected ? ' is-connected' : ''}" role="listitem" data-connector="${esc(c.id || c.name)}" title="${c.connected ? 'Connected · ' : 'Connect '}${esc(c.name)}">
               ${connectorLogo(c)}
               <span class="sc-connector-name">${esc(c.name)}</span>
-              <span class="sc-connector-tick material-icons" aria-hidden="true">${c.connected ? 'check_circle' : 'add'}</span>
+              <span class="sc-connector-tick material-symbols-outlined" aria-hidden="true">${c.connected ? 'check_circle' : 'add'}</span>
             </button>`
           ).join('')}
         </div>
-        ${showConnectorMore ? `<button type="button" class="sc-connector-more" id="${id}-connectors-more" title="More connectors" aria-label="More connectors"><span class="material-icons">more_vert</span></button>` : ''}
+        ${showConnectorMore ? `<button type="button" class="sc-connector-more" id="${id}-connectors-more" title="More connectors" aria-label="More connectors"><span class="material-symbols-outlined">more_vert</span></button>` : ''}
       </div>`
     : '';
 
@@ -833,7 +839,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const chipsFlow = opts.chipsFlow === 'wrap' ? 'wrap' : 'carousel';
 
   const buildChipsHtml = () => intents.map((c, i) =>
-    `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-icons">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
+    `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
   ).join('');
   let chipsHtml = buildChipsHtml();
 
@@ -841,8 +847,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     ? `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`
     : `<div class="ws-chips-wrap">
         <div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-chip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-icons">chevron_left</span></button>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-chip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-symbols-outlined">chevron_left</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-symbols-outlined">chevron_right</span></button>
       </div>`;
 
   /* Persistent intent-chip rail — an opt-in (`persistChips: true`) horizontal
@@ -882,8 +888,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const persistChipsHtml = persistChips
     ? `<div class="ws-chips-bar ws-chips-wrap" id="${id}-pchips-wrap" aria-label="Quick actions">
         <div class="ws-chips" id="${id}-pchips" role="list">${chipsHtml}</div>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-pchip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-icons">chevron_left</span></button>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-pchip-scroll="1" aria-label="Scroll to see more actions"><span class="material-icons">chevron_right</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-pchip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-symbols-outlined">chevron_left</span></button>
+        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-pchip-scroll="1" aria-label="Scroll to see more actions"><span class="material-symbols-outlined">chevron_right</span></button>
       </div>`
     : '';
 
@@ -896,7 +902,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const menuLinksHtml = menuLinks.length
     ? `<div class="topbar-menu-label">${esc(menuLinksLabel)}</div>` +
       menuLinks.map((m) =>
-        `<button type="button" class="topbar-menu-item" data-menulink="${esc(m.key)}"><span class="material-icons topbar-menu-icon">${esc(m.icon || 'chevron_right')}</span><span>${esc(m.label || m.key)}</span></button>`
+        `<button type="button" class="topbar-menu-item" data-menulink="${esc(m.key)}"><span class="material-symbols-outlined topbar-menu-icon">${esc(m.icon || 'chevron_right')}</span><span>${esc(m.label || m.key)}</span></button>`
       ).join('') +
       `<div class="topbar-menu-divider"></div>`
     : '';
@@ -909,7 +915,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         <div class="sc-topbar-titles">
           <span class="topbar-title">${esc(title)}</span>
           <button type="button" class="topbar-agents-btn" data-sc="agents" title="Choose agents">
-            <span class="material-icons">smart_toy</span>
+            <span class="material-symbols-outlined">smart_toy</span>
             <span class="agents-count-pill" id="${id}-count">${esc(agentCount)}</span>
             <span>agents running</span>
           </button>
@@ -917,24 +923,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       </div>`}
       <div class="sc-topbar-controls">
         <div class="panel-more-wrap">
-        <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-icons">more_vert</span></button>
+        <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
           ${menuLinksHtml}
-          <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
-          <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-icons topbar-menu-icon">download</span><span>Export conversation</span></button>
-          <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-symbols-outlined topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">alt_route</span><span>Turns</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-icons topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
-          ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
+          ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${(scorecardsHtml || intents.length) ? `<div class="topbar-menu-divider"></div>` : ''}
-          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item" data-sc="toggle-cards"><span class="material-icons topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span></button>` : ''}
-          ${intents.length ? `<button type="button" class="topbar-menu-item" data-sc="toggle-intent-chips"><span class="material-icons topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span></button>` : ''}
+          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span></button>` : ''}
+          ${intents.length ? `<button type="button" class="topbar-menu-item" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span></button>` : ''}
           <div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-icons topbar-menu-icon">close</span><span>Close conversation</span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
         </div>
         <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="WISEai™ module width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -964,24 +970,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       <div class="sc-input-row">
         <div class="fl-input-wrap fl-input-wrap--lead">
           <div class="fl-more-wrap">
-            <button type="button" class="fl-icon-btn fl-more-btn" id="${id}-fl-more" title="Attach" aria-haspopup="menu" aria-expanded="false"><span class="material-icons">add</span></button>
+            <button type="button" class="fl-icon-btn fl-more-btn" id="${id}-fl-more" title="Attach" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">add</span></button>
             <div class="fl-more-popover fl-more-popover--left" id="${id}-fl-pop" role="menu">
-              <button type="button" class="fl-more-item" data-sc="attach"><span class="material-icons">attach_file</span><span>Attach</span></button>
-              <button type="button" class="fl-more-item" data-sc="camera"><span class="material-icons">photo_camera</span><span>Camera</span></button>
-              <button type="button" class="fl-more-item" data-sc="voice"><span class="material-icons">mic</span><span>Voice</span></button>
+              <button type="button" class="fl-more-item" data-sc="attach"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
+              <button type="button" class="fl-more-item" data-sc="camera"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
+              <button type="button" class="fl-more-item" data-sc="voice"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
               <div class="fl-more-divider" role="separator"></div>
-              <button type="button" class="fl-more-item" data-sc="attach-example"><span class="material-icons">burst_mode</span><span>Load 3 example images</span></button>
+              <button type="button" class="fl-more-item" data-sc="attach-example"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
             </div>
           </div>
           <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
           <input type="text" class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" autocomplete="off" />
           ${buildModelSelectorHtml(id)}
         </div>
-        <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-icons">send</span></button>
+        <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
       </div>
       ${activityOn ? buildActivityHtml(id, title) : ''}
       ${connectorsHtml}
-      ${disclaimer ? `<p class="sc-disclaimer"><span class="material-icons">shield</span>${esc(disclaimer)}</p>` : ''}
+      ${disclaimer ? `<p class="sc-disclaimer"><span class="material-symbols-outlined">shield</span>${esc(disclaimer)}</p>` : ''}
     </div>`;
 
   const messages = rootEl.querySelector(`#${id}-messages`);
@@ -1151,7 +1157,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const items = atts.map((a) => {
         const thumb = a.src
           ? `<span class="sc-att-thumb" style="background-image:url('${String(a.src).replace(/'/g, '%27')}')"></span>`
-          : `<span class="sc-att-thumb sc-att-thumb--icon"><span class="material-icons">image</span></span>`;
+          : `<span class="sc-att-thumb sc-att-thumb--icon"><span class="material-symbols-outlined">image</span></span>`;
         return `<span class="sc-att-chip" title="${esc(a.name)}">${thumb}<span class="sc-att-name">${esc(a.name)}</span></span>`;
       }).join('');
       attHtml = `<div class="sc-att-row">${items}</div>`;
@@ -1204,7 +1210,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const src = meta.source !== undefined ? meta.source : sourceLabel;
     const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml() : '';
     const footer = `<div class="sc-line-meta">${
-      src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
+      src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
     }<span class="sc-line-time">${esc(nowLabel())}</span>${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
@@ -1282,15 +1288,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function connectFlowCardHtml(name, steps, headline) {
     const rows = steps.map((s, i) => `
       <li class="sc-cf-step" data-cf-step="${i}">
-        <span class="sc-cf-ic"><span class="material-icons">${esc(s.icon)}</span></span>
+        <span class="sc-cf-ic"><span class="material-symbols-outlined">${esc(s.icon)}</span></span>
         <span class="sc-cf-text">
           <span class="sc-cf-title">${esc(s.title)}</span>
           <span class="sc-cf-desc">${esc(s.desc.replace(/\{brand\}/g, name))}</span>
         </span>
-        <span class="sc-cf-state"><span class="material-icons">radio_button_unchecked</span></span>
+        <span class="sc-cf-state"><span class="material-symbols-outlined">radio_button_unchecked</span></span>
       </li>`).join('');
     return `<div class="sc-connect-flow" role="group" aria-label="${esc(headline)}">
-        <div class="sc-cf-head"><span class="sc-cf-spin material-icons">sync</span><span class="sc-cf-head-text">${esc(headline)}</span></div>
+        <div class="sc-cf-head"><span class="sc-cf-spin material-symbols-outlined">sync</span><span class="sc-cf-head-text">${esc(headline)}</span></div>
         <ol class="sc-cf-steps">${rows}</ol>
       </div>`;
   }
@@ -1303,20 +1309,20 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         const prev = rows[i - 1];
         prev.classList.remove('is-active'); prev.classList.add('is-done');
         const st = prev.querySelector('.sc-cf-state');
-        if (st) st.innerHTML = '<span class="material-icons">check_circle</span>';
+        if (st) st.innerHTML = '<span class="material-symbols-outlined">check_circle</span>';
       }
       if (i < rows.length) {
         const cur = rows[i];
         cur.classList.add('is-active');
         const st = cur.querySelector('.sc-cf-state');
-        if (st) st.innerHTML = '<span class="material-icons sc-cf-spin">sync</span>';
+        if (st) st.innerHTML = '<span class="material-symbols-outlined sc-cf-spin">sync</span>';
         i += 1;
         scrollDown();
         setTimeout(step, 950);
       } else {
         card.classList.add('is-complete');
         const head = card.querySelector('.sc-cf-head');
-        if (head) head.innerHTML = `<span class="sc-cf-check material-icons">check_circle</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
+        if (head) head.innerHTML = `<span class="sc-cf-check material-symbols-outlined">check_circle</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
         markConnectorConnected(cid, name);
         if (doneReply) setTimeout(() => addWISEai(doneReply, { source: '' }), 560);
       }
@@ -1354,8 +1360,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const cid = esc(c.id || c.name);
     const connected = !!c.connected;
     const cta = connected
-      ? '<span class="wch-conn-cta"><span class="material-icons">check_circle</span>Connected</span>'
-      : '<span class="wch-conn-cta"><span class="material-icons">add</span>Connect</span>';
+      ? '<span class="wch-conn-cta"><span class="material-symbols-outlined">check_circle</span>Connected</span>'
+      : '<span class="wch-conn-cta"><span class="material-symbols-outlined">add</span>Connect</span>';
     return `<button type="button" class="wch-conn-row${connected ? ' is-connected' : ''}" data-connector="${cid}" title="${connected ? 'Connected \u00b7 ' : 'Connect '}${esc(c.name)}">
         ${connectorLogo(c)}
         <span class="wch-conn-body"><span class="wch-conn-name">${esc(c.name)}</span><span class="wch-conn-status">${connected ? 'Connected \u00b7 catalog synced' : 'Not connected'}</span></span>
@@ -1377,8 +1383,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     connPanel.setAttribute('aria-label', connectorsLabel || 'Connect a data source');
     connPanel.innerHTML =
       '<div class="wch-head">' +
-        `<span class="wch-head-title"><span class="material-icons">hub</span>${esc(connectorsLabel || 'Connect a data source')}</span>` +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-icons">close</span></button>' +
+        `<span class="wch-head-title"><span class="material-symbols-outlined">hub</span>${esc(connectorsLabel || 'Connect a data source')}</span>` +
+        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<p class="wch-conn-intro">Link a retailer or food-data source so WISEai\u2122 can pull verified product, pricing &amp; nutrition data.</p>' +
       '<div class="wch-list wch-conn-list" role="list"></div>';
@@ -1445,7 +1451,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (!el) return '';
     const body = el.querySelector('.sc-line-body') || el;
     const clone = body.cloneNode(true);
-    clone.querySelectorAll('.sc-line-meta, .sc-fb-wrap, .sc-inline-chips, .material-icons, .material-symbols-outlined, .material-symbols-rounded, svg')
+    clone.querySelectorAll('.sc-line-meta, .sc-fb-wrap, .sc-inline-chips, .material-symbols-outlined, .material-symbols-outlined, .material-symbols-rounded, svg')
       .forEach((n) => n.remove());
     return (clone.textContent || '').replace(/\s+/g, ' ').trim();
   }
@@ -1521,19 +1527,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const q = turn.you ? lineText(turn.you) : '';
     const a = turn.replies.length ? lineText(turn.replies[0]) : '';
     const chips = turnArtifacts(turn.replies)
-      .map((c) => `<span class="wt-chip"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span>`)
+      .map((c) => `<span class="wt-chip"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span>`)
       .join('');
     const key = turnKey(turn, i);
     const fid = forkIdOf(turn);
     const note = turnsNotesOn ? (turnNotes[key] || '') : '';
     const shareBtn = turnsShareOn
-      ? `<button type="button" class="wt-iconbtn wt-share" data-share="${i}" title="Share this turn" aria-label="Share this turn"><span class="material-icons">ios_share</span></button>`
+      ? `<button type="button" class="wt-iconbtn wt-share" data-share="${i}" title="Share this turn" aria-label="Share this turn"><span class="material-symbols-outlined">ios_share</span></button>`
       : '';
     const noteBtn = turnsNotesOn
-      ? `<button type="button" class="wt-iconbtn wt-note-btn${note ? ' is-on' : ''}" data-note="${i}" title="${note ? 'Edit note' : 'Add a note'}" aria-label="${note ? 'Edit note on this turn' : 'Add a note to this turn'}" aria-pressed="false"><span class="material-icons">edit_note</span></button>`
+      ? `<button type="button" class="wt-iconbtn wt-note-btn${note ? ' is-on' : ''}" data-note="${i}" title="${note ? 'Edit note' : 'Add a note'}" aria-label="${note ? 'Edit note on this turn' : 'Add a note to this turn'}" aria-pressed="false"><span class="material-symbols-outlined">edit_note</span></button>`
       : '';
     const noteBlock = turnsNotesOn
-      ? `<div class="wt-note-saved" data-note-saved="${i}"${note ? '' : ' hidden'}><span class="material-icons">sticky_note_2</span><span class="wt-note-saved-txt">${esc(note)}</span></div>
+      ? `<div class="wt-note-saved" data-note-saved="${i}"${note ? '' : ' hidden'}><span class="material-symbols-outlined">sticky_note_2</span><span class="wt-note-saved-txt">${esc(note)}</span></div>
         <div class="wt-note" data-note-area="${i}" hidden><textarea class="wt-note-input" data-note-input="${i}" placeholder="Leave a note on this turn…" rows="2">${esc(note)}</textarea></div>`
       : '';
     return `<div class="wt-turn" data-turn="${i}" data-key="${esc(key)}">
@@ -1544,11 +1550,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         ${a ? `<div class="wt-turn-a">${esc(a)}</div>` : ''}
         ${chips ? `<div class="wt-chips">${chips}</div>` : ''}
         <div class="wt-actions">
-          <button type="button" class="wt-fork" data-fork="${i}" title="Fork from here" aria-label="Fork from here"><span class="material-icons">alt_route</span></button>
+          <button type="button" class="wt-fork" data-fork="${i}" title="Fork from here" aria-label="Fork from here"><span class="material-symbols-outlined">alt_route</span></button>
           ${fid ? `<span class="wt-fork-id" title="Fork ID">${esc(fid)}</span>` : ''}
           ${shareBtn}
           ${noteBtn}
-          <button type="button" class="wt-jump" data-jump="${i}" title="Jump to this turn"><span class="material-icons">my_location</span>Jump</button>
+          <button type="button" class="wt-jump" data-jump="${i}" title="Jump to this turn"><span class="material-symbols-outlined">my_location</span>Jump</button>
         </div>
         ${noteBlock}
       </div>`;
@@ -1608,7 +1614,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }
 
     const sourceTitle = (chatHistory && chatHistory.currentTitle) ? chatHistory.currentTitle() : 'this conversation';
-    const banner = `<div class="sc-fork-banner" role="note"><span class="sc-fork-banner-ic material-icons">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>${esc(sourceTitle)}</strong></span></div>`;
+    const banner = `<div class="sc-fork-banner" role="note"><span class="sc-fork-banner-ic material-symbols-outlined">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>${esc(sourceTitle)}</strong></span></div>`;
     const forkHtml = banner + container.innerHTML;
     const count = container.querySelectorAll('.sc-line').length;
 
@@ -1808,27 +1814,27 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const headControls = turnsDockedControls
       ? '<div class="wch-controls">' +
           '<div class="panel-more-wrap wt-more-wrap">' +
-            '<button type="button" class="panel-more-btn wt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
+            '<button type="button" class="panel-more-btn wt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
             '<div class="topbar-popover hidden wt-more-pop" role="menu">' +
-              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-turns-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close panel</span></button>' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-turns-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close panel</span></button>' +
             '</div>' +
           '</div>' +
           '<button type="button" class="panel-width-toggle-btn wt-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Turns module width"><span class="material-symbols-outlined">width_normal</span></button>' +
         '</div>'
-      : (turnsBreakout ? '<button type="button" class="wch-dock" title="Break out as a side module" aria-label="Break turns out as a side module"><span class="material-icons">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-icons">close</span></button>';
+      : (turnsBreakout ? '<button type="button" class="wch-dock" title="Break out as a side module" aria-label="Break turns out as a side module"><span class="material-symbols-outlined">vertical_split</span></button>' : '') +
+        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>';
 
     const searchHtml = turnsSearchOn
       ? '<div class="wt-search">' +
-          '<span class="material-icons">search</span>' +
+          '<span class="material-symbols-outlined">search</span>' +
           '<input type="text" class="wt-search-input" placeholder="Search turns…" aria-label="Search turns" autocomplete="off">' +
-          '<button type="button" class="wt-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>' +
+          '<button type="button" class="wt-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
         '</div>'
       : '';
 
     turnsPanel.innerHTML =
       '<div class="wch-head">' +
-        '<span class="wch-head-title"><span class="material-icons">alt_route</span>Turns</span>' +
+        '<span class="wch-head-title"><span class="material-symbols-outlined">alt_route</span>Turns</span>' +
         headControls +
       '</div>' +
       '<p class="wt-intro">Fork any turn into a brand-new chat of your own — the whole conversation up to that point is copied verbatim (nothing is re-run). The original is never touched.</p>' +
@@ -1901,7 +1907,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      back into the chat). */
   function updateTurnsDockBtn() {
     if (!turnsDockBtn) return;
-    const icon = turnsDockBtn.querySelector('.material-icons');
+    const icon = turnsDockBtn.querySelector('.material-symbols-outlined');
     if (turnsDocked) {
       if (icon) icon.textContent = 'close_fullscreen';
       turnsDockBtn.title = 'Merge turns back into the chat';
@@ -2082,7 +2088,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   let attachments = [];
   let attachSeq = 0;
   const IMAGE_ICON =
-    '<span class="material-icons">image</span>';
+    '<span class="material-symbols-outlined">image</span>';
   /* Reflect the pending count onto the wrap so the input can drop its
      placeholder (it would otherwise collide with the chips) while still
      accepting text — the caret sits right after the last chip. */
@@ -2111,7 +2117,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     chip.dataset.attachId = att.id;
     chip.title = att.name;
     chip.innerHTML = `${thumb}<span class="fl-attach-name">${esc(att.name)}</span>` +
-      `<button type="button" class="fl-attach-x" aria-label="Remove ${esc(att.name)}"><span class="material-icons">close</span></button>`;
+      `<button type="button" class="fl-attach-x" aria-label="Remove ${esc(att.name)}"><span class="material-symbols-outlined">close</span></button>`;
     attachEl?.appendChild(chip);
   }
   function addAttachment(att) {
@@ -2308,7 +2314,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const src = t.source !== undefined ? t.source : sourceLabel;
       const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml() : '';
       const footer = `<div class="sc-line-meta">${
-        src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-icons">verified_user</span>${esc(src)}</span>` : ''
+        src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
       }<span class="sc-line-time">${esc(clock)}</span>${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');

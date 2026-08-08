@@ -93,7 +93,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -133,7 +133,7 @@ function orderedFiltered() {
 
 function rowHtml(a, i) {
   const chip = ACTION_CHIP[a.action] || 'adm-chip--outline';
-  const canonIcon = a.action === 'Suggest New Canon' ? '<span class="material-icons">add_circle</span>' : '';
+  const canonIcon = a.action === 'Suggest New Canon' ? '<span class="material-symbols-outlined">add_circle</span>' : '';
   return `
     <div class="adm-trow adm-trow--audit" data-adm-row="${i}">
       <span class="adm-td"><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(a.brand)}</span><span class="adm-idcell-sub" style="color:var(--primary)">${esc(a.food)}</span></span></span>
@@ -141,8 +141,8 @@ function rowHtml(a, i) {
       <span class="adm-td" style="font-style:italic;color:var(--text-subtle);font-size:0.8rem">${esc(a.mapping)}</span>
       <span class="adm-td"><span class="adm-chip ${chip}">${canonIcon}${esc(a.action)}</span></span>
       <span class="adm-td"><span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span></span>
-      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-icons">task_alt</span>Resolve</button></span></span>
-      <div class="adm-trow-notes"><span class="material-icons">sticky_note_2</span><span class="adm-notes adm-notes--full">${esc(a.notes)}</span></div>
+      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button></span></span>
+      <div class="adm-trow-notes"><span class="material-symbols-outlined">sticky_note_2</span><span class="adm-notes adm-notes--full">${esc(a.notes)}</span></div>
     </div>`;
 }
 
@@ -152,7 +152,7 @@ function statsHtml() {
     return `
       <button type="button" class="adm-stat${s.accent ? ' ' + s.accent : ''}${active ? ' is-active' : ''}" data-adm-filter="${s.key == null ? '' : esc(s.key)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="adm-stat-num">${s.num}</span>
-        <span class="adm-stat-label"><span class="material-icons">${esc(s.icon)}</span>${esc(s.label)}</span>
+        <span class="adm-stat-label"><span class="material-symbols-outlined">${esc(s.icon)}</span>${esc(s.label)}</span>
         <span class="adm-stat-sub">${esc(s.sub)}</span>
       </button>`;
   }).join('');
@@ -203,16 +203,16 @@ function paint() {
             <p class="adm-lede">Review and resolve ingredient mappings flagged by brand users.</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="refresh"><span class="material-icons">refresh</span>Refresh Queue</button>
+            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="refresh"><span class="material-symbols-outlined">refresh</span>Refresh Queue</button>
           </div>
         </div>
       </header>
 
       <div class="adm-toolbar">
         <div class="adm-search-inline has-filter">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search ingredient, food, or notes…" aria-label="Search audits" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-icons">tune</span></button>
+          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
       </div>

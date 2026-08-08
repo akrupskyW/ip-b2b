@@ -64,11 +64,11 @@
   }
 
   function textWithoutIcons(el) {
-    if (!el.querySelector || !el.querySelector('.material-icons, .material-symbols-outlined, .material-symbols-rounded')) {
+    if (!el.querySelector || !el.querySelector('.material-symbols-outlined, .material-symbols-outlined, .material-symbols-rounded')) {
       return el.textContent;
     }
     var clone = el.cloneNode(true);
-    var icons = clone.querySelectorAll('.material-icons, .material-symbols-outlined, .material-symbols-rounded');
+    var icons = clone.querySelectorAll('.material-symbols-outlined, .material-symbols-outlined, .material-symbols-rounded');
     Array.prototype.forEach.call(icons, function (n) { n.parentNode.removeChild(n); });
     return clone.textContent;
   }

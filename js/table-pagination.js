@@ -35,7 +35,7 @@
   var MAP = new WeakMap();       /* table element → pagination state            */
 
   var EXPAND_ICON =
-    '<span class="material-icons" aria-hidden="true">expand_more</span>';
+    '<span class="material-symbols-outlined" aria-hidden="true">expand_more</span>';
 
   /* Row classes other page code uses to mark a row filtered-out. Such rows are
      excluded from the pagination count (they're already hidden by that code). */
@@ -59,7 +59,7 @@
       'letter-spacing:.01em;transition:color .12s ease;}',
       'html.dark .wtp-more{color:var(--primary-bright,var(--primary));}',
       '.wtp-more:hover{text-decoration:underline;}',
-      '.wtp-more .material-icons{font-size:16px;line-height:1;}',
+      '.wtp-more .material-symbols-outlined{font-size:16px;line-height:1;}',
       '.wtp-more[hidden]{display:none;}',
       '.wtp-clip{display:none !important;}',
       '.wtp-hidden-foot{display:none !important;}'

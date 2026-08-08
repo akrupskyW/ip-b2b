@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Scan the repo for Material Icons / Symbols usage.
+
+Produces a JSON inventory of every icon glyph name, the CSS family it uses,
+how many times it appears, and a few example placements (file + a short
+human label inferred from nearby text). This feeds the Icon Inventory module.
+"""
+import json
+import os
+import re
+from collections import defaultdict
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Directories / files worth scanning for icon glyphs.
+SCAN_DIRS = ["js", "pages"]
+SCAN_ROOT_FILES = [
+    "index.html",
+    "wise_ip3.html",
+    "marketing-alliance.html",
+    "marketing-app.html",
+    "marketing-coach.html",
+    "marketing-enterprise.html",
+    "marketing-gras.html",
+    "marketing-nonupf.html",
+    "marketing-pricing.html",
+    "marketing-products.html",
+    "marketing-solutions.html",
+    "marketing-wiseai.html",
+]
+
+# Skip giant generated data blobs — they hold no icon markup.
+SKIP_FILES = {"gs-data.js"}
+
+FAMILY_RE = r"material-(icons|symbols-outlined|symbols-rounded|symbols-sharp)"
+# class="material-icons ...">glyph<   OR   class='material-symbols-outlined'>glyph<
+ICON_RE = re.compile(
+    FAMILY_RE + r"[^>]*>\s*([a-z][a-z0-9_]+)\s*<",
+)
+
+# Icon name assigned to a data field, e.g. icon: 'insights'  /  "icon":"bolt"
+DATA_ICON_RE = re.compile(r"""\bicon\s*:\s*['"]([a-z][a-z0-9_]+)['"]""")
+
+# A rough label: nearest text after the closing </span> on the same line, or a
+# preceding word/aria-label. We keep it short.
+LABEL_AFTER_RE = re.compile(r"</span>\s*([A-Z][A-Za-z0-9 &/'’\-]{1,40})")
+ARIA_RE = re.compile(r"""aria-label=['"]([^'"]{1,50})['"]""")
+TITLE_RE = re.compile(r"""title=['"]([^'"]{1,50})['"]""")
+
+
+def family_label(fam):
+    if fam == "icons":
+        return "Material Icons"
+    return "Material Symbols (" + fam.replace("symbols-", "") + ")"
+
+
+def iter_files():
+    for d in SCAN_DIRS:
+        base = os.path.join(ROOT, d)
+        for dirpath, _dirs, files in os.walk(base):
+            for f in files:
+                if f in SKIP_FILES:
+                    continue
+                if f.rsplit(".", 1)[-1] in ("js", "html", "css"):
+                    yield os.path.join(dirpath, f)
+    for f in SCAN_ROOT_FILES:
+        p = os.path.join(ROOT, f)
+        if os.path.exists(p):
+            yield p
+
+
+def rel(p):
+    return os.path.relpath(p, ROOT)
+
+
+def main():
+    # glyph -> { families:set, count:int, placements:list }
+    inv = defaultdict(lambda: {"families": set(), "count": 0, "placements": []})
+
+    for path in iter_files():
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+                text = fh.read()
+        except Exception:
+            continue
+        lines = text.splitlines()
+        for lineno, line in enumerate(lines, 1):
+            for m in ICON_RE.finditer(line):
+                fam, glyph = m.group(1), m.group(2)
+                # Skip obvious CSS/keyword false-positives
+                rec = inv[glyph]
+                rec["families"].add(family_label(fam))
+                rec["count"] += 1
+                label = ""
+                after = LABEL_AFTER_RE.search(line, m.end() - 1)
+                if after:
+                    label = after.group(1).strip()
+                if not label:
+                    a = ARIA_RE.search(line)
+                    if a:
+                        label = a.group(1).strip()
+                if not label:
+                    t = TITLE_RE.search(line)
+                    if t:
+                        label = t.group(1).strip()
+                if len(rec["placements"]) < 6:
+                    rec["placements"].append(
+                        {"file": rel(path), "line": lineno, "label": label}
+                    )
+
+    # summary
+    total_uses = sum(v["count"] for v in inv.values())
+    out = {
+        "generatedAt": None,
+        "totalUniqueIcons": len(inv),
+        "totalUses": total_uses,
+        "icons": [],
+    }
+    for glyph in sorted(inv.keys()):
+        rec = inv[glyph]
+        # a representative label: first non-empty placement label
+        rep_label = ""
+        files = []
+        for pl in rec["placements"]:
+            if pl["label"] and not rep_label:
+                rep_label = pl["label"]
+            if pl["file"] not in files:
+                files.append(pl["file"])
+        out["icons"].append(
+            {
+                "name": glyph,
+                "families": sorted(rec["families"]),
+                "count": rec["count"],
+                "label": rep_label,
+                "placements": rec["placements"],
+            }
+        )
+
+    out_path = os.path.join(ROOT, "scripts", "icon-inventory.json")
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(out, fh, indent=2)
+
+    # Also emit an ES module the Icon Inventory UI can import directly (no fetch,
+    # works from file:// and the dev server alike).
+    js_path = os.path.join(ROOT, "js", "icon-inventory-data.js")
+    header = (
+        "/* AUTO-GENERATED by scripts/scan_icons.py — do not edit by hand.\n"
+        " * A scan of every Material Icons / Symbols glyph used across the app,\n"
+        " * with the CSS family it renders in, how often it appears, a representative\n"
+        " * label, and example placements (file + line). Regenerate with:\n"
+        " *   python3 scripts/scan_icons.py\n"
+        " */\n"
+    )
+    with open(js_path, "w", encoding="utf-8") as fh:
+        fh.write(header)
+        fh.write("export const ICON_INVENTORY = ")
+        json.dump(out, fh, indent=2, ensure_ascii=False)
+        fh.write(";\n")
+
+    print("unique icons:", len(inv))
+    print("total uses:", total_uses)
+    print("wrote:", rel(out_path))
+    print("wrote:", rel(js_path))
+
+
+if __name__ == "__main__":
+    main()

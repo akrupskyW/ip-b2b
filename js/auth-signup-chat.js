@@ -317,7 +317,7 @@
     function chipsHtml(options) {
       if (!options || !options.length) return '';
       var btns = options.map(function (o) {
-        return '<button type="button" class="chip' + (o.primary ? ' chip-primary' : '') + (o.cls ? ' ' + o.cls : '') + '" data-ac="' + esc(o.action || 'answer') + '" data-value="' + esc(o.value != null ? o.value : o.label) + '" data-label="' + esc(o.label) + '">' + (o.icon ? '<span class="material-icons">' + esc(o.icon) + '</span>' : '') + esc(o.label) + '</button>';
+        return '<button type="button" class="chip' + (o.primary ? ' chip-primary' : '') + (o.cls ? ' ' + o.cls : '') + '" data-ac="' + esc(o.action || 'answer') + '" data-value="' + esc(o.value != null ? o.value : o.label) + '" data-label="' + esc(o.label) + '">' + (o.icon ? '<span class="material-symbols-outlined">' + esc(o.icon) + '</span>' : '') + esc(o.label) + '</button>';
       }).join('');
       return '<div class="sc-reply-chips">' + btns + '</div>';
     }
@@ -409,7 +409,7 @@
     function routeCardsHtml(q) {
       return '<div class="sc-reply-chips ac-routes">' + (q.options || []).map(function (o) {
         return '<button type="button" class="ac-route" data-ac="route" data-value="' + esc(o.value) + '" data-label="' + esc(o.label) + '">' +
-          '<span class="ac-route-ico"><span class="material-icons">' + esc(o.icon) + '</span></span>' +
+          '<span class="ac-route-ico"><span class="material-symbols-outlined">' + esc(o.icon) + '</span></span>' +
           '<span class="ac-route-txt"><span class="ac-route-title">' + esc(o.label) + '</span>' +
           '<span class="ac-route-desc">' + esc(o.desc) + '</span></span></button>';
       }).join('') + '</div>';
@@ -464,10 +464,10 @@
         var suggest = (q.options || []).map(function (o) {
           return '<button type="button" class="chip ms-chip" data-ac="toggle" data-value="' + esc(o) + '">' + esc(o) + '</button>';
         }).join('');
-        var controls = '<button type="button" class="chip chip-primary" data-ac="msdone"><span class="material-icons">check</span>Continue</button>' +
-          (q.optional ? '<button type="button" class="chip" data-ac="skip"><span class="material-icons">skip_next</span>Skip</button>' : '') +
-          (isDelegatable(q) ? '<button type="button" class="chip" data-ac="delegate"><span class="material-icons">group_add</span>Someone else should answer</button>' : '') +
-          (q.optional && bareMinimumMet() ? '<button type="button" class="chip chip-dive" data-ac="diveIn"><span class="material-icons">rocket_launch</span>Dive right into the product</button>' : '');
+        var controls = '<button type="button" class="chip chip-primary" data-ac="msdone"><span class="material-symbols-outlined">check</span>Continue</button>' +
+          (q.optional ? '<button type="button" class="chip" data-ac="skip"><span class="material-symbols-outlined">skip_next</span>Skip</button>' : '') +
+          (isDelegatable(q) ? '<button type="button" class="chip" data-ac="delegate"><span class="material-symbols-outlined">group_add</span>Someone else should answer</button>' : '') +
+          (q.optional && bareMinimumMet() ? '<button type="button" class="chip chip-dive" data-ac="diveIn"><span class="material-symbols-outlined">rocket_launch</span>Dive right into the product</button>' : '');
         messages.insertAdjacentHTML('beforeend',
           (suggest ? '<div class="sc-reply-chips ms-suggest">' + suggest + '</div>' : '<div class="sc-reply-chips ms-suggest"></div>') +
           '<div class="sc-reply-chips ms-controls">' + controls + '</div>');
@@ -560,7 +560,7 @@
     function maybeRelease() {
       if (flow.forage.brand >= 100) {
         setInputEnabled(false);
-        wiseaiSay('<span class="ac-success"><span class="material-icons">insights</span>Your brand view is ready</span> — we found ' + esc(firstBrand()) + '\u2019s catalogue' + compReadyNote() + '.',
+        wiseaiSay('<span class="ac-success"><span class="material-symbols-outlined">insights</span>Your brand view is ready</span> — we found ' + esc(firstBrand()) + '\u2019s catalogue' + compReadyNote() + '.',
           null, function () { finishFlow({ dest: 'overview' }); });
         return;
       }
@@ -582,7 +582,7 @@
       flow.releasing = false;
       if (flow.waitTyping) { flow.waitTyping.remove(); flow.waitTyping = null; }
       disablePriorChips();
-      wiseaiSay('<span class="ac-success"><span class="material-icons">insights</span>Your brand view is ready.</span>', null,
+      wiseaiSay('<span class="ac-success"><span class="material-symbols-outlined">insights</span>Your brand view is ready.</span>', null,
         function () { finishFlow({ dest: 'overview' }); });
     }
 
@@ -792,7 +792,7 @@
       var fullName = (d.first + ' ' + (d.last || '')).trim();
       var wasStep = q ? q.step : 0;
       wiseaiSay(
-        '<span class="ac-success"><span class="material-icons">mail</span>Invite ready for ' + esc(fullName) + '</span> — ' +
+        '<span class="ac-success"><span class="material-symbols-outlined">mail</span>Invite ready for ' + esc(fullName) + '</span> — ' +
         'we\u2019ll email <strong>' + esc(d.email) + '</strong> a link to join <strong>' + esc(firstOrgName()) + '</strong> and answer this. Let\u2019s keep going.',
         null,
         function () { advanceAfterAnswer(wasStep); }
@@ -833,7 +833,7 @@
         };
         auth.signup(reg);
         var tail = toOverview ? 'taking you to your overview…' : 'taking you to WISEai…';
-        wiseaiSay('<span class="ac-success"><span class="material-icons">celebration</span>Welcome to WISEcode, ' + esc((a.name || '').split(' ')[0] || 'there') + '!</span> Your account is ready — ' + tail, null,
+        wiseaiSay('<span class="ac-success"><span class="material-symbols-outlined">celebration</span>Welcome to WISEcode, ' + esc((a.name || '').split(' ')[0] || 'there') + '!</span> Your account is ready — ' + tail, null,
           function () { setTimeout(function () { location.href = destUrl; }, 1000); });
       });
     }
@@ -890,7 +890,7 @@
         var done = allDone || i < curMacro;
         var active = !done && i === curMacro;
         var cls = done ? 'vs-step--done' : (active ? 'vs-step--active' : '');
-        var numHtml = done ? '<span class="material-icons">check</span>' : String(i + 1);
+        var numHtml = done ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
         var sub = 'Up next';
         if (done) sub = 'Completed';
         else if (active) sub = 'Step ' + (i + 1) + ' of ' + MACROS.length + ' · in progress';
@@ -906,7 +906,7 @@
             var icon = isDone ? 'check_circle' : 'radio_button_unchecked';
             var stateCls = isDone ? 'sp-field--done' : 'sp-field--active';
             var val = isDone ? '<span class="sp-field-val">' + esc(fieldValueDisplay(k)) + '</span>' : '<span class="sp-field-val">Collecting…</span>';
-            return '<div class="sp-field ' + stateCls + '"><span class="material-icons">' + icon + '</span><span class="sp-field-label">' + esc(meta.label) + '</span>' + val + '</div>';
+            return '<div class="sp-field ' + stateCls + '"><span class="material-symbols-outlined">' + icon + '</span><span class="sp-field-label">' + esc(meta.label) + '</span>' + val + '</div>';
           }).join('');
           if (rows) fieldsHtml = '<div class="sp-fields">' + rows + '</div>';
         }
@@ -920,17 +920,17 @@
       pane.innerHTML =
         '<div class="sp-inner' + (progressMin ? ' is-min' : '') + '">' +
           '<div class="sp-header">' +
-            '<div class="sp-header-icon"><span class="material-icons">badge</span></div>' +
+            '<div class="sp-header-icon"><span class="material-symbols-outlined">badge</span></div>' +
             '<div class="sp-pct-ring" style="--pct:' + pct + '"><span>' + pct + '%</span></div>' +
             '<div class="sp-header-text">' +
               '<div class="sp-title">Account setup</div>' +
               '<div class="sp-subtitle">' + (allDone ? 'All steps complete' : 'Complete these steps to finish') + '</div>' +
             '</div>' +
-            '<button type="button" class="sp-min-btn" data-ac="togglemin" aria-label="' + (progressMin ? 'Expand progress' : 'Collapse progress') + '" title="' + (progressMin ? 'Expand' : 'Collapse') + '"><span class="material-icons">' + (progressMin ? 'chevron_left' : 'chevron_right') + '</span></button>' +
+            '<button type="button" class="sp-min-btn" data-ac="togglemin" aria-label="' + (progressMin ? 'Expand progress' : 'Collapse progress') + '" title="' + (progressMin ? 'Expand' : 'Collapse') + '"><span class="material-symbols-outlined">' + (progressMin ? 'chevron_left' : 'chevron_right') + '</span></button>' +
             '<div class="sp-header-menu">' +
-              '<button type="button" class="panel-more-btn" id="sp-more-btn" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="sp-menu" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
+              '<button type="button" class="panel-more-btn" id="sp-more-btn" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="sp-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
               '<div id="sp-menu" class="sp-menu hidden" role="menu">' +
-                '<button type="button" class="sp-menu-item" data-ac="removepane"><span class="material-icons">close</span><span>Remove panel</span></button>' +
+                '<button type="button" class="sp-menu-item" data-ac="removepane"><span class="material-symbols-outlined">close</span><span>Remove panel</span></button>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -1086,7 +1086,7 @@
           '<div class="fl-input-wrap">' +
             '<input type="text" class="fl-input" id="ac-input" placeholder="Type your answer" autocomplete="off" />' +
           '</div>' +
-          '<button type="button" class="sc-send" id="ac-send" title="Send"><span class="material-icons">send</span></button>' +
+          '<button type="button" class="sc-send" id="ac-send" title="Send"><span class="material-symbols-outlined">send</span></button>' +
         '</div>' +
       '</div>';
   }

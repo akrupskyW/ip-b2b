@@ -121,7 +121,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -250,7 +250,7 @@ function statusListCard() {
     const w = Math.round((s.num / max) * 100);
     return `
       <div class="adm-vrow">
-        <span class="material-icons adm-vrow-ic" style="color:${s.color()}">${esc(s.icon)}</span>
+        <span class="material-symbols-outlined adm-vrow-ic" style="color:${s.color()}">${esc(s.icon)}</span>
         <div class="adm-vrow-main">
           <div class="adm-vrow-label">${esc(s.label)}</div>
           <div class="adm-vrow-bar"><span style="width:0;background:${s.color()}" data-w="${w}"></span></div>
@@ -279,7 +279,7 @@ function statCardsHtml() {
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
       <span class="adm-vf-stat-num" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">${c.num}</span>
-      <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span></span>
+      <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
       ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
     </div>`;
@@ -302,7 +302,7 @@ function theadHtml() {
 function thumbHtml(p) {
   return `<span class="adm-avatar adm-avatar--round adm-avatar--photo adm-avatar--lg">` +
     `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">` +
-    `<span class="material-icons" style="display:none;font-size:18px">${esc(p.icon || 'lunch_dining')}</span></span>`;
+    `<span class="material-symbols-outlined" style="display:none;font-size:18px">${esc(p.icon || 'lunch_dining')}</span></span>`;
 }
 
 function productRow(p) {
@@ -312,9 +312,9 @@ function productRow(p) {
     <div class="adm-trow" data-adm-prow="${esc(p.upc)}" data-adm-pstatus="${esc(p.status)}" data-adm-pupf="${esc(p.upf)}">
       <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:'SF Mono',ui-monospace,Menlo,monospace">UPC · ${esc(p.upc)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${upf.cls}">${esc(upf.label)}</span></span>
-      <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-icons">${esc(st.icon)}</span>${esc(st.label)}</span></span>
+      <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-symbols-outlined">${esc(st.icon)}</span>${esc(st.label)}</span></span>
       <span class="adm-td"><span class="adm-idcell-body"><span style="font-weight:600;font-size:0.82rem">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span></span>
-      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-icons">more_horiz</span></button></span></span>
+      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_horiz</span></button></span></span>
     </div>`;
 }
 
@@ -374,17 +374,17 @@ function paint() {
             <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
           </div>
           <div class="adm-head-actions">
-            <a class="adm-btn adm-btn--ghost" href="invoices.html"><span class="material-icons">receipt_long</span>View invoices</a>
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="export"><span class="material-icons">download</span>Export</button>
+            <a class="adm-btn adm-btn--ghost" href="invoices.html"><span class="material-symbols-outlined">receipt_long</span>View invoices</a>
+            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export</button>
           </div>
         </div>
       </header>
 
       <div class="adm-toolbar">
         <div class="adm-search-inline has-filter">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search products by name or brand" aria-label="Search products" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-icons">tune</span></button>
+          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
       </div>
@@ -560,7 +560,7 @@ function openRowMenu(btn, upc) {
   menu.setAttribute('role', 'menu');
   menu.innerHTML = MENU_ITEMS.map((it) => it.sep
     ? '<div class="adm-menu-sep"></div>'
-    : `<button type="button" role="menuitem" class="adm-menu-item${it.danger ? ' adm-menu-item--danger' : ''}" data-adm-menu-action="${it.action}" data-adm-upc="${esc(upc)}"><span class="material-icons">${it.icon}</span>${esc(it.label)}</button>`
+    : `<button type="button" role="menuitem" class="adm-menu-item${it.danger ? ' adm-menu-item--danger' : ''}" data-adm-menu-action="${it.action}" data-adm-upc="${esc(upc)}"><span class="material-symbols-outlined">${it.icon}</span>${esc(it.label)}</button>`
   ).join('');
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect();

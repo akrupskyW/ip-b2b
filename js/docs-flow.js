@@ -57,7 +57,7 @@ const ARTICLES = {
       <p>Each product is classified against the NOVA scale. Flagged ingredients are highlighted so you can see exactly what pushes a product into the ultra-processed tier.</p>
       <h3>3 · Verify</h3>
       <p>Select pre-qualified SKUs, sign the attestation, and pay per SKU. WISE mints a shield you can use on packaging and marketing.</p>
-      <div class="dc-callout"><span class="material-icons">lightbulb</span><div>Tip: the WISEai assistant can run the entire verification flow for you — just ask it to “verify all pre-qualified foods.”</div></div>`,
+      <div class="dc-callout"><span class="material-symbols-outlined">lightbulb</span><div>Tip: the WISEai assistant can run the entire verification flow for you — just ask it to “verify all pre-qualified foods.”</div></div>`,
   },
   concepts: {
     title: 'Core concepts',
@@ -83,7 +83,7 @@ const ARTICLES = {
       <p>Classifies finished products against the NOVA scale. Select SKUs, attest that your data matches packaging, and pay per SKU.</p>
       <h3>GRAS</h3>
       <p>Works at the ingredient level, documenting Generally Recognized As Safe status for each additive across five documentation steps.</p>
-      <div class="dc-callout"><span class="material-icons">verified</span><div>Both flows can be driven end-to-end from the WISEai chat.</div></div>`,
+      <div class="dc-callout"><span class="material-symbols-outlined">verified</span><div>Both flows can be driven end-to-end from the WISEai chat.</div></div>`,
   },
   reports: {
     title: 'Reading reports',
@@ -146,7 +146,7 @@ function paint() {
   hostEl.innerHTML = `
     <div class="dc-wrap">
       <aside class="dc-sidebar" aria-label="Documentation">
-        <div class="dc-side-title"><span class="material-icons">menu_book</span>Documentation</div>
+        <div class="dc-side-title"><span class="material-symbols-outlined">menu_book</span>Documentation</div>
         ${NAV.map((grp) => `
           <div class="dc-side-group">
             <div class="dc-side-group-title">${esc(grp.group)}</div>
@@ -157,7 +157,7 @@ function paint() {
           </div>`).join('')}
       </aside>
       <article class="dc-article">
-        <div class="dc-breadcrumb"><span>Docs</span><span class="material-icons">chevron_right</span><span class="dc-breadcrumb-here">${esc(art.title)}</span></div>
+        <div class="dc-breadcrumb"><span>Docs</span><span class="material-symbols-outlined">chevron_right</span><span class="dc-breadcrumb-here">${esc(art.title)}</span></div>
         <h1 class="dc-article-title">${esc(art.title)}</h1>
         <div class="dc-article-body">${art.body}</div>
       </article>

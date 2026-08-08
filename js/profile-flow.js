@@ -116,7 +116,7 @@ function toast(msg, icon = 'check_circle') {
   }
   const t = document.createElement('div');
   t.className = 'pf-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -158,10 +158,10 @@ function uploadHtml(kind) {
   const body = tab === 'url'
     ? `<div class="pf-uprow">
          <input class="pf-url-input" type="url" data-pf-url="${kind}" value="${urlVal}" placeholder="https://example.com/${kind}.png" />
-         <button type="button" class="pf-file-btn" data-pf-import="${kind}"><span class="material-icons">download</span>Import</button>
+         <button type="button" class="pf-file-btn" data-pf-import="${kind}"><span class="material-symbols-outlined">download</span>Import</button>
        </div>`
     : `<div class="pf-uprow">
-         <label class="pf-file-btn"><span class="material-icons">upload_file</span>Choose File
+         <label class="pf-file-btn"><span class="material-symbols-outlined">upload_file</span>Choose File
            <input type="file" accept="image/*" data-pf-file="${kind}" hidden />
          </label>
          <span class="pf-file-name${cur && cur.kind === 'file' ? ' is-set' : ''}" data-pf-filename="${kind}">${fileLabel}</span>
@@ -173,8 +173,8 @@ function uploadHtml(kind) {
         <div class="pf-upload-sub">${sub}</div>
       </div>
       <div class="pf-uptabs" role="tablist">
-        <button type="button" class="pf-uptab${tab === 'file' ? ' is-active' : ''}" data-pf-uptab="${kind}:file" role="tab"><span class="material-icons">description</span>Browse File</button>
-        <button type="button" class="pf-uptab${tab === 'url' ? ' is-active' : ''}" data-pf-uptab="${kind}:url" role="tab"><span class="material-icons">link</span>Import from URL</button>
+        <button type="button" class="pf-uptab${tab === 'file' ? ' is-active' : ''}" data-pf-uptab="${kind}:file" role="tab"><span class="material-symbols-outlined">description</span>Browse File</button>
+        <button type="button" class="pf-uptab${tab === 'url' ? ' is-active' : ''}" data-pf-uptab="${kind}:url" role="tab"><span class="material-symbols-outlined">link</span>Import from URL</button>
       </div>
       ${body}
       <div class="pf-hint">${esc(hint)}</div>
@@ -191,33 +191,33 @@ function paint() {
           <p class="pf-lede">Edit organization details, contact information, and brands.</p>
         </div>
         <div class="pf-head-actions">
-          <button type="button" class="pf-btn pf-btn--primary" data-pf-save><span class="material-icons">save</span>Save Changes</button>
+          <button type="button" class="pf-btn pf-btn--primary" data-pf-save><span class="material-symbols-outlined">save</span>Save Changes</button>
         </div>
       </div>
 
       <form class="pf-card" data-pf-form novalidate>
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-icons">apartment</span>Organization &amp; contact</h2>
+          <h2 class="pf-section-title"><span class="material-symbols-outlined">apartment</span>Organization &amp; contact</h2>
           <div class="pf-grid">
             ${LAYOUT.map(([key, span]) => fieldHtml(key, span)).join('')}
           </div>
         </div>
 
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-icons">sell</span>Associated brand</h2>
+          <h2 class="pf-section-title"><span class="material-symbols-outlined">sell</span>Associated brand</h2>
           <div class="pf-brandchips">
-            <span class="pf-brandchip"><span class="material-icons">verified</span>${esc(state.brand)}</span>
+            <span class="pf-brandchip"><span class="material-symbols-outlined">verified</span>${esc(state.brand)}</span>
           </div>
         </div>
 
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-icons">image</span>Brand assets</h2>
+          <h2 class="pf-section-title"><span class="material-symbols-outlined">image</span>Brand assets</h2>
           ${uploadHtml('logo')}
           ${uploadHtml('banner')}
         </div>
 
         <div class="pf-footer">
-          <button type="submit" class="pf-btn pf-btn--primary"><span class="material-icons">save</span>Save Changes</button>
+          <button type="submit" class="pf-btn pf-btn--primary"><span class="material-symbols-outlined">save</span>Save Changes</button>
         </div>
       </form>
     </div>`;

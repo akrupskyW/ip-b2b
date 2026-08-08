@@ -61,9 +61,9 @@ function paint() {
       <section class="hc-hero">
         <h1 class="hc-title">How can we help?</h1>
         <div class="hc-search">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input class="hc-search-input" type="text" placeholder="Search help articles…" value="${esc(query)}" data-hc-search />
-          ${query ? '<button type="button" class="hc-search-clear" data-hc-action="clear_search"><span class="material-icons">close</span></button>' : ''}
+          ${query ? '<button type="button" class="hc-search-clear" data-hc-action="clear_search"><span class="material-symbols-outlined">close</span></button>' : ''}
         </div>
       </section>
 
@@ -72,9 +72,9 @@ function paint() {
       <div class="hc-topics">
         ${TOPICS.map((t) => `
           <button type="button" class="hc-topic" data-hc-topic="${t.id}">
-            <span class="hc-topic-ic"><span class="material-icons">${esc(t.icon)}</span></span>
+            <span class="hc-topic-ic"><span class="material-symbols-outlined">${esc(t.icon)}</span></span>
             <span class="hc-topic-body"><span class="hc-topic-title">${esc(t.title)}</span><span class="hc-topic-sub">${esc(t.sub)}</span></span>
-            <span class="material-icons hc-topic-arrow">chevron_right</span>
+            <span class="material-symbols-outlined hc-topic-arrow">chevron_right</span>
           </button>`).join('')}
       </div>`}
 
@@ -87,7 +87,7 @@ function paint() {
           <div class="hc-faq${open ? ' is-open' : ''}">
             <button type="button" class="hc-faq-q" data-hc-faq="${idx}">
               <span>${highlight(f.q)}</span>
-              <span class="material-icons hc-faq-chev">expand_more</span>
+              <span class="material-symbols-outlined hc-faq-chev">expand_more</span>
             </button>
             <div class="hc-faq-a">${highlight(f.a)}</div>
           </div>`;
@@ -101,17 +101,17 @@ function paint() {
         </div>
         <div class="hc-support-cards">
           <button type="button" class="hc-support-card" data-hc-action="chat">
-            <span class="hc-support-ic"><span class="material-icons">forum</span></span>
+            <span class="hc-support-ic"><span class="material-symbols-outlined">forum</span></span>
             <span class="hc-support-title">Chat with WISEai</span>
             <span class="hc-support-desc">Instant answers from the assistant</span>
           </button>
           <button type="button" class="hc-support-card" data-hc-action="email">
-            <span class="hc-support-ic"><span class="material-icons">mail</span></span>
+            <span class="hc-support-ic"><span class="material-symbols-outlined">mail</span></span>
             <span class="hc-support-title">Email support</span>
             <span class="hc-support-desc">support@wisecode.ai</span>
           </button>
           <button type="button" class="hc-support-card" data-hc-action="docs">
-            <span class="hc-support-ic"><span class="material-icons">menu_book</span></span>
+            <span class="hc-support-ic"><span class="material-symbols-outlined">menu_book</span></span>
             <span class="hc-support-title">Read the docs</span>
             <span class="hc-support-desc">Guides and API reference</span>
           </button>

@@ -113,10 +113,23 @@
     var aRect = anchor.getBoundingClientRect();
     var w = el.offsetWidth || 0;
     var h = el.offsetHeight || 0;
+    // Desired position in VIEWPORT space: the anchor's live position plus the
+    // offset the popover had from it when floated.
     var left = clamp(aRect.left + el.__plDX, 8, window.innerWidth - w - 8);
     var top = clamp(aRect.top + el.__plDY, 8, window.innerHeight - h - 8);
-    el.style.left = Math.round(left) + 'px';
-    el.style.top = Math.round(top) + 'px';
+    // A `position:fixed` box is normally viewport-relative — UNLESS an ancestor
+    // establishes a containing block (any non-`none` transform/filter/perspective/
+    // will-change/contain). Several surfaces have exactly that: e.g. the chat card
+    // keeps a settled `transform` from its `both`-filled entry animation, so left/
+    // top would resolve against that card's box and the menu would land off its
+    // anchor. Probe where the element actually sits at (0,0) and offset by that
+    // origin, so the final coordinates are truly viewport-relative no matter what
+    // the containing block turns out to be (origin is 0,0 when there's none).
+    el.style.left = '0px';
+    el.style.top = '0px';
+    var origin = el.getBoundingClientRect();
+    el.style.left = Math.round(left - origin.left) + 'px';
+    el.style.top = Math.round(top - origin.top) + 'px';
   }
 
   function unfloatEl(el) {

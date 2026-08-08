@@ -36,7 +36,7 @@
     ];
     var nav = items.map(function (it) {
       return '<a class="menu-nav-item' + (it.key === active ? ' is-active' : '') + '" href="' + it.href + '" title="' + it.label + '">' +
-        '<span class="menu-nav-icon"><span class="material-icons">' + it.icon + '</span></span>' +
+        '<span class="menu-nav-icon"><span class="material-symbols-outlined">' + it.icon + '</span></span>' +
         '<span class="menu-nav-label">' + it.label + '</span></a>';
     }).join('');
     /* The logo points at the marketing home for signed-out visitors and at the
@@ -52,7 +52,7 @@
             '</a>' +
           '</div>' +
           '<button type="button" id="auth-menu-toggle" class="topbar-menu-toggle" aria-pressed="false" title="Collapse menu to icons" aria-label="Collapse menu to icons">' +
-            '<span class="material-icons">chevron_left</span>' +
+            '<span class="material-symbols-outlined">chevron_left</span>' +
           '</button>' +
         '</div>' +
         '<div class="menu-panel-body"></div>' +
@@ -115,7 +115,7 @@
       var label = railed ? 'Expand menu' : 'Collapse menu to icons';
       btn.setAttribute('aria-label', label);
       btn.setAttribute('title', label);
-      var icon = btn.querySelector('.material-icons');
+      var icon = btn.querySelector('.material-symbols-outlined');
       if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
     };
 
@@ -212,7 +212,7 @@
         if (!input) return;
         var show = input.type === 'password';
         input.type = show ? 'text' : 'password';
-        var ic = btn.querySelector('.material-icons');
+        var ic = btn.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = show ? 'visibility_off' : 'visibility';
         btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
       });

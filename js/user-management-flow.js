@@ -116,7 +116,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -157,7 +157,7 @@ function statsHtml() {
     return `
       <button type="button" class="adm-stat${s.accent ? ' ' + s.accent : ''}${active ? ' is-active' : ''}" data-adm-stat="${esc(s.id)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="adm-stat-num">${statCount(s)}</span>
-        <span class="adm-stat-label"><span class="material-icons">${esc(s.icon)}</span>${esc(s.label)}</span>
+        <span class="adm-stat-label"><span class="material-symbols-outlined">${esc(s.icon)}</span>${esc(s.label)}</span>
       </button>`;
   }).join('');
 }
@@ -167,11 +167,11 @@ function rowHtml(u) {
     ? `<span class="adm-chip ${ROLE_CHIP[u.role]}">${esc(u.role)}</span>`
     : `<span class="adm-chip adm-chip--outline">No roles</span>`;
   const emailStatus = u.email_status === 'confirmed'
-    ? '<span class="adm-chip adm-chip--green"><span class="material-icons">check_circle</span>Confirmed</span>'
-    : '<span class="adm-chip adm-chip--amber"><span class="material-icons">hourglass_top</span>Pending</span>';
+    ? '<span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check_circle</span>Confirmed</span>'
+    : '<span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span>';
   const lockout = u.lockout === 'active'
-    ? '<span class="adm-chip adm-chip--green"><span class="material-icons">lock_open</span>Active</span>'
-    : '<span class="adm-chip adm-chip--red"><span class="material-icons">lock</span>Locked</span>';
+    ? '<span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">lock_open</span>Active</span>'
+    : '<span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">lock</span>Locked</span>';
   const mark = betaMark(u.beta);
   return `
     <div class="adm-trow" data-adm-row="${esc(u.email)}">
@@ -190,7 +190,7 @@ function rowHtml(u) {
       <span class="adm-td">${emailStatus}</span>
       <span class="adm-td">${lockout}</span>
       <span class="adm-td adm-td--num${u.orgs ? ' is-hot' : ''}">${u.orgs}</span>
-      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Edit user" data-adm-action="edit" data-adm-user="${esc(u.email)}"><span class="material-icons">edit</span></button></span></span>
+      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Edit user" data-adm-action="edit" data-adm-user="${esc(u.email)}"><span class="material-symbols-outlined">edit</span></button></span></span>
     </div>`;
 }
 
@@ -241,7 +241,7 @@ function paint() {
             <p class="adm-lede" data-adm-count>Showing ${USERS.length} of 40 users · 3 roles</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="new-user"><span class="material-icons">person_add</span>New User</button>
+            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="new-user"><span class="material-symbols-outlined">person_add</span>New User</button>
           </div>
         </div>
       </header>
@@ -250,9 +250,9 @@ function paint() {
 
       <div class="adm-toolbar">
         <div class="adm-search-inline has-filter">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search users…" aria-label="Search users" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-icons">tune</span></button>
+          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
       </div>

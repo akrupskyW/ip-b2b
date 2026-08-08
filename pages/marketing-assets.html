@@ -21,7 +21,6 @@
       }
     })();
   </script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -84,9 +83,9 @@
     }
     .ma-seg-btn:hover:not(.is-active) { color: var(--text); }
     .ma-seg-btn.is-active { background: var(--primary); color: #fff; }
-    .ma-seg-btn .material-icons { font-size: 16px; transition: transform 0.2s ease; }
+    .ma-seg-btn .material-symbols-outlined { font-size: 16px; transition: transform 0.2s ease; }
     .ma-seg-btn--icon { padding: 6px 10px; }
-    .ma-seg-btn--icon.is-desc .material-icons { transform: rotate(180deg); }
+    .ma-seg-btn--icon.is-desc .material-symbols-outlined { transform: rotate(180deg); }
 
     /* ---------- Toolbar (search + filters) ----------
        A search field that fills the row with the sort/expand filters docked to
@@ -98,7 +97,7 @@
       margin-bottom: 14px;
     }
     .ma-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 320px; min-width: 240px; }
-    .ma-search-inline > .material-icons {
+    .ma-search-inline > .material-symbols-outlined {
       position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
       font-size: 18px; color: var(--text-subtle); pointer-events: none;
     }
@@ -123,12 +122,12 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
     .ma-search-clear:hover { background: var(--surface-3); color: var(--text); }
-    .ma-search-clear .material-icons { font-size: 16px; }
+    .ma-search-clear .material-symbols-outlined { font-size: 16px; }
     .ma-searchbar-meta {
       display: flex; align-items: center; gap: 6px;
       margin: -4px 2px 12px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted);
     }
-    .ma-searchbar-meta .material-icons { font-size: 16px; color: var(--text-subtle); }
+    .ma-searchbar-meta .material-symbols-outlined { font-size: 16px; color: var(--text-subtle); }
 
     /* Matched text in a name during search. */
     .ma-hl {
@@ -150,7 +149,7 @@
       background: color-mix(in srgb, var(--primary) 20%, var(--surface-2));
       border-color: var(--primary);
     }
-    .ma-do-chip .material-icons { color: var(--primary); }
+    .ma-do-chip .material-symbols-outlined { color: var(--primary); }
     html.dark .ma-do-chip { background: color-mix(in srgb, var(--primary) 26%, transparent); border-color: var(--primary); }
 
     /* ---------- Score cards (file-type summary + filter) ----------
@@ -241,14 +240,14 @@
        is chosen from the row's own label (a shield, an envelope, a package…),
        tinted by kind so the column scans quickly. */
     .ma-ic { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; }
-    .ma-ic .material-icons { font-size: 24px; }
-    .ma-ic--folder .material-icons { color: var(--primary); }
-    html.dark .ma-ic--folder .material-icons { color: var(--primary-bright, #8B9FAF); }
-    .ma-ic--pdf .material-icons { color: var(--sec-red); }
-    .ma-ic--img .material-icons { color: var(--sec-green); }
-    .ma-ic--vector .material-icons { color: var(--ter-amber-text); }
-    html.dark .ma-ic--vector .material-icons { color: var(--ter-amber); }
-    .ma-ic--doc .material-icons { color: var(--text-subtle); }
+    .ma-ic .material-symbols-outlined { font-size: 24px; }
+    .ma-ic--folder .material-symbols-outlined { color: var(--primary); }
+    html.dark .ma-ic--folder .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .ma-ic--pdf .material-symbols-outlined { color: var(--sec-red); }
+    .ma-ic--img .material-symbols-outlined { color: var(--sec-green); }
+    .ma-ic--vector .material-symbols-outlined { color: var(--ter-amber-text); }
+    html.dark .ma-ic--vector .material-symbols-outlined { color: var(--ter-amber); }
+    .ma-ic--doc .material-symbols-outlined { color: var(--text-subtle); }
 
     /* Name + meta cell */
     .ma-name { font-size: 0.9rem; font-weight: 600; color: var(--text); line-height: 1.25; }
@@ -271,7 +270,7 @@
       width: 30px; height: 30px; color: var(--text-subtle);
       transition: transform 0.2s ease;
     }
-    .ma-chevron .material-icons { font-size: 22px; }
+    .ma-chevron .material-symbols-outlined { font-size: 22px; }
     .ma-row--folder.is-open .ma-chevron { transform: rotate(90deg); color: var(--primary); }
     html.dark .ma-row--folder.is-open .ma-chevron { color: var(--primary-bright, #8B9FAF); }
 
@@ -283,7 +282,7 @@
       font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer;
       border: 1px solid transparent; transition: filter 0.15s ease, background 0.15s ease, transform 0.1s ease;
     }
-    .ma-btn .material-icons { font-size: 16px; }
+    .ma-btn .material-symbols-outlined { font-size: 16px; }
     .ma-btn:active { transform: translateY(1px); }
     .ma-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
     .ma-btn--primary:hover { filter: brightness(1.08); }
@@ -339,8 +338,8 @@
       background: var(--surface); border: 1px solid var(--border-strong);
       box-shadow: var(--shadow-2);
     }
-    .ma-modal-preview-tile .material-icons { font-size: 46px; color: var(--primary); }
-    html.dark .ma-modal-preview-tile .material-icons { color: var(--primary-bright, #8B9FAF); }
+    .ma-modal-preview-tile .material-symbols-outlined { font-size: 46px; color: var(--primary); }
+    html.dark .ma-modal-preview-tile .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
     .ma-modal-preview-name { font-size: 0.82rem; font-weight: 600; color: var(--text); text-align: center; word-break: break-word; }
     .ma-modal-foot {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -362,13 +361,13 @@
       opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease;
     }
     .ma-toast.is-in { opacity: 1; transform: none; }
-    .ma-toast .material-icons { font-size: 17px; }
+    .ma-toast .material-symbols-outlined { font-size: 17px; }
 
     @media (max-width: 720px) {
       .ma-head { padding: 20px 20px 0; }
       .ma-body { padding: 16px 20px 48px; }
       .ma-head-title { font-size: var(--module-title-size, 1.2rem); }
-      .ma-actions .ma-btn span:not(.material-icons) { display: none; }
+      .ma-actions .ma-btn span:not(.material-symbols-outlined) { display: none; }
       .ma-actions .ma-btn { padding: 0 12px; }
     }
   </style>

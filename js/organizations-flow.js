@@ -127,7 +127,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -137,8 +137,8 @@ function toast(msg, icon = 'check_circle') {
 function metricsHtml() {
   return COUNTS.map((c) => `
     <div class="adm-metric${c.accent ? ' adm-metric--accent' : ''}" draggable="true" data-adm-metric="${esc(c.id)}">
-      <span class="adm-metric-grip" aria-hidden="true"><span class="material-icons">drag_indicator</span></span>
-      <span class="adm-metric-top"><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</span>
+      <span class="adm-metric-grip" aria-hidden="true"><span class="material-symbols-outlined">drag_indicator</span></span>
+      <span class="adm-metric-top"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span>
       <span class="adm-metric-num">${c.num}</span>
       <span class="adm-metric-sub">${esc(c.sub)}</span>
     </div>`).join('');
@@ -147,7 +147,7 @@ function metricsHtml() {
 function statsHtml() {
   return STATUSES.map((s) => {
     const active = s.key === activeStatus;
-    const icon = s.icon ? `<span class="material-icons">${esc(s.icon)}</span>` : '';
+    const icon = s.icon ? `<span class="material-symbols-outlined">${esc(s.icon)}</span>` : '';
     return `
       <button type="button" class="adm-stat${s.accent ? ' ' + s.accent : ''}${active ? ' is-active' : ''}" data-adm-filter="${s.key == null ? '' : esc(s.key)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="adm-stat-num">${s.num}</span>
@@ -169,9 +169,9 @@ function theadHtml() {
 
 function rowMenuHtml(o) {
   const items = ROW_ACTIONS.map((a) =>
-    `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(o.name)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+    `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(o.name)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
-  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function rowHtml(o) {
@@ -182,7 +182,7 @@ function rowHtml(o) {
   return `
     <div class="adm-trow" data-adm-row="${esc(o.name)}" data-adm-status="${esc(o.status)}">
       <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">${esc(initials(o.name))}</span><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(o.name)}</span><span class="adm-idcell-sub">${esc(o.type)}</span></span></span></span>
-      <span class="adm-td"><span class="adm-chip ${chip.cls}"><span class="material-icons">${esc(chip.icon)}</span>${esc(chip.label)}</span></span>
+      <span class="adm-td"><span class="adm-chip ${chip.cls}"><span class="material-symbols-outlined">${esc(chip.icon)}</span>${esc(chip.label)}</span></span>
       <span class="adm-td" style="font-size:0.8rem">${joined}</span>
       <span class="adm-td adm-td--num${o.users ? ' is-hot' : ''}">${o.users}</span>
       <span class="adm-td adm-td--num${o.products ? ' is-hot' : ''}">${o.products}</span>
@@ -214,9 +214,9 @@ function paint() {
             <p class="adm-lede">Create, edit and manage customer organizations.</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-icons">download</span>Export CSV</button>
-            <a class="adm-btn adm-btn--ghost" href="quick-invite.html"><span class="material-icons">bolt</span>Quick Invite</a>
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="add-org"><span class="material-icons">add</span>Add Organization</button>
+            <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
+            <a class="adm-btn adm-btn--ghost" href="quick-invite.html"><span class="material-symbols-outlined">bolt</span>Quick Invite</a>
+            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="add-org"><span class="material-symbols-outlined">add</span>Add Organization</button>
           </div>
         </div>
       </header>
@@ -225,9 +225,9 @@ function paint() {
 
       <div class="adm-toolbar" style="margin-top:18px">
         <div class="adm-search-inline has-filter">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search organization, brand, contact, or email…" aria-label="Search organizations" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter" data-adm-action="filters" title="Filters" aria-label="Filters"><span class="material-icons">filter_list</span></button>
+          <button type="button" class="adm-search-filter" data-adm-action="filters" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">filter_list</span></button>
         </div>
       </div>
 

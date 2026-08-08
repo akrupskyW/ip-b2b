@@ -17,7 +17,6 @@
       } catch (e) { document.documentElement.classList.add('dark'); }
     })();
   </script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,7 +31,7 @@
 
     .al-wrap { padding: 26px 40px 56px; max-width: 860px; }
     .al-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; }
-    .al-breadcrumb .material-icons { font-size: 16px; opacity: 0.6; }
+    .al-breadcrumb .material-symbols-outlined { font-size: 16px; opacity: 0.6; }
     .al-breadcrumb-here { color: var(--text); }
     .al-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .al-title { font-family: var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
@@ -55,7 +54,7 @@
     html.dark .al-item:hover { background: rgba(255,255,255,0.04); }
     .al-item.is-unread { background: color-mix(in srgb, var(--primary) 5%, transparent); }
     .al-item-ic { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--ic, var(--primary)); background: color-mix(in srgb, var(--ic, var(--primary)) 14%, transparent); }
-    .al-item-ic .material-icons { font-size: 21px; }
+    .al-item-ic .material-symbols-outlined { font-size: 21px; }
     .al-item-body { flex: 1; min-width: 0; }
     .al-item-title { font-size: 0.9rem; font-weight: 600; color: var(--text); }
     .al-item.is-unread .al-item-title { font-weight: 700; }
@@ -64,23 +63,23 @@
     .al-item-x { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--text-subtle); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease, background 0.15s ease; flex-shrink: 0; }
     .al-item:hover .al-item-x { opacity: 1; }
     .al-item-x:hover { background: var(--surface-3, var(--surface-2)); color: var(--text); }
-    .al-item-x .material-icons { font-size: 17px; }
+    .al-item-x .material-symbols-outlined { font-size: 17px; }
 
     /* Buttons */
     .al-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
-    .al-btn .material-icons { font-size: 18px; }
+    .al-btn .material-symbols-outlined { font-size: 18px; }
     .al-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
     .al-btn--ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
     html.dark .al-btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
     .al-btn:disabled { opacity: 0.45; cursor: default; }
 
     .al-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
-    .al-empty .material-icons { font-size: 44px; color: var(--text-subtle); }
+    .al-empty .material-symbols-outlined { font-size: 44px; color: var(--text-subtle); }
 
     #al-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
     .al-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
     .al-toast.is-in { opacity: 1; transform: none; }
-    .al-toast .material-icons { font-size: 17px; }
+    .al-toast .material-symbols-outlined { font-size: 17px; }
 
     @media (max-width: 720px) {
       .al-wrap { padding: 20px 20px 48px; }

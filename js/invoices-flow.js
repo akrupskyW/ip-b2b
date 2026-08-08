@@ -78,7 +78,7 @@ function toast(msg, icon = 'check_circle') {
   }
   const t = document.createElement('div');
   t.className = 'inv-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -122,23 +122,23 @@ function actionListFor(inv) {
 /* Inline button row (shown on a wide board). */
 function actionsFor(inv) {
   return actionListFor(inv).map((a) =>
-    `<button type="button" class="inv-btn inv-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+    `<button type="button" class="inv-btn inv-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
 }
 
 /* Three-dot menu + popover (shown when the board is too narrow for the row). */
 function menuFor(inv) {
   const items = actionListFor(inv).map((a) =>
-    `<button type="button" class="inv-rowmenu-item inv-rowmenu-item--${esc(a.variant)}" role="menuitem" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-icons">${esc(a.icon)}</span>${esc(a.label)}</button>`
+    `<button type="button" class="inv-rowmenu-item inv-rowmenu-item--${esc(a.variant)}" role="menuitem" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
-  return `<div class="inv-rowmenu"><button type="button" class="inv-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-icons">more_vert</span></button><div class="inv-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+  return `<div class="inv-rowmenu"><button type="button" class="inv-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="inv-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function rowHtml(inv) {
   const m = STATUS_META[inv.status];
   return `
     <div class="inv-trow" data-inv-row="${esc(inv.id)}" data-inv-status="${esc(inv.status)}">
-      <span class="inv-td"><span class="inv-meta"><span class="inv-date">${esc(inv.date)}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-icons">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
+      <span class="inv-td"><span class="inv-meta"><span class="inv-date">${esc(inv.date)}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-symbols-outlined">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
       <span class="inv-td inv-desc"><span class="inv-amount">${esc(inv.amount)}</span><span class="inv-desc-name">${esc(inv.desc)}</span><span class="inv-desc-sub">${esc(inv.sub)}</span></span>
       <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span>${menuFor(inv)}</span>
     </div>`;
@@ -215,7 +215,7 @@ function statsHtml() {
     const isAll = f.status === null;
     const active = isAll ? activeStatus === null : activeStatus === f.status;
     const accent = f.accent ? ` ${f.accent}` : '';
-    const icon = f.icon ? `<span class="material-icons">${esc(f.icon)}</span>` : '';
+    const icon = f.icon ? `<span class="material-symbols-outlined">${esc(f.icon)}</span>` : '';
     return `
       <button type="button" class="inv-stat${accent}${active ? ' is-active' : ''}" data-inv-filter="${f.status == null ? '' : esc(f.status)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="inv-stat-num">${countFor(f.status)}</span>
@@ -235,10 +235,10 @@ function paint() {
 
       <div class="inv-toolbar">
         <div class="inv-search-inline">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="inv-search" data-inv-search placeholder="Search by description or invoice #" aria-label="Search invoices" value="${esc(query)}" />
         </div>
-        <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-icons">download</span>Download all</button>
+        <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
       </div>
 
       <div class="inv-card inv-board">

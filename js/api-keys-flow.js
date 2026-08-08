@@ -41,7 +41,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ak-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'ak-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -62,13 +62,13 @@ function paint() {
   const active = KEYS.filter((k) => k.status !== 'revoked').length;
   hostEl.innerHTML = `
     <div class="ak-wrap">
-      <div class="ak-breadcrumb"><span>Account</span><span class="material-icons">chevron_right</span><span class="ak-breadcrumb-here">API keys</span></div>
+      <div class="ak-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="ak-breadcrumb-here">API keys</span></div>
       <div class="ak-head-row">
         <div>
           <h1 class="ak-title">API keys</h1>
           <p class="ak-lede">Authenticate requests to the WISE API. Keep your secret keys safe — never expose them in client-side code.</p>
         </div>
-        <button type="button" class="ak-btn ak-btn--primary" data-ak-action="create"><span class="material-icons">add</span>Create key</button>
+        <button type="button" class="ak-btn ak-btn--primary" data-ak-action="create"><span class="material-symbols-outlined">add</span>Create key</button>
       </div>
 
       <div class="ak-stats" data-ak-anchor="usage">
@@ -80,18 +80,18 @@ function paint() {
 
       ${justCreated ? `
       <div class="ak-newkey" role="alert">
-        <span class="material-icons">vpn_key</span>
+        <span class="material-symbols-outlined">vpn_key</span>
         <div class="ak-newkey-body">
           <div class="ak-newkey-title">Your new secret key — copy it now</div>
           <div class="ak-newkey-sub">For security this key is shown only once. Store it somewhere safe.</div>
-          <div class="ak-newkey-code"><code>${esc(justCreated)}</code><button type="button" class="ak-icon-btn" data-ak-action="copy" data-val="${esc(justCreated)}" title="Copy"><span class="material-icons">content_copy</span></button></div>
+          <div class="ak-newkey-code"><code>${esc(justCreated)}</code><button type="button" class="ak-icon-btn" data-ak-action="copy" data-val="${esc(justCreated)}" title="Copy"><span class="material-symbols-outlined">content_copy</span></button></div>
         </div>
-        <button type="button" class="ak-icon-btn" data-ak-action="dismiss_new" title="Dismiss"><span class="material-icons">close</span></button>
+        <button type="button" class="ak-icon-btn" data-ak-action="dismiss_new" title="Dismiss"><span class="material-symbols-outlined">close</span></button>
       </div>` : ''}
 
       <div class="ak-toolbar">
         <div class="ak-toolbar-title">Your keys</div>
-        <button type="button" class="ak-btn ak-btn--ghost" data-ak-action="toggle_reveal"><span class="material-icons">${revealAll ? 'visibility_off' : 'visibility'}</span>${revealAll ? 'Hide keys' : 'Reveal keys'}</button>
+        <button type="button" class="ak-btn ak-btn--ghost" data-ak-action="toggle_reveal"><span class="material-symbols-outlined">${revealAll ? 'visibility_off' : 'visibility'}</span>${revealAll ? 'Hide keys' : 'Reveal keys'}</button>
       </div>
 
       <div class="ak-card">
@@ -101,7 +101,7 @@ function paint() {
             ${KEYS.map((k) => `
               <tr class="ak-row${k.status === 'revoked' ? ' is-revoked' : ''}">
                 <td><div class="ak-name">${esc(k.name)}</div><div class="ak-meta">Created ${esc(k.created)}</div></td>
-                <td><code class="ak-key">${esc(revealAll ? k.full : mask(k.full))}</code>${k.status !== 'revoked' ? `<button type="button" class="ak-icon-btn" data-ak-action="copy" data-val="${esc(k.full)}" title="Copy"><span class="material-icons">content_copy</span></button>` : ''}</td>
+                <td><code class="ak-key">${esc(revealAll ? k.full : mask(k.full))}</code>${k.status !== 'revoked' ? `<button type="button" class="ak-icon-btn" data-ak-action="copy" data-val="${esc(k.full)}" title="Copy"><span class="material-symbols-outlined">content_copy</span></button>` : ''}</td>
                 <td><span class="ak-scope">${esc(k.scope)}</span></td>
                 <td class="ak-muted">${esc(k.lastUsed)}</td>
                 <td>${statusPill(k.status)}</td>
@@ -112,7 +112,7 @@ function paint() {
       </div>
 
       <div class="ak-docs-cta">
-        <span class="material-icons">menu_book</span>
+        <span class="material-symbols-outlined">menu_book</span>
         <div class="ak-docs-body"><strong>Building an integration?</strong> The API reference covers authentication, endpoints, and rate limits.</div>
         <button type="button" class="ak-btn ak-btn--ghost" data-ak-action="open_docs">Open API reference</button>
       </div>

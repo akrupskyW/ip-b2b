@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISEai — Ask your verified food data anything</title>
   <script src="../js/text-size-fouc.js"></script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -61,7 +60,16 @@
          than the nav (and, in sticky mode, visibly off). Zero both so the chat
          (and every module) spans the same top-to-bottom band as the nav. */
       margin-top: 0;
-      padding: 0 2px;
+      /* overflow-x:auto (needed for horizontal scroll when panes break out)
+         forces overflow-y to compute as non-visible, so overflow-y:hidden
+         clips the module cards' drop-shadow flush at the row's bottom edge —
+         leaving the body's 12px bottom inset as bare empty space. Fix it the
+         same way product-portfolio does: keep a bottom SHADOW GUTTER inside the
+         row (padding-bottom) so the shadow renders into padding the clip box
+         still shows, then pull the row back down by the same amount (negative
+         margin) so the panes still fill the nav column's full height. */
+      padding: 0 2px var(--modules-bottom-pad);
+      margin-bottom: calc(-1 * var(--modules-bottom-pad));
     }
 
     /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
@@ -69,7 +77,10 @@
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
-    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+    /* Drop the owl lower than the shared 7px nudge so it lines up horizontally
+       with the headlines of the modules to the right (their heads pad the title
+       ~18px from the top, so the centered logo otherwise reads too high). */
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
 
     /* ── Center chat column (the ONE shared WISEai chat, carded) ──
        Default: the chat fills the whole modules row (full-screen, single pane).
@@ -206,7 +217,7 @@
       color: var(--text);
       align-items: center;
     }
-    #modules-row .wch-sidebar.wch-docked .wch-head-title .material-icons { display: none; }
+    #modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined { display: none; }
     /* Header controls cluster (three-dot + width) sits top-right, like the panes. */
     #modules-row .wch-sidebar.wch-docked .wch-controls { margin-top: 1px; }
 
@@ -290,7 +301,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center; height: 100%; gap: 12px; color: var(--text-muted); padding: 24px;
     }
-    .wa-empty .material-icons { font-size: 34px; color: var(--text-subtle); }
+    .wa-empty .material-symbols-outlined { font-size: 34px; color: var(--text-subtle); }
     .wa-empty-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 15px; color: var(--text); }
     .wa-empty-sub { font-size: 12.5px; line-height: 1.5; max-width: 300px; }
 
@@ -342,7 +353,7 @@
     }
     .wa-pane-nav-arrow:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--surface); }
     .wa-pane-nav-arrow:disabled { opacity: .38; cursor: default; }
-    .wa-pane-nav-arrow .material-icons { font-size: 18px; }
+    .wa-pane-nav-arrow .material-symbols-outlined { font-size: 18px; }
     /* Keep the very first thumbnail off the pane's left border by a hair without
        losing the edge-to-edge scroll (the strip still begins at the module edge). */
     .wa-pane-thumb-item:first-child { margin-left: 16px; }
@@ -403,8 +414,8 @@
     }
 
     .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
-    .wa-sec-title .material-icons { font-size: 18px; color: var(--primary); }
-    html.dark .wa-sec-title .material-icons { color: var(--primary-bright, #8B9FAF); }
+    .wa-sec-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+    html.dark .wa-sec-title .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
     .wa-caption { font-size: 11.5px; color: var(--text-subtle); margin: 0 0 12px; font-style: italic; }
 
     /* ── Result "table" rows (head + pager live under .wa-tbl below) ── */
@@ -424,7 +435,7 @@
     .wa-cat { font-size: 11px; color: var(--text-subtle); }
     .wa-ing { font-size: 11px; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .wa-table-foot { font-size: 11.5px; color: var(--text-subtle); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
-    .wa-table-foot .material-icons { font-size: 14px; }
+    .wa-table-foot .material-symbols-outlined { font-size: 14px; }
 
     /* ═══ Result-set treatment ═══
        The result's name now lives in the pane header (see .wa-pane-head), so a
@@ -452,7 +463,7 @@
     /* ── Toolbar + inline search ── */
     .wa-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
     .wa-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
-    .wa-search-inline > .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .wa-search-inline > .material-symbols-outlined { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
     .wa-search { width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px 0 42px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 9999px; outline: none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
     html.dark .wa-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .wa-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
@@ -490,7 +501,7 @@
     html.dark .wa-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
     .wa-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .wa-thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
-    .wa-thumb-fallback .material-icons { font-size: 19px; }
+    .wa-thumb-fallback .material-symbols-outlined { font-size: 19px; }
     .wa-prod-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
     .wa-prod-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.32; }
     .wa-prod-brand { font-size: 11px; color: var(--text-subtle); }
@@ -510,7 +521,7 @@
     .wa-pager[hidden] { display: none; }
     .wa-pager-range { font-size: 12px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
     .wa-loadmore { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; background: transparent; border: none; color: var(--primary); font-family: inherit; font-size: 12px; font-weight: 700; }
-    .wa-loadmore .material-icons { font-size: 16px; }
+    .wa-loadmore .material-symbols-outlined { font-size: 16px; }
     .wa-loadmore[hidden] { display: none; }
 
     /* ── Food-detail hero (failed-lookup notice state) ──
@@ -524,7 +535,7 @@
     .wa-dhero-thumb .wa-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .wa-dhero-thumb .wa-thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: var(--primary-soft); color: var(--primary); }
     html.dark .wa-dhero-thumb .wa-thumb-fallback { color: var(--primary-bright, #8B9FAF); }
-    .wa-dhero-thumb .wa-thumb-fallback .material-icons { font-size: 30px; }
+    .wa-dhero-thumb .wa-thumb-fallback .material-symbols-outlined { font-size: 30px; }
     .wa-dhero-info { flex: 1 1 auto; min-width: 0; }
     .wa-dhero-name { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 18px; line-height: 1.22; color: var(--text); letter-spacing: -.01em; }
     .wa-dhero-brand { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 6px; }
@@ -532,7 +543,7 @@
     .wa-dhero-score-n { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 46px; line-height: .9; color: var(--sec-red-text); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
     .wa-dhero-score-l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-subtle); margin-top: 6px; }
     .wa-notice { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: 11px; font-size: 12px; line-height: 1.45; margin-bottom: 14px; background: var(--ter-amber-10); border: 1px solid color-mix(in srgb, var(--ter-amber) 34%, transparent); color: var(--ter-amber-text); }
-    .wa-notice .material-icons { font-size: 17px; flex: 0 0 auto; margin-top: 1px; }
+    .wa-notice .material-symbols-outlined { font-size: 17px; flex: 0 0 auto; margin-top: 1px; }
     .wa-detail-sub { font-size: 12px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
     .wa-chiplist { display: flex; flex-wrap: wrap; gap: 6px; }
     .wa-ing-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 26%, transparent); color: var(--sec-red-text); }
@@ -688,7 +699,7 @@
     }
     .wa-manifest-btn:hover { background: var(--surface-2); color: var(--text); }
     html.dark .wa-manifest-btn:hover { background: rgba(255,255,255,0.06); }
-    .wa-manifest-btn .material-icons { font-size: 17px; }
+    .wa-manifest-btn .material-symbols-outlined { font-size: 17px; }
 
     .wa-manifest-section { min-height: 0; display: flex; flex-direction: column; }
     .wa-manifest-section[hidden] { display: none; }
@@ -714,7 +725,7 @@
       background: var(--primary-soft); color: var(--primary); overflow: hidden;
     }
     html.dark .wa-manifest-ic { color: var(--primary-bright, #8B9FAF); }
-    .wa-manifest-ic .material-icons { font-size: 16px; }
+    .wa-manifest-ic .material-symbols-outlined { font-size: 16px; }
     .wa-manifest-ic img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
     .wa-manifest-name { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -738,7 +749,7 @@
     .wa-manifest-rail-ic:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.14); }
     .wa-manifest-rail-ic--static { cursor: default; background: var(--surface-2); color: var(--text-muted); }
     html.dark .wa-manifest-rail-ic--static { background: rgba(255,255,255,0.06); }
-    .wa-manifest-rail-ic .material-icons { font-size: 14px; }
+    .wa-manifest-rail-ic .material-symbols-outlined { font-size: 14px; }
     .wa-manifest-rail-ic img { width: 14px; height: 14px; object-fit: contain; border-radius: 50%; }
     .wa-manifest-rail-div { width: 18px; height: 1px; background: var(--border); margin: 2px 0; flex: 0 0 auto; }
 
@@ -765,7 +776,7 @@
     html.dark .wa-manifest-reopen { color: var(--primary-bright, #8B9FAF); box-shadow: 0 10px 26px rgba(0,0,0,0.5); }
     .wa-manifest-reopen:hover { transform: translateY(-1px); }
     .wa-manifest.is-hidden .wa-manifest-reopen { display: inline-flex; opacity: 1; transform: none; }
-    .wa-manifest-reopen .material-icons { font-size: 20px; }
+    .wa-manifest-reopen .material-symbols-outlined { font-size: 20px; }
     .wa-manifest-reopen-badge {
       position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px;
       border-radius: 9999px; background: var(--primary); color: #fff; font-size: 9.5px; font-weight: 800;
@@ -794,7 +805,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-icons">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -809,8 +820,11 @@
       </div>
     </div>
 
-    <!-- Chat + result panes share the shell's "modules" grid area -->
-    <div id="modules-row">
+    <!-- Chat + result panes share the shell's "modules" grid area.
+         `modules-sticky` is permanent here: the docked History (left) and Turns
+         (right) modules ONLY ever render as tucked "sticky" drawers behind the
+         chat — the old free-standing "breakout" presentation is gone. -->
+    <div id="modules-row" class="modules-sticky">
       <!-- 1 · WISEai chat — the ONE shared WISEai chat module (js/wiseai-chat.js). -->
       <main class="wa-chat" id="wa-chat" data-pr-fill></main>
 
@@ -823,12 +837,12 @@
           </div>
           <div class="wa-pane-controls">
             <div class="panel-more-wrap" data-pane-more="results">
-              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-icons topbar-menu-icon">download</span><span>Export</span></button>
-                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close pane</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" data-pane-width="results" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Results pane width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -847,12 +861,12 @@
           </div>
           <div class="wa-pane-controls">
             <div class="panel-more-wrap" data-pane-more="visuals">
-              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>
+              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-icons topbar-menu-icon">download</span><span>Export</span></button>
-                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-icons topbar-menu-icon">share</span><span>Share</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close pane</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" data-pane-width="visuals" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Visuals pane width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -1109,7 +1123,7 @@
         if (!el) return '';
         if (stripIcons) {
           const c = el.cloneNode(true);
-          c.querySelectorAll('.material-icons, .material-symbols-outlined').forEach((n) => n.remove());
+          c.querySelectorAll('.material-symbols-outlined, .material-symbols-outlined').forEach((n) => n.remove());
           return c.textContent.trim();
         }
         return el.textContent.trim();
@@ -1131,7 +1145,7 @@
       const btn = nav.querySelector('[data-nav="min"]');
       if (!btn) return;
       const min = !!paneMin[which];
-      const ic = btn.querySelector('.material-icons');
+      const ic = btn.querySelector('.material-symbols-outlined');
       if (ic) ic.textContent = min ? 'open_in_full' : 'close_fullscreen';
       btn.title = min ? 'Expand output cards' : 'Minimize to chips';
       btn.setAttribute('aria-label', btn.title);
@@ -1210,9 +1224,9 @@
         `<div class="wa-pane-nav-ctrls">
           <span class="wa-pane-nav-count" data-nav-count aria-live="polite"></span>
           <span class="wa-pane-nav-btns">
-            <button type="button" class="wa-pane-nav-arrow" data-nav="min" aria-label="Minimize to chips"><span class="material-icons">close_fullscreen</span></button>
-            <button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-icons">chevron_left</span></button>
-            <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-icons">chevron_right</span></button>
+            <button type="button" class="wa-pane-nav-arrow" data-nav="min" aria-label="Minimize to chips"><span class="material-symbols-outlined">close_fullscreen</span></button>
+            <button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
+            <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>
           </span>
         </div>
         <div class="wa-pane-nav-track" data-nav-track role="tablist">${thumbs}</div>`;
@@ -1481,7 +1495,7 @@
       'portfolio/dark_cherry_brownies.png', 'portfolio/granola.jpg',
     ];
     function thumb(imgRel, fallbackIcon) {
-      return `<span class="wa-thumb"><img class="wa-thumb-img" src="${IMG}${imgRel}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">${fallbackIcon}</span></span></span>`;
+      return `<span class="wa-thumb"><img class="wa-thumb-img" src="${IMG}${imgRel}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-symbols-outlined">${fallbackIcon}</span></span></span>`;
     }
 
     /* Scorecards. A card with a `sort` descriptor renders as a button that sorts
@@ -1491,14 +1505,14 @@
         const tone = c.tone ? ' wa-stat--' + c.tone : '';
         const inner = `<span class="wa-stat-num">${c.num}</span><span class="wa-stat-label">${esc(c.label)}</span>`;
         if (c.sort) {
-          return `<button type="button" class="wa-stat wa-stat--btn${tone}" data-stat-sort-col="${c.sort.col}" data-stat-sort-dir="${c.sort.dir}" title="Sort the table by ${esc(c.label)}"><span class="material-icons wa-stat-sort">${c.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>${inner}</button>`;
+          return `<button type="button" class="wa-stat wa-stat--btn${tone}" data-stat-sort-col="${c.sort.col}" data-stat-sort-dir="${c.sort.dir}" title="Sort the table by ${esc(c.label)}"><span class="material-symbols-outlined wa-stat-sort">${c.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>${inner}</button>`;
         }
         return `<div class="wa-stat${tone}">${inner}</div>`;
       }).join('')}</div>`;
     }
 
     function searchToolbar(placeholder) {
-      return `<div class="wa-toolbar"><div class="wa-search-inline"><span class="material-icons">search</span><input type="text" class="wa-search" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}"></div></div>`;
+      return `<div class="wa-toolbar"><div class="wa-search-inline"><span class="material-symbols-outlined">search</span><input type="text" class="wa-search" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}"></div></div>`;
     }
 
     /* Proper sortable table: real column headers (click Food / Score to sort),
@@ -1542,7 +1556,7 @@
       const paginate = pageSize > 0 && rows.length > pageSize;
       const pager = paginate ? `<div class="wa-pager" data-pager-bar>
           <span class="wa-pager-range" data-pager-range></span>
-          <button type="button" class="wa-loadmore" data-loadmore>Load more <span class="material-icons">expand_more</span></button>
+          <button type="button" class="wa-loadmore" data-loadmore>Load more <span class="material-symbols-outlined">expand_more</span></button>
         </div>` : '';
       return `<div class="wa-tbl" data-sort-col="${sortCol}" data-sort-dir="${sortDir}" data-shown="${paginate ? pageSize : 0}" data-page-size="${paginate ? pageSize : 0}">
           ${head}
@@ -1563,7 +1577,7 @@
           ])}
           ${searchToolbar('Search food or brand\u2026')}
           ${sortTable(WORST_FOODS, { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc', pageSize: 8 })}
-          <div class="wa-table-foot"><span class="material-icons">south</span>Lower WISEscore = further from the WISE standard. The bottom of the database clusters around decorated cakes, cupcakes &amp; dessert kits.</div>
+          <div class="wa-table-foot"><span class="material-symbols-outlined">south</span>Lower WISEscore = further from the WISE standard. The bottom of the database clusters around decorated cakes, cupcakes &amp; dessert kits.</div>
         </div>`;
     }
 
@@ -1578,7 +1592,7 @@
           ])}
           ${searchToolbar('Search these 10 foods\u2026')}
           ${sortTable(WORST_FOODS.slice(0, 10), { images: DESSERT_IMGS, fallbackIcon: 'cake', tone: 'bad', sortCol: 'score', sortDir: 'asc' })}
-          <div class="wa-table-foot"><span class="material-icons">info</span>Gut Health and Excellent Source came back empty across all ten — that data gap is what the spider chart is really showing.</div>
+          <div class="wa-table-foot"><span class="material-symbols-outlined">info</span>Gut Health and Excellent Source came back empty across all ten — that data gap is what the spider chart is really showing.</div>
         </div>`;
     }
 
@@ -1587,16 +1601,16 @@
       return `
         <div class="wa-block">
           <div class="wa-dhero">
-            <span class="wa-dhero-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/frosted_toaster_pastries.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-icons">cake</span></span></span>
+            <span class="wa-dhero-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/frosted_toaster_pastries.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-symbols-outlined">cake</span></span></span>
             <div class="wa-dhero-info">
               <div class="wa-dhero-name">Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</div>
               <div class="wa-dhero-brand">Member\u2019s Mark</div>
             </div>
             <div class="wa-dhero-score"><div class="wa-dhero-score-n">0.06</div><div class="wa-dhero-score-l">WISEscore</div></div>
           </div>
-          <div class="wa-notice"><span class="material-icons">error_outline</span><span>The full food-detail card couldn\u2019t be fetched — the detail lookup failed. Below is what\u2019s confirmed from the search result.</span></div>
+          <div class="wa-notice"><span class="material-symbols-outlined">error_outline</span><span>The full food-detail card couldn\u2019t be fetched — the detail lookup failed. Below is what\u2019s confirmed from the search result.</span></div>
           <p class="wa-detail-sub">Its ingredient list is extremely long and dense with:</p>
-          <div class="wa-chiplist">${badIngredients.map((t) => `<span class="wa-ing-chip"><span class="material-icons" style="font-size:13px">close</span>${esc(t)}</span>`).join('')}</div>
+          <div class="wa-chiplist">${badIngredients.map((t) => `<span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">close</span>${esc(t)}</span>`).join('')}</div>
           <p class="wa-detail-sub" style="margin-top:16px">Why it ranks last</p>
           <p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:0">That combination — not simply being \u201ca dessert\u201d — is why it surfaced at the very bottom of the ranking.</p>
         </div>`;
@@ -1613,7 +1627,7 @@
           ])}
           ${searchToolbar('Search cookies or brand\u2026')}
           ${sortTable(COOKIES, { images: COOKIE_IMGS, fallbackIcon: 'cookie', tone: 'good', showIngredients: true, sortCol: 'score', sortDir: 'desc', pageSize: 8 })}
-          <div class="wa-table-foot"><span class="material-icons">warning_amber</span>Several top rows have broken or incomplete ingredient lists, so read the ranking as strong candidates, not a final answer.</div>
+          <div class="wa-table-foot"><span class="material-symbols-outlined">warning_amber</span>Several top rows have broken or incomplete ingredient lists, so read the ranking as strong candidates, not a final answer.</div>
         </div>`;
     }
 
@@ -1797,7 +1811,7 @@
                 <span class="wa-cand-score">${fmtScore(c[2])}</span>
               </div>`).join('')}
           </div>
-          <div class="wa-table-foot" style="margin-top:18px"><span class="material-icons">insights</span>Charts, distribution &amp; trend slopes are in the Visuals pane →</div>
+          <div class="wa-table-foot" style="margin-top:18px"><span class="material-symbols-outlined">insights</span>Charts, distribution &amp; trend slopes are in the Visuals pane →</div>
         </div>`;
     }
 
@@ -1893,8 +1907,8 @@
       manifestEl.innerHTML = `
         <div class="wa-manifest-full">
           <div class="wa-manifest-ctrls">
-            <button type="button" class="wa-manifest-btn" data-mf="collapse" title="Collapse to icons" aria-label="Collapse outputs & sources to icons"><span class="material-icons">unfold_less</span></button>
-            <button type="button" class="wa-manifest-btn" data-mf="close" title="Hide" aria-label="Hide outputs & sources"><span class="material-icons">close</span></button>
+            <button type="button" class="wa-manifest-btn" data-mf="collapse" title="Collapse to icons" aria-label="Collapse outputs & sources to icons"><span class="material-symbols-outlined">unfold_less</span></button>
+            <button type="button" class="wa-manifest-btn" data-mf="close" title="Hide" aria-label="Hide outputs & sources"><span class="material-symbols-outlined">close</span></button>
           </div>
           <div class="wa-manifest-section" data-mf-out hidden>
             <div class="wa-manifest-label">Outputs</div>
@@ -1907,7 +1921,7 @@
           </div>
         </div>
         <div class="wa-manifest-rail" data-mf-rail></div>
-        <button type="button" class="wa-manifest-reopen" data-mf="reopen" title="Show outputs & sources" aria-label="Show outputs & sources"><span class="material-icons">dashboard_customize</span><span class="wa-manifest-reopen-badge" data-mf-badge>0</span></button>`;
+        <button type="button" class="wa-manifest-reopen" data-mf="reopen" title="Show outputs & sources" aria-label="Show outputs & sources"><span class="material-symbols-outlined">dashboard_customize</span><span class="wa-manifest-reopen-badge" data-mf-badge>0</span></button>`;
       host.appendChild(manifestEl);
       manifestOutListEl = manifestEl.querySelector('[data-mf-outlist]');
       manifestSrcListEl = manifestEl.querySelector('[data-mf-srclist]');
@@ -1940,9 +1954,9 @@
 
     function iconMarkup(item, cls) {
       if (item.logo) {
-        return `<span class="${cls}"><img src="${item.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span style="display:none;align-items:center;justify-content:center"><span class="material-icons">${esc(item.icon || 'public')}</span></span></span>`;
+        return `<span class="${cls}"><img src="${item.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span style="display:none;align-items:center;justify-content:center"><span class="material-symbols-outlined">${esc(item.icon || 'public')}</span></span></span>`;
       }
-      return `<span class="${cls}"><span class="material-icons">${esc(item.icon || 'insights')}</span></span>`;
+      return `<span class="${cls}"><span class="material-symbols-outlined">${esc(item.icon || 'insights')}</span></span>`;
     }
 
     function renderManifest() {
@@ -1971,11 +1985,11 @@
       /* Collapsed icon rail: output icons (clickable) · divider · source icons. */
       manifestRailEl.innerHTML =
         manifestOutputs.map((o) =>
-          `<button type="button" class="wa-manifest-rail-ic" data-mf-block="${o.blockId}" title="${esc(o.title)}" aria-label="Open “${esc(o.title)}”"><span class="material-icons">${esc(o.icon || 'insights')}</span></button>`
+          `<button type="button" class="wa-manifest-rail-ic" data-mf-block="${o.blockId}" title="${esc(o.title)}" aria-label="Open “${esc(o.title)}”"><span class="material-symbols-outlined">${esc(o.icon || 'insights')}</span></button>`
         ).join('') +
         (hasOut && hasSrc ? '<span class="wa-manifest-rail-div"></span>' : '') +
         (hasSrc ? MANIFEST_SOURCES.map((s) =>
-          `<span class="wa-manifest-rail-ic wa-manifest-rail-ic--static" title="${esc(s.title)}">${s.logo ? `<img src="${s.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none" class="material-icons">${esc(s.icon || 'public')}</span>` : `<span class="material-icons">${esc(s.icon || 'public')}</span>`}</span>`
+          `<span class="wa-manifest-rail-ic wa-manifest-rail-ic--static" title="${esc(s.title)}">${s.logo ? `<img src="${s.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none" class="material-symbols-outlined">${esc(s.icon || 'public')}</span>` : `<span class="material-symbols-outlined">${esc(s.icon || 'public')}</span>`}</span>`
         ).join('') : '');
     }
 
@@ -2001,7 +2015,7 @@
       /* The collapse control doubles as a pin-open toggle when collapsed. */
       const cBtn = manifestEl.querySelector('[data-mf="collapse"]');
       if (cBtn) {
-        cBtn.querySelector('.material-icons').textContent = collapsed ? 'unfold_more' : 'unfold_less';
+        cBtn.querySelector('.material-symbols-outlined').textContent = collapsed ? 'unfold_more' : 'unfold_less';
         cBtn.title = collapsed ? 'Pin open' : 'Collapse to icons';
       }
     }
@@ -2211,23 +2225,26 @@
         /* Per-turn Share + Note (annotate) controls in addition to Fork/Jump. */
         turnsShare: true,
         turnsNotes: true,
-        /* "Sticky modules" toggle in the chat's three-dot menu — tucks the docked
-           History (left) and Turns (right) modules in behind the chat card
+        /* Sticky is the ONLY module style on WISEai — the docked History (left)
+           and Turns (right) modules are always tucked in behind the chat card
            (flush, square inner corners, calmer surface, slightly shorter). The
-           preference persists across reloads via localStorage. */
+           free-standing "breakout" look is gone. We still enable the shared
+           "sticky" machinery (so the chat lays both flanking modules out at the
+           equal, narrower sticky width and calls setSticky on them), default it
+           permanently ON, and just pin the row's class so it can never fall back
+           to breakout. The now-pointless menu toggle is stripped after mount. */
         stickyModules: true,
-        stickyModulesDefault: (() => { try { return localStorage.getItem('wiseai-sticky-modules') === '1'; } catch (_) { return false; } })(),
-        onStickyModules: (on) => {
+        stickyModulesDefault: true,
+        onStickyModules: () => {
           const row = document.getElementById('modules-row');
-          if (row) row.classList.toggle('modules-sticky', on);
-          try { localStorage.setItem('wiseai-sticky-modules', on ? '1' : '0'); } catch (_) {}
+          if (row) row.classList.add('modules-sticky');
         },
         /* "Hide outputs & sources" switch in the chat's three-dot menu — fully
            hides the floating Outputs / Sources manifest pinned to the chat's
-           top-right. OFF by default (the manifest shows as before); flipping it
-           on removes the whole component. */
+           top-right. ON by default (the manifest stays hidden); flipping it off
+           brings the component back. */
         outputsToggle: true,
-        outputsToggleDefault: false,
+        outputsToggleDefault: true,
         onToggleOutputs: (hidden) => setManifestOff(hidden),
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
@@ -2287,12 +2304,15 @@
         btn.type = 'button';
         btn.className = 'topbar-menu-item';
         btn.setAttribute('data-sc', 'history');
-        btn.innerHTML = '<span class="material-icons topbar-menu-icon">history</span><span>History &amp; Projects</span>';
+        btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span>';
         const div = document.createElement('div');
         div.className = 'topbar-menu-divider';
         morePop.insertBefore(div, morePop.firstChild);
         morePop.insertBefore(btn, div);
       }
+      /* Sticky is now the only module style, so the "Sticky modules" switch has
+         nothing to toggle — remove it from the menu. */
+      if (morePop) morePop.querySelector('[data-sc="sticky"]')?.remove();
     }
   </script>
 </body>

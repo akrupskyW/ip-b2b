@@ -72,7 +72,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -85,7 +85,7 @@ function scoreHtml(d) {
       <div class="au-score au-score--wide">
         <div class="au-score-top">
           <span class="au-score-key">${esc(d.key)}</span>
-          <span class="au-score-pill"><span class="material-icons">help</span>Unknown env</span>
+          <span class="au-score-pill"><span class="material-symbols-outlined">help</span>Unknown env</span>
         </div>
         <span class="au-score-val">${esc(d.val)}</span>
       </div>`;
@@ -100,15 +100,15 @@ function scoreHtml(d) {
 function utilHtml(u, section) {
   const isRun = RUNNING.has(u.id);
   const cta = isRun
-    ? `<span class="au-cta">Run<span class="material-icons au-cta--run">play_arrow</span></span>`
-    : `<span class="au-cta">Open<span class="material-icons">north_east</span></span>`;
+    ? `<span class="au-cta">Run<span class="material-symbols-outlined au-cta--run">play_arrow</span></span>`
+    : `<span class="au-cta">Open<span class="material-symbols-outlined">north_east</span></span>`;
   return `
     <div class="au-card" role="button" tabindex="0" data-adm-util="${esc(u.id)}"${u.href ? ` data-adm-href="${esc(u.href)}"` : ''} aria-label="${esc(u.title)}">
       <div class="au-poster ${esc(section.tone)}">
         ${BUG_SVG.replace('<svg ', '<svg class="au-poster-bug" ')}
-        <span class="au-poster-icon"><span class="material-icons">${esc(u.icon)}</span></span>
+        <span class="au-poster-icon"><span class="material-symbols-outlined">${esc(u.icon)}</span></span>
         <span class="au-badge">${esc(section.badge)}</span>
-        <span class="au-poster-open"><span class="material-icons">${isRun ? 'play_arrow' : 'north_east'}</span></span>
+        <span class="au-poster-open"><span class="material-symbols-outlined">${isRun ? 'play_arrow' : 'north_east'}</span></span>
       </div>
       <div class="au-body">
         <div class="au-name">${esc(u.title)}${u.tag ? `<span class="au-tag">${esc(u.tag)}</span>` : ''}</div>

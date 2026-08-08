@@ -54,7 +54,7 @@ function layoutsSection(layouts, currentLayout) {
   const items = layouts
     .map(
       (l) => `<div class="wise-popover-item${l.mode === currentLayout ? ' is-active' : ''}" data-layout="${l.mode}">
-        <span class="${l.sym ? 'material-symbols-outlined' : 'material-icons'}">${l.icon}</span>${l.label}
+        <span class="${l.sym ? 'material-symbols-outlined' : 'material-symbols-outlined'}">${l.icon}</span>${l.label}
       </div>`
     )
     .join('');
@@ -100,7 +100,7 @@ function jamPlayerSection() {
     <div class="jam-pop${playing ? ' is-playing' : ''}">
       <div class="jam-pop-head">
         <button type="button" class="jam-pop-play" data-jam-play aria-label="${playing ? 'Pause' : 'Play'}">
-          <span class="material-icons">${playing ? 'pause' : 'play_arrow'}</span>
+          <span class="material-symbols-outlined">${playing ? 'pause' : 'play_arrow'}</span>
         </button>
         <div class="jam-pop-now">
           <div class="jam-pop-eq" aria-hidden="true">${bars}</div>
@@ -127,7 +127,7 @@ function syncJamPop(root) {
   const playBtn = pop.querySelector('[data-jam-play]');
   if (playBtn) {
     playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-    const icon = playBtn.querySelector('.material-icons');
+    const icon = playBtn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = playing ? 'pause' : 'play_arrow';
   }
 
@@ -177,9 +177,27 @@ function accessibilityReviewSection() {
   } catch (e) { /* non-browser context — keep the default */ }
   return `
     <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review">
-      <span class="material-icons">accessibility_new</span>Accessibility review
+      <span class="material-symbols-outlined">accessibility_new</span>Accessibility review
       <span class="wise-popover-badge">Admin</span>
-      <span class="wise-popover-ext material-icons" aria-hidden="true">arrow_outward</span>
+      <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+    </a>`;
+}
+
+/** Link out to the "All Modules" admin index (the app-wide module directory +
+    the Icon Inventory). Sits directly beneath the Accessibility review row and,
+    like it, is an Admin-only destination. Path resolves the same way — the page
+    lives in pages/, so app shells (already in pages/) link to it directly while
+    a root shell reaches it through pages/. */
+function allModulesSection() {
+  let href = 'pages/all-modules.html';
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) href = 'all-modules.html';
+  } catch (e) { /* non-browser context — keep the default */ }
+  return `
+    <a class="wise-popover-item" href="${href}" data-pop-action="all-modules">
+      <span class="material-symbols-outlined">widgets</span>All modules
+      <span class="wise-popover-badge">Admin</span>
+      <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
     </a>`;
 }
 
@@ -256,11 +274,12 @@ export function buildAppearanceBody({
     </div>
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
-      <span class="material-icons js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
+      <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
       <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
     </div>
     <div class="wise-popover-divider"></div>
     ${accessibilityReviewSection()}
+    ${allModulesSection()}
   `;
 }
 
@@ -288,23 +307,23 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
   const safeName = String(name || 'Arthur Krupsky')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const locked = (icon, label) =>
-    `<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">${icon}</span>${label}<span class="wise-popover-lock material-icons" aria-hidden="true">lock</span></div>`;
+    `<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">${icon}</span>${label}<span class="wise-popover-lock material-symbols-outlined" aria-hidden="true">lock</span></div>`;
   return `
     <div class="wise-popover-header">${safeName}</div>
     <div class="wise-popover-actions">
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>
+      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-symbols-outlined" aria-hidden="true">lock</span></button>
       <span class="wise-pop-vline" aria-hidden="true"></span>
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-icons">tune</span><span>Agents</span><span class="wise-pop-action-lock material-icons" aria-hidden="true">lock</span></button>
+      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">tune</span><span>Agents</span><span class="wise-pop-action-lock material-symbols-outlined" aria-hidden="true">lock</span></button>
     </div>
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="profile"><span class="material-icons">person</span>My profile</div>
-    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-icons">receipt_long</span>Invoices &amp; Downloads</div>
+    <div class="wise-popover-item" data-pop-action="profile"><span class="material-symbols-outlined">person</span>My profile</div>
+    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-symbols-outlined">receipt_long</span>Invoices &amp; Downloads</div>
     ${locked('tune', 'Preferences')}
     ${locked('key', 'API keys')}
     ${locked('help', 'Help')}
     ${locked('menu_book', 'Docs')}
     <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-icons">logout</span>Sign out</div>
+    <div class="wise-popover-item danger" data-pop-action="signout"><span class="material-symbols-outlined">logout</span>Sign out</div>
   `;
 }
 
@@ -385,8 +404,9 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Light / dark theme. */
     if (within('[data-pop-action="theme"]')) { ev.stopPropagation(); ctx.toggleTheme?.(); render(); return; }
 
-    /* The accessibility-review row is a real link — let it navigate. */
+    /* The accessibility-review and all-modules rows are real links — navigate. */
     if (within('[data-pop-action="a11y-review"]')) return;
+    if (within('[data-pop-action="all-modules"]')) return;
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */

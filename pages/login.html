@@ -7,7 +7,7 @@
   <script>
     try { if (localStorage.getItem('wise-theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { document.documentElement.classList.add('dark'); }
   </script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="auth.css" />
@@ -30,7 +30,7 @@
           <label for="password">Password <span class="req">*</span></label>
           <div class="auth-input-affix">
             <input type="password" id="password" name="password" class="auth-input" autocomplete="current-password" placeholder="Your password" required />
-            <button type="button" class="auth-affix-btn" data-toggle-pw aria-label="Show password"><span class="material-icons">visibility</span></button>
+            <button type="button" class="auth-affix-btn" data-toggle-pw aria-label="Show password"><span class="material-symbols-outlined">visibility</span></button>
           </div>
         </div>
         <div class="auth-row">
@@ -38,10 +38,10 @@
           <a class="auth-link" href="forgot-password.html">Forgot password?</a>
         </div>
         <p class="auth-banner auth-banner--error" id="login-error" hidden></p>
-        <button type="submit" class="btn btn-primary btn-block"><span class="material-icons">login</span>Sign in</button>
+        <button type="submit" class="btn btn-primary btn-block"><span class="material-symbols-outlined">login</span>Sign in</button>
       </form>
 
-      <button type="button" class="btn btn-ghost btn-block" id="demo-btn" style="margin-top:10px"><span class="material-icons">bolt</span>Use demo account</button>
+      <button type="button" class="btn btn-ghost btn-block" id="demo-btn" style="margin-top:10px"><span class="material-symbols-outlined">bolt</span>Use demo account</button>
 
       <div class="auth-divider"><span>or continue with</span></div>
       <div class="auth-sso">
@@ -62,7 +62,7 @@
       <p class="auth-foot">Don't have an account? <a class="auth-link" href="create-account.html">Create account</a></p>
 
       <div class="auth-demo">
-        <span class="material-icons">info</span>
+        <span class="material-symbols-outlined">info</span>
         <div>
           <div class="auth-demo-title">Demo access</div>
           <div class="auth-demo-body">Explore instantly with <code>demo@wisealliance.com</code> / <code>demo123</code> — or tap “Use demo account”.</div>

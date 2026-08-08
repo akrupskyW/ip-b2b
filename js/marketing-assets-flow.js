@@ -124,7 +124,7 @@ function toast(msg, icon = 'check_circle') {
   }
   const t = document.createElement('div');
   t.className = 'ma-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => {
@@ -367,21 +367,21 @@ function renderFolderRow(node) {
   return `
     <tr class="ma-row ma-row--folder ${open ? 'is-open' : ''}" data-folder="${esc(node._path)}"
         role="button" tabindex="0" aria-expanded="${open}">
-      <td class="ma-cell-icon"><span class="ma-ic ma-ic--folder"><span class="material-icons">${folderIcon(node.name)}</span></span></td>
+      <td class="ma-cell-icon"><span class="ma-ic ma-ic--folder"><span class="material-symbols-outlined">${folderIcon(node.name)}</span></span></td>
       <td class="ma-cell-main">
         <span class="ma-name">${highlight(node.name)}</span>
         <span class="ma-count-pill">${esc(countChildren(node))}</span>
       </td>
-      <td class="ma-cell-actions"><span class="ma-chevron"><span class="material-icons">chevron_right</span></span></td>
+      <td class="ma-cell-actions"><span class="ma-chevron"><span class="material-symbols-outlined">chevron_right</span></span></td>
     </tr>${nested}`;
 }
 
 function renderFileRow(node) {
   const m = fileMeta(node.name);
-  const icon = `<span class="ma-ic ${m.tone || ''}"><span class="material-icons">${m.icon}</span></span>`;
+  const icon = `<span class="ma-ic ${m.tone || ''}"><span class="material-symbols-outlined">${m.icon}</span></span>`;
   const warn = isImportant(node) ? ' ma-name--warn' : '';
   const preview = m.previewable
-    ? `<button type="button" class="ma-btn ma-btn--ghost" data-preview="${esc(node._path)}"><span class="material-icons">visibility</span><span>Preview</span></button>`
+    ? `<button type="button" class="ma-btn ma-btn--ghost" data-preview="${esc(node._path)}"><span class="material-symbols-outlined">visibility</span><span>Preview</span></button>`
     : '';
   return `
     <tr class="ma-row ma-row--file" data-file="${esc(node._path)}">
@@ -393,7 +393,7 @@ function renderFileRow(node) {
       <td class="ma-cell-actions">
         <span class="ma-actions">
           ${preview}
-          <button type="button" class="ma-btn ma-btn--primary" data-download="${esc(node._path)}"><span class="material-icons">download</span><span>Download</span></button>
+          <button type="button" class="ma-btn ma-btn--primary" data-download="${esc(node._path)}"><span class="material-symbols-outlined">download</span><span>Download</span></button>
         </span>
       </td>
     </tr>`;
@@ -436,15 +436,15 @@ function renderShell() {
            expand filters docked to its right (mirrors product-portfolio). -->
       <div class="ma-toolbar">
         <div class="ma-search-inline">
-          <span class="material-icons">search</span>
+          <span class="material-symbols-outlined">search</span>
           <input type="text" class="ma-search" id="ma-search" placeholder="Search all assets by name, type, or toolkit"
                  autocomplete="off" spellcheck="false" aria-label="Search marketing assets" />
-          <button type="button" class="ma-search-clear" id="ma-search-clear" aria-label="Clear search" hidden><span class="material-icons">close</span></button>
+          <button type="button" class="ma-search-clear" id="ma-search-clear" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="ma-tools">
           <div class="ma-seg" role="group" aria-label="Expand or collapse all folders">
             <button type="button" class="ma-seg-btn" id="ma-expand-toggle">
-              <span class="material-icons">unfold_more</span><span id="ma-expand-label">Expand all</span>
+              <span class="material-symbols-outlined">unfold_more</span><span id="ma-expand-label">Expand all</span>
             </button>
           </div>
           <div class="ma-sort">
@@ -455,7 +455,7 @@ function renderShell() {
             <div class="ma-seg" role="group" aria-label="Sort direction">
               <button type="button" class="ma-seg-btn ma-seg-btn--icon${descCls}" id="ma-sort-dir"
                       title="Ascending — tap to reverse" aria-label="Toggle sort direction">
-                <span class="material-icons">arrow_upward</span>
+                <span class="material-symbols-outlined">arrow_upward</span>
               </button>
             </div>
           </div>
@@ -483,15 +483,15 @@ function openPreview(node) {
     <div class="ma-modal" role="dialog" aria-modal="true" aria-label="Preview ${esc(node.name)}">
       <div class="ma-modal-head">
         <span class="ma-modal-title">${esc(node.name)}</span>
-        <button type="button" class="ma-modal-close" data-close aria-label="Close preview"><span class="material-icons">close</span></button>
+        <button type="button" class="ma-modal-close" data-close aria-label="Close preview"><span class="material-symbols-outlined">close</span></button>
       </div>
       <div class="ma-modal-preview">
-        <div class="ma-modal-preview-tile"><span class="material-icons">${m.icon}</span></div>
+        <div class="ma-modal-preview-tile"><span class="material-symbols-outlined">${m.icon}</span></div>
         <div class="ma-modal-preview-name">${esc(node.name)}</div>
       </div>
       <div class="ma-modal-foot">
         <span class="ma-modal-info">${esc(m.ext.toUpperCase())} · ${esc(fmtBytes(node.bytes))} · updated ${esc(node.updated)}</span>
-        <button type="button" class="ma-btn ma-btn--primary" data-modal-download><span class="material-icons">download</span><span>Download</span></button>
+        <button type="button" class="ma-btn ma-btn--primary" data-modal-download><span class="material-symbols-outlined">download</span><span>Download</span></button>
       </div>
     </div>`;
   document.body.appendChild(scrim);
@@ -589,7 +589,7 @@ function replyChip({ node, act, label, icon }) {
   if (!node) return '';
   const a = act || (node.type === 'folder' ? 'open' : 'download');
   const ic = icon || (a === 'open' ? 'folder_open' : a === 'preview' ? 'visibility' : 'download');
-  return `<button type="button" class="chip ma-do-chip" data-ma-do="${a}" data-ma-path="${esc(node._path)}"><span class="material-icons">${ic}</span>${esc(label)}</button>`;
+  return `<button type="button" class="chip ma-do-chip" data-ma-do="${a}" data-ma-path="${esc(node._path)}"><span class="material-symbols-outlined">${ic}</span>${esc(label)}</button>`;
 }
 function replyChips(items) {
   const html = items.map(replyChip).filter(Boolean).join('');
@@ -703,15 +703,15 @@ function updateSearchMeta(host) {
 
   meta.hidden = false;
   meta.innerHTML = n
-    ? `<span class="material-icons">filter_list</span>${n} asset${n === 1 ? '' : 's'} ${scope}`
-    : `<span class="material-icons">search_off</span>No assets ${scope}`;
+    ? `<span class="material-symbols-outlined">filter_list</span>${n} asset${n === 1 ? '' : 's'} ${scope}`
+    : `<span class="material-symbols-outlined">search_off</span>No assets ${scope}`;
 }
 
 function syncExpandLabel(host) {
   const total = allFolderPaths().length;
   const allOpen = total > 0 && state.open.size >= total;
   const label = host.querySelector('#ma-expand-label');
-  const icon = host.querySelector('#ma-expand-toggle .material-icons');
+  const icon = host.querySelector('#ma-expand-toggle .material-symbols-outlined');
   if (label) label.textContent = allOpen ? 'Collapse all' : 'Expand all';
   if (icon) icon.textContent = allOpen ? 'unfold_less' : 'unfold_more';
 }

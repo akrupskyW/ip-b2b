@@ -51,7 +51,7 @@ function toast(msg, icon = 'check_circle') {
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.className = 'ag-toast';
-  t.innerHTML = `<span class="material-icons">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
@@ -64,15 +64,15 @@ function paint() {
   const active = list.filter((a) => state[a.id].enabled).length;
   hostEl.innerHTML = `
     <div class="ag-wrap">
-      <div class="ag-breadcrumb"><span>Account</span><span class="material-icons">chevron_right</span><span class="ag-breadcrumb-here">Agents</span></div>
+      <div class="ag-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="ag-breadcrumb-here">Agents</span></div>
       <div class="ag-head-row">
         <div>
           <h1 class="ag-title">Agents</h1>
           <p class="ag-lede">Enable, pause, and set the autonomy of the specialized agents that power your workspace.</p>
         </div>
         <div class="ag-head-actions">
-          <button type="button" class="ag-btn ag-btn--ghost" data-ag-action="pause_all"><span class="material-icons">pause_circle</span>Pause all</button>
-          <button type="button" class="ag-btn ag-btn--primary" data-ag-action="enable_all"><span class="material-icons">play_circle</span>Enable all</button>
+          <button type="button" class="ag-btn ag-btn--ghost" data-ag-action="pause_all"><span class="material-symbols-outlined">pause_circle</span>Pause all</button>
+          <button type="button" class="ag-btn ag-btn--primary" data-ag-action="enable_all"><span class="material-symbols-outlined">play_circle</span>Enable all</button>
         </div>
       </div>
 
@@ -84,7 +84,7 @@ function paint() {
           return `
           <div class="ag-card${s.enabled ? '' : ' is-off'}${a.depth ? ' is-child' : ''}" data-ag-id="${a.id}">
             <div class="ag-card-top">
-              <span class="ag-card-ic"><span class="material-icons">${esc(a.icon || 'smart_toy')}</span></span>
+              <span class="ag-card-ic"><span class="material-symbols-outlined">${esc(a.icon || 'smart_toy')}</span></span>
               <div class="ag-card-titles">
                 <div class="ag-card-name">${esc(a.label)}</div>
                 <div class="ag-card-status">${s.enabled ? '<span class="ag-dot ag-dot--on"></span>Active' : '<span class="ag-dot ag-dot--off"></span>Paused'}</div>

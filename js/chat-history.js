@@ -56,14 +56,14 @@
       '.wch-head{display:flex;align-items:center;gap:8px;padding:14px 12px 12px 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08);}',
       'html:not(.dark) .wch-head{border-bottom-color:rgba(0,0,0,0.07);}',
       '.wch-head-title{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;flex:1;}',
-      '.wch-head-title .material-icons{font-size:19px;color:var(--primary,#2F6DF6);}',
+      '.wch-head-title .material-symbols-outlined{font-size:19px;color:var(--primary,#2F6DF6);}',
       '.wch-close,.wch-dock{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.75;}',
       '.wch-close:hover,.wch-dock:hover{background:rgba(255,255,255,0.08);opacity:1;}',
       'html:not(.dark) .wch-close:hover,html:not(.dark) .wch-dock:hover{background:rgba(0,0,0,0.05);}',
-      '.wch-close .material-icons,.wch-dock .material-icons{font-size:19px;}',
+      '.wch-close .material-symbols-outlined,.wch-dock .material-symbols-outlined{font-size:19px;}',
       '.wch-new{margin:12px;padding:10px 14px;border:0;border-radius:999px;background:var(--primary,#2F6DF6);color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;}',
       '.wch-new:hover{filter:brightness(1.06);}',
-      '.wch-new .material-icons{font-size:18px;}',
+      '.wch-new .material-symbols-outlined{font-size:18px;}',
       '.wch-list{flex:1;overflow-y:auto;padding:2px 8px 12px;}',
       '.wch-item{position:relative;padding:9px 34px 9px 12px;border-radius:10px;cursor:pointer;margin:2px 0;}',
       '.wch-item:hover{background:rgba(255,255,255,0.06);}',
@@ -71,17 +71,17 @@
       '.wch-item.wch-active{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);outline:1px solid color-mix(in srgb,var(--primary,#2F6DF6) 40%,transparent);}',
       '.wch-item-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-fork-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:5px;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);color:var(--primary,#2F6DF6);}',
-      '.wch-fork-badge .material-icons{font-size:12px;}',
+      '.wch-fork-badge .material-symbols-outlined{font-size:12px;}',
       '.wch-item-meta{font-size:11px;opacity:.62;margin-top:2px;}',
       '.wch-del{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
       '.wch-item:hover .wch-del{display:flex;}',
       '.wch-del:hover{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-del:hover{background:rgba(0,0,0,0.08);}',
-      '.wch-del .material-icons{font-size:16px;}',
+      '.wch-del .material-symbols-outlined{font-size:16px;}',
       '.wch-empty{padding:22px 16px;font-size:12px;line-height:1.5;opacity:.6;text-align:center;}',
       '.wch-group{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.5;padding:12px 12px 4px;}',
       '.wch-search{position:relative;display:flex;align-items:center;margin:10px 12px 2px;flex-shrink:0;}',
-      '.wch-search > .material-icons{position:absolute;left:11px;font-size:18px;opacity:.5;pointer-events:none;}',
+      '.wch-search > .material-symbols-outlined{position:absolute;left:11px;font-size:18px;opacity:.5;pointer-events:none;}',
       '.wch-search-input{width:100%;height:36px;box-sizing:border-box;padding:0 32px 0 36px;border-radius:999px;font:inherit;font-size:13px;color:inherit;outline:none;',
         'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);transition:border-color .15s ease,box-shadow .15s ease;}',
       'html:not(.dark) .wch-search-input{background:rgba(20,40,80,0.04);border-color:rgba(0,0,0,0.10);}',
@@ -90,7 +90,7 @@
       '.wch-search-clear{position:absolute;right:8px;width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
       '.wch-search-clear:hover{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-search-clear:hover{background:rgba(0,0,0,0.08);}',
-      '.wch-search-clear .material-icons{font-size:16px;}',
+      '.wch-search-clear .material-symbols-outlined{font-size:16px;}',
       '.wch-search.has-q .wch-search-clear{display:flex;}',
       /* Search row can host a trailing filter toggle (e.g. MCP-usage). */
       '.wch-search-row{display:flex;align-items:center;gap:8px;margin:10px 12px 2px;flex-shrink:0;}',
@@ -98,17 +98,17 @@
       '.wch-mcp{flex:0 0 auto;height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:12px;font-weight:700;color:inherit;',
         'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);transition:background .15s ease,border-color .15s ease,color .15s ease;}',
       'html:not(.dark) .wch-mcp{background:rgba(20,40,80,0.04);border-color:rgba(0,0,0,0.10);}',
-      '.wch-mcp .material-icons{font-size:17px;}',
+      '.wch-mcp .material-symbols-outlined{font-size:17px;}',
       '.wch-mcp:hover{border-color:var(--primary,#2F6DF6);}',
       '.wch-mcp.is-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);border-color:color-mix(in srgb,var(--primary,#2F6DF6) 48%,transparent);color:var(--primary,#2F6DF6);}',
       '.wch-mcp-label{letter-spacing:.02em;}',
       /* Small "used MCP" chip on a conversation row. */
       '.wch-mcp-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:5px;',
         'background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);color:var(--primary,#2F6DF6);}',
-      '.wch-mcp-badge .material-icons{font-size:12px;}',
+      '.wch-mcp-badge .material-symbols-outlined{font-size:12px;}',
       /* MCP-usage filter as a switch row inside the three-dot menu (docked). */
       '.wch-mcp-item{justify-content:flex-start;}',
-      '.wch-mcp-item > span:not(.material-icons):not(.wch-switch){flex:1 1 auto;white-space:nowrap;}',
+      '.wch-mcp-item > span:not(.material-symbols-outlined):not(.wch-switch){flex:1 1 auto;white-space:nowrap;}',
       '.wch-switch{position:relative;flex:0 0 auto;width:34px;height:19px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);transition:background .15s ease,border-color .15s ease;}',
       'html:not(.dark) .wch-switch{background:rgba(20,40,80,0.16);border-color:rgba(0,0,0,0.16);}',
       '.wch-switch::after{content:"";position:absolute;top:1px;left:1px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.28);transition:transform .18s ease;}',
@@ -131,7 +131,7 @@
       '.wch-iact{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;}',
       '.wch-iact:hover{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-iact:hover{background:rgba(0,0,0,0.08);}',
-      '.wch-iact .material-icons{font-size:16px;}',
+      '.wch-iact .material-symbols-outlined{font-size:16px;}',
       /* Item needs room for the two hover actions. */
       '.wch-item{padding-right:60px;}',
       /* Projects section header + add button. */
@@ -141,7 +141,7 @@
       '.wch-proj-add{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
       '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary,#2F6DF6);}',
       'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
-      '.wch-proj-add .material-icons{font-size:18px;}',
+      '.wch-proj-add .material-symbols-outlined{font-size:18px;}',
       /* A single project block. */
       '.wch-project{border-radius:10px;margin:1px 0;}',
       '.wch-project.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 55%,transparent);}',
@@ -149,8 +149,8 @@
       '.wch-project-head:hover{background:rgba(255,255,255,0.06);}',
       'html:not(.dark) .wch-project-head:hover{background:rgba(20,40,80,0.05);}',
       '.wch-proj-toggle{width:22px;height:22px;flex:0 0 auto;border:0;border-radius:6px;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
-      '.wch-proj-toggle .material-icons{font-size:18px;transition:transform .18s ease;}',
-      '.wch-project.wch-collapsed .wch-proj-toggle .material-icons{transform:rotate(-90deg);}',
+      '.wch-proj-toggle .material-symbols-outlined{font-size:18px;transition:transform .18s ease;}',
+      '.wch-project.wch-collapsed .wch-proj-toggle .material-symbols-outlined{transform:rotate(-90deg);}',
       '.wch-proj-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:currentColor;}',
       '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-proj-count{flex:0 0 auto;font-size:11px;font-weight:600;opacity:.55;padding:0 4px;}',
@@ -158,7 +158,7 @@
       '.wch-project-head:hover .wch-proj-menu{display:flex;}',
       '.wch-proj-menu:hover{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-proj-menu:hover{background:rgba(0,0,0,0.08);}',
-      '.wch-proj-menu .material-icons{font-size:16px;}',
+      '.wch-proj-menu .material-symbols-outlined{font-size:16px;}',
       '.wch-project-body{padding-left:8px;}',
       '.wch-project.wch-collapsed .wch-project-body{display:none;}',
       '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
@@ -178,7 +178,7 @@
       '.wch-pop-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:13px;text-align:left;}',
       '.wch-pop-item:hover{background:rgba(255,255,255,0.08);}',
       'html:not(.dark) .wch-pop-item:hover{background:rgba(20,40,80,0.06);}',
-      '.wch-pop-item .material-icons{font-size:17px;opacity:.8;}',
+      '.wch-pop-item .material-symbols-outlined{font-size:17px;opacity:.8;}',
       '.wch-pop-item .wch-proj-dot{width:9px;height:9px;}',
       '.wch-pop-item.is-current{color:var(--primary,#2F6DF6);font-weight:600;}',
       '.wch-pop-item--danger{color:#E5484D;}',
@@ -294,7 +294,7 @@
   function cleanText(el) {
     if (!el) return '';
     var clone = el.cloneNode(true);
-    clone.querySelectorAll('.sc-line-meta,.msg-source-chips,.sc-reply-chips,.material-icons,.material-symbols-rounded,.material-symbols-outlined')
+    clone.querySelectorAll('.sc-line-meta,.msg-source-chips,.sc-reply-chips,.material-symbols-outlined,.material-symbols-rounded,.material-symbols-outlined')
       .forEach(function (n) { n.remove(); });
     return (clone.textContent || '').replace(/\s+/g, ' ').trim();
   }
@@ -409,30 +409,30 @@
        the module carries pane chrome (docked / broken-out beside the chat). */
     var mcpMenuItemHtml = mcpFilter
       ? '<div class="topbar-menu-divider"></div>' +
-        '<button type="button" class="topbar-menu-item wch-mcp-item" data-wch-act="mcp" role="menuitemcheckbox" aria-checked="false"><span class="material-icons topbar-menu-icon">dns</span><span>MCP conversations only</span><span class="wch-switch" aria-hidden="true"></span></button>'
+        '<button type="button" class="topbar-menu-item wch-mcp-item" data-wch-act="mcp" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP conversations only</span><span class="wch-switch" aria-hidden="true"></span></button>'
       : '';
 
     var headControlsHtml = dockedControls
       ? '<div class="wch-controls">' +
           '<div class="panel-more-wrap wch-more-wrap">' +
-            '<button type="button" class="panel-more-btn wch-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-icons">more_vert</span></button>' +
+            '<button type="button" class="panel-more-btn wch-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
             '<div class="topbar-popover hidden wch-more-pop" role="menu">' +
-              '<button type="button" class="topbar-menu-item" data-wch-act="new"><span class="material-icons topbar-menu-icon">add_circle_outline</span><span>New conversation</span></button>' +
+              '<button type="button" class="topbar-menu-item" data-wch-act="new"><span class="material-symbols-outlined topbar-menu-icon">add_circle_outline</span><span>New conversation</span></button>' +
               mcpMenuItemHtml +
               '<div class="topbar-menu-divider"></div>' +
-              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-wch-act="close"><span class="material-icons topbar-menu-icon">close</span><span>Close panel</span></button>' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-wch-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close panel</span></button>' +
             '</div>' +
           '</div>' +
           '<button type="button" class="panel-width-toggle-btn wch-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="History module width"><span class="material-symbols-outlined">width_normal</span></button>' +
         '</div>'
-      : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-icons">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-icons">close</span></button>';
+      : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-symbols-outlined">vertical_split</span></button>' : '') +
+        '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-symbols-outlined">close</span></button>';
 
     /* Only keep the standalone search-row MCP pill when there is no three-dot
        menu to host it (i.e. the classic overlay mode). Docked modules get the
        switch inside the menu instead. */
     var mcpToggleHtml = (mcpFilter && !dockedControls)
-      ? '<button type="button" class="wch-mcp" aria-pressed="false" title="Show only conversations that used the MCP server" aria-label="Filter to conversations that used the MCP server"><span class="material-icons">dns</span><span class="wch-mcp-label">MCP</span></button>'
+      ? '<button type="button" class="wch-mcp" aria-pressed="false" title="Show only conversations that used the MCP server" aria-label="Filter to conversations that used the MCP server"><span class="material-symbols-outlined">dns</span><span class="wch-mcp-label">MCP</span></button>'
       : '';
 
     var sidebar = document.createElement('aside');
@@ -440,18 +440,18 @@
     sidebar.setAttribute('aria-label', titleText);
     sidebar.innerHTML =
       '<div class="wch-head">' +
-        '<span class="wch-head-title"><span class="material-icons">history</span>' + esc(titleText) + '</span>' +
+        '<span class="wch-head-title"><span class="material-symbols-outlined">history</span>' + esc(titleText) + '</span>' +
         headControlsHtml +
       '</div>' +
       '<div class="wch-search-row">' +
         '<div class="wch-search">' +
-          '<span class="material-icons">search</span>' +
+          '<span class="material-symbols-outlined">search</span>' +
           '<input type="text" class="wch-search-input" placeholder="Search conversations…" aria-label="Search conversations" autocomplete="off">' +
-          '<button type="button" class="wch-search-clear" title="Clear search" aria-label="Clear search"><span class="material-icons">close</span></button>' +
+          '<button type="button" class="wch-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
         '</div>' +
         mcpToggleHtml +
       '</div>' +
-      '<button type="button" class="wch-new"><span class="material-icons">add</span>New conversation</button>' +
+      '<button type="button" class="wch-new"><span class="material-symbols-outlined">add</span>New conversation</button>' +
       '<div class="wch-list" role="list"></div>';
 
     host.appendChild(scrim);
@@ -725,17 +725,17 @@
        actions for "move to project" and delete. */
     function itemHtml(it) {
       var forkBadge = it.fork
-        ? '<span class="wch-fork-badge" title="Forked from ' + esc(it.fork.from || 'a conversation') + '"><span class="material-icons">alt_route</span></span>'
+        ? '<span class="wch-fork-badge" title="Forked from ' + esc(it.fork.from || 'a conversation') + '"><span class="material-symbols-outlined">alt_route</span></span>'
         : '';
       var mcpBadge = it.mcp
-        ? '<span class="wch-mcp-badge" title="Used the MCP server"><span class="material-icons">dns</span></span>'
+        ? '<span class="wch-mcp-badge" title="Used the MCP server"><span class="material-symbols-outlined">dns</span></span>'
         : '';
       return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '">' +
         '<div class="wch-item-title">' + forkBadge + mcpBadge + esc(it.title) + '</div>' +
         '<div class="wch-item-meta">' + esc(metaFor(it)) + '</div>' +
         '<div class="wch-item-actions">' +
-          '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-icons">drive_file_move</span></button>' +
-          '<button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-icons">delete_outline</span></button>' +
+          '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-symbols-outlined">drive_file_move</span></button>' +
+          '<button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-symbols-outlined">delete_outline</span></button>' +
         '</div>' +
       '</div>';
     }
@@ -764,7 +764,7 @@
       html += '<div class="wch-projects">' +
         '<div class="wch-projects-head">' +
           '<span class="wch-projects-title">Projects</span>' +
-          '<button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-icons">create_new_folder</span></button>' +
+          '<button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>' +
         '</div>';
       if (creatingProject) html += projEditRowHtml('', 'new');
       projects.forEach(function (p) {
@@ -779,11 +779,11 @@
           html += projEditRowHtml(p.name, p.id);
         } else {
           html += '<div class="wch-project-head" data-proj-head="' + esc(p.id) + '" role="button" tabindex="0" aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
-            '<button type="button" class="wch-proj-toggle" data-proj-toggle="' + esc(p.id) + '" tabindex="-1" aria-label="Expand or collapse project"><span class="material-icons">expand_more</span></button>' +
+            '<button type="button" class="wch-proj-toggle" data-proj-toggle="' + esc(p.id) + '" tabindex="-1" aria-label="Expand or collapse project"><span class="material-symbols-outlined">expand_more</span></button>' +
             '<span class="wch-proj-dot" style="color:' + esc(p.color) + '"></span>' +
             '<span class="wch-proj-name">' + esc(p.name) + '</span>' +
             '<span class="wch-proj-count">' + kids.length + '</span>' +
-            '<button type="button" class="wch-proj-menu" data-proj-menu="' + esc(p.id) + '" title="Project options" aria-label="Project options"><span class="material-icons">more_horiz</span></button>' +
+            '<button type="button" class="wch-proj-menu" data-proj-menu="' + esc(p.id) + '" title="Project options" aria-label="Project options"><span class="material-symbols-outlined">more_horiz</span></button>' +
           '</div>';
         }
         html += '<div class="wch-project-body" data-proj-body="' + esc(p.id) + '">';
@@ -925,15 +925,15 @@
         h += '<button type="button" class="wch-pop-item' + (cur ? ' is-current' : '') + '" data-move="' + esc(p.id) + '">' +
           '<span class="wch-proj-dot" style="color:' + esc(p.color) + '"></span>' +
           '<span class="wch-pop-name">' + esc(p.name) + '</span>' +
-          (cur ? '<span class="material-icons">check</span>' : '') +
+          (cur ? '<span class="material-symbols-outlined">check</span>' : '') +
         '</button>';
       });
       if (it.projectId) {
         h += '<button type="button" class="wch-pop-item" data-move="">' +
-          '<span class="material-icons">remove_circle_outline</span><span class="wch-pop-name">Remove from project</span></button>';
+          '<span class="material-symbols-outlined">remove_circle_outline</span><span class="wch-pop-name">Remove from project</span></button>';
       }
       h += '</div><div class="wch-pop-div"></div>' +
-        '<button type="button" class="wch-pop-item" data-move-new><span class="material-icons">create_new_folder</span><span class="wch-pop-name">New project…</span></button>';
+        '<button type="button" class="wch-pop-item" data-move-new><span class="material-symbols-outlined">create_new_folder</span><span class="wch-pop-name">New project…</span></button>';
       openPopover(h, anchor);
       /* Set AFTER openPopover — it calls closePopover() first, which would
          otherwise clear the chat we're about to file. */
@@ -943,10 +943,10 @@
       var p = findProject(projId);
       if (!p) return;
       var h = '<div class="wch-pop-head">' + esc(p.name) + '</div>' +
-        '<button type="button" class="wch-pop-item" data-pmenu="rename" data-pid="' + esc(projId) + '"><span class="material-icons">edit</span><span class="wch-pop-name">Rename</span></button>' +
-        '<button type="button" class="wch-pop-item" data-pmenu="collapse" data-pid="' + esc(projId) + '"><span class="material-icons">' + (p.collapsed ? 'unfold_more' : 'unfold_less') + '</span><span class="wch-pop-name">' + (p.collapsed ? 'Expand' : 'Collapse') + '</span></button>' +
+        '<button type="button" class="wch-pop-item" data-pmenu="rename" data-pid="' + esc(projId) + '"><span class="material-symbols-outlined">edit</span><span class="wch-pop-name">Rename</span></button>' +
+        '<button type="button" class="wch-pop-item" data-pmenu="collapse" data-pid="' + esc(projId) + '"><span class="material-symbols-outlined">' + (p.collapsed ? 'unfold_more' : 'unfold_less') + '</span><span class="wch-pop-name">' + (p.collapsed ? 'Expand' : 'Collapse') + '</span></button>' +
         '<div class="wch-pop-div"></div>' +
-        '<button type="button" class="wch-pop-item wch-pop-item--danger" data-pmenu="delete" data-pid="' + esc(projId) + '"><span class="material-icons">delete_outline</span><span class="wch-pop-name">Delete project</span></button>';
+        '<button type="button" class="wch-pop-item wch-pop-item--danger" data-pmenu="delete" data-pid="' + esc(projId) + '"><span class="material-symbols-outlined">delete_outline</span><span class="wch-pop-name">Delete project</span></button>';
       openPopover(h, anchor);
     }
     /* Popover click routing (single listener; popEl is recreated per open). */
@@ -1128,7 +1128,7 @@
     function breakoutAnchor() { return resolve(opts.breakoutAnchor, document) || root; }
     function updateDockButton() {
       if (!dockBtn) return;
-      var icon = dockBtn.querySelector('.material-icons');
+      var icon = dockBtn.querySelector('.material-symbols-outlined');
       if (docked) {
         if (icon) icon.textContent = 'close_fullscreen';
         dockBtn.title = 'Merge history back into the chat';

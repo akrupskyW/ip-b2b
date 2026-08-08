@@ -506,7 +506,7 @@ function buildStrip() {
 
   strip.innerHTML = `
     <button type="button" class="jam-play" data-jam-toggle aria-label="Play the jam" title="Play / pause">
-      <span class="material-icons jam-play-icon">play_arrow</span>
+      <span class="material-symbols-outlined jam-play-icon">play_arrow</span>
     </button>
     <div class="jam-eq" aria-hidden="true">${eqBars}</div>
     <div class="jam-songs" role="group" aria-label="Pick a track">${songChips}</div>`;

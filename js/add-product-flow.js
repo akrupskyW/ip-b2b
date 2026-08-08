@@ -156,7 +156,7 @@
   function chipsRow(chips) {
     if (!chips || !chips.length) return '';
     return `<div class="sc-reply-chips">${chips.map((c) =>
-      `<button type="button" class="chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-icons">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`).join('')}</div>`;
+      `<button type="button" class="chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`).join('')}</div>`;
   }
   function addWISEai(html, chips) {
     hideWelcome();
@@ -167,7 +167,7 @@
   }
   function addSysNote(text, icon) {
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="ap-sys-note"><span class="material-icons">${esc(icon || 'check_circle')}</span><span>${esc(text)}</span></div>`);
+      `<div class="ap-sys-note"><span class="material-symbols-outlined">${esc(icon || 'check_circle')}</span><span>${esc(text)}</span></div>`);
     scrollDown();
   }
   function showTyping() {
@@ -209,15 +209,15 @@
     const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
     const err = state.errors.category;
     const inner = state.category
-      ? `<span class="nfp-cat-chip${onPhoto ? ' nfp-cat-chip--onphoto' : ''}"><span class="material-icons">sell</span>${esc(state.category)}</span>
-         <button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-icons">edit</span>Change</button>`
-      : `<button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-icons">add</span>Add category <span class="nfp-req">*</span></button>`;
-    return `<div class="nfp-hero-cat">${inner}</div>${err ? `<div class="nfp-hero-field-note"><span class="material-icons">error_outline</span>${esc(err)}</div>` : ''}`;
+      ? `<span class="nfp-cat-chip${onPhoto ? ' nfp-cat-chip--onphoto' : ''}"><span class="material-symbols-outlined">sell</span>${esc(state.category)}</span>
+         <button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-symbols-outlined">edit</span>Change</button>`
+      : `<button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`;
+    return `<div class="nfp-hero-cat">${inner}</div>${err ? `<div class="nfp-hero-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}`;
   }
   function heroUpcHTML(onPhoto) {
     if (!state.upc) {
       const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
-      return `<div class="nfp-hero-upc"><button type="button" class="${btnCls}" data-nfp="upc-edit"><span class="material-icons">qr_code_2</span>Add a UPC</button></div>`;
+      return `<div class="nfp-hero-upc"><button type="button" class="${btnCls}" data-nfp="upc-edit"><span class="material-symbols-outlined">qr_code_2</span>Add a UPC</button></div>`;
     }
     return `<div class="nfp-hero-upc nfp-rupc">${barcodeSVG(state.upc)}<div class="nfp-rupc-num">${editSpan('upc', state.upc, 'UPC digits')}</div></div>`;
   }
@@ -237,7 +237,7 @@
     if (!onPhoto) {
       return `<div class="nfp-hero nfp-hero--rich nfp-hero--empty">
         <div class="nfp-hero-empty" data-nfp="upload-main">
-          <span class="material-icons">add_a_photo</span>
+          <span class="material-symbols-outlined">add_a_photo</span>
           <span class="neh-t">Add a product photo</span>
           <span class="neh-d">Upload, take a photo, or paste a URL</span>
         </div>
@@ -247,7 +247,7 @@
     return `<div class="nfp-hero nfp-hero--rich">
       <img class="nfp-hero-img" src="${esc(state.image)}" alt="" onerror="this.src='https://placehold.co/300x260/1A2339/ffffff?text=Product'">
       <div class="nfp-hero-scrim" aria-hidden="true"></div>
-      <button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-icons">photo_camera</span>Replace</button>
+      <button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-symbols-outlined">photo_camera</span>Replace</button>
       ${stack}
     </div>`;
   }
@@ -255,13 +255,13 @@
   function categoryHTML() {
     const err = state.errors.category;
     const chip = state.category
-      ? `<span class="nfp-cat-chip"><span class="material-icons">sell</span>${esc(state.category)}</span>
-         <button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-icons">edit</span>Change</button>`
-      : `<button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-icons">add</span>Add category <span class="nfp-req">*</span></button>`;
+      ? `<span class="nfp-cat-chip"><span class="material-symbols-outlined">sell</span>${esc(state.category)}</span>
+         <button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-symbols-outlined">edit</span>Change</button>`
+      : `<button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`;
     return `<div class="nfp-cat${err ? ' nfp-block-err' : ''}">
       <div class="nfp-cat-label">Category</div>
       <div class="nfp-cat-row">${chip}</div>
-      ${err ? `<div class="nfp-field-note"><span class="material-icons">error_outline</span>${esc(err)}</div>` : ''}
+      ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
     </div>`;
   }
 
@@ -281,7 +281,7 @@
       </div>
       <div class="nfp-fi-thumbs">
         ${thumbs}
-        <div class="nfp-fi-add" data-nfp="add-image" title="Add another image"><span class="material-icons">add</span></div>
+        <div class="nfp-fi-add" data-nfp="add-image" title="Add another image"><span class="material-symbols-outlined">add</span></div>
       </div>
     </div>`;
   }
@@ -302,7 +302,7 @@
     }
     const dv = r.noDV ? '' : editSpan(errKey + '.dv', val.dv, '—');
     return `<div class="nfp-nf-row${indCls}${noB}${err ? ' nfp-row-err' : ''}">
-        <div class="nfp-nf-main">${main}${err ? `<span class="nfp-field-note" style="margin-left:8px"><span class="material-icons">error_outline</span>${esc(err)}</span>` : ''}</div>
+        <div class="nfp-nf-main">${main}${err ? `<span class="nfp-field-note" style="margin-left:8px"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</span>` : ''}</div>
         <div class="nfp-nf-dv${err ? ' nfp-err-val' : ''}">${dv}</div>
       </div>`;
   }
@@ -338,12 +338,12 @@
     return `<div class="nfp-ingred-wrap">
       <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
         <p class="nfp-ingred-text">${ingredBody}</p>
-        ${err ? `<div class="nfp-field-note"><span class="material-icons">error_outline</span>${esc(err)}</div>` : ''}
+        ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
       </div>
       <div class="nfp-allergen-wrap">
         <div class="nfp-allergen-heading">Allergens</div>
         <div class="nfp-allergen-tags">${allergTags}
-          <button type="button" class="nfp-mini-btn" data-nfp="add-allergen" style="margin-left:2px"><span class="material-icons">add</span>Add</button>
+          <button type="button" class="nfp-mini-btn" data-nfp="add-allergen" style="margin-left:2px"><span class="material-symbols-outlined">add</span>Add</button>
         </div>
       </div>
       <div class="nfp-contains"><strong>Contains:</strong> ${editSpan('contains', state.contains, 'e.g. Wheat, Soy')}</div>
@@ -366,13 +366,13 @@
     return `<div class="nfp-rthumbs">
       <span class="nfp-rthumbs-badge">${all.length} ${all.length === 1 ? 'IMG' : 'IMGS'}</span>
       ${thumbs}
-      <button type="button" class="nfp-rthumb nfp-rthumb-add" data-nfp="add-image" title="Add another image"><span class="material-icons">add</span></button>
+      <button type="button" class="nfp-rthumb nfp-rthumb-add" data-nfp="add-image" title="Add another image"><span class="material-symbols-outlined">add</span></button>
     </div>`;
   }
   function rUpcHTML() {
     if (!state.upc) {
       return `<div class="nfp-rupc nfp-rupc-empty">
-        <button type="button" class="nfp-mini-btn nfp-mini-btn--onphoto" data-nfp="upc-edit"><span class="material-icons">qr_code_2</span>Add a UPC</button>
+        <button type="button" class="nfp-mini-btn nfp-mini-btn--onphoto" data-nfp="upc-edit"><span class="material-symbols-outlined">qr_code_2</span>Add a UPC</button>
       </div>`;
     }
     return `<div class="nfp-rupc">
@@ -387,7 +387,7 @@
          single-pane hero and the chat's "type the name" action. */
       return `<div class="nfp-rcol-empty">
         <div class="nfp-hero-empty nfp-hero-empty--fill" data-nfp="upload-main">
-          <span class="material-icons">add_a_photo</span>
+          <span class="material-symbols-outlined">add_a_photo</span>
           <span class="neh-t">Add a product photo</span>
           <span class="neh-d">Fills the whole right pane</span>
         </div>
@@ -402,7 +402,7 @@
     return `<div class="nfp-rcol">
       <img class="nfp-rcol-img" src="${esc(active.src)}" alt="" onerror="this.src='https://placehold.co/400x640/1A2339/ffffff?text=Product'">
       <div class="nfp-rcol-scrim" aria-hidden="true"></div>
-      <button type="button" class="nfp-rcol-replace" data-nfp="upload-main" title="Replace photo"><span class="material-icons">photo_camera</span></button>
+      <button type="button" class="nfp-rcol-replace" data-nfp="upload-main" title="Replace photo"><span class="material-symbols-outlined">photo_camera</span></button>
       <div class="nfp-rcol-top">${rThumbsHTML(all)}</div>
       <div class="nfp-rcol-bottom">
         <div class="nfp-rcol-name">${editSpan('productName', state.productName, 'Product name')}</div>
@@ -499,8 +499,8 @@
       if (err) cls = 'vfp-step--err';
       else if (filled) cls = 'vfp-step--done';
       else if (isActive) cls = 'vfp-step--active';
-      const num = err ? '<span class="material-icons">priority_high</span>'
-        : filled ? '<span class="material-icons">check</span>' : String(i + 1);
+      const num = err ? '<span class="material-symbols-outlined">priority_high</span>'
+        : filled ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
       let sub = '';
       if (err) sub = 'Needs attention';
       else if (filled) sub = 'Completed';
@@ -512,7 +512,7 @@
         const rows = stepFields(s.id).map((f) => {
           const icon = f.err ? 'error_outline' : f.done ? 'check_circle' : 'radio_button_unchecked';
           const st = f.err ? 'vfp-field--err' : f.done ? 'vfp-field--done' : 'vfp-field--active';
-          return `<div class="vfp-field ${st}"><span class="material-icons">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
+          return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
         }).join('');
         fieldsHtml = `<div class="vfp-fields">${rows}</div>`;
       }
@@ -534,7 +534,7 @@
           <div class="vfp-title">Add product progress</div>
           <div class="vfp-subtitle">${state.brand} · ${STEPS.length} steps</div>
         </div>
-        <button type="button" class="vfp-min-btn" data-ap-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-icons">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
+        <button type="button" class="vfp-min-btn" data-ap-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-symbols-outlined">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
       </div>
       <div class="vfp-progress">
         <div class="vfp-progress-head"><span>${completed} of ${STEPS.length} steps</span><span class="vfp-progress-pct">${pct}%</span></div>
@@ -575,21 +575,21 @@
     btn.disabled = !ready || state.saved;
     status.title = '';
     if (state.saved) {
-      status.innerHTML = '<span class="material-icons" style="color:var(--sec-green)">check_circle</span><span>Saved to portfolio</span>';
-      btn.innerHTML = '<span class="material-icons">check</span>Saved';
+      status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">check_circle</span><span>Saved to portfolio</span>';
+      btn.innerHTML = '<span class="material-symbols-outlined">check</span>Saved';
     } else if (ready) {
-      status.innerHTML = '<span class="material-icons" style="color:var(--sec-green)">task_alt</span><span>Ready to save</span>';
-      btn.innerHTML = '<span class="material-icons">save</span>Save to Portfolio';
+      status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">task_alt</span><span>Ready to save</span>';
+      btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     } else if (errs) {
-      status.innerHTML = `<span class="material-icons" style="color:var(--sec-red)">error_outline</span><span>${errs} field${errs > 1 ? 's' : ''} need attention</span>`;
-      btn.innerHTML = '<span class="material-icons">save</span>Save to Portfolio';
+      status.innerHTML = `<span class="material-symbols-outlined" style="color:var(--sec-red)">error_outline</span><span>${errs} field${errs > 1 ? 's' : ''} need attention</span>`;
+      btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     } else {
       /* Name exactly which required fields are still empty (out of the total)
          so "N left" never reads as if only those N fields are required. */
       const names = missing.map((m) => m.label);
-      status.innerHTML = `<span class="material-icons">info</span><span>Draft — still need <strong>${esc(names.join(', '))}</strong> (${missing.length} of ${REQUIRED.length} required)</span>`;
+      status.innerHTML = `<span class="material-symbols-outlined">info</span><span>Draft — still need <strong>${esc(names.join(', '))}</strong> (${missing.length} of ${REQUIRED.length} required)</span>`;
       status.title = 'Required to save: ' + names.join(', ');
-      btn.innerHTML = '<span class="material-icons">save</span>Save to Portfolio';
+      btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     }
   }
   function doSave() {
@@ -841,7 +841,7 @@
   function addUserFile(name, kind) {
     hideWelcome();
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">${esc(name || 'File')}<div class="ap-file-chip"><span class="material-icons">${fileIconFor(kind)}</span><span>${esc(kind || 'File')}</span></div><div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
+      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">${esc(name || 'File')}<div class="ap-file-chip"><span class="material-symbols-outlined">${fileIconFor(kind)}</span><span>${esc(kind || 'File')}</span></div><div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown();
   }
   /* Parse an uploaded document / spec sheet. Like a label parse, but a spec
@@ -1187,7 +1187,7 @@
     // Welcome chips
     if (chipsStartEl) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
-        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-icons">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
+        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
 
     // First paint

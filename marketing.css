@@ -1555,7 +1555,7 @@ body.mkt-chat-focus #mkt-wiseai .ws-scorecard {
   flex: 1 1 230px; min-width: 210px; max-width: 320px;
   aspect-ratio: auto; min-height: 138px; padding: 18px;
 }
-body.mkt-chat-focus #mkt-wiseai .ws-sc-icon .material-icons { font-size: 28px !important; }
+body.mkt-chat-focus #mkt-wiseai .ws-sc-icon .material-symbols-outlined { font-size: 28px !important; }
 body.mkt-chat-focus #mkt-wiseai .ws-sc-intro-title { font-size: 1.0625rem; margin-top: 8px; }
 body.mkt-chat-focus #mkt-wiseai .ws-sc-desc { font-size: 0.8125rem; }
 body.mkt-chat-focus #mkt-wiseai .ws-sc-scroll { display: none !important; }

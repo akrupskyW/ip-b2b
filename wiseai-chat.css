@@ -249,7 +249,7 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
   width: fit-content;
 }
 .topbar-agents-btn:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--primary-soft); color: var(--text); }
-.topbar-agents-btn .material-icons { font-size: 12px !important; }
+.topbar-agents-btn .material-symbols-outlined { font-size: 12px !important; }
 .agents-count-pill {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 14px; height: 14px; border-radius: 999px; padding: 0 3px;
@@ -266,7 +266,7 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
   color: var(--text-muted); cursor: pointer; opacity: 0.85;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-icons { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
 .panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
 .panel-more-btn.is-open { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 /* Three-dot "More" popover + its menu rows. These live in the product's
@@ -373,7 +373,7 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 }
 .chat-messages-area > :first-child { margin-top: auto; }
 html.dark .chat-messages-area { background: transparent; }
-.chat-messages-area .material-icons { vertical-align: middle; }
+.chat-messages-area .material-symbols-outlined { vertical-align: middle; }
 
 /* Plain message lines (mirrors ai-chat.html — not bubbles). Each line is an
    avatar column (the WISE-owl bug, same as the header) + the message body. The
@@ -591,7 +591,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
   transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 .ws-sc-scroll:hover { background: transparent; color: var(--text); transform: translateY(-50%) scale(1.15); }
-.ws-sc-scroll .material-icons { font-size: 22px !important; }
+.ws-sc-scroll .material-symbols-outlined { font-size: 22px !important; }
 .ws-sc-scroll--next { right: -16px; }
 .ws-sc-scroll--prev { left: -16px; }
 .ws-sc-scroll[hidden] { display: none; }
@@ -610,13 +610,13 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 /* Bare glyphs — no chip behind them — sized up a touch for presence. */
 .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ws-sc-icon .material-icons { font-size: 24px !important; }
+.ws-sc-icon .material-symbols-outlined { font-size: 24px !important; }
 /* Metric cards: neutral (foreground) icon — intro/WISEai keep the brand accent. */
 .ws-sc-icon--brand,
 .ws-sc-icon--warn,
 .ws-sc-icon--alert { color: var(--text); }
 .ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
-.ws-sc-pill .material-icons { font-size: 12px !important; }
+.ws-sc-pill .material-symbols-outlined { font-size: 12px !important; }
 /* Metric-card pills: neutral grey "shades of black" (intro/WISEai keep accent). */
 .ws-sc-pill--up,
 .ws-sc-pill--warn,
@@ -626,8 +626,8 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-sc-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
 .ws-sc-desc { font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); flex: 1 1 auto; }
 .ws-sc-action { display: inline-flex; align-items: center; align-self: flex-end; gap: 4px; margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--primary); }
-.ws-sc-action .material-icons { font-size: 15px !important; transition: transform 0.15s ease; }
-.ws-scorecard:hover .ws-sc-action .material-icons { transform: translate(2px, -2px); }
+.ws-sc-action .material-symbols-outlined { font-size: 15px !important; transition: transform 0.15s ease; }
+.ws-scorecard:hover .ws-sc-action .material-symbols-outlined { transform: translate(2px, -2px); }
 /* Intro / orientation variants — same surface as the metric cards, set apart
    only by an accent stroke + a matching accent headline. */
 .ws-scorecard--intro,
@@ -651,12 +651,12 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-.chip .material-icons { font-size: 16px !important; }
+.chip .material-symbols-outlined { font-size: 16px !important; }
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
 .ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px;
   white-space: normal; overflow-wrap: anywhere; text-align: left; }
-.ws-intent-chip .material-icons { font-size: 20px !important; flex: 0 0 auto; }
+.ws-intent-chip .material-symbols-outlined { font-size: 20px !important; flex: 0 0 auto; }
 .ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: faint-white chip fills get our royal-blue border so they don't
    read as white-bordered pills on the navy chrome. */
@@ -688,7 +688,7 @@ html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgb
   transition: background 0.15s ease, color 0.15s ease; flex-shrink: 0;
 }
 .fl-icon-btn:hover { background: var(--surface-2); color: var(--primary); }
-.fl-icon-btn .material-icons { font-size: 20px !important; }
+.fl-icon-btn .material-symbols-outlined { font-size: 20px !important; }
 /* Active voice-dictation state on the input's more button. */
 .fl-more-btn.sc-recording { color: var(--sec-red, #DC3038); background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); animation: scRecPulse 1.2s ease-in-out infinite; }
 @keyframes scRecPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sec-red, #DC3038) 40%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
@@ -706,7 +706,7 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
   width: 100%; transition: background 0.12s, color 0.12s; text-align: left; font-family: inherit;
 }
 .fl-more-item:hover { background: var(--surface-2); color: var(--text); }
-.fl-more-item .material-icons { font-size: 18px !important; flex-shrink: 0; }
+.fl-more-item .material-symbols-outlined { font-size: 18px !important; flex-shrink: 0; }
 .fl-more-divider { height: 1px; background: var(--border); margin: 4px 6px; }
 html.dark .fl-more-divider { background: rgba(255,255,255,0.08); }
 
@@ -732,7 +732,7 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
   display: inline-flex; align-items: center; justify-content: center;
 }
 .fl-attach-thumb--icon { color: var(--text-muted); }
-.fl-attach-thumb--icon .material-icons { font-size: 14px !important; }
+.fl-attach-thumb--icon .material-symbols-outlined { font-size: 14px !important; }
 .fl-attach-name {
   font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
@@ -744,7 +744,7 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
   transition: background 0.12s ease, color 0.12s ease;
 }
 .fl-attach-x:hover { background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); color: var(--sec-red, #DC3038); }
-.fl-attach-x .material-icons { font-size: 13px !important; }
+.fl-attach-x .material-symbols-outlined { font-size: 13px !important; }
 /* With chips present the input shrinks to hug the caret so the previews sit
    directly before where you type; the placeholder is blanked in JS. */
 .fl-input-wrap.has-attachments .fl-input { flex: 1 1 80px; min-width: 80px; }
@@ -765,7 +765,7 @@ html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(
   display: inline-flex; align-items: center; justify-content: center;
 }
 .sc-att-thumb--icon { color: var(--text-muted); }
-.sc-att-thumb--icon .material-icons { font-size: 15px !important; }
+.sc-att-thumb--icon .material-symbols-outlined { font-size: 15px !important; }
 .sc-att-name {
   font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
@@ -815,7 +815,7 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   transition: background 0.15s ease;
 }
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
-.sc-send .material-icons { font-size: 20px !important; }
+.sc-send .material-symbols-outlined { font-size: 20px !important; }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
@@ -830,8 +830,8 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.01em;
   color: var(--text-subtle); white-space: nowrap;
 }
-.sc-connectors-label .material-icons { font-size: 15px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
-html.dark .sc-connectors-label .material-icons { color: var(--primary-bright, #8B9FAF); }
+.sc-connectors-label .material-symbols-outlined { font-size: 15px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
+html.dark .sc-connectors-label .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
 /* Chips wrap and stay centered rather than scrolling off to one side. */
 .sc-connectors-rail {
@@ -860,7 +860,7 @@ html.dark .sc-connector { background: rgba(255,255,255,0.05); border-color: rgba
   background: color-mix(in srgb, var(--cxc) 16%, transparent);
   color: var(--cxc); overflow: hidden;
 }
-.sc-connector-logo .material-icons { font-size: 15px !important; }
+.sc-connector-logo .material-symbols-outlined { font-size: 15px !important; }
 .sc-connector-logo--mono { font-weight: 800; font-size: 0.7rem; letter-spacing: -0.01em; }
 /* When a real logo image is present, sit it on a white circle so full-color
    brand marks read cleanly in both light and dark themes. */
@@ -871,7 +871,7 @@ html.dark .sc-connector-logo--img { background: #fff; }
   display: none; width: 100%; height: 100%; align-items: center; justify-content: center;
   color: var(--cxc); font-weight: 800; font-size: 0.7rem; letter-spacing: -0.01em;
 }
-.sc-connector-logo-fb .material-icons { font-size: 15px !important; }
+.sc-connector-logo-fb .material-symbols-outlined { font-size: 15px !important; }
 
 /* Trailing add/connected affordance. */
 .sc-connector-tick { font-size: 15px !important; color: var(--text-subtle); margin-left: -1px; transition: color 0.14s ease; }
@@ -887,7 +887,7 @@ html.dark .sc-connector-logo--img { background: #fff; }
 }
 .sc-connector-more:hover { background: var(--surface); border-color: var(--border-strong); color: var(--primary); }
 html.dark .sc-connector-more:hover { background: rgba(255,255,255,0.06); }
-.sc-connector-more .material-icons { font-size: 18px !important; }
+.sc-connector-more .material-symbols-outlined { font-size: 18px !important; }
 
 @media (max-width: 720px) {
   .sc-connectors-label { display: none; }
@@ -906,8 +906,8 @@ html.dark .sc-connect-flow { background: rgba(255,255,255,0.04); }
   padding: 10px 14px; border-bottom: 1px solid var(--border);
   font-size: 0.8125rem; font-weight: 700; color: var(--text);
 }
-.sc-cf-head .material-icons { font-size: 18px !important; color: var(--primary); }
-html.dark .sc-cf-head .material-icons { color: var(--primary-bright, #8B9FAF); }
+.sc-cf-head .material-symbols-outlined { font-size: 18px !important; color: var(--primary); }
+html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 .sc-connect-flow.is-complete .sc-cf-head { color: var(--sec-green-text, #1F7A48); }
 .sc-cf-check { color: var(--sec-green, #32A966) !important; }
 .sc-cf-steps { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
@@ -925,13 +925,13 @@ html.dark .sc-cf-head .material-icons { color: var(--primary-bright, #8B9FAF); }
 }
 .sc-cf-step.is-active .sc-cf-ic { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
 .sc-cf-step.is-done .sc-cf-ic { background: color-mix(in srgb, var(--sec-green, #32A966) 16%, transparent); color: var(--sec-green, #32A966); }
-.sc-cf-ic .material-icons { font-size: 16px !important; }
+.sc-cf-ic .material-symbols-outlined { font-size: 16px !important; }
 .sc-cf-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
 .sc-cf-title { font-size: 0.75rem; font-weight: 700; color: var(--text); }
 .sc-cf-desc { font-size: 0.6875rem; line-height: 1.4; color: var(--text-muted); }
 .sc-cf-state { flex-shrink: 0; display: inline-flex; align-items: center; margin-top: 2px; }
-.sc-cf-state .material-icons { font-size: 18px !important; color: var(--text-subtle); }
-.sc-cf-step.is-done .sc-cf-state .material-icons { color: var(--sec-green, #32A966); }
+.sc-cf-state .material-symbols-outlined { font-size: 18px !important; color: var(--text-subtle); }
+.sc-cf-step.is-done .sc-cf-state .material-symbols-outlined { color: var(--sec-green, #32A966); }
 .sc-cf-spin { animation: scCfSpin 0.9s linear infinite; color: var(--primary) !important; }
 @keyframes scCfSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-cf-spin { animation: none; } }
@@ -953,8 +953,8 @@ html.dark .sc-cf-head .material-icons { color: var(--primary-bright, #8B9FAF); }
   font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
   color: var(--text-subtle);
 }
-.sc-trust-badge .material-icons { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
-html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF); }
+.sc-trust-badge .material-symbols-outlined { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
+html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
 /* Per-line meta row — timestamp (both speakers) + grounding caption (WISEai). */
 .sc-line-meta {
@@ -968,7 +968,7 @@ html.dark .sc-trust-badge .material-icons { color: var(--primary-bright, #8B9FAF
   font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
   color: color-mix(in srgb, var(--primary) 75%, var(--text-muted));
 }
-.sc-trust-chip .material-icons { font-size: 12px !important; }
+.sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 
 /* Typing indicator now carries a status label ("WISEai is checking…"). */
@@ -982,7 +982,7 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
   font-size: 0.625rem; font-weight: 500; line-height: 1.3;
   color: var(--text-subtle); text-align: center;
 }
-.sc-disclaimer .material-icons { font-size: 12px !important; opacity: 0.8; flex-shrink: 0; }
+.sc-disclaimer .material-symbols-outlined { font-size: 12px !important; opacity: 0.8; flex-shrink: 0; }
 
 /* =============================================================
    In-chat "Agent Settings" panel
@@ -1018,13 +1018,13 @@ html.dark .sc-settings .ss-header {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .sc-settings .ss-back-btn:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--text); }
-.sc-settings .ss-back-btn .material-icons { font-size: 20px !important; }
+.sc-settings .ss-back-btn .material-symbols-outlined { font-size: 20px !important; }
 .sc-settings .ss-header-icon {
   width: 28px; height: 28px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   color: var(--text);
 }
-.sc-settings .ss-header-icon .material-icons { font-size: 18px !important; }
+.sc-settings .ss-header-icon .material-symbols-outlined { font-size: 18px !important; }
 .sc-settings .ss-header-titles { flex: 1; min-width: 0; }
 .sc-settings .ss-header-title { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.2; margin: 0; }
 .sc-settings .ss-header-subtitle { font-size: 0.6875rem; color: var(--text-muted); margin: 2px 0 0; }
@@ -1042,7 +1042,7 @@ html.dark .sc-settings .ss-body { background: transparent; }
   display: flex; align-items: center; justify-content: center;
   background: var(--primary-soft); color: var(--primary);
 }
-.sc-settings .ss-info-icon .material-icons { font-size: 16px !important; }
+.sc-settings .ss-info-icon .material-symbols-outlined { font-size: 16px !important; }
 .sc-settings .ss-info-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); margin: 0; }
 .sc-settings .ss-info-desc { font-size: var(--fs-label); color: var(--text-muted); margin: 4px 0 0; line-height: 1.5; }
 
@@ -1067,7 +1067,7 @@ html.dark .sc-settings .ss-body { background: transparent; }
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-3);
 }
-.sc-settings .ss-agent-icon .material-icons { font-size: 20px !important; }
+.sc-settings .ss-agent-icon .material-symbols-outlined { font-size: 20px !important; }
 .sc-settings .ss-agent-body { flex: 1; min-width: 0; }
 .sc-settings .ss-agent-name {
   font-size: var(--fs-ui); font-weight: 700; color: var(--text);
