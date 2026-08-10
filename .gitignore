@@ -17,3 +17,6 @@ _WISEdesigns
 
 # Generated page screenshots (regenerate via screenshots/_shoot.py)
 screenshots/*.png
+
+# Throwaway repro/debug screenshots
+scripts/*.png

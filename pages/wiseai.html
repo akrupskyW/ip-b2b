@@ -101,7 +101,12 @@
       box-shadow: var(--shadow-card);
       overflow: hidden;
       transform-origin: left center;
-      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+      /* `backwards` (not `both`): hold the start frame during the delay, but DON'T
+         retain the end frame's transform afterwards. A lingering `transform` would
+         make the card a containing block for position:fixed AND (with overflow:hidden)
+         clip any floated three-dot popover inside the chat — which no z-index escapes.
+         The end frame is visually identical to no transform, so reverting is seamless. */
+      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s backwards;
     }
     /* When any result pane is open, dock the chat to a fixed-width column. */
     #modules-row:has(.wa-pane.is-open) .wa-chat {
@@ -119,6 +124,24 @@
     .sc-reply-chips .chip { font-weight: 500; padding: 7px 13px; font-size: var(--fs-label); line-height: 1.25; text-align: left; max-width: 100%; }
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
     html.header-float .wa-chat .chat-topbar { z-index: 12 !important; }
+    /* Floated chat controls (⋯ + width): when the transcript scrolls up beneath
+       them they gain an opaque backing so glyphs stay legible. The shared rule
+       paints that backing white (--surface), which reads as a different color
+       from the chat module's scrolling surface (--bg). Match --bg so, at rest,
+       the icons blend into the chat module instead of sitting on white pills. */
+    html.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: var(--bg);
+    }
+    html.dark.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.dark.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: #1A2339; /* matches html.dark .sc-card's surface */
+    }
+    /* Keep hover/active affordances readable over the new resting backing. */
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover { background: var(--surface-3); }
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn.is-open,
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn.is-on { background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
 
     /* Bigger welcome headline on the WISEai surface — it leads the full-width
        chat, so give it more presence than the shared default. */
@@ -180,23 +203,29 @@
       height: calc(100% - 30px);
     }
 
-    /* Pane header — a Noto Serif title + muted meta, controls floated right.
-       Mirrors the product-portfolio board header (no boxed icon, no shaded strip). */
-    /* Pane header — a plain editorial masthead like reports.html (.rp-title-main):
-       a serif title + muted meta, NO icon and NO boxed/shaded chrome. The title
-       and meta are set dynamically to the current result's own name, so the
-       result name and the module header read as one thing. */
-    .wa-pane-head {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 20px 16px 16px 24px; flex-shrink: 0;
+    /* Pane top bar — a slim, always-present control strip that replaces the old
+       editorial masthead (which merely duplicated the title already rendered
+       inside each output block). It carries only the carousel position counter
+       on the LEFT and the control cluster on the RIGHT: the prev/next/minimize
+       buttons followed by the three-dot menu + width changer, all in one line. */
+    .wa-pane-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 12px 10px 20px; flex-shrink: 0;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
-    .wa-pane-head-titles { flex: 1 1 auto; min-width: 0; }
-    .wa-pane-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.16;
-      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .wa-pane-meta { font-size: 11.5px; color: var(--text-muted); margin: 5px 0 0; line-height: 1.4; }
-    .wa-pane-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    /* The header control cluster (nav + three-dot + width) is ALWAYS pinned to the
+       pane's right edge. margin-left:auto guarantees this even when the position
+       counter on the left is empty/hidden (a single output) — without it,
+       justify-content:space-between would collapse the lone cluster to the left. */
+    .wa-pane-top-right { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto; }
+    .wa-pane-controls { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    .wa-pane-controls .panel-more-wrap { margin-left: 0; }
+    /* .topbar-menu-item carries an explicit display:flex, which would otherwise
+       defeat the [hidden] attribute — force menu items/dividers hidden when set
+       (used to reveal the "Minimize" item only in carousel mode). */
+    .wa-pane .topbar-menu-item[hidden],
+    .wa-pane .topbar-menu-divider[hidden] { display: none !important; }
 
     /* ── Broken-out History / Turns modules ──
        When History or Turns live as their own docked modules (real flex siblings
@@ -284,6 +313,18 @@
     #modules-row #wa-chat { position: relative; z-index: 3; }
     #modules-row .wch-sidebar.wch-docked { position: relative; z-index: 1; }
 
+    /* The docked History / Turns three-dot menu portals its popover to <body>
+       (z-index 3000), so the module itself never needs lifting to show it. Pin
+       the docked sidebars BELOW the chat even while their menu is open — this
+       overrides the shared pane-resize "menu open" rule (which otherwise jumps
+       the whole module to z-index 500, popping the entire History module on top
+       of the chat). Higher specificity + !important beats that generic rule. */
+    #modules-row .wch-sidebar.wch-docked:has(.panel-more-btn.is-open),
+    #modules-row .wch-sidebar.wch-docked:has(.topbar-popover:not(.hidden)),
+    #modules-row .wch-sidebar.wch-docked:has([role="menu"]:not(.hidden):not([hidden])) {
+      z-index: 1 !important;
+    }
+
     /* ── Docked module reveal / conceal ──────────────────────────────────────
        Showing a docked module (History on the left, Turns on the right) slides
        it out from behind the chat; hiding it slides it back in behind the chat
@@ -331,39 +372,39 @@
     .wa-pane-body.is-carousel > .wa-block { display: none; margin: 0; padding-top: 0; border-top: 0; }
     .wa-pane-body.is-carousel > .wa-block.is-active { display: block; }
 
-    /* Rail is TWO stacked rows: a control row on top (position counter on the
-       left, minimize + prev/next on the right) and, beneath it, the thumbnail
-       track running EDGE-TO-EDGE so the controls never eat into — or overlap —
-       the carousel's horizontal scroll. */
-    .wa-pane-nav {
-      display: none; flex: 0 0 auto; flex-direction: column; align-items: stretch; gap: 8px;
-      padding: 10px 0 10px 0; border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .wa-pane-nav.is-on { display: flex; }
-    /* Scrollable thumbnail track — full-width row of its own, flush to the
-       module's left edge with nothing sharing its horizontal space. */
-    .wa-pane-nav-track {
-      flex: 0 0 auto; min-width: 0; width: 100%;
-      display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
-      scrollbar-width: thin; padding: 2px 14px 4px 0;
-      scroll-snap-type: x proximity;
-    }
-    /* Control row (above the track): counter on the left, minimize + prev/next
-       on the right, spanning the full module width. */
-    .wa-pane-nav-ctrls { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; }
-    .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; white-space: nowrap; }
+    /* Position counter — lives on the LEFT of the top bar (see .wa-pane-top).
+       Hidden when a pane holds a single output (nothing to count). */
+    .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .wa-pane-nav-count:empty { display: none; }
     .wa-pane-nav-count b { color: var(--text); font-weight: 800; }
-    .wa-pane-nav-btns { display: inline-flex; gap: 4px; }
+    /* prev/next button group — sits in the top-bar right cluster, just LEFT of
+       the three-dot + width controls. Empty (and collapsed) unless the pane is
+       in carousel mode. (Minimize now lives inside the three-dot menu.) */
+    .wa-pane-nav-btns { display: inline-flex; align-items: center; gap: 2px; }
+    .wa-pane-nav-btns:empty { display: none; }
+    /* Borderless icon buttons that match the three-dot + width controls beside
+       them: no circle backing at rest, a soft fill on hover only. */
     .wa-pane-nav-arrow {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
-      background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text);
-      transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+      width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+      background: transparent; border: 0; color: var(--text-muted); opacity: .85; padding: 0;
+      transition: background .15s ease, color .15s ease, opacity .15s ease;
     }
-    .wa-pane-nav-arrow:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: var(--surface); }
-    .wa-pane-nav-arrow:disabled { opacity: .38; cursor: default; }
+    .wa-pane-nav-arrow:hover { opacity: 1; background: var(--surface-3); color: var(--text); }
+    .wa-pane-nav-arrow:disabled { opacity: .32; cursor: default; }
+    .wa-pane-nav-arrow:disabled:hover { background: transparent; color: var(--text-muted); }
     .wa-pane-nav-arrow .material-symbols-outlined { font-size: 18px; }
+
+    /* Scrollable thumbnail track — a full-width row of its own below the top
+       bar, flush to the module's left edge, shown only in carousel mode. */
+    .wa-pane-nav-track {
+      display: none; flex: 0 0 auto; min-width: 0; width: 100%;
+      gap: 10px; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: thin; padding: 10px 14px 12px 0;
+      border-bottom: 1px solid var(--border); background: var(--surface);
+      scroll-snap-type: x proximity;
+    }
+    .wa-pane-nav-track.is-on { display: flex; }
     /* Keep the very first thumbnail off the pane's left border by a hair without
        losing the edge-to-edge scroll (the strip still begins at the module edge). */
     .wa-pane-thumb-item:first-child { margin-left: 16px; }
@@ -408,25 +449,84 @@
     /* ── Minimized (intent-chip) mode ──
        The minimize control collapses the thumbnail cards into compact intent-
        style chips: a small circular preview image + the output's label. */
-    .wa-pane-nav.is-min .wa-pane-nav-track { align-items: center; padding-top: 4px; padding-bottom: 4px; }
-    .wa-pane-nav.is-min .wa-pane-thumb-item {
+    .wa-pane-nav-track.is-min { align-items: center; padding-top: 6px; padding-bottom: 8px; }
+    .wa-pane-nav-track.is-min .wa-pane-thumb-item {
       flex-direction: row; align-items: center; gap: 8px;
       width: auto; max-width: 190px; padding: 4px 12px 4px 4px; border-radius: 9999px;
     }
-    .wa-pane-nav.is-min .wa-pane-thumb-num { display: none; }
-    .wa-pane-nav.is-min .wa-pane-thumb-preview {
+    .wa-pane-nav-track.is-min .wa-pane-thumb-num { display: none; }
+    .wa-pane-nav-track.is-min .wa-pane-thumb-preview {
       width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
     }
-    .wa-pane-nav.is-min .wa-pane-thumb-inner { transform: scale(0.1056); } /* 38 / 360 */
-    .wa-pane-nav.is-min .wa-pane-thumb-label {
+    .wa-pane-nav-track.is-min .wa-pane-thumb-inner { transform: scale(0.1056); } /* 38 / 360 */
+    .wa-pane-nav-track.is-min .wa-pane-thumb-label {
       display: block; -webkit-line-clamp: none; line-clamp: none;
       font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
     }
 
+    /* ── Unified (merged) rail: two STACKED chip carousels ──
+       When Results & Visuals are merged into one module, the rail becomes two
+       stacked rows — one per group — each a horizontally-scrolling strip of small
+       intent-style pill chips (matching the chat transcript's chips), introduced
+       by a compact group label. Clicking a chip reveals that output below. */
+    .wa-pane-nav-track.is-stacked {
+      flex-direction: column; align-items: stretch; gap: 8px;
+      overflow-x: hidden; overflow-y: auto; scroll-snap-type: none;
+      padding: 10px 14px 12px;
+    }
+    /* Label sits DIRECTLY ABOVE its chip row (not beside it), so every chip row
+       starts flush against the rail's left edge. */
+    .wa-merge-group { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; }
+    /* Hairline between the two stacked carousels so each reads as its own row. */
+    .wa-pane-nav-track.is-stacked .wa-merge-group + .wa-merge-group { border-top: 1px solid var(--border); padding-top: 10px; }
+    .wa-merge-group-label {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding-left: 2px;
+      font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-subtle); line-height: 1.2;
+    }
+    .wa-merge-group-label .material-symbols-outlined { font-size: 15px; color: var(--primary); flex: 0 0 auto; }
+    html.dark .wa-merge-group-label .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .wa-merge-chips {
+      flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+      scroll-snap-type: x proximity; padding: 2px;
+    }
+    .wa-merge-chips::-webkit-scrollbar { height: 6px; }
+    /* Output chip — a rounded-corner RECTANGLE card that mirrors the transcript's
+       .sc-surface-card exactly: a tiny scaled preview of the output on the left,
+       its name to the right. NOT a pill. Clicking it reveals that output below. */
+    .wa-merge-chip {
+      flex: 0 0 auto; scroll-snap-align: start; max-width: 260px;
+      display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
+      background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px;
+      font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--text);
+      cursor: pointer; text-align: left;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    }
+    .wa-merge-chip:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+    .wa-merge-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .wa-merge-chip:active { transform: translateY(1px); }
+    /* Clipped snapshot of the output, scaled way down (matches .sc-surface-thumb). */
+    .wa-merge-chip-thumb {
+      width: 40px; height: 40px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+    }
+    .wa-merge-chip-thumb-inner {
+      position: absolute; top: 0; left: 0; width: 360px;
+      transform: scale(0.111); transform-origin: top left; pointer-events: none;
+    }
+    .wa-merge-chip-thumb-inner > * { margin: 0 !important; }
+    .wa-merge-chip-label { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+    .wa-merge-chip.is-active {
+      background: var(--surface); border-color: var(--primary); color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    html.dark .wa-merge-chip { background: rgba(255,255,255,0.04); }
+
     .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
     html.dark .wa-sec-title .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
-    .wa-caption { font-size: 11.5px; color: var(--text-subtle); margin: 0 0 12px; font-style: italic; }
+    .wa-caption { font-size: 11.5px; color: var(--text-subtle); margin: 0 0 12px; font-style: normal; }
 
     /* ── Result "table" rows (head + pager live under .wa-tbl below) ── */
     .wa-trow { display: grid; align-items: center; gap: 10px; padding: 9px 14px; }
@@ -448,8 +548,8 @@
     .wa-table-foot .material-symbols-outlined { font-size: 14px; }
 
     /* ═══ Result-set treatment ═══
-       The result's name now lives in the pane header (see .wa-pane-head), so a
-       block just carries its scorecards, a search, and a proper sortable table. */
+       Each block carries its own title, scorecards, a search, and a proper
+       sortable table (the pane no longer has a separate masthead header). */
     .wa-resultset { margin: 0; }
 
     /* ── Scorecards (result-set) — scoped to .wa-resultset so the report's own
@@ -583,7 +683,7 @@
        already separated by the hairline rule above, so each chart just needs
        breathing room, not a rounded container. */
     .wa-chart-card { border: 0; border-radius: 0; padding: 0; background: transparent; }
-    .wa-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--text-muted); }
+    .wa-chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--text-muted); }
     .wa-chart-legend .k { display: inline-flex; align-items: center; gap: 6px; }
     .wa-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
     .wa-bars { display: flex; flex-direction: column; gap: 9px; }
@@ -810,6 +910,162 @@
       #chat-shell-wrap.menu-brand-integrated #modules-row { overflow-x: auto; }
       .wa-pane.is-open { min-width: 480px; }
     }
+
+    /* ═══════════ Share panel (⋯ → Share) ═══════════
+       A centered dialog opened from any pane's three-dot "Share" action. You can
+       invite brand-new users by email or search the people directory (matches show
+       their address), share with the entire organization, and optionally attach
+       individual conversation outputs — each labelled by the pane it lives in. */
+    .wa-share-scrim {
+      position: fixed; inset: 0; z-index: 1200;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: rgba(6, 12, 22, 0.5);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      opacity: 0; transition: opacity 0.18s ease;
+    }
+    .wa-share-scrim[hidden] { display: none; }
+    .wa-share-scrim.is-open { opacity: 1; }
+    .wa-share {
+      width: 100%; max-width: 460px; max-height: calc(100vh - 48px);
+      display: flex; flex-direction: column;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-md); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      transform: translateY(10px) scale(0.985); transition: transform 0.2s ease; overflow: hidden;
+    }
+    .wa-share-scrim.is-open .wa-share { transform: none; }
+    html.dark .wa-share { background: #14242f; border-color: rgba(255, 255, 255, 0.08); }
+
+    .wa-share-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 18px 20px 16px; border-bottom: 1px solid var(--border);
+    }
+    .wa-share-head-text { min-width: 0; }
+    .wa-share-title { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .wa-share-sub {
+      margin: 3px 0 0; font-size: 0.85rem; color: var(--text-subtle); line-height: 1.35;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .wa-share-close {
+      display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0;
+      border-radius: 8px; border: 1px solid transparent; background: transparent;
+      color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .wa-share-close:hover { background: var(--surface-2); color: var(--text); }
+    .wa-share-close .material-symbols-outlined { font-size: 20px; }
+
+    .wa-share-body { padding: 18px 20px; overflow-y: auto; }
+    .wa-share-form { display: flex; flex-direction: column; gap: 18px; }
+    .wa-share-field { display: flex; flex-direction: column; gap: 7px; position: relative; }
+    .wa-share-flabel { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+
+    .wa-share-input, .wa-share-textarea {
+      width: 100%; font: inherit; font-size: 0.95rem; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px;
+      padding: 11px 13px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .wa-share-textarea { resize: vertical; min-height: 76px; line-height: 1.4; }
+    .wa-share-input:focus, .wa-share-textarea:focus, .wa-share-chipbox:focus-within {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 80, 124, 0.12);
+    }
+    html.dark .wa-share-input:focus, html.dark .wa-share-textarea:focus,
+    html.dark .wa-share-chipbox:focus-within { box-shadow: 0 0 0 3px rgba(139, 159, 175, 0.18); }
+    .wa-share-input::placeholder, .wa-share-textarea::placeholder { color: var(--text-subtle); opacity: 0.7; }
+
+    /* Chip box — collects added emails + selected people as removable pills. */
+    .wa-share-chipbox {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px; padding: 7px 9px;
+      background: var(--surface); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .wa-share-chipinput {
+      flex: 1 1 120px; min-width: 120px; border: none; outline: none; background: transparent;
+      font: inherit; font-size: 0.95rem; color: var(--text); padding: 4px 2px;
+    }
+    .wa-share-chipinput::placeholder { color: var(--text-subtle); opacity: 0.7; }
+    .wa-share-chip {
+      display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+      padding: 4px 6px 4px 11px; border-radius: var(--radius-pill);
+      background: var(--surface-2); border: 1px solid var(--border); font-size: 0.85rem; color: var(--text);
+    }
+    .wa-share-chip.is-invalid { border-color: var(--sec-red, #DC3038); color: var(--sec-red, #DC3038); }
+    .wa-share-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-share-chip-x {
+      display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0;
+      border-radius: 50%; border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+    }
+    .wa-share-chip-x:hover { background: rgba(0, 0, 0, 0.08); color: var(--text); }
+    html.dark .wa-share-chip-x:hover { background: rgba(255, 255, 255, 0.1); }
+    .wa-share-chip-x .material-symbols-outlined { font-size: 15px; }
+
+    /* People search dropdown. */
+    .wa-share-people-menu {
+      position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 5;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16); overflow: hidden auto; max-height: 244px;
+    }
+    html.dark .wa-share-people-menu { background: #14242f; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5); }
+    .wa-share-people-menu.hidden { display: none; }
+    .wa-share-person {
+      display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+      padding: 10px 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; cursor: pointer;
+    }
+    .wa-share-person:last-child { border-bottom: none; }
+    .wa-share-person:hover, .wa-share-person.is-active { background: var(--surface-2); }
+    .wa-share-person-av {
+      display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0;
+      border-radius: 50%; background: var(--surface-2); color: var(--text-subtle);
+    }
+    .wa-share-person-av .material-symbols-outlined { font-size: 18px; }
+    .wa-share-person-txt { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+    .wa-share-person-name { font-size: 0.92rem; color: var(--text); font-weight: 500; white-space: nowrap; }
+    .wa-share-person-mail { font-size: 0.85rem; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-share-people-empty { padding: 12px 13px; font-size: 0.88rem; color: var(--text-subtle); }
+
+    /* Checkbox rows (entire org + individual outputs). */
+    .wa-share-check { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: var(--text); cursor: pointer; }
+    .wa-share-check input, .wa-share-out input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+    .wa-share-check.is-disabled { opacity: 0.5; cursor: default; }
+
+    .wa-share-outputs { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+    .wa-share-out { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 9px; cursor: pointer; }
+    .wa-share-out:hover { background: var(--surface-2); }
+    .wa-share-out-tag {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--primary); flex-shrink: 0;
+    }
+    html.dark .wa-share-out-tag { color: var(--primary-bright); }
+    .wa-share-out-name { min-width: 0; font-size: 0.92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-share-outputs-empty { font-size: 0.88rem; color: var(--text-subtle); padding: 2px 6px; }
+
+    /* Footer + primary action. */
+    .wa-share-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 20px 18px; }
+    .wa-share-primary {
+      font: inherit; font-size: 0.95rem; font-weight: 700; color: #fff; background: var(--primary);
+      border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer;
+      transition: filter 0.15s ease, transform 0.05s ease;
+    }
+    .wa-share-primary:hover { filter: brightness(1.1); }
+    .wa-share-primary:active { transform: translateY(1px); }
+    .wa-share-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Success view (shown after "Create share link"). */
+    .wa-share-done { display: flex; flex-direction: column; gap: 15px; }
+    .wa-share-done-msg { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 600; color: var(--text); }
+    .wa-share-done-msg .material-symbols-outlined { color: var(--sec-green); font-size: 24px; }
+    .wa-share-linkrow { display: flex; gap: 8px; }
+    .wa-share-linkrow input {
+      flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.9rem; color: var(--text-muted);
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; outline: none;
+    }
+    .wa-share-copy {
+      display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.9rem; font-weight: 600;
+      color: var(--text); background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 10px; padding: 0 14px; cursor: pointer; white-space: nowrap;
+    }
+    .wa-share-copy:hover { background: var(--surface-2); }
+    .wa-share-copy .material-symbols-outlined { font-size: 18px; }
+    .wa-share-recap { font-size: 0.88rem; color: var(--text-subtle); line-height: 1.45; }
+    .wa-share-recap strong { color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -840,52 +1096,155 @@
 
       <!-- 2 · Results & Details pane — food results, food-detail cards, reports. -->
       <section class="wa-pane" id="wa-results" aria-label="Results & Details">
-        <header class="wa-pane-head">
-          <div class="wa-pane-head-titles">
-            <h2 class="wa-pane-title" id="wa-results-title">Results &amp; Details</h2>
-            <p class="wa-pane-meta" id="wa-results-meta">Food results, detail cards &amp; reports</p>
-          </div>
-          <div class="wa-pane-controls">
-            <div class="panel-more-wrap" data-pane-more="results">
-              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
-              <div class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
-                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+        <div class="wa-pane-top">
+          <span class="wa-pane-nav-count" id="wa-results-count" data-nav-count aria-live="polite"></span>
+          <div class="wa-pane-top-right">
+            <span class="wa-pane-nav-btns" id="wa-results-navbtns"></span>
+            <div class="wa-pane-controls">
+              <div class="panel-more-wrap" data-pane-more="results">
+                <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+                <div class="topbar-popover hidden" role="menu">
+                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
+                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
+                  <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+                  <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+                  <div class="topbar-menu-divider"></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+                </div>
               </div>
+              <button type="button" class="panel-width-toggle-btn" data-pane-width="results" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Results pane width"><span class="material-symbols-outlined">width_normal</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-pane-width="results" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Results pane width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
-        </header>
-        <div class="wa-pane-nav" id="wa-results-nav" role="tablist" aria-label="Results outputs"></div>
+        </div>
+        <div class="wa-pane-nav-track" id="wa-results-track" role="tablist" aria-label="Results outputs"></div>
         <div class="wa-pane-body" id="wa-results-body"></div>
       </section>
 
       <!-- 3 · Visuals pane — charts, graphs & trends. -->
       <section class="wa-pane" id="wa-visuals" aria-label="Visuals">
-        <header class="wa-pane-head">
-          <div class="wa-pane-head-titles">
-            <h2 class="wa-pane-title" id="wa-visuals-title">Visuals</h2>
-            <p class="wa-pane-meta" id="wa-visuals-meta">Charts, graphs &amp; trends</p>
-          </div>
-          <div class="wa-pane-controls">
-            <div class="panel-more-wrap" data-pane-more="visuals">
-              <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
-              <div class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
-                <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+        <div class="wa-pane-top">
+          <span class="wa-pane-nav-count" id="wa-visuals-count" data-nav-count aria-live="polite"></span>
+          <div class="wa-pane-top-right">
+            <span class="wa-pane-nav-btns" id="wa-visuals-navbtns"></span>
+            <div class="wa-pane-controls">
+              <div class="panel-more-wrap" data-pane-more="visuals">
+                <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+                <div class="topbar-popover hidden" role="menu">
+                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
+                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
+                  <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+                  <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+                  <div class="topbar-menu-divider"></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+                </div>
               </div>
+              <button type="button" class="panel-width-toggle-btn" data-pane-width="visuals" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Visuals pane width"><span class="material-symbols-outlined">width_normal</span></button>
             </div>
-            <button type="button" class="panel-width-toggle-btn" data-pane-width="visuals" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Visuals pane width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
-        </header>
-        <div class="wa-pane-nav" id="wa-visuals-nav" role="tablist" aria-label="Visuals outputs"></div>
+        </div>
+        <div class="wa-pane-nav-track" id="wa-visuals-track" role="tablist" aria-label="Visuals outputs"></div>
         <div class="wa-pane-body" id="wa-visuals-body"></div>
       </section>
+
+      <!-- 4 · Unified pane — Results & Visuals merged into ONE module. Hidden
+           unless the chat's "Merge outputs into one panel" switch is on. Its
+           thumbnail rail is grouped (Results · | · Visuals), split by a line
+           divider; clicking a thumbnail reveals that one output below. -->
+      <section class="wa-pane wa-pane--unified" id="wa-unified" aria-label="Outputs (merged)">
+        <div class="wa-pane-top">
+          <span class="wa-pane-nav-count" id="wa-unified-count" data-nav-count aria-live="polite"></span>
+          <div class="wa-pane-top-right">
+            <span class="wa-pane-nav-btns" id="wa-unified-navbtns"></span>
+            <div class="wa-pane-controls">
+              <div class="panel-more-wrap" data-pane-more="unified">
+                <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+                <div class="topbar-popover hidden" role="menu">
+                  <button type="button" class="topbar-menu-item" data-pane-act="split"><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
+                  <div class="topbar-menu-divider"></div>
+                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
+                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
+                  <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+                  <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+                  <div class="topbar-menu-divider"></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+                </div>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-pane-width="unified" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Outputs pane width"><span class="material-symbols-outlined">width_normal</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="wa-pane-nav-track" id="wa-unified-track" role="tablist" aria-label="Merged outputs"></div>
+        <div class="wa-pane-body" id="wa-unified-body"></div>
+      </section>
     </div><!-- /#modules-row -->
+  </div>
+
+  <!-- Share panel — opened from any pane's ⋯ → Share. Recipients by email or
+       people search, entire-org option, and per-output individual sharing. -->
+  <div class="wa-share-scrim" id="wa-share-scrim" hidden>
+    <div class="wa-share" role="dialog" aria-modal="true" aria-labelledby="wa-share-title">
+      <div class="wa-share-head">
+        <div class="wa-share-head-text">
+          <h2 class="wa-share-title" id="wa-share-title">Share</h2>
+          <p class="wa-share-sub" data-share-sub></p>
+        </div>
+        <button type="button" class="wa-share-close" data-share-close aria-label="Close share panel"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <div class="wa-share-body">
+        <!-- Compose view -->
+        <form class="wa-share-form" data-share-form novalidate>
+          <div class="wa-share-field">
+            <label class="wa-share-flabel" for="wa-share-title-input">Title</label>
+            <input type="text" id="wa-share-title-input" class="wa-share-input" data-share-title-input autocomplete="off">
+          </div>
+
+          <div class="wa-share-field">
+            <label class="wa-share-flabel" for="wa-share-email-input">Email addresses</label>
+            <div class="wa-share-chipbox" data-share-emailbox data-focus="wa-share-email-input">
+              <input type="text" id="wa-share-email-input" class="wa-share-chipinput" data-share-email placeholder="name@example.com" inputmode="email" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="wa-share-field">
+            <label class="wa-share-flabel" for="wa-share-people-input">People</label>
+            <div class="wa-share-chipbox" data-share-peoplebox data-focus="wa-share-people-input">
+              <input type="text" id="wa-share-people-input" class="wa-share-chipinput" data-share-people placeholder="Search by name or email" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="wa-share-people-menu">
+            </div>
+            <div class="wa-share-people-menu hidden" id="wa-share-people-menu" data-share-people-menu role="listbox"></div>
+          </div>
+
+          <label class="wa-share-check">
+            <input type="checkbox" data-share-org>
+            <span>Entire organization</span>
+          </label>
+
+          <div class="wa-share-field" data-share-outputs-wrap hidden>
+            <span class="wa-share-flabel">Also share individually</span>
+            <div class="wa-share-outputs" data-share-outputs></div>
+          </div>
+
+          <div class="wa-share-field">
+            <label class="wa-share-flabel" for="wa-share-message">Message</label>
+            <textarea id="wa-share-message" class="wa-share-textarea" data-share-message rows="3" placeholder="Optional note, included in the invitation email"></textarea>
+          </div>
+        </form>
+
+        <!-- Success view -->
+        <div class="wa-share-done" data-share-done hidden>
+          <div class="wa-share-done-msg"><span class="material-symbols-outlined">check_circle</span><span>Share link created</span></div>
+          <div class="wa-share-linkrow">
+            <input type="text" data-share-link readonly aria-label="Share link">
+            <button type="button" class="wa-share-copy" data-share-copy><span class="material-symbols-outlined">content_copy</span><span data-share-copy-label>Copy</span></button>
+          </div>
+          <p class="wa-share-recap" data-share-recap></p>
+        </div>
+      </div>
+
+      <div class="wa-share-foot">
+        <button type="button" class="wa-share-primary" data-share-create>Create share link</button>
+      </div>
+    </div>
   </div>
 
   <!-- Shared WISE navigation + brand strip (same pattern as studio-ai.html). -->
@@ -1076,47 +1435,68 @@
     const fmtScore = (n) => (Math.round(n * 100) / 100).toFixed(2);
 
     /* Result panes ------------------------------------------------------------ */
-    const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals') };
-    const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body') };
-    const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title') };
-    const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta') };
-    const paneNav = { results: document.getElementById('wa-results-nav'), visuals: document.getElementById('wa-visuals-nav') };
-    const paneMin = { results: false, visuals: false };  /* rail minimized to intent chips */
+    const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals'), unified: document.getElementById('wa-unified') };
+    const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body'), unified: document.getElementById('wa-unified-body') };
+    const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title'), unified: null };
+    const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta'), unified: null };
+    /* Top-bar carousel bits: the position counter (left) and the prev/next/min
+       button group (right cluster) live in .wa-pane-top; the thumbnail rail is
+       its own standalone strip below. */
+    const paneCount = { results: document.getElementById('wa-results-count'), visuals: document.getElementById('wa-visuals-count'), unified: document.getElementById('wa-unified-count') };
+    const paneNavBtns = { results: document.getElementById('wa-results-navbtns'), visuals: document.getElementById('wa-visuals-navbtns'), unified: document.getElementById('wa-unified-navbtns') };
+    const paneTrack = { results: document.getElementById('wa-results-track'), visuals: document.getElementById('wa-visuals-track'), unified: document.getElementById('wa-unified-track') };
+    const paneMin = { results: false, visuals: false, unified: false };  /* rail minimized to intent chips */
+
+    /* ── Merged mode ──────────────────────────────────────────────────────────
+       Toggled from the chat's three-dot "Merge outputs into one panel" switch.
+       When ON, every result/visual block is pulled into the single #wa-unified
+       module, whose one thumbnail rail is grouped (Results · | · Visuals). The
+       two source panes are hidden; flipping it OFF sends each block home. */
+    let mergedMode = false;
+    const PANE_GROUPS = ['results', 'visuals'];
+    const PANE_GROUP_LABEL = { results: 'Results & Details', visuals: 'Visuals' };
+    const PANE_GROUP_ICON = { results: 'table_chart', visuals: 'insights' };
 
     /* Append a result/chart into a pane so the module keeps GROWING as the
        conversation surfaces more — each answer stacks below the previous one.
-       The result's own name + byline are promoted INTO the pane header (so the
-       module header and the result name read as one), then the body accumulates.
+       Each block carries its own title/byline, so nothing is promoted into a
+       pane masthead (the pane has none); the body just accumulates.
        Returns the first appended block so we can reveal it. */
     function openPane(which, { html, title, meta } = {}) {
-      const el = paneEl[which];
+      /* While merged, results/visuals blocks flow into the single unified body
+         (tagged with their origin group so the rail can group + un-merge them). */
+      const routed = mergedMode && (which === 'results' || which === 'visuals');
+      const dest = routed ? 'unified' : which;
+      const el = paneEl[dest];
       if (!el) return;
-      if (title != null && paneTitle[which]) paneTitle[which].textContent = title;
-      if (meta != null && paneMeta[which]) paneMeta[which].textContent = meta;
+      if (title != null && paneTitle[dest]) paneTitle[dest].textContent = title;
+      if (meta != null && paneMeta[dest]) paneMeta[dest].textContent = meta;
       let firstAdded = null;
       if (html != null) {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
         while (tmp.firstChild) {
           const node = tmp.firstChild;
-          paneBody[which].appendChild(node);
+          if (routed && node.nodeType === 1) node.dataset.origin = which;
+          paneBody[dest].appendChild(node);
           if (!firstAdded && node.nodeType === 1) firstAdded = node;
         }
       }
       /* Activate search/sort/pagination on any table that just landed. */
-      paneBody[which].querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+      paneBody[dest].querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
       if (!el.classList.contains('is-open')) {
         el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
         el.classList.add('is-open');
       }
       /* Rebuild the thumbnail rail; make the just-surfaced block the active slide
          once the pane holds 2+ outputs. */
-      refreshPaneCarousel(which, { activate: firstAdded });
+      if (dest === 'unified') refreshUnifiedCarousel({ activate: firstAdded });
+      else refreshPaneCarousel(which, { activate: firstAdded });
       /* In carousel mode only one block shows, so reset the scroll to its top;
          otherwise scroll the newest result into view so growth stays visible. */
       if (firstAdded) {
-        if (paneBody[which].classList.contains('is-carousel')) {
-          paneBody[which].scrollTop = 0;
+        if (paneBody[dest].classList.contains('is-carousel')) {
+          paneBody[dest].scrollTop = 0;
         } else {
           requestAnimationFrame(() => firstAdded.scrollIntoView({ block: 'start', behavior: 'smooth' }));
         }
@@ -1148,22 +1528,35 @@
       return Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
     }
 
-    /* Sync the minimize/expand toggle icon with the rail's current mode. */
+    /* Sync the minimize/expand toggle (now a three-dot menu item) with the rail's
+       current mode: swap its icon + label between minimize and expand. */
     function updateMinBtn(which) {
-      const nav = paneNav[which];
-      if (!nav) return;
-      const btn = nav.querySelector('[data-nav="min"]');
-      if (!btn) return;
+      const item = paneEl[which] && paneEl[which].querySelector('[data-pane-act="min"]');
+      if (!item) return;
       const min = !!paneMin[which];
-      const ic = btn.querySelector('.material-symbols-outlined');
+      const ic = item.querySelector('.material-symbols-outlined');
+      const lbl = item.querySelector('.pane-min-label');
+      const txt = min ? 'Expand output cards' : 'Minimize to chips';
       if (ic) ic.textContent = min ? 'open_in_full' : 'close_fullscreen';
-      btn.title = min ? 'Expand output cards' : 'Minimize to chips';
-      btn.setAttribute('aria-label', btn.title);
+      if (lbl) lbl.textContent = txt;
+      item.setAttribute('aria-label', txt);
+    }
+
+    /* Show/hide the minimize menu item (and its divider) — it's only meaningful
+       while the pane is in carousel mode (2+ outputs to collapse into chips). */
+    function setPaneMinItemVisible(which, on) {
+      const root = paneEl[which];
+      if (!root) return;
+      const item = root.querySelector('[data-pane-act="min"]');
+      const div = root.querySelector('[data-pane-min-div]');
+      if (item) item.hidden = !on;
+      if (div) div.hidden = !on;
     }
 
     function setPaneSlide(which, idx, { animate = true, scrollNav = false } = {}) {
       const blocks = paneBlocks(which);
-      const nav = paneNav[which];
+      const track = paneTrack[which];
+      const btns = paneNavBtns[which];
       if (!blocks.length) return;
       idx = Math.max(0, Math.min(idx, blocks.length - 1));
       blocks.forEach((b, i) => b.classList.toggle('is-active', i === idx));
@@ -1178,20 +1571,22 @@
         const active = blocks[idx];
         active.style.animation = 'none'; void active.offsetWidth; active.style.animation = '';
       }
-      if (nav) {
-        const items = nav.querySelectorAll('[data-slide]');
+      if (track) {
+        const items = track.querySelectorAll('[data-slide]');
         items.forEach((it) => {
           const on = Number(it.dataset.slide) === idx;
           it.classList.toggle('is-active', on);
           it.setAttribute('aria-selected', on ? 'true' : 'false');
         });
         if (scrollNav && items[idx]) items[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        /* Position counter (e.g. "Chart 2 / 4") + prev/next availability. */
-        const noun = which === 'visuals' ? 'Chart' : 'Result';
-        const count = nav.querySelector('[data-nav-count]');
-        if (count) count.innerHTML = `${noun} <b>${idx + 1}</b> / ${blocks.length}`;
-        const prev = nav.querySelector('[data-nav="prev"]');
-        const next = nav.querySelector('[data-nav="next"]');
+      }
+      /* Position counter (e.g. "Chart 2 / 4") + prev/next availability. */
+      const noun = which === 'visuals' ? 'Chart' : which === 'unified' ? 'Output' : 'Result';
+      const count = paneCount[which];
+      if (count) count.innerHTML = `${noun} <b>${idx + 1}</b> / ${blocks.length}`;
+      if (btns) {
+        const prev = btns.querySelector('[data-nav="prev"]');
+        const next = btns.querySelector('[data-nav="next"]');
         if (prev) prev.disabled = idx <= 0;
         if (next) next.disabled = idx >= blocks.length - 1;
       }
@@ -1199,18 +1594,26 @@
 
     function refreshPaneCarousel(which, { activate } = {}) {
       const body = paneBody[which];
-      const nav = paneNav[which];
-      if (!body || !nav) return;
+      const track = paneTrack[which];
+      const btns = paneNavBtns[which];
+      const count = paneCount[which];
+      if (!body || !track || !btns) return;
       const blocks = paneBlocks(which);
-      if (blocks.length < 2) {
+      /* Separate panes run in carousel mode from the very FIRST output — the rail,
+         counter ("Result 1 / 1") and nav all show as soon as there's one block, so
+         you always land "on the first one". Only a truly empty pane resets. */
+      if (blocks.length < 1) {
         body.classList.remove('is-carousel');
-        nav.classList.remove('is-on');
-        nav.innerHTML = '';
+        track.classList.remove('is-on', 'is-min');
+        track.innerHTML = '';
+        btns.innerHTML = '';
+        if (count) count.innerHTML = '';
+        setPaneMinItemVisible(which, false);
         blocks.forEach((b) => b.classList.remove('is-active'));
         return;
       }
       body.classList.add('is-carousel');
-      nav.classList.add('is-on');
+      track.classList.add('is-on');
       blocks.forEach((b, i) => { b.dataset.slideIndex = i; });
       /* Preserve the current slide unless the caller points at a new block. */
       let activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
@@ -1230,46 +1633,201 @@
           <span class="wa-pane-thumb-preview"><span class="wa-pane-thumb-inner" inert>${b.innerHTML}</span></span>
           <span class="wa-pane-thumb-label">${esc(paneSlideLabel(b, which, i))}</span>
         </div>`).join('');
-      nav.innerHTML =
-        `<div class="wa-pane-nav-ctrls">
-          <span class="wa-pane-nav-count" data-nav-count aria-live="polite"></span>
-          <span class="wa-pane-nav-btns">
-            <button type="button" class="wa-pane-nav-arrow" data-nav="min" aria-label="Minimize to chips"><span class="material-symbols-outlined">close_fullscreen</span></button>
-            <button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
-            <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>
-          </span>
-        </div>
-        <div class="wa-pane-nav-track" data-nav-track role="tablist">${thumbs}</div>`;
-      nav.classList.toggle('is-min', !!paneMin[which]);
+      track.innerHTML = thumbs;
+      btns.innerHTML =
+        `<button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
+         <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>`;
+      track.classList.toggle('is-min', !!paneMin[which]);
+      /* The minimize toggle now lives in the three-dot menu — reveal it (and its
+         divider) only while the pane is in carousel mode, and sync its label. */
+      setPaneMinItemVisible(which, true);
       updateMinBtn(which);
       setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
     }
 
-    /* Tapping a thumbnail switches the visible output. */
-    Object.keys(paneNav).forEach((which) => {
-      const nav = paneNav[which];
-      if (!nav) return;
-      const curSlide = () => Number(nav.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
-      nav.addEventListener('click', (e) => {
-        const ctrl = e.target.closest('[data-nav]');
-        if (ctrl) {
-          const act = ctrl.dataset.nav;
-          if (act === 'min') {
-            paneMin[which] = !paneMin[which];
-            nav.classList.toggle('is-min', paneMin[which]);
-            updateMinBtn(which);
-            /* Re-scroll the active chip/card into view after the layout change. */
-            setPaneSlide(which, curSlide(), { animate: false, scrollNav: true });
-            return;
+    /* ── Unified (merged) carousel ──
+       The unified body holds every block from BOTH source panes (each tagged
+       with data-origin). Its single rail is grouped by origin — Results first,
+       then a vertical divider, then Visuals — so the two "carousels" read as
+       distinct sections of one strip. Clicking any thumbnail reveals that one
+       output below. Reuses setPaneSlide for slide activation + the counter. */
+    function refreshUnifiedCarousel({ activate } = {}) {
+      const which = 'unified';
+      const body = paneBody[which];
+      const track = paneTrack[which];
+      const btns = paneNavBtns[which];
+      const count = paneCount[which];
+      if (!body || !track || !btns) return;
+      /* Keep blocks ordered by group (results → visuals) so grouping stays clean
+         even as new outputs append at the end of the body. Stable within group. */
+      const blocks = Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
+      blocks.sort((a, b) => {
+        const ra = PANE_GROUPS.indexOf(a.dataset.origin || 'results');
+        const rb = PANE_GROUPS.indexOf(b.dataset.origin || 'results');
+        return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb);
+      });
+      blocks.forEach((b) => body.appendChild(b)); /* re-flow into grouped order */
+
+      if (blocks.length < 2) {
+        body.classList.remove('is-carousel');
+        track.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked');
+        track.innerHTML = '';
+        btns.innerHTML = '';
+        if (count) count.innerHTML = '';
+        setPaneMinItemVisible(which, false);
+        blocks.forEach((b) => b.classList.remove('is-active'));
+        if (blocks.length === 1) blocks[0].classList.add('is-active');
+        return;
+      }
+      body.classList.add('is-carousel');
+      /* Merged rail = two STACKED rows of small intent-style pill chips (one row
+         per group), matching the chat transcript's chips — not the big preview
+         thumbnails the single-pane rails use. */
+      track.classList.add('is-on', 'is-grouped', 'is-stacked');
+      track.classList.remove('is-min');
+      blocks.forEach((b, i) => { b.dataset.slideIndex = i; });
+
+      let activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
+      if (activate instanceof Element) {
+        const idx = blocks.indexOf(activate);
+        if (idx >= 0) activeIdx = idx;
+      }
+      if (activeIdx < 0) activeIdx = blocks.length - 1;
+
+      /* Group blocks by origin, preserving global slide indices for setPaneSlide. */
+      const groups = new Map();
+      blocks.forEach((b, i) => {
+        const grp = b.dataset.origin || 'results';
+        if (!groups.has(grp)) groups.set(grp, []);
+        groups.get(grp).push({ b, i });
+      });
+      let html = '';
+      PANE_GROUPS.forEach((grp) => {
+        const items = groups.get(grp);
+        if (!items || !items.length) return;
+        const chips = items.map(({ b, i }) => {
+          const label = paneSlideLabel(b, grp, i);
+          /* A <div role="tab"> (not a <button>) so the preview clone — which for
+             result blocks holds <button>/<input> controls — can nest safely; the
+             clone is `inert` so nothing inside it is focusable. Mirrors the
+             transcript's .sc-surface-card. */
+          return `<div class="wa-merge-chip" data-slide="${i}" role="tab" tabindex="0" aria-selected="false" title="${esc(label)}">
+            <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${b.innerHTML}</span></span>
+            <span class="wa-merge-chip-label">${esc(label)}</span>
+          </div>`;
+        }).join('');
+        html += `<div class="wa-merge-group">
+          <span class="wa-merge-group-label"><span class="material-symbols-outlined">${esc(PANE_GROUP_ICON[grp] || 'category')}</span>${esc(PANE_GROUP_LABEL[grp] || grp)}</span>
+          <div class="wa-merge-chips">${chips}</div>
+        </div>`;
+      });
+      track.innerHTML = html;
+      btns.innerHTML =
+        `<button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
+         <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>`;
+      /* The chip rail IS the compact form, so the "minimize to chips" item is
+         meaningless here — keep it hidden while merged. */
+      setPaneMinItemVisible(which, false);
+      setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
+    }
+
+    /* Sync the chat menu's "Merge outputs" switch with the current state. */
+    let mergeMenuItem = null;
+    function syncMergeMenu() {
+      if (!mergeMenuItem) return;
+      mergeMenuItem.classList.toggle('is-on', mergedMode);
+      mergeMenuItem.setAttribute('aria-checked', mergedMode ? 'true' : 'false');
+    }
+
+    /* Flip between the two-pane and one-merged-pane layouts, carrying every block
+       across with it so nothing is lost either way. */
+    function applyMergeMode(on) {
+      on = !!on;
+      if (on === mergedMode) { syncMergeMenu(); return; }
+      mergedMode = on;
+      const row = document.getElementById('modules-row');
+      if (row) row.classList.toggle('outputs-merged', on);
+
+      if (on) {
+        /* Pull each source pane's blocks into the unified body, tagged by origin,
+           results first then visuals (grouped order). */
+        PANE_GROUPS.forEach((grp) => {
+          const src = paneBody[grp];
+          if (!src) return;
+          Array.from(src.children)
+            .filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'))
+            .forEach((b) => { b.dataset.origin = grp; b.classList.remove('is-active'); paneBody.unified.appendChild(b); });
+          /* Reset the now-empty source pane back to a clean closed state. */
+          src.classList.remove('is-carousel');
+          if (paneTrack[grp]) { paneTrack[grp].innerHTML = ''; paneTrack[grp].classList.remove('is-on', 'is-min'); }
+          if (paneNavBtns[grp]) paneNavBtns[grp].innerHTML = '';
+          if (paneCount[grp]) paneCount[grp].innerHTML = '';
+          paneEl[grp]?.classList.remove('is-open', 'pane-wide', 'pane-triple');
+          const wb = document.querySelector(`[data-pane-width="${grp}"]`);
+          if (wb) syncPaneWidthBtn(wb, 0);
+        });
+        const hasContent = paneBody.unified.querySelector('.wa-block');
+        if (hasContent) {
+          paneEl.unified.classList.remove('is-open'); void paneEl.unified.offsetWidth;
+          paneEl.unified.classList.add('is-open');
+        }
+        refreshUnifiedCarousel({ activate: paneBody.unified.querySelector('.wa-block') });
+      } else {
+        /* Send every block home to its origin pane, preserving order. */
+        Array.from(paneBody.unified.children)
+          .filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'))
+          .forEach((b) => {
+            const grp = b.dataset.origin || 'results';
+            b.classList.remove('is-active');
+            (paneBody[grp] || paneBody.results).appendChild(b);
+          });
+        paneBody.unified.classList.remove('is-carousel');
+        if (paneTrack.unified) { paneTrack.unified.innerHTML = ''; paneTrack.unified.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
+        if (paneNavBtns.unified) paneNavBtns.unified.innerHTML = '';
+        if (paneCount.unified) paneCount.unified.innerHTML = '';
+        paneEl.unified.classList.remove('is-open', 'pane-wide', 'pane-triple');
+        const uwb = document.querySelector('[data-pane-width="unified"]');
+        if (uwb) syncPaneWidthBtn(uwb, 0);
+        /* Re-open each source pane that regained content + rebuild its rail. */
+        PANE_GROUPS.forEach((grp) => {
+          if (paneBody[grp] && paneBody[grp].querySelector('.wa-block')) {
+            paneEl[grp]?.classList.remove('is-open'); void paneEl[grp]?.offsetWidth;
+            paneEl[grp]?.classList.add('is-open');
+            refreshPaneCarousel(grp);
           }
+        });
+      }
+      window.WisePaneResize?.release?.([
+        document.getElementById('wa-chat'),
+        paneEl.results,
+        paneEl.visuals,
+        paneEl.unified,
+      ]);
+      syncMergeMenu();
+    }
+
+    /* Carousel controls live in two spots: the prev/next group up in the top bar
+       (paneNavBtns) and the thumbnail strip below (paneTrack). The minimize
+       toggle now lives in the three-dot menu (see the [data-pane-act] handler).
+       Delegate both off the pane section so a single handler covers each. */
+    Object.keys(paneEl).forEach((which) => {
+      const el = paneEl[which];
+      if (!el) return;
+      const curSlide = () => Number(paneTrack[which]?.querySelector('[data-slide].is-active')?.dataset.slide || 0);
+      el.addEventListener('click', (e) => {
+        const ctrl = e.target.closest('[data-nav]');
+        if (ctrl && el.contains(ctrl)) {
+          const act = ctrl.dataset.nav;
           setPaneSlide(which, curSlide() + (act === 'next' ? 1 : -1), { animate: true, scrollNav: true });
           return;
         }
         const it = e.target.closest('[data-slide]');
-        if (!it) return;
+        if (!it || !el.contains(it)) return;
         setPaneSlide(which, Number(it.dataset.slide), { animate: true, scrollNav: true });
       });
-      nav.addEventListener('keydown', (e) => {
+      el.addEventListener('keydown', (e) => {
+        const track = paneTrack[which];
+        if (!track || !track.contains(e.target)) return;
         if (e.key === 'ArrowRight') { e.preventDefault(); setPaneSlide(which, curSlide() + 1, { animate: true, scrollNav: true }); return; }
         if (e.key === 'ArrowLeft') { e.preventDefault(); setPaneSlide(which, curSlide() - 1, { animate: true, scrollNav: true }); return; }
         if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1284,9 +1842,21 @@
       const el = paneEl[which];
       if (el) el.classList.remove('is-open', 'pane-wide', 'pane-triple');
       if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
-      if (paneNav[which]) { paneNav[which].innerHTML = ''; paneNav[which].classList.remove('is-on'); }
+      if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
+      if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
+      if (paneCount[which]) paneCount[which].innerHTML = '';
+      paneMin[which] = false;
+      setPaneMinItemVisible(which, false);
+      updateMinBtn(which);
       const wb = document.querySelector(`[data-pane-width="${which}"]`);
       if (wb) syncPaneWidthBtn(wb, 0);
+      /* Closing the merged panel closes ALL outputs and drops merged mode, so the
+         next surfaced output lands back in the normal two-pane layout. */
+      if (which === 'unified') {
+        mergedMode = false;
+        document.getElementById('modules-row')?.classList.remove('outputs-merged');
+        syncMergeMenu();
+      }
       /* Drop any drag-pinned widths so the remaining modules reflow to fill the
          freed space — and once the last pane is gone, the chat expands back to
          full-screen (its stylesheet default) instead of staying docked at the
@@ -1295,6 +1865,7 @@
         document.getElementById('wa-chat'),
         paneEl.results,
         paneEl.visuals,
+        paneEl.unified,
       ]);
     }
 
@@ -1338,14 +1909,21 @@
         pop.classList.add('hidden'); btn.classList.remove('is-open');
         const act = item.dataset.paneAct;
         const which = wrap.dataset.paneMore;
-        if (act === 'close') closePane(which);
+        if (act === 'min') {
+          paneMin[which] = !paneMin[which];
+          paneTrack[which]?.classList.toggle('is-min', paneMin[which]);
+          updateMinBtn(which);
+          /* Re-scroll the active chip/card into view after the layout change. */
+          const idx = Number(paneTrack[which]?.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
+          setPaneSlide(which, idx, { animate: false, scrollNav: true });
+        }
+        else if (act === 'split') applyMergeMode(false);
+        else if (act === 'close') closePane(which);
         else if (act === 'export') {
           const blob = new Blob(['WISEai export placeholder\n'], { type: 'text/plain' });
           const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `wiseai-${which}.txt`; a.click();
         } else if (act === 'share') {
-          const url = location.href;
-          if (navigator.share) navigator.share({ title: 'WISEai', url }).catch(() => {});
-          else navigator.clipboard?.writeText(url).catch(() => {});
+          openShareModal(which);
         }
       });
     });
@@ -1353,6 +1931,311 @@
       document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
       document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
     });
+
+    /* ══════════ Share panel ══════════
+       Opened from a pane's ⋯ → Share. Lets you invite brand-new users by email,
+       search the org's people directory (matches surface their address), share
+       with the entire organization, and optionally attach individual outputs from
+       this conversation — each tagged by the pane it lives in. */
+    const PANE_SHARE_TAG = { results: 'Results', visuals: 'Visuals', unified: 'Output' };
+    /* Mock org directory. Entries without a `name` are addresses with no display
+       name on file (shown by email, mirroring the reference design). */
+    const SHARE_PEOPLE = [
+      { name: 'Christopher K Knoch', email: 'cknoch@wisecode.ai' },
+      { name: 'Craig Anderson', email: 'canderson@wisecode.ai' },
+      { name: 'Danny Webb', email: 'dwebb@wisecode.ai' },
+      { name: '', email: 'edunleavy@wisecode.ai' },
+      { name: '', email: 'ereyes@wisecode.ai' },
+      { name: 'Priya Anand', email: 'panand@wisecode.ai' },
+      { name: 'Maria Alvarez', email: 'malvarez@wisecode.ai' },
+      { name: 'Aaron Bell', email: 'abell@wisecode.ai' },
+      { name: 'Sophia Nguyen', email: 'snguyen@wisecode.ai' },
+      { name: 'James Carter', email: 'jcarter@wisecode.ai' },
+      { name: 'Olivia Martin', email: 'omartin@wisecode.ai' },
+      { name: 'Liam Patel', email: 'lpatel@wisecode.ai' },
+      { name: 'Grace Kim', email: 'gkim@wisecode.ai' },
+      { name: 'Noah Foster', email: 'nfoster@wisecode.ai' },
+    ];
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const shareScrim = document.getElementById('wa-share-scrim');
+    const shareEls = shareScrim ? {
+      panel: shareScrim.querySelector('.wa-share'),
+      sub: shareScrim.querySelector('[data-share-sub]'),
+      form: shareScrim.querySelector('[data-share-form]'),
+      done: shareScrim.querySelector('[data-share-done]'),
+      titleInput: shareScrim.querySelector('[data-share-title-input]'),
+      emailBox: shareScrim.querySelector('[data-share-emailbox]'),
+      emailInput: shareScrim.querySelector('[data-share-email]'),
+      peopleBox: shareScrim.querySelector('[data-share-peoplebox]'),
+      peopleInput: shareScrim.querySelector('[data-share-people]'),
+      peopleMenu: shareScrim.querySelector('[data-share-people-menu]'),
+      org: shareScrim.querySelector('[data-share-org]'),
+      outputsWrap: shareScrim.querySelector('[data-share-outputs-wrap]'),
+      outputs: shareScrim.querySelector('[data-share-outputs]'),
+      message: shareScrim.querySelector('[data-share-message]'),
+      create: shareScrim.querySelector('[data-share-create]'),
+      link: shareScrim.querySelector('[data-share-link]'),
+      copy: shareScrim.querySelector('[data-share-copy]'),
+      copyLabel: shareScrim.querySelector('[data-share-copy-label]'),
+      recap: shareScrim.querySelector('[data-share-recap]'),
+    } : null;
+
+    /* Recipients live here: people (from the directory) + ad-hoc email invites. */
+    const shareRecipients = [];
+    let shareActiveIdx = -1; /* highlighted row in the people dropdown */
+
+    /* Best-effort conversation title from the first thing you asked. */
+    function conversationTitle() {
+      const firstYou = host && host.querySelector('.sc-line-you .sc-line-body');
+      if (firstYou) {
+        const clone = firstYou.cloneNode(true);
+        clone.querySelectorAll('.sc-line-meta, .sc-att-row').forEach((n) => n.remove());
+        const t = (clone.textContent || '').trim();
+        if (t) return t;
+      }
+      return 'WISEai conversation';
+    }
+
+    function personLabel(p) { return p.name || p.email; }
+
+    function renderShareChips() {
+      if (!shareEls) return;
+      [shareEls.emailBox, shareEls.peopleBox].forEach((box) => {
+        box.querySelectorAll('.wa-share-chip').forEach((c) => c.remove());
+      });
+      shareRecipients.forEach((r, i) => {
+        const box = r.type === 'email' ? shareEls.emailBox : shareEls.peopleBox;
+        const input = r.type === 'email' ? shareEls.emailInput : shareEls.peopleInput;
+        const chip = document.createElement('span');
+        chip.className = 'wa-share-chip' + (r.invalid ? ' is-invalid' : '');
+        const label = r.type === 'email' ? r.email : personLabel(r);
+        chip.title = r.type === 'person' && r.name ? `${r.name} · ${r.email}` : r.email;
+        chip.innerHTML = `<span class="wa-share-chip-name">${esc(label)}</span>` +
+          `<button type="button" class="wa-share-chip-x" data-share-rm="${i}" aria-label="Remove ${esc(label)}"><span class="material-symbols-outlined">close</span></button>`;
+        box.insertBefore(chip, input);
+      });
+    }
+
+    function hasRecipient(email) {
+      return shareRecipients.some((r) => r.email.toLowerCase() === email.toLowerCase());
+    }
+
+    function addEmailRecipient(raw) {
+      const email = raw.trim().replace(/[,;]+$/, '').trim();
+      if (!email) return;
+      if (hasRecipient(email)) return;
+      const known = SHARE_PEOPLE.find((p) => p.email.toLowerCase() === email.toLowerCase());
+      if (known) shareRecipients.push({ type: 'person', ...known });
+      else shareRecipients.push({ type: 'email', email, invalid: !EMAIL_RE.test(email) });
+      renderShareChips();
+    }
+
+    function addPersonRecipient(p) {
+      if (hasRecipient(p.email)) return;
+      shareRecipients.push({ type: 'person', ...p });
+      renderShareChips();
+    }
+
+    function closePeopleMenu() {
+      if (!shareEls) return;
+      shareEls.peopleMenu.classList.add('hidden');
+      shareEls.peopleInput.setAttribute('aria-expanded', 'false');
+      shareActiveIdx = -1;
+    }
+
+    function renderPeopleMenu(q) {
+      if (!shareEls) return;
+      const query = q.trim().toLowerCase();
+      const matches = SHARE_PEOPLE.filter((p) =>
+        !hasRecipient(p.email) &&
+        ((p.name && p.name.toLowerCase().includes(query)) || p.email.toLowerCase().includes(query))
+      );
+      if (!query && matches.length === 0) { closePeopleMenu(); return; }
+      shareActiveIdx = -1;
+      if (matches.length === 0) {
+        shareEls.peopleMenu.innerHTML = `<div class="wa-share-people-empty">No people match “${esc(q.trim())}”. Add “${esc(q.trim())}” as an email above.</div>`;
+      } else {
+        shareEls.peopleMenu.innerHTML = matches.slice(0, 8).map((p) =>
+          `<button type="button" class="wa-share-person" role="option" data-share-pick="${esc(p.email)}">
+            <span class="wa-share-person-av"><span class="material-symbols-outlined">person</span></span>
+            <span class="wa-share-person-txt">
+              ${p.name ? `<span class="wa-share-person-name">${esc(p.name)}</span>` : ''}
+              <span class="wa-share-person-mail">${esc(p.email)}</span>
+            </span>
+          </button>`).join('');
+      }
+      shareEls.peopleMenu.classList.remove('hidden');
+      shareEls.peopleInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function renderShareOutputs() {
+      if (!shareEls) return;
+      if (!manifestOutputs.length) {
+        shareEls.outputsWrap.hidden = true;
+        shareEls.outputs.innerHTML = '';
+        return;
+      }
+      shareEls.outputsWrap.hidden = false;
+      shareEls.outputs.innerHTML = manifestOutputs.map((o) => {
+        const tag = PANE_SHARE_TAG[o.which] || 'Output';
+        return `<label class="wa-share-out">
+          <input type="checkbox" data-share-out="${o.blockId}">
+          <span class="wa-share-out-tag">${esc(tag)}</span>
+          <span class="wa-share-out-name">${esc(o.title)}</span>
+        </label>`;
+      }).join('');
+    }
+
+    let shareLastFocus = null;
+    function openShareModal(/* which */) {
+      if (!shareEls) return;
+      shareLastFocus = document.activeElement;
+      shareRecipients.length = 0;
+      shareActiveIdx = -1;
+      const title = conversationTitle();
+      shareEls.titleInput.value = title;
+      shareEls.sub.textContent = title;
+      shareEls.emailInput.value = '';
+      shareEls.peopleInput.value = '';
+      shareEls.org.checked = false;
+      shareEls.message.value = '';
+      renderShareChips();
+      renderShareOutputs();
+      closePeopleMenu();
+      /* Reset from any prior success view. */
+      shareEls.form.hidden = false;
+      shareEls.done.hidden = true;
+      shareEls.create.hidden = false;
+      shareEls.create.disabled = false;
+      shareEls.create.textContent = 'Create share link';
+      shareScrim.hidden = false;
+      requestAnimationFrame(() => {
+        shareScrim.classList.add('is-open');
+        shareEls.peopleInput.focus();
+      });
+    }
+
+    function closeShareModal() {
+      if (!shareEls) return;
+      shareScrim.classList.remove('is-open');
+      closePeopleMenu();
+      setTimeout(() => { shareScrim.hidden = true; }, 180);
+      if (shareLastFocus && typeof shareLastFocus.focus === 'function') shareLastFocus.focus();
+    }
+
+    function createShareLink() {
+      if (!shareEls) return;
+      /* Commit whatever is still sitting in the inputs. */
+      if (shareEls.emailInput.value.trim()) { addEmailRecipient(shareEls.emailInput.value); shareEls.emailInput.value = ''; }
+
+      const org = shareEls.org.checked;
+      const people = shareRecipients.map((r) => r.type === 'email' ? r.email : personLabel(r));
+      const outIds = Array.from(shareEls.outputs.querySelectorAll('[data-share-out]:checked')).map((c) => c.dataset.shareOut);
+      const outTitles = outIds.map((id) => (manifestOutputs.find((o) => o.blockId === id) || {}).title).filter(Boolean);
+
+      const slug = (shareEls.titleInput.value || 'wiseai').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'wiseai';
+      const token = Math.random().toString(36).slice(2, 10);
+      const url = `${location.origin}/share/${slug}-${token}`;
+
+      shareEls.link.value = url;
+      /* Human-readable recap of who this reaches + what's attached. */
+      const bits = [];
+      if (org) bits.push('the <strong>entire organization</strong>');
+      if (people.length) bits.push(`<strong>${people.length}</strong> ${people.length === 1 ? 'person' : 'people'}`);
+      let recap = bits.length ? `Shared with ${bits.join(' and ')}.` : 'Anyone with the link can view.';
+      if (outTitles.length) recap += ` Includes ${outTitles.length} individual ${outTitles.length === 1 ? 'output' : 'outputs'}.`;
+      shareEls.recap.innerHTML = recap;
+
+      shareEls.form.hidden = true;
+      shareEls.done.hidden = false;
+      shareEls.create.hidden = true;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      requestAnimationFrame(() => shareEls.link.focus());
+    }
+
+    if (shareEls) {
+      /* Clicking anywhere in a chip box focuses its text input. */
+      [shareEls.emailBox, shareEls.peopleBox].forEach((box) => {
+        box.addEventListener('mousedown', (e) => {
+          if (e.target.closest('.wa-share-chip')) return;
+          if (e.target === box) { e.preventDefault(); document.getElementById(box.dataset.focus)?.focus(); }
+        });
+      });
+
+      shareEls.emailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',' || (e.key === ' ' && shareEls.emailInput.value.includes('@'))) {
+          e.preventDefault(); addEmailRecipient(shareEls.emailInput.value); shareEls.emailInput.value = '';
+        } else if (e.key === 'Backspace' && !shareEls.emailInput.value) {
+          const last = [...shareRecipients].reverse().find((r) => r.type === 'email');
+          if (last) { shareRecipients.splice(shareRecipients.indexOf(last), 1); renderShareChips(); }
+        }
+      });
+      shareEls.emailInput.addEventListener('blur', () => {
+        if (shareEls.emailInput.value.trim()) { addEmailRecipient(shareEls.emailInput.value); shareEls.emailInput.value = ''; }
+      });
+
+      shareEls.peopleInput.addEventListener('input', () => renderPeopleMenu(shareEls.peopleInput.value));
+      shareEls.peopleInput.addEventListener('focus', () => { if (shareEls.peopleInput.value.trim()) renderPeopleMenu(shareEls.peopleInput.value); });
+      shareEls.peopleInput.addEventListener('keydown', (e) => {
+        const opts = Array.from(shareEls.peopleMenu.querySelectorAll('[data-share-pick]'));
+        if (e.key === 'ArrowDown' && opts.length) {
+          e.preventDefault(); shareActiveIdx = Math.min(shareActiveIdx + 1, opts.length - 1);
+        } else if (e.key === 'ArrowUp' && opts.length) {
+          e.preventDefault(); shareActiveIdx = Math.max(shareActiveIdx - 1, 0);
+        } else if (e.key === 'Enter') {
+          if (shareActiveIdx >= 0 && opts[shareActiveIdx]) {
+            e.preventDefault();
+            const p = SHARE_PEOPLE.find((x) => x.email === opts[shareActiveIdx].dataset.sharePick);
+            if (p) { addPersonRecipient(p); shareEls.peopleInput.value = ''; renderPeopleMenu(''); }
+          }
+          return;
+        } else if (e.key === 'Escape') {
+          if (!shareEls.peopleMenu.classList.contains('hidden')) { e.stopPropagation(); closePeopleMenu(); }
+          return;
+        } else if (e.key === 'Backspace' && !shareEls.peopleInput.value) {
+          const last = [...shareRecipients].reverse().find((r) => r.type === 'person');
+          if (last) { shareRecipients.splice(shareRecipients.indexOf(last), 1); renderShareChips(); renderPeopleMenu(shareEls.peopleInput.value); }
+          return;
+        } else { return; }
+        opts.forEach((o, i) => o.classList.toggle('is-active', i === shareActiveIdx));
+        if (opts[shareActiveIdx]) opts[shareActiveIdx].scrollIntoView({ block: 'nearest' });
+      });
+
+      shareEls.peopleMenu.addEventListener('mousedown', (e) => {
+        const pick = e.target.closest('[data-share-pick]');
+        if (!pick) return;
+        e.preventDefault();
+        const p = SHARE_PEOPLE.find((x) => x.email === pick.dataset.sharePick);
+        if (p) { addPersonRecipient(p); shareEls.peopleInput.value = ''; renderPeopleMenu(''); shareEls.peopleInput.focus(); }
+      });
+
+      /* Remove-chip clicks (delegated across both boxes). */
+      shareScrim.addEventListener('click', (e) => {
+        const rm = e.target.closest('[data-share-rm]');
+        if (rm) { shareRecipients.splice(Number(rm.dataset.shareRm), 1); renderShareChips(); }
+      });
+
+      shareEls.create.addEventListener('click', createShareLink);
+      shareEls.copy.addEventListener('click', () => {
+        navigator.clipboard?.writeText(shareEls.link.value).catch(() => {});
+        shareEls.link.select();
+        if (shareEls.copyLabel) {
+          shareEls.copyLabel.textContent = 'Copied';
+          setTimeout(() => { if (shareEls.copyLabel) shareEls.copyLabel.textContent = 'Copy'; }, 1600);
+        }
+      });
+
+      shareScrim.querySelector('[data-share-close]').addEventListener('click', closeShareModal);
+      shareScrim.addEventListener('mousedown', (e) => { if (e.target === shareScrim) closeShareModal(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !shareScrim.hidden && shareEls.peopleMenu.classList.contains('hidden')) closeShareModal();
+      });
+      /* Close the people dropdown on outside click. */
+      document.addEventListener('mousedown', (e) => {
+        if (!shareScrim.hidden && !e.target.closest('[data-share-peoplebox]') && !e.target.closest('[data-share-people-menu]')) closePeopleMenu();
+      });
+    }
 
     /* ── Results-table controller: live search + click-to-sort + pagination ──
        Search (per result-set), the column headers, and the clickable score cards
@@ -1486,6 +2369,7 @@
     }
     wireResults(paneBody.results);
     wireResults(paneBody.visuals);
+    wireResults(paneBody.unified);
 
     /* ═════════ Content builders ═════════ */
     /* Representative food photos pulled from the app's asset library. The exact
@@ -1734,7 +2618,7 @@
       });
       return `
         <div class="wa-block">
-          <p class="wa-sec-title">Where the cookie shell gets its score</p>
+          <h3 class="wa-report-title wa-chart-title">Where the cookie shell gets its score</h3>
           <div class="wa-chart-card">
             <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="WISEscore across the ranked chocolate chip cookies">
               ${grid}
@@ -1760,7 +2644,7 @@
         </div>`).join('');
       return `
         <div class="wa-block">
-          <p class="wa-sec-title">WISEscore distribution · 3,010 cookies</p>
+          <h3 class="wa-report-title wa-chart-title">WISEscore distribution · 3,010 cookies</h3>
           <div class="wa-chart-card"><div class="wa-bars">${bars}</div></div>
         </div>`;
     }
@@ -1789,7 +2673,7 @@
       const legend = series.map(([lbl, , , col]) => `<span class="k"><span class="wa-dot" style="background:${col}"></span>${esc(lbl)}</span>`).join('');
       return `
         <div class="wa-block">
-          <p class="wa-sec-title">Trend-style slopes</p>
+          <h3 class="wa-report-title wa-chart-title">Trend-style slopes</h3>
           <p class="wa-caption">Built from the current cookie ranking (not invented time trends): where chocolate falls later in the list, WISEscore climbs.</p>
           <div class="wa-chart-card">${svg}<div class="wa-chart-legend">${legend}</div></div>
         </div>`;
@@ -1874,10 +2758,11 @@
 
     /* Tag the first .wa-block in a view's html so we can later tell whether that
        exact block is still present in its pane (i.e. not closed/cleared). */
-    function tagBlock(html, id, title, meta) {
+    function tagBlock(html, id, title, meta, icon) {
       const attrs = `data-block-id="${id}"`
         + (title ? ` data-slide-title="${esc(title)}"` : '')
-        + (meta ? ` data-slide-meta="${esc(meta)}"` : '');
+        + (meta ? ` data-slide-meta="${esc(meta)}"` : '')
+        + (icon ? ` data-slide-icon="${esc(icon)}"` : '');
       return html.replace('<div class="wa-block', `<div ${attrs} class="wa-block`);
     }
 
@@ -2041,7 +2926,7 @@
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
     function surfaceBlock(which, { icon, title, meta, html }) {
       const blockId = 'blk' + (++surfaceSeq);
-      const tagged = tagBlock(html, blockId, title, meta);
+      const tagged = tagBlock(html, blockId, title, meta, icon);
       openPane(which, { title, meta, html: tagged });
       SURFACED[blockId] = { which, title, meta, html: tagged };
       addManifestOutput({ blockId, which, icon, title });
@@ -2055,13 +2940,15 @@
     function reopenSurface(blockId) {
       const e = SURFACED[blockId];
       if (!e) return;
-      const pane = paneEl[e.which];
-      const present = paneBody[e.which] && paneBody[e.which].querySelector(`[data-block-id="${blockId}"]`);
+      /* While merged, every block lives in the unified pane — look for it there. */
+      const dest = mergedMode ? 'unified' : e.which;
+      const pane = paneEl[dest];
+      const present = paneBody[dest] && paneBody[dest].querySelector(`[data-block-id="${blockId}"]`);
       if (present) {
         if (pane && !pane.classList.contains('is-open')) pane.classList.add('is-open');
-        if (paneBody[e.which].classList.contains('is-carousel')) {
+        if (paneBody[dest].classList.contains('is-carousel')) {
           const idx = Number(present.dataset.slideIndex);
-          setPaneSlide(e.which, Number.isNaN(idx) ? 0 : idx, { animate: true, scrollNav: true });
+          setPaneSlide(dest, Number.isNaN(idx) ? 0 : idx, { animate: true, scrollNav: true });
         } else {
           requestAnimationFrame(() => present.scrollIntoView({ block: 'start', behavior: 'smooth' }));
         }
@@ -2315,9 +3202,11 @@
       if (morePop && !morePop.querySelector('[data-sc="history"]')) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'topbar-menu-item';
+        btn.className = 'topbar-menu-item sc-mcp-item';
         btn.setAttribute('data-sc', 'history');
-        btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span>';
+        btn.setAttribute('role', 'menuitemcheckbox');
+        btn.setAttribute('aria-checked', 'false');
+        btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
         const div = document.createElement('div');
         div.className = 'topbar-menu-divider';
         morePop.insertBefore(div, morePop.firstChild);
@@ -2326,6 +3215,32 @@
       /* Sticky is now the only module style, so the "Sticky modules" switch has
          nothing to toggle — remove it from the menu. */
       if (morePop) morePop.querySelector('[data-sc="sticky"]')?.remove();
+
+      /* "Merge outputs into one panel" switch — collapses the Results & Details
+         and Visuals modules into a single #wa-unified module whose one thumbnail
+         rail is grouped (Results · | · Visuals). Uses a custom data attr (not
+         data-sc) so the chat module's own menu handler ignores it; we wire it
+         ourselves and keep the menu open so the switch state reads back. */
+      if (morePop && !morePop.querySelector('[data-merge-outputs]')) {
+        const mBtn = document.createElement('button');
+        mBtn.type = 'button';
+        mBtn.className = 'topbar-menu-item sc-mcp-item';
+        mBtn.setAttribute('role', 'menuitemcheckbox');
+        mBtn.setAttribute('aria-checked', 'false');
+        mBtn.setAttribute('data-merge-outputs', '');
+        mBtn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Merge outputs into one panel</span><span class="sc-switch" aria-hidden="true"></span>';
+        /* Sit it just above the danger "Close conversation" item when present. */
+        const closeItem = morePop.querySelector('[data-sc="close"]');
+        const anchor = closeItem ? (closeItem.previousElementSibling?.classList.contains('topbar-menu-divider') ? closeItem.previousElementSibling : closeItem) : null;
+        if (anchor) morePop.insertBefore(mBtn, anchor);
+        else morePop.appendChild(mBtn);
+        mergeMenuItem = mBtn;
+        syncMergeMenu();
+        mBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applyMergeMode(!mergedMode);
+        });
+      }
     }
   </script>
 </body>

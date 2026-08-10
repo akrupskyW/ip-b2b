@@ -11,15 +11,18 @@
  * the menu was copy-pasted per shell and drifted out of sync (which is how a
  * new toggle could land in one menu but not another).
  *
- * Shell-agnostic state is read straight from the shared modules below. The bits
- * that genuinely differ per shell (the module-layout list, whether the nav can
- * pivot, the active theme, the WISEai dock side) are passed in as options, so a
- * shell simply omits the capabilities it doesn't have.
+ * The row set is FIXED here — it is not configurable per shell. That is
+ * deliberate: shells used to pass their own show/hide options (a module-layout
+ * list, a "Dock Chat" segmented control, a "WISEai chat" toggle) and the menu
+ * drifted page to page (overview/portfolio grew rows wiseai.html never had).
+ * Now the ONLY things a shell varies are the live state a row reflects — whether
+ * the nav is pivoted (showPivot/isPivoted) and whether dark mode is on (isDark).
+ * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-layout / data-pivot / data-minimal / data-headerfloat /
- * data-fullbleed / data-jam / data-wiseai-dock / data-fz / data-pop-action),
- * so the existing per-shell listeners keep working unchanged.
+ * attribute (data-pivot / data-minimal / data-headerfloat / data-fullbleed /
+ * data-jam / data-colorblind / data-fz / data-pop-action), so the existing
+ * per-shell listeners keep working unchanged.
  */
 
 import {
@@ -47,20 +50,6 @@ import {
 } from './jam-strip.js';
 import { getStoredFontSize, setTextSize } from './text-size.js';
 
-/** Module-layout rows (only Column remains). Shells without a layout list
-    (e.g. a single agent page) pass no list and get nothing. */
-function layoutsSection(layouts, currentLayout) {
-  if (!Array.isArray(layouts) || !layouts.length) return '';
-  const items = layouts
-    .map(
-      (l) => `<div class="wise-popover-item${l.mode === currentLayout ? ' is-active' : ''}" data-layout="${l.mode}">
-        <span class="${l.sym ? 'material-symbols-outlined' : 'material-symbols-outlined'}">${l.icon}</span>${l.label}
-      </div>`
-    )
-    .join('');
-  return `${items}<div class="wise-popover-divider"></div>`;
-}
-
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
  * active, it shows a Material Symbols switch glyph to the LEFT of the label —
@@ -70,10 +59,14 @@ function layoutsSection(layouts, currentLayout) {
  * @param {string} dataAttr  Full data-* attribute string (e.g. `data-minimal="1"`).
  * @param {boolean} on        Whether the setting is currently on.
  * @param {string} label      Visible row label.
+ * @param {boolean} [admin]   Trail the row with a pink "Admin" badge (same badge
+ *                            the Accessibility review / All modules rows carry),
+ *                            marking the toggle as an admin-only capability.
  */
-function toggleRow(dataAttr, on, label) {
+function toggleRow(dataAttr, on, label, admin = false) {
+  const badge = admin ? '<span class="wise-popover-badge">Admin</span>' : '';
   return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}" ${dataAttr} role="switch" aria-checked="${on ? 'true' : 'false'}">
-      <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${label}
+      <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${label}${badge}
     </div>`;
 }
 
@@ -145,7 +138,7 @@ function syncJamPop(root) {
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
   if (!showPivot) return '';
-  return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation');
+  return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation', true);
 }
 
 /** "Colorblind type" segmented control — only revealed once the colorblind
@@ -201,74 +194,51 @@ function allModulesSection() {
     </a>`;
 }
 
-/** "Dock Chat" segmented control for the WISEai dock. WISEai is always the
-    centre anchor — there is never anything to its LEFT — so the three modes
-    choose how many module panes sit to its RIGHT: none (chat only), one, or a
-    second. Values map to the pane count in js/wiseai-dock.js. */
-function wiseaiDockSection(mode) {
-  const btn = (m, icon, label) =>
-    `<button type="button" class="fz-btn${mode === m ? ' fz-active' : ''}" data-wiseai-dock="${m}" title="${label}" aria-label="${label}"><span class="material-symbols-outlined">${icon}</span></button>`;
-  return `
-    <div class="fz-row">
-      <span class="fz-row-label">Dock Chat</span>
-      <div class="fz-btns wiseai-seg" role="group" aria-label="Panes beside chat">
-        ${btn('center', 'crop_portrait', 'Chat only')}
-        ${btn('right1', 'view_sidebar', 'One pane to the right')}
-        ${btn('right2', 'view_week', 'Two panes to the right')}
-      </div>
-    </div>
-    <div class="wise-popover-divider"></div>`;
-}
-
 /**
  * Build the full innerHTML for an Appearance popover.
  *
- * @param {Object}  opts
- * @param {Array}   [opts.layouts]        Module-layout list ({mode,icon,label,sym}); omit to hide.
- * @param {string}  [opts.currentLayout]  Active layout mode id.
- * @param {boolean} [opts.showPivot]      Show the "Pivot Navigation" row.
- * @param {boolean} [opts.isPivoted]      Whether the nav is currently pivoted.
- * @param {boolean} [opts.isDark]         Whether dark mode is active (shells compute this differently).
- * @param {boolean} [opts.showWISEaiDock]  Show the WISEai "Dock Chat" control (default true).
- * @param {string}  [opts.wiseaiDockMode]  Active WISEai dock mode ('center'|'right1'|'right2') — panes to the right of the chat.
- * @param {boolean} [opts.showWISEaiChat]  Show the "WISEai chat" on/off toggle (default false).
- *                                          Only shells that mount the shared dock pass this.
- * @param {boolean} [opts.wiseaiChatOn]    Whether the WISEai chat is currently open (not closed).
+ * ONE canonical popover for the whole app. The row set is fixed here — the same
+ * toggles, in the same order, on every shell — so the menu CANNOT drift between
+ * pages again (previously each shell passed its own show/hide options, which is
+ * how overview/portfolio grew an extra "Dock Chat" control and a module-layout
+ * list that wiseai.html never had). The only things a shell varies are the live
+ * state a row reflects: whether the nav is pivoted and whether dark mode is on.
+ *
+ * Deliberately NOT configurable: module-layout list, the WISEai "Dock Chat"
+ * segmented control, and the "WISEai chat" on/off toggle. They were removed so
+ * every page renders the identical menu that wiseai.html does. Extra options are
+ * ignored, so existing call sites that still pass them keep working unchanged.
+ *
+ * @param {Object}  [opts]
+ * @param {boolean} [opts.showPivot]  Show the "Pivot Navigation" row (shells whose rail can pivot).
+ * @param {boolean} [opts.isPivoted]  Whether the nav is currently pivoted.
+ * @param {boolean} [opts.isDark]     Whether dark mode is active (shells compute this differently).
  * @returns {string} popover innerHTML
  */
 export function buildAppearanceBody({
-  layouts = null,
-  currentLayout = null,
   showPivot = false,
   isPivoted = false,
   isDark = false,
-  showWISEaiDock = true,
-  wiseaiDockMode = 'off',
-  showWISEaiChat = false,
-  wiseaiChatOn = true,
 } = {}) {
   const fz = getStoredFontSize();
   const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
   return `
     <div class="wise-popover-header">Appearance</div>
-    ${layoutsSection(layouts, currentLayout)}
     ${pivotSection(showPivot, isPivoted)}
     ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
     ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
-    ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header')}
+    ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
     ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
-    ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip')}
+    ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
     ${jamPlayerSection()}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Colorblind mode')}
-    ${showWISEaiChat ? toggleRow('data-wiseai-chat="1"', wiseaiChatOn, 'WISEai™ chat') : ''}
     <div class="wise-popover-divider"></div>
     ${colorblindTypeSection()}
-    ${showWISEaiDock ? wiseaiDockSection(wiseaiDockMode) : ''}
-    <div class="fz-row">
-      <span class="fz-row-label">Text size</span>
-      <div class="fz-btns">
+    <div class="fz-size">
+      <span class="fz-size-label">Text size</span>
+      <div class="fz-seg" role="group" aria-label="Text size">
         ${Object.keys(sizes)
-          .map((s) => `<button type="button" class="fz-btn${fz === s ? ' fz-active' : ''}" data-fz="${s}">${sizes[s]}</button>`)
+          .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}">${sizes[s]}</button>`)
           .join('')}
       </div>
     </div>
@@ -350,9 +320,10 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
  * @param {Function} [ctx.onClose]     Close the popover (called on outside/blank click).
  * @param {Function} [ctx.togglePivot] Toggle nav pivot (shells whose nav can pivot).
  * @param {Function} [ctx.toggleTheme] Toggle light/dark. Required for the theme row.
- * @param {Function} [ctx.setLayout]   Set a module layout (mode id) — dock/portfolio shells.
- * @param {Function} [ctx.setDock]     Set the WISEai dock mode (id) — dock shells.
- * @param {Function} [ctx.toggleWiseaiChat] Toggle the WISEai chat on/off — dock shells.
+ *
+ * Note: any extra callbacks a shell still passes (e.g. setLayout / setDock /
+ * toggleWiseaiChat from before the menu was unified) are simply ignored — those
+ * rows no longer exist in the one canonical popover.
  */
 export function wireAppearancePopover(pop, ctx = {}) {
   if (!pop || pop.dataset.appearanceWired === '1') return;
@@ -364,10 +335,6 @@ export function wireAppearancePopover(pop, ctx = {}) {
       const el = ev.target.closest(sel);
       return el && pop.contains(el) ? el : null;
     };
-
-    /* Module layout (Column …) — dock / portfolio shells only. */
-    const layout = within('[data-layout]');
-    if (layout) { ev.stopPropagation(); ctx.setLayout?.(layout.dataset.layout); render(); return; }
 
     /* Nav pivot — shells whose rail can pivot to a top bar. */
     if (within('[data-pivot]')) { ev.stopPropagation(); ctx.togglePivot?.(); render(); return; }
@@ -387,13 +354,8 @@ export function wireAppearancePopover(pop, ctx = {}) {
     const jamSong = within('[data-jam-song]');
     if (jamSong) { ev.stopPropagation(); toggleJam(jamSong.dataset.jamSong); if (!syncJamPop(pop)) render(); return; }
 
-    /* WISEai dock segmented control + chat on/off — dock shells only. */
-    const dock = within('.fz-btn[data-wiseai-dock]');
-    if (dock) { ev.stopPropagation(); ctx.setDock?.(dock.dataset.wiseaiDock); render(); return; }
-    if (within('[data-wiseai-chat]')) { ev.stopPropagation(); ctx.toggleWiseaiChat?.(); render(); return; }
-
-    /* Text size. */
-    const fz = within('.fz-btn[data-fz]');
+    /* Text size (connected segmented toggle). */
+    const fz = within('[data-fz]');
     if (fz) { ev.stopPropagation(); setTextSize(fz.dataset.fz); render(); return; }
 
     /* CVD-type buttons are handled by topbar.js's global capture-phase handler
@@ -410,7 +372,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.fz-row, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.fz-row, .fz-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();

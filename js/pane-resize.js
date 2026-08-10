@@ -93,6 +93,13 @@
   function isFill(el) {
     return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-fill')) && growOf(el) > 0;
   }
+  // A "locked" pane (marked data-pr-lock) opts out of resizing entirely — no
+  // drag handle is offered on either of its seams and its width is never pinned
+  // or restored. Used e.g. by the History module while it is minimized to its
+  // fixed-width icon rail: a minimized panel must not be draggable/resizable.
+  function isLocked(el) {
+    return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-lock'));
+  }
 
   /* ── width helpers ────────────────────────────────────────────────────── */
   function rectW(el) { return el.getBoundingClientRect().width; }
@@ -138,6 +145,7 @@
     var stored = readPage();
     ps.forEach(function (el) {
       if (hasPreset(el)) return;            // preset width button owns this pane
+      if (isLocked(el)) return;             // minimized/locked pane owns its own fixed width
       if (isFill(el)) { clearInline(el); return; }  // flexible filler: stays fluid
       var w = stored[keyOf(row, el)];
       // Clamp any previously-saved width up to the hard floor so a width stored
@@ -155,11 +163,15 @@
     var out = [], n = ps.length;
     if (n < 1) return out;
     var hasFlex = ps.some(function (p) { return growOf(p) > 0; });
-    for (var i = 0; i < n - 1; i++) out.push({ mode: 'split', left: ps[i], right: ps[i + 1] });
+    // Skip any split seam that touches a locked pane (e.g. a minimized module).
+    for (var i = 0; i < n - 1; i++) {
+      if (isLocked(ps[i]) || isLocked(ps[i + 1])) continue;
+      out.push({ mode: 'split', left: ps[i], right: ps[i + 1] });
+    }
     // Outer handles only for fixed end-panes, and only when a flexible pane can
     // absorb the change (otherwise dragging would open an empty gap).
-    if (hasFlex && growOf(ps[0]) === 0) out.push({ mode: 'outerL', right: ps[0] });
-    if (n > 1 && hasFlex && growOf(ps[n - 1]) === 0) out.push({ mode: 'outerR', left: ps[n - 1] });
+    if (hasFlex && growOf(ps[0]) === 0 && !isLocked(ps[0])) out.push({ mode: 'outerL', right: ps[0] });
+    if (n > 1 && hasFlex && growOf(ps[n - 1]) === 0 && !isLocked(ps[n - 1])) out.push({ mode: 'outerR', left: ps[n - 1] });
     return out;
   }
 

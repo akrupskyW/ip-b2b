@@ -746,7 +746,7 @@ html.dark .fl-more-divider { background: rgba(255,255,255,0.08); }
 .fl-attachments:empty { display: none; }
 .fl-attach-chip {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 190px;
-  padding: 3px 8px 3px 3px; border-radius: 999px;
+  padding: 3px 3px 3px 8px; border-radius: 999px;
   background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
   animation: flAttachPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -833,6 +833,108 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
 }
 .fl-model-item.is-active .fl-model-switch { background: var(--primary); }
 .fl-model-item.is-active .fl-model-switch::after { transform: translateX(14px); }
+
+/* ===== Database selector popover — grouped, searchable, filterable ===== */
+.fl-db-popover { padding: 0; min-width: 340px; max-width: 380px; gap: 0; overflow: hidden; }
+/* Sticky search + filter header at the very top of the popover. */
+.fl-db-top {
+  position: sticky; top: 0; z-index: 2; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 12px 10px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+html.dark .fl-db-top { background: #1A2339; }
+/* Popover header: title + dock-to-sticky-module control. */
+.fl-db-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fl-db-pop-title { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+.fl-db-dock-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; border: 0; cursor: pointer;
+  background: transparent; color: var(--text-muted);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.fl-db-dock-btn:hover { background: var(--surface-2); color: var(--text); }
+.fl-db-dock-btn.is-on { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+.fl-db-dock-btn .material-symbols-outlined { font-size: 18px; }
+/* Pill search — matches the results-table search + turns-module search. */
+.fl-db-search {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 36px; border-radius: 9999px;
+  border: 1px solid var(--border-strong); background: var(--surface-2);
+}
+.fl-db-search:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent); }
+.fl-db-search .material-symbols-outlined { font-size: 18px; color: var(--text-subtle); flex-shrink: 0; }
+.fl-db-search-input {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+  font-family: inherit; font-size: var(--fs-ui); color: var(--text);
+}
+.fl-db-search-input::placeholder { color: var(--text-subtle); }
+.fl-db-filters { display: flex; gap: 6px; }
+.fl-db-chip {
+  padding: 4px 11px; border-radius: 9999px; cursor: pointer; font-family: inherit;
+  font-size: 11.5px; font-weight: 600; color: var(--text-muted);
+  border: 1px solid var(--border-strong); background: transparent;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.fl-db-chip:hover { background: var(--surface-2); }
+.fl-db-chip.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* Scrollable body holding the grouped databases. */
+.fl-db-scroll { overflow-y: auto; max-height: 360px; padding: 6px; }
+.fl-db-group { padding: 4px 0 6px; }
+.fl-db-group[hidden] { display: none; }
+.fl-db-grouphead {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 6px 8px 4px;
+}
+.fl-db-grouptitle { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+.fl-db-access {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 2px 8px; border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+}
+.fl-db-access--ro { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 40%, transparent); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.fl-db-access--rw { color: var(--sec-green-text, #1a7f4b); border-color: color-mix(in srgb, var(--sec-green-text, #1a7f4b) 40%, transparent); background: color-mix(in srgb, var(--sec-green-text, #1a7f4b) 10%, transparent); }
+
+.fl-db-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent;
+  border-radius: 10px; cursor: pointer; width: 100%; text-align: left; font-family: inherit;
+  transition: background 0.12s ease;
+}
+.fl-db-item[hidden] { display: none; }
+.fl-db-item:hover { background: var(--surface-2); }
+.fl-db-item.is-active { background: color-mix(in srgb, var(--primary) 9%, transparent); }
+.fl-db-meta { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.fl-db-name { font-size: var(--fs-ui); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-db-desc { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-db-item.is-active .fl-db-name { color: var(--primary); }
+/* Access badge (LIVE / ORG / GLB) — floated to the FAR RIGHT of the row. */
+.fl-db-badge {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; padding: 3px 6px; border-radius: 7px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em;
+  color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border);
+}
+/* Prominent selected-tick, pinned to the FAR RIGHT (the row's last element). */
+.fl-db-check {
+  flex-shrink: 0; font-size: 22px; color: var(--primary);
+  opacity: 0; transform: scale(0.6);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.fl-db-item.is-active .fl-db-check { opacity: 1; transform: none; }
+
+.fl-db-groupempty { padding: 6px 12px 8px; font-size: 12px; color: var(--text-subtle); font-style: italic; }
+.fl-db-groupempty[hidden] { display: none; }
+.fl-db-noresults { padding: 18px 12px; text-align: center; font-size: 12.5px; color: var(--text-subtle); }
+.fl-db-noresults[hidden] { display: none; }
+
+/* ── Database roster broken out into a docked "sticky module" ──────────────
+   Reuses the `.wch-sidebar.wch-docked` shell (surface, border, serif masthead,
+   sticky-drawer treatment) — these rules just let the shared roster fill the
+   panel height instead of the popover's fixed max-height. */
+.fl-db-module .fl-db-module-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.fl-db-module .fl-db-top { position: static; border-bottom: 1px solid var(--border); background: transparent; }
+html.dark .fl-db-module .fl-db-top { background: transparent; }
+.fl-db-module .fl-db-scroll { flex: 1 1 auto; max-height: none; }
 
 /* Send button — 40px primary circle, aligned to the input */
 .sc-send {

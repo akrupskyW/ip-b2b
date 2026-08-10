@@ -215,28 +215,129 @@ const DEFAULT_FEEDBACK_REASONS = [
   { reason: 'other', label: 'Something else' },
 ];
 
-/* WISE.ai model roster shown in the in-input model selector (the "tune" button
-   on the right edge of the input). Exactly one model is active at a time. */
-export const WISEAI_MODELS = [
-  { id: 'swift', name: 'WISE.ai Swift', desc: 'Fast answers for everyday work' },
-  { id: 'core',  name: 'WISE.ai Core',  desc: 'Balanced depth & speed', default: true },
-  { id: 'deep',  name: 'WISE.ai Deep',  desc: 'Advanced reasoning for reformulation' },
+/* Thumbs-up "what was accurate?" intents — the positive mirror of the reason
+   chips shown when a user marks an answer accurate. Hosts can override via
+   opts.accurateReasons. */
+const DEFAULT_ACCURATE_REASONS = [
+  { reason: 'trustworthy', label: 'Trustworthy sources' },
+  { reason: 'clear', label: 'Clear & easy' },
+  { reason: 'thorough', label: 'Thorough' },
+  { reason: 'right-food', label: 'Right food' },
+  { reason: 'actionable', label: 'Actionable' },
+  { reason: 'other-good', label: 'Something else' },
 ];
 
-/* Build the right-side model selector (button + single-select toggle popover).
-   Kept as a shared helper so every chat surface renders an identical control. */
-function buildModelSelectorHtml(id) {
-  const items = WISEAI_MODELS.map((m) => {
-    const on = m.default === true;
-    return `<button type="button" class="fl-model-item${on ? ' is-active' : ''}" role="menuitemradio" aria-checked="${on ? 'true' : 'false'}" data-model="${m.id}">`
-      + `<span class="fl-model-meta"><span class="fl-model-name">${esc(m.name)}</span><span class="fl-model-desc">${esc(m.desc)}</span></span>`
-      + `<span class="fl-model-switch" aria-hidden="true"></span></button>`;
+/* Database / environment roster shown in the in-input selector (the button on
+   the right edge of the input). Databases are grouped by category; each group
+   carries an access mode (read-only / read/write). Exactly one database is
+   active at a time. `badge` is the short tag rendered on the left of each row. */
+export const WISEAI_DBS = [
+  {
+    label: 'Postgres databases', access: 'read-only', badge: 'LIVE',
+    items: [
+      { id: 'pg-alpha-live', name: 'Postgres (ALPHA)', desc: "This deployment's live database" },
+      { id: 'pg-dev', name: 'Postgres (DEV)', desc: 'Named live environment', default: true },
+      { id: 'pg-uat', name: 'Postgres (UAT)', desc: 'Named live environment' },
+      { id: 'pg-prd', name: 'Postgres (PRD)', desc: 'Named live environment' },
+      { id: 'pg-alpha', name: 'Postgres (ALPHA)', desc: 'Named live environment' },
+    ],
+  },
+  {
+    label: 'Org databases', access: 'read/write', badge: 'ORG',
+    items: [
+      { id: 'org-default', name: 'Org default', desc: "Follows the org's default snapshot re-points" },
+      { id: 'org-jul29', name: 'ALPHA snapshot \u2014 2026-Jul-29', desc: 'as of 2026-Jul-29 \u00b7 #4391 \u00b7 current default' },
+      { id: 'org-aug04', name: 'ALPHA snapshot \u2014 2026-Aug-04', desc: 'as of 2026-Aug-04 \u00b7 #1485' },
+    ],
+  },
+  {
+    label: 'Personal sandboxes', access: 'read/write', badge: 'ORG',
+    items: [], empty: 'None available',
+  },
+  {
+    label: 'Global', access: 'read-only', badge: 'GLB',
+    items: [
+      { id: 'glb-current', name: 'Current global', desc: 'Follows a global promote' },
+      { id: 'glb-aug04', name: 'ALPHA snapshot \u2014 2026-Aug-04', desc: 'as of 2026-Aug-04 \u00b7 #4f6f' },
+      { id: 'glb-jul31', name: 'ALPHA snapshot \u2014 2026-Jul-31', desc: 'as of 2026-Jul-31 \u00b7 #0306' },
+      { id: 'glb-jul28-494f', name: 'ALPHA snapshot \u2014 2026-Jul-28', desc: 'as of 2026-Jul-28 \u00b7 #494f' },
+      { id: 'glb-jul28-bcc9', name: 'ALPHA snapshot \u2014 2026-Jul-28', desc: 'as of 2026-Jul-28 \u00b7 #bcc9' },
+      { id: 'glb-jul28-1717', name: 'ALPHA snapshot \u2014 2026-Jul-28', desc: 'as of 2026-Jul-28 \u00b7 #1717' },
+      { id: 'glb-jul28-1e8c', name: 'ALPHA snapshot \u2014 2026-Jul-28', desc: 'as of 2026-Jul-28 \u00b7 #1e8c' },
+      { id: 'glb-jul28-27eb', name: 'ALPHA snapshot \u2014 2026-Jul-28', desc: 'as of 2026-Jul-28 \u00b7 #27eb' },
+    ],
+  },
+];
+
+/* Access mode → short filter key, so the top-of-popover filter chips can hide
+   whole groups by whether they're read-only or read/write. */
+function dbAccessKey(access) { return access === 'read/write' ? 'rw' : 'ro'; }
+
+/* Grouped, single-select database rows. Row layout is name/desc → access badge
+   → a prominent selected-tick, both floated to the FAR RIGHT (the tick is the
+   right-most element). Shared so the popover and docked module render identically. */
+function buildDbGroupsHtml() {
+  return WISEAI_DBS.map((g) => {
+    const ak = dbAccessKey(g.access);
+    const rows = g.items.length
+      ? g.items.map((it) => {
+          const on = it.default === true;
+          const search = esc(`${it.name} ${it.desc || ''} ${g.label}`.toLowerCase());
+          return `<button type="button" class="fl-db-item${on ? ' is-active' : ''}" role="menuitemradio" aria-checked="${on ? 'true' : 'false'}" data-db="${esc(it.id)}" data-search="${search}">`
+            + `<span class="fl-db-meta"><span class="fl-db-name">${esc(it.name)}</span>${it.desc ? `<span class="fl-db-desc">${esc(it.desc)}</span>` : ''}</span>`
+            + `<span class="fl-db-badge">${esc(g.badge)}</span>`
+            + `<span class="fl-db-check material-symbols-outlined" aria-hidden="true">check_circle</span></button>`;
+        }).join('')
+      : `<div class="fl-db-groupempty">${esc(g.empty || 'None available')}</div>`;
+    return `<div class="fl-db-group" data-access="${ak}">
+              <div class="fl-db-grouphead">
+                <span class="fl-db-grouptitle">${esc(g.label)}</span>
+                <span class="fl-db-access fl-db-access--${ak}">${esc(g.access)}</span>
+              </div>
+              ${rows}
+            </div>`;
   }).join('');
+}
+
+/* Sticky search + access-filter chips shown at the top of the roster (both in the
+   popover and in the docked module). */
+function dbControlsHtml() {
+  return `<label class="fl-db-search">
+                  <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                  <input type="text" class="fl-db-search-input" placeholder="Search databases\u2026" aria-label="Search databases" autocomplete="off">
+                </label>
+                <div class="fl-db-filters" role="group" aria-label="Filter by access">
+                  <button type="button" class="fl-db-chip is-active" data-filter="all">All</button>
+                  <button type="button" class="fl-db-chip" data-filter="ro">Read-only</button>
+                  <button type="button" class="fl-db-chip" data-filter="rw">Read/write</button>
+                </div>`;
+}
+
+/* The searchable, filterable, grouped roster body — reused verbatim inside the
+   popover and inside the docked "sticky module" so both stay in lockstep. */
+function dbRosterHtml() {
+  return `<div class="fl-db-scroll">
+                ${buildDbGroupsHtml()}
+                <div class="fl-db-noresults" hidden>No databases match your search.</div>
+              </div>`;
+}
+
+/* Build the right-side database selector (button + searchable, filterable,
+   grouped single-select popover). Kept as a shared helper so every chat surface
+   renders an identical control. A dock icon at the top of the popover breaks it
+   out into a sticky side module, just like the Turns module. */
+function buildModelSelectorHtml(id) {
   return `<div class="fl-model-wrap">
-            <button type="button" class="fl-icon-btn fl-model-btn" id="${id}-fl-model" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">tune</span></button>
-            <div class="fl-model-popover" id="${id}-fl-model-pop" role="menu">
-              <div class="fl-model-head">WISE.ai model</div>
-              ${items}
+            <button type="button" class="fl-icon-btn fl-model-btn" id="${id}-fl-model" title="Select database" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">database</span></button>
+            <div class="fl-model-popover fl-db-popover" id="${id}-fl-model-pop" role="menu">
+              <div class="fl-db-top">
+                <div class="fl-db-pop-head">
+                  <span class="fl-db-pop-title">Databases</span>
+                  <button type="button" class="fl-db-dock-btn" title="Dock as a sticky module" aria-label="Dock the database selector as a sticky module"><span class="material-symbols-outlined">dock_to_right</span></button>
+                </div>
+                ${dbControlsHtml()}
+              </div>
+              ${dbRosterHtml()}
             </div>
           </div>`;
 }
@@ -285,6 +386,10 @@ function injectChatExtras() {
        a fixed layer. */
     .sc-mcp-item > span:not(.material-symbols-outlined):not(.sc-switch) { flex: 0 1 auto; min-width: 0; text-align: left; white-space: nowrap; }
     .sc-mcp-item .sc-switch { margin-left: auto; }
+    /* When an Admin badge is present it claims the right-edge auto margin, so the
+       switch sits snug beside it (on the row's own gap) rather than fighting it
+       for the free space. */
+    .sc-mcp-item .topbar-menu-badge ~ .sc-switch { margin-left: 0; }
     .sc-switch { position: relative; flex: 0 0 auto; width: 34px; height: 19px; border-radius: 999px;
       background: var(--surface-3, #cdd3da); border: 1px solid var(--border-strong); transition: background .15s ease, border-color .15s ease; }
     html.dark .sc-switch { background: rgba(255,255,255,0.14); }
@@ -327,14 +432,28 @@ function injectChatExtras() {
     .sc-fb-btn.is-done { color: var(--sec-green-text); }
     /* Reason picker — a pop-over anchored to the thumbs-down button, floated
        above the transcript rather than pushing the thread open inline. */
-    .sc-fb-down-wrap { position: relative; display: inline-flex; }
-    .sc-fb-reasons { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    .sc-fb-down-wrap, .sc-fb-up-wrap, .sc-fb-copy-wrap { position: relative; display: inline-flex; }
+    /* "Copied" confirmation pill — floats just above the copy button, snaps in
+       and fades away after copyAnswer() flips the .is-vis flag. */
+    .sc-fb-copied { position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%) translateY(3px) scale(.96);
+      z-index: 70; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; pointer-events: none;
+      padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .01em;
+      background: var(--sec-green-bg, #E6F4EA); color: var(--sec-green-text, #1E7A34);
+      border: 1px solid color-mix(in srgb, var(--sec-green-text, #1E7A34) 26%, transparent);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.16); opacity: 0; transition: opacity .13s ease, transform .13s ease; }
+    html.dark .sc-fb-copied { background: rgba(46,125,50,0.18); }
+    .sc-fb-copied .material-symbols-outlined { font-size: 13px; font-variation-settings: 'FILL' 1; }
+    .sc-fb-copied.is-vis { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    /* Anchored to the button's left edge (rather than centered) so the wider
+       chip + free-form panel opens rightward and can't clip off the left of the
+       transcript — the thumbs sit close to the meta row's left edge. */
+    .sc-fb-reasons { position: absolute; top: calc(100% + 8px); left: -6px;
       z-index: 60; width: max-content; max-width: 260px; display: flex; flex-direction: column; gap: 8px;
       padding: 11px 12px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 12px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
-    .sc-fb-reasons::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    .sc-fb-reasons::before { content: ''; position: absolute; bottom: 100%; left: 15px;
       border: 6px solid transparent; border-bottom-color: var(--border-strong); }
-    .sc-fb-reasons::after { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(1px);
+    .sc-fb-reasons::after { content: ''; position: absolute; bottom: 100%; left: 16px; transform: translateY(1px);
       border: 5px solid transparent; border-bottom-color: var(--surface); }
     html.dark .sc-fb-reasons { background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%); border-color: rgba(37,80,124,0.22); }
     html.dark .sc-fb-reasons::after { border-bottom-color: #1A2339; }
@@ -344,6 +463,21 @@ function injectChatExtras() {
     .sc-fb-reason { font-size: 11.5px !important; padding: 5px 11px !important; font-weight: 500; }
     .sc-fb-reason.is-on { border-color: var(--primary); color: var(--primary);
       background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    /* Free-form note beneath the chips — lets a user qualify the verdict in
+       their own words. Present in both the up and down pop-overs. */
+    .sc-fb-reasons { max-width: 280px; }
+    .sc-fb-form { display: flex; flex-direction: column; gap: 7px; min-width: 214px; }
+    .sc-fb-input { width: 100%; box-sizing: border-box; resize: vertical; min-height: 34px; max-height: 120px;
+      padding: 7px 9px; border-radius: 9px; font: inherit; font-size: 12px; line-height: 1.4; color: var(--text);
+      background: var(--surface-2, rgba(255,255,255,0.04)); border: 1px solid var(--border-strong);
+      outline: none; transition: border-color .14s ease, box-shadow .14s ease; }
+    html.dark .sc-fb-input { background: rgba(255,255,255,0.05); }
+    .sc-fb-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .sc-fb-input::placeholder { color: var(--text-subtle); }
+    .sc-fb-send { align-self: flex-end; font-size: 11.5px !important; padding: 5px 14px !important; font-weight: 700;
+      border-color: var(--primary); color: #fff; background: var(--primary); }
+    .sc-fb-send:hover { filter: brightness(1.05); }
+    .sc-fb-send:disabled { opacity: .5; cursor: default; filter: none; }
     .sc-fb-note { margin-top: 8px; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-style: italic; color: var(--text-subtle); }
     .sc-fb-note[hidden] { display: none; }
     .sc-fb-note .material-symbols-outlined { font-size: 15px; }
@@ -800,6 +934,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const feedbackReasons = Array.isArray(opts.feedbackReasons) && opts.feedbackReasons.length
     ? opts.feedbackReasons
     : DEFAULT_FEEDBACK_REASONS;
+  const accurateReasons = Array.isArray(opts.accurateReasons) && opts.accurateReasons.length
+    ? opts.accurateReasons
+    : DEFAULT_ACCURATE_REASONS;
   /* The trailing "more connectors" three-dot button is opt-out: when every
      source is already shown in the rail (opts.connectorsMore === false) it's
      redundant, so callers can drop it. */
@@ -930,7 +1067,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
@@ -1184,21 +1321,39 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      (auto_read_play), edit-then-run in a new chat (bubble), fork the whole turn
      (alt_route), and the turn's ID (e.g. #6d7a). Rendered with Material Symbols
      so the idle state reads as outlined glyphs and the active state fills in. */
-  function feedbackRowHtml() {
-    const chips = feedbackReasons.map((r) =>
+  /* A reason pop-over (chip set + optional free-form note) anchored to a
+     thumbs button. `kind` is 'up' | 'down' so the up / down flows can host
+     their own intents and share one set of interaction handlers. */
+  function reasonsPopoverHtml(kind, reasons, label, placeholder) {
+    const chips = reasons.map((r) =>
       `<button type="button" class="chip sc-fb-reason" data-reason="${esc(r.reason)}">${esc(r.label)}</button>`
     ).join('');
+    return `<div class="sc-fb-reasons sc-fb-reasons--${kind}" role="menu" aria-label="${esc(label)}" hidden>
+              <span class="sc-fb-reasons-label">${esc(label)}</span>
+              <div class="sc-fb-reason-chips">${chips}</div>
+              <div class="sc-fb-form">
+                <textarea class="sc-fb-input" rows="2" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}"></textarea>
+                <button type="button" class="chip sc-fb-send" data-fb-send="${kind}">Send</button>
+              </div>
+            </div>`;
+  }
+  function feedbackRowHtml() {
     const tid = makeTurnId();
+    const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
+    const downPop = reasonsPopoverHtml('down', feedbackReasons, 'What wasn\u2019t right?', 'Tell us more (optional)');
     return `<div class="sc-fb-wrap">
         <div class="sc-fb" role="group" aria-label="Answer actions">
-          <button type="button" class="sc-fb-btn" data-fb="copy" data-tip="Copy answer" aria-label="Copy answer"><span class="material-symbols-outlined">content_copy</span></button>
-          <button type="button" class="sc-fb-btn" data-fb="up" data-tip="Accurate" aria-label="Mark accurate" aria-pressed="false"><span class="material-symbols-outlined">thumb_up</span></button>
+          <span class="sc-fb-copy-wrap">
+            <button type="button" class="sc-fb-btn" data-fb="copy" data-tip="Copy answer" aria-label="Copy answer"><span class="material-symbols-outlined">content_copy</span></button>
+            <span class="sc-fb-copied" role="status" aria-hidden="true"><span class="material-symbols-outlined">check_circle</span>Copied</span>
+          </span>
+          <span class="sc-fb-up-wrap">
+            <button type="button" class="sc-fb-btn" data-fb="up" data-tip="Accurate" aria-label="Mark accurate" aria-haspopup="true" aria-pressed="false" aria-expanded="false"><span class="material-symbols-outlined">thumb_up</span></button>
+            ${upPop}
+          </span>
           <span class="sc-fb-down-wrap">
             <button type="button" class="sc-fb-btn" data-fb="down" data-tip="Not accurate" aria-label="Mark not accurate" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">thumb_down</span></button>
-            <div class="sc-fb-reasons" role="menu" aria-label="What wasn\u2019t right?" hidden>
-              <span class="sc-fb-reasons-label">What wasn\u2019t right?</span>
-              <div class="sc-fb-reason-chips">${chips}</div>
-            </div>
+            ${downPop}
           </span>
           <span class="sc-fb-turn">
             <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
@@ -2081,6 +2236,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     item.classList.toggle('is-on', on);
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
+  /* Whether the History & Projects module is currently revealed (docked reveal or
+     overlay open). Mirrors isTurnsVisible for the sibling module. */
+  function isHistoryVisible() {
+    if (!chatHistory || !chatHistory.root) return false;
+    const el = chatHistory.root;
+    if (el.classList.contains('wch-dock-conceal')) return false;
+    if (chatHistory.isDocked && chatHistory.isDocked()) return !el.classList.contains('wch-docked-hidden');
+    return chatHistory.isOpen ? chatHistory.isOpen() : el.classList.contains('wch-open');
+  }
+  /* Sync the History & Projects on/off switch (only present when the injected
+     menu entry opts into the sc-mcp-item switch styling). */
+  function syncHistoryMenu() {
+    const item = rootEl.querySelector('[data-sc="history"].sc-mcp-item');
+    if (!item) return;
+    const on = isHistoryVisible();
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
   /* Re-flow both flanking modules to the sticky (equal, narrower) or normal base
      width. Drag-resize still overrides per side afterwards. */
   function applyStickyLayout() {
@@ -2126,8 +2299,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     chip.className = 'fl-attach-chip';
     chip.dataset.attachId = att.id;
     chip.title = att.name;
-    chip.innerHTML = `${thumb}<span class="fl-attach-name">${esc(att.name)}</span>` +
-      `<button type="button" class="fl-attach-x" aria-label="Remove ${esc(att.name)}"><span class="material-symbols-outlined">close</span></button>`;
+    chip.innerHTML = `<button type="button" class="fl-attach-x" aria-label="Remove ${esc(att.name)}"><span class="material-symbols-outlined">close</span></button>` +
+      `<span class="fl-attach-name">${esc(att.name)}</span>${thumb}`;
     attachEl?.appendChild(chip);
   }
   function addAttachment(att) {
@@ -2164,9 +2337,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   /* Three built-in sample thumbnails for the "Load 3 example images" demo —
      self-contained SVG data URIs so the example works with no backend. */
   function sampleThumb(bg, fg, glyph) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'>` +
+    /* Center the glyph with dominant-baseline='central' (more reliably honored
+       than 'middle' when the SVG is rasterized as a background image) and keep
+       the font a touch smaller than the box so the round 22px thumbnail can't
+       clip it at the top. */
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>` +
       `<rect width='96' height='96' fill='${bg}'/>` +
-      `<text x='50%' y='54%' font-size='46' text-anchor='middle' dominant-baseline='middle' fill='${fg}' font-family='sans-serif'>${glyph}</text>` +
+      `<text x='48' y='50' font-size='40' text-anchor='middle' dominant-baseline='central' fill='${fg}' font-family='sans-serif'>${glyph}</text>` +
       `</svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
@@ -2176,7 +2353,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     { name: 'ingredients.jpg', src: sampleThumb('#DC7A38', '#ffffff', '\uD83E\uDDFE') },
   ];
   function loadExampleAttachments() {
-    hideWelcome();
+    /* Attaching examples must NOT hide the welcome — the previews are still
+       pending in the input rail and nothing has been sent yet. Hiding it here
+       blanked the whole surface (headline + intent chips) before submit. The
+       welcome is dismissed on submit(), matching the regular attach flow. */
     EXAMPLE_IMAGES.forEach((img) => addAttachment({ name: img.name, src: img.src }));
   }
 
@@ -2464,7 +2644,14 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const ic = btn.querySelector('.material-symbols-outlined');
       btn.classList.add('is-done');
       if (ic) ic.textContent = 'check';
-      flashScTip(btn, 'Copied!');
+      /* Pop a transient "Copied" pill anchored to the copy button, then let it
+         fade back out on its own. */
+      const pill = btn.closest('.sc-fb-copy-wrap')?.querySelector('.sc-fb-copied');
+      if (pill) {
+        clearTimeout(pill._hideTimer);
+        pill.classList.add('is-vis');
+        pill._hideTimer = setTimeout(() => pill.classList.remove('is-vis'), 1300);
+      }
       setTimeout(() => { btn.classList.remove('is-done'); if (ic) ic.textContent = 'content_copy'; }, 1400);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, done);
@@ -2496,34 +2683,59 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       if (verdict === 'edit') { rerunFromLine(line, false); return; }
       const up = wrap.querySelector('[data-fb="up"]');
       const down = wrap.querySelector('[data-fb="down"]');
-      const reasons = wrap.querySelector('.sc-fb-reasons');
+      const upReasons = wrap.querySelector('.sc-fb-reasons--up');
+      const downReasons = wrap.querySelector('.sc-fb-reasons--down');
       if (verdict === 'up') {
         const on = !up.classList.contains('is-on');
         up.classList.toggle('is-on', on);
         up.setAttribute('aria-pressed', on ? 'true' : 'false');
+        up.setAttribute('aria-expanded', on ? 'true' : 'false');
         down.classList.remove('is-on'); down.setAttribute('aria-expanded', 'false');
-        if (reasons) reasons.hidden = true;
-        fbNote(wrap, on ? 'Thanks — glad this was accurate.' : '', 'thumb_up');
+        if (downReasons) downReasons.hidden = true;
+        if (upReasons) upReasons.hidden = !on;
+        fbNote(wrap, '', '');
         if (on && typeof opts.onFeedback === 'function') opts.onFeedback('up');
       } else if (verdict === 'down') {
         const on = !down.classList.contains('is-on');
         down.classList.toggle('is-on', on);
         down.setAttribute('aria-expanded', on ? 'true' : 'false');
-        up.classList.remove('is-on'); up.setAttribute('aria-pressed', 'false');
-        if (reasons) reasons.hidden = !on;
+        up.classList.remove('is-on'); up.setAttribute('aria-pressed', 'false'); up.setAttribute('aria-expanded', 'false');
+        if (upReasons) upReasons.hidden = true;
+        if (downReasons) downReasons.hidden = !on;
         fbNote(wrap, '', '');
         if (on && typeof opts.onFeedback === 'function') opts.onFeedback('down');
       }
       return;
     }
+    const sendBtn = e.target.closest('.sc-fb-send');
+    if (sendBtn) {
+      const wrap = sendBtn.closest('.sc-fb-wrap');
+      const pop = sendBtn.closest('.sc-fb-reasons');
+      if (!wrap || !pop) return;
+      const kind = sendBtn.getAttribute('data-fb-send');
+      const input = pop.querySelector('.sc-fb-input');
+      const text = input ? input.value.trim() : '';
+      if (input) input.value = '';
+      pop.hidden = true;
+      const btn = wrap.querySelector(`[data-fb="${kind}"]`);
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      fbNote(wrap, 'Thanks — your feedback helps WISEai\u2122 improve.', kind === 'up' ? 'thumb_up' : 'favorite');
+      if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, { note: text });
+      return;
+    }
     const reason = e.target.closest('.sc-fb-reason');
     if (reason) {
       const wrap = reason.closest('.sc-fb-wrap');
-      if (!wrap) return;
+      const pop = reason.closest('.sc-fb-reasons');
+      if (!wrap || !pop) return;
+      const kind = pop.classList.contains('sc-fb-reasons--up') ? 'up' : 'down';
       reason.classList.toggle('is-on');
-      const anyOn = wrap.querySelector('.sc-fb-reason.is-on');
-      fbNote(wrap, anyOn ? 'Thanks — your feedback helps WISEai\u2122 improve.' : '', 'favorite');
-      if (typeof opts.onFeedback === 'function') opts.onFeedback('down', reason.getAttribute('data-reason'));
+      const anyOn = pop.querySelector('.sc-fb-reason.is-on');
+      const msg = kind === 'up'
+        ? 'Thanks — glad this hit the mark.'
+        : 'Thanks — your feedback helps WISEai\u2122 improve.';
+      fbNote(wrap, anyOn ? msg : '', kind === 'up' ? 'thumb_up' : 'favorite');
+      if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, reason.getAttribute('data-reason'));
     }
   });
 
@@ -2532,12 +2744,12 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function closeReasonPopovers() {
     messages?.querySelectorAll('.sc-fb-reasons:not([hidden])').forEach((pop) => {
       pop.hidden = true;
-      const btn = pop.closest('.sc-fb-down-wrap')?.querySelector('[data-fb="down"]');
+      const btn = pop.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')?.querySelector('.sc-fb-btn');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   }
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.sc-fb-down-wrap')) return;
+    if (e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')) return;
     closeReasonPopovers();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReasonPopovers(); });
@@ -2711,6 +2923,22 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
 
+  /* Keep the caret in the TEXT field whenever the user clicks the input pill.
+     The pending attachment chips render before the input, each with a focusable
+     remove (×) button; a click that lands in that area (or on the pill padding)
+     would otherwise leave focus on a chip button, so a subsequent Space/Enter —
+     or the browser treating keys against a non-text control — could remove an
+     image "as if it were a letter". Redirecting focus to the input (unless an
+     interactive control was the actual target) guarantees typing, Backspace and
+     Delete only ever edit the text, never the attachments. */
+  const inputWrap = input?.closest('.fl-input-wrap');
+  inputWrap?.addEventListener('mousedown', (e) => {
+    if (e.target === input) return;
+    if (e.target.closest('button, a, input, textarea, select, [contenteditable], .fl-more-popover, .fl-model-popover')) return;
+    e.preventDefault(); /* don't blur/steal selection — just land the caret in the text field */
+    input?.focus();
+  });
+
   /* Agent toggles inside the settings panel */
   settings?.addEventListener('change', (e) => {
     const cb = e.target.closest('input[data-sc-agent]');
@@ -2733,6 +2961,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) syncHistoryMenu();
   });
 
   /* "Go to" destinations (opts.menuLinks) — hand the clicked key back to the
@@ -2786,26 +3015,182 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     flMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
-  /* Model selector ("tune") popover — floated to the far right, where the old
-     three-dot lived. Single-select: choosing a model deactivates the others. */
+  /* Database selector popover — floated to the far right, where the old
+     three-dot lived. A search + access filter sit at the top; databases are
+     grouped by category and single-select (choosing one deactivates the rest).
+     The same roster can also break out into a docked "sticky module" (below). */
+  const flDbSearch = flModelPop?.querySelector('.fl-db-search-input');
+  let flDbAccessFilter = 'all';
+  let dbModule = null;      // the docked "sticky module", once broken out
+
+  /* Every roster surface currently mounted (the popover + the docked module),
+     so filters and single-select stay perfectly in sync between the two. */
+  function dbRoots() { return [flModelPop, dbModule].filter(Boolean); }
+
+  /* Show/hide rows & whole groups against the current query + access filter,
+     applied to every mounted roster at once. */
+  function applyDbFilter() {
+    const q = (flDbSearch?.value || '').trim().toLowerCase();
+    dbRoots().forEach((root) => {
+      let anyVisible = false;
+      root.querySelectorAll('.fl-db-group').forEach((grp) => {
+        const accessOk = flDbAccessFilter === 'all' || flDbAccessFilter === grp.dataset.access;
+        const items = grp.querySelectorAll('.fl-db-item');
+        let groupHasVisible = false;
+        items.forEach((it) => {
+          const match = accessOk && (!q || (it.dataset.search || '').includes(q));
+          it.hidden = !match;
+          if (match) groupHasVisible = true;
+        });
+        const emptyEl = grp.querySelector('.fl-db-groupempty');
+        let showGroup;
+        if (!items.length) {
+          showGroup = accessOk && !q; // empty categories only surface with no query
+          if (emptyEl) emptyEl.hidden = !showGroup;
+        } else {
+          showGroup = groupHasVisible;
+        }
+        grp.hidden = !showGroup;
+        if (showGroup) anyVisible = true;
+      });
+      const noResults = root.querySelector('.fl-db-noresults');
+      if (noResults) noResults.hidden = anyVisible;
+    });
+  }
+
+  /* Reflect the chosen database across every roster (checkmark + aria-checked). */
+  function markActiveDb(dbId) {
+    dbRoots().forEach((root) => root.querySelectorAll('.fl-db-item').forEach((el) => {
+      const on = el.dataset.db === dbId;
+      el.classList.toggle('is-active', on);
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+    }));
+  }
+
+  /* Mirror the active access-filter chip across every roster. */
+  function syncDbFilterChips() {
+    dbRoots().forEach((root) => root.querySelectorAll('.fl-db-chip').forEach((c) => {
+      c.classList.toggle('is-active', (c.dataset.filter || 'all') === flDbAccessFilter);
+    }));
+  }
+
+  /* Delegated wiring for one roster surface (popover OR docked module). Search
+     input mirrors into the shared query; chips set the shared access filter;
+     picking a row single-selects everywhere. `isPopover` closes the popover on
+     pick (the docked module stays put). */
+  function wireDbRoster(root, isPopover) {
+    if (!root) return;
+    const search = root.querySelector('.fl-db-search-input');
+    search?.addEventListener('click', (e) => e.stopPropagation());
+    search?.addEventListener('input', () => {
+      /* Keep both search boxes showing the same query. */
+      dbRoots().forEach((r) => { const s = r.querySelector('.fl-db-search-input'); if (s && s !== search) s.value = search.value; });
+      applyDbFilter();
+    });
+    root.addEventListener('click', (e) => {
+      const chip = e.target.closest('.fl-db-chip');
+      if (chip) {
+        e.stopPropagation();
+        flDbAccessFilter = chip.dataset.filter || 'all';
+        syncDbFilterChips();
+        applyDbFilter();
+        return;
+      }
+      const it = e.target.closest('.fl-db-item');
+      if (!it) return;
+      markActiveDb(it.dataset.db);
+      if (isPopover) {
+        flModelPop.classList.remove('open');
+        flModelBtn?.setAttribute('aria-expanded', 'false');
+      }
+      const cb = opts.onDbChange || opts.onModelChange;
+      if (typeof cb === 'function') cb(it.dataset.db);
+    });
+  }
+
   flModelBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     flPop?.classList.remove('open');
     const open = flModelPop.classList.toggle('open');
     flModelBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { applyDbFilter(); requestAnimationFrame(() => flDbSearch?.focus()); }
   });
-  flModelPop?.addEventListener('click', (e) => {
-    const it = e.target.closest('.fl-model-item');
-    if (!it) return;
-    flModelPop.querySelectorAll('.fl-model-item').forEach((el) => {
-      el.classList.remove('is-active');
-      el.setAttribute('aria-checked', 'false');
-    });
-    it.classList.add('is-active');
-    it.setAttribute('aria-checked', 'true');
-    flModelPop.classList.remove('open');
+
+  wireDbRoster(flModelPop, true);
+
+  /* ── Break the roster out into a docked "sticky module" ───────────────────
+     Mirrors the Turns module: a real flex sibling of the chat inside
+     #modules-row, dressed by the shared `.wch-sidebar.wch-docked` rules (serif
+     masthead, pane surface, and — under `.modules-sticky` — the tucked-behind
+     drawer treatment). Clicking the popover's dock icon breaks it out; the
+     module's own close control merges it back into the popover. */
+  const DB_MODULE_W = opts.stickyModulesWidth || 280;
+
+  function updateDbDockBtn() {
+    const btn = flModelPop?.querySelector('.fl-db-dock-btn');
+    if (!btn) return;
+    const on = !!dbModule;
+    btn.classList.toggle('is-on', on);
+    const ic = btn.querySelector('.material-symbols-outlined');
+    if (ic) ic.textContent = on ? 'dock_to_left' : 'dock_to_right';
+    btn.title = on ? 'Undock — back to popover' : 'Dock as a sticky module';
+    btn.setAttribute('aria-label', on ? 'Undock the database selector back to a popover' : 'Dock the database selector as a sticky module');
+  }
+
+  function ensureDbModule() {
+    if (dbModule) return dbModule;
+    const container = rootEl.parentElement;
+    if (!container) return null;
+    dbModule = document.createElement('aside');
+    dbModule.className = 'wch-sidebar wch-docked wch-right fl-db-module';
+    dbModule.setAttribute('aria-label', 'Databases');
+    dbModule.style.flex = '0 0 ' + DB_MODULE_W + 'px';
+    dbModule.style.width = DB_MODULE_W + 'px';
+    dbModule.innerHTML =
+      '<div class="wch-head">' +
+        '<span class="wch-head-title"><span class="material-symbols-outlined">database</span>Databases</span>' +
+        '<div class="wch-controls">' +
+          '<button type="button" class="panel-width-toggle-btn fl-db-undock" title="Undock — back to popover" aria-label="Merge databases back into the popover"><span class="material-symbols-outlined">close</span></button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fl-db-module-body">' +
+        '<div class="fl-db-top">' + dbControlsHtml() + '</div>' +
+        dbRosterHtml() +
+      '</div>';
+    /* Slot in as the chat's right-hand neighbour (after #wa-chat). */
+    if (rootEl.nextSibling) container.insertBefore(dbModule, rootEl.nextSibling);
+    else container.appendChild(dbModule);
+    dbModule.querySelector('.fl-db-undock')?.addEventListener('click', () => undockDbModule());
+    wireDbRoster(dbModule.querySelector('.fl-db-module-body'), false);
+    /* Carry the current query / filter / selection into the fresh roster. */
+    const activeId = flModelPop?.querySelector('.fl-db-item.is-active')?.dataset.db;
+    const s = dbModule.querySelector('.fl-db-search-input');
+    if (s && flDbSearch) s.value = flDbSearch.value;
+    syncDbFilterChips();
+    if (activeId) markActiveDb(activeId);
+    applyDbFilter();
+    /* Slide it out from behind the chat, like the other docked modules. */
+    void dbModule.offsetWidth;
+    dbModule.classList.add('wch-dock-reveal');
+    setTimeout(() => dbModule && dbModule.classList.remove('wch-dock-reveal'), 480);
+    return dbModule;
+  }
+
+  function dockDbModule() {
+    ensureDbModule();
+    flModelPop?.classList.remove('open');
     flModelBtn?.setAttribute('aria-expanded', 'false');
-    if (typeof opts.onModelChange === 'function') opts.onModelChange(it.dataset.model);
+    updateDbDockBtn();
+  }
+  function undockDbModule() {
+    if (dbModule) { dbModule.remove(); dbModule = null; }
+    updateDbDockBtn();
+  }
+
+  flModelPop?.querySelector('.fl-db-dock-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (dbModule) undockDbModule();
+    else dockDbModule();
   });
 
   /* Brand connectors — clicking a source hands its id to the host (which can
@@ -2854,12 +3239,16 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       else addWISEai('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this WISEai™ conversation.');
     }
     else if (action === 'history') {
-      closeMore();
+      /* When the entry is styled as an on/off switch (sc-mcp-item) keep the menu
+         open so the switch state reads back immediately — matching Turns. */
+      const asToggle = item.classList.contains('sc-mcp-item');
+      if (!asToggle) closeMore();
       closeConnectors(); /* keep only one overlay open at a time */
       dismissTurnsOverlay();
       if (chatHistory) chatHistory.toggle();
       else if (typeof opts.onHistory === 'function') opts.onHistory();
       else addWISEai('History &amp; Projects lets you jump back into past WISEai™ conversations. It’s coming to this workspace soon.');
+      if (asToggle) syncHistoryMenu();
     }
     else if (action === 'connect') {
       closeMore();

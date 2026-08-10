@@ -11,6 +11,7 @@
  * licensing needed) so each riff ships as a few lines of note data. The
  * library is a crate of certified bangers — recognizable hooks that read
  * instantly even as a bare monophonic chiptune:
+ *   - "Money, Money"     ABBA · Money, Money, Money chorus hook
  *   - "Pump Up the Jam"  Technotronic
  *   - "Axel F"           the Axel Foley / Beverly Hills Cop theme
  *   - "Ode to Joy"       Beethoven
@@ -21,7 +22,6 @@
  *   - "7 Nation Army"    The White Stripes · the stadium riff
  *   - "Smoke/Water"      Deep Purple · Smoke on the Water riff
  *   - "Megalovania"      Undertale
- *   - "Nokia"            Gran Vals · the Nokia ringtone
  *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
  *   - "Take On Me"       a-ha · the synth hook
  *   - "Jump Around"      House of Pain · the horn-squeal hook
@@ -54,6 +54,18 @@ function noteFreq(name) {
 /* Each note is [name|null, beats]. Rests use a null name. */
 
 const SONGS = {
+  money: {
+    label: 'Money, Money',
+    bpm: 120,
+    type: 'sawtooth',
+    notes: [
+      // ABBA — Money, Money, Money, the chorus hook, key Am.
+      ['A4', 0.5], ['A4', 0.5], ['A4', 0.75], ['C5', 0.25], ['B4', 0.5], ['A4', 0.5],
+      ['C5', 0.5], ['B4', 0.5], ['A4', 1.0], [null, 0.5],
+      ['A4', 0.25], ['A4', 0.25], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['A4', 1.0],
+      [null, 0.5],
+    ],
+  },
   pump: {
     label: 'Pump Up the Jam',
     bpm: 125,
@@ -171,17 +183,6 @@ const SONGS = {
       [null, 0.5],
     ],
   },
-  nokia: {
-    label: 'Nokia',
-    bpm: 150,
-    type: 'square',
-    notes: [
-      // Gran Vals (Tárrega) — the Nokia ringtone.
-      ['E5', 0.25], ['D5', 0.25], ['F#4', 0.5], ['G#4', 0.5],
-      ['C#5', 0.25], ['B4', 0.25], ['D4', 0.5], ['E4', 0.5],
-      ['B4', 0.25], ['A4', 0.25], ['C#4', 0.5], ['E4', 0.5], ['A4', 1.0], [null, 0.5],
-    ],
-  },
   pirates: {
     label: 'Pirates',
     bpm: 140,
@@ -242,8 +243,8 @@ const SONGS = {
 };
 
 const SONG_ORDER = [
-  'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
-  'imperial', 'seven', 'smoke', 'megalovania', 'nokia', 'pirates', 'takeonme',
+  'money', 'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
+  'imperial', 'seven', 'smoke', 'megalovania', 'pirates', 'takeonme',
   'jumparound', 'sabotage', 'rickroll',
 ];
 
