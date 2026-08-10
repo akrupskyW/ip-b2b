@@ -2992,25 +2992,16 @@ html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-m
   display: inline-flex !important;
 }
 /* Scrolling underneath: when the header is floated the ⋯ + width controls sit
-   on top of the scrolling message list. Give them a persistent opaque circle
-   (not just on hover) so the glyphs never read through the moving content. */
-html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
-html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
-html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
-html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn {
-  background: var(--surface-2);
+   on top of the scrolling message list. By default they carry NO backing (so
+   the header reads clean); only once content has scrolled up beneath them
+   (.sc-scrolled, set from the message scroll position) do they gain a plain
+   opaque circle — the EXACT module background colour, no shadow — so text can
+   never read through the glyphs. */
+html.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  background: var(--surface);
   opacity: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
-html.header-float .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
-html.header-float .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
-html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
-html.header-float #pf-chat-panel .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
-html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover,
-html.header-float #wiseai-dock-panel .chat-topbar > .sc-topbar-controls .panel-more-btn:hover {
-  background: var(--surface-3);
+  box-shadow: none;
 }
 
 /* The WISEai welcome screen is an opaque overlay (z-index 10, background

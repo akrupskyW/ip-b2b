@@ -999,6 +999,16 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   const scrollDown = () => { if (messages) messages.scrollTop = messages.scrollHeight; };
 
+  /* Reflect the message scroll position onto the card. The floated header
+     controls (⋯ + width) only paint their opaque backing circle once content
+     has actually scrolled up underneath them — at the very top there's nothing
+     beneath the icons, so they stay chrome-free. See .sc-card.sc-scrolled. */
+  if (messages) {
+    const syncScrolled = () => rootEl.classList.toggle('sc-scrolled', messages.scrollTop > 4);
+    messages.addEventListener('scroll', syncScrolled, { passive: true });
+    syncScrolled();
+  }
+
   /* Kick off the live food-count animation (opt-in via `subCounter:true`). */
   if (subCounter && welcome) {
     const countEl = welcome.querySelector('.ws-count');

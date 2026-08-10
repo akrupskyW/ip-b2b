@@ -346,6 +346,17 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 .panel-width-toggle-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
 .panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
 
+/* Floated header controls: no backing circle by default. Only once the message
+   list has scrolled up beneath them (.sc-scrolled) do the ⋯ + width icons gain a
+   plain opaque circle in the EXACT module background colour (no shadow), so
+   scrolling text can't read through the glyphs. */
+html.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  background: var(--surface);
+  opacity: 1;
+  box-shadow: none;
+}
+
 /* Wide state — legacy hook when panel-wide is applied to an inner card; the
    dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
 .sc-card.panel-wide {
