@@ -2161,8 +2161,11 @@
            that narrows the list to conversations that used the MCP server. */
         historyMcpFilter: true,
         /* Preload a few past conversations so the three-dot → History pane opens
-           on an established workspace you can jump back into (seeded once). Each
-           reuses the same verbatim replies the live transcript uses. */
+           on an established workspace you can jump back into. Each reuses the
+           same verbatim replies the live transcript uses. Bump
+           historySeedVersion whenever the seed below changes so every browser
+           re-seeds to the latest on next load (clears saved threads there). */
+        historySeedVersion: 1,
         historySeed: [
           {
             title: 'What\u2019s the worst food in our database?',

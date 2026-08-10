@@ -2362,6 +2362,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       paneHost: rootEl.querySelector('.sc-body'),
       welcomeEl: welcome,
       seed: historySeedItems,
+      /* Bump opts.historySeedVersion whenever the seed content changes so every
+         browser refreshes its stored History to the latest on next load. */
+      seedVersion: (typeof opts.historySeedVersion === 'number') ? opts.historySeedVersion : 0,
       /* Opt-in: adds a "break out" control that pops History out of the in-chat
          overlay into a standalone module docked to the left of the chat. The
          module is inserted as a flex sibling before the chat's mount element. */

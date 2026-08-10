@@ -366,6 +366,13 @@
        own `projectId` (null/absent = ungrouped). */
     var projects = Array.isArray(stored.projects) ? stored.projects.map(normalizeProject) : [];
     var seeded = !!stored.seeded;
+    /* Seed versioning: when the host bumps `opts.seedVersion`, any origin still
+       holding an older seed re-seeds to the latest on next load. This prevents
+       stale History panels lingering in a browser's localStorage after the
+       hardcoded seed changes. 0/undefined disables versioned re-seeding. */
+    var seedVersion = (typeof opts.seedVersion === 'number') ? opts.seedVersion : 0;
+    var storedSeedVersion = (typeof stored.seedV === 'number') ? stored.seedV : 0;
+    var seedOutdated = seedVersion > 0 && storedSeedVersion !== seedVersion;
     /* Default to broken-out on first load when the host opts in (no stored
        preference yet), so History opens as its own module rather than an
        in-chat overlay. */
@@ -379,11 +386,13 @@
     var creatingProject = false;   /* the "new project" inline input is shown */
     var pendingMoveItemId = null;  /* chat awaiting a project pick from the popover */
 
-    /* Preload a few sample conversations on first mount so the History pane
-       reads as an established workspace (not an empty shell). Seeds are written
-       once — after that the user's real threads take over, and clearing them
-       won't reseed. */
-    if (storageKey && !seeded && !items.length && Array.isArray(opts.seed) && opts.seed.length) {
+    /* Preload a few sample conversations so the History pane reads as an
+       established workspace (not an empty shell). Seeds are written on first
+       mount (until the user's real threads take over), or whenever
+       opts.seedVersion is bumped past the stored one — a version bump replaces
+       the stored threads with the latest seed. */
+    if (storageKey && Array.isArray(opts.seed) && opts.seed.length &&
+        ((!seeded && !items.length) || seedOutdated)) {
       items = opts.seed.map(function (s, i) {
         return {
           id: s.id || ('seed-' + i + '-' + Math.random().toString(36).slice(2, 7)),
@@ -523,7 +532,7 @@
       var cleanProjects = projects.map(function (p) {
         return { id: p.id, name: p.name, color: p.color, ts: p.ts, collapsed: p.collapsed === true };
       });
-      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, items: clean, projects: cleanProjects, seeded: seeded, docked: docked })); } catch (_) {}
+      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, seedV: seedVersion, items: clean, projects: cleanProjects, seeded: seeded, docked: docked })); } catch (_) {}
     }
 
     /* ── Projects (chat grouping) — full CRUD ── */
