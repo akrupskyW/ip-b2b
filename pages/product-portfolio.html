@@ -45,8 +45,8 @@
       --text-muted: #444B55;
       /* AAA (7:1) on surface, bg, surface-2 and surface-3. */
       --text-subtle: #474E58;
-      --border: rgba(17,24,39,0.08);
-      --border-strong: rgba(17,24,39,0.14);
+      --border: rgba(37, 80, 124, 0.16);
+      --border-strong: rgba(37, 80, 124, 0.28);
 
       --primary: #25507C;
       --primary-10: rgba(37, 80, 124, 0.10);
@@ -106,8 +106,8 @@
       /* Lightened to clear AAA (7:1) on every navy surface up to surface-3. */
       --text-muted: #BCC6D3;
       --text-subtle: #B1BAC7;
-      --border: rgba(255,255,255,0.08);
-      --border-strong: rgba(255,255,255,0.14);
+      --border: rgba(139, 159, 175, 0.18);
+      --border-strong: rgba(139, 159, 175, 0.30);
 
       --primary-soft: rgba(37, 80, 124, 0.18);
       --primary-bright: #8B9FAF;
@@ -448,8 +448,7 @@
          nav column's full height AND their drop-shadow renders into that gutter
          instead of being clipped flush at the card edge. Preserves the
          horizontal scroll (overflow-x:auto) that opening panes relies on. */
-      padding: 0 16px var(--modules-bottom-pad);
-      margin-bottom: calc(-1 * var(--modules-bottom-pad));
+      padding: 0 16px;
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -1275,12 +1274,16 @@
       border: 1px solid var(--border-strong);
       border-radius: 14px;
       box-shadow: var(--shadow-card);
-      z-index: 200;
+      z-index: 2000;
       padding: 6px;
       animation: fadeSlideUp 0.15s ease-out both;
       transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     .topbar-popover.hidden { display: none; }
+    /* When the chat topbar's "More" menu is open, lift the whole chat shell above
+       the sibling report panels (portfolio / compare / workflow), which otherwise
+       paint on top of it in order-modified flex paint order and clip the popover. */
+    #chat-shell:has(#wiseai-menu:not(.hidden)) { z-index: 60; }
     html.dark .topbar-popover {
       background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       border-color: rgba(37, 80, 124, 0.22);
@@ -3876,129 +3879,11 @@
     }
 
     /* Topbar menu */
-    /* ===== User-menu popover (matches dashboard style) ===== */
-    .wise-popover {
-      position: fixed;
-      min-width: 220px;
-      max-width: 300px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: var(--shadow-card);
-      z-index: 9999;
-      overflow: hidden;
-      transform: translateY(-6px);
-      opacity: 0;
-      pointer-events: none;
-      transition: transform .2s ease, opacity .18s ease;
-    }
-    .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-    .wise-popover-header {
-      padding: 10px 14px 6px;
-      font-size: 11px;
-      letter-spacing: .12em;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .wise-popover-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 6px;
-      padding: 8px 12px;
-      border-radius: var(--radius-pill);
-      font-size: var(--fs-ui);
-      color: var(--text);
-      cursor: pointer;
-      background: none;
-      border: 0;
-      width: calc(100% - 12px);
-      text-align: left;
-      font-family: inherit;
-      transition: background-color .15s ease, color .15s ease;
-    }
-    .wise-popover-item:hover,
-    .wise-popover-item.is-active {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    html.dark .wise-popover-item:hover {
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-    }
-    html.dark .wise-popover-item.is-active {
-      background: rgba(37, 80, 124, 0.22);
-      color: var(--primary-bright);
-    }
-    .wise-popover-item.danger { color: #DC3038; }
-    .wise-popover-item .material-symbols-outlined,
-    .wise-popover-item .material-symbols-outlined { font-size: 17px; color: var(--text-muted); }
-    .wise-popover-item:hover .material-symbols-outlined,
-    .wise-popover-item:hover .material-symbols-outlined,
-    .wise-popover-item.is-active .material-symbols-outlined,
-    .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary); }
-    html.dark .wise-popover-item.is-active .material-symbols-outlined,
-    html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-bright); }
-    .wise-popover-item.danger .material-symbols-outlined { color: #DC3038; }
-    /* Binary on/off settings: switch glyph on the left (blue on, gray off);
-       no full-row highlight. */
-    .wise-popover-item.wise-toggle-item.is-active { background: none; color: var(--text); }
-    .wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
-    html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-    .wise-popover-item .wise-toggle-ico { font-size: 22px; color: var(--text-muted); transition: color .15s ease; }
-    .wise-popover-item:hover .wise-toggle-ico { color: var(--text-muted); }
-    .wise-popover-item.is-on .wise-toggle-ico,
-    .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
-    html.dark .wise-popover-item.is-on .wise-toggle-ico,
-    html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
-    .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
-    /* Notifications / Agents quick-actions docked at the top of the avatar
-       menu, split by a thin vertical rule. */
-    .wise-popover-actions { display: flex; align-items: stretch; gap: 4px; padding: 8px; }
-    .wise-pop-action {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 9px 6px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-radius: var(--radius-pill);
-      color: var(--text);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .02em;
-      transition: background-color .15s ease, color .15s ease;
-    }
-    .wise-pop-action:hover {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    html.dark .wise-pop-action:hover {
-      background: rgba(37, 80, 124, 0.18);
-      color: var(--primary-bright);
-    }
-    .wise-pop-action .material-symbols-outlined { font-size: 20px; color: var(--text-muted); }
-    .wise-pop-action:hover .material-symbols-outlined { color: var(--primary); }
-    html.dark .wise-pop-action:hover .material-symbols-outlined { color: var(--primary-bright); }
-    .wise-pop-action.has-dot { position: relative; }
-    .wise-pop-action.has-dot::after {
-      content: '';
-      position: absolute;
-      top: 6px;
-      left: 50%;
-      margin-left: 4px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--sec-red, #DC3038);
-    }
-    .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
-    /* ===== end user-menu popover ===== */
+    /* User/appearance popover styling lives in the shared wise.css
+       (.wise-popover*). The per-page copy that used to sit here drifted out of
+       sync (narrower panel, missing the segmented text-size control + Admin
+       badges), which made this page's Appearance panel not match the others.
+       Removed so every navigation module renders the identical popover. */
 
     .topbar-menu-item {
       display: flex;
@@ -6350,28 +6235,27 @@
       gap: 8px;
     }
     .fl-input-wrap {
-      padding: 0 6px 0 14px !important;
-      min-height: 40px;
-      gap: 4px;
       background: var(--surface-2);
       border-color: var(--border-strong);
     }
+    /* Stacked composer (canonical WISEai rail): the "+" sits left, the database
+       selector row sits atop the text input. Let wiseai-chat.css own the padding. */
+    .fl-input-wrap--stacked { min-height: 40px; }
     .fl-label { display: none !important; }
     .fl-input {
       font-size: 13px;
       font-weight: 400;
-      padding: 8px 0;
     }
     .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
     .fl-icon-btn { width: 32px; height: 32px; }
+    /* Send button matches the canonical 40px .sc-send circle. */
     #send-btn {
-      width: 32px !important;
-      height: 32px !important;
+      width: 40px;
+      height: 40px;
       flex-shrink: 0;
       align-self: center;
     }
-    /* Airplane glyph sized well inside the circle (not touching the edges). */
-    #send-btn .material-symbols-outlined { font-size: 15px !important; line-height: 1; }
+    #send-btn .material-symbols-outlined { font-size: 20px !important; line-height: 1; }
 
     /* =====================================================================
        FONT WEIGHTS — dial back the chunky display weights.
@@ -7292,7 +7176,66 @@
        line with the headline, just to its right — not floated to the far edge. */
     .pf-head-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .pf-head-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
-    .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 3px 0 0; }
+    .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 8px 0 0; }
+
+    /* ── Brand intent chip + dropdown ────────────────────────────────────
+       Compact, tappable chip sitting inline to the right of the board title.
+       Opens a listbox of brands; selecting one repopulates the whole board. */
+    .pf-brand { position: relative; }
+    .pf-brand-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 8px 4px 5px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill, 999px);
+      cursor: pointer; max-width: 100%;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .pf-brand-chip:hover { border-color: var(--primary); background: var(--primary-soft); }
+    .pf-brand-chip[aria-expanded="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    html.dark .pf-brand-chip { background: rgba(255,255,255,0.05); }
+    html.dark .pf-brand-chip:hover, html.dark .pf-brand-chip[aria-expanded="true"] { background: rgba(37,80,124,0.28); }
+    .pf-brand-avatar {
+      flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 12px; color: #fff; letter-spacing: -0.01em;
+      background: var(--primary); overflow: hidden;
+    }
+    .pf-brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pf-brand-name { font-size: 0.85rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+    .pf-brand-caret { font-size: 18px !important; color: var(--text-muted); transition: transform .15s ease; flex: 0 0 auto; }
+    .pf-brand-chip[aria-expanded="true"] .pf-brand-caret { transform: rotate(180deg); color: var(--primary); }
+
+    .pf-brand-menu {
+      position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+      min-width: 300px; max-width: 340px; max-height: 380px; overflow-y: auto;
+      padding: 6px; background: var(--surface-2);
+      border: 1px solid var(--border-strong); border-radius: 14px;
+      box-shadow: var(--shadow-card); animation: fadeSlideUp 0.15s ease-out both;
+    }
+    .pf-brand-menu[hidden] { display: none; }
+    html.dark .pf-brand-menu {
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%);
+      border-color: rgba(37,80,124,0.28); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .pf-brand-opt {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 9px 10px; border: none; background: none; cursor: pointer;
+      border-radius: 10px; text-align: left; color: var(--text);
+    }
+    .pf-brand-opt:hover, .pf-brand-opt.is-active { background: var(--primary-soft); }
+    html.dark .pf-brand-opt:hover, html.dark .pf-brand-opt.is-active { background: rgba(255,255,255,0.06); }
+    .pf-brand-opt-avatar {
+      flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; color: #fff; background: var(--primary); overflow: hidden;
+    }
+    .pf-brand-opt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pf-brand-opt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+    .pf-brand-opt-name { font-size: 0.9rem; font-weight: 700; }
+    .pf-brand-opt-meta { font-size: 11px; color: var(--text-muted); }
+    .pf-brand-opt-check { margin-left: auto; color: var(--primary); font-size: 20px !important; opacity: 0; }
+    .pf-brand-opt.is-active .pf-brand-opt-check { opacity: 1; }
 
     /* ── Guiding Stars toggle ────────────────────────────────────────────
        Pink pill switch that sits in line with the board title. Flipping it on
@@ -7634,9 +7577,14 @@
       border-radius: 16px; padding: 16px;
       box-shadow: var(--shadow-1);
     }
-    /* Board card holds the score-card filters + the tables. Keep overflow
-       visible (overriding .pf-card) so row action menus aren't clipped. */
-    .pf-board { padding: 14px; overflow: visible; }
+    /* Board is now a bare wrapper: the score-card filters sit directly on the
+       module background (no card), and the visible table gets its own card
+       (.pf-table-card). Keep overflow visible so row menus aren't clipped. */
+    .pf-board {
+      padding: 0; overflow: visible;
+      background: transparent; border: none; border-radius: 0; box-shadow: none;
+    }
+    .pf-board-views { margin-top: 14px; }
     .pf-card-title { font-family: 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
     .pf-card-sub { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.5; }
 
@@ -7692,8 +7640,13 @@
     .pf-search { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 13px; }
     .pf-search::placeholder { color: var(--text-subtle); }
 
-    /* Table */
-    .pf-table-card { padding: 6px 4px; overflow: visible; }
+    /* Table — sits in its own card, separate from the bare score-card filters
+       above it (same elevation / radius / surface as .pf-card). */
+    .pf-table-card {
+      padding: 10px 8px; overflow: visible;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; box-shadow: var(--shadow-1);
+    }
     .pf-table { width: 100%; }
     .pf-thead, .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
     /* Unified columns across every tab: leading ⋮ actions menu · product
@@ -7710,7 +7663,9 @@
     .pf-date { display: flex; flex-direction: column; line-height: 1.2; }
     .pf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
     .pf-date-val { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-    .pf-thead { border-bottom: 1px solid var(--border); }
+    /* Sticky header — pins to the top of the scrolling #pf-body so columns stay
+       labelled while the portfolio list scrolls. */
+    .pf-thead { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); }
     .pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
     .pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
     .pf-trow:last-child { border-bottom: none; }
@@ -7882,7 +7837,7 @@
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
         <div class="menu-panel-body">
-          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
         </div>
       </div>
     </div>
@@ -7893,6 +7848,13 @@
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+      import { wireChatComposer } from '../js/wiseai-chat.js';
+
+      /* Upgrade the inline portfolio chat input to the canonical WISEai composer:
+         swap the old model-tune selector for the shared database selector. The
+         page keeps its own "+" attach popover, so skip the shared attach wiring. */
+      document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
+
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -8965,10 +8927,9 @@
         </div><!-- /#settings-screen -->
       </div>
 
-      <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10">
-        <div class="flex gap-2 items-end">
-          <div class="fl-input-wrap fl-input-wrap--lead">
-            <span id="fl-label" class="fl-label">Ask a question or choose an option above</span>
+      <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10" data-wise-composer>
+        <div class="sc-input-row">
+          <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
             <div class="fl-more-wrap" id="fl-more-wrap">
               <button type="button" class="fl-icon-btn fl-more-btn" id="fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" onclick="toggleInputMore(event)">
                 <span class="material-symbols-outlined">add</span>
@@ -8988,29 +8949,16 @@
                 </button>
               </div>
             </div>
-            <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
-            <div class="fl-model-wrap" id="fl-model-wrap">
-              <button type="button" class="fl-icon-btn fl-model-btn" id="fl-model-btn" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false" onclick="toggleModelMenu(event)">
-                <span class="material-symbols-outlined">tune</span>
-              </button>
-              <div class="fl-model-popover" id="fl-model-popover" role="menu">
-                <div class="fl-model-head">WISE.ai model</div>
-                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="swift" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Swift</span><span class="fl-model-desc">Fast answers for everyday work</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
-                <button type="button" class="fl-model-item is-active" role="menuitemradio" aria-checked="true" data-model="core" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Core</span><span class="fl-model-desc">Balanced depth &amp; speed</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
-                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="deep" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Deep</span><span class="fl-model-desc">Advanced reasoning for reformulation</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
+            <div class="fl-input-col">
+              <div class="fl-model-row">
+                <div class="fl-attachments"></div>
+              </div>
+              <div class="fl-input-line">
+                <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
               </div>
             </div>
           </div>
-          <button type="button" id="send-btn" class="btn-primary w-12 h-12 shrink-0 rounded-full text-white flex items-center justify-center">
+          <button type="button" id="send-btn" class="sc-send">
             <span class="material-symbols-outlined">send</span>
           </button>
         </div>
@@ -9723,8 +9671,22 @@
                Compare module's .cmp-board-title / .cmp-board-meta. -->
           <header class="pf-head">
             <div class="pf-head-text">
-              <h2 class="pf-head-title">Product Portfolio</h2>
-              <p class="pf-head-meta" id="pf-head-meta">Flax4Life · 10 claimed · 47 discovered · 13 needs info</p>
+              <!-- Title + brand switcher share one row: the brand chip floats
+                   directly to the right of the headline, inline. Click the chip
+                   to open a dropdown of brands; picking one repopulates the
+                   whole board (score cards + tables + notes) for that brand. -->
+              <div class="pf-head-title-row">
+                <h2 class="pf-head-title">Product Portfolio</h2>
+                <div class="pf-brand" id="pf-brand">
+                  <button type="button" class="pf-brand-chip" id="pf-brand-chip" aria-haspopup="listbox" aria-expanded="false" onclick="pfToggleBrandMenu(event)" title="Switch brand" aria-label="Switch brand">
+                    <span class="pf-brand-avatar" id="pf-brand-avatar">F</span>
+                    <span class="pf-brand-name" id="pf-brand-name">Flax4Life</span>
+                    <span class="material-symbols-outlined pf-brand-caret">expand_more</span>
+                  </button>
+                  <div class="pf-brand-menu" id="pf-brand-menu" role="listbox" aria-label="Select a brand" hidden></div>
+                </div>
+              </div>
+              <p class="pf-head-meta" id="pf-head-meta">10 claimed · 47 discovered · 13 needs info</p>
             </div>
             <!-- The Guiding Stars on/off control now lives in the module's
                  three-dot (⋯) menu — see consolidatePanelControls(). -->
@@ -9807,10 +9769,7 @@
                toggle filters: segment cards (Claimed / Discovered / Needs Info)
                switch which list shows; status cards (To verify / Shields
                pending / Ineligible) filter the rows within the Claimed list. -->
-          <div class="pf-card pf-board">
-            <div class="pf-stats-bar">
-              <span class="pf-stats-label">Your portfolio at a glance</span>
-            </div>
+          <div class="pf-board">
             <div class="pf-stats" role="group" aria-label="Filter portfolio by segment and status">
               <!-- First card is the all-items total for the claimed list; it also
                    clears any active status filter. Every status below it has its
@@ -9866,7 +9825,6 @@
               <span class="pf-stats-gs-label"><span class="material-symbols-outlined">star</span>Guiding Stars · <span id="pf-stats-gs-seg">Claimed</span></span>
               <div class="pf-stats pf-stats-gs" id="pf-stats-gs" role="group" aria-label="Filter by Guiding Stars rating"></div>
             </div>
-            <div class="pf-board-divider"></div>
             <div class="pf-board-views">
 
           <!-- ── CLAIMED ─────────────────────────────────────────────── -->
@@ -12701,10 +12659,11 @@
       if (!panel) return;
       dockReportRight('portfolio-panel', 'portfolio');
       panel.classList.add('pf-open');
-      try {
-        const w = JSON.parse(localStorage.getItem('wise-panel-wide-v1') || '{}') || {};
-        if (w.portfolio === undefined && typeof window.setPanelWide === 'function') window.setPanelWide('portfolio', 1);
-      } catch (_) {}
+      /* Always open the Product Portfolio at single-pane width. (It used to
+         force tier 1 / double on first open, which also persisted "wide" so it
+         stuck that way on every later load.) The width toggle can still widen
+         it in-session. */
+      if (typeof window.setPanelWide === 'function') window.setPanelWide('portfolio', 0);
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
       scrollPanelIntoView('portfolio-panel');
     }
@@ -13420,6 +13379,377 @@
       document.addEventListener('DOMContentLoaded', pfInitGuidingStars);
     } else {
       pfInitGuidingStars();
+    }
+
+    /* ── Brand switcher ───────────────────────────────────────────────────
+       The board title carries a large "intent chip" naming the brand whose
+       portfolio is on screen. Picking a different brand from its dropdown
+       repopulates the whole board — score cards, all three tables, the
+       discovered/needs-info notes and every count — for that brand.
+
+       Flax4Life is the default and its rich, hand-authored board is kept
+       verbatim: we snapshot its markup on load and simply restore it when the
+       user switches back. The other brands are rendered from PF_BRANDS data. */
+    function pfEsc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    const PF_IMG = {
+      granola: '../assets/portfolio/granola.jpg',
+      cereal: '../assets/portfolio/pf_cereal.png',
+      cookies: '../assets/portfolio/oatmeal_raisin_cookies.png',
+      brownies: '../assets/portfolio/chocolate_brownies.png',
+      bar: '../assets/portfolio/pf_protein_bar.png',
+      mix: '../assets/portfolio/pf_trail_mix.png',
+      crackers: '../assets/portfolio/pf_crackers.png',
+      chips: '../assets/portfolio/pf_tortilla_chips.png',
+      popcorn: '../assets/portfolio/pf_popcorn.png',
+      bites: '../assets/portfolio/pf_date_bites.png',
+    };
+    const PF_ICON = {
+      granola: 'grain', cereal: 'grain', cookies: 'cookie', brownies: 'bakery_dining',
+      bar: 'nutrition', mix: 'nutrition', crackers: 'bakery_dining', chips: 'restaurant',
+      popcorn: 'grain', bites: 'cookie',
+    };
+    const PF_DATES = [
+      ['Apr 20, 2026', 'Apr 16, 2026'], ['May 27, 2026', 'May 23, 2026'],
+      ['Feb 27, 2026', 'Feb 23, 2026'], ['Jun 9, 2026', 'Jun 5, 2026'],
+      ['Mar 14, 2026', 'Mar 10, 2026'], ['Jan 30, 2026', 'Jan 26, 2026'],
+      ['Dec 12, 2025', 'Dec 8, 2025'], ['Nov 3, 2025', 'Oct 30, 2025'],
+    ];
+    /* Each product is a compact tuple:
+         claimed:            [name, upc, imgKey, data, shield]
+         discovered / needs: [name, upc, imgKey, iconOverride?]
+       imgKey is a key of PF_IMG (or null → icon-only thumb). */
+    const PF_BRANDS = [
+      { name: 'Flax4Life', color: '#2E7D5B', avatar: null, isDefault: true },
+      { name: 'Simple Truth', color: '#4E7D5A', avatar: '../assets/compare/simpletruth.png',
+        claimed: [
+          ['Organic Ancient Grain Granola, Vanilla Almond', '0 11110 88421 0', 'granola', 'complete', 'verified'],
+          ['Organic Dark Chocolate Sea Salt Snack Bar', '0 11110 88433 3', 'bar', 'complete', 'verified'],
+          ['Organic Nut & Berry Trail Mix', '0 11110 88440 1', 'mix', 'complete', 'verified'],
+          ['Organic Sea Salt Multi-Seed Crackers', '0 11110 88452 4', 'crackers', 'complete', 'verified'],
+          ['Organic Honey Oat Toasted Cereal', '0 11110 88461 6', 'cereal', 'verify', 'attest'],
+          ['Organic Peanut Butter Protein Bar', '0 11110 88474 6', 'bar', 'verify', 'attest'],
+          ['Organic Coconut Cashew Granola', '0 11110 88488 3', 'granola', 'complete', 'prequal'],
+          ['Organic Cinnamon Almond Trail Mix', '0 11110 88491 3', 'mix', 'verify', 'prequal'],
+          ['Organic Rosemary & Olive Oil Crackers', '0 11110 88499 9', 'crackers', 'verify', 'inelig'],
+          ['Organic Oatmeal Raisin Cookies', '0 11110 88512 5', 'cookies', 'complete', 'inelig'],
+        ],
+        discovered: [
+          ['Organic Blueberry Almond Granola', '0 11110 88611 2', 'granola'],
+          ['Organic Maple Pecan Protein Bar', '0 11110 88622 8', 'bar'],
+          ['Organic Everything Seed Crackers', '0 11110 88633 4', 'crackers'],
+          ['Organic Mango Coconut Trail Mix', '0 11110 88644 0', 'mix'],
+          ['Organic Cinnamon Toast Cereal', '0 11110 88655 6', 'cereal'],
+          ['Organic Chocolate Chip Oat Cookies', '0 11110 88666 2', 'cookies'],
+          ['Organic Sprouted Grain Granola', '0 11110 88677 8', 'granola'],
+          ['Organic Cranberry Cashew Mix', '0 11110 88688 4', 'mix'],
+          ['Organic Multigrain Crackers', '0 11110 88699 0', 'crackers'],
+          ['Organic Chocolate Brownie Bites', '0 11110 88701 0', 'bites'],
+        ],
+        needsinfo: [
+          ['Organic Pumpkin Spice Granola', '0 11110 88720 1', 'granola'],
+          ['Organic Peppermint Cocoa Cookies', '0 11110 88731 7', 'cookies'],
+          ['Organic Tropical Trail Mix', '0 11110 88742 3', 'mix'],
+          ['Organic Fig & Walnut Crackers', '0 11110 88753 9', 'crackers'],
+          ['Organic Apple Cinnamon Cereal', '0 11110 88764 5', 'cereal'],
+          ['Organic Sunflower Seed Butter, 16 oz', '0 11110 88775 1', null, 'water_drop'],
+        ] },
+      { name: 'Purely Elizabeth', color: '#C9736B', avatar: '../assets/compare/sug_purely.jpg',
+        claimed: [
+          ['Original Ancient Grain Granola', '0 85911 20011 4', 'granola', 'complete', 'verified'],
+          ['Blueberry Hemp Grain-Free Granola', '0 85911 20022 0', 'granola', 'complete', 'verified'],
+          ['Chocolate Sea Salt Probiotic Granola', '0 85911 20033 6', 'granola', 'complete', 'verified'],
+          ['Vanilla Almond Butter Grain-Free Bar', '0 85911 20044 2', 'bar', 'complete', 'verified'],
+          ['Original Superfood Oatmeal Cup', '0 85911 20055 8', 'cereal', 'verify', 'attest'],
+          ['Cinnamon Toast Grain-Free Cereal', '0 85911 20066 4', 'cereal', 'verify', 'attest'],
+          ['Pumpkin Cinnamon Granola', '0 85911 20077 0', 'granola', 'complete', 'prequal'],
+          ['Peanut Butter Superfood Bar', '0 85911 20088 6', 'bar', 'verify', 'prequal'],
+          ['Maple Walnut Trail Mix', '0 85911 20099 2', 'mix', 'verify', 'inelig'],
+          ['Chocolate Chip Grain-Free Cookies', '0 85911 20112 8', 'cookies', 'complete', 'inelig'],
+        ],
+        discovered: [
+          ['Coconut Cashew Ancient Grain Granola', '0 85911 20211 8', 'granola'],
+          ['Banana Nut Superfood Oatmeal', '0 85911 20222 4', 'cereal'],
+          ['Dark Chocolate Almond Bar', '0 85911 20233 0', 'bar'],
+          ['Strawberry Probiotic Granola', '0 85911 20244 6', 'granola'],
+          ['Cranberry Pecan Trail Mix', '0 85911 20255 2', 'mix'],
+          ['Honey Almond Grain-Free Cereal', '0 85911 20266 8', 'cereal'],
+          ['Double Chocolate Brownie Bites', '0 85911 20277 4', 'bites'],
+          ['Original Seeded Crackers', '0 85911 20288 0', 'crackers'],
+          ['Apple Cinnamon Oatmeal Cup', '0 85911 20299 6', 'cereal'],
+          ['Vanilla Almond Granola Bar', '0 85911 20301 6', 'bar'],
+        ],
+        needsinfo: [
+          ['Matcha Coconut Granola', '0 85911 20320 7', 'granola'],
+          ['Espresso Chip Superfood Bar', '0 85911 20331 3', 'bar'],
+          ['Peppermint Brownie Bites', '0 85911 20342 9', 'bites'],
+          ['Golden Milk Oatmeal Cup', '0 85911 20353 5', 'cereal'],
+          ['Everything Seeded Crackers', '0 85911 20364 1', 'crackers'],
+          ['Almond Butter, Vanilla, 12 oz', '0 85911 20375 7', null, 'water_drop'],
+        ] },
+      { name: 'Siete', color: '#C0392B', avatar: '../assets/compare/sug_siete.jpg',
+        claimed: [
+          ['Grain-Free Sea Salt Tortilla Chips', '0 74992 90011 3', 'chips', 'complete', 'verified'],
+          ['Grain-Free Nacho Tortilla Chips', '0 74992 90022 9', 'chips', 'complete', 'verified'],
+          ['Lime Grain-Free Tortilla Chips', '0 74992 90033 5', 'chips', 'complete', 'verified'],
+          ['Grain-Free Sea Salt Crackers', '0 74992 90044 1', 'crackers', 'complete', 'verified'],
+          ['Cinnamon Churro Grain-Free Cookies', '0 74992 90055 7', 'cookies', 'verify', 'attest'],
+          ['Chocolate Chip Grain-Free Cookies', '0 74992 90066 3', 'cookies', 'verify', 'attest'],
+          ['Fuego Grain-Free Tortilla Chips', '0 74992 90077 9', 'chips', 'complete', 'prequal'],
+          ['Grain-Free Kettle Corn', '0 74992 90088 5', 'popcorn', 'verify', 'prequal'],
+          ['Ranch Grain-Free Crackers', '0 74992 90099 1', 'crackers', 'verify', 'inelig'],
+          ['Grain-Free Butter Popcorn', '0 74992 90112 6', 'popcorn', 'complete', 'inelig'],
+        ],
+        discovered: [
+          ['Grain-Free Ranch Tortilla Chips', '0 74992 90211 6', 'chips'],
+          ['Jalapeño Grain-Free Tortilla Chips', '0 74992 90222 2', 'chips'],
+          ['Grain-Free Cheddar Crackers', '0 74992 90233 8', 'crackers'],
+          ['Snickerdoodle Grain-Free Cookies', '0 74992 90244 4', 'cookies'],
+          ['Grain-Free White Cheddar Popcorn', '0 74992 90255 0', 'popcorn'],
+          ['Sea Salt & Vinegar Grain-Free Chips', '0 74992 90266 6', 'chips'],
+          ['Grain-Free Cinnamon Crackers', '0 74992 90277 2', 'crackers'],
+          ['Mexican Chocolate Grain-Free Cookies', '0 74992 90288 8', 'cookies'],
+          ['Grain-Free Nacho Cheese Popcorn', '0 74992 90299 4', 'popcorn'],
+          ['Chipotle BBQ Grain-Free Chips', '0 74992 90301 4', 'chips'],
+        ],
+        needsinfo: [
+          ['Grain-Free Queso Tortilla Chips', '0 74992 90320 5', 'chips'],
+          ['Grain-Free Salsa Verde Crackers', '0 74992 90331 1', 'crackers'],
+          ['Pumpkin Spice Grain-Free Cookies', '0 74992 90342 7', 'cookies'],
+          ['Grain-Free Caramel Popcorn', '0 74992 90353 3', 'popcorn'],
+          ['Grain-Free Taco Shells, 8 ct', '0 74992 90364 9', null, 'lunch_dining'],
+          ['Grain-Free Cassava Flour Tortillas', '0 74992 90375 5', null, 'lunch_dining'],
+        ] },
+      { name: 'KIND', color: '#E0A100', avatar: '../assets/compare/kind.jpg',
+        claimed: [
+          ['Dark Chocolate Nuts & Sea Salt Bar', '0 60265 20011 7', 'bar', 'complete', 'verified'],
+          ['Peanut Butter Dark Chocolate Bar', '0 60265 20022 3', 'bar', 'complete', 'verified'],
+          ['Caramel Almond & Sea Salt Bar', '0 60265 20033 9', 'bar', 'complete', 'verified'],
+          ['Dark Chocolate Cherry Cashew Bar', '0 60265 20044 5', 'bar', 'complete', 'verified'],
+          ['Peanut Butter Granola Clusters', '0 60265 20055 1', 'granola', 'verify', 'attest'],
+          ['Dark Chocolate Almond Granola', '0 60265 20066 7', 'granola', 'verify', 'attest'],
+          ['Honey Roasted Nuts Trail Mix', '0 60265 20077 3', 'mix', 'complete', 'prequal'],
+          ['Fruit & Nut Trail Mix', '0 60265 20088 9', 'mix', 'verify', 'prequal'],
+          ['Dark Chocolate Nut Energy Bites', '0 60265 20099 5', 'bites', 'verify', 'inelig'],
+          ['Maple Glazed Pecan & Sea Salt Bar', '0 60265 20112 4', 'bar', 'complete', 'inelig'],
+        ],
+        discovered: [
+          ['Almond & Coconut Bar', '0 60265 20211 4', 'bar'],
+          ['Blueberry Vanilla & Cashew Bar', '0 60265 20222 0', 'bar'],
+          ['Oats & Honey Granola Clusters', '0 60265 20233 6', 'granola'],
+          ['Cranberry Almond Trail Mix', '0 60265 20244 2', 'mix'],
+          ['Dark Chocolate Cinnamon Bites', '0 60265 20255 8', 'bites'],
+          ['Peanut Butter Banana Bar', '0 60265 20266 4', 'bar'],
+          ['Cinnamon Oat Granola', '0 60265 20277 0', 'granola'],
+          ['Tropical Nut & Fruit Mix', '0 60265 20288 6', 'mix'],
+          ['Double Dark Chocolate Bar', '0 60265 20299 2', 'bar'],
+          ['Espresso Almond Bites', '0 60265 20301 2', 'bites'],
+        ],
+        needsinfo: [
+          ['Pumpkin Spice Nut Bar', '0 60265 20320 3', 'bar'],
+          ['Maple Pecan Granola', '0 60265 20331 9', 'granola'],
+          ['Peppermint Dark Chocolate Bites', '0 60265 20342 5', 'bites'],
+          ['Salted Caramel Trail Mix', '0 60265 20353 1', 'mix'],
+          ['Almond Butter Filled Bar', '0 60265 20364 7', 'bar'],
+          ['Roasted Almonds, Sea Salt, 10 oz', '0 60265 20375 3', null, 'nutrition'],
+        ] },
+    ];
+
+    let PF_DEFAULT_BOARD = '';
+    let PF_DEFAULT_META = '';
+    let pfCurrentBrand = 0;
+
+    function pfThumb(imgKey, iconOverride, name) {
+      /* When there's a product image the fallback icon comes from PF_ICON;
+         the icon override only applies to icon-only (image-less) rows. */
+      const icon = (imgKey ? PF_ICON[imgKey] : iconOverride) || 'nutrition';
+      if (imgKey && PF_IMG[imgKey]) {
+        return '<span class="pf-thumb"><img class="pf-thumb-img" src="' + PF_IMG[imgKey] +
+          '" alt="' + pfEsc(name) + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\'">' +
+          '<span class="material-symbols-outlined" style="display:none">' + icon + '</span></span>';
+      }
+      return '<span class="pf-thumb"><span class="material-symbols-outlined">' + icon + '</span></span>';
+    }
+    function pfRowMenuHtml(seg, up, ed) {
+      let items;
+      if (seg === 'claimed') {
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button>' +
+          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button>';
+      } else if (seg === 'discovered') {
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">bookmark_add</span>Review &amp; claim</button>' +
+          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button>' +
+          '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button>';
+      } else {
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit_note</span>Add details</button>' +
+          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button>' +
+          '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button>';
+      }
+      return '<span class="pf-td pf-col-menu"><div class="pf-rowmenu">' +
+        '<button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button>' +
+        '<div class="pf-rowmenu-pop" role="menu" hidden>' + items + '<div class="pf-rowmenu-sep"></div>' +
+        '<div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · ' + up + '</div>' +
+        '<div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · ' + ed + '</div>' +
+        '</div></div></span>';
+    }
+    function pfDataChip(seg, data) {
+      if (seg === 'discovered') return '<button type="button" class="pf-chip pf-chip--claim">Claim to unlock <span class="material-symbols-outlined">chevron_right</span></button>';
+      if (seg === 'needsinfo') return '<button type="button" class="pf-chip pf-chip--add">Add details <span class="material-symbols-outlined">chevron_right</span></button>';
+      if (data === 'complete') return '<span class="pf-chip pf-chip--complete">Complete</span>';
+      return '<button type="button" class="pf-chip pf-chip--verify">Verify Ingredients <span class="material-symbols-outlined">chevron_right</span></button>';
+    }
+    function pfShieldChip(seg, shield) {
+      if (seg === 'discovered') return '<span class="pf-chip pf-chip--muted">Not claimed</span>';
+      if (seg === 'needsinfo') return '<span class="pf-chip pf-chip--muted">Locked</span>';
+      switch (shield) {
+        case 'verified': return '<span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span>';
+        case 'attest': return '<button type="button" class="pf-chip pf-chip--attest">Pending Attestation <span class="material-symbols-outlined">arrow_outward</span></button>';
+        case 'prequal': return '<button type="button" class="pf-chip pf-chip--prequal">Pre-qualified <span class="material-symbols-outlined">arrow_outward</span></button>';
+        default: return '<span class="pf-chip pf-chip--inelig">Ineligible</span>';
+      }
+    }
+    function pfBrandRow(p, seg, i) {
+      const dates = PF_DATES[i % PF_DATES.length];
+      const product = '<span class="pf-td pf-col-product">' + pfThumb(p[2], p[3], p[0]) +
+        '<span class="pf-pcell-text"><span class="pf-pname">' + pfEsc(p[0]) + '</span>' +
+        '<span class="pf-upc">UPC · ' + pfEsc(p[1]) + '</span></span></span>';
+      return '<div class="pf-trow">' + pfRowMenuHtml(seg, dates[0], dates[1]) + product +
+        '<span class="pf-td pf-col-data">' + pfDataChip(seg, p[3]) + '</span>' +
+        '<span class="pf-td pf-col-shield">' + pfShieldChip(seg, p[4]) + '</span></div>';
+    }
+    function pfFillTable(seg, list) {
+      const table = document.querySelector('#portfolio-panel .pf-table--' + seg);
+      if (!table) return;
+      table.querySelectorAll('.pf-trow').forEach((r) => r.remove());
+      const foot = table.querySelector('.pf-table-foot');
+      const rows = list.map((p, i) => pfBrandRow(p, seg, i)).join('');
+      if (foot) foot.insertAdjacentHTML('beforebegin', rows);
+      else table.insertAdjacentHTML('beforeend', rows);
+      if (foot) {
+        foot.innerHTML = '<span>Showing ' + list.length + ' of ' + list.length + ' products</span>';
+      }
+    }
+    function pfSetNum(sel, n) {
+      const el = document.querySelector(sel + ' .pf-stat-num');
+      if (el) el.textContent = n;
+    }
+    function pfApplyBrandData(brand) {
+      pfFillTable('claimed', brand.claimed);
+      pfFillTable('discovered', brand.discovered);
+      pfFillTable('needsinfo', brand.needsinfo);
+      /* Score cards — segment totals + the claimed-list status breakdown. */
+      pfSetNum('#pf-seg-claimed', brand.claimed.length);
+      pfSetNum('#pf-seg-discovered', brand.discovered.length);
+      pfSetNum('#pf-seg-needsinfo', brand.needsinfo.length);
+      const c = { verify: 0, complete: 0, prequal: 0, attest: 0, verified: 0, ineligible: 0 };
+      brand.claimed.forEach((p) => {
+        if (p[3] === 'complete') c.complete++; else c.verify++;
+        if (p[4] === 'verified') c.verified++;
+        else if (p[4] === 'attest') c.attest++;
+        else if (p[4] === 'prequal') c.prequal++;
+        else c.ineligible++;
+      });
+      Object.keys(c).forEach((k) => pfSetNum('.pf-stat[data-status="' + k + '"]', c[k]));
+      /* Notes + meta strip. */
+      const note = document.querySelector('#pf-view-discovered .pf-note .pf-card-title');
+      if (note) note.textContent = 'We found ' + brand.discovered.length + ' products that look like ' + brand.name + '\u2019s';
+      const meta = document.getElementById('pf-head-meta');
+      if (meta) meta.textContent = brand.claimed.length + ' claimed · ' + brand.discovered.length + ' discovered · ' + brand.needsinfo.length + ' needs info';
+    }
+    function pfUpdateBrandHeader(brand) {
+      const nameEl = document.getElementById('pf-brand-name');
+      if (nameEl) nameEl.textContent = brand.name;
+      const av = document.getElementById('pf-brand-avatar');
+      if (av) {
+        av.style.background = brand.color || 'var(--primary)';
+        av.innerHTML = brand.avatar
+          ? '<img src="' + brand.avatar + '" alt="' + pfEsc(brand.name) + '" onerror="this.parentNode.textContent=\'' + pfEsc(brand.name.charAt(0)) + '\'">'
+          : pfEsc(brand.name.charAt(0));
+      }
+      const sub = document.getElementById('pf-subtitle');
+      if (sub) sub.textContent = brand.name + ' · Claimed, Discovered & Needs Info';
+      document.querySelectorAll('#pf-brand-menu .pf-brand-opt').forEach((o, i) => {
+        o.classList.toggle('is-active', i === pfCurrentBrand);
+        o.setAttribute('aria-selected', i === pfCurrentBrand ? 'true' : 'false');
+      });
+    }
+    function pfRenderBrand(idx) {
+      if (idx < 0 || idx >= PF_BRANDS.length) return;
+      const brand = PF_BRANDS[idx];
+      pfCurrentBrand = idx;
+      const board = document.querySelector('#portfolio-panel .pf-board');
+      if (board && PF_DEFAULT_BOARD) board.innerHTML = PF_DEFAULT_BOARD;   /* clean base */
+      if (!brand.isDefault) pfApplyBrandData(brand);
+      else {
+        const meta = document.getElementById('pf-head-meta');
+        if (meta) meta.textContent = PF_DEFAULT_META;
+      }
+      pfUpdateBrandHeader(brand);
+      /* Re-run the shared board wiring against the fresh rows. */
+      pfSeg = 'claimed'; pfStatus = null;
+      pfBuildStarColumns();
+      pfPopulateDates();
+      if (window.pfClearFilters) pfClearFilters(); else pfRender();
+      pfRender();
+      const body = document.getElementById('pf-body');
+      if (body) body.scrollTop = 0;
+    }
+
+    function pfBuildBrandMenu() {
+      const menu = document.getElementById('pf-brand-menu');
+      if (!menu) return;
+      menu.innerHTML = PF_BRANDS.map((b, i) => {
+        const n = (b.isDefault ? 10 : b.claimed.length);
+        const d = (b.isDefault ? 47 : b.discovered.length);
+        const av = b.avatar
+          ? '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '"><img src="' + b.avatar + '" alt="" onerror="this.parentNode.textContent=\'' + pfEsc(b.name.charAt(0)) + '\'"></span>'
+          : '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '">' + pfEsc(b.name.charAt(0)) + '</span>';
+        return '<button type="button" class="pf-brand-opt" role="option" onclick="pfSelectBrand(' + i + ')">' + av +
+          '<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">' + pfEsc(b.name) + '</span>' +
+          '<span class="pf-brand-opt-meta">' + n + ' claimed · ' + d + ' discovered</span></span>' +
+          '<span class="material-symbols-outlined pf-brand-opt-check">check</span></button>';
+      }).join('');
+    }
+    function pfToggleBrandMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('pf-brand-menu');
+      const chip = document.getElementById('pf-brand-chip');
+      if (!menu) return;
+      const open = menu.hasAttribute('hidden');
+      if (open) { menu.removeAttribute('hidden'); } else { menu.setAttribute('hidden', ''); }
+      if (chip) chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function pfCloseBrandMenu() {
+      const menu = document.getElementById('pf-brand-menu');
+      const chip = document.getElementById('pf-brand-chip');
+      if (menu) menu.setAttribute('hidden', '');
+      if (chip) chip.setAttribute('aria-expanded', 'false');
+    }
+    function pfSelectBrand(idx) {
+      pfCloseBrandMenu();
+      pfRenderBrand(idx);
+    }
+    window.pfToggleBrandMenu = pfToggleBrandMenu;
+    window.pfSelectBrand = pfSelectBrand;
+    document.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element) || !e.target.closest('#pf-brand')) pfCloseBrandMenu();
+    });
+
+    function pfInitBrands() {
+      const board = document.querySelector('#portfolio-panel .pf-board');
+      if (!board) return;
+      PF_DEFAULT_BOARD = board.innerHTML;
+      const meta = document.getElementById('pf-head-meta');
+      PF_DEFAULT_META = meta ? meta.textContent : '';
+      pfBuildBrandMenu();
+      pfUpdateBrandHeader(PF_BRANDS[0]);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', pfInitBrands);
+    } else {
+      pfInitBrands();
     }
 
     /* Per-row ⋮ actions menu (edit / view / claim + updated & last-edited

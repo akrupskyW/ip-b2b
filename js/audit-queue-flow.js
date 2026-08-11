@@ -3,8 +3,10 @@
  *
  * Rendered into #agent-main-scroll on audit-queue.html, paired with the
  * WISEai dock. Reviewers triage ingredient mappings flagged by brand users:
- * a filter card, status filter tiles, and a grid table with per-row Resolve
- * actions. Uses the shared token-driven `adm-*` component set from wise.css.
+ * single-line status filter tiles, a search pill with an in-pill filter
+ * popover (action / brand / flagged-date range), and a sortable grid table
+ * with a per-row Resolve action. Uses the shared token-driven `adm-*`
+ * component set from wise.css.
  */
 
 function esc(s) {
@@ -13,67 +15,77 @@ function esc(s) {
     .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/* Status filter tiles across the top. */
+/* Status filter tiles across the top — single-line num + icon-label tiles,
+   matching the shared admin scorecard style used across the platform. */
 const STATUSES = [
-  { key: null,        label: 'All',       num: 23, icon: 'inbox',        sub: 'Every audit row, all parses',            accent: '' },
-  { key: 'open',      label: 'Open',      num: 6,  icon: 'schedule',     sub: '0 flags · 0 overrides · 6 new canon · 0 not sure', accent: 'adm-stat--blue' },
-  { key: 'accepted',  label: 'Accepted',  num: 14, icon: 'check_circle', sub: '10 remapped · 4 flag only',              accent: 'adm-stat--green' },
-  { key: 'new_canon', label: 'New Canon', num: 1,  icon: 'add_circle',   sub: 'Created by reviewer',                    accent: 'adm-stat--blue' },
-  { key: 'rejected',  label: 'Rejected',  num: 0,  icon: 'cancel',       sub: 'Original mapping kept',                  accent: 'adm-stat--red' },
-  { key: 'canceled',  label: 'Canceled',  num: 2,  icon: 'block',        sub: 'Withdrawn or superseded by a re-analyze', accent: '' },
+  { key: null,        label: 'All',       num: 209, icon: 'inbox',        accent: '' },
+  { key: 'open',      label: 'Open',      num: 8,   icon: 'schedule',     accent: 'adm-stat--blue' },
+  { key: 'accepted',  label: 'Accepted',  num: 179, icon: 'check_circle', accent: 'adm-stat--green' },
+  { key: 'new_canon', label: 'New Canon', num: 14,  icon: 'add_circle',   accent: 'adm-stat--blue' },
+  { key: 'rejected',  label: 'Rejected',  num: 4,   icon: 'cancel',       accent: 'adm-stat--red' },
+  { key: 'canceled',  label: 'Canceled',  num: 4,   icon: 'block',        accent: '' },
 ];
 
 const AUDITS = [
-  { brand: 'Flax4Life', food: 'Blueberry Muffin–Single Serve', raw: 'new canon3', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: new canon3 (Additives). "new canon3" is not a recognizable ingredient name and appears to be a placeholder or internal marker rather than a food substance…', when: '24d ago', by: 'Kelly S.', status: 'open' },
-  { brand: 'Flax4Life', food: 'Carrot Cake Flax, Carrot Cake', raw: 'VEGAN NATURAL FLAVORS', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: VEGAN NATURAL FLAVORS. No detailed AI research available for this ingredient. The ingredient name will be used as the proposed canon name.', when: '25d ago', by: 'Rob S.', status: 'open' },
-  { brand: 'Goodles', food: 'Kirkland Signature Organic Har…', raw: 'Organic Hard Red Wheat Flour', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Organic Hard Red Wheat Flour (Grain). Hard red wheat flour is produced by milling cleaned hard red wheat kernels into flour. This is a traditional minimal processing…', when: '25d ago', by: 'Kevin J.', status: 'open' },
-  { brand: 'Goodles', food: 'Cheddy Mac – Creamy Chedd…', raw: 'Dried Maple Syrup', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: DRIED MAPLE SYRUP (Additives). Dried maple syrup is maple syrup that has been dehydrated into solids/powder (often via evaporation and drying, sometimes with…', when: '25d ago', by: 'Kevin J.', status: 'open' },
-  { brand: 'Goodles', food: 'Cheddy Mac (Creamy Chedd…', raw: 'Cranberry', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Cranberry. No detailed AI research available for this ingredient. The ingredient name will be used as the proposed canon name.', when: '25d ago', by: 'Kevin J.', status: 'open' },
-  { brand: 'Giffard', food: "Pip's Heirloom Snacks Twists…", raw: 'Upcycled Ground Yellow Corn', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Upcycled Ground Yellow Corn — Grain. Ground yellow corn is produced by milling whole yellow corn kernels into smaller particles. This is a physical size reduction…', when: 'Jun 17', by: 'Rob S.', status: 'open' },
-  { brand: 'Flax4Life', food: 'Cinnamon Flax Muffin', raw: 'Sunflower Lecithin', mapping: 'Lecithin (Sunflower)', action: 'Remapped', notes: 'Auditor accepted the brand suggestion and remapped to the existing canonical ingredient Lecithin (Sunflower).', when: '26d ago', by: 'Kelly S.', status: 'accepted' },
-  { brand: 'Goodles', food: 'Shells & White Cheddar', raw: 'Organic Semolina', mapping: 'Semolina (Durum Wheat)', action: 'Remapped', notes: 'Accepted with a remap to Semolina (Durum Wheat).', when: '27d ago', by: 'Kevin J.', status: 'accepted' },
-  { brand: 'Giffard', food: 'Heirloom Twists – Sea Salt', raw: 'RE-ANALYZE', mapping: 'unmatched', action: 'Canceled', notes: 'Withdrawn — superseded by a brand re-analyze of the product ingredient list.', when: '28d ago', by: 'Rob S.', status: 'canceled' },
-  { brand: 'Flax4Life', food: 'Ancient Grain Loaf', raw: 'Teff Flour', mapping: 'Teff Flour', action: 'New Canon', notes: 'Reviewer created a new canonical ingredient: Teff Flour (Grain).', when: '29d ago', by: 'Kelly S.', status: 'new_canon' },
+  { brand: 'Karma Wellness Kitchen', food: 'Vegan Cheese Pops',              raw: 'Popped Water Lily Seeds', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Popped Water Lily Seeds (FINISHED PRODUCTS). Popped water lily seeds are water lily seeds that have been heat-popped (similar to puffed grains) to create an expanded snack. This involves industrial thermal processing that alters structure/texture but is not inherently a restricted/banned additive…', when: '48m ago', by: 'Vikita P.', status: 'open' },
+  { brand: 'Karma Wellness Kitchen', food: 'Cheddar Cheese Pops',           raw: 'Popped Water Lily Seeds', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Popped Water Lily Seeds (Grain). Water lily seeds are an edible seed traditionally dried and popped (a heat-based physical expansion similar to popping grains). This is a minimal, non-chemical process with no functional additives implied by the name and no specific regulatory concerns. It…', when: '48m ago', by: 'Vikita P.', status: 'open' },
+  { brand: 'Karma Wellness Kitchen', food: 'Spicy Masala Pops',             raw: 'Popped Water Lily Seeds', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Popped Water Lily Seeds (Protein). Popped water lily seeds (often sold as makhana/fox nuts) are the edible seeds of the water lily plant that have been heat-popped (similar in concept to popping grains). This is a traditional, minimal processing method (heating/puffing) without chemical solvents or…', when: '50m ago', by: 'Vikita P.', status: 'open' },
+  { brand: 'Karma Wellness Kitchen', food: 'Spicy Masala Pops',             raw: 'Chaat Masala',           mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Chaat Masala (Additive). Chaat masala is a blended spice/seasoning mix (typically a variable formulation that can include spices plus acidulants such as dried mango powder and often salt). Because the label provides no sub-ingredient breakdown, it is an undisclosed formulation/seasoning…', when: '50m ago', by: 'Vikita P.', status: 'open' },
+  { brand: 'Karma Wellness Kitchen', food: 'Turmeric Popped Water Lily S…', raw: 'Cchaat Masala',          mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Cchaat Masala (FINISHED PRODUCTS). Chaat masala is a formulated spice-and-salt seasoning blend (commonly including salt and multiple ground spices and dried acids such as mango powder and/or black salt). It is produced by blending multiple processed spice/acid components into a…', when: '51m ago', by: 'Vikita P.', status: 'open' },
+  { brand: 'Hoplark',                food: 'The Blood Orange One',           raw: 'Crystalized Blood Orange', mapping: 'unmatched', action: 'Suggest New Canon', notes: 'Proposed new canon: Crystalized Blood Orange (FRUIT). The label specifies a crystallized blood orange ingredient; generic blood oranges or blood orange juice are less specific, and the shortlist only contains crystallized forms of other citrus fruits.', when: '2d ago', by: 'Frances M.', status: 'open' },
+  { brand: 'Hoplark',                food: 'The Sprucey One',                raw: 'Fir Tips',                 mapping: 'unmatched', action: 'Not Sure',          notes: 'Spruce tips are the young growths that appear at the end of spruce tree branches in the spring. We proudly source sustainably hand-foraged, American spruce tips that are never extracted or dehydrated — for a unique piney, herbal, and citrusy flavor.', when: '2d ago', by: 'Frances M.', status: 'open' },
+  { brand: 'Karma Wellness Kitchen', food: 'Original Popped Lotus Seeds',    raw: 'Sunflower Oil',            mapping: 'Sunflower Oil',      action: 'Remapped',  notes: 'Auditor accepted the brand suggestion and remapped to the existing canonical ingredient Sunflower Oil.', when: '3d ago', by: 'Vikita P.', status: 'accepted' },
+  { brand: 'Hoplark',                food: 'The Cola One',                   raw: 'Kola Nut Extract',         mapping: 'Kola Nut Extract',   action: 'Remapped',  notes: 'Accepted with a remap to the existing canonical ingredient Kola Nut Extract.', when: '4d ago', by: 'Frances M.', status: 'accepted' },
+  { brand: 'Karma Wellness Kitchen', food: 'Himalayan Salt Pops',           raw: 'Pink Himalayan Salt',      mapping: 'Salt (Himalayan Pink)', action: 'New Canon', notes: 'Reviewer created a new canonical ingredient: Salt (Himalayan Pink).', when: '5d ago', by: 'Vikita P.', status: 'new_canon' },
+  { brand: 'Hoplark',                food: 'The Half & Half One',            raw: 'RE-ANALYZE',               mapping: 'unmatched', action: 'Canceled',  notes: 'Withdrawn — superseded by a brand re-analyze of the product ingredient list.', when: '6d ago', by: 'Frances M.', status: 'canceled' },
+  { brand: 'Karma Wellness Kitchen', food: 'BBQ Cheese Pops',               raw: 'Natural Smoke Flavor',     mapping: 'unmatched', action: 'Rejected',  notes: 'Rejected — original unmatched mapping kept pending a clearer sub-ingredient breakdown from the brand.', when: '7d ago', by: 'Vikita P.', status: 'rejected' },
 ];
 
-const ACTION_CHIP = {
-  'Suggest New Canon': 'adm-chip--canon',
-  'Remapped':          'adm-chip--green',
-  'New Canon':         'adm-chip--blue',
-  'Canceled':          'adm-chip--muted',
+/* Chip class + leading icon per brand action. */
+const ACTION_META = {
+  'Suggest New Canon': { cls: 'adm-chip--blue',   icon: 'add_circle' },
+  'Not Sure':          { cls: 'adm-chip--amber',  icon: 'help' },
+  'Remapped':          { cls: 'adm-chip--green',  icon: 'sync_alt' },
+  'New Canon':         { cls: 'adm-chip--blue',   icon: 'auto_awesome' },
+  'Rejected':          { cls: 'adm-chip--red',    icon: 'cancel' },
+  'Canceled':          { cls: 'adm-chip--muted',  icon: 'block' },
 };
 
+/* Select filters shown in the search pill's popover. Date range is handled
+   separately with two <input type="date"> fields in the same popover. */
 const FILTERS = {
-  action: { label: 'Action Type', opts: ['All actions', 'Suggest New Canon', 'Remapped', 'New Canon', 'Canceled'] },
-  brand:  { label: 'Brand',       opts: ['All brands', 'Flax4Life', 'Goodles', 'Giffard'] },
+  action: { label: 'Action Type', icon: 'bolt',   opts: ['All actions', 'Suggest New Canon', 'Not Sure', 'Remapped', 'New Canon', 'Rejected', 'Canceled'] },
+  brand:  { label: 'Brand',       icon: 'storefront', opts: ['All brands', 'Karma Wellness Kitchen', 'Hoplark'] },
 };
 const FILTER_DEFAULTS = { action: 'All actions', brand: 'All brands', after: '', before: '' };
 
-/* Reference "today" for the demo data so relative flags ("24d ago") and
-   calendar flags ("Jun 17") sort and date-filter consistently. */
-const NOW_REF = Date.parse('2026-08-01');
+/* Reference "now" for the demo data so relative flags ("48m ago", "2d ago")
+   and calendar flags sort and date-filter consistently. */
+const NOW_REF = Date.parse('2026-08-10T14:00:00');
 function flaggedTime(a) {
-  const m = /(\d+)\s*d\s*ago/i.exec(a.when);
-  if (m) return NOW_REF - Number(m[1]) * 86400000;
-  const t = Date.parse(`${a.when} 2026`);
+  const w = a.when;
+  let m;
+  if ((m = /(\d+)\s*m\s*ago/i.exec(w))) return NOW_REF - Number(m[1]) * 60000;
+  if ((m = /(\d+)\s*h\s*ago/i.exec(w))) return NOW_REF - Number(m[1]) * 3600000;
+  if ((m = /(\d+)\s*d\s*ago/i.exec(w))) return NOW_REF - Number(m[1]) * 86400000;
+  const t = Date.parse(`${w} 2026`);
   return Number.isNaN(t) ? null : t;
 }
-function flaggedDays(a) {
-  const t = flaggedTime(a);
-  return t == null ? Number.MAX_SAFE_INTEGER : Math.round((NOW_REF - t) / 86400000);
-}
 
-/* Sortable columns. Notes are rendered on their own full-width row beneath
-   the aligned cells, so they aren't part of the column grid. */
+/* Sortable columns. A wide inline notes column sits among the aligned data
+   cells. */
 const COLS = [
-  { key: 'brand',   label: 'Brand / Food',    sortable: true,  value: (a) => `${a.brand} ${a.food}`.toLowerCase(), type: 'text' },
-  { key: 'raw',     label: 'Raw Ingredient',  sortable: true,  value: (a) => a.raw.toLowerCase(), type: 'text' },
-  { key: 'mapping', label: 'Current Mapping', sortable: true,  value: (a) => a.mapping.toLowerCase(), type: 'text' },
-  { key: 'action',  label: "Brand's Action",  sortable: true,  value: (a) => a.action.toLowerCase(), type: 'text' },
-  { key: 'flagged', label: 'Flagged',         sortable: true,  value: (a) => flaggedDays(a), type: 'num' },
-  { key: 'actions', label: 'Actions',         sortable: false, end: true },
+  { key: 'brand',   label: 'Brand / Food',     sortable: true,  value: (a) => `${a.brand} ${a.food}`.toLowerCase(), type: 'text' },
+  { key: 'raw',     label: 'Raw Ingredient',   sortable: true,  value: (a) => a.raw.toLowerCase(), type: 'text' },
+  { key: 'mapping', label: 'Current Mapping',  sortable: true,  value: (a) => a.mapping.toLowerCase(), type: 'text' },
+  { key: 'action',  label: "Brand's Action",   sortable: true,  value: (a) => a.action.toLowerCase(), type: 'text' },
+  { key: 'notes',   label: "Brand's Notes",    sortable: false },
+  { key: 'flagged', label: 'Flagged',          sortable: true,  value: (a) => flaggedTime(a) ?? 0, type: 'num' },
+  { key: 'actions', label: '',                 sortable: false, end: true },
 ];
-const GRID_COLS = 'minmax(150px, 1.5fr) minmax(130px, 1.2fr) 124px 150px 112px 120px';
+/* min:0 tracks let every flexible column shrink so the table fits the narrow
+   board beside the WISEai dock (text truncates/clamps). */
+const GRID_COLS = 'minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.85fr) 156px minmax(0,2.3fr) 88px 112px';
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 let hostEl = null;
@@ -113,6 +125,9 @@ function matches(a) {
   return true;
 }
 
+/* Count of popover filters that differ from their defaults (drives the "has
+   changes" dot on the filter button). The status tiles are a separate
+   dimension and aren't counted here. */
 function activeFilterCount() {
   return Object.keys(FILTER_DEFAULTS).filter((k) => filters[k] !== FILTER_DEFAULTS[k]).length;
 }
@@ -132,17 +147,19 @@ function orderedFiltered() {
 }
 
 function rowHtml(a, i) {
-  const chip = ACTION_CHIP[a.action] || 'adm-chip--outline';
-  const canonIcon = a.action === 'Suggest New Canon' ? '<span class="material-symbols-outlined">add_circle</span>' : '';
+  const meta = ACTION_META[a.action] || { cls: 'adm-chip--outline', icon: '' };
+  const icon = meta.icon ? `<span class="material-symbols-outlined">${esc(meta.icon)}</span>` : '';
   return `
     <div class="adm-trow adm-trow--audit" data-adm-row="${i}">
       <span class="adm-td"><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(a.brand)}</span><span class="adm-idcell-sub" style="color:var(--primary)">${esc(a.food)}</span></span></span>
       <span class="adm-td" style="font-weight:600;font-size:0.82rem">${esc(a.raw)}</span>
       <span class="adm-td" style="font-style:italic;color:var(--text-subtle);font-size:0.8rem">${esc(a.mapping)}</span>
-      <span class="adm-td"><span class="adm-chip ${chip}">${canonIcon}${esc(a.action)}</span></span>
+      <span class="adm-td"><span class="adm-chip ${meta.cls}">${icon}${esc(a.action)}</span></span>
+      <span class="adm-td"><span class="adm-notes">${esc(a.notes)}</span></span>
       <span class="adm-td"><span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span></span>
-      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button></span></span>
-      <div class="adm-trow-notes"><span class="material-symbols-outlined">sticky_note_2</span><span class="adm-notes adm-notes--full">${esc(a.notes)}</span></div>
+      <span class="adm-td adm-td--end"><span class="adm-actions">
+        <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
+      </span></span>
     </div>`;
 }
 
@@ -153,7 +170,6 @@ function statsHtml() {
       <button type="button" class="adm-stat${s.accent ? ' ' + s.accent : ''}${active ? ' is-active' : ''}" data-adm-filter="${s.key == null ? '' : esc(s.key)}" aria-pressed="${active ? 'true' : 'false'}">
         <span class="adm-stat-num">${s.num}</span>
         <span class="adm-stat-label"><span class="material-symbols-outlined">${esc(s.icon)}</span>${esc(s.label)}</span>
-        <span class="adm-stat-sub">${esc(s.sub)}</span>
       </button>`;
   }).join('');
 }
@@ -191,6 +207,10 @@ function filterPopHtml() {
     </div>`;
 }
 
+function footText(n) {
+  return `Showing ${n ? '1-' + n : 0} of ${n} audits`;
+}
+
 function paint() {
   if (!hostEl) return;
   const rows = orderedFiltered();
@@ -217,14 +237,14 @@ function paint() {
         </div>
       </div>
 
-      <div class="adm-stats" style="margin-bottom:14px">${statsHtml()}</div>
+      <div class="adm-stats" style="margin:0 0 16px">${statsHtml()}</div>
 
       <div class="adm-card">
         <div class="adm-table-card">
           <div class="adm-table" style="--adm-cols:${GRID_COLS}">
             <div class="adm-thead">${theadHtml()}</div>
             <div data-adm-rows>${rows.map((a) => rowHtml(a, AUDITS.indexOf(a))).join('')}</div>
-            <div class="adm-table-foot"><span data-adm-foot>Showing ${rows.length ? '1-' + rows.length : 0} of ${rows.length} audits</span></div>
+            <div class="adm-table-foot"><span data-adm-foot>${footText(rows.length)}</span></div>
           </div>
         </div>
       </div>
@@ -238,7 +258,7 @@ function repaintRows() {
   const thead = hostEl?.querySelector('.adm-thead');
   if (thead) thead.innerHTML = theadHtml();
   const foot = hostEl?.querySelector('[data-adm-foot]');
-  if (foot) foot.textContent = `Showing ${rows.length ? '1-' + rows.length : 0} of ${rows.length} audits`;
+  if (foot) foot.textContent = footText(rows.length);
   hostEl?.querySelectorAll('button[data-adm-filter]').forEach((b) => {
     const s = b.dataset.admFilter || null;
     b.classList.toggle('is-active', s === activeStatus);
@@ -247,20 +267,27 @@ function repaintRows() {
   syncFilterUi();
 }
 
-/* Keep the in-search filter button (active + "has changes" dot), the popover
-   controls, and open/closed state in sync with the live filter state. */
+/* Keep the search-pill filter button (active + "has changes" dot) and the
+   popover controls in sync with the live filter state. */
 function syncFilterUi() {
   if (!hostEl) return;
   const btn = hostEl.querySelector('[data-adm-action="toggle-filters"]');
   if (btn) { btn.classList.toggle('has-dot', activeFilterCount() > 0); btn.classList.toggle('is-active', filterOpen); btn.setAttribute('aria-expanded', String(filterOpen)); }
-  const pop = hostEl.querySelector('[data-adm-filter-pop]');
-  if (pop) pop.hidden = !filterOpen;
   Object.keys(FILTERS).forEach((k) => { const sel = hostEl.querySelector(`select[data-adm-filter="${k}"]`); if (sel && sel.value !== filters[k]) sel.value = filters[k]; });
   ['after', 'before'].forEach((k) => { const dt = hostEl.querySelector(`input[data-adm-filter-date="${k}"]`); if (dt && dt.value !== filters[k]) dt.value = filters[k]; });
 }
 
-function setFilterOpen(open) { filterOpen = open; syncFilterUi(); }
-function clearFilters() { filters = { ...FILTER_DEFAULTS }; repaintRows(); }
+function setFilterOpen(open) {
+  filterOpen = open;
+  const pop = hostEl?.querySelector('[data-adm-filter-pop]');
+  if (pop) pop.hidden = !open;
+  syncFilterUi();
+}
+
+function clearFilters() {
+  filters = { ...FILTER_DEFAULTS };
+  repaintRows();
+}
 
 function toggleSort(key) {
   const col = COLS.find((c) => c.key === key);
@@ -283,11 +310,10 @@ function resolve(idx) {
 function runAction(action, idx) {
   switch (action) {
     case 'refresh': toast('Queue refreshed', 'refresh'); repaintRows(); break;
+    case 'resolve': resolve(Number(idx)); break;
     case 'toggle-filters': setFilterOpen(!filterOpen); break;
     case 'apply-filters': setFilterOpen(false); break;
     case 'clear-filters': clearFilters(); break;
-    case 'resolve': resolve(Number(idx)); break;
-    case 'ai': { const a = AUDITS[Number(idx)]; if (a) pushChat(`Let\u2019s look at <strong>${esc(a.raw)}</strong> (${esc(a.brand)} · ${esc(a.food)}). ${esc(a.notes)}`); break; }
     default: break;
   }
 }
@@ -322,13 +348,13 @@ export function renderAuditQueue(mainEl) {
     if (dt) { filters[dt.dataset.admFilterDate] = dt.value; repaintRows(); }
   });
 
-  /* Dismiss the filter popover on any outside click / Escape (bound once). */
+  /* Dismiss the filter popover on any outside click (attached once). */
   if (!docListenersBound) {
     docListenersBound = true;
     document.addEventListener('click', (e) => {
       if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && filterOpen) setFilterOpen(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setFilterOpen(false); });
   }
 }
 

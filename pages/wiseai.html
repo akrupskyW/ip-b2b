@@ -68,8 +68,7 @@
          row (padding-bottom) so the shadow renders into padding the clip box
          still shows, then pull the row back down by the same amount (negative
          margin) so the panes still fill the nav column's full height. */
-      padding: 0 2px var(--modules-bottom-pad);
-      margin-bottom: calc(-1 * var(--modules-bottom-pad));
+      padding: 0 2px;
     }
 
     /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
@@ -580,9 +579,11 @@
     .wa-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
     /* ── Sortable results table (real column headers, click-to-sort) ── */
-    .wa-tbl { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    /* overflow visible so .wa-tbl-head can stick to the scrolling .wa-pane-body;
+       the head + last row carry the rounded corners instead. */
+    .wa-tbl { border: 1px solid var(--border); border-radius: 12px; }
     .wa-tbl-head, .wa-trow { display: grid; align-items: center; gap: 12px; padding: 10px 14px; }
-    .wa-tbl-head { border-bottom: 1px solid var(--border); }
+    .wa-tbl-head { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); border-radius: 12px 12px 0 0; }
     .wa-tbl-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; white-space: nowrap; }
     button.wa-tbl-th { cursor: pointer; transition: color .14s; }
     button.wa-tbl-th:hover { color: var(--text); }
@@ -599,7 +600,7 @@
     @media (prefers-reduced-motion: reduce) { .wa-sort-ic { transition: none; } }
     .wa-tbl-body { display: block; }
     .wa-trow { border-bottom: 1px solid var(--border); transition: background .14s; }
-    .wa-tbl-body .wa-trow:last-child { border-bottom: 0; }
+    .wa-tbl-body .wa-trow:last-child { border-bottom: 0; border-radius: 0 0 12px 12px; }
     .wa-trow:hover { background: var(--surface-2); }
     html.dark .wa-trow:hover { background: rgba(255,255,255,0.03); }
     .wa-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
@@ -707,6 +708,61 @@
     /* Let axis labels render past the SVG box instead of being clipped. */
     .wa-radar-svg { overflow: visible; }
     .wa-nd-tag { display: inline-block; padding: 1px 7px; border-radius: 9999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--ter-amber-10); color: var(--ter-amber-text); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); }
+
+    /* ═══════════ Code Evaluation module ═══════════
+       A distinct OUTPUT TYPE (beyond result tables, detail cards, reports &
+       charts): the WISEcode "code evaluation" run for a recipe / ingredient
+       list. Header carries a score gauge + parse summary; a collapsible STEP
+       BREAKDOWN lists the code that produced the score; an INGREDIENT
+       PROCESSING panel groups every parsed ingredient by NOVA-style processing
+       level with a category tag. Renders inside a .wa-block in the Results pane. */
+    .wa-ce-head { display: flex; align-items: center; gap: 18px; padding: 2px 2px 22px; }
+    .wa-ce-gauge { flex: 0 0 auto; width: 88px; height: 88px; position: relative; }
+    .wa-ce-gauge svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+    .wa-ce-gauge-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .wa-ce-gauge-val { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 25px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-ce-gauge-band { font-size: 8.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--sec-green-text); margin-top: 3px; }
+    .wa-ce-sum-concept { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); }
+    .wa-ce-sum-main { font-family: 'Noto Serif', Georgia, serif; font-size: 18px; font-weight: 800; color: var(--text); margin-top: 4px; line-height: 1.1; }
+    .wa-ce-sum-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+    .wa-ce-sum-sub b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .wa-ce-sum-sub .sep { color: var(--text-subtle); opacity: .6; }
+
+    .wa-ce-sec { border-top: 1px solid var(--border); padding-top: 16px; }
+    .wa-ce-sec + .wa-ce-sec { margin-top: 24px; }
+    .wa-ce-sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .wa-ce-sec-head > .material-symbols-outlined { font-size: 17px; color: var(--primary); }
+    html.dark .wa-ce-sec-head > .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .wa-ce-sec-title { font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text); }
+    .wa-ce-sec-count { font-size: 11px; font-weight: 600; color: var(--text-subtle); }
+    .wa-ce-sec-chev { margin-left: auto; color: var(--text-subtle); font-size: 18px; }
+
+    .wa-ce-steps-head { display: grid; grid-template-columns: 46px 1fr 72px; gap: 10px; padding: 0 4px 8px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); border-bottom: 1px solid var(--border); }
+    .wa-ce-steps-head .end { text-align: right; }
+    .wa-ce-step { display: grid; grid-template-columns: 46px 1fr 72px; gap: 10px; align-items: start; padding: 11px 4px; border-bottom: 1px solid var(--border); }
+    .wa-ce-step:hover { background: var(--surface-2); }
+    html.dark .wa-ce-step:hover { background: rgba(255,255,255,0.03); }
+    .wa-ce-step-num { font-size: 11.5px; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .wa-ce-step-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.35; }
+    .wa-ce-step-name .tag { font-size: 10px; font-weight: 800; letter-spacing: .04em; color: var(--primary); margin-left: 5px; }
+    html.dark .wa-ce-step-name .tag { color: var(--primary-bright, #8B9FAF); }
+    .wa-ce-step-note { font-size: 11px; color: var(--text-subtle); line-height: 1.45; margin-top: 3px; }
+    .wa-ce-step-val { text-align: right; font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-ce-step-val.is-empty { color: var(--text-subtle); font-weight: 600; }
+    .wa-ce-step-val.is-false { color: var(--ter-amber-text); }
+
+    .wa-ce-pl { display: flex; align-items: center; gap: 9px; }
+    .wa-ce-pl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sec-green); flex: 0 0 auto; }
+    .wa-ce-pl-label { font-size: 12.5px; font-weight: 700; color: var(--text); }
+    .wa-ce-pl-count { margin-left: auto; font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-ce-plbar { height: 6px; border-radius: 9999px; background: var(--surface-3); overflow: hidden; margin: 10px 0 16px; }
+    .wa-ce-plbar-fill { height: 100%; border-radius: 9999px; background: var(--sec-green); }
+    .wa-ce-ings { display: flex; flex-wrap: wrap; gap: 7px; }
+    .wa-ce-ing { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 9999px; font-size: 11.5px; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); }
+    html.dark .wa-ce-ing { background: rgba(255,255,255,0.03); }
+    .wa-ce-ing-tag { font-size: 10px; font-weight: 700; color: var(--primary); }
+    html.dark .wa-ce-ing-tag { color: var(--primary-bright, #8B9FAF); }
+    .wa-ce-role-tag { flex: 0 0 auto; padding: 3px 9px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: var(--sec-green-10); color: var(--sec-green-text); border: 1px solid color-mix(in srgb, var(--sec-green) 26%, transparent); }
 
     /* ═══════════ Inline surface preview chip ═══════════
        When a turn opens a Results/Visuals module on the right, a small chip is
@@ -911,161 +967,210 @@
       .wa-pane.is-open { min-width: 480px; }
     }
 
-    /* ═══════════ Share panel (⋯ → Share) ═══════════
-       A centered dialog opened from any pane's three-dot "Share" action. You can
-       invite brand-new users by email or search the people directory (matches show
-       their address), share with the entire organization, and optionally attach
-       individual conversation outputs — each labelled by the pane it lives in. */
-    .wa-share-scrim {
-      position: fixed; inset: 0; z-index: 1200;
-      display: flex; align-items: center; justify-content: center; padding: 24px;
-      background: rgba(6, 12, 22, 0.5);
-      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-      opacity: 0; transition: opacity 0.18s ease;
-    }
-    .wa-share-scrim[hidden] { display: none; }
-    .wa-share-scrim.is-open { opacity: 1; }
-    .wa-share {
-      width: 100%; max-width: 460px; max-height: calc(100vh - 48px);
-      display: flex; flex-direction: column;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-md); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-      transform: translateY(10px) scale(0.985); transition: transform 0.2s ease; overflow: hidden;
-    }
-    .wa-share-scrim.is-open .wa-share { transform: none; }
-    html.dark .wa-share { background: #14242f; border-color: rgba(255, 255, 255, 0.08); }
+    /* ═══════════ Share side panel (⋯ → Share) ═══════════
+       A right-docked panel that slides over the chat, reusing the SHARED
+       `.wch-sidebar` shell (identical to "Connect a data source") plus the app's
+       own form controls (.adm-field / .adm-input / .adm-btn pill / .chip). Only
+       the bits those classes don't cover (chip box, people dropdown, output rows)
+       are defined here. */
+    #wa-share-panel { width: 372px; }
+    /* Editorial serif masthead — matches the result panes / docked modules. The
+       title + conversation subtitle stack in the header (no leading icon). */
+    #wa-share-panel .wch-head { align-items: flex-start; padding: 16px 12px 14px 18px; }
+    #wa-share-panel .wch-head-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.01em; line-height: 1.16; color: var(--text); }
+    .wa-sh-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .wa-sh-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 16px; }
+    .wa-sh-sub { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-sh-form { display: flex; flex-direction: column; gap: 16px; }
+    .wa-sh-form[hidden], .wa-sh-done[hidden] { display: none; }
 
-    .wa-share-head {
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-      padding: 18px 20px 16px; border-bottom: 1px solid var(--border);
-    }
-    .wa-share-head-text { min-width: 0; }
-    .wa-share-title { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
-    .wa-share-sub {
-      margin: 3px 0 0; font-size: 0.85rem; color: var(--text-subtle); line-height: 1.35;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .wa-share-close {
-      display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0;
-      border-radius: 8px; border: 1px solid transparent; background: transparent;
-      color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
-    }
-    .wa-share-close:hover { background: var(--surface-2); color: var(--text); }
-    .wa-share-close .material-symbols-outlined { font-size: 20px; }
+    /* Textarea sibling to .adm-input (which is a fixed-height single-line field). */
+    .wa-sh-textarea { width: 100%; box-sizing: border-box; min-height: 74px; padding: 10px 14px; font-family: inherit; font-size: 0.8125rem; line-height: 1.45; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; outline: none; resize: vertical; }
+    html.dark .wa-sh-textarea { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-sh-textarea:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .adm-input::placeholder, .wa-sh-textarea::placeholder { color: var(--text-subtle); opacity: 0.85; }
 
-    .wa-share-body { padding: 18px 20px; overflow-y: auto; }
-    .wa-share-form { display: flex; flex-direction: column; gap: 18px; }
-    .wa-share-field { display: flex; flex-direction: column; gap: 7px; position: relative; }
-    .wa-share-flabel { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    /* Recipient chip box — matches .adm-input, but wraps chips + a borderless input. */
+    .wa-sh-chips { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 42px; box-sizing: border-box; padding: 5px 8px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; }
+    html.dark .wa-sh-chips { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-sh-chips:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .wa-sh-chipinput { flex: 1 1 90px; min-width: 90px; height: 30px; border: 0; background: transparent; font-family: inherit; font-size: 0.8125rem; color: var(--text); outline: none; padding: 0 4px; }
+    .wa-sh-chipinput::placeholder { color: var(--text-subtle); opacity: 0.85; }
 
-    .wa-share-input, .wa-share-textarea {
-      width: 100%; font: inherit; font-size: 0.95rem; color: var(--text);
-      background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px;
-      padding: 11px 13px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .wa-share-textarea { resize: vertical; min-height: 76px; line-height: 1.4; }
-    .wa-share-input:focus, .wa-share-textarea:focus, .wa-share-chipbox:focus-within {
-      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 80, 124, 0.12);
-    }
-    html.dark .wa-share-input:focus, html.dark .wa-share-textarea:focus,
-    html.dark .wa-share-chipbox:focus-within { box-shadow: 0 0 0 3px rgba(139, 159, 175, 0.18); }
-    .wa-share-input::placeholder, .wa-share-textarea::placeholder { color: var(--text-subtle); opacity: 0.7; }
-
-    /* Chip box — collects added emails + selected people as removable pills. */
-    .wa-share-chipbox {
-      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-      border: 1px solid var(--border-strong); border-radius: 10px; padding: 7px 9px;
-      background: var(--surface); transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .wa-share-chipinput {
-      flex: 1 1 120px; min-width: 120px; border: none; outline: none; background: transparent;
-      font: inherit; font-size: 0.95rem; color: var(--text); padding: 4px 2px;
-    }
-    .wa-share-chipinput::placeholder { color: var(--text-subtle); opacity: 0.7; }
-    .wa-share-chip {
-      display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
-      padding: 4px 6px 4px 11px; border-radius: var(--radius-pill);
-      background: var(--surface-2); border: 1px solid var(--border); font-size: 0.85rem; color: var(--text);
-    }
-    .wa-share-chip.is-invalid { border-color: var(--sec-red, #DC3038); color: var(--sec-red, #DC3038); }
-    .wa-share-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .wa-share-chip-x {
-      display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0;
-      border-radius: 50%; border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
-    }
-    .wa-share-chip-x:hover { background: rgba(0, 0, 0, 0.08); color: var(--text); }
-    html.dark .wa-share-chip-x:hover { background: rgba(255, 255, 255, 0.1); }
-    .wa-share-chip-x .material-symbols-outlined { font-size: 15px; }
+    /* Recipient pill (compact take on .chip; body isn't clickable, only the ×). */
+    .wa-sh-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 5px 3px 11px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 500; color: var(--text); }
+    html.dark .wa-sh-chip { background: rgba(255,255,255,0.06); }
+    .wa-sh-chip.is-invalid { border-color: var(--sec-red); color: var(--sec-red); }
+    .wa-sh-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-sh-chip-x { display: grid; place-items: center; width: 17px; height: 17px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle); cursor: pointer; }
+    .wa-sh-chip-x:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+    html.dark .wa-sh-chip-x:hover { background: rgba(255,255,255,0.12); }
+    .wa-sh-chip-x .material-symbols-outlined { font-size: 14px; }
 
     /* People search dropdown. */
-    .wa-share-people-menu {
-      position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 5;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16); overflow: hidden auto; max-height: 244px;
-    }
-    html.dark .wa-share-people-menu { background: #14242f; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5); }
-    .wa-share-people-menu.hidden { display: none; }
-    .wa-share-person {
-      display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
-      padding: 10px 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; cursor: pointer;
-    }
-    .wa-share-person:last-child { border-bottom: none; }
-    .wa-share-person:hover, .wa-share-person.is-active { background: var(--surface-2); }
-    .wa-share-person-av {
-      display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0;
-      border-radius: 50%; background: var(--surface-2); color: var(--text-subtle);
-    }
-    .wa-share-person-av .material-symbols-outlined { font-size: 18px; }
-    .wa-share-person-txt { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-    .wa-share-person-name { font-size: 0.92rem; color: var(--text); font-weight: 500; white-space: nowrap; }
-    .wa-share-person-mail { font-size: 0.85rem; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .wa-share-people-empty { padding: 12px 13px; font-size: 0.88rem; color: var(--text-subtle); }
+    .wa-sh-menu { position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 5; overflow: hidden auto; max-height: 210px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 16px 34px rgba(20,30,60,0.16); }
+    html.dark .wa-sh-menu { background: var(--surface-2); box-shadow: 0 16px 34px rgba(0,0,0,0.5); }
+    .wa-sh-menu[hidden] { display: none; }
+    .wa-sh-person { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--border); background: transparent; cursor: pointer; }
+    .wa-sh-person:last-child { border-bottom: 0; }
+    .wa-sh-person:hover, .wa-sh-person.is-active { background: var(--surface-2); }
+    html.dark .wa-sh-person:hover, html.dark .wa-sh-person.is-active { background: rgba(255,255,255,0.06); }
+    .wa-sh-person-av { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: var(--surface-2); color: var(--text-subtle); }
+    html.dark .wa-sh-person-av { background: rgba(255,255,255,0.08); }
+    .wa-sh-person-av .material-symbols-outlined { font-size: 17px; }
+    .wa-sh-person-txt { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
+    .wa-sh-person-name { font-size: 0.82rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+    .wa-sh-person-mail { font-size: 0.78rem; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-sh-menu-empty { padding: 10px 12px; font-size: 0.8rem; color: var(--text-subtle); line-height: 1.4; }
 
     /* Checkbox rows (entire org + individual outputs). */
-    .wa-share-check { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: var(--text); cursor: pointer; }
-    .wa-share-check input, .wa-share-out input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
-    .wa-share-check.is-disabled { opacity: 0.5; cursor: default; }
+    .wa-sh-check { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+    .wa-sh-outs { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+    .wa-sh-out { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: 8px; cursor: pointer; }
+    .wa-sh-out:hover { background: var(--surface-2); }
+    html.dark .wa-sh-out:hover { background: rgba(255,255,255,0.05); }
+    .wa-sh-out-tag { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); flex-shrink: 0; }
+    html.dark .wa-sh-out-tag { color: var(--primary-bright); }
+    .wa-sh-out-name { min-width: 0; font-size: 0.8125rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .wa-share-outputs { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
-    .wa-share-out { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 9px; cursor: pointer; }
-    .wa-share-out:hover { background: var(--surface-2); }
-    .wa-share-out-tag {
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
-      color: var(--primary); flex-shrink: 0;
-    }
-    html.dark .wa-share-out-tag { color: var(--primary-bright); }
-    .wa-share-out-name { min-width: 0; font-size: 0.92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .wa-share-outputs-empty { font-size: 0.88rem; color: var(--text-subtle); padding: 2px 6px; }
+    /* Footer pinned to the bottom of the panel. */
+    .wa-sh-foot { flex-shrink: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 14px; border-top: 1px solid var(--border); }
+    html.dark .wa-sh-foot { border-top-color: rgba(255,255,255,0.08); }
 
-    /* Footer + primary action. */
-    .wa-share-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 20px 18px; }
-    .wa-share-primary {
-      font: inherit; font-size: 0.95rem; font-weight: 700; color: #fff; background: var(--primary);
-      border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer;
-      transition: filter 0.15s ease, transform 0.05s ease;
-    }
-    .wa-share-primary:hover { filter: brightness(1.1); }
-    .wa-share-primary:active { transform: translateY(1px); }
-    .wa-share-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* Success view — a "Share created" card (link + copy) above the running
+       "Existing shares" list. Copy uses the app's primary pill button. */
+    .wa-sh-done { display: flex; flex-direction: column; gap: 16px; }
+    .wa-sh-created { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--sec-green) 42%, var(--border)); background: color-mix(in srgb, var(--sec-green) 7%, var(--surface)); }
+    html.dark .wa-sh-created { background: color-mix(in srgb, var(--sec-green) 14%, var(--surface-2)); }
+    .wa-sh-created-title { font-size: 1rem; font-weight: 700; color: var(--sec-green-text, var(--sec-green)); }
+    .wa-sh-linkrow { display: flex; gap: 8px; }
+    .wa-sh-linkrow .adm-input { flex: 1 1 auto; min-width: 0; font-size: 0.76rem; }
+    .wa-sh-linkrow .adm-btn { flex: 0 0 auto; }
 
-    /* Success view (shown after "Create share link"). */
-    .wa-share-done { display: flex; flex-direction: column; gap: 15px; }
-    .wa-share-done-msg { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 600; color: var(--text); }
-    .wa-share-done-msg .material-symbols-outlined { color: var(--sec-green); font-size: 24px; }
-    .wa-share-linkrow { display: flex; gap: 8px; }
-    .wa-share-linkrow input {
-      flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.9rem; color: var(--text-muted);
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; outline: none;
+    .wa-sh-existing { display: flex; flex-direction: column; padding-top: 14px; border-top: 1px solid var(--border); }
+    .wa-sh-existing-label { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .wa-sh-existing-empty { font-size: 0.8rem; color: var(--text-subtle); padding: 4px 0; }
+    .wa-sh-share-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .wa-sh-share-ic { display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0; color: var(--sec-green); }
+    .wa-sh-share-ic .material-symbols-outlined { font-size: 19px; }
+    .wa-sh-share-meta { flex: 1 1 auto; min-width: 0; font-size: 0.82rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wa-sh-share-scope { color: var(--text-subtle); }
+    .wa-sh-share-acts { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    .wa-sh-share-act { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--text-subtle); cursor: pointer; }
+    .wa-sh-share-act:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .wa-sh-share-act:hover { background: rgba(255,255,255,0.06); }
+    .wa-sh-share-act .material-symbols-outlined { font-size: 17px; }
+
+    /* ═══════════ Compare module (side pane) ═══════════
+       A self-contained comparison board that mirrors the product-comparison
+       page: a metric rail on the left and one column per product, aligned by a
+       CSS grid. Header tiles carry a full-bleed product photo with a circular
+       WISEscore gauge floating on top; each metric row shows a value + coloured
+       bar + letter grade, and the board closes with a per-product insight row. */
+    .wa-cmp { display: flex; flex-direction: column; gap: 12px; }
+    .wa-cmp-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .wa-cmp-chip {
+      display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 11px; font-weight: 600;
+      color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 9999px; padding: 5px 12px; cursor: pointer; transition: border-color .15s ease, background .15s ease, color .15s ease;
     }
-    .wa-share-copy {
-      display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.9rem; font-weight: 600;
-      color: var(--text); background: var(--surface); border: 1px solid var(--border-strong);
-      border-radius: 10px; padding: 0 14px; cursor: pointer; white-space: nowrap;
+    .wa-cmp-chip .material-symbols-outlined { font-size: 15px; }
+    .wa-cmp-chip:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); color: var(--text); }
+    .wa-cmp-chip.is-on { background: color-mix(in srgb, var(--primary) 14%, var(--surface-2)); border-color: var(--primary); color: var(--primary); }
+    .wa-cmp-chip--add { margin-left: auto; }
+
+    .wa-cmp-grid-wrap { overflow-x: hidden; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+    .wa-cmp-grid { display: grid; width: 100%; min-width: 0; }
+    .wa-cmp-cell { padding: 10px 12px; border-bottom: 1px solid var(--border); min-width: 0; }
+    .wa-cmp-cell--rail { position: sticky; left: 0; z-index: 2; background: var(--surface-2); border-right: 1px solid var(--border); }
+    .wa-cmp-cell--entity + .wa-cmp-cell--entity { border-left: 1px solid var(--border); }
+
+    /* Header row */
+    .wa-cmp-hcell { position: relative; }
+    .wa-cmp-corner { display: flex; flex-direction: column; gap: 3px; }
+    .wa-cmp-corner-title { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+    .wa-cmp-corner-h { font-size: 1rem; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .wa-cmp-corner-desc { font-size: 10px; color: var(--text-subtle); line-height: 1.4; margin-top: 2px; }
+
+    .wa-cmp-tile {
+      position: relative; width: 100%; height: 138px; border-radius: 12px; overflow: hidden;
+      background: var(--primary); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
     }
-    .wa-share-copy:hover { background: var(--surface-2); }
-    .wa-share-copy .material-symbols-outlined { font-size: 18px; }
-    .wa-share-recap { font-size: 0.88rem; color: var(--text-subtle); line-height: 1.45; }
-    .wa-share-recap strong { color: var(--text-muted); font-weight: 600; }
+    .wa-cmp-tile-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .wa-cmp-tile-overlay {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 20px 12px 10px;
+      background: linear-gradient(to top, rgba(8,12,20,0.82) 12%, rgba(8,12,20,0.35) 60%, rgba(8,12,20,0) 100%);
+    }
+    .wa-cmp-ent-name { font-size: 0.78rem; font-weight: 700; color: #fff; line-height: 1.2; overflow-wrap: anywhere; }
+    .wa-cmp-ent-cat { font-size: 10px; color: rgba(255,255,255,0.82); overflow-wrap: anywhere; margin-top: 1px; }
+    .wa-cmp-rankchip {
+      position: absolute; top: 10px; left: 10px; z-index: 4; display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px 2px 3px; border-radius: 9999px; background: rgba(8,12,20,0.55); color: #fff; font-size: 10px; font-weight: 700;
+    }
+    .wa-cmp-rankchip .wa-cmp-rank {
+      width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary-bright, #8B9FAF); color: #fff; font-size: 10px; font-weight: 800;
+    }
+    .wa-cmp-you {
+      position: absolute; top: 10px; right: 10px; z-index: 4; padding: 2px 8px; border-radius: 9999px;
+      background: var(--primary); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.04em;
+    }
+    .wa-cmp-toppill {
+      position: absolute; top: 40px; left: 10px; z-index: 4; padding: 2px 8px; border-radius: 9999px;
+      font-size: 9px; font-weight: 800; background: var(--sec-green-10); color: var(--sec-green-text);
+      box-shadow: 0 1px 6px rgba(8,12,20,0.35);
+    }
+    .wa-cmp-toppill.tp-mid { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .wa-cmp-toppill.tp-low { background: var(--sec-red-10); color: var(--sec-red-text); }
+
+    /* Circular WISEscore gauge floating in the tile centre */
+    .wa-cmp-gauge {
+      position: absolute; z-index: 3; left: 50%; top: 46%; transform: translate(-50%, -50%);
+      width: 96px; height: 96px; border: none; padding: 0; cursor: pointer; border-radius: 50%;
+      background: radial-gradient(circle at center, rgba(8,12,20,0.55) 0%, rgba(8,12,20,0.32) 60%, rgba(8,12,20,0) 100%);
+      transition: transform 0.14s ease;
+    }
+    .wa-cmp-gauge:hover { transform: translate(-50%, -50%) scale(1.05); }
+    .wa-cmp-gauge:active { transform: translate(-50%, -50%) scale(0.95); }
+    .wa-cmp-gauge:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .wa-cmp-gauge-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .wa-cmp-gauge-track { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 7; }
+    .wa-cmp-gauge-arc { fill: none; stroke: var(--gauge-color, var(--sec-green)); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+    .wa-cmp-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .wa-cmp-gauge-num { font-size: 1.9rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -0.02em; }
+    .wa-cmp-gauge-lbl { margin-top: 2px; font-size: 7.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); }
+
+    /* Metric rows */
+    .wa-cmp-rail-metric { display: flex; flex-direction: column; gap: 3px; }
+    .wa-cmp-rail-lead { display: flex; align-items: center; gap: 6px; }
+    .wa-cmp-rail-ic {
+      width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--mic, var(--primary)) 15%, transparent); color: var(--mic, var(--primary)); cursor: pointer;
+    }
+    .wa-cmp-rail-ic .material-symbols-outlined { font-size: 15px; }
+    .wa-cmp-rail-name { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+    .wa-cmp-rail-desc { font-size: 9.5px; color: var(--text-subtle); line-height: 1.4; padding-left: 28px; }
+    .wa-cmp-metric-cell { display: flex; align-items: center; gap: 8px; min-width: 0; height: 100%; }
+    .wa-cmp-metric-val { font-size: 11px; font-weight: 700; color: var(--text); width: 22px; text-align: right; flex-shrink: 0; }
+    .wa-cmp-bar-outer { position: relative; flex: 1 1 0; min-width: 16px; height: 6px; border-radius: 9999px; background: color-mix(in srgb, var(--text-subtle) 22%, transparent); overflow: hidden; }
+    .wa-cmp-bar-fill { display: block; height: 100%; width: 0; border-radius: 9999px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+    .wa-cmp-bar-fill.g-a, .wa-cmp-bar-fill.g-b { background: var(--sec-green); }
+    .wa-cmp-bar-fill.g-c { background: var(--ter-amber); }
+    .wa-cmp-bar-fill.g-d { background: var(--sec-red); }
+    .wa-cmp-grade { width: 28px; flex-shrink: 0; text-align: center; padding: 2px 0; border-radius: 6px; font-size: 10px; font-weight: 800; }
+    .wa-cmp-grade.g-a, .wa-cmp-grade.g-b { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .wa-cmp-grade.g-c { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .wa-cmp-grade.g-d { background: var(--sec-red-10); color: var(--sec-red-text); }
+
+    /* Insight row */
+    .wa-cmp-insight-head { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--primary); }
+    .wa-cmp-insight-head .material-symbols-outlined { font-size: 13px; color: #C9A227; }
+    .wa-cmp-insight-body { font-size: 11px; color: var(--text-muted); line-height: 1.45; margin-top: 3px; }
+    .wa-cmp-foot { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: var(--text-subtle); line-height: 1.5; }
+    .wa-cmp-foot .material-symbols-outlined { font-size: 15px; flex: 0 0 auto; margin-top: 1px; }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-cmp-gauge-arc, .wa-cmp-bar-fill { transition-duration: 0.01ms; }
+    }
   </style>
 </head>
 <body>
@@ -1179,74 +1284,6 @@
     </div><!-- /#modules-row -->
   </div>
 
-  <!-- Share panel — opened from any pane's ⋯ → Share. Recipients by email or
-       people search, entire-org option, and per-output individual sharing. -->
-  <div class="wa-share-scrim" id="wa-share-scrim" hidden>
-    <div class="wa-share" role="dialog" aria-modal="true" aria-labelledby="wa-share-title">
-      <div class="wa-share-head">
-        <div class="wa-share-head-text">
-          <h2 class="wa-share-title" id="wa-share-title">Share</h2>
-          <p class="wa-share-sub" data-share-sub></p>
-        </div>
-        <button type="button" class="wa-share-close" data-share-close aria-label="Close share panel"><span class="material-symbols-outlined">close</span></button>
-      </div>
-
-      <div class="wa-share-body">
-        <!-- Compose view -->
-        <form class="wa-share-form" data-share-form novalidate>
-          <div class="wa-share-field">
-            <label class="wa-share-flabel" for="wa-share-title-input">Title</label>
-            <input type="text" id="wa-share-title-input" class="wa-share-input" data-share-title-input autocomplete="off">
-          </div>
-
-          <div class="wa-share-field">
-            <label class="wa-share-flabel" for="wa-share-email-input">Email addresses</label>
-            <div class="wa-share-chipbox" data-share-emailbox data-focus="wa-share-email-input">
-              <input type="text" id="wa-share-email-input" class="wa-share-chipinput" data-share-email placeholder="name@example.com" inputmode="email" autocomplete="off">
-            </div>
-          </div>
-
-          <div class="wa-share-field">
-            <label class="wa-share-flabel" for="wa-share-people-input">People</label>
-            <div class="wa-share-chipbox" data-share-peoplebox data-focus="wa-share-people-input">
-              <input type="text" id="wa-share-people-input" class="wa-share-chipinput" data-share-people placeholder="Search by name or email" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="wa-share-people-menu">
-            </div>
-            <div class="wa-share-people-menu hidden" id="wa-share-people-menu" data-share-people-menu role="listbox"></div>
-          </div>
-
-          <label class="wa-share-check">
-            <input type="checkbox" data-share-org>
-            <span>Entire organization</span>
-          </label>
-
-          <div class="wa-share-field" data-share-outputs-wrap hidden>
-            <span class="wa-share-flabel">Also share individually</span>
-            <div class="wa-share-outputs" data-share-outputs></div>
-          </div>
-
-          <div class="wa-share-field">
-            <label class="wa-share-flabel" for="wa-share-message">Message</label>
-            <textarea id="wa-share-message" class="wa-share-textarea" data-share-message rows="3" placeholder="Optional note, included in the invitation email"></textarea>
-          </div>
-        </form>
-
-        <!-- Success view -->
-        <div class="wa-share-done" data-share-done hidden>
-          <div class="wa-share-done-msg"><span class="material-symbols-outlined">check_circle</span><span>Share link created</span></div>
-          <div class="wa-share-linkrow">
-            <input type="text" data-share-link readonly aria-label="Share link">
-            <button type="button" class="wa-share-copy" data-share-copy><span class="material-symbols-outlined">content_copy</span><span data-share-copy-label>Copy</span></button>
-          </div>
-          <p class="wa-share-recap" data-share-recap></p>
-        </div>
-      </div>
-
-      <div class="wa-share-foot">
-        <button type="button" class="wa-share-primary" data-share-create>Create share link</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Shared WISE navigation + brand strip (same pattern as studio-ai.html). -->
   <script type="module">
     import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
@@ -1281,7 +1318,7 @@
 
     const navEl = document.getElementById('agent-menu-nav');
     if (navEl) {
-      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'wiseai' });
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'wiseai-chat' });
     }
 
     applyStoredTextSize();
@@ -1484,6 +1521,8 @@
       }
       /* Activate search/sort/pagination on any table that just landed. */
       paneBody[dest].querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+      /* Animate any compare board (gauges + metric bars) that just landed. */
+      paneBody[dest].querySelectorAll('.wa-cmp:not([data-ready])').forEach((cmp) => initCompare(cmp));
       if (!el.classList.contains('is-open')) {
         el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
         el.classList.add('is-open');
@@ -1932,11 +1971,14 @@
       document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
     });
 
-    /* ══════════ Share panel ══════════
-       Opened from a pane's ⋯ → Share. Lets you invite brand-new users by email,
-       search the org's people directory (matches surface their address), share
-       with the entire organization, and optionally attach individual outputs from
-       this conversation — each tagged by the pane it lives in. */
+    /* ══════════ Share side panel ══════════
+       Opened from the chat's ⋯ → Share (and any result pane's ⋯ → Share). Slides
+       in from the RIGHT over the chat, reusing the shared `.wch-sidebar` shell —
+       the exact same panel chrome + open/close animation as "Connect a data
+       source" — and the app's own `.adm-*` form controls (pill buttons included).
+       Invite brand-new users by email, search the people directory (matches
+       surface their address), share with the whole org, and attach individual
+       outputs from this conversation, each tagged by the pane it lives in. */
     const PANE_SHARE_TAG = { results: 'Results', visuals: 'Visuals', unified: 'Output' };
     /* Mock org directory. Entries without a `name` are addresses with no display
        name on file (shown by email, mirroring the reference design). */
@@ -1958,32 +2000,37 @@
     ];
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    const shareScrim = document.getElementById('wa-share-scrim');
-    const shareEls = shareScrim ? {
-      panel: shareScrim.querySelector('.wa-share'),
-      sub: shareScrim.querySelector('[data-share-sub]'),
-      form: shareScrim.querySelector('[data-share-form]'),
-      done: shareScrim.querySelector('[data-share-done]'),
-      titleInput: shareScrim.querySelector('[data-share-title-input]'),
-      emailBox: shareScrim.querySelector('[data-share-emailbox]'),
-      emailInput: shareScrim.querySelector('[data-share-email]'),
-      peopleBox: shareScrim.querySelector('[data-share-peoplebox]'),
-      peopleInput: shareScrim.querySelector('[data-share-people]'),
-      peopleMenu: shareScrim.querySelector('[data-share-people-menu]'),
-      org: shareScrim.querySelector('[data-share-org]'),
-      outputsWrap: shareScrim.querySelector('[data-share-outputs-wrap]'),
-      outputs: shareScrim.querySelector('[data-share-outputs]'),
-      message: shareScrim.querySelector('[data-share-message]'),
-      create: shareScrim.querySelector('[data-share-create]'),
-      link: shareScrim.querySelector('[data-share-link]'),
-      copy: shareScrim.querySelector('[data-share-copy]'),
-      copyLabel: shareScrim.querySelector('[data-share-copy-label]'),
-      recap: shareScrim.querySelector('[data-share-recap]'),
-    } : null;
-
     /* Recipients live here: people (from the directory) + ad-hoc email invites. */
     const shareRecipients = [];
-    let shareActiveIdx = -1; /* highlighted row in the people dropdown */
+    /* Links created this session — powers the "Existing shares" list. */
+    const shareExisting = [];
+    let shareSeq = 0;
+    let shareActiveIdx = -1;              /* highlighted row in the people dropdown */
+    let sharePanel = null, shareScrim = null, shareEls = null, shareCloseTimer = null, shareLastFocus = null;
+
+    function fmtShareTime(ts) {
+      const d = new Date(ts);
+      const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+      return `${date}, ${time}`;
+    }
+
+    function renderShareExisting() {
+      if (!shareEls) return;
+      if (!shareExisting.length) {
+        shareEls.existing.innerHTML = '<div class="wa-sh-existing-empty">No active share links yet.</div>';
+        return;
+      }
+      shareEls.existing.innerHTML = shareExisting.map((s) =>
+        `<div class="wa-sh-share-row" data-share-row="${s.id}">
+          <span class="wa-sh-share-ic"><span class="material-symbols-outlined">public</span></span>
+          <span class="wa-sh-share-meta">${esc(fmtShareTime(s.time))} <span class="wa-sh-share-scope">· ${esc(s.scope)}</span></span>
+          <span class="wa-sh-share-acts">
+            <button type="button" class="wa-sh-share-act" data-share-copyrow="${s.id}" title="Copy link" aria-label="Copy link"><span class="material-symbols-outlined">content_copy</span></button>
+            <button type="button" class="wa-sh-share-act" data-share-unlink="${s.id}" title="Remove share link" aria-label="Remove share link"><span class="material-symbols-outlined">link_off</span></button>
+          </span>
+        </div>`).join('');
+    }
 
     /* Best-effort conversation title from the first thing you asked. */
     function conversationTitle() {
@@ -1999,20 +2046,82 @@
 
     function personLabel(p) { return p.name || p.email; }
 
+    /* Build the side panel once, inside the chat body (`.sc-body`) so it docks
+       over the transcript exactly like the connectors panel. */
+    function buildSharePanel() {
+      if (sharePanel) return;
+      const paneHost = host && (host.querySelector('.sc-body') || host);
+      if (!paneHost) return;
+      paneHost.classList.add('wch-host');
+      shareScrim = document.createElement('div');
+      shareScrim.className = 'wch-scrim';
+      sharePanel = document.createElement('aside');
+      sharePanel.className = 'wch-sidebar wch-right';
+      sharePanel.id = 'wa-share-panel';
+      sharePanel.setAttribute('aria-label', 'Share');
+      sharePanel.innerHTML =
+        '<div class="wch-head">' +
+          '<span class="wa-sh-head-text"><span class="wch-head-title">Share</span><span class="wa-sh-sub" data-sub></span></span>' +
+          '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
+        '</div>' +
+        '<div class="wa-sh-body">' +
+          '<form class="wa-sh-form" data-form novalidate>' +
+            '<div class="adm-field"><label class="adm-field-label" for="wa-sh-title">Title</label>' +
+              '<input type="text" id="wa-sh-title" class="adm-input" data-title autocomplete="off"></div>' +
+            '<div class="adm-field"><label class="adm-field-label" for="wa-sh-email">Email addresses</label>' +
+              '<div class="wa-sh-chips" data-emailbox data-focus="wa-sh-email">' +
+                '<input type="text" id="wa-sh-email" class="wa-sh-chipinput" data-email placeholder="name@example.com" inputmode="email" autocomplete="off"></div></div>' +
+            '<div class="adm-field"><label class="adm-field-label" for="wa-sh-people">People</label>' +
+              '<div class="wa-sh-chips" data-peoplebox data-focus="wa-sh-people">' +
+                '<input type="text" id="wa-sh-people" class="wa-sh-chipinput" data-people placeholder="Search by name or email" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list"></div>' +
+              '<div class="wa-sh-menu" data-menu role="listbox" hidden></div></div>' +
+            '<label class="wa-sh-check"><input type="checkbox" class="adm-check" data-org><span>Entire organization</span></label>' +
+            '<div class="adm-field" data-outwrap hidden><span class="adm-field-label">Also share individually</span>' +
+              '<div class="wa-sh-outs" data-outs></div></div>' +
+            '<div class="adm-field"><label class="adm-field-label" for="wa-sh-msg">Message</label>' +
+              '<textarea id="wa-sh-msg" class="wa-sh-textarea" data-message rows="3" placeholder="Optional note, included in the invitation email"></textarea></div>' +
+          '</form>' +
+          '<div class="wa-sh-done" data-done hidden>' +
+            '<div class="wa-sh-created">' +
+              '<div class="wa-sh-created-title">Share created</div>' +
+              '<div class="wa-sh-linkrow"><input type="text" class="adm-input" data-link readonly aria-label="Share link">' +
+                '<button type="button" class="adm-btn adm-btn--primary" data-copy><span class="material-symbols-outlined">content_copy</span><span data-copylabel>Copy link</span></button></div>' +
+            '</div>' +
+            '<div class="wa-sh-existing">' +
+              '<div class="wa-sh-existing-label">Existing shares</div>' +
+              '<div class="wa-sh-existing-list" data-existing></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wa-sh-foot"><button type="button" class="adm-btn adm-btn--primary" data-create>Create share link</button></div>';
+      paneHost.appendChild(shareScrim);
+      paneHost.appendChild(sharePanel);
+      const q = (s) => sharePanel.querySelector(s);
+      shareEls = {
+        sub: q('[data-sub]'), form: q('[data-form]'), done: q('[data-done]'),
+        titleInput: q('[data-title]'), emailBox: q('[data-emailbox]'), emailInput: q('[data-email]'),
+        peopleBox: q('[data-peoplebox]'), peopleInput: q('[data-people]'), peopleMenu: q('[data-menu]'),
+        org: q('[data-org]'), outputsWrap: q('[data-outwrap]'), outputs: q('[data-outs]'),
+        message: q('[data-message]'), create: q('[data-create]'), link: q('[data-link]'),
+        copy: q('[data-copy]'), copyLabel: q('[data-copylabel]'), existing: q('[data-existing]'),
+      };
+      wireSharePanel();
+    }
+
     function renderShareChips() {
       if (!shareEls) return;
       [shareEls.emailBox, shareEls.peopleBox].forEach((box) => {
-        box.querySelectorAll('.wa-share-chip').forEach((c) => c.remove());
+        box.querySelectorAll('.wa-sh-chip').forEach((c) => c.remove());
       });
       shareRecipients.forEach((r, i) => {
         const box = r.type === 'email' ? shareEls.emailBox : shareEls.peopleBox;
         const input = r.type === 'email' ? shareEls.emailInput : shareEls.peopleInput;
         const chip = document.createElement('span');
-        chip.className = 'wa-share-chip' + (r.invalid ? ' is-invalid' : '');
+        chip.className = 'wa-sh-chip' + (r.invalid ? ' is-invalid' : '');
         const label = r.type === 'email' ? r.email : personLabel(r);
         chip.title = r.type === 'person' && r.name ? `${r.name} · ${r.email}` : r.email;
-        chip.innerHTML = `<span class="wa-share-chip-name">${esc(label)}</span>` +
-          `<button type="button" class="wa-share-chip-x" data-share-rm="${i}" aria-label="Remove ${esc(label)}"><span class="material-symbols-outlined">close</span></button>`;
+        chip.innerHTML = `<span class="wa-sh-chip-name">${esc(label)}</span>` +
+          `<button type="button" class="wa-sh-chip-x" data-share-rm="${i}" aria-label="Remove ${esc(label)}"><span class="material-symbols-outlined">close</span></button>`;
         box.insertBefore(chip, input);
       });
     }
@@ -2023,8 +2132,7 @@
 
     function addEmailRecipient(raw) {
       const email = raw.trim().replace(/[,;]+$/, '').trim();
-      if (!email) return;
-      if (hasRecipient(email)) return;
+      if (!email || hasRecipient(email)) return;
       const known = SHARE_PEOPLE.find((p) => p.email.toLowerCase() === email.toLowerCase());
       if (known) shareRecipients.push({ type: 'person', ...known });
       else shareRecipients.push({ type: 'email', email, invalid: !EMAIL_RE.test(email) });
@@ -2039,14 +2147,14 @@
 
     function closePeopleMenu() {
       if (!shareEls) return;
-      shareEls.peopleMenu.classList.add('hidden');
+      shareEls.peopleMenu.hidden = true;
       shareEls.peopleInput.setAttribute('aria-expanded', 'false');
       shareActiveIdx = -1;
     }
 
-    function renderPeopleMenu(q) {
+    function renderPeopleMenu(rawQ) {
       if (!shareEls) return;
-      const query = q.trim().toLowerCase();
+      const query = rawQ.trim().toLowerCase();
       const matches = SHARE_PEOPLE.filter((p) =>
         !hasRecipient(p.email) &&
         ((p.name && p.name.toLowerCase().includes(query)) || p.email.toLowerCase().includes(query))
@@ -2054,18 +2162,18 @@
       if (!query && matches.length === 0) { closePeopleMenu(); return; }
       shareActiveIdx = -1;
       if (matches.length === 0) {
-        shareEls.peopleMenu.innerHTML = `<div class="wa-share-people-empty">No people match “${esc(q.trim())}”. Add “${esc(q.trim())}” as an email above.</div>`;
+        shareEls.peopleMenu.innerHTML = `<div class="wa-sh-menu-empty">No people match “${esc(rawQ.trim())}”. Add “${esc(rawQ.trim())}” as an email above.</div>`;
       } else {
         shareEls.peopleMenu.innerHTML = matches.slice(0, 8).map((p) =>
-          `<button type="button" class="wa-share-person" role="option" data-share-pick="${esc(p.email)}">
-            <span class="wa-share-person-av"><span class="material-symbols-outlined">person</span></span>
-            <span class="wa-share-person-txt">
-              ${p.name ? `<span class="wa-share-person-name">${esc(p.name)}</span>` : ''}
-              <span class="wa-share-person-mail">${esc(p.email)}</span>
+          `<button type="button" class="wa-sh-person" role="option" data-share-pick="${esc(p.email)}">
+            <span class="wa-sh-person-av"><span class="material-symbols-outlined">person</span></span>
+            <span class="wa-sh-person-txt">
+              ${p.name ? `<span class="wa-sh-person-name">${esc(p.name)}</span>` : ''}
+              <span class="wa-sh-person-mail">${esc(p.email)}</span>
             </span>
           </button>`).join('');
       }
-      shareEls.peopleMenu.classList.remove('hidden');
+      shareEls.peopleMenu.hidden = false;
       shareEls.peopleInput.setAttribute('aria-expanded', 'true');
     }
 
@@ -2079,18 +2187,27 @@
       shareEls.outputsWrap.hidden = false;
       shareEls.outputs.innerHTML = manifestOutputs.map((o) => {
         const tag = PANE_SHARE_TAG[o.which] || 'Output';
-        return `<label class="wa-share-out">
-          <input type="checkbox" data-share-out="${o.blockId}">
-          <span class="wa-share-out-tag">${esc(tag)}</span>
-          <span class="wa-share-out-name">${esc(o.title)}</span>
+        return `<label class="wa-sh-out">
+          <input type="checkbox" class="adm-check" data-share-out="${o.blockId}">
+          <span class="wa-sh-out-tag">${esc(tag)}</span>
+          <span class="wa-sh-out-name">${esc(o.title)}</span>
         </label>`;
       }).join('');
     }
 
-    let shareLastFocus = null;
+    function onShareKey(e) {
+      if (e.key !== 'Escape') return;
+      if (shareEls && !shareEls.peopleMenu.hidden) { closePeopleMenu(); return; }
+      closeShareModal();
+    }
+
     function openShareModal(/* which */) {
-      if (!shareEls) return;
+      buildSharePanel();
+      if (!sharePanel) return;
       shareLastFocus = document.activeElement;
+      /* Never leave two chat overlays open at once. */
+      try { chat && chat.closeConnectors && chat.closeConnectors(); } catch (_) {}
+      try { chat && chat.closeTurns && chat.closeTurns(); } catch (_) {}
       shareRecipients.length = 0;
       shareActiveIdx = -1;
       const title = conversationTitle();
@@ -2106,21 +2223,30 @@
       /* Reset from any prior success view. */
       shareEls.form.hidden = false;
       shareEls.done.hidden = true;
-      shareEls.create.hidden = false;
-      shareEls.create.disabled = false;
       shareEls.create.textContent = 'Create share link';
-      shareScrim.hidden = false;
-      requestAnimationFrame(() => {
-        shareScrim.classList.add('is-open');
-        shareEls.peopleInput.focus();
-      });
+      clearTimeout(shareCloseTimer);
+      sharePanel.classList.remove('wch-closing');
+      shareScrim.classList.remove('wch-closing');
+      sharePanel.classList.add('wch-open');
+      shareScrim.classList.add('wch-open');
+      document.addEventListener('keydown', onShareKey);
+      requestAnimationFrame(() => shareEls.peopleInput.focus());
     }
 
     function closeShareModal() {
-      if (!shareEls) return;
-      shareScrim.classList.remove('is-open');
+      if (!sharePanel) return;
+      if (!sharePanel.classList.contains('wch-open') && !sharePanel.classList.contains('wch-closing')) return;
       closePeopleMenu();
-      setTimeout(() => { shareScrim.hidden = true; }, 180);
+      sharePanel.classList.remove('wch-open');
+      shareScrim.classList.remove('wch-open');
+      sharePanel.classList.add('wch-closing');
+      shareScrim.classList.add('wch-closing');
+      document.removeEventListener('keydown', onShareKey);
+      clearTimeout(shareCloseTimer);
+      shareCloseTimer = setTimeout(() => {
+        sharePanel.classList.remove('wch-closing');
+        shareScrim.classList.remove('wch-closing');
+      }, 300);
       if (shareLastFocus && typeof shareLastFocus.focus === 'function') shareLastFocus.focus();
     }
 
@@ -2134,31 +2260,33 @@
       const outIds = Array.from(shareEls.outputs.querySelectorAll('[data-share-out]:checked')).map((c) => c.dataset.shareOut);
       const outTitles = outIds.map((id) => (manifestOutputs.find((o) => o.blockId === id) || {}).title).filter(Boolean);
 
-      const slug = (shareEls.titleInput.value || 'wiseai').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'wiseai';
-      const token = Math.random().toString(36).slice(2, 10);
-      const url = `${location.origin}/share/${slug}-${token}`;
+      const token = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+      const url = `https://wi-alpha.wisecode.ai/share/${token}`;
+
+      /* Scope label for the "Existing shares" row. */
+      const scope = org ? 'entire organization'
+        : people.length ? `${people.length} ${people.length === 1 ? 'person' : 'people'}`
+        : 'link only';
 
       shareEls.link.value = url;
-      /* Human-readable recap of who this reaches + what's attached. */
-      const bits = [];
-      if (org) bits.push('the <strong>entire organization</strong>');
-      if (people.length) bits.push(`<strong>${people.length}</strong> ${people.length === 1 ? 'person' : 'people'}`);
-      let recap = bits.length ? `Shared with ${bits.join(' and ')}.` : 'Anyone with the link can view.';
-      if (outTitles.length) recap += ` Includes ${outTitles.length} individual ${outTitles.length === 1 ? 'output' : 'outputs'}.`;
-      shareEls.recap.innerHTML = recap;
+      shareExisting.unshift({ id: ++shareSeq, time: Date.now(), scope, url, outputs: outTitles.length });
+      renderShareExisting();
 
       shareEls.form.hidden = true;
       shareEls.done.hidden = false;
-      shareEls.create.hidden = true;
+      shareEls.create.textContent = 'Done';
       navigator.clipboard?.writeText(url).catch(() => {});
       requestAnimationFrame(() => shareEls.link.focus());
     }
 
-    if (shareEls) {
-      /* Clicking anywhere in a chip box focuses its text input. */
+    /* Attach the panel's own listeners (called once, right after it's built). */
+    function wireSharePanel() {
+      if (!shareEls) return;
+
+      /* Clicking empty space in a chip box focuses its text input. */
       [shareEls.emailBox, shareEls.peopleBox].forEach((box) => {
         box.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.wa-share-chip')) return;
+          if (e.target.closest('.wa-sh-chip')) return;
           if (e.target === box) { e.preventDefault(); document.getElementById(box.dataset.focus)?.focus(); }
         });
       });
@@ -2190,9 +2318,6 @@
             if (p) { addPersonRecipient(p); shareEls.peopleInput.value = ''; renderPeopleMenu(''); }
           }
           return;
-        } else if (e.key === 'Escape') {
-          if (!shareEls.peopleMenu.classList.contains('hidden')) { e.stopPropagation(); closePeopleMenu(); }
-          return;
         } else if (e.key === 'Backspace' && !shareEls.peopleInput.value) {
           const last = [...shareRecipients].reverse().find((r) => r.type === 'person');
           if (last) { shareRecipients.splice(shareRecipients.indexOf(last), 1); renderShareChips(); renderPeopleMenu(shareEls.peopleInput.value); }
@@ -2210,30 +2335,46 @@
         if (p) { addPersonRecipient(p); shareEls.peopleInput.value = ''; renderPeopleMenu(''); shareEls.peopleInput.focus(); }
       });
 
-      /* Remove-chip clicks (delegated across both boxes). */
-      shareScrim.addEventListener('click', (e) => {
+      /* Delegated clicks: remove a recipient chip, copy/unlink an existing share. */
+      sharePanel.addEventListener('click', (e) => {
         const rm = e.target.closest('[data-share-rm]');
-        if (rm) { shareRecipients.splice(Number(rm.dataset.shareRm), 1); renderShareChips(); }
+        if (rm) { shareRecipients.splice(Number(rm.dataset.shareRm), 1); renderShareChips(); return; }
+        const copyRow = e.target.closest('[data-share-copyrow]');
+        if (copyRow) {
+          const s = shareExisting.find((x) => String(x.id) === copyRow.dataset.shareCopyrow);
+          if (s) navigator.clipboard?.writeText(s.url).catch(() => {});
+          const ic = copyRow.querySelector('.material-symbols-outlined');
+          if (ic) { ic.textContent = 'check'; setTimeout(() => { ic.textContent = 'content_copy'; }, 1400); }
+          return;
+        }
+        const unlink = e.target.closest('[data-share-unlink]');
+        if (unlink) {
+          const idx = shareExisting.findIndex((x) => String(x.id) === unlink.dataset.shareUnlink);
+          if (idx >= 0) shareExisting.splice(idx, 1);
+          renderShareExisting();
+          return;
+        }
       });
 
-      shareEls.create.addEventListener('click', createShareLink);
+      shareEls.create.addEventListener('click', () => {
+        if (!shareEls.done.hidden) { closeShareModal(); return; } /* second click ("Done") closes */
+        createShareLink();
+      });
       shareEls.copy.addEventListener('click', () => {
         navigator.clipboard?.writeText(shareEls.link.value).catch(() => {});
         shareEls.link.select();
         if (shareEls.copyLabel) {
           shareEls.copyLabel.textContent = 'Copied';
-          setTimeout(() => { if (shareEls.copyLabel) shareEls.copyLabel.textContent = 'Copy'; }, 1600);
+          setTimeout(() => { if (shareEls.copyLabel) shareEls.copyLabel.textContent = 'Copy link'; }, 1600);
         }
       });
 
-      shareScrim.querySelector('[data-share-close]').addEventListener('click', closeShareModal);
-      shareScrim.addEventListener('mousedown', (e) => { if (e.target === shareScrim) closeShareModal(); });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !shareScrim.hidden && shareEls.peopleMenu.classList.contains('hidden')) closeShareModal();
-      });
-      /* Close the people dropdown on outside click. */
+      sharePanel.querySelector('.wch-close').addEventListener('click', closeShareModal);
+      shareScrim.addEventListener('click', closeShareModal);
+      /* Close the people dropdown on any click outside it. */
       document.addEventListener('mousedown', (e) => {
-        if (!shareScrim.hidden && !e.target.closest('[data-share-peoplebox]') && !e.target.closest('[data-share-people-menu]')) closePeopleMenu();
+        if (!sharePanel.classList.contains('wch-open')) return;
+        if (!e.target.closest('[data-peoplebox]') && !e.target.closest('[data-menu]')) closePeopleMenu();
       });
     }
 
@@ -2334,6 +2475,24 @@
         if (tbl) { tbl.dataset.shown = parseInt(tbl.dataset.pageSize, 10) || 0; renderTable(tbl); }
       });
       body.addEventListener('click', (e) => {
+        /* Compare board: replay a single WISEscore gauge, or a whole metric row. */
+        const gauge = e.target.closest('.wa-cmp-gauge');
+        if (gauge) { e.stopPropagation(); waCmpAnimateGauge(gauge); return; }
+        const railIc = e.target.closest('.wa-cmp-rail-ic');
+        if (railIc) {
+          const rail = railIc.closest('.wa-cmp-cell--rail');
+          const grid = railIc.closest('.wa-cmp-grid');
+          if (rail && grid) {
+            const cells = Array.from(grid.children);
+            const start = cells.indexOf(rail);
+            let i = 0;
+            for (let k = start + 1; k < cells.length && cells[k].classList.contains('wa-cmp-cell--entity'); k++) {
+              const bar = cells[k].querySelector('.wa-cmp-bar-fill');
+              if (bar) { const w = bar.style.width; bar.style.width = '0'; void bar.getBoundingClientRect(); setTimeout(((b, ww) => () => { b.style.width = ww; })(bar, w), i++ * 60); }
+            }
+          }
+          return;
+        }
         const th = e.target.closest('button.wa-tbl-th[data-sort]');
         if (th) {
           const tbl = th.closest('.wa-tbl');
@@ -2525,6 +2684,176 @@
         </div>`;
     }
 
+    /* ── Compare board (side-pane port of the product-comparison module) ──
+       A few products are grabbed by default and rendered as a comparison board:
+       a metric rail + one column per product, WISEscore gauges on each tile,
+       and per-metric value/bar/grade rows — the same read as the product
+       comparison page, surfaced into the Results & Details pane. */
+    const COMPARE_METRICS = [
+      { id: 'upf',              icon: 'science',           color: '#2AA866', label: 'UPF Risk',             desc: 'How ultra-processed the formulation reads \u2014 lower is cleaner.' },
+      { id: 'gras',             icon: 'health_and_safety', color: '#5B6ED0', label: 'GRAS',                 desc: 'Share of ingredients Generally Recognized As Safe.' },
+      { id: 'ing_overall',      icon: 'eco',               color: '#7C3AED', label: 'Ingredient Integrity', desc: 'Clean-label read across additives, colors & sourcing.' },
+      { id: 'nutrient_overall', icon: 'restaurant',        color: '#E8833A', label: 'Nutrient Density',     desc: 'Protein, fiber, fat & carb quality rolled into one.' },
+      { id: 'gut_health',       icon: 'clean_hands',       color: '#2AA6A6', label: 'Gut Health',           desc: 'Fermented, fiber-rich & polyphenol signals for the gut.' },
+    ];
+
+    const COMPARE_PRODUCTS = [
+      {
+        name: 'Aloha Organic Protein Bar, Peanut Butter Chocolate Chip', brand: 'Aloha',
+        cat: 'Bars \u00b7 Protein', img: 'portfolio/pf_protein_bar.png', score: 84, top: 'Top 8%',
+        scores: { upf: 86, gras: 90, ing_overall: 88, nutrient_overall: 80, gut_health: 72 },
+        insight: 'Cleanest formulation of the three \u2014 organic plant protein, dates &amp; brown-rice syrup with no synthetic additives. Nutrient density leads on protein and fiber.',
+      },
+      {
+        name: 'Simple Truth Organic Trail Mix', brand: 'Simple Truth',
+        cat: 'Snacks \u00b7 Trail mix', img: 'portfolio/pf_trail_mix.png', score: 71, top: 'Top 27%',
+        scores: { upf: 74, gras: 85, ing_overall: 76, nutrient_overall: 73, gut_health: 68 },
+        insight: 'Whole nuts &amp; dried fruit keep ingredient integrity high, but the added chocolate &amp; sugar pull the UPF and nutrient scores down a notch.',
+      },
+      {
+        name: 'SkinnyPop Original Popcorn', brand: 'SkinnyPop',
+        cat: 'Snacks \u00b7 Popcorn', img: 'portfolio/pf_popcorn.png', score: 63, top: 'Top 44%',
+        scores: { upf: 66, gras: 82, ing_overall: 70, nutrient_overall: 58, gut_health: 55 },
+        insight: 'A short, recognizable ingredient list, but sunflower oil &amp; salt with modest fiber cap the nutrient density and gut-health signals.',
+      },
+    ];
+
+    const CMP_R = 42, CMP_C = 2 * Math.PI * 42;
+    function waCmpGrade(v) {
+      v = Math.round(v);
+      if (v >= 90) return 'A+'; if (v >= 85) return 'A'; if (v >= 80) return 'A-';
+      if (v >= 75) return 'B+'; if (v >= 70) return 'B'; if (v >= 65) return 'B-';
+      if (v >= 60) return 'C+'; if (v >= 55) return 'C'; if (v >= 50) return 'C-';
+      if (v >= 40) return 'D'; return 'F';
+    }
+    function waCmpGradeClass(g) { const c = g[0]; return c === 'A' ? 'g-a' : c === 'B' ? 'g-b' : c === 'C' ? 'g-c' : 'g-d'; }
+    function waCmpGauge(score) {
+      const color = score < 55 ? 'var(--sec-red)' : (score < 68 ? 'var(--ter-amber)' : 'var(--sec-green)');
+      return `<button type="button" class="wa-cmp-gauge" data-score="${score}" style="--gauge-color:${color}" title="Replay WISEscore" aria-label="WISEscore ${score} \u2014 tap to replay">
+          <svg class="wa-cmp-gauge-svg" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="wa-cmp-gauge-track" cx="50" cy="50" r="${CMP_R}"></circle>
+            <circle class="wa-cmp-gauge-arc" cx="50" cy="50" r="${CMP_R}" stroke-dasharray="${CMP_C.toFixed(1)}" stroke-dashoffset="${(CMP_C * (1 - score / 100)).toFixed(1)}"></circle>
+          </svg>
+          <span class="wa-cmp-gauge-center"><span class="wa-cmp-gauge-num" data-score="${score}">${score}</span><span class="wa-cmp-gauge-lbl">WISEscore</span></span>
+        </button>`;
+    }
+    function waCmpTile(prod, rank) {
+      const s = prod.score;
+      const pillCls = s < 55 ? ' tp-low' : (s < 68 ? ' tp-mid' : '');
+      const img = prod.img
+        ? `<img class="wa-cmp-tile-img" src="${IMG}${prod.img}" alt="" loading="lazy" onerror="this.style.display='none'">`
+        : '';
+      const you = prod.primary ? '<span class="wa-cmp-you">YOU</span>' : '';
+      return `<div class="wa-cmp-tile">
+          ${img}
+          <span class="wa-cmp-rankchip"><span class="wa-cmp-rank">${rank}</span>${esc(prod.brand)}</span>
+          ${you}
+          <span class="wa-cmp-toppill${pillCls}">${esc(prod.top || 'Top 50%')}</span>
+          ${waCmpGauge(s)}
+          <div class="wa-cmp-tile-overlay">
+            <div class="wa-cmp-ent-name" title="${esc(prod.name)}">${esc(prod.name)}</div>
+            <div class="wa-cmp-ent-cat">${esc(prod.cat)}</div>
+          </div>
+        </div>`;
+    }
+    function compareProductsView(products = COMPARE_PRODUCTS, metrics = COMPARE_METRICS) {
+      const n = products.length;
+      const cols = `minmax(150px, 1.05fr) repeat(${n}, minmax(0, 1fr))`;
+      const cells = [];
+      /* Header row: corner + one image tile per product. */
+      cells.push(`<div class="wa-cmp-cell wa-cmp-cell--rail wa-cmp-hcell">
+          <div class="wa-cmp-corner">
+            <span class="wa-cmp-corner-title">Compare Foods</span>
+            <span class="wa-cmp-corner-h">WISEscore</span>
+            <span class="wa-cmp-corner-desc">The overall 0\u2013100 Food Truth\u2122 score. Tap a gauge to replay it.</span>
+          </div>
+        </div>`);
+      products.forEach((p, i) => cells.push(`<div class="wa-cmp-cell wa-cmp-cell--entity wa-cmp-hcell">${waCmpTile(p, i + 1)}</div>`));
+      /* Metric rows: rail (icon + label + desc) then value/bar/grade per product. */
+      metrics.forEach((m) => {
+        cells.push(`<div class="wa-cmp-cell wa-cmp-cell--rail">
+            <div class="wa-cmp-rail-metric">
+              <div class="wa-cmp-rail-lead">
+                <span class="wa-cmp-rail-ic" style="--mic:${m.color}" title="Replay this row" role="button" tabindex="0"><span class="material-symbols-outlined">${m.icon}</span></span>
+                <span class="wa-cmp-rail-name">${esc(m.label)}</span>
+              </div>
+              <div class="wa-cmp-rail-desc">${m.desc}</div>
+            </div>
+          </div>`);
+        products.forEach((p) => {
+          const v = Math.round((p.scores && p.scores[m.id] != null) ? p.scores[m.id] : p.score);
+          const g = waCmpGrade(v), gc = waCmpGradeClass(g);
+          cells.push(`<div class="wa-cmp-cell wa-cmp-cell--entity">
+              <div class="wa-cmp-metric-cell">
+                <span class="wa-cmp-metric-val">${v}</span>
+                <span class="wa-cmp-bar-outer"><span class="wa-cmp-bar-fill ${gc}" style="width:${v}%" data-w="${v}"></span></span>
+                <span class="wa-cmp-grade ${gc}">${g}</span>
+              </div>
+            </div>`);
+        });
+      });
+      /* Insight row. */
+      cells.push(`<div class="wa-cmp-cell wa-cmp-cell--rail">
+          <div class="wa-cmp-insight-head"><span class="material-symbols-outlined">auto_awesome</span>Insight</div>
+          <div class="wa-cmp-insight-body">Ranked by WISEscore, the cleaner-label bar leads on ingredient integrity and nutrient density, while the popcorn trails mostly on nutrient density.</div>
+        </div>`);
+      products.forEach((p) => cells.push(`<div class="wa-cmp-cell wa-cmp-cell--entity"><div class="wa-cmp-insight-body">${p.insight || ''}</div></div>`));
+
+      return `
+        <div class="wa-block">
+          <div class="wa-cmp">
+            <div class="wa-cmp-toolbar">
+              <button type="button" class="wa-cmp-chip is-on"><span class="material-symbols-outlined">tune</span>${metrics.length} metrics</button>
+              <button type="button" class="wa-cmp-chip"><span class="material-symbols-outlined">category</span>All categories</button>
+              <button type="button" class="wa-cmp-chip wa-cmp-chip--add"><span class="material-symbols-outlined">add</span>Add product</button>
+            </div>
+            <div class="wa-cmp-grid-wrap">
+              <div class="wa-cmp-grid" style="grid-template-columns:${cols}">${cells.join('')}</div>
+            </div>
+            <div class="wa-cmp-foot"><span class="material-symbols-outlined">info</span>Grabbed the top ${n} matching products to start. Same board as the Product Comparison page \u2014 tap a metric icon to replay its bars, or a gauge to replay a WISEscore.</div>
+          </div>
+        </div>`;
+    }
+
+    /* Animate the compare board when it lands: sweep each gauge arc + count its
+       number up, then fill the metric bars, staggered left-to-right. */
+    function waCmpCountUp(el, to, ms) {
+      const start = performance.now();
+      (function tick(now) {
+        const p = Math.min(1, (now - start) / ms);
+        el.textContent = Math.round(to * (0.5 - Math.cos(Math.PI * p) / 2));
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+    function waCmpAnimateGauge(el) {
+      if (!el) return;
+      const arc = el.querySelector('.wa-cmp-gauge-arc');
+      const num = el.querySelector('.wa-cmp-gauge-num');
+      const to = parseInt(el.getAttribute('data-score'), 10) || 0;
+      if (arc) {
+        arc.style.transition = 'none';
+        arc.style.strokeDashoffset = CMP_C.toFixed(1);
+        void arc.getBoundingClientRect();
+        arc.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+        arc.style.strokeDashoffset = (CMP_C * (1 - to / 100)).toFixed(1);
+      }
+      if (num) { num.textContent = '0'; waCmpCountUp(num, to, 850); }
+    }
+    function initCompare(cmp) {
+      if (!cmp || cmp.dataset.ready) return;
+      cmp.dataset.ready = '1';
+      /* Bars/gauges render pre-filled (so the static inline preview reads right);
+         reset them to empty, then replay the fill so the live pane animates in. */
+      const bars = cmp.querySelectorAll('.wa-cmp-bar-fill');
+      bars.forEach((b) => { b.style.transition = 'none'; b.style.width = '0'; });
+      cmp.querySelectorAll('.wa-cmp-gauge').forEach((g, i) => setTimeout(() => waCmpAnimateGauge(g), 120 + i * 110));
+      requestAnimationFrame(() => {
+        bars.forEach((b, i) => {
+          setTimeout(() => { b.style.transition = ''; b.style.width = (parseFloat(b.dataset.w) || 0) + '%'; }, 240 + i * 28);
+        });
+      });
+    }
+
     /* ── Charts ── */
     function radarChart() {
       // Square viewBox with generous margin so the outer labels (left/right)
@@ -2713,23 +3042,182 @@
       return distributionChart() + scoreCurveChart() + trendSlopeChart();
     }
 
+    /* ── Code Evaluation module (brisket · Gut Health) ───────────────────────
+       A second output TYPE combined into this conversation alongside the
+       reports & charts module. brisketCodeEvalView() renders the WISEcode
+       evaluation run (score gauge + step breakdown + ingredient processing);
+       brisketChartView() drops the score-driver charts into Visuals; and
+       brisketReportView() writes the optimized-recipe report. */
+    const BRISKET_INGREDIENTS = [
+      ['beef brisket', 'Protein'], ['extra virgin olive oil', 'Fats & Oils'],
+      ['onion', 'Vegetable'], ['garlic', 'Vegetable'], ['black pepper', 'Additives'],
+      ['sea salt', 'Additives'], ['apple cider vinegar', 'VINEGAR'], ['lemon juice', 'FRUIT'],
+      ['tomato paste', 'Vegetable'], ['sauerkraut', 'Finished Products'], ['mushrooms', 'Fungi'],
+      ['carrots', 'Vegetable'], ['celery', 'Additives'], ['parsley', 'Additives'],
+      ['thyme', 'Additives'], ['rosemary', 'Additives'], ['cocoa powder', 'Protein'],
+      ['coffee', 'Additives'],
+    ];
+
+    function ceGauge(score, band, color) {
+      const r = 40, c = 2 * Math.PI * r, on = (score / 100) * c, off = c - on;
+      return `<div class="wa-ce-gauge">
+          <svg viewBox="0 0 100 100" role="img" aria-label="Gut Health score ${score} of 100 — ${esc(band)}">
+            <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--surface-3)" stroke-width="9"/>
+            <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${on.toFixed(1)} ${off.toFixed(1)}"/>
+          </svg>
+          <div class="wa-ce-gauge-num"><span class="wa-ce-gauge-val">${score}</span><span class="wa-ce-gauge-band">${esc(band)}</span></div>
+        </div>`;
+    }
+
+    function brisketCodeEvalView() {
+      const steps = [
+        ['1.01', 'Total Carbohydrates (g)', '', '\u2014', 'empty'],
+        ['1.02', 'Omega-3 (mg)', '', '\u2014', 'empty'],
+        ['1.03', 'Omega-6 (mg)', '', '\u2014', 'empty'],
+        ['1.04', 'Vitamin B12 (mcg)', '', '\u2014', 'empty'],
+        ['1.05', 'Selenium (mcg)', '', '\u2014', 'empty'],
+        ['1.06', 'Zinc (mg)', '', '\u2014', 'empty'],
+        ['1.07', 'Energy (kcal) <span class="tag">[Return]</span>', 'Final return value for this concept; all other nutrients are available as earlier steps', '\u2014', 'empty'],
+        ['2.01', 'Fermented (ordinal&lt;4, depth=1)', 'TRUE if any of the first 4 top-level ingredients contain common fermented-food terms (case-insensitive); else FALSE', 'False', 'false'],
+      ];
+      const stepRows = steps.map(([n, name, note, val, cls]) => `
+          <div class="wa-ce-step">
+            <div class="wa-ce-step-num">${n}</div>
+            <div>
+              <div class="wa-ce-step-name">${name}</div>
+              ${note ? `<div class="wa-ce-step-note">${esc(note)}</div>` : ''}
+            </div>
+            <div class="wa-ce-step-val is-${cls}">${val}</div>
+          </div>`).join('');
+      const chips = BRISKET_INGREDIENTS.map(([name, cat]) =>
+        `<span class="wa-ce-ing">${esc(name)}<span class="wa-ce-ing-tag">${esc(cat)}</span></span>`).join('');
+      return `
+        <div class="wa-block">
+          <div class="wa-ce-head">
+            ${ceGauge(64, 'Good', 'var(--sec-green)')}
+            <div>
+              <div class="wa-ce-sum-concept">Gut Health · code evaluation</div>
+              <div class="wa-ce-sum-main">Score 64 — Good</div>
+              <div class="wa-ce-sum-sub"><b>18</b> ingredients parsed<span class="sep">·</span><b>17,032&thinsp;ms</b><span class="sep">·</span>WISEcode concept run</div>
+            </div>
+          </div>
+
+          <div class="wa-ce-sec">
+            <div class="wa-ce-sec-head">
+              <span class="material-symbols-outlined">functions</span>
+              <span class="wa-ce-sec-title">Step breakdown</span>
+              <span class="wa-ce-sec-count">(38 steps)</span>
+              <span class="material-symbols-outlined wa-ce-sec-chev">expand_less</span>
+            </div>
+            <div class="wa-ce-steps-head"><span>#</span><span>Step</span><span class="end">Value</span></div>
+            ${stepRows}
+            <div class="wa-table-foot"><span class="material-symbols-outlined">more_horiz</span>Showing the first 8 of 38 evaluated steps — the nutrient sub-scores feed the returned Gut Health value.</div>
+          </div>
+
+          <div class="wa-ce-sec">
+            <div class="wa-ce-sec-head">
+              <span class="material-symbols-outlined">change_history</span>
+              <span class="wa-ce-sec-title">Ingredient processing</span>
+              <span class="material-symbols-outlined wa-ce-sec-chev">expand_less</span>
+            </div>
+            <div class="wa-ce-pl">
+              <span class="wa-ce-pl-dot"></span>
+              <span class="wa-ce-pl-label">PL1 — Fortificant, Unprocessed or Minimally Processed</span>
+              <span class="wa-ce-pl-count">18</span>
+            </div>
+            <div class="wa-ce-plbar"><div class="wa-ce-plbar-fill" style="width:100%"></div></div>
+            <div class="wa-ce-ings">${chips}</div>
+            <div class="wa-notice" style="margin-top:16px"><span class="material-symbols-outlined">info</span><span>All 18 ingredients classified <b>PL1</b> (minimally processed) — no nitrates, nitrites or highly-processed add-ins detected. The <b>Fermented</b> step returned <b>False</b> because sauerkraut fell outside the first four top-level ingredients, so the fermented bonus didn\u2019t fully trigger.</span></div>
+          </div>
+        </div>`;
+    }
+
+    function brisketChartView() {
+      const drivers = [
+        ['Polyphenol-rich plants', 21], ['Fiber vegetables', 15], ['Healthy oil (EVOO)', 12],
+        ['Cocoa & coffee polyphenols', 9], ['Acids & aromatics', 5], ['Fermented bonus (sauerkraut)', 2],
+      ];
+      const mx = Math.max(...drivers.map((d) => d[1]));
+      const bars = drivers.map(([lbl, v], i) => {
+        const isFerment = /Fermented/.test(lbl);
+        const col = isFerment ? 'var(--ter-amber)' : (i < 4 ? 'var(--sec-green)' : 'var(--primary)');
+        return `<div class="wa-bar-row">
+            <div class="wa-bar-label">${esc(lbl)}</div>
+            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%;background:${col}"></div></div>
+            <div class="wa-bar-val">+${v}</div>
+          </div>`;
+      }).join('');
+      const cmp = [['This build', 64, 'var(--sec-green)'], ['Sauerkraut moved into top 4', 78, 'var(--primary)']];
+      const cmpBars = cmp.map(([lbl, v, col]) => `<div class="wa-scorebar">
+          <div class="wa-scorebar-name">${esc(lbl)}</div>
+          <div class="wa-scorebar-line"><div class="wa-bar-track"><div class="wa-bar-fill" style="width:${v}%;background:${col}"></div></div><div class="wa-bar-val">${v}</div></div>
+        </div>`).join('');
+      return `
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title">Where the Gut Health score comes from</h3>
+          <div class="wa-chart-card"><div class="wa-bars">${bars}</div></div>
+          <p class="wa-caption" style="margin:10px 0 0">Modeled contribution of each ingredient group to the returned Gut Health score of 64. The fermented bonus reads small because sauerkraut fell outside the first four top-level ingredients.</p>
+        </div>
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title">Headroom · move sauerkraut higher</h3>
+          <div class="wa-chart-card"><div class="wa-scorebars">${cmpBars}</div></div>
+          <p class="wa-caption" style="margin:10px 0 0">Promoting sauerkraut into the first four ingredients is projected to fully trigger the fermented bonus, lifting the score from Good toward the low end of Excellent.</p>
+        </div>`;
+    }
+
+    function brisketReportView() {
+      const build = [
+        ['Fermented', 'Sauerkraut', 'Promote into the first 4 ingredients to fully trigger the fermented-food bonus.'],
+        ['Polyphenols', 'Onion · garlic · mushrooms · carrots · celery · parsley · thyme · rosemary · tomato paste', 'Broad plant + polyphenol signal the Gut Health code rewards.'],
+        ['Healthy oil', 'Extra virgin olive oil', 'Hits the healthy-oil bonus.'],
+        ['Polyphenols+', 'Cocoa powder · coffee', 'Both favored polyphenol-style ingredients in the code.'],
+        ['Protect', 'No nitrates / nitrites · no highly-processed add-ins', 'Avoiding these keeps the score from being dragged down.'],
+      ];
+      const rows = build.map((b, i) => `
+          <div class="wa-cand">
+            <span class="wa-cand-rank">${i + 1}</span>
+            <div class="wa-cand-body"><div class="wa-cand-name">${esc(b[1])}</div><div class="wa-cand-note">${esc(b[2])}</div></div>
+            <span class="wa-ce-role-tag">${esc(b[0])}</span>
+          </div>`).join('');
+      return `
+        <div class="wa-block wa-report">
+          <div class="wa-report-hero">
+            <h1 class="wa-report-title">The gut-health-optimized brisket</h1>
+            <p class="wa-report-lede">An 18-ingredient brisket built to score as high as possible on the WISEcode Gut Health evaluation. Every ingredient classified PL1 (minimally processed); the score lands at 64 — Good — with clear headroom if sauerkraut is promoted higher in the list.</p>
+          </div>
+          <div class="wa-stats">
+            <div class="wa-stat"><div class="wa-stat-num">64</div><div class="wa-stat-label">Gut Health score</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">Good</div><div class="wa-stat-label">Score band</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">18</div><div class="wa-stat-label">PL1 ingredients</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">0</div><div class="wa-stat-label">Nitrates / nitrites</div></div>
+          </div>
+          <p class="wa-sec-title"><span class="material-symbols-outlined">bolt</span>How the build earns its score</p>
+          <div class="wa-shortlist">${rows}</div>
+          <div class="wa-table-foot" style="margin-top:18px"><span class="material-symbols-outlined">insights</span>Score-driver &amp; headroom charts are in the Visuals pane →</div>
+        </div>`;
+    }
+
     /* ═════════ Scripted transcript (chips → user turn → WISEai reply → panes) ═════════
        The chat transcript stays verbatim to the source conversation; only the
        surfaced RESULTS move into the panes on the right. */
     const INTENTS = [
+      { intent: 'brisket', icon: 'outdoor_grill',   label: 'Build me a gut-healthy brisket recipe' },
       { intent: 'upf',     icon: 'science',        label: 'Is this ingredient list ultra-processed?' },
       { intent: 'worst',   icon: 'trending_down',  label: 'What\u2019s the worst food in our database?' },
       { intent: 'spider',  icon: 'radar',          label: 'Spider-chart the 10 worst foods by gut & immune health' },
       { intent: 'cupcake', icon: 'cake',           label: 'Tell me more about the worst-ranked cupcake' },
       { intent: 'cookie',  icon: 'cookie',         label: 'Best chocolate chip cookie with the least chocolate' },
+      { intent: 'compare', icon: 'compare_arrows', label: 'Compare a few products side by side' },
       { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report — all the charts & trends' },
     ];
 
     const INTENT_REPLIES = {
+      brisket: 'For a gut-health-maximized brisket, I\u2019d build it around these ingredients:<div class="wa-chiplist" style="margin:10px 0 12px">' + ['Beef brisket', 'Extra virgin olive oil', 'Onion', 'Garlic', 'Sauerkraut', 'Mushrooms', 'Carrots', 'Celery', 'Parsley', 'Thyme', 'Rosemary', 'Apple cider vinegar', 'Lemon juice', 'Tomato paste', 'Cocoa powder', 'Coffee', 'Black pepper', 'Sea salt'].map((n) => '<span class="wa-ce-ing">' + n + '</span>').join('') + '</div>I ran a brisket-style ingredient list through the <strong>Gut Health code evaluation</strong>, and this combination came out with a Gut Health score of <strong>64</strong>, which lands in <strong>Good</strong>.<br><br><strong>Why this works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li><strong>Sauerkraut</strong> adds a fermented-food signal.</li><li>Onion, garlic, mushrooms, carrots, celery, parsley, thyme, rosemary &amp; tomato paste support the code\u2019s plant / polyphenol logic.</li><li>Extra virgin olive oil hits the healthy-oil bonus.</li><li>Cocoa powder &amp; coffee are both favored polyphenol-style ingredients in the code.</li><li>Avoiding nitrates / nitrites and highly processed add-ins helps protect the score.</li></ul><br>One nuance: in the run I tested, the <strong>fermented bonus didn\u2019t fully trigger</strong> because sauerkraut wasn\u2019t among the first few ingredients. To push the score even higher, make sauerkraut a more prominent ingredient in the dish.<br><br>Opened the <strong>code evaluation</strong> &amp; recipe report in Results &amp; Details, and the score-driver charts in Visuals \u2192',
       upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
       worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br>Opened the full ranking in Results &amp; Details \u2192',
       spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details',
       cupcake: 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d',
+      compare: 'I grabbed a few comparable products and put them head-to-head on the same board we use on the <strong>Product Comparison</strong> page.<br><br>Ranked by WISEscore, the <strong>Aloha Organic Protein Bar</strong> leads at <strong>84</strong> \u2014 the cleanest formulation, strongest on ingredient integrity and nutrient density. The <strong>Simple Truth Trail Mix</strong> (71) holds up on whole-food ingredients but loses ground on added sugar, and <strong>SkinnyPop Popcorn</strong> (63) trails mostly on nutrient density and gut-health signals.<br><br>Opened the full comparison in Results &amp; Details \u2014 tap any gauge or metric to replay it, and add more products to the board. \u2192',
       cookie: 'I pulled the highest-WISEscore chocolate chip cookies first, but the result quality is noisy: several top rows have clearly broken or incomplete ingredient lists, so they don\u2019t really answer your \u201cleast amount of chocolate\u201d criterion reliably.<br><br>Among the credible top-scoring matches, the strongest candidates look like the ones where chocolate chips appear later in the ingredient list, which usually means less chocolate by weight. The cleanest examples near the top are <strong>Paleo, Vegan Chocolate Chip Cookie</strong> and <strong>Emmy\u2019s Organics Coconut Cookies</strong>. By contrast, products like the Overjoyed biscotti put chocolate ingredients much earlier and even add a drizzle, so they\u2019re clearly more chocolate-heavy.',
       report: 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.',
     };
@@ -2739,11 +3227,13 @@
     function reply(text, intent) {
       if (intent && INTENT_REPLIES[intent] != null) return INTENT_REPLIES[intent];
       const t = String(text || '').toLowerCase();
+      if (/brisket|recipe/.test(t)) return INTENT_REPLIES.brisket;
       if (/ultra|upf|processed/.test(t)) return INTENT_REPLIES.upf;
       if (/worst|bottom|lowest/.test(t)) return INTENT_REPLIES.worst;
       if (/spider|radar|gut|immune/.test(t)) return INTENT_REPLIES.spider;
       if (/cupcake|detail/.test(t)) return INTENT_REPLIES.cupcake;
       if (/cookie|chocolate chip/.test(t)) return INTENT_REPLIES.cookie;
+      if (/compare|comparison|side by side|versus|vs\.?|head-to-head/.test(t)) return INTENT_REPLIES.compare;
       if (/report|chart|graph|trend|pretty/.test(t)) return INTENT_REPLIES.report;
       return DEFAULT_REPLY;
     }
@@ -2961,7 +3451,26 @@
        reply lands (so the transcript reads first, then the pane resolves). */
     function surface(intent) {
       setTimeout(() => {
-        if (intent === 'worst') {
+        if (intent === 'brisket') {
+          surfaceBlock('results', {
+            icon: 'terminal',
+            title: 'Gut Health · code evaluation',
+            meta: 'WISEcode run · 18 ingredients parsed · score 64 (Good) · 38 steps',
+            html: brisketCodeEvalView(),
+          });
+          surfaceBlock('visuals', {
+            icon: 'stacked_bar_chart',
+            title: 'Gut Health score drivers · brisket',
+            meta: 'Modeled contribution of each ingredient group + headroom if sauerkraut moves higher',
+            html: brisketChartView(),
+          });
+          surfaceBlock('results', {
+            icon: 'summarize',
+            title: 'The gut-health-optimized brisket',
+            meta: 'WISEai report · ingredient roles, score bands & optimization',
+            html: brisketReportView(),
+          });
+        } else if (intent === 'worst') {
           surfaceBlock('results', {
             icon: 'trending_down',
             title: 'Worst foods in the database',
@@ -2994,6 +3503,13 @@
             title: 'Best chocolate chip cookies',
             meta: "25 of 3,010 matches — category 'snacks,cookies' & name 'chocolate chip', sorted by WISEscore descending",
             html: cookiesView(),
+          });
+        } else if (intent === 'compare') {
+          surfaceBlock('results', {
+            icon: 'compare_arrows',
+            title: 'Product comparison',
+            meta: `${COMPARE_PRODUCTS.length} products \u00b7 WISEscore + ${COMPARE_METRICS.length} key metrics, ranked by WISEscore`,
+            html: compareProductsView(),
           });
         } else if (intent === 'report') {
           surfaceBlock('results', {
@@ -3052,8 +3568,17 @@
            same verbatim replies the live transcript uses. Bump
            historySeedVersion whenever the seed below changes so every browser
            re-seeds to the latest on next load (clears saved threads there). */
-        historySeedVersion: 1,
+        historySeedVersion: 2,
         historySeed: [
+          {
+            title: 'Build me a gut-healthy brisket recipe',
+            msAgo: 40 * 60000,
+            mcp: true,
+            turns: [
+              { role: 'you', text: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
+              { role: 'wiseai', html: INTENT_REPLIES.brisket },
+            ],
+          },
           {
             title: 'What\u2019s the worst food in our database?',
             msAgo: 2 * 3600000,
@@ -3146,6 +3671,8 @@
         outputsToggle: true,
         outputsToggleDefault: true,
         onToggleOutputs: (hidden) => setManifestOff(hidden),
+        /* Chat three-dot "Share" opens WISEai's in-app share panel. */
+        onShare: () => openShareModal(),
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
           { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },
@@ -3167,8 +3694,10 @@
             { variant: 'wiseai', icon: 'radar', title: 'Spider-chart the 10 worst foods', desc: 'Compare the bottom of the ranking by gut & immune health.', action: 'Chart it', intent: 'spider', ask: 'Spider-chart the 10 worst foods by gut & immune health' },
             { variant: 'wiseai', icon: 'cake', title: 'Worst-ranked cupcake', desc: 'Dig into the single lowest-scoring cupcake and why it landed there.', action: 'Explain', intent: 'cupcake', ask: 'Tell me more about the worst-ranked cupcake' },
             { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
+            { variant: 'wiseai', icon: 'compare_arrows', title: 'Compare a few products', desc: 'Grab a few products and put them head-to-head on the comparison board.', action: 'Compare', intent: 'compare', ask: 'Compare a few products side by side' },
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
             { variant: 'wiseai', icon: 'hub', title: 'Connect a data source', desc: 'Link Kroger, Instacart, USDA FoodData Central & more so WISEai can pull verified product data.', action: 'Connect', intent: 'connect_source' },
+            { variant: 'metric', icon: 'outdoor_grill', pill: { tone: 'up', icon: 'north', text: 'Good' }, metric: '64', title: 'Build a gut-healthy brisket', desc: 'Run a brisket ingredient list through the WISEcode Gut Health code evaluation.', action: 'Build it', intent: 'brisket', ask: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
             { variant: 'wiseai', icon: 'explore', title: 'Take a tour', desc: 'A quick guided walkthrough of WISEai — the panes, prompts & reports.', locked: true },
           ],
         },
@@ -3224,11 +3753,11 @@
       if (morePop && !morePop.querySelector('[data-merge-outputs]')) {
         const mBtn = document.createElement('button');
         mBtn.type = 'button';
-        mBtn.className = 'topbar-menu-item sc-mcp-item';
+        mBtn.className = 'topbar-menu-item topbar-menu-item--admin sc-mcp-item';
         mBtn.setAttribute('role', 'menuitemcheckbox');
         mBtn.setAttribute('aria-checked', 'false');
         mBtn.setAttribute('data-merge-outputs', '');
-        mBtn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Merge outputs into one panel</span><span class="sc-switch" aria-hidden="true"></span>';
+        mBtn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Merge outputs into one panel</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span>';
         /* Sit it just above the danger "Close conversation" item when present. */
         const closeItem = morePop.querySelector('[data-sc="close"]');
         const anchor = closeItem ? (closeItem.previousElementSibling?.classList.contains('topbar-menu-divider') ? closeItem.previousElementSibling : closeItem) : null;

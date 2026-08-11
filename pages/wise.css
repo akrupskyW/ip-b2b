@@ -33,8 +33,10 @@
   --text-muted: #444B55;
   /* AAA on surface, bg, surface-2 and surface-3 (was #646E7C, AA-only). */
   --text-subtle: #474E58;
-  --border: rgba(17,24,39,0.08);
-  --border-strong: rgba(17,24,39,0.14);
+  /* Brand-blue borders — tinted from --primary (#25507C) instead of neutral
+     ink so every card, divider, input and SVG stroke reads on-brand. */
+  --border: color-mix(in srgb, var(--primary) 16%, transparent);
+  --border-strong: color-mix(in srgb, var(--primary) 28%, transparent);
 
   /* Deepened from #25507C so primary works as AAA text (7:1 on bg) AND as a
      button fill (white-on-primary clears 7:1). rgb(37, 80, 124). */
@@ -107,11 +109,13 @@ html.dark {
      lightest (surface-3 #15303F), keeping muted brighter than subtle. */
   --text-muted: #BCC6D3;
   --text-subtle: #B1BAC7;
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.14);
-  --primary-soft: rgba(37, 80, 124, 0.18);
   /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. AAA (9.7:1) on surface. */
   --primary-bright: #8B9FAF;
+  /* Brand-blue borders on dark: --primary (#25507C) is nearly invisible over
+     navy, so tint from --primary-bright to keep borders on-brand yet visible. */
+  --border: color-mix(in srgb, var(--primary-bright) 18%, transparent);
+  --border-strong: color-mix(in srgb, var(--primary-bright) 30%, transparent);
+  --primary-soft: rgba(37, 80, 124, 0.18);
 
   /* Softened pastel inks so semantic TEXT clears 7:1 on its own 16% tint over
      the navy surfaces (the vibrant fills only reached ~4.7:1 as small text). */
@@ -1091,7 +1095,11 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 16px var(--modules-bottom-pad);
+  /* No bottom padding here: the body already frames the shell with a uniform
+     inset on all four sides. A bottom padding on the row stacks on top of that
+     body inset (the negative-margin cancel below never fires under the fixed
+     grid/flex height), doubling the bottom gap to ~24px. */
+  padding: 0 16px;
   gap: 8px;
   scrollbar-gutter: stable;
 }
@@ -1925,7 +1933,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   background: transparent;
   color: inherit;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 50%;
 }
 .menu-nav-chevron-btn:hover { background: rgba(0,0,0,0.05); }
 html.dark .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
@@ -4066,7 +4074,7 @@ html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgb
 @keyframes scRecPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sec-red, #DC3038) 40%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
 .fl-more-wrap { position: relative; flex-shrink: 0; }
 .fl-more-popover {
-  display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
+  display: none; position: absolute; bottom: calc(100% + 3px); right: 0;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
   box-shadow: var(--shadow-3, var(--sc-shadow-pop)); padding: 4px; z-index: 600; min-width: 140px; flex-direction: column; gap: 2px;
 }
@@ -4086,11 +4094,12 @@ html.dark .fl-more-divider { background: rgba(255,255,255,0.08); }
    before the placeholder/caret. Each is a circle thumbnail + a label to its
    right, with a hover remove button. They wrap onto a second row if several are
    added and push the caret/placeholder along so you can keep typing. ===== */
-.fl-attachments { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.fl-model-row { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.fl-attachments { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
 .fl-attachments:empty { display: none; }
 .fl-attach-chip {
-  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 190px;
-  padding: 3px 8px 3px 3px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; max-width: 160px;
+  padding: 1px 6px 1px 2px; border-radius: 999px;
   background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
   animation: flAttachPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -4098,25 +4107,25 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
 @keyframes flAttachPop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fl-attach-chip { animation: none; } }
 .fl-attach-thumb {
-  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
   background-size: cover; background-position: center; background-repeat: no-repeat;
   background-color: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .fl-attach-thumb--icon { color: var(--text-muted); }
-.fl-attach-thumb--icon .material-symbols-outlined { font-size: 14px !important; }
+.fl-attach-thumb--icon .material-symbols-outlined { font-size: 11px !important; }
 .fl-attach-name {
-  font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
+  font-size: 10.5px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 .fl-attach-x {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%;
+  width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%;
   background: transparent; color: var(--text-subtle); cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
 }
 .fl-attach-x:hover { background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); color: var(--sec-red, #DC3038); }
-.fl-attach-x .material-symbols-outlined { font-size: 13px !important; }
+.fl-attach-x .material-symbols-outlined { font-size: 11px !important; }
 .fl-input-wrap.has-attachments .fl-input { flex: 1 1 80px; min-width: 80px; }
 
 /* ===== Sent attachments — the same previews carried into a user's transcript
@@ -4183,6 +4192,71 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
 .fl-model-item.is-active .fl-model-switch { background: var(--primary); }
 .fl-model-item.is-active .fl-model-switch::after { transform: translateX(14px); }
 
+/* ===== Stacked composer — the "+" stays on the far left, then a two-row column
+   holds the database selector label on top with the text input directly beneath
+   it. The database label reads like a quiet dropdown (name + caret), and its
+   popover now opens from the LEFT edge since the trigger lives on the left. === */
+.fl-input-wrap--stacked { align-items: center; gap: 6px; padding: 5px 8px 5px 6px; }
+.fl-input-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.fl-input-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fl-input-wrap--stacked .fl-input { padding: 3px 0; }
+.fl-model-wrap--lead { align-self: flex-start; }
+
+/* The database label itself: a muted, pill-on-hover text button with a caret. */
+.fl-db-trigger {
+  display: inline-flex; align-items: center; gap: 3px; max-width: none;
+  margin: 0; padding: 1px 5px 1px 0; border: 0; border-radius: 7px;
+  background: transparent; cursor: pointer; color: var(--text-subtle);
+  font-family: inherit; font-size: 11.5px; font-weight: 600; line-height: 1.4;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.fl-db-trigger:hover,
+.fl-db-trigger[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+html.dark .fl-db-trigger:hover,
+html.dark .fl-db-trigger[aria-expanded="true"] { background: rgba(255,255,255,0.08); }
+.fl-db-trigger-ic { font-size: 14px !important; opacity: 0.85; flex-shrink: 0; }
+.fl-db-trigger-label { white-space: nowrap; overflow: visible; text-overflow: clip; }
+.fl-db-trigger-caret { font-size: 15px !important; opacity: 0.7; flex-shrink: 0; }
+/* Left-opening variant of the database popover (trigger now sits on the left). */
+.fl-db-popover--lead { left: 0; right: auto; }
+
+/* ===== Narrow / mobile composer — keep the database selector and the pending
+   attachment thumbnails on ONE horizontal line (a scrollable rail) instead of
+   letting the long snapshot label wrap the images onto a second row. The label
+   is clamped to ~15 characters then ellipsised so it never shoves the images
+   off-row. Applies on small viewports and inside the always-narrow chat dock. */
+@media (max-width: 767px) {
+  .fl-model-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .fl-model-row::-webkit-scrollbar { display: none; }
+  .fl-attachments { flex-wrap: nowrap; }
+  .fl-model-wrap--lead { align-self: center; }
+  .fl-db-trigger { flex-shrink: 0; }
+  .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
+}
+.wiseai-dock .fl-model-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.wiseai-dock .fl-model-row::-webkit-scrollbar { display: none; }
+.wiseai-dock .fl-attachments { flex-wrap: nowrap; }
+.wiseai-dock .fl-model-wrap--lead { align-self: center; }
+.wiseai-dock .fl-db-trigger { flex-shrink: 0; }
+.wiseai-dock .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== Inline conversation event marker — e.g. a mid-thread database switch.
+   Centered and muted so it reads as a system change (not a message from either
+   party), but tinted with the brand accent so the change still stands out. === */
+.sc-line-event { display: flex; justify-content: center; margin: 6px 0; }
+.sc-event {
+  display: inline-flex; align-items: center; gap: 7px; max-width: 92%;
+  padding: 5px 13px; border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface-2));
+  border: 1px dashed color-mix(in srgb, var(--primary) 32%, var(--border-strong));
+  color: var(--text-muted); font-size: 12px; line-height: 1.35;
+}
+html.dark .sc-event { background: color-mix(in srgb, var(--primary) 14%, rgba(255,255,255,0.04)); border-color: color-mix(in srgb, var(--primary) 40%, rgba(255,255,255,0.14)); }
+.sc-event-ic { font-size: 16px !important; color: var(--primary); flex-shrink: 0; }
+.sc-event-text { min-width: 0; }
+.sc-event-text strong { color: var(--text); font-weight: 700; }
+.sc-event-time { font-size: 10.5px; color: var(--text-subtle); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
 /* ===== Database selector popover — grouped, searchable, filterable ===== */
 .fl-db-popover { padding: 0; min-width: 340px; max-width: 380px; gap: 0; overflow: hidden; }
 /* Sticky search + filter header at the very top of the popover. */
@@ -4205,19 +4279,21 @@ html.dark .fl-db-top { background: #1A2339; }
 .fl-db-dock-btn:hover { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
 .fl-db-dock-btn.is-on { background: color-mix(in srgb, var(--primary) 14%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, transparent); color: var(--primary); }
 .fl-db-dock-btn .material-symbols-outlined { font-size: 18px; }
-/* Pill search — matches the results-table + turns-module search fields. */
+/* Pill search — matched to the History module's search field (.wch-search). */
 .fl-db-search {
   display: flex; align-items: center; gap: 8px;
-  padding: 0 14px; height: 38px; border-radius: 9999px;
-  border: 1px solid var(--border-strong); background: var(--surface-2);
+  padding: 0 14px; height: 36px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.fl-db-search:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent); }
-.fl-db-search .material-symbols-outlined { font-size: 18px; color: var(--text-subtle); flex-shrink: 0; }
+html:not(.dark) .fl-db-search { background: rgba(20,40,80,0.04); border-color: rgba(0,0,0,0.10); }
+.fl-db-search:focus-within { border-color: var(--primary, #2F6DF6); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent); }
+.fl-db-search .material-symbols-outlined { font-size: 18px; opacity: 0.5; flex-shrink: 0; }
 .fl-db-search-input {
   flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
-  font-family: inherit; font-size: var(--fs-ui); color: var(--text);
+  font: inherit; font-size: 13px; color: inherit;
 }
-.fl-db-search-input::placeholder { color: var(--text-subtle); }
+.fl-db-search-input::placeholder { opacity: 0.6; }
 .fl-db-filters { display: flex; gap: 6px; }
 .fl-db-chip {
   padding: 4px 11px; border-radius: 9999px; cursor: pointer; font-family: inherit;
@@ -8080,13 +8156,6 @@ body[data-nav-id="verification"] .agent-main-scroll { padding: 0; }
    body already supplies the 12px top + bottom). */
 body[data-nav-id="verification"] #modules-row {
   margin-top: 0;
-  /* Keep the bottom padding as a shadow gutter but pull the row back down by
-     the same amount, so the module fills the nav column's full height AND its
-     drop-shadow renders into the body's bottom gap instead of being clipped
-     flush (matches the nav rail, which sits outside this row). Preserves
-     overflow-x:auto for horizontal scrolling. */
-  padding-bottom: var(--modules-bottom-pad);
-  margin-bottom: calc(-1 * var(--modules-bottom-pad));
 }
 
 .vf-root {
@@ -8921,7 +8990,7 @@ body[data-nav-id="gras-verification"] .agent-main-scroll { padding: 0; }
 /* Shadow gutter via padding + equal negative margin — see the verification
    rule above; keeps the module flush with the nav height while letting its
    drop-shadow bleed into the body's bottom gap. */
-body[data-nav-id="gras-verification"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
+body[data-nav-id="gras-verification"] #modules-row { margin-top: 0; }
 
 .gv-root {
   font-family: var(--font-sans, 'DM Sans', system-ui, sans-serif);
@@ -9627,6 +9696,26 @@ html.dark .adm-chip--canon { color: #6FE0A0; }
 .adm-flagged-when { font-weight: 600; color: var(--text-muted); }
 .adm-flagged-by { font-size: 0.72rem; color: var(--text-subtle); }
 
+/* Audit Queue — expanded filter card (search + selects + date range),
+   shown in place of a search-bar popover so every filter is visible. */
+.adm-filter-card { padding: 15px 18px 17px; border-left: 3px solid var(--sec-green); }
+html.dark .adm-filter-card { border-left-color: #6FE0A0; }
+.adm-filter-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.adm-filter-head-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 800; color: var(--text); }
+.adm-filter-head-title .material-symbols-outlined { font-size: 17px; color: var(--sec-green); }
+html.dark .adm-filter-head-title .material-symbols-outlined { color: #6FE0A0; }
+.adm-filter-head-sub { font-size: 0.73rem; color: var(--text-subtle); }
+.adm-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; }
+.adm-filter-grid .adm-field { min-width: 0; gap: 6px; }
+.adm-filter-grid .adm-field-label { text-transform: none; letter-spacing: 0; font-size: 0.73rem; font-weight: 600; color: var(--text-muted); }
+.adm-filter-grid .adm-select, .adm-filter-grid .adm-input { width: 100%; }
+.adm-filter-grid .adm-search-inline { min-width: 0; width: 100%; }
+@container adm (max-width: 760px) { .adm-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container adm (max-width: 460px) { .adm-filter-grid { grid-template-columns: 1fr; } }
+
+/* Audit Queue — leading checkbox column stays left-aligned with its header. */
+.adm-th--check, .adm-td--check { justify-content: flex-start; }
+
 .adm-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
 /* Per-row three-dot (kebab) menu — collapses the row's actions into a popover. */
@@ -9827,7 +9916,7 @@ body[data-adm-page] .agent-main-scroll { padding: 0; }
 /* Shadow gutter via padding + equal negative margin — see the verification
    rule; keeps admin modules flush with the nav height while letting their
    drop-shadow bleed into the body's bottom gap instead of clipping flush. */
-body[data-adm-page] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
+body[data-adm-page] #modules-row { margin-top: 0; }
 
 /* =============================================================
    Guiding Stars view (overview.html) — a second pink hero toggle

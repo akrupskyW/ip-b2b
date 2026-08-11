@@ -181,7 +181,12 @@
       h.className = 'pr-handle';
       h.setAttribute('role', 'separator');
       h.setAttribute('aria-orientation', 'vertical');
-      h.setAttribute('title', 'Drag to resize · double-click to reset');
+      // Use aria-label (not title) for the hint: a native `title` renders an OS
+      // tooltip box at the cursor that overflows onto the neighbouring module's
+      // content (e.g. the Library score cards). aria-label keeps it accessible
+      // without the intrusive popup — the visual grip + col-resize cursor still
+      // signal that the seam is draggable.
+      h.setAttribute('aria-label', 'Drag to resize · double-click to reset');
       h.innerHTML = '<i class="pr-grip"></i>';
       // Mouse events (not pointer events) drive the drag: a document-level
       // mousemove/mouseup pair is the classic, universally reliable splitter

@@ -521,9 +521,9 @@
           </div>
         </div>
 
-        <div class="chat-input-rail shrink-0">
-          <div class="sc-input-row" style="display:flex;gap:8px;align-items:flex-end">
-            <div class="fl-input-wrap fl-input-wrap--lead" style="flex:1">
+        <div class="chat-input-rail shrink-0" data-wise-composer>
+          <div class="sc-input-row">
+            <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
               <div class="fl-more-wrap" id="ap-attach-wrap">
                 <button type="button" id="ap-attach" class="fl-icon-btn fl-more-btn" title="Attach a file" aria-haspopup="menu" aria-expanded="false" aria-controls="ap-attach-pop"><span class="material-symbols-outlined">add</span></button>
                 <div class="fl-more-popover fl-more-popover--left ap-attach-pop" id="ap-attach-pop" role="menu">
@@ -553,7 +553,14 @@
                   <button type="button" class="fl-more-item" role="menuitem" data-up="url"><span class="material-symbols-outlined">link</span>Paste a URL</button>
                 </div>
               </div>
-              <input id="chat-input" type="text" placeholder="Type a value, paste a URL, or ask me anything…" class="fl-input" autocomplete="off" />
+              <div class="fl-input-col">
+                <div class="fl-model-row">
+                  <div class="fl-attachments"></div>
+                </div>
+                <div class="fl-input-line">
+                  <input id="chat-input" type="text" placeholder="Type a value, paste a URL, or ask me anything…" class="fl-input" autocomplete="off" />
+                </div>
+              </div>
             </div>
             <button type="button" id="ap-send" class="sc-send" title="Send">
               <span class="material-symbols-outlined">send</span>
@@ -599,6 +606,11 @@
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
     import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+    import { wireChatComposer } from '../js/wiseai-chat.js';
+
+    /* Add the canonical WISEai database selector to the wizard composer. The
+       page keeps its own rich "+" attach popover, so skip the shared attach wiring. */
+    document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,

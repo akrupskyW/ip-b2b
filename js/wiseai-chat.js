@@ -273,6 +273,12 @@ export const WISEAI_DBS = [
    whole groups by whether they're read-only or read/write. */
 function dbAccessKey(access) { return access === 'read/write' ? 'rw' : 'ro'; }
 
+/* Flat lookup helpers for the active database — used to render the in-input
+   label and to name both ends of a mid-conversation switch in the transcript. */
+function allDbItems() { return WISEAI_DBS.flatMap((g) => g.items.map((it) => ({ ...it, group: g }))); }
+function defaultDbItem() { const all = allDbItems(); return all.find((it) => it.default) || all[0] || null; }
+function dbItemById(dbId) { return allDbItems().find((it) => it.id === dbId) || null; }
+
 /* Grouped, single-select database rows. Row layout is name/desc → access badge
    → a prominent selected-tick, both floated to the FAR RIGHT (the tick is the
    right-most element). Shared so the popover and docked module render identically. */
@@ -322,14 +328,20 @@ function dbRosterHtml() {
               </div>`;
 }
 
-/* Build the right-side database selector (button + searchable, filterable,
-   grouped single-select popover). Kept as a shared helper so every chat surface
-   renders an identical control. A dock icon at the top of the popover breaks it
-   out into a sticky side module, just like the Turns module. */
+/* Build the database selector — a quiet dropdown-style label (active database
+   name + caret) that sits just right of the "+" and directly above the input,
+   opening a searchable, filterable, grouped single-select popover. Kept as a
+   shared helper so every chat surface renders an identical control. A dock icon
+   at the top of the popover breaks it out into a sticky side module. */
 function buildModelSelectorHtml(id) {
-  return `<div class="fl-model-wrap">
-            <button type="button" class="fl-icon-btn fl-model-btn" id="${id}-fl-model" title="Select database" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">database</span></button>
-            <div class="fl-model-popover fl-db-popover" id="${id}-fl-model-pop" role="menu">
+  const def = defaultDbItem();
+  const label = def ? def.name : 'Select database';
+  return `<div class="fl-model-wrap fl-model-wrap--lead">
+            <button type="button" class="fl-db-trigger fl-model-btn" id="${id}-fl-model" title="Active database — click to switch" aria-haspopup="menu" aria-expanded="false">
+              <span class="fl-db-trigger-label" id="${id}-fl-db-label">${esc(label)}</span>
+              <span class="material-symbols-outlined fl-db-trigger-caret" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="fl-model-popover fl-db-popover fl-db-popover--lead" id="${id}-fl-model-pop" role="menu">
               <div class="fl-db-top">
                 <div class="fl-db-pop-head">
                   <span class="fl-db-pop-title">Databases</span>
@@ -340,6 +352,162 @@ function buildModelSelectorHtml(id) {
               ${dbRosterHtml()}
             </div>
           </div>`;
+}
+
+/* ── Standalone composer (shared by the bespoke page chats) ─────────────────
+   The canonical WISEai chat above renders its input rail (the stacked composer:
+   "+" attach on the left, the database selector + attachments row on top, the
+   text input beneath) inside mountWISEaiChat. A handful of pages run their OWN
+   chat (reformulation, the add/view-product wizard, guiding-stars, the product
+   comparison / portfolio rails) and hand-roll their input. These helpers let
+   those pages render + wire the EXACT same composer so the input section looks
+   and behaves identically everywhere.
+
+   Markup builder — same structure/classes as the canonical rail, minus the
+   dock-to-module control (which depends on the surrounding modules row). Query
+   by class rather than id so a page can mount several without id collisions. */
+export function composerDbSelectorHtml() {
+  const def = defaultDbItem();
+  const label = def ? def.name : 'Select database';
+  return `<div class="fl-model-wrap fl-model-wrap--lead">
+            <button type="button" class="fl-db-trigger fl-model-btn" title="Active database — click to switch" aria-haspopup="menu" aria-expanded="false">
+              <span class="fl-db-trigger-label">${esc(label)}</span>
+              <span class="material-symbols-outlined fl-db-trigger-caret" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="fl-model-popover fl-db-popover fl-db-popover--lead" role="menu">
+              <div class="fl-db-top">
+                <div class="fl-db-pop-head">
+                  <span class="fl-db-pop-title">Databases</span>
+                </div>
+                ${dbControlsHtml()}
+              </div>
+              ${dbRosterHtml()}
+            </div>
+          </div>`;
+}
+
+/* Wire a hand-rolled input rail so its database selector + "+" attach popover
+   behave exactly like the canonical composer. Idempotent per rail.
+
+   Expects the standard stacked markup inside `railEl`:
+     .fl-input-wrap.fl-input-wrap--stacked
+       .fl-more-wrap  (optional — "+" attach popover)
+       .fl-input-col
+         .fl-model-row   ← the DB selector is injected here (before any
+                           .fl-attachments) if it isn't already present
+         .fl-input-line > input.fl-input
+
+   opts.onDbChange(dbId, dbItem) — notified whenever the active database changes.
+   Returns { getDbId } so callers can read the current selection. */
+export function wireChatComposer(railEl, opts = {}) {
+  if (!railEl || railEl.dataset.composerWired === '1') return null;
+  railEl.dataset.composerWired = '1';
+
+  /* Inject the DB selector into the model row if the page left it empty. */
+  const modelRow = railEl.querySelector('.fl-model-row');
+  if (modelRow && !modelRow.querySelector('.fl-db-trigger')) {
+    modelRow.insertAdjacentHTML('afterbegin', composerDbSelectorHtml());
+  }
+
+  const trigger = railEl.querySelector('.fl-db-trigger');
+  const pop = railEl.querySelector('.fl-db-popover');
+  const labelEl = railEl.querySelector('.fl-db-trigger-label');
+  const search = pop?.querySelector('.fl-db-search-input');
+  let accessFilter = 'all';
+  let currentDbId = defaultDbItem() ? defaultDbItem().id : null;
+
+  function applyFilter() {
+    if (!pop) return;
+    const q = (search?.value || '').trim().toLowerCase();
+    let anyVisible = false;
+    pop.querySelectorAll('.fl-db-group').forEach((grp) => {
+      const accessOk = accessFilter === 'all' || accessFilter === grp.dataset.access;
+      const items = grp.querySelectorAll('.fl-db-item');
+      let groupHasVisible = false;
+      items.forEach((it) => {
+        const match = accessOk && (!q || (it.dataset.search || '').includes(q));
+        it.hidden = !match;
+        if (match) groupHasVisible = true;
+      });
+      const emptyEl = grp.querySelector('.fl-db-groupempty');
+      let showGroup;
+      if (!items.length) { showGroup = accessOk && !q; if (emptyEl) emptyEl.hidden = !showGroup; }
+      else { showGroup = groupHasVisible; }
+      grp.hidden = !showGroup;
+      if (showGroup) anyVisible = true;
+    });
+    const noResults = pop.querySelector('.fl-db-noresults');
+    if (noResults) noResults.hidden = anyVisible;
+  }
+
+  function selectDb(dbId) {
+    if (!pop) return;
+    pop.querySelectorAll('.fl-db-item').forEach((el) => {
+      const on = el.dataset.db === dbId;
+      el.classList.toggle('is-active', on);
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    const next = dbItemById(dbId);
+    if (labelEl && next) labelEl.textContent = next.name;
+    const changed = dbId !== currentDbId;
+    currentDbId = dbId;
+    if (changed && typeof opts.onDbChange === 'function') opts.onDbChange(dbId, next);
+  }
+
+  function closeDbPop() {
+    pop?.classList.remove('open');
+    trigger?.setAttribute('aria-expanded', 'false');
+  }
+
+  /* "+" attach popover — only wire if the page hasn't bound its own handler
+     (its button carries an inline onclick), so we never double-toggle. */
+  const moreBtn = railEl.querySelector('.fl-more-btn');
+  const morePop = railEl.querySelector('.fl-more-popover');
+  const pageWiresAttach = opts.skipAttach === true || !!(moreBtn && moreBtn.getAttribute('onclick'));
+  if (moreBtn && morePop && !pageWiresAttach) {
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeDbPop();
+      const open = morePop.classList.toggle('open');
+      moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  } else if (moreBtn) {
+    /* The page owns the attach toggle — just make sure opening it closes the
+       database popover so the two are never open at once. */
+    moreBtn.addEventListener('click', () => closeDbPop());
+  }
+
+  if (trigger && pop) {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      morePop?.classList.remove('open');
+      const open = pop.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { applyFilter(); requestAnimationFrame(() => search?.focus()); }
+    });
+    search?.addEventListener('click', (e) => e.stopPropagation());
+    search?.addEventListener('input', applyFilter);
+    pop.addEventListener('click', (e) => {
+      const chip = e.target.closest('.fl-db-chip');
+      if (chip) {
+        e.stopPropagation();
+        accessFilter = chip.dataset.filter || 'all';
+        pop.querySelectorAll('.fl-db-chip').forEach((c) => c.classList.toggle('is-active', (c.dataset.filter || 'all') === accessFilter));
+        applyFilter();
+        return;
+      }
+      const it = e.target.closest('.fl-db-item');
+      if (!it) return;
+      closeDbPop();
+      selectDb(it.dataset.db);
+    });
+    /* Dismiss the popover on any outside click. */
+    document.addEventListener('click', (e) => {
+      if (pop.classList.contains('open') && !e.target.closest('.fl-model-wrap')) closeDbPop();
+    });
+  }
+
+  return { getDbId: () => currentDbId };
 }
 
 /* Live-activity indicator markup: a small trio of dots + a hover read-out card.
@@ -363,6 +531,39 @@ function buildActivityHtml(id, title) {
               </div>
             </div>
           </div>`;
+}
+
+/* Full-size image preview lightbox — opened when an attachment thumbnail is
+   clicked. Self-contained scrim appended to <body>; closes on backdrop click,
+   the close button, or Escape. Styles live in injectChatExtras(). */
+function openWiseImageModal(src, name) {
+  if (typeof document === 'undefined' || !src) return;
+  const scrim = document.createElement('div');
+  scrim.className = 'wai-img-scrim';
+  scrim.setAttribute('role', 'dialog');
+  scrim.setAttribute('aria-modal', 'true');
+  scrim.setAttribute('aria-label', name ? `Preview of ${name}` : 'Image preview');
+  scrim.innerHTML =
+    `<div class="wai-img-modal">
+       <div class="wai-img-head">
+         <span class="wai-img-name">${esc(name || 'Image')}</span>
+         <button type="button" class="wai-img-close" aria-label="Close preview"><span class="material-symbols-outlined">close</span></button>
+       </div>
+       <div class="wai-img-body"><img src="${String(src).replace(/"/g, '%22')}" alt="${esc(name || 'Image preview')}"></div>
+     </div>`;
+  let onKey;
+  const close = () => {
+    scrim.classList.remove('is-open');
+    document.removeEventListener('keydown', onKey);
+    setTimeout(() => scrim.remove(), 180);
+  };
+  onKey = (e) => { if (e.key === 'Escape') close(); };
+  scrim.addEventListener('click', (e) => {
+    if (e.target === scrim || e.target.closest('.wai-img-close')) close();
+  });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(scrim);
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
 }
 
 /* One-time style injection for the bits the shared chat adds on top of the
@@ -625,6 +826,25 @@ function injectChatExtras() {
     .sc-activity-val b { color: #6bd68a; font-weight: 700; }
     .sc-activity-val em { color: #7fb0ff; font-style: normal; }
     .sc-activity-val .sc-activity-muted { color: #7c8798; }
+
+    /* Clickable attachment thumbnails + the full-size image lightbox they open. */
+    .fl-attach-thumb { cursor: zoom-in; }
+    .wai-img-scrim { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
+      padding: 32px; background: rgba(10,15,25,0.72); backdrop-filter: blur(3px);
+      opacity: 0; transition: opacity .18s ease; }
+    .wai-img-scrim.is-open { opacity: 1; }
+    .wai-img-modal { position: relative; max-width: min(880px, 92vw); max-height: 88vh; display: flex; flex-direction: column;
+      background: var(--surface, #fff); border: 1px solid var(--border-strong, rgba(0,0,0,.12)); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4); overflow: hidden; transform: scale(.96); transition: transform .18s ease; }
+    .wai-img-scrim.is-open .wai-img-modal { transform: scale(1); }
+    .wai-img-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border, rgba(0,0,0,.08)); }
+    .wai-img-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wai-img-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0;
+      border: 0; border-radius: 8px; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background .12s, color .12s; }
+    .wai-img-close:hover { background: var(--surface-2); color: var(--text); }
+    .wai-img-close .material-symbols-outlined { font-size: 20px; }
+    .wai-img-body { display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--surface-2, #f2f4f7); }
+    .wai-img-body img { max-width: 100%; max-height: calc(88vh - 62px); object-fit: contain; border-radius: 8px; display: block; }
   `;
   const style = document.createElement('style');
   style.id = 'wiseai-chat-extras';
@@ -971,28 +1191,26 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       </div>`
     : '';
 
-  /* 'carousel' (default) = horizontal scroll row with scroll buttons + edge
-     fades; 'wrap' = plain wrapped flex grid, no controls, no overflow. */
-  const chipsFlow = opts.chipsFlow === 'wrap' ? 'wrap' : 'carousel';
+  /* Intent chips ALWAYS render as a plain wrapped flex grid — the single-line
+     scrolling "carousel" variant (horizontal scroll row with chevron buttons +
+     edge fades) has been retired everywhere, so `opts.chipsFlow` is ignored on
+     purpose and no caller can bring the carousel back. */
 
   const buildChipsHtml = () => intents.map((c, i) =>
     `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
   ).join('');
   let chipsHtml = buildChipsHtml();
 
-  const chipsContainerHtml = chipsFlow === 'wrap'
-    ? `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`
-    : `<div class="ws-chips-wrap">
-        <div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" data-chip-scroll="-1" aria-label="Scroll to previous actions" hidden><span class="material-symbols-outlined">chevron_left</span></button>
-        <button type="button" class="ws-sc-scroll ws-sc-scroll--next" data-chip-scroll="1" aria-label="Scroll to see more actions"><span class="material-symbols-outlined">chevron_right</span></button>
-      </div>`;
+  const chipsContainerHtml = `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`;
 
   /* Persistent intent-chip rail — an opt-in (`persistChips: true`) horizontal
      rail that stays docked above the input for the whole conversation, so every
      possible conversational route is always one tap away (not just on the
      welcome screen). Rendered here, revealed once the welcome is dismissed. */
-  const persistChips = opts.persistChips === true;
+  /* The persistent intent-chip rail docked above the input was itself a single-
+     line scrolling carousel, so it is retired too — intent chips only ever live
+     on the welcome as wrapped chips. Forced off regardless of caller opts. */
+  const persistChips = false;
   /* Remembered preference for the LARGE welcome cards (the "at a glance"
      scorecards block). Toggled from the three-dot menu; persisted per surface so
      a host's choice sticks across reloads. Nothing else on the welcome (owl,
@@ -1069,13 +1287,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${(scorecardsHtml || intents.length) ? `<div class="topbar-menu-divider"></div>` : ''}
-          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span></button>` : ''}
-          ${intents.length ? `<button type="button" class="topbar-menu-item" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span></button>` : ''}
+          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
+          ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
@@ -1105,7 +1323,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
     <div class="chat-input-rail">
       <div class="sc-input-row">
-        <div class="fl-input-wrap fl-input-wrap--lead">
+        <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
           <div class="fl-more-wrap">
             <button type="button" class="fl-icon-btn fl-more-btn" id="${id}-fl-more" title="Attach" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">add</span></button>
             <div class="fl-more-popover fl-more-popover--left" id="${id}-fl-pop" role="menu">
@@ -1116,9 +1334,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
               <button type="button" class="fl-more-item" data-sc="attach-example"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
             </div>
           </div>
-          <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
-          <input type="text" class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" autocomplete="off" />
-          ${buildModelSelectorHtml(id)}
+          <div class="fl-input-col">
+            <div class="fl-model-row">
+              ${buildModelSelectorHtml(id)}
+              <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
+            </div>
+            <div class="fl-input-line">
+              <input type="text" class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" autocomplete="off" />
+            </div>
+          </div>
         </div>
         <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
       </div>
@@ -1631,6 +1855,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     Array.from(messages.children).forEach((node) => {
       if (!node.classList || !node.classList.contains('sc-line')) return;
       if (node.classList.contains('sc-line-typing')) return;
+      if (node.classList.contains('sc-line-event')) return; /* system markers aren't turns */
       if (node.classList.contains('sc-line-you')) {
         cur = { you: node, replies: [] };
         turns.push(cur);
@@ -2263,10 +2488,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   /* ── Pending attachments ─────────────────────────────────────────────────
      Files picked via "+" don't post straight to the thread anymore — they first
-     appear as removable previews INSIDE the input (a circle thumbnail + label,
-     inline directly before the placeholder). They only travel into the thread
-     when the message is sent. The user can keep typing the whole time; the
-     chips just offset the caret/placeholder to the right. */
+     appear as small removable previews (a thumbnail + label) inline to the
+     right of the database selector on the same row — never inline with the
+     placeholder text below. They only travel into the thread when the message
+     is sent, and the user can keep typing the whole time with the placeholder
+     still visible. */
   const attachEl = rootEl.querySelector(`#${id}-fl-attach`);
   let attachments = [];
   let attachSeq = 0;
@@ -2279,17 +2505,6 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const wrap = attachEl?.closest('.fl-input-wrap');
     const has = attachments.length > 0;
     wrap?.classList.toggle('has-attachments', has);
-    if (input) {
-      if (has) {
-        if (input.getAttribute('placeholder')) {
-          input.dataset.phCache = input.getAttribute('placeholder');
-          input.setAttribute('placeholder', '');
-        }
-      } else if (input.dataset.phCache != null) {
-        input.setAttribute('placeholder', input.dataset.phCache);
-        delete input.dataset.phCache;
-      }
-    }
   }
   function renderAttachChip(att) {
     const thumb = att.src
@@ -2325,13 +2540,22 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (attachEl) attachEl.innerHTML = '';
     syncAttachState();
   }
-  /* Remove-button clicks on the pending chips. */
+  /* Remove-button clicks (and thumbnail clicks → full-size preview) on the
+     pending chips. */
   attachEl?.addEventListener('click', (e) => {
     const x = e.target.closest('.fl-attach-x');
-    if (!x) return;
-    const chip = x.closest('.fl-attach-chip');
-    if (chip) removeAttachment(chip.dataset.attachId);
-    input?.focus();
+    if (x) {
+      const chip = x.closest('.fl-attach-chip');
+      if (chip) removeAttachment(chip.dataset.attachId);
+      input?.focus();
+      return;
+    }
+    const thumb = e.target.closest('.fl-attach-thumb');
+    if (thumb) {
+      const chip = thumb.closest('.fl-attach-chip');
+      const rec = attachments.find((a) => a.id === chip?.dataset.attachId);
+      if (rec && rec.src) openWiseImageModal(rec.src, rec.name);
+    }
   });
 
   /* Three built-in sample thumbnails for the "Load 3 example images" demo —
@@ -2348,9 +2572,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
   const EXAMPLE_IMAGES = [
-    { name: 'front-label.png', src: sampleThumb('#25507C', '#ffffff', '\uD83C\uDFF7') },
-    { name: 'nutrition-panel.jpg', src: sampleThumb('#32A966', '#ffffff', '\uD83D\uDCCA') },
-    { name: 'ingredients.jpg', src: sampleThumb('#DC7A38', '#ffffff', '\uD83E\uDDFE') },
+    { name: 'front-label.png', src: sampleThumb('transparent', '#ffffff', '\uD83C\uDFF7') },
+    { name: 'nutrition-panel.jpg', src: sampleThumb('transparent', '#ffffff', '\uD83D\uDCCA') },
+    { name: 'ingredients.jpg', src: sampleThumb('transparent', '#ffffff', '\uD83E\uDDFE') },
   ];
   function loadExampleAttachments() {
     /* Attaching examples must NOT hide the welcome — the previews are still
@@ -2426,6 +2650,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   let chatHistory = null;
   function hideWelcome() {
     welcome?.classList.add('sc-hidden');
+    /* A clicked intent chip starts a fresh turn, so drop any half-typed copy
+       left in the composer — the placeholder returns so the input reads clean
+       while the transcript animates in. (submit() already clears before this,
+       so this only bites the chip/scorecard/sendIntent paths.) */
+    if (input && input.value) input.value = '';
     if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
   }
   function reset() {
@@ -2860,36 +3089,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }
   }
 
-  /* Intent-chip carousel — single horizontal row with the same scroll controls
-     + edge fades as the score-card rail. Only wired when chipsFlow is 'carousel'
-     (the default); 'wrap' mode uses plain flex-wrap and needs no scroll logic. */
-  if (chipsFlow === 'carousel') {
-    const rail = rootEl.querySelector(`#${id}-chips`);
-    const wrap = rail?.closest('.ws-chips-wrap');
-    if (rail && wrap) {
-      const prev = wrap.querySelector('.ws-sc-scroll--prev');
-      const next = wrap.querySelector('.ws-sc-scroll--next');
-      const updateArrows = () => {
-        const max = rail.scrollWidth - rail.clientWidth - 1;
-        const hasPrev = rail.scrollLeft > 1;
-        const hasNext = rail.scrollLeft < max && rail.scrollWidth > rail.clientWidth + 1;
-        if (prev) prev.hidden = !hasPrev;
-        if (next) next.hidden = !hasNext;
-        wrap.classList.toggle('has-prev', hasPrev);
-        wrap.classList.toggle('has-next', hasNext);
-      };
-      wrap.querySelectorAll('.ws-sc-scroll').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const dir = Number(btn.dataset.chipScroll) || 1;
-          rail.scrollBy({ left: dir * Math.max(rail.clientWidth * 0.8, 200), behavior: 'smooth' });
-        });
-      });
-      rail.addEventListener('scroll', updateArrows, { passive: true });
-      window.addEventListener('resize', updateArrows);
-      requestAnimationFrame(updateArrows);
-    }
-  }
+  /* Intent chips always render as a wrapped flex grid now — the single-line
+     scrolling carousel variant has been retired, so there is no chip scroll
+     logic to wire up here. */
 
   /* Persistent intent-chip rail — same horizontal scroll controls + edge fades
      as the welcome carousel. `refreshPersistChips` is exposed so hideWelcome can
@@ -3067,6 +3269,49 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }));
   }
 
+  /* The currently active database + the in-input trigger label that names it. */
+  let currentDbId = defaultDbItem() ? defaultDbItem().id : null;
+  const flDbLabelEl = rootEl.querySelector(`#${id}-fl-db-label`);
+
+  /* Has the conversation actually started? The very first database pick (before
+     anyone has spoken) shouldn't leave a marker — only mid-thread switches do. */
+  function conversationStarted() {
+    return !!(messages && messages.querySelector('.sc-line-you, .sc-line-wiseai'));
+  }
+
+  /* Drop a muted, highlighted marker into the transcript so a mid-conversation
+     database switch is visible and the thread keeps flowing after it. */
+  function addDbChangeNote(prev, next) {
+    if (!messages || !next) return;
+    const body = prev
+      ? `Database switched from <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
+      : `Database set to <strong>${esc(next.name)}</strong>`;
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-event" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
+      + `<span class="sc-event">`
+      + `<span class="material-symbols-outlined sc-event-ic" aria-hidden="true">swap_horiz</span>`
+      + `<span class="sc-event-text">${body}</span>`
+      + `<span class="sc-event-time">${esc(nowLabel())}</span>`
+      + `</span></div>`);
+    scrollDown();
+    refreshDockedTurns();
+  }
+
+  /* Single entry point for choosing a database: keeps every roster in sync,
+     refreshes the in-input label, notes the change in a live thread, and hands
+     the new id to the host. */
+  function selectDb(dbId) {
+    markActiveDb(dbId);
+    const next = dbItemById(dbId);
+    if (flDbLabelEl && next) flDbLabelEl.textContent = next.name;
+    const changed = dbId !== currentDbId;
+    const prev = dbItemById(currentDbId);
+    currentDbId = dbId;
+    if (changed && conversationStarted()) addDbChangeNote(prev, next);
+    const cb = opts.onDbChange || opts.onModelChange;
+    if (changed && typeof cb === 'function') cb(dbId);
+  }
+
   /* Mirror the active access-filter chip across every roster. */
   function syncDbFilterChips() {
     dbRoots().forEach((root) => root.querySelectorAll('.fl-db-chip').forEach((c) => {
@@ -3098,13 +3343,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       }
       const it = e.target.closest('.fl-db-item');
       if (!it) return;
-      markActiveDb(it.dataset.db);
       if (isPopover) {
         flModelPop.classList.remove('open');
         flModelBtn?.setAttribute('aria-expanded', 'false');
       }
-      const cb = opts.onDbChange || opts.onModelChange;
-      if (typeof cb === 'function') cb(it.dataset.db);
+      selectDb(it.dataset.db);
     });
   }
 
@@ -3317,9 +3560,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       a.click();
     } else if (action === 'share') {
       closeMore();
-      const url = window.location.href;
-      if (navigator.share) navigator.share({ title: esc(title), url }).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+      /* Let the host own the Share UX (e.g. WISEai's in-app share panel). Falls
+         back to the native share sheet / clipboard when no hook is provided. */
+      if (typeof opts.onShare === 'function') {
+        opts.onShare();
+      } else {
+        const url = window.location.href;
+        if (navigator.share) navigator.share({ title: esc(title), url }).catch(() => {});
+        else if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+      }
     } else if (action === 'close') {
       closeMore();
       /* "Close conversation" wipes the thread and restarts the chat from scratch —

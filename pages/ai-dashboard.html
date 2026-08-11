@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · AI Dashboard</title>
+  <script>
+    /* FOUC theme guard — mirror the other WISE pages so we never flash. */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) { document.documentElement.classList.add('dark'); }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════════════════ AI Dashboard (aid-) ═══════════════════════
+       A single, self-contained overview of everything wired into the AI
+       platform — tokens, rules, skills, databases, sources, models, agents,
+       tools, keys — with usage-by-user and a set of pretty inline-SVG charts.
+       Reuses the shared WISE palette + fonts from wise.css; everything
+       bespoke here is prefixed `aid-`. No external chart library. */
+
+    :root {
+      --aid-cyan: #22b8cf;
+      --aid-violet: #7c6cf0;
+      --aid-pink: #e069a8;
+      --aid-teal: #2bb59a;
+      --aid-gold: var(--ter-amber);
+      --aid-blue: var(--primary);
+      --aid-green: var(--sec-green);
+      --aid-red: var(--sec-red);
+      --aid-gap: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .aid-shell { max-width: 1320px; margin: 0 auto; padding: 26px 28px 72px; }
+
+    /* ── Top bar ── */
+    .aid-top {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .aid-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .aid-brand-badge {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      background: linear-gradient(140deg, var(--aid-violet), var(--aid-cyan));
+      box-shadow: var(--shadow-1);
+    }
+    .aid-brand-badge .material-symbols-outlined { font-size: 24px; }
+    .aid-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); }
+    .aid-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 2px 0 0; }
+    .aid-top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .aid-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; }
+    html.dark .aid-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .aid-seg-btn { border: 0; border-radius: 999px; padding: 6px 13px; height: 30px; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.76rem; font-weight: 600; transition: background .18s, color .18s; }
+    .aid-seg-btn:hover:not(.is-active) { color: var(--text); }
+    .aid-seg-btn.is-active { background: var(--primary); color: #fff; }
+
+    .aid-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
+    .aid-btn:hover { color: var(--text); background: var(--surface-2); }
+    html.dark .aid-btn:hover { background: rgba(255,255,255,0.05); }
+    .aid-btn .material-symbols-outlined { font-size: 18px; }
+
+    /* ── Cards ── */
+    .aid-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-md, 16px); box-shadow: var(--shadow-1);
+      padding: 18px;
+    }
+    .aid-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .aid-card-title { font-size: 0.92rem; font-weight: 700; color: var(--text); margin: 0; }
+    .aid-card-sub { font-size: 0.75rem; color: var(--text-muted); margin: 2px 0 0; }
+    .aid-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .aid-leg { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .aid-leg-dot { width: 9px; height: 9px; border-radius: 3px; }
+
+    /* ── KPI hero row ── */
+    .aid-kpis { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: var(--aid-gap); margin-bottom: var(--aid-gap); }
+    .aid-kpi { position: relative; overflow: hidden; }
+    .aid-kpi-top { display: flex; align-items: center; gap: 8px; }
+    .aid-kpi-ic { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+    .aid-kpi-ic .material-symbols-outlined { font-size: 18px; }
+    .aid-kpi-label { font-size: 0.74rem; font-weight: 600; color: var(--text-muted); }
+    .aid-kpi-val { font-family: 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; margin: 10px 0 4px; line-height: 1; }
+    .aid-kpi-val small { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; }
+    .aid-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 700; }
+    .aid-delta .material-symbols-outlined { font-size: 15px; }
+    .aid-delta.up { color: var(--sec-green-text); }
+    .aid-delta.down { color: var(--sec-red-text); }
+    .aid-delta.flat { color: var(--text-subtle); }
+    .aid-spark { position: absolute; right: 12px; bottom: 10px; width: 82px; height: 30px; opacity: 0.9; }
+
+    /* ── Connected-resources strip ── */
+    .aid-section-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); margin: 30px 0 12px; }
+    .aid-res-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: var(--aid-gap); }
+    .aid-res {
+      display: flex; align-items: center; gap: 12px; padding: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; box-shadow: var(--shadow-1);
+      transition: border-color .15s, transform .15s;
+    }
+    .aid-res:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+    .aid-res-ic { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+    .aid-res-ic .material-symbols-outlined { font-size: 21px; }
+    .aid-res-body { min-width: 0; }
+    .aid-res-count { font-size: 1.28rem; font-weight: 800; font-family: 'Noto Serif', Georgia, serif; line-height: 1; }
+    .aid-res-name { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
+    .aid-res-meta { font-size: 0.68rem; margin-top: 2px; display: inline-flex; align-items: center; gap: 4px; }
+    .aid-res-meta .aid-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* Tone helpers */
+    .tone-blue   { background: color-mix(in srgb, var(--aid-blue) 14%, transparent);   color: var(--aid-blue); }
+    .tone-violet { background: color-mix(in srgb, var(--aid-violet) 16%, transparent); color: var(--aid-violet); }
+    .tone-cyan   { background: color-mix(in srgb, var(--aid-cyan) 16%, transparent);   color: var(--aid-cyan); }
+    .tone-teal   { background: color-mix(in srgb, var(--aid-teal) 16%, transparent);   color: var(--aid-teal); }
+    .tone-green  { background: color-mix(in srgb, var(--aid-green) 16%, transparent);  color: var(--sec-green-text); }
+    .tone-gold   { background: color-mix(in srgb, var(--aid-gold) 22%, transparent);   color: var(--ter-amber-text); }
+    .tone-pink   { background: color-mix(in srgb, var(--aid-pink) 16%, transparent);   color: var(--aid-pink); }
+    .tone-red    { background: color-mix(in srgb, var(--aid-red) 14%, transparent);    color: var(--sec-red-text); }
+    html.dark .tone-green { color: #6fd39b; }
+    html.dark .tone-gold  { color: #e6c67d; }
+    html.dark .tone-red   { color: #ff9c96; }
+
+    /* ── Chart grid ── */
+    .aid-grid { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: var(--aid-gap); align-items: stretch; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-5 { grid-column: span 5; }
+    .col-4 { grid-column: span 4; }
+    .col-7 { grid-column: span 7; }
+    .col-12 { grid-column: span 12; }
+
+    /* SVG chart shells */
+    .aid-chart { width: 100%; display: block; }
+    .aid-axis-lbl { font-size: 10px; fill: var(--text-subtle); font-family: 'DM Sans', sans-serif; }
+    .aid-grid-line { stroke: var(--border); stroke-width: 1; }
+
+    /* Donut center label */
+    .aid-donut-wrap { display: flex; align-items: center; gap: 18px; }
+    .aid-donut-center-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.4rem; }
+    .aid-donut-legend { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
+    .aid-dl-row { display: flex; align-items: center; gap: 9px; font-size: 0.78rem; }
+    .aid-dl-name { color: var(--text-muted); font-weight: 600; }
+    .aid-dl-val { margin-left: auto; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+    /* Horizontal bars (usage by user / skills) */
+    .aid-hbars { display: flex; flex-direction: column; gap: 12px; }
+    .aid-hbar-row { display: grid; grid-template-columns: 116px 1fr 54px; align-items: center; gap: 10px; }
+    .aid-hbar-name { font-size: 0.78rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .aid-hbar-track { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    html.dark .aid-hbar-track { background: rgba(255,255,255,0.06); }
+    .aid-hbar-fill { height: 100%; border-radius: 999px; }
+    .aid-hbar-val { font-size: 0.76rem; font-weight: 700; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+    /* ── Table ── */
+    .aid-table-wrap { overflow-x: auto; }
+    table.aid-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .aid-table th { text-align: left; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); padding: 0 14px 10px; border-bottom: 1px solid var(--border); }
+    .aid-table th.num, .aid-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .aid-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .aid-table tr:last-child td { border-bottom: 0; }
+    .aid-table tr:hover td { background: var(--surface-2); }
+    html.dark .aid-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .aid-user { display: flex; align-items: center; gap: 10px; }
+    .aid-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .aid-user-name { font-weight: 600; }
+    .aid-user-role { font-size: 0.7rem; color: var(--text-muted); }
+    .aid-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+    .aid-pill .material-symbols-outlined { font-size: 13px; }
+
+    /* Utilization bar in-cell */
+    .aid-util { display: flex; align-items: center; gap: 8px; }
+    .aid-util-track { width: 70px; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    html.dark .aid-util-track { background: rgba(255,255,255,0.07); }
+    .aid-util-fill { height: 100%; border-radius: 999px; }
+
+    /* ── "Also worth tracking" (inferred gaps) ── */
+    .aid-gaps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .aid-gap-card { padding: 14px; border: 1px dashed var(--border-strong); border-radius: 13px; background: color-mix(in srgb, var(--primary) 4%, var(--surface)); }
+    .aid-gap-top { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+    .aid-gap-ic { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .aid-gap-ic .material-symbols-outlined { font-size: 17px; }
+    .aid-gap-name { font-size: 0.82rem; font-weight: 700; }
+    .aid-gap-desc { font-size: 0.74rem; line-height: 1.45; color: var(--text-muted); }
+
+    .aid-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ter-amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); margin-bottom: 16px; }
+    .aid-note .material-symbols-outlined { font-size: 19px; color: var(--ter-amber-text); flex-shrink: 0; }
+    html.dark .aid-note .material-symbols-outlined { color: #e6c67d; }
+    .aid-note-text { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); }
+    .aid-note-text b { color: var(--text); }
+
+    .aid-foot { margin-top: 34px; text-align: center; font-size: 0.74rem; color: var(--text-subtle); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1180px) {
+      .aid-kpis { grid-template-columns: repeat(3, 1fr); }
+      .aid-res-grid { grid-template-columns: repeat(4, 1fr); }
+      .col-8, .col-7 { grid-column: span 12; }
+      .col-6, .col-5, .col-4 { grid-column: span 6; }
+      .aid-gaps { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .aid-shell { padding: 18px 16px 56px; }
+      .aid-kpis { grid-template-columns: repeat(2, 1fr); }
+      .aid-res-grid { grid-template-columns: repeat(2, 1fr); }
+      .col-6, .col-5, .col-4 { grid-column: span 12; }
+      .aid-gaps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="aid-shell">
+    <!-- ══ Top bar ══ -->
+    <header class="aid-top">
+      <div class="aid-brand">
+        <span class="aid-brand-badge"><span class="material-symbols-outlined">hub</span></span>
+        <div>
+          <div class="aid-eyebrow">WISEai · Platform</div>
+          <h1 class="aid-title">AI Operations Dashboard</h1>
+        </div>
+      </div>
+      <div class="aid-top-actions">
+        <div class="aid-seg" id="aid-range" role="tablist" aria-label="Time range">
+          <button class="aid-seg-btn" data-range="24h">24h</button>
+          <button class="aid-seg-btn" data-range="7d">7d</button>
+          <button class="aid-seg-btn is-active" data-range="30d">30d</button>
+          <button class="aid-seg-btn" data-range="90d">90d</button>
+        </div>
+        <button class="aid-btn" id="aid-theme"><span class="material-symbols-outlined">dark_mode</span><span>Theme</span></button>
+        <button class="aid-btn"><span class="material-symbols-outlined">download</span><span>Export</span></button>
+      </div>
+    </header>
+
+    <!-- ══ KPI hero row ══ -->
+    <section class="aid-kpis" id="aid-kpis"></section>
+
+    <!-- ══ Connected resources ══ -->
+    <div class="aid-section-label">Connected in one place</div>
+    <section class="aid-res-grid" id="aid-resources"></section>
+
+    <!-- ══ Charts row 1 ══ -->
+    <div class="aid-section-label">Usage &amp; consumption</div>
+    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+      <div class="aid-card col-8">
+        <div class="aid-card-head">
+          <div>
+            <h3 class="aid-card-title">Token consumption</h3>
+            <p class="aid-card-sub">Input vs. output tokens over the selected range</p>
+          </div>
+          <div class="aid-legend">
+            <span class="aid-leg"><span class="aid-leg-dot" style="background:var(--aid-violet)"></span>Input</span>
+            <span class="aid-leg"><span class="aid-leg-dot" style="background:var(--aid-cyan)"></span>Output</span>
+          </div>
+        </div>
+        <div id="aid-tokens-chart"></div>
+      </div>
+
+      <div class="aid-card col-4">
+        <div class="aid-card-head">
+          <h3 class="aid-card-title">Tokens by workload</h3>
+        </div>
+        <div class="aid-donut-wrap">
+          <div id="aid-workload-donut"></div>
+          <div class="aid-donut-legend" id="aid-workload-legend"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Charts row 2 ══ -->
+    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+      <div class="aid-card col-5">
+        <div class="aid-card-head">
+          <div>
+            <h3 class="aid-card-title">Usage by user</h3>
+            <p class="aid-card-sub">Top consumers by tokens this period</p>
+          </div>
+        </div>
+        <div class="aid-hbars" id="aid-user-bars"></div>
+      </div>
+
+      <div class="aid-card col-4">
+        <div class="aid-card-head">
+          <div>
+            <h3 class="aid-card-title">Skill invocations</h3>
+            <p class="aid-card-sub">Most-called skills</p>
+          </div>
+        </div>
+        <div class="aid-hbars" id="aid-skill-bars"></div>
+      </div>
+
+      <div class="aid-card col-3" style="grid-column: span 3;">
+        <div class="aid-card-head">
+          <h3 class="aid-card-title">Data sources</h3>
+        </div>
+        <div id="aid-sources-donut" style="display:flex;justify-content:center;"></div>
+        <div class="aid-donut-legend" id="aid-sources-legend" style="margin-top:14px;"></div>
+      </div>
+    </section>
+
+    <!-- ══ Requests by model ══ -->
+    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+      <div class="aid-card col-7">
+        <div class="aid-card-head">
+          <div>
+            <h3 class="aid-card-title">Requests by model</h3>
+            <p class="aid-card-sub">Volume + share of traffic across connected models</p>
+          </div>
+        </div>
+        <div id="aid-model-chart"></div>
+      </div>
+      <div class="aid-card col-5">
+        <div class="aid-card-head">
+          <div>
+            <h3 class="aid-card-title">Rules &amp; guardrails</h3>
+            <p class="aid-card-sub">Policy checks run against requests</p>
+          </div>
+        </div>
+        <div class="aid-hbars" id="aid-rules-bars"></div>
+      </div>
+    </section>
+
+    <!-- ══ Usage-by-user table ══ -->
+    <div class="aid-section-label">Per-user activity</div>
+    <section class="aid-card col-12" style="grid-column: span 12;">
+      <div class="aid-table-wrap">
+        <table class="aid-table" id="aid-user-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th class="num">Requests</th>
+              <th class="num">Tokens</th>
+              <th>Top skill</th>
+              <th>Budget used</th>
+              <th class="num">Spend</th>
+              <th>Last active</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ Inferred gaps ══ -->
+    <div class="aid-section-label">Also worth tracking (inferred gaps)</div>
+    <div class="aid-note">
+      <span class="material-symbols-outlined">lightbulb</span>
+      <div class="aid-note-text">
+        You asked for tokens, rules, skills, databases and sources — those are covered above. A complete
+        AI-ops view usually also watches the items below. <b>Add these to close the loop on cost, quality,
+        safety and reliability.</b>
+      </div>
+    </div>
+    <section class="aid-gaps" id="aid-gaps"></section>
+
+    <div class="aid-foot">
+      Demo data · WISEai AI Operations Dashboard · figures are illustrative and refresh with the selected range.
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+    var $ = function (s, r) { return (r || document).querySelector(s); };
+    var NS = 'http://www.w3.org/2000/svg';
+
+    /* ── Palette pulled from CSS custom props so charts follow the theme ── */
+    function cssvar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    var C = {};
+    function refreshColors() {
+      C = {
+        violet: cssvar('--aid-violet') || '#7c6cf0',
+        cyan: cssvar('--aid-cyan') || '#22b8cf',
+        pink: cssvar('--aid-pink') || '#e069a8',
+        teal: cssvar('--aid-teal') || '#2bb59a',
+        gold: cssvar('--ter-amber') || '#FFC434',
+        blue: cssvar('--primary') || '#25507C',
+        green: cssvar('--sec-green') || '#32A966',
+        red: cssvar('--sec-red') || '#DC3038',
+        grid: cssvar('--border') || 'rgba(0,0,0,.08)',
+        text: cssvar('--text-subtle') || '#888',
+      };
+    }
+    refreshColors();
+
+    var fmt = {
+      compact: function (n) {
+        if (n >= 1e9) return (n / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+        return String(n);
+      },
+      money: function (n) { return '$' + n.toLocaleString('en-US'); },
+    };
+
+    function el(tag, attrs, kids) {
+      var e = document.createElementNS(NS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      (kids || []).forEach(function (c) { e.appendChild(c); });
+      return e;
+    }
+
+    /* ════════════════════ DATA (varies a little per range) ════════════════════ */
+    var RANGE = '30d';
+    var RANGE_POINTS = { '24h': 24, '7d': 7, '30d': 30, '90d': 26 };
+    var RANGE_SCALE = { '24h': 0.04, '7d': 0.24, '30d': 1, '90d': 2.9 };
+
+    function seedSeries(points, base, variance, seed) {
+      var out = [], v = base;
+      for (var i = 0; i < points; i++) {
+        var s = Math.sin((i + seed) * 0.7) * variance * 0.5;
+        var n = ((Math.sin((i + seed) * 12.9898) * 43758.5453) % 1) * variance;
+        v = Math.max(base * 0.35, base + s + (n - variance / 2));
+        out.push(Math.round(v));
+      }
+      return out;
+    }
+
+    function kpis() {
+      var s = RANGE_SCALE[RANGE];
+      return [
+        { label: 'Tokens used', ic: 'toll', tone: 'tone-violet', val: fmt.compact(Math.round(48.2e6 * s)), delta: 12, spark: 'violet' },
+        { label: 'Requests', ic: 'send', tone: 'tone-cyan', val: fmt.compact(Math.round(1.28e6 * s)), delta: 5, spark: 'cyan' },
+        { label: 'Active users', ic: 'group', tone: 'tone-blue', val: String(Math.round(342 * Math.min(1, 0.55 + s * 0.45))), delta: 8, spark: 'blue' },
+        { label: 'Avg latency', ic: 'timer', tone: 'tone-teal', val: '0.82<small>s</small>', delta: -6, good: 'down', spark: 'teal' },
+        { label: 'Est. spend', ic: 'payments', tone: 'tone-gold', val: fmt.money(Math.round(6840 * s)), delta: 9, spark: 'gold' },
+        { label: 'Error rate', ic: 'error', tone: 'tone-red', val: '0.7<small>%</small>', delta: -0.2, unit: 'pp', good: 'down', spark: 'red' },
+      ];
+    }
+
+    var RESOURCES = [
+      { ic: 'psychology', tone: 'tone-violet', count: 24, name: 'Skills', meta: '18 active', dot: 'var(--sec-green)' },
+      { ic: 'gavel', tone: 'tone-blue', count: 57, name: 'Rules', meta: 'Guardrails on', dot: 'var(--sec-green)' },
+      { ic: 'database', tone: 'tone-cyan', count: 6, name: 'Databases', meta: 'All healthy', dot: 'var(--sec-green)' },
+      { ic: 'cloud_sync', tone: 'tone-teal', count: 38, name: 'Sources', meta: '2 stale', dot: 'var(--ter-amber)' },
+      { ic: 'network_intelligence', tone: 'tone-pink', count: 9, name: 'Models', meta: '3 providers', dot: 'var(--sec-green)' },
+      { ic: 'smart_toy', tone: 'tone-gold', count: 12, name: 'Agents', meta: '10 live', dot: 'var(--sec-green)' },
+      { ic: 'build', tone: 'tone-teal', count: 41, name: 'Tools / functions', meta: 'Callable', dot: 'var(--sec-green)' },
+      { ic: 'key', tone: 'tone-blue', count: 15, name: 'API keys', meta: '2 near limit', dot: 'var(--ter-amber)' },
+      { ic: 'extension', tone: 'tone-violet', count: 22, name: 'Integrations', meta: 'Connected', dot: 'var(--sec-green)' },
+      { ic: 'article', tone: 'tone-cyan', count: '84.2K', name: 'Vector docs', meta: 'Indexed', dot: 'var(--sec-green)' },
+      { ic: 'terminal', tone: 'tone-pink', count: 63, name: 'Prompts', meta: 'Versioned', dot: 'var(--sec-green)' },
+      { ic: 'toll', tone: 'tone-gold', count: '80%', name: 'Token budget', meta: '48.2M / 60M', dot: 'var(--ter-amber)' },
+    ];
+
+    var WORKLOADS = [
+      { name: 'Chat / assistant', val: 42, color: 'violet' },
+      { name: 'RAG retrieval', val: 24, color: 'cyan' },
+      { name: 'Agents', val: 18, color: 'teal' },
+      { name: 'Batch / jobs', val: 10, color: 'gold' },
+      { name: 'API (external)', val: 6, color: 'pink' },
+    ];
+
+    var SOURCES = [
+      { name: 'Databases', val: 6, color: 'cyan' },
+      { name: 'REST APIs', val: 14, color: 'violet' },
+      { name: 'Files / docs', val: 11, color: 'teal' },
+      { name: 'Web crawl', val: 5, color: 'gold' },
+      { name: 'Streams', val: 2, color: 'pink' },
+    ];
+
+    var USERS = [
+      { name: 'Arthur Krupsky', role: 'Product Intelligence Lead', req: 184200, tokens: 9.1e6, skill: 'RAG Search', budget: 78, spend: 1284, last: '2m ago', color: 'violet' },
+      { name: 'Dana Owusu', role: 'Data Scientist', req: 142800, tokens: 7.4e6, skill: 'Code Interp.', budget: 64, spend: 1042, last: '11m ago', color: 'cyan' },
+      { name: 'Miguel Santos', role: 'Compliance Analyst', req: 98400, tokens: 5.2e6, skill: 'Rules Check', budget: 51, spend: 733, last: '38m ago', color: 'teal' },
+      { name: 'Priya Nair', role: 'Ops Engineer', req: 76100, tokens: 3.9e6, skill: 'Agents', budget: 44, spend: 561, last: '1h ago', color: 'gold' },
+      { name: 'Lena Fischer', role: 'Content Strategist', req: 51900, tokens: 2.6e6, skill: 'Summarize', budget: 29, spend: 372, last: '3h ago', color: 'pink' },
+      { name: 'Omar Haddad', role: 'Support Lead', req: 38700, tokens: 1.8e6, skill: 'Q&A Bot', budget: 22, spend: 254, last: '5h ago', color: 'blue' },
+    ];
+
+    var SKILLS = [
+      { name: 'RAG Search', val: 312000, color: 'violet' },
+      { name: 'Summarize', val: 241000, color: 'cyan' },
+      { name: 'Code Interpreter', val: 198000, color: 'teal' },
+      { name: 'Rules Check', val: 156000, color: 'gold' },
+      { name: 'Web Browse', val: 121000, color: 'pink' },
+      { name: 'SQL Query', val: 94000, color: 'blue' },
+    ];
+
+    var MODELS = [
+      { name: 'gpt-4o', val: 420000, color: 'violet' },
+      { name: 'claude-sonnet', val: 356000, color: 'cyan' },
+      { name: 'gpt-4o-mini', val: 268000, color: 'teal' },
+      { name: 'llama-3-70b', val: 142000, color: 'gold' },
+      { name: 'embed-3-large', val: 94000, color: 'pink' },
+    ];
+
+    var RULES = [
+      { name: 'PII redaction', val: 92, color: 'blue' },
+      { name: 'Toxicity filter', val: 88, color: 'teal' },
+      { name: 'Prompt-injection', val: 71, color: 'violet' },
+      { name: 'Grounding check', val: 64, color: 'cyan' },
+      { name: 'Rate limiting', val: 55, color: 'gold' },
+    ];
+
+    var GAPS = [
+      { ic: 'savings', tone: 'tone-gold', name: 'Cost per user / team', desc: 'Attribute spend by user, team, and project to catch runaway usage before the invoice.' },
+      { ic: 'speed', tone: 'tone-teal', name: 'p95 / p99 latency', desc: 'Averages hide tail latency. Track percentiles per model + time-to-first-token.' },
+      { ic: 'bolt', tone: 'tone-cyan', name: 'Cache hit rate', desc: 'Prompt / embedding cache hits directly cut tokens and cost — surface the ratio.' },
+      { ic: 'fact_check', tone: 'tone-violet', name: 'Answer quality / evals', desc: 'Groundedness, hallucination rate, and eval scores so quality is measured, not assumed.' },
+      { ic: 'gpp_maybe', tone: 'tone-red', name: 'Guardrail violations', desc: 'Count + trend of blocked prompts, jailbreak attempts, and policy breaches.' },
+      { ic: 'schedule', tone: 'tone-blue', name: 'Data freshness / drift', desc: 'Last-sync age per source and index staleness so RAG never answers from stale data.' },
+      { ic: 'speed_camera', tone: 'tone-pink', name: 'Rate-limit headroom', desc: 'Per-key quota consumed vs. limit, with alerts before you hit 429s.' },
+      { ic: 'monitoring', tone: 'tone-green', name: 'Uptime / SLO', desc: 'Availability per model + provider and error budget burn for reliability targets.' },
+    ];
+
+    /* ════════════════════ RENDERERS ════════════════════ */
+
+    function renderKpis() {
+      var host = $('#aid-kpis');
+      host.innerHTML = '';
+      kpis().forEach(function (k, i) {
+        var good = k.good || 'up';
+        var dir = k.delta > 0 ? 'up' : (k.delta < 0 ? 'down' : 'flat');
+        var positive = (dir === good);
+        var deltaCls = dir === 'flat' ? 'flat' : (positive ? 'up' : 'down');
+        var arrow = dir === 'up' ? 'trending_up' : (dir === 'down' ? 'trending_down' : 'trending_flat');
+        var card = document.createElement('div');
+        card.className = 'aid-card aid-kpi';
+        card.innerHTML =
+          '<div class="aid-kpi-top"><span class="aid-kpi-ic ' + k.tone + '"><span class="material-symbols-outlined">' + k.ic + '</span></span>' +
+          '<span class="aid-kpi-label">' + k.label + '</span></div>' +
+          '<div class="aid-kpi-val">' + k.val + '</div>' +
+          '<span class="aid-delta ' + deltaCls + '"><span class="material-symbols-outlined">' + arrow + '</span>' +
+          Math.abs(k.delta) + (k.unit || '%') + '</span>';
+        var spark = seedSeries(16, 40, 26, i * 3 + 2);
+        card.appendChild(sparkline(spark, C[k.spark] || C.violet));
+        host.appendChild(card);
+      });
+    }
+
+    function sparkline(data, color) {
+      var w = 82, h = 30, max = Math.max.apply(null, data), min = Math.min.apply(null, data);
+      var rng = (max - min) || 1;
+      var pts = data.map(function (v, i) {
+        return [(i / (data.length - 1)) * w, h - ((v - min) / rng) * (h - 4) - 2];
+      });
+      var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+      var svg = el('svg', { class: 'aid-spark', viewBox: '0 0 ' + w + ' ' + h, preserveAspectRatio: 'none' });
+      svg.appendChild(el('path', { d: d, fill: 'none', stroke: color, 'stroke-width': '1.6', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: '0.85' }));
+      return svg;
+    }
+
+    function renderResources() {
+      var host = $('#aid-resources');
+      host.innerHTML = '';
+      RESOURCES.forEach(function (r) {
+        var d = document.createElement('div');
+        d.className = 'aid-res';
+        d.innerHTML =
+          '<span class="aid-res-ic ' + r.tone + '"><span class="material-symbols-outlined">' + r.ic + '</span></span>' +
+          '<div class="aid-res-body">' +
+          '<div class="aid-res-count">' + r.count + '</div>' +
+          '<div class="aid-res-name">' + r.name + '</div>' +
+          '<div class="aid-res-meta" style="color:var(--text-subtle)"><span class="aid-dot" style="background:' + r.dot + '"></span>' + r.meta + '</div>' +
+          '</div>';
+        host.appendChild(d);
+      });
+    }
+
+    /* Stacked area line chart: input + output tokens */
+    function renderTokens() {
+      var host = $('#aid-tokens-chart');
+      host.innerHTML = '';
+      var pts = RANGE_POINTS[RANGE], s = RANGE_SCALE[RANGE];
+      var input = seedSeries(pts, 1.05e6 * s / (pts / 30 || 1), 5e5 * s / (pts / 30 || 1), 3);
+      var output = seedSeries(pts, 0.62e6 * s / (pts / 30 || 1), 3e5 * s / (pts / 30 || 1), 9);
+      var W = 720, H = 260, padL = 46, padR = 12, padB = 26, padT = 12;
+      var iw = W - padL - padR, ih = H - padT - padB;
+      var totals = input.map(function (v, i) { return v + output[i]; });
+      var max = Math.max.apply(null, totals) * 1.1;
+      var x = function (i) { return padL + (i / (pts - 1)) * iw; };
+      var y = function (v) { return padT + ih - (v / max) * ih; };
+
+      var svg = el('svg', { class: 'aid-chart', viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none' });
+
+      /* gridlines + y labels */
+      for (var g = 0; g <= 4; g++) {
+        var gy = padT + (ih / 4) * g;
+        svg.appendChild(el('line', { x1: padL, y1: gy, x2: W - padR, y2: gy, class: 'aid-grid-line' }));
+        var lbl = el('text', { x: padL - 8, y: gy + 3, 'text-anchor': 'end', class: 'aid-axis-lbl' });
+        lbl.textContent = fmt.compact(Math.round(max - (max / 4) * g));
+        svg.appendChild(lbl);
+      }
+
+      function areaPath(top, bottom) {
+        var d = 'M' + x(0) + ' ' + y(top[0]);
+        for (var i = 1; i < pts; i++) d += ' L' + x(i) + ' ' + y(top[i]);
+        for (var j = pts - 1; j >= 0; j--) d += ' L' + x(j) + ' ' + y(bottom[j]);
+        return d + ' Z';
+      }
+      var zero = input.map(function () { return 0; });
+      var stacked = input.map(function (v, i) { return v + output[i]; });
+
+      var defs = el('defs', {});
+      defs.appendChild(gradient('aid-g-out', C.cyan));
+      defs.appendChild(gradient('aid-g-in', C.violet));
+      svg.appendChild(defs);
+
+      svg.appendChild(el('path', { d: areaPath(stacked, input), fill: 'url(#aid-g-out)', opacity: '0.55' }));
+      svg.appendChild(el('path', { d: areaPath(input, zero), fill: 'url(#aid-g-in)', opacity: '0.65' }));
+
+      svg.appendChild(linePath(input, x, y, C.violet));
+      svg.appendChild(linePath(stacked, x, y, C.cyan));
+
+      /* x labels (sparse) */
+      var step = Math.ceil(pts / 6);
+      for (var xi = 0; xi < pts; xi += step) {
+        var t = el('text', { x: x(xi), y: H - 8, 'text-anchor': 'middle', class: 'aid-axis-lbl' });
+        t.textContent = xLabel(xi, pts);
+        svg.appendChild(t);
+      }
+      host.appendChild(svg);
+    }
+
+    function xLabel(i, pts) {
+      if (RANGE === '24h') return (i) + 'h';
+      var daysAgo = Math.round((1 - i / (pts - 1)) * (RANGE === '90d' ? 90 : (RANGE === '7d' ? 7 : 30)));
+      return daysAgo === 0 ? 'now' : '-' + daysAgo + 'd';
+    }
+
+    function gradient(id, color) {
+      var lg = el('linearGradient', { id: id, x1: '0', y1: '0', x2: '0', y2: '1' });
+      lg.appendChild(el('stop', { offset: '0%', 'stop-color': color, 'stop-opacity': '0.55' }));
+      lg.appendChild(el('stop', { offset: '100%', 'stop-color': color, 'stop-opacity': '0.02' }));
+      return lg;
+    }
+
+    function linePath(data, x, y, color) {
+      var d = data.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); }).join(' ');
+      return el('path', { d: d, fill: 'none', stroke: color, 'stroke-width': '2', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    }
+
+    /* Donut chart */
+    function donut(segments, size, thickness, centerTop, centerBottom) {
+      size = size || 150; thickness = thickness || 26;
+      var r = (size - thickness) / 2, cx = size / 2, cy = size / 2, circ = 2 * Math.PI * r;
+      var total = segments.reduce(function (a, s) { return a + s.val; }, 0);
+      var svg = el('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size, style: 'transform:rotate(-90deg)' });
+      svg.appendChild(el('circle', { cx: cx, cy: cy, r: r, fill: 'none', stroke: C.grid, 'stroke-width': thickness, opacity: '0.4' }));
+      var offset = 0;
+      segments.forEach(function (s) {
+        var frac = s.val / total;
+        var len = frac * circ;
+        svg.appendChild(el('circle', {
+          cx: cx, cy: cy, r: r, fill: 'none', stroke: C[s.color] || C.violet,
+          'stroke-width': thickness, 'stroke-dasharray': len + ' ' + (circ - len),
+          'stroke-dashoffset': -offset, 'stroke-linecap': 'butt',
+        }));
+        offset += len;
+      });
+      var wrap = document.createElement('div');
+      wrap.style.position = 'relative';
+      wrap.style.width = size + 'px';
+      wrap.style.height = size + 'px';
+      wrap.appendChild(svg);
+      if (centerTop != null) {
+        var c = document.createElement('div');
+        c.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;';
+        c.innerHTML = '<div class="aid-donut-center-num">' + centerTop + '</div>' +
+          (centerBottom ? '<div style="font-size:.66rem;color:var(--text-muted);font-weight:600;">' + centerBottom + '</div>' : '');
+        wrap.appendChild(c);
+      }
+      return wrap;
+    }
+
+    function donutLegend(host, segments, unit) {
+      host.innerHTML = '';
+      var total = segments.reduce(function (a, s) { return a + s.val; }, 0);
+      segments.forEach(function (s) {
+        var row = document.createElement('div');
+        row.className = 'aid-dl-row';
+        var pct = Math.round((s.val / total) * 100);
+        row.innerHTML =
+          '<span class="aid-leg-dot" style="background:' + (C[s.color] || C.violet) + '"></span>' +
+          '<span class="aid-dl-name">' + s.name + '</span>' +
+          '<span class="aid-dl-val">' + (unit === 'pct' ? pct + '%' : s.val) + '</span>';
+        host.appendChild(row);
+      });
+    }
+
+    function renderWorkloads() {
+      var host = $('#aid-workload-donut');
+      host.innerHTML = '';
+      host.appendChild(donut(WORKLOADS, 158, 28, fmt.compact(Math.round(48.2e6 * RANGE_SCALE[RANGE])), 'tokens'));
+      donutLegend($('#aid-workload-legend'), WORKLOADS, 'pct');
+    }
+
+    function renderSources() {
+      var host = $('#aid-sources-donut');
+      host.innerHTML = '';
+      var total = SOURCES.reduce(function (a, s) { return a + s.val; }, 0);
+      host.appendChild(donut(SOURCES, 150, 24, total, 'sources'));
+      donutLegend($('#aid-sources-legend'), SOURCES, 'count');
+    }
+
+    /* Horizontal bars */
+    function hbars(host, items, formatter) {
+      host.innerHTML = '';
+      var max = Math.max.apply(null, items.map(function (i) { return i.val; }));
+      items.forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'aid-hbar-row';
+        var pct = (it.val / max) * 100;
+        row.innerHTML =
+          '<span class="aid-hbar-name">' + it.name + '</span>' +
+          '<span class="aid-hbar-track"><span class="aid-hbar-fill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,' + (C[it.color] || C.violet) + ',' + (C[it.color] || C.violet) + 'cc)"></span></span>' +
+          '<span class="aid-hbar-val">' + formatter(it.val) + '</span>';
+        host.appendChild(row);
+      });
+    }
+
+    /* Vertical bar chart (requests by model) */
+    function renderModels() {
+      var host = $('#aid-model-chart');
+      host.innerHTML = '';
+      var s = RANGE_SCALE[RANGE];
+      var data = MODELS.map(function (m) { return { name: m.name, val: Math.round(m.val * s), color: m.color }; });
+      var W = 640, H = 240, padL = 44, padR = 10, padB = 34, padT = 10;
+      var iw = W - padL - padR, ih = H - padT - padB;
+      var max = Math.max.apply(null, data.map(function (d) { return d.val; })) * 1.15;
+      var svg = el('svg', { class: 'aid-chart', viewBox: '0 0 ' + W + ' ' + H });
+      for (var g = 0; g <= 4; g++) {
+        var gy = padT + (ih / 4) * g;
+        svg.appendChild(el('line', { x1: padL, y1: gy, x2: W - padR, y2: gy, class: 'aid-grid-line' }));
+        var lbl = el('text', { x: padL - 8, y: gy + 3, 'text-anchor': 'end', class: 'aid-axis-lbl' });
+        lbl.textContent = fmt.compact(Math.round(max - (max / 4) * g));
+        svg.appendChild(lbl);
+      }
+      var bw = iw / data.length;
+      data.forEach(function (d, i) {
+        var bh = (d.val / max) * ih;
+        var bx = padL + i * bw + bw * 0.18;
+        var bwidth = bw * 0.64;
+        var by = padT + ih - bh;
+        var defsId = 'aid-bar-' + i;
+        var defs = el('defs', {});
+        var lg = el('linearGradient', { id: defsId, x1: '0', y1: '0', x2: '0', y2: '1' });
+        lg.appendChild(el('stop', { offset: '0%', 'stop-color': C[d.color] || C.violet, 'stop-opacity': '1' }));
+        lg.appendChild(el('stop', { offset: '100%', 'stop-color': C[d.color] || C.violet, 'stop-opacity': '0.55' }));
+        defs.appendChild(lg);
+        svg.appendChild(defs);
+        svg.appendChild(el('rect', { x: bx, y: by, width: bwidth, height: bh, rx: 6, fill: 'url(#' + defsId + ')' }));
+        var vlbl = el('text', { x: bx + bwidth / 2, y: by - 6, 'text-anchor': 'middle', class: 'aid-axis-lbl' });
+        vlbl.textContent = fmt.compact(d.val);
+        svg.appendChild(vlbl);
+        var nlbl = el('text', { x: bx + bwidth / 2, y: H - 12, 'text-anchor': 'middle', class: 'aid-axis-lbl' });
+        nlbl.textContent = d.name;
+        svg.appendChild(nlbl);
+      });
+      host.appendChild(svg);
+    }
+
+    function avColor(c) { return C[c] || C.violet; }
+    function initials(name) { return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+
+    function renderUserTable() {
+      var tb = $('#aid-user-table tbody');
+      tb.innerHTML = '';
+      var s = RANGE_SCALE[RANGE];
+      USERS.forEach(function (u) {
+        var tr = document.createElement('tr');
+        var budgetColor = u.budget > 75 ? C.red : (u.budget > 55 ? C.gold : C.green);
+        tr.innerHTML =
+          '<td><div class="aid-user"><span class="aid-av" style="background:' + avColor(u.color) + '">' + initials(u.name) + '</span>' +
+          '<div><div class="aid-user-name">' + u.name + '</div><div class="aid-user-role">' + u.role + '</div></div></div></td>' +
+          '<td class="num">' + fmt.compact(Math.round(u.req * s)) + '</td>' +
+          '<td class="num">' + fmt.compact(Math.round(u.tokens * s)) + '</td>' +
+          '<td><span class="aid-pill" style="background:color-mix(in srgb,' + avColor(u.color) + ' 16%,transparent);color:' + avColor(u.color) + '">' + u.skill + '</span></td>' +
+          '<td><div class="aid-util"><span class="aid-util-track"><span class="aid-util-fill" style="width:' + u.budget + '%;background:' + budgetColor + '"></span></span><span style="font-size:.72rem;color:var(--text-muted);font-weight:600">' + u.budget + '%</span></div></td>' +
+          '<td class="num">' + fmt.money(Math.round(u.spend * s)) + '</td>' +
+          '<td style="color:var(--text-muted)">' + u.last + '</td>';
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderGaps() {
+      var host = $('#aid-gaps');
+      host.innerHTML = '';
+      GAPS.forEach(function (g) {
+        var d = document.createElement('div');
+        d.className = 'aid-gap-card';
+        d.innerHTML =
+          '<div class="aid-gap-top"><span class="aid-gap-ic ' + g.tone + '"><span class="material-symbols-outlined">' + g.ic + '</span></span>' +
+          '<span class="aid-gap-name">' + g.name + '</span></div>' +
+          '<div class="aid-gap-desc">' + g.desc + '</div>';
+        host.appendChild(d);
+      });
+    }
+
+    function renderAll() {
+      refreshColors();
+      renderKpis();
+      renderResources();
+      renderTokens();
+      renderWorkloads();
+      hbars($('#aid-user-bars'), USERS.map(function (u) { return { name: u.name.split(' ')[0], val: Math.round(u.tokens * RANGE_SCALE[RANGE]), color: u.color }; }), fmt.compact);
+      hbars($('#aid-skill-bars'), SKILLS.map(function (m) { return { name: m.name, val: Math.round(m.val * RANGE_SCALE[RANGE]), color: m.color }; }), fmt.compact);
+      renderSources();
+      renderModels();
+      hbars($('#aid-rules-bars'), RULES, function (v) { return v + 'K'; });
+      renderUserTable();
+      renderGaps();
+    }
+
+    /* ── Range switch ── */
+    $('#aid-range').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-range]');
+      if (!btn) return;
+      $('#aid-range').querySelectorAll('.aid-seg-btn').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      RANGE = btn.dataset.range;
+      renderAll();
+    });
+
+    /* ── Theme toggle (persists like the rest of WISE) ── */
+    $('#aid-theme').addEventListener('click', function () {
+      var dark = !document.documentElement.classList.contains('dark');
+      document.documentElement.classList.toggle('dark', dark);
+      try { localStorage.setItem('wise-theme', dark ? 'dark' : 'light'); } catch (e) {}
+      renderAll();
+    });
+
+    renderAll();
+    window.addEventListener('resize', function () { /* SVGs are responsive via viewBox; no-op */ });
+  })();
+  </script>
+  <!-- App-wide click-to-sort headers on every data table. -->
+  <script src="../js/sortable-tables.js"></script>
+</body>
+</html>

@@ -42,7 +42,7 @@
     /* Zero the shell's default 8px top margin + bottom padding on #modules-row so
        the Marketing Assets Module and the WISEai chat dock line up flush with the
        full-height navigation rail (matches verification / gras-verification). */
-    body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
+    body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; }
 
     /* ---------- Head (serif title + subtitle + sort) ---------- */
     .ma-head { padding: 26px 40px 0; }
@@ -372,7 +372,7 @@
     }
   </style>
 </head>
-<body data-nav-id="marketing-assets" data-default-dock="left" data-default-nav-collapsed="1">
+<body data-nav-id="marketing-assets" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">

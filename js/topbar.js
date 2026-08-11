@@ -255,9 +255,11 @@ export function positionPopoverInMenuPanel(pop, anchor) {
   const panelInner = anchor.closest('#menu-panel .menu-inner') || anchor.closest('#menu-panel');
   const anchorRect = anchor.getBoundingClientRect();
   const panelRect = panelInner?.getBoundingClientRect() || anchorRect;
-  const maxW = Math.max(200, Math.round((panelRect.width || 240) - 16));
-  pop.style.width = maxW + 'px';
-  pop.style.maxWidth = maxW + 'px';
+  /* Do NOT size the popover to the nav panel's width. The panel width varies
+     per page and per state (expanded nav vs 66px icon rail), which used to make
+     the Appearance panel a different width on every navigation module. Leave the
+     width to the shared .wise-popover CSS (min 240 / max 320) so the panel is
+     identical everywhere — and identical to the top-bar-anchored popover too. */
   pop.classList.add('menu-footer-popover');
 
   let ph = pop.offsetHeight;
@@ -266,7 +268,7 @@ export function positionPopoverInMenuPanel(pop, anchor) {
     ph = pop.offsetHeight;
     pop.style.visibility = '';
   }
-  const pw = pop.offsetWidth || maxW;
+  const pw = pop.offsetWidth || 240;
 
   let left = panelRect.left + 8;
   let top = anchorRect.top - ph - 8;

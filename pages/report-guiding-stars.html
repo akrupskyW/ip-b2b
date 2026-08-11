@@ -212,7 +212,9 @@
     .gs-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
     /* ── Data table ── */
-    .gs-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    /* overflow is left visible so the .gs-thead can stick to the scrolling
+       .gs-body; the head + last row carry the rounded corners instead. */
+    .gs-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; }
     .gs-thead, .gs-trow {
       display: grid; align-items: center; gap: 12px; padding: 11px 16px;
       grid-template-columns: 104px minmax(0, 2.2fr) 78px minmax(0, 2.5fr) 132px;
@@ -221,12 +223,13 @@
     .gs-trow > * { align-self: center; }
     .gs-thead {
       background: var(--surface-2); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 5; border-radius: 12px 12px 0 0;
     }
     html.dark .gs-thead { background: rgba(255,255,255,0.03); }
     /* Header cells — match the app-wide sortable header style (srt-* arrow). */
     .gs-th { display: inline-flex; align-items: center; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
     .gs-trow { border-bottom: 1px solid var(--border); transition: background .14s ease; }
-    .gs-trow:last-child { border-bottom: 0; }
+    .gs-trow:last-child { border-bottom: 0; border-radius: 0 0 12px 12px; }
     .gs-trow:hover { background: var(--surface-2); }
     html.dark .gs-trow:hover { background: rgba(255,255,255,0.03); }
     .gs-trow.gs-hidden { display: none; }
@@ -402,12 +405,27 @@
           <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
         </div>
 
-        <div class="chat-input-rail shrink-0">
-          <div style="display:flex;gap:8px;align-items:flex-end">
-            <div class="fl-input-wrap" style="flex:1">
-              <input id="chat-input" type="text" placeholder="Ask WISEai about the action plan…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();gsSend();}" />
+        <div class="chat-input-rail shrink-0" data-wise-composer>
+          <div class="sc-input-row">
+            <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
+              <div class="fl-more-wrap">
+                <button type="button" class="fl-icon-btn fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">add</span></button>
+                <div class="fl-more-popover fl-more-popover--left" role="menu">
+                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
+                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
+                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
+                </div>
+              </div>
+              <div class="fl-input-col">
+                <div class="fl-model-row">
+                  <div class="fl-attachments"></div>
+                </div>
+                <div class="fl-input-line">
+                  <input id="chat-input" type="text" placeholder="Ask WISEai about the action plan…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();gsSend();}" />
+                </div>
+              </div>
             </div>
-            <button type="button" id="gs-send" onclick="gsSend()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Send">
+            <button type="button" id="gs-send" class="sc-send" onclick="gsSend()" title="Send">
               <span class="material-symbols-outlined">send</span>
             </button>
           </div>
@@ -555,6 +573,11 @@
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
     import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+    import { wireChatComposer } from '../js/wiseai-chat.js';
+
+    /* Bring the hand-rolled action-plan chat input up to the canonical WISEai
+       composer: database selector + "+" attach popover, styled + wired identically. */
+    document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail));
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,

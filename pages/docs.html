@@ -27,7 +27,7 @@
     /* Docs browser — rendered by js/docs-flow.js. */
     body[data-nav-id="docs"] #agent-main-header { display: none; }
     body[data-nav-id="docs"] .agent-main-scroll { padding: 0; }
-    body[data-nav-id="docs"] #modules-row { margin-top: 0; padding-bottom: var(--modules-bottom-pad); margin-bottom: calc(-1 * var(--modules-bottom-pad)); }
+    body[data-nav-id="docs"] #modules-row { margin-top: 0; }
 
     .dc-wrap { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 0; min-height: 100%; }
     .dc-sidebar { border-right: 1px solid var(--border); padding: 24px 16px 40px; }
@@ -71,7 +71,7 @@
     }
   </style>
 </head>
-<body data-nav-id="docs" data-default-dock="left" data-default-nav-collapsed="1">
+<body data-nav-id="docs" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">

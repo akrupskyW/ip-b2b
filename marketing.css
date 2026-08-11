@@ -24,8 +24,8 @@
   --text: #111827;
   --text-muted: #444B55;
   --text-subtle: #474E58;
-  --border: rgba(17,24,39,0.08);
-  --border-strong: rgba(17,24,39,0.14);
+  --border: rgba(37, 80, 124, 0.16);
+  --border-strong: rgba(37, 80, 124, 0.28);
 
   --primary: #25507C;
   --primary-10: rgba(37, 80, 124, 0.10);
@@ -65,8 +65,8 @@ html.dark {
   --text: #F3F4F6;
   --text-muted: #BCC6D3;
   --text-subtle: #B1BAC7;
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.14);
+  --border: rgba(139, 159, 175, 0.18);
+  --border-strong: rgba(139, 159, 175, 0.30);
   --primary-soft: rgba(37, 80, 124, 0.18);
   --primary-bright: #8B9FAF;
 

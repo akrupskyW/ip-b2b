@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<!--
+  WISE · Ingredient Browser (Studio · WISEai)
+
+  A browsable, filterable registry of every ingredient in the WISEcode
+  database. Sits under the WISEai group in the workspace nav, beside Chat and
+  Library. Uses the exact same module shell as library.html
+  (`<body data-nav-id="ingredients">` + js/agent-overview.js) and reuses the
+  Product Portfolio module's design language — the canonical app search with a
+  funnel filter popover inside it, the score cards, and the grid table — copied
+  here and prefixed `ib-` so nothing collides with shell/module styles.
+-->
+<html lang="en" class="dark">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Ingredient Browser</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint so the page
+       never flashes dark→light (or vice versa). */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ===================================================================
+       Ingredient Browser — everything reuses the shared design tokens
+       (--surface, --primary, --sec-red …) from wise.css and is prefixed
+       `ib-` so it can't collide with shell/module styles. The search, filter
+       popover, score cards and table are lifted verbatim from the Product
+       Portfolio module (.pf-search / .pf-filter-pop / .pf-stat / .pf-table).
+    =================================================================== */
+
+    .ib-wrap {
+      display: flex; flex-direction: column;
+      padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px;
+    }
+
+    /* ---- Masthead ---- */
+    .ib-masthead {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+    }
+    .ib-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .ib-title-main {
+      font-family: var(--module-title-family, 'Noto Serif', Georgia, serif);
+      margin: 0;
+      font-size: var(--module-title-size, 1.35rem);
+      font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em; line-height: 1.15; color: var(--text);
+    }
+    .ib-count-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 11px 3px 9px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.01em;
+      background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary);
+    }
+    html.dark .ib-count-chip { background: rgba(96,165,250,0.16); color: #93C5FD; }
+    .ib-count-chip .material-symbols-outlined { font-size: 15px !important; }
+    .ib-sub { font-size: 0.9375rem; color: var(--text-muted); margin: 6px 0 0; max-width: 62ch; }
+
+    /* ---- Search — the canonical app search, copied verbatim from the
+       Product Portfolio module (.pf-search-inline / .pf-search): surface-2
+       fill, strong border, primary focus ring, italic placeholder, leading
+       search glyph on the left and a funnel filter button floated inside the
+       right edge (no separate Search button — the app has never had one). ---- */
+    .ib-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 22px; }
+    .ib-search-inline {
+      position: relative; display: inline-flex; align-items: center;
+      flex: 1 1 auto; min-width: 240px;
+    }
+    .ib-search-inline > .material-symbols-outlined {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      font-size: 18px !important; color: var(--text-subtle); pointer-events: none;
+    }
+    .ib-search-inline .ib-search {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 44px 0 42px;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill, 999px); outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    html.dark .ib-search-inline .ib-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .ib-search-inline .ib-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .ib-search-inline .ib-search:focus {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+
+    /* ---- Funnel filter button + popover — the Product Portfolio filter
+       (.pf-filter-btn / .pf-filter-pop): a funnel floated inside the search
+       field's right edge that opens a popover holding every filter. ---- */
+    .ib-search-inline .ib-filter-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ib-search-inline .ib-filter-btn:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .ib-search-inline .ib-filter-btn:hover { background: rgba(255,255,255,0.08); }
+    .ib-search-inline .ib-filter-btn .material-symbols-outlined { font-size: 18px !important; }
+    .ib-filter-btn.has-filters { color: var(--primary); }
+    html.dark .ib-filter-btn.has-filters { color: #93C5FD; }
+    .ib-filter-btn .ib-filter-dot {
+      position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary); border: 1.5px solid var(--surface-2); display: none;
+    }
+    .ib-filter-btn.has-filters .ib-filter-dot { display: block; }
+
+    /* Popover spans the full width of the search field (left:0 / right:0) and
+       lays every filter group out in its own responsive column so each
+       dropdown gets a column instead of stacking. */
+    .ib-filter-pop {
+      position: absolute; z-index: 60; top: calc(100% + 8px); left: 0; right: 0;
+      max-height: min(70vh, 580px); overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px;
+      align-items: start;
+    }
+    .ib-filter-pop[hidden] { display: none; }
+    .ib-filter-pop-head {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: -14px; z-index: 1; background: var(--surface); padding: 14px 0 8px; margin: -14px 0 -4px;
+    }
+    .ib-filter-pop-title { font-size: 13px; font-weight: 800; color: var(--text); }
+    .ib-filter-clear { border: none; background: transparent; color: var(--primary); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    html.dark .ib-filter-clear { color: #93C5FD; }
+    .ib-filter-clear:hover { text-decoration: underline; }
+    .ib-filter-group { min-width: 0; }
+    /* The free-form flag chips group spans the whole row beneath the columns. */
+    .ib-filter-group:has(.ib-fchips) { grid-column: 1 / -1; }
+    .ib-filter-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 7px; }
+
+    /* Filter dropdowns — native selects styled to match the app. */
+    .ib-select-wrap { position: relative; display: block; }
+    .ib-select-wrap > .material-symbols-outlined {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 18px !important; color: var(--text-subtle); pointer-events: none;
+    }
+    .ib-select {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 34px 0 13px;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 500; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 10px; outline: none; cursor: pointer;
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    html.dark .ib-select { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .ib-select:focus {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+
+    /* Flag toggle chips — the Product Portfolio filter chips (.pf-fchip): pill
+       toggles that fill primary when on. */
+    .ib-fchips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ib-fchip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+    html.dark .ib-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .ib-fchip:hover { color: var(--text); border-color: var(--primary); }
+    .ib-fchip.is-on { color: #fff; border-color: var(--primary); background: var(--primary); }
+
+    /* ---- Score cards — the canonical portfolio at-a-glance stat tiles
+       (.pf-stats / .pf-stat), reused here as GRAS-status filters. ---- */
+    .ib-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .ib-stat {
+      flex: 1 1 130px; min-width: 116px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: var(--shadow-1);
+      font-family: inherit; text-align: center; cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    html.dark .ib-stat { background: rgba(255,255,255,0.04); }
+    .ib-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-2)); border-color: var(--border-strong); }
+    .ib-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .ib-stat.is-active {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
+    }
+    html.dark .ib-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .ib-stat-num { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .ib-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .ib-stat-label .material-symbols-outlined {
+      font-size: 13px !important; line-height: 1 !important;
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .ib-stat--verified .ib-stat-num { color: var(--primary); }
+    html.dark .ib-stat--verified .ib-stat-num { color: #93C5FD; }
+    .ib-stat--verified .ib-stat-label .material-symbols-outlined { color: var(--primary); }
+    html.dark .ib-stat--verified .ib-stat-label .material-symbols-outlined { color: #93C5FD; }
+    .ib-stat--warn .ib-stat-num { color: #8a6400; }
+    html.dark .ib-stat--warn .ib-stat-num { color: #FFD98A; }
+    .ib-stat--muted .ib-stat-num { color: var(--text-muted); }
+    .ib-stat--alert .ib-stat-num { color: var(--sec-red); }
+
+    /* ---- Table — the Product Portfolio grid table (.pf-table): a CSS-grid
+       header + rows, hover highlight. Wrapped in a card that scrolls
+       horizontally when the 8 columns exceed the module width. ---- */
+    .ib-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 6px 4px; margin-top: 14px;
+      box-shadow: var(--shadow-1); overflow-x: auto;
+    }
+    .ib-table { width: 100%; min-width: 960px; }
+    .ib-thead, .ib-trow {
+      display: grid; align-items: center; gap: 10px; padding: 11px 14px;
+      grid-template-columns: minmax(210px,2.1fr) minmax(150px,1.7fr) 52px 92px minmax(0,1.1fr) minmax(0,1.2fr) minmax(160px,1.7fr);
+    }
+    .ib-thead { border-bottom: 1px solid var(--border); }
+    .ib-th {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle);
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+    .ib-th.is-sortable { cursor: pointer; user-select: none; }
+    .ib-th.is-sortable:hover { color: var(--text); }
+    .ib-th .ib-sort-caret { font-size: 14px !important; opacity: 0; transition: opacity 0.15s ease, transform 0.15s ease; }
+    .ib-th.is-sortable:hover .ib-sort-caret { opacity: 0.4; }
+    .ib-th.is-sorted .ib-sort-caret { opacity: 1; }
+    .ib-th.is-sorted.is-desc .ib-sort-caret { transform: rotate(180deg); }
+    .ib-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
+    .ib-trow:last-child { border-bottom: none; }
+    .ib-trow:hover { background: var(--surface-2); }
+    html.dark .ib-trow:hover { background: rgba(255,255,255,0.04); }
+    .ib-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+    .ib-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .ib-cell-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ib-muted { color: var(--text-subtle); }
+
+    /* Combined Category / Subcategory cell — the category on top with its
+       subcategory clearly legible directly beneath it, so the two former
+       columns share one cell but both values stay readable. */
+    .ib-catcell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ib-catcell .ib-cat { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.25; }
+    .ib-catcell .ib-subcat { font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1.2; }
+
+    /* GRAS status + Processing-Level (PL) both render as pill chips of the same
+       family — a tinted fill with a colour-coded label — matching the status
+       chips used across the app's other tables. */
+    .ib-gras, .ib-pl {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 2px 9px; min-width: 22px; box-sizing: border-box;
+      border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.6;
+      white-space: nowrap; font-variant-numeric: tabular-nums;
+    }
+
+    /* GRAS status — colour-coded to the score cards above (blue = GRAS, amber =
+       Historical, neutral = Unclear, red = Unsafe). */
+    .ib-gras--gras { background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary); }
+    html.dark .ib-gras--gras { background: rgba(96,165,250,0.16); color: #93C5FD; }
+    .ib-gras--historical { background: rgba(185,130,43,0.16); color: #8a6400; }
+    html.dark .ib-gras--historical { background: rgba(255,217,138,0.16); color: #FFD98A; }
+    .ib-gras--unclear { background: var(--surface-3); color: var(--text-muted); }
+    html.dark .ib-gras--unclear { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+    .ib-gras--unsafe { background: rgba(200,42,42,0.12); color: var(--sec-red); }
+    html.dark .ib-gras--unsafe { background: rgba(255,158,150,0.16); color: #FF9E96; }
+
+    /* Processing-level (PL) — the same chip, ramped cool→hot with brand-safe
+       colours (navy → amber → orange → red; no green) to signal increasing
+       processing. */
+    .ib-pl-1 { background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary); }
+    html.dark .ib-pl-1 { background: rgba(96,165,250,0.16); color: #93C5FD; }
+    .ib-pl-2 { background: rgba(185,130,43,0.16); color: #8a6400; }
+    html.dark .ib-pl-2 { background: rgba(255,217,138,0.16); color: #FFD98A; }
+    .ib-pl-3 { background: rgba(197,106,42,0.16); color: #b4551f; }
+    html.dark .ib-pl-3 { background: rgba(247,161,105,0.18); color: #F7A169; }
+    .ib-pl-4 { background: rgba(200,42,42,0.12); color: var(--sec-red); }
+    html.dark .ib-pl-4 { background: rgba(255,158,150,0.16); color: #FF9E96; }
+
+    /* Flags cell — neutral tag chips (matches the reference's light pills). */
+    .ib-flags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ib-tag {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; white-space: nowrap;
+      background: var(--surface-3); color: var(--text-muted);
+    }
+    html.dark .ib-tag { background: rgba(255,255,255,0.08); }
+
+    /* No-results row */
+    .ib-empty { display: none; padding: 34px 14px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    .ib-table.is-empty .ib-empty { display: block; }
+
+    /* Table footer + pagination — mirrors .pf-table-foot. */
+    .ib-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 6px 2px; font-size: 12px; color: var(--text-subtle); flex-wrap: wrap;
+    }
+    .ib-pager { display: inline-flex; align-items: center; gap: 8px; }
+    .ib-pager-page { font-weight: 600; color: var(--text-muted); }
+    .ib-pager-btn {
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    html.dark .ib-pager-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .ib-pager-btn:hover:not(:disabled) { color: var(--text); border-color: var(--primary); }
+    .ib-pager-btn:disabled { opacity: 0.45; cursor: default; }
+    .ib-pager-btn .material-symbols-outlined { font-size: 18px !important; }
+
+    /* ===================================================================
+       Workspace layout — mirror library.html / reports.html: the persistent
+       WISEai chat sits directly right of the nav, and the Ingredient Browser
+       module docks to its right. The shared shell (js/agent-overview.js) drops
+       the WISEai dock into #modules-row; here we re-order the row (page-scoped)
+       so the chat is the centre column and the browser is the module on the
+       right, and we drop the 60px module header bar so the serif masthead leads
+       the scroll body.
+    =================================================================== */
+    #modules-row #wiseai-dock-panel.wiseai-dock-open {
+      order: -1;
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      flex: 0 0 var(--chat-pane-w, 380px) !important;
+      width: var(--chat-pane-w, 380px) !important;
+      min-width: var(--chat-pane-w, 380px) !important;
+      max-width: var(--chat-pane-w, 380px) !important;
+    }
+    #modules-row #agent-main { order: 0; flex: 1 1 0%; min-width: 380px; }
+    .menu-brand-integrated #modules-row { margin-top: 0 !important; }
+    #modules-row { padding-bottom: 0 !important; margin-bottom: 0 !important; }
+    #modules-row #wiseai-dock-panel.wiseai-dock-open,
+    #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
+    /* Keep the standard module header (it carries the ⋯ options menu + width
+       changer via setupMainPanelControls) — the page leads with a slim count
+       chip rather than a duplicate serif title. */
+    body[data-nav-id="ingredients"] .agent-main-scroll { padding: 0; }
+  </style>
+</head>
+<body data-nav-id="ingredients">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
+    <div id="topbar-row" hidden aria-hidden="true"></div>
+
+    <div id="modules-row">
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll">
+            <div class="ib-wrap">
+
+              <!-- ============ MASTHEAD ============ -->
+              <div class="ib-masthead">
+                <div>
+                  <div class="ib-title-row">
+                    <h1 class="ib-title-main">Ingredient Browser</h1>
+                    <span class="ib-count-chip"><span class="material-symbols-outlined">nutrition</span><span id="ib-total">8,658</span> ingredients</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============ SEARCH + FUNNEL FILTER POPOVER ============ -->
+              <div class="ib-toolbar">
+                <div class="ib-search-inline">
+                  <span class="material-symbols-outlined">search</span>
+                  <input type="search" class="ib-search" id="ib-search" placeholder="Search by ingredient name" aria-label="Search ingredients" />
+                  <button type="button" class="ib-filter-btn" id="ib-filter-btn" aria-haspopup="dialog" aria-expanded="false" title="Filter ingredients" aria-label="Filter ingredients">
+                    <span class="material-symbols-outlined">tune</span>
+                    <span class="ib-filter-dot" aria-hidden="true"></span>
+                  </button>
+
+                  <div class="ib-filter-pop" id="ib-filter-pop" role="dialog" aria-label="Filter ingredients" hidden>
+                    <div class="ib-filter-pop-head">
+                      <span class="ib-filter-pop-title">Filter ingredients</span>
+                      <button type="button" class="ib-filter-clear" id="ib-filter-clear">Clear all</button>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">GRAS</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-gras" data-filter="gras">
+                          <option value="">Any</option>
+                          <option>GRAS</option>
+                          <option>Historical</option>
+                          <option>Unclear</option>
+                          <option>Unsafe</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">Category</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-cat" data-filter="cat">
+                          <option value="">Any</option>
+                          <option>Additives</option>
+                          <option>Dairy</option>
+                          <option>FRUIT</option>
+                          <option>Fats &amp; Oils</option>
+                          <option>Finished Products</option>
+                          <option>Fungi</option>
+                          <option>Grain</option>
+                          <option>Protein</option>
+                          <option>Succulents</option>
+                          <option>VINEGAR</option>
+                          <option>Vegetable</option>
+                          <option>WATER</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">Subcategory</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-sub" data-filter="sub">
+                          <option value="">Any</option>
+                          <option>ALGAE</option>
+                          <option>ALKALINE WATER</option>
+                          <option>ANIMAL SHORTENING</option>
+                          <option>APPLE CIDER VINEGAR</option>
+                          <option>Allium Vegetables</option>
+                          <option>Aloe Vera Category</option>
+                          <option>Animal Proteins</option>
+                          <option>BALSAMIC VINEGAR</option>
+                          <option>BARLEY</option>
+                          <option>BERRY</option>
+                          <option>BRAN</option>
+                          <option>BUCKWHEAT</option>
+                          <option>BUTTERFAT / MILKFAT</option>
+                          <option>Bakery Products</option>
+                          <option>Beverages</option>
+                          <option>CACTUS</option>
+                          <option>CANE VINEGAR</option>
+                          <option>CARBONATED WATER</option>
+                          <option>CHEESE</option>
+                          <option>CHOCOLATE</option>
+                          <option>CITRUS FRUIT</option>
+                          <option>COCONUT VINEGAR</option>
+                          <option>COFFEE CHERRY</option>
+                          <option>COFFEE, GROUND</option>
+                          <option>CREAM</option>
+                          <option>Confections</option>
+                          <option>Cruciferous Vegetables</option>
+                          <option>Cucurbitaceae Vegetables</option>
+                          <option>DAIRY BLEND</option>
+                          <option>DAIRY PRODUCT SOLIDS</option>
+                          <option>Edible Plant Stems</option>
+                          <option>Egg Products</option>
+                          <option>FARRO</option>
+                          <option>FONIO GRAIN</option>
+                          <option>FRUIT JUICE</option>
+                          <option>FRUIT PULP</option>
+                          <option>FRUIT PUREE</option>
+                          <option>FUSARIUM VENENATUM</option>
+                          <option>Frozen desserts</option>
+                          <option>Functional Additives</option>
+                          <option>GLASSWORT</option>
+                          <option>GRAIN VINEGAR</option>
+                          <option>Grain Food Products</option>
+                          <option>HERBS</option>
+                          <option>JOSHUA-TREE JUCCA</option>
+                          <option>Leaf Vegetables</option>
+                          <option>Legumes</option>
+                          <option>MILLET</option>
+                          <option>MUSHROOMS</option>
+                          <option>Melons</option>
+                          <option>Milks</option>
+                          <option>Nightshades</option>
+                          <option>Nonstarchy Vegetables</option>
+                          <option>Nut &amp; Seed</option>
+                          <option>OATS</option>
+                          <option>PASSOVER VINEGAR</option>
+                          <option>PREPARED SOUP &amp; BASES</option>
+                          <option>Plant Based Oils</option>
+                          <option>Plant-based Products</option>
+                          <option>Pomme Fruits</option>
+                          <option>Prepared Condiments</option>
+                          <option>Prepared Fruit products</option>
+                          <option>Processed Meat Foods</option>
+                          <option>ROOT VEGETABLES</option>
+                          <option>Rice Grains</option>
+                          <option>Rye</option>
+                          <option>SORGHUM</option>
+                          <option>SPELT</option>
+                          <option>SPICES</option>
+                          <option>Seafood Products</option>
+                          <option>Spice &amp; Seasoning Blends</option>
+                          <option>Starchy Vegetables</option>
+                          <option>Stone Fruits</option>
+                          <option>TEA, DRY</option>
+                          <option>TEFF</option>
+                          <option>TRANS FATS</option>
+                          <option>TRITICALE</option>
+                          <option>TROPICAL/EXOTIC FRUITS</option>
+                          <option>Tubers</option>
+                          <option>VEGETABLE BLEND</option>
+                          <option>VEGETABLES-PREPARED</option>
+                          <option>VINEGAR POWDER</option>
+                          <option>Vegetables, Dry Snacks</option>
+                          <option>WHEAT</option>
+                          <option>WHEY</option>
+                          <option>WHOLE GRAIN BLENDS</option>
+                          <option>WINE VINEGAR</option>
+                          <option>YEAST</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">PL</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-pl" data-filter="pl">
+                          <option value="">Any</option>
+                          <option>1</option>
+                          <option>2</option>
+                          <option>3</option>
+                          <option>4</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">Processed Category</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-proc" data-filter="proc">
+                          <option value="">Any</option>
+                          <option>Aloe Product</option>
+                          <option>Aluminum</option>
+                          <option>Anti-Caking Agent</option>
+                          <option>Antifoaming Agent</option>
+                          <option>Antimicrobial</option>
+                          <option>Antimicrobial Agent</option>
+                          <option>Antioxidant</option>
+                          <option>Artifical Flavor</option>
+                          <option>Artifical Flavor; Artifical Preservative</option>
+                          <option>Artifical Leavening</option>
+                          <option>Artifical Preservative</option>
+                          <option>Artifical Sweetener</option>
+                          <option>Artifical Sweetner</option>
+                          <option>Artificial Fat</option>
+                          <option>Artificial Flavor</option>
+                          <option>Artificial Flavor, Preservative</option>
+                          <option>Artificial Leavening; Aluminum</option>
+                          <option>Artificial Preservative</option>
+                          <option>Artificial Sweetener</option>
+                          <option>Artificial fiber</option>
+                          <option>Benzoate</option>
+                          <option>Bleaching Agent</option>
+                          <option>Boiler Water Additive</option>
+                          <option>Bromate</option>
+                          <option>Color</option>
+                          <option>Coloring Agent</option>
+                          <option>Concentrate</option>
+                          <option>Contaminant</option>
+                          <option>Curing Agent</option>
+                          <option>Dough Strengthener</option>
+                          <option>Drug-Like</option>
+                          <option>Drug-Like; Illegal</option>
+                          <option>Emulsifier</option>
+                          <option>Emulsifier, Thickener</option>
+                          <option>Emulsifier; Gelling Agent</option>
+                          <option>Enzyme</option>
+                          <option>Extract</option>
+                          <option>Extraction Medium</option>
+                          <option>Extracts</option>
+                          <option>Fat Substitute</option>
+                          <option>Firming Agent</option>
+                          <option>Flavor Enhancer</option>
+                          <option>Flavor Enhancer; Supplement</option>
+                          <option>Flavoring Agent</option>
+                          <option>Flour</option>
+                          <option>Flour, refined</option>
+                          <option>Food Coloring</option>
+                          <option>Formulation Aid</option>
+                          <option>Functional Additive</option>
+                          <option>Fungus Extract</option>
+                          <option>Gum</option>
+                          <option>Gums</option>
+                          <option>Health Risk</option>
+                          <option>Herbal Remedy</option>
+                          <option>High Temp Processing Product</option>
+                          <option>Illegal</option>
+                          <option>Intense sweetener</option>
+                          <option>Irritant</option>
+                          <option>Juice Concentrates</option>
+                          <option>Leavening Agent</option>
+                          <option>Lubricant</option>
+                          <option>Natural Color</option>
+                          <option>Nitrite/Nitrate</option>
+                          <option>Oil, Treated</option>
+                          <option>Oils</option>
+                          <option>Oils, refined</option>
+                          <option>Ph Adjustment</option>
+                          <option>Preservative</option>
+                          <option>Processing Aid</option>
+                          <option>Processing Aid: Antifoaming</option>
+                          <option>Propellant</option>
+                          <option>Protein Isolates</option>
+                          <option>Refined Ingredient</option>
+                          <option>Refined Oil</option>
+                          <option>Refined Sugar</option>
+                          <option>Refined Sugar Alcohols</option>
+                          <option>Refined Sugars</option>
+                          <option>Refined Sweetener</option>
+                          <option>Refined ingredient</option>
+                          <option>Refined sugar</option>
+                          <option>Sequestrant</option>
+                          <option>Simple Carb</option>
+                          <option>Stabilizer</option>
+                          <option>Stool Softener</option>
+                          <option>Sugar Alcohols; Functional Additive</option>
+                          <option>Sugar alcohol</option>
+                          <option>Sugar, refined</option>
+                          <option>Supplement</option>
+                          <option>Surfactant</option>
+                          <option>Sweetener</option>
+                          <option>Sweetener, refined</option>
+                          <option>Texturizer</option>
+                          <option>Thickener</option>
+                          <option>This Is A Finished Product, Not An Ingredient:</option>
+                          <option>color</option>
+                          <option>extract, fiber</option>
+                          <option>flavor</option>
+                          <option>pH adjuster</option>
+                          <option>refined sugar</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">Vegetarian</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-veg" data-filter="veg">
+                          <option value="">Any</option>
+                          <option>Lacto-Vegetarian</option>
+                          <option>Not Compatible</option>
+                          <option>Ovo-Vegetarian</option>
+                          <option>Pescatarian</option>
+                          <option>Vegetarian</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">US Allergen</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-usa" data-filter="usa">
+                          <option value="">Any</option>
+                          <option>Milk</option>
+                          <option>Eggs</option>
+                          <option>Fish</option>
+                          <option>Shellfish</option>
+                          <option>Tree Nuts</option>
+                          <option>Peanuts</option>
+                          <option>Wheat</option>
+                          <option>Soy</option>
+                          <option>Sesame</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-filter-label">EU Allergen</div>
+                      <div class="ib-select-wrap">
+                        <select class="ib-select" id="ib-f-eua" data-filter="eua">
+                          <option value="">Any</option>
+                          <option>Milk</option>
+                          <option>Eggs</option>
+                          <option>Fish</option>
+                          <option>Crustaceans</option>
+                          <option>Nuts</option>
+                          <option>Peanuts</option>
+                          <option>Cereals containing gluten</option>
+                          <option>Soybeans</option>
+                          <option>Sesame</option>
+                        </select>
+                        <span class="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </div>
+
+                    <div class="ib-filter-group">
+                      <div class="ib-fchips" id="ib-fchips">
+                        <button type="button" class="ib-fchip" data-flag="Sweetener">Sweetener</button>
+                        <button type="button" class="ib-fchip" data-flag="Emulsifier">Emulsifier</button>
+                        <button type="button" class="ib-fchip" data-flag="Artificial Color">Artificial Color</button>
+                        <button type="button" class="ib-fchip" data-flag="Artificial Preservative">Artificial Preservative</button>
+                        <button type="button" class="ib-fchip" data-flag="Added Sugar">Added Sugar</button>
+                        <button type="button" class="ib-fchip" data-flag="Whole Grain">Whole Grain</button>
+                        <button type="button" class="ib-fchip" data-flag="Caffeine">Caffeine</button>
+                        <button type="button" class="ib-fchip" data-flag="Vegan">Vegan</button>
+                        <button type="button" class="ib-fchip" data-flag="Gluten Free">Gluten Free</button>
+                        <button type="button" class="ib-fchip" data-flag="Dairy Free">Dairy Free</button>
+                        <button type="button" class="ib-fchip" data-flag="Sugar Alcohol">Sugar Alcohol</button>
+                        <button type="button" class="ib-fchip" data-flag="Nutritive Sweetener">Nutritive Sweetener</button>
+                        <button type="button" class="ib-fchip" data-flag="Natural Sweetener">Natural Sweetener</button>
+                        <button type="button" class="ib-fchip" data-flag="High Intensity Sweetener">High Intensity Sweetener</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============ SCORE CARDS — GRAS-status filters ============ -->
+              <div class="ib-stats" role="group" aria-label="Filter ingredients by GRAS status">
+                <button type="button" class="ib-stat is-active" data-gras="" aria-pressed="true">
+                  <span class="ib-stat-num">8,658</span>
+                  <span class="ib-stat-label">All ingredients</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--verified" data-gras="GRAS" aria-pressed="false">
+                  <span class="ib-stat-num">8,241</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">verified</span>GRAS</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--warn" data-gras="Historical" aria-pressed="false">
+                  <span class="ib-stat-num">210</span>
+                  <span class="ib-stat-label">Historical</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--muted" data-gras="Unclear" aria-pressed="false">
+                  <span class="ib-stat-num">142</span>
+                  <span class="ib-stat-label">Unclear</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--alert" data-gras="Unsafe" aria-pressed="false">
+                  <span class="ib-stat-num">65</span>
+                  <span class="ib-stat-label">Unsafe</span>
+                </button>
+              </div>
+
+              <!-- ============ TABLE ============ -->
+              <div class="ib-card">
+                <div class="ib-table" id="ib-table">
+                  <div class="ib-thead">
+                    <span class="ib-th is-sortable is-sorted" data-sort="name">Name <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="cat">Category / Subcategory <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="pl"><span class="dash-term" data-tip="Processing Level — how heavily an ingredient is processed, from 1 (whole / minimally processed) to 4 (ultra-processed)." tabindex="0">PL</span> <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="gras">GRAS <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="usa">US Allergen <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="eua">EU Allergen <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                    <span class="ib-th is-sortable" data-sort="flags">Flags <span class="material-symbols-outlined ib-sort-caret">arrow_upward</span></span>
+                  </div>
+
+                  <div class="ib-rows" id="ib-rows">
+                    <!-- Rows are rendered by the inline script below from IB_DATA. -->
+                  </div>
+
+                  <div class="ib-empty">No ingredients match your filters.</div>
+                </div>
+              </div>
+
+              <!-- ============ FOOTER + PAGINATION ============ -->
+              <div class="ib-foot">
+                <span id="ib-foot-count">Showing 1–50 of 8,658</span>
+                <div class="ib-pager">
+                  <button type="button" class="ib-pager-btn" id="ib-prev" disabled aria-label="Previous page"><span class="material-symbols-outlined">chevron_left</span></button>
+                  <span class="ib-pager-page">Page 1 of 174</span>
+                  <button type="button" class="ib-pager-btn" id="ib-next" aria-label="Next page"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    /* A slice of the WISEcode ingredient registry, transcribed from the source
+       tables. The parenthetical flavour chemicals (page 1) are GRAS with no
+       other data; the "A…" foods (page 20) carry full category / subcategory /
+       PL / allergen / flag data. `V/G/D` = Vegan / Gluten Free / Dairy Free. */
+    const VGD = ['Vegan', 'Gluten Free', 'Dairy Free'];
+    const GD = ['Gluten Free', 'Dairy Free'];
+    const IB_NAMES = [
+      '(+)-CEDROL',
+      '(+/-)-1-ACETOXY-1-ETHOXYETHANE',
+      '(+/-)-1-HEPTEN-3-OL',
+      '(+/-)-1-PHENYLETHYLMERCAPTAN',
+      '(+/-)-2,4,8-TRIMETHYL-7-NONEN-2-OL',
+      '(+/-)-2,6,10,10-TETRAMETHYL-1-OXASPIRO[4,5]DECA-2,6-DIEN-8-ONE',
+      '(+/-)-2,8-EPITHIO-CIS-P-MENTHANE',
+      '(+/-)-2-(5-METHYL-5-VINYLTETRAHYDROFURAN-2-YL)PROPIONALDEHYDE',
+      '(+/-)-2-HYDROXYPIPERITONE',
+      '(+/-)-2-METHYLTETRAHYDROFURAN-3-THIOL ACETATE',
+      '(+/-)-2-PHENYL-4-METHYL-2-HEXENAL',
+      '(+/-)-3-(ETHYLTHIO)BUTANOL',
+      '(+/-)-3-(METHYLTHIO)HEPTANAL',
+      '(+/-)-3-HYDROXY-3-METHYL-2,4-NONANEDIONE',
+      '(+/-)-3-MERCAPTO-1-BUTYL ACETATE',
+      '(+/-)-3-[(2-METHYL-3-FURYL)THIO]-2-BUTANONE',
+      '(+/-)-4-ETHYLOCTANAL',
+      '(+/-)-4-MERCAPTO-4-METHYL-2-PENTANOL',
+      '(+/-)-4-METHYL-2-PROPYL-1,3-OXATHIANE',
+      '(+/-)-6-METHYLOCTANAL',
+    ];
+    const IB_DATA = IB_NAMES.map((name) => ({
+      name, cat: '', sub: '', pl: '', gras: 'GRAS', usa: '', eua: '', veg: '', proc: '', flags: [],
+    })).concat([
+      { name: 'AGED CAYENNE PEPPERS', cat: 'Vegetable', sub: 'Nightshades', pl: 1, gras: 'GRAS', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'AGED CHEDDAR CHEESE FLAVOR', cat: 'Additives', sub: 'Functional Additives', pl: 3, gras: 'Unclear', usa: 'Milk', eua: 'Milk', veg: 'Lacto-Vegetarian', proc: '', flags: GD },
+      { name: 'AGED RED PEPPERS', cat: 'Vegetable', sub: 'Nightshades', pl: 1, gras: 'GRAS', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'AIR POPPED POPCORN', cat: 'Finished Products', sub: 'Vegetables, Dry Snacks', pl: 1, gras: 'Historical', usa: '', eua: '', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALANINE', cat: 'Additives', sub: 'Functional Additives', pl: 1, gras: 'GRAS', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALASKA POLLOCK', cat: 'Protein', sub: 'Animal Proteins', pl: 1, gras: 'Historical', usa: 'Fish', eua: 'Fish', veg: 'Pescatarian', proc: '', flags: GD },
+      { name: 'ALBACORE TUNA', cat: 'Protein', sub: 'Animal Proteins', pl: 1, gras: 'Historical', usa: 'Fish', eua: 'Fish', veg: 'Pescatarian', proc: '', flags: GD },
+      { name: 'ALCOHOL', cat: 'Finished Products', sub: 'Beverages', pl: 3, gras: 'GRAS', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALCOHOL SDA-3A', cat: '', sub: '', pl: '', gras: 'GRAS', usa: '', eua: '', veg: '', proc: '', flags: [] },
+      { name: 'ALCOHOL, DENATURED FORMULA 23A', cat: '', sub: '', pl: '', gras: 'GRAS', usa: '', eua: '', veg: '', proc: '', flags: [] },
+      { name: 'ALFALFA EXTRACT', cat: 'Additives', sub: 'Functional Additives', pl: 2, gras: 'GRAS', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALFALFA GRASS JUICE', cat: 'Vegetable', sub: 'Leaf Vegetables', pl: 1, gras: 'Unclear', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALFALFA GRASS POWDER', cat: 'Vegetable', sub: 'Leaf Vegetables', pl: 1, gras: 'Unclear', usa: 'Reviewed-No Allergen', eua: 'Reviewed-No Allergen', veg: 'Vegan', proc: '', flags: VGD },
+      { name: 'ALFREDO SAUCE', cat: 'Finished Products', sub: 'Prepared Condiments', pl: 3, gras: 'Unclear', usa: 'Milk', eua: 'Milk', veg: 'Lacto-Vegetarian', proc: '', flags: ['Gluten Free'] },
+      { name: 'ALFREDO SAUCE MIX', cat: 'Finished Products', sub: 'Prepared Condiments', pl: 3, gras: 'Unclear', usa: 'Milk', eua: 'Milk', veg: 'Lacto-Vegetarian', proc: '', flags: ['Gluten Free'] },
+      { name: 'ALGAE', cat: 'Vegetable', sub: 'ALGAE', pl: 1, gras: 'Unclear', usa: 'Reviewed-No Allergen', eua: 'Sulphur Dioxide (Sulphites)', veg: 'Vegan', proc: '', flags: VGD },
+    ]);
+
+    (function () {
+      const TOTAL = 8658;
+      const rowsEl = document.getElementById('ib-rows');
+      const tableEl = document.getElementById('ib-table');
+      const footEl = document.getElementById('ib-foot-count');
+      const searchEl = document.getElementById('ib-search');
+      const filterBtn = document.getElementById('ib-filter-btn');
+      const filterPop = document.getElementById('ib-filter-pop');
+      const filterClear = document.getElementById('ib-filter-clear');
+      const filterDot = filterBtn;
+
+      const GRAS_CLASS = { GRAS: 'gras', Historical: 'historical', Unclear: 'unclear', Unsafe: 'unsafe' };
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const dash = (v) => v ? esc(v) : '<span class="ib-muted">—</span>';
+
+      /* Render each ingredient as a grid row mirroring the portfolio table. */
+      function renderRows(list) {
+        rowsEl.innerHTML = list.map((d) => {
+          const grasCls = GRAS_CLASS[d.gras] || 'gras';
+          const gras = d.gras ? `<span class="ib-gras ib-gras--${grasCls}">${esc(d.gras)}</span>` : '<span class="ib-muted">—</span>';
+          const pl = d.pl ? `<span class="ib-pl ib-pl-${esc(d.pl)}">${esc(d.pl)}</span>` : '<span class="ib-muted">—</span>';
+          const flags = d.flags && d.flags.length
+            ? `<span class="ib-flags">${d.flags.map((f) => `<span class="ib-tag">${esc(f)}</span>`).join('')}</span>`
+            : '<span class="ib-muted">—</span>';
+          const catCell = (d.cat || d.sub)
+            ? `<span class="ib-catcell">
+                 <span class="ib-cat ib-cell-text">${d.cat ? esc(d.cat) : '—'}</span>
+                 <span class="ib-subcat ib-cell-text">${d.sub ? esc(d.sub) : '—'}</span>
+               </span>`
+            : '<span class="ib-muted">—</span>';
+          return `
+            <div class="ib-trow" data-name="${esc(d.name.toLowerCase())}" data-cat="${esc(d.cat)}" data-sub="${esc(d.sub)}" data-pl="${esc(d.pl)}" data-gras="${esc(d.gras)}" data-usa="${esc(d.usa)}" data-eua="${esc(d.eua)}" data-veg="${esc(d.veg)}" data-proc="${esc(d.proc)}" data-flags="${esc((d.flags || []).join('|'))}">
+              <span class="ib-td"><span class="ib-name ib-cell-text">${esc(d.name)}</span></span>
+              <span class="ib-td">${catCell}</span>
+              <span class="ib-td">${pl}</span>
+              <span class="ib-td">${gras}</span>
+              <span class="ib-td ib-cell-text">${dash(d.usa)}</span>
+              <span class="ib-td ib-cell-text">${dash(d.eua)}</span>
+              <span class="ib-td">${flags}</span>
+            </div>`;
+        }).join('');
+      }
+
+      /* Active filter state driven by the search, dropdowns, flag chips and
+         the score cards. */
+      const state = { q: '', gras: '', cat: '', sub: '', pl: '', proc: '', veg: '', usa: '', eua: '', flags: new Set() };
+
+      function anyFilterActive() {
+        return !!(state.q || state.gras || state.cat || state.sub || state.pl || state.proc || state.veg || state.usa || state.eua || state.flags.size);
+      }
+
+      function apply() {
+        renderRows(sortList(IB_DATA));
+        let shown = 0;
+        rowsEl.querySelectorAll('.ib-trow').forEach((row) => {
+          const d = row.dataset;
+          const flags = d.flags ? d.flags.split('|') : [];
+          let ok = true;
+          if (state.q && !d.name.includes(state.q)) ok = false;
+          if (state.gras && d.gras !== state.gras) ok = false;
+          if (state.cat && d.cat !== state.cat) ok = false;
+          if (state.sub && d.sub !== state.sub) ok = false;
+          if (state.pl && d.pl !== state.pl) ok = false;
+          if (state.proc && d.proc !== state.proc) ok = false;
+          if (state.veg && d.veg !== state.veg) ok = false;
+          if (state.usa && d.usa !== state.usa) ok = false;
+          if (state.eua && d.eua !== state.eua) ok = false;
+          for (const f of state.flags) { if (!flags.includes(f)) { ok = false; break; } }
+          row.style.display = ok ? '' : 'none';
+          if (ok) shown += 1;
+        });
+        tableEl.classList.toggle('is-empty', shown === 0);
+        filterDot.classList.toggle('has-filters', anyFilterActive());
+        footEl.textContent = anyFilterActive()
+          ? `Showing ${shown} of ${TOTAL.toLocaleString()}`
+          : `Showing 1–${IB_DATA.length} of ${TOTAL.toLocaleString()}`;
+      }
+
+      /* Column sort — every labeled column is sortable: name / category /
+         gras / allergens / flags alphabetical, PL numeric. */
+      let sortKey = 'name', sortDir = 1;
+      function sortList(list) {
+        const copy = list.slice();
+        const cmp = (x, y) => {
+          x = String(x).toLowerCase(); y = String(y).toLowerCase();
+          return x < y ? -1 : x > y ? 1 : 0;
+        };
+        copy.sort((a, b) => {
+          if (sortKey === 'pl') return ((+a.pl || 0) - (+b.pl || 0)) * sortDir;
+          /* The combined Category cell breaks ties on its subcategory. */
+          if (sortKey === 'cat') return (cmp(a.cat, b.cat) || cmp(a.sub, b.sub)) * sortDir;
+          if (sortKey === 'flags') return cmp((a.flags || []).join(', '), (b.flags || []).join(', ')) * sortDir;
+          return cmp(a[sortKey], b[sortKey]) * sortDir;
+        });
+        return copy;
+      }
+
+      /* ---- Search ---- */
+      searchEl.addEventListener('input', () => { state.q = searchEl.value.trim().toLowerCase(); apply(); });
+
+      /* ---- Funnel filter popover open/close ---- */
+      function setPop(open) {
+        filterPop.hidden = !open;
+        filterBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      filterBtn.addEventListener('click', (e) => { e.stopPropagation(); setPop(filterPop.hidden); });
+      filterPop.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => setPop(false));
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setPop(false); });
+
+      /* ---- Dropdowns ---- */
+      document.querySelectorAll('.ib-select[data-filter]').forEach((sel) => {
+        sel.addEventListener('change', () => {
+          state[sel.dataset.filter] = sel.value;
+          if (sel.dataset.filter === 'gras') syncStatCards(sel.value);
+          apply();
+        });
+      });
+
+      /* ---- Flag toggle chips ---- */
+      document.getElementById('ib-fchips').addEventListener('click', (e) => {
+        const chip = e.target.closest('.ib-fchip');
+        if (!chip) return;
+        const flag = chip.dataset.flag;
+        if (state.flags.has(flag)) { state.flags.delete(flag); chip.classList.remove('is-on'); }
+        else { state.flags.add(flag); chip.classList.add('is-on'); }
+        apply();
+      });
+
+      /* ---- Clear all ---- */
+      filterClear.addEventListener('click', () => {
+        Object.assign(state, { gras: '', cat: '', sub: '', pl: '', proc: '', veg: '', usa: '', eua: '' });
+        state.flags.clear();
+        document.querySelectorAll('.ib-select[data-filter]').forEach((s) => { s.value = ''; });
+        document.querySelectorAll('.ib-fchip.is-on').forEach((c) => c.classList.remove('is-on'));
+        syncStatCards('');
+        apply();
+      });
+
+      /* ---- Score cards (GRAS-status filters) ---- */
+      function syncStatCards(gras) {
+        document.querySelectorAll('.ib-stat').forEach((b) => {
+          const on = (b.dataset.gras || '') === (gras || '');
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+      document.querySelectorAll('.ib-stat').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.gras = btn.dataset.gras || '';
+          syncStatCards(state.gras);
+          const grasSel = document.getElementById('ib-f-gras');
+          if (grasSel) grasSel.value = state.gras;
+          apply();
+        });
+      });
+
+      /* ---- Sortable headers ---- */
+      document.querySelectorAll('.ib-th.is-sortable').forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+          document.querySelectorAll('.ib-th').forEach((h) => h.classList.remove('is-sorted', 'is-desc'));
+          th.classList.add('is-sorted');
+          if (sortDir === -1) th.classList.add('is-desc');
+          apply();
+        });
+      });
+
+      apply();
+    })();
+  </script>
+
+  <script type="module" src="../js/agent-overview.js"></script>
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

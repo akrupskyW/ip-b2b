@@ -772,6 +772,7 @@ function setupWISEaiDock() {
 
   const isDashboard = document.body.dataset.productId === 'dashboard';
   const isReports = document.body.dataset.navId === 'reports';
+  const isLibrary = document.body.dataset.navId === 'library';
   const isVerification = document.body.dataset.navId === 'verification';
   const isGras = document.body.dataset.navId === 'gras-verification';
   const isMarketing = document.body.dataset.navId === 'marketing-assets';
@@ -805,7 +806,7 @@ function setupWISEaiDock() {
      ON this page, that must stick: a reload (incl. livereload during editing) or
      a back/forward must NOT re-open it, otherwise "Close conversation" looks like
      it just restarts the chat. So only force-open on a genuine navigation. */
-  if ((isVerification || isGras || isReports || isMarketing || accountWiseai) && arrivedByNavigation()) {
+  if ((isVerification || isGras || isReports || isLibrary || isMarketing || accountWiseai) && arrivedByNavigation()) {
     writeWISEaiDockState({ collapsed: false });
   }
 
@@ -886,6 +887,11 @@ function setupWISEaiDock() {
         if (go) { window.location.href = go; return true; }
         return false;
       },
+    };
+  } else if (isLibrary) {
+    cfg = {
+      sub: 'Search and open anything from your WISEai library.',
+      chipsFlow: 'wrap',
     };
   } else if (isDashboard) {
     cfg = {

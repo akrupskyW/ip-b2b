@@ -7,6 +7,9 @@
      1. Real  <table>  elements  → sorts <tbody> <tr> rows by a <th> column.
      2. Grid  ".pf-table"  blocks → sorts ".pf-trow" rows by a ".pf-th"
         column (the header/cell share a ".pf-col-*" class).
+     3. Any other grid faux-table (a "*-thead" / "*-tbl-head" head over
+        "*-trow" rows) → every labelled column becomes click-to-sortable,
+        unless the grid already ships its own sorting.
 
    It is intentionally generic and self-initialising:
      • Runs on DOMContentLoaded and re-scans on DOM changes (a MutationObserver)
@@ -228,6 +231,73 @@
     });
   }
 
+  /* ── Paradigm 3: generic grid faux-tables ─────────────────────────────────
+     Any grid "table" whose header container class ends in  -thead / -tbl-head
+     and whose body rows' class ends in  -trow . Makes every labelled data
+     column click-to-sortable, so tables that never wired up their own sorting
+     (e.g. a static ".rf-table--moves" head) get it for free.
+
+     Grids that already ship sorting are left untouched — detected by existing
+     sort markers — as are the ".pf-table" grids handled by paradigm 2. */
+  var THEAD_RE = /-(thead|tbl-head)$/;
+  var TROW_RE = /-trow$/;
+  var ACTION_RE = /^actions?$/i;
+  var CUSTOM_SORT_SEL = '[data-sort],[data-inv-sort],[data-adm-sort],[data-key],' +
+    '.is-sortable,.srt-sortable,[class*="--sortable"],.wa-tbl-th';
+
+  function classTokenMatches(el, re) {
+    var cls = el.className;
+    if (typeof cls !== 'string') return false;
+    var toks = cls.split(/\s+/);
+    for (var i = 0; i < toks.length; i++) { if (re.test(toks[i])) return true; }
+    return false;
+  }
+
+  function enhanceGenericGrid(thead) {
+    if (!classTokenMatches(thead, THEAD_RE)) return;
+    if (thead.dataset.srtgInit) return;
+    var root = thead.parentElement;
+    if (!root) return;
+    if (root.classList && root.classList.contains('pf-table')) return;  /* paradigm 2 */
+    if (root.dataset && root.dataset.srtInit) return;
+    if (thead.hasAttribute('data-no-sort') || root.hasAttribute('data-no-sort')) return;
+    if (thead.querySelector(CUSTOM_SORT_SEL)) return;                   /* has its own sort */
+
+    var headers = Array.prototype.slice.call(thead.children);
+    if (headers.length < 2) return;
+
+    var rows = Array.prototype.filter.call(root.querySelectorAll('*'), function (el) {
+      return classTokenMatches(el, TROW_RE);
+    });
+    if (!rows.length) return;
+    var rowsParent = rows[0].parentNode;
+    for (var r = 0; r < rows.length; r++) { if (rows[r].parentNode !== rowsParent) return; }
+
+    thead.dataset.srtgInit = '1';
+
+    headers.forEach(function (th, colIndex) {
+      var label = norm(textWithoutIcons(th));
+      if (label === '' || ACTION_RE.test(label)) return;    /* skip menu / action columns */
+      decorate(th, function () {
+        var dir = nextDir(th);
+        var liveRows = Array.prototype.filter.call(rowsParent.children, function (el) {
+          return classTokenMatches(el, TROW_RE);
+        });
+        if (!liveRows.length) return;
+        var anchor = liveRows[0].previousSibling;
+        var texts = liveRows.map(function (row) { return cellText(row.children[colIndex]); });
+        var type = columnType(texts);
+        var cmp = makeComparator(type, dir);
+        var indexed = liveRows.map(function (row, i) { return { r: row, t: texts[i], i: i }; });
+        indexed.sort(function (a, b) { return cmp(a.t, b.t) || (a.i - b.i); });
+        var frag = document.createDocumentFragment();
+        indexed.forEach(function (o) { frag.appendChild(o.r); });
+        rowsParent.insertBefore(frag, anchor ? anchor.nextSibling : rowsParent.firstChild);
+        setDir(th, headers, dir);
+      });
+    });
+  }
+
   /* ── Scan + observe ───────────────────────────────────────────────────── */
   function scan(root) {
     root = root || document;
@@ -235,6 +305,8 @@
     Array.prototype.forEach.call(tables, enhanceTable);
     var grids = root.querySelectorAll('.pf-table');
     Array.prototype.forEach.call(grids, enhanceGrid);
+    var gheads = root.querySelectorAll('[class*="thead"], [class*="tbl-head"]');
+    Array.prototype.forEach.call(gheads, enhanceGenericGrid);
   }
 
   function start() {

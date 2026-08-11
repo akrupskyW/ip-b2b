@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<!--
+  WISE · WISEai Library (Studio)
+
+  Every report, dashboard, chat, MCP result, and reference from WISEai work,
+  collected in one browsable library. Visually modeled on reports.html: same
+  module shell (`<body data-nav-id="library">`), the persistent WISEai chat
+  docked to the left of the content module, and the shared design tokens from
+  wise.css. Everything bespoke here is prefixed `lib-`.
+-->
+<html lang="en" class="dark">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · WISEai Library</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint so the page
+       never flashes dark→light (or vice versa). */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ===================================================================
+       WISEai Library — everything reuses the shared design tokens
+       (--surface, --primary, --sec-green …) from wise.css and is prefixed
+       `lib-` so it can't collide with shell/module styles.
+
+       Layout: a narrow scope rail (All items / Shared / Folders) on the
+       left, and the library canvas (masthead + tabs + filters + a masonry
+       shelf of preview cards) filling the rest.
+    =================================================================== */
+
+    .lib-wrap {
+      display: flex; flex-direction: column;
+      padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px;
+    }
+    .lib-serif { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif; }
+
+    /* ---- Masthead ---- */
+    .lib-masthead {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+    }
+    .lib-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .lib-title-main {
+      font-family: var(--module-title-family, 'Noto Serif', Georgia, serif);
+      margin: 0;
+      font-size: var(--module-title-size, 1.35rem);
+      font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em; line-height: 1.15; color: var(--text);
+    }
+    .lib-sub { font-size: 0.9375rem; color: var(--text-muted); margin: 6px 0 0; }
+
+    /* ---- Search — the canonical app search, copied verbatim from the
+       Product Portfolio module (.pf-search-inline / .pf-search): surface-2
+       fill, strong border, primary focus ring, italic placeholder, leading
+       search glyph affixed inside on the left. ---- */
+    .lib-search-inline {
+      position: relative; display: inline-flex; align-items: center;
+      flex: 1 1 auto; min-width: 200px;
+    }
+    .lib-search-inline > .material-symbols-outlined {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      font-size: 18px !important; color: var(--text-subtle); pointer-events: none;
+    }
+    .lib-search-inline .lib-search-input {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 44px 0 42px;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill, 999px); outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    html.dark .lib-search-inline .lib-search-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .lib-search-inline .lib-search-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .lib-search-inline .lib-search-input:focus {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+
+    /* ---- Funnel filter button + popover — the Product Portfolio filter
+       (.pf-filter-btn / .pf-filter-pop): a funnel floated inside the search
+       field's right edge that opens a popover holding every filter. ---- */
+    .lib-search-inline .lib-filter-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .lib-search-inline .lib-filter-btn:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .lib-search-inline .lib-filter-btn:hover { background: rgba(255,255,255,0.08); }
+    .lib-search-inline .lib-filter-btn .material-symbols-outlined { font-size: 18px !important; }
+    .lib-filter-btn.has-filters { color: var(--primary); }
+    html.dark .lib-filter-btn.has-filters { color: var(--primary-bright); }
+    .lib-filter-btn .lib-filter-dot {
+      position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary); border: 1.5px solid var(--surface-2); display: none;
+    }
+    .lib-filter-btn.has-filters .lib-filter-dot { display: block; }
+
+    /* Popover spans the full width of the search field and lays every filter
+       group out in its own responsive column. */
+    .lib-filter-pop {
+      position: absolute; z-index: 60; top: calc(100% + 8px); left: 0; right: 0;
+      max-height: min(70vh, 560px); overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;
+      align-items: start;
+    }
+    .lib-filter-pop[hidden] { display: none; }
+    .lib-filter-pop-head {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: -14px; background: var(--surface); padding: 14px 0 8px; margin: -14px 0 -4px;
+    }
+    .lib-filter-pop-title { font-size: 13px; font-weight: 800; color: var(--text); }
+    .lib-filter-clear { border: none; background: transparent; color: var(--primary); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    html.dark .lib-filter-clear { color: var(--primary-bright); }
+    .lib-filter-clear:hover { text-decoration: underline; }
+    .lib-filter-group { min-width: 0; }
+    .lib-filter-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 7px; }
+    .lib-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .lib-fchip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+    html.dark .lib-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .lib-fchip .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+    .lib-fchip:hover { color: var(--text); border-color: var(--primary); }
+    .lib-fchip.is-on { color: #fff; border-color: var(--primary); background: var(--primary); }
+    .lib-fchip.is-on .material-symbols-outlined { color: #fff; }
+
+    /* ---- Toolbar (search bar row above the score cards) ---- */
+    .lib-toolbar-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      padding: 2px 0; margin-top: 22px;
+    }
+
+    /* ---- Score cards — the canonical portfolio at-a-glance stat tiles
+       (.pf-stats / .pf-stat), reused here as scope + filed/unfiled toggles.
+       Top row: All items / Shared with me / Shared by me. Second row:
+       Filed / Unfiled. ---- */
+    .lib-stats-bar { padding: 0 2px 10px; margin-top: 18px; }
+    .lib-stats-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+
+    /* The score cards are laid out on an explicit CSS grid whose column count
+       is chosen — via container queries on the module width — so a row can
+       NEVER end up with a single orphan card. The type row has 6 cards
+       (valid splits: 6 · 3+3 · 2+2+2 — 5+1 is forbidden) and the scope row
+       has 4 (valid: 4 · 2+2 — 3+1 is forbidden). We only ever set 6/3/2 or
+       4/2 columns, so every row stays at least two cards wide. */
+    .lib-stats-wrap { container-type: inline-size; }
+    .lib-stats-row { display: grid; gap: 10px; }
+    .lib-stats-row + .lib-stats-row { margin-top: 10px; }
+    .lib-row-type  { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 2+2+2 */
+    .lib-row-scope { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 2+2 */
+    @container (min-width: 460px) {
+      .lib-row-type { grid-template-columns: repeat(3, minmax(0, 1fr)); }  /* 3+3 */
+    }
+    @container (min-width: 700px) {
+      .lib-row-type  { grid-template-columns: repeat(6, minmax(0, 1fr)); } /* 6 */
+      .lib-row-scope { grid-template-columns: repeat(4, minmax(0, 1fr)); } /* 4 */
+    }
+    .lib-stat {
+      min-width: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: var(--shadow-1);
+      font-family: inherit; text-align: center; cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    html.dark .lib-stat { background: rgba(255,255,255,0.04); }
+    .lib-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-2)); border-color: var(--border-strong); }
+    .lib-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .lib-stat.is-active {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
+    }
+    html.dark .lib-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .lib-stat-num { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .lib-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .lib-stat-label .material-symbols-outlined {
+      font-size: 13px !important; line-height: 1 !important;
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* ---- Type scorecard accents — tint each type card's icon so the
+       scorecards echo the masthead chip colours (report / dashboard / chat …). */
+    .lib-stat .lib-stat-label .material-symbols-outlined { color: var(--text-subtle); }
+    .lib-stat.t-report   .lib-stat-label .material-symbols-outlined { color: #7c6cf0; }
+    .lib-stat.t-dashboard .lib-stat-label .material-symbols-outlined { color: var(--sec-green); }
+    .lib-stat.t-chat     .lib-stat-label .material-symbols-outlined { color: var(--primary); }
+    html.dark .lib-stat.t-chat .lib-stat-label .material-symbols-outlined { color: var(--primary-bright); }
+    .lib-stat.t-mcp      .lib-stat-label .material-symbols-outlined { color: var(--ter-amber-text); }
+    .lib-stat.t-ref      .lib-stat-label .material-symbols-outlined { color: var(--sec-red); }
+
+    /* Divider between the score-card filters and the grid, mirroring
+       .pf-board-divider on the Product Portfolio module. */
+    .lib-board-divider { height: 1px; background: var(--border); margin: 20px 0 18px; }
+
+    /* ---- Card grid ---- */
+    .lib-grid {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    }
+    .lib-card {
+      display: flex; flex-direction: column;
+      border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit;
+      border: 1px solid var(--border); background: var(--surface);
+      box-shadow: var(--shadow-1);
+      transition: transform 0.18s cubic-bezier(.2,.7,.3,1), box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    a.lib-card:hover {
+      transform: translateY(-4px); box-shadow: var(--shadow-2);
+      border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+    }
+    a.lib-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    /* ---- Preview thumb ---- */
+    .lib-thumb {
+      position: relative; height: 122px; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .lib-thumb.pad { padding: 12px 14px; }
+
+    /* Bar-chart mock */
+    .lib-bars { display: flex; align-items: flex-end; gap: 7px; height: 100%; padding-bottom: 2px; }
+    .lib-bars i { flex: 1; border-radius: 3px 3px 0 0; display: block; }
+    .lib-bars i.g { background: color-mix(in srgb, var(--sec-green) 75%, transparent); }
+    .lib-bars i.b { background: color-mix(in srgb, var(--ter-amber) 82%, transparent); }
+    .lib-bars i.p { background: color-mix(in srgb, var(--primary) 60%, transparent); }
+
+    /* Line-chart mock */
+    .lib-line { width: 100%; height: 100%; }
+    .lib-line svg { width: 100%; height: 100%; display: block; }
+
+    /* Chat preview */
+    .lib-chatprev { display: flex; flex-direction: column; gap: 7px; height: 100%; overflow: hidden; }
+    .lib-bubble {
+      max-width: 88%; padding: 6px 9px; border-radius: 10px;
+      font-size: 0.6875rem; line-height: 1.35; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .lib-bubble.me { align-self: flex-end; background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text); border-color: transparent; }
+    .lib-bubble.ai { align-self: flex-start; }
+    .lib-clip { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .lib-thumb-badge {
+      position: absolute; top: 9px; left: 10px;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(3px);
+      color: var(--text-muted); border: 1px solid var(--border);
+    }
+    .lib-thumb-badge .material-symbols-outlined { font-size: 12px !important; }
+
+    /* ---- Card body ---- */
+    .lib-cbody { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 13px; flex: 1; }
+    .lib-cname {
+      font-size: 0.875rem; font-weight: 700; line-height: 1.3; color: var(--text);
+      display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .lib-shared {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: var(--text-subtle);
+    }
+    .lib-shared .material-symbols-outlined { font-size: 14px !important; }
+    .lib-cfoot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px; }
+    .lib-type {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 700; color: var(--acc, var(--text-muted));
+    }
+    .lib-type .material-symbols-outlined { font-size: 14px !important; }
+    .lib-type.t-chat { --acc: var(--primary); }
+    html.dark .lib-type.t-chat { --acc: var(--primary-bright); }
+    .lib-type.t-dashboard { --acc: var(--sec-green); }
+    .lib-type.t-report { --acc: #7c6cf0; }
+    .lib-date { font-size: 0.75rem; color: var(--text-subtle); }
+    .lib-counts { display: inline-flex; align-items: center; gap: 10px; }
+    .lib-count {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.75rem; font-weight: 600; color: var(--text-subtle);
+    }
+    .lib-count .material-symbols-outlined { font-size: 14px !important; }
+
+    /* ===================================================================
+       Workspace layout — mirror reports.html: the persistent WISEai chat
+       sits directly right of the nav, and the Library module docks to its
+       right. The shared shell (js/agent-overview.js) drops the WISEai dock
+       into #modules-row; here we just re-order the row (page-scoped) so the
+       chat is the centre column and the Library is the module on the right.
+    =================================================================== */
+    #modules-row #wiseai-dock-panel.wiseai-dock-open {
+      order: -1;
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      flex: 0 0 var(--chat-pane-w, 380px) !important;
+      width: var(--chat-pane-w, 380px) !important;
+      min-width: var(--chat-pane-w, 380px) !important;
+      max-width: var(--chat-pane-w, 380px) !important;
+    }
+    #modules-row #agent-main {
+      order: 0;
+      flex: 1 1 0%;
+      min-width: 380px;
+    }
+    .menu-brand-integrated #modules-row { margin-top: 0 !important; }
+    #modules-row { padding-bottom: 0 !important; margin-bottom: 0 !important; }
+    #modules-row #wiseai-dock-panel.wiseai-dock-open,
+    #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
+
+    /* The Library module owns its own scroll; drop the separate 60px header
+       bar so the serif masthead leads the scroll body, matching reports.html. */
+    body[data-nav-id="library"] #agent-main-header { display: none; }
+    body[data-nav-id="library"] .agent-main-scroll { padding: 0; }
+  </style>
+</head>
+<body data-nav-id="library">
+  <div id="agent-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+    <!-- Top bar rendered by the shared component in js/topbar.js (mountTopbar). -->
+    <div id="topbar-row" hidden aria-hidden="true"></div>
+
+    <div id="modules-row">
+      <main id="agent-main">
+        <div class="agent-main-inner">
+          <header class="agent-main-header" id="agent-main-header"></header>
+          <div class="agent-main-scroll" id="agent-main-scroll">
+            <div class="lib-wrap">
+
+              <!-- ============ MASTHEAD ============ -->
+              <div class="lib-masthead">
+                <div>
+                  <div class="lib-title-row">
+                    <h1 class="lib-title-main">WISEai Library</h1>
+                  </div>
+                  <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place.</p>
+                </div>
+              </div>
+
+              <!-- ============ TOOLBAR — canonical app search ============ -->
+              <div class="lib-toolbar-bar">
+                <div class="lib-search-inline">
+                  <span class="material-symbols-outlined">search</span>
+                  <input type="search" id="lib-search" class="lib-search-input" placeholder="Search by title, type, or shared by" aria-label="Search library" />
+                  <button type="button" class="lib-filter-btn" id="lib-filter-btn" aria-haspopup="dialog" aria-expanded="false" title="Filter library" aria-label="Filter library">
+                    <span class="material-symbols-outlined">tune</span>
+                    <span class="lib-filter-dot" aria-hidden="true"></span>
+                  </button>
+
+                  <div class="lib-filter-pop" id="lib-filter-pop" role="dialog" aria-label="Filter library" hidden>
+                    <div class="lib-filter-pop-head">
+                      <span class="lib-filter-pop-title">Filter library</span>
+                      <button type="button" class="lib-filter-clear" id="lib-filter-clear">Clear all</button>
+                    </div>
+
+                    <div class="lib-filter-group">
+                      <div class="lib-filter-label">Type</div>
+                      <div class="lib-filter-chips" id="lib-filter-type">
+                        <button type="button" class="lib-fchip is-on" data-type="all">All</button>
+                        <button type="button" class="lib-fchip" data-type="report"><span class="material-symbols-outlined">description</span>Reports</button>
+                        <button type="button" class="lib-fchip" data-type="dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboards</button>
+                        <button type="button" class="lib-fchip" data-type="chat"><span class="material-symbols-outlined">forum</span>Chats</button>
+                        <button type="button" class="lib-fchip" data-type="mcp"><span class="material-symbols-outlined">extension</span>MCP</button>
+                        <button type="button" class="lib-fchip" data-type="ref"><span class="material-symbols-outlined">bookmark</span>References</button>
+                      </div>
+                    </div>
+
+                    <div class="lib-filter-group">
+                      <div class="lib-filter-label">Sharing</div>
+                      <div class="lib-filter-chips" id="lib-filter-shared">
+                        <button type="button" class="lib-fchip is-on" data-shared="all">All</button>
+                        <button type="button" class="lib-fchip" data-shared="with"><span class="material-symbols-outlined">group</span>Shared with me</button>
+                        <button type="button" class="lib-fchip" data-shared="by"><span class="material-symbols-outlined">send</span>Shared by me</button>
+                      </div>
+                    </div>
+
+                    <div class="lib-filter-group">
+                      <div class="lib-filter-label">Folder</div>
+                      <div class="lib-filter-chips" id="lib-filter-folder">
+                        <button type="button" class="lib-fchip is-on" data-folder="all">All</button>
+                        <button type="button" class="lib-fchip" data-folder="filed"><span class="material-symbols-outlined">folder</span>Filed</button>
+                        <button type="button" class="lib-fchip" data-folder="unfiled"><span class="material-symbols-outlined">folder_open</span>Unfiled</button>
+                      </div>
+                    </div>
+
+                    <div class="lib-filter-group">
+                      <div class="lib-filter-label">Sort by</div>
+                      <div class="lib-filter-chips" id="lib-filter-sort">
+                        <button type="button" class="lib-fchip is-on" data-sort="newest">Newest</button>
+                        <button type="button" class="lib-fchip" data-sort="oldest">Oldest</button>
+                        <button type="button" class="lib-fchip" data-sort="az">A–Z</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============ SCORE CARDS — the whole page runs on the same
+                   scorecards as the Product Portfolio module. Top row = item
+                   type (All / Reports / Dashboards / Chats / MCP / References);
+                   second row = scope + folder status (Shared with me / Shared by
+                   me / Filed / Unfiled). Every count is derived from the cards
+                   actually rendered in the grid below. ==== -->
+              <div class="lib-stats-bar"><span class="lib-stats-label">Your library at a glance</span></div>
+              <div class="lib-stats-wrap">
+                <!-- Type row (6 cards — never wraps to a lone card) -->
+                <div class="lib-stats-row lib-row-type" role="group" aria-label="Filter library by type">
+                  <button type="button" class="lib-stat is-active" aria-pressed="true">
+                    <span class="lib-stat-num">13</span>
+                    <span class="lib-stat-label">All</span>
+                  </button>
+                  <button type="button" class="lib-stat t-report" aria-pressed="false">
+                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">description</span>Reports</span>
+                  </button>
+                  <button type="button" class="lib-stat t-dashboard" aria-pressed="false">
+                    <span class="lib-stat-num">4</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">bar_chart</span>Dashboards</span>
+                  </button>
+                  <button type="button" class="lib-stat t-chat" aria-pressed="false">
+                    <span class="lib-stat-num">9</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">forum</span>Chats</span>
+                  </button>
+                  <button type="button" class="lib-stat t-mcp" aria-pressed="false">
+                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">extension</span>MCP</span>
+                  </button>
+                  <button type="button" class="lib-stat t-ref" aria-pressed="false">
+                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">bookmark</span>References</span>
+                  </button>
+                </div>
+                <!-- Scope + folder status row (4 cards — never wraps to a lone card) -->
+                <div class="lib-stats-row lib-row-scope" role="group" aria-label="Filter library by scope and folder status">
+                  <button type="button" class="lib-stat" aria-pressed="false">
+                    <span class="lib-stat-num">5</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">group</span>Shared with me</span>
+                  </button>
+                  <button type="button" class="lib-stat" aria-pressed="false">
+                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">send</span>Shared by me</span>
+                  </button>
+                  <button type="button" class="lib-stat" aria-pressed="false">
+                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">folder</span>Filed</span>
+                  </button>
+                  <button type="button" class="lib-stat" aria-pressed="false">
+                    <span class="lib-stat-num">13</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">folder_open</span>Unfiled</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="lib-board-divider"></div>
+
+              <!-- ============ ITEMS ============ -->
+              <section aria-label="Library items">
+
+                  <div class="lib-grid" id="lib-grid">
+
+                    <!-- 1 · Dashboard -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                        <div class="lib-bars"><i class="g" style="height:38%"></i><i class="g" style="height:64%"></i><i class="b" style="height:88%"></i><i class="g" style="height:52%"></i><i class="b" style="height:30%"></i><i class="g" style="height:70%"></i></div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">B-optimized ingredient stack cracked a novel food shock</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                          <span class="lib-date">Aug 10, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 2 · Dashboard -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                        <div class="lib-bars"><i class="b" style="height:80%"></i><i class="g" style="height:54%"></i><i class="g" style="height:44%"></i><i class="b" style="height:66%"></i><i class="g" style="height:34%"></i><i class="g" style="height:58%"></i></div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Show me all the foods that are just one point away from moderately processed</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                          <span class="lib-date">Aug 10, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 3 · Chat -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">Show me all the foods that are just one point away from being moderately processed?</div>
+                          <div class="lib-bubble ai lib-clip">These are the foods scoring **WISEcode UPF** raw score = 6**, which is **one point below** the…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Show me all the foods that are just one point away from being moderately processed?</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts">
+                            <span class="lib-count"><span class="material-symbols-outlined">attach_file</span>2</span>
+                            <span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span>
+                          </span>
+                          <span class="lib-date">Aug 10, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 4 · Chat (shared) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">I want to test your ability to come up with codes and test them on your own — make…</div>
+                          <div class="lib-bubble ai lib-clip">Here's a first-pass **mitochondria code** concept. Great concept. Since WISEcode does not appear to have a…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">I want to test your ability to come up with codes…</div>
+                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 6</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>4</span></span>
+                          <span class="lib-date">Aug 5, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 5 · Chat (shared) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">can you remember things between conversations?</div>
+                          <div class="lib-bubble ai lib-clip">Not really — I can use context within the current chat, but I don't reliably carry your personal history across…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">can you remember things between conversations?</div>
+                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 5</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>6</span></span>
+                          <span class="lib-date">Aug 5, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 6 · Dashboard -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                        <div class="lib-bars"><i class="b" style="height:30%"></i><i class="b" style="height:46%"></i><i class="g" style="height:70%"></i><i class="g" style="height:90%"></i><i class="b" style="height:56%"></i><i class="g" style="height:40%"></i></div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Is this ingredient list ultra-processed?</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+                          <span class="lib-date">Aug 4, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 7 · Chat (shared) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">find foods whose ingredient list include the word natto</div>
+                          <div class="lib-bubble ai lib-clip">The raw text search mostly matched **annatto / natamycin** false positives. I tightened it, but the…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">find foods whose ingredient list include the word natto</div>
+                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span></span>
+                          <span class="lib-date">Aug 3, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 8 · Chat (shared) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">how many foods have full nfp15?</div>
+                          <div class="lib-bubble ai lib-clip">**207,988 foods** have all **NFP15** nutrients present from source*. {{suggestions: What percentage of all food…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">how many foods have full nfp15?</div>
+                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>8</span></span>
+                          <span class="lib-date">Aug 3, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 9 · Chat (shared) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">how many foods have full nfp15?</div>
+                          <div class="lib-bubble ai lib-clip">**207,988 foods** all **NFP15** nutrients declared. {{suggestions: What percentage of all foods is that?}}…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">how many foods have full nfp15?</div>
+                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>2</span></span>
+                          <span class="lib-date">Aug 3, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 10 · Chat -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">Is this ingredient list ultra-processed?</div>
+                          <div class="lib-bubble ai lib-clip">Paste the ingredient list, and I'll evaluate it for **UPF classification**. If you have them, include: - **Ingredient list**…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Is this ingredient list ultra-processed?</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>2</span></span>
+                          <span class="lib-date">Aug 1, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 11 · Dashboard (line) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">show_chart</span>Dashboard</span>
+                        <div class="lib-line">
+                          <svg viewBox="0 0 160 90" preserveAspectRatio="none" aria-hidden="true">
+                            <polyline points="0,70 26,54 52,60 78,32 104,40 130,18 160,26" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+                            <polyline points="0,78 26,72 52,66 78,68 104,54 130,58 160,44" fill="none" stroke="var(--sec-green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Is this ingredient list ultra-processed?</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">show_chart</span>Dashboard</span>
+                          <span class="lib-date">Jul 29, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 12 · Chat -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">Is this ingredient list ultra-processed?</div>
+                          <div class="lib-bubble ai lib-clip">Paste the ingredient list and I'll evaluate it for **WISEcode UPF**. If you have them, include: - **Ingredients**…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Is this ingredient list ultra-processed?</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-counts">
+                            <span class="lib-count"><span class="material-symbols-outlined">attach_file</span>2</span>
+                            <span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>14</span>
+                          </span>
+                          <span class="lib-date">Jul 29, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 13 · Chat -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <div class="lib-chatprev">
+                          <div class="lib-bubble me lib-clip">hello</div>
+                          <div class="lib-bubble ai lib-clip">Hi — I can help you search foods, analyze ingredients, check UPF classification, and build dashboards…</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">hello</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
+                          <span class="lib-date">Jul 28, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                  </div>
+                </section>
+
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="../js/agent-overview.js"></script>
+
+  <!-- ============ Library search + funnel filter wiring ============
+       Mirrors the Product Portfolio filter interaction: the funnel opens a
+       popover of chip groups, chips are single-select within a group, the
+       search matches title/shared-by text, and everything filters the grid
+       live. Card type / sharing / date are derived from the rendered card so
+       no per-card data attributes are needed. -->
+  <script>
+    (function () {
+      const grid = document.getElementById('lib-grid');
+      const searchEl = document.getElementById('lib-search');
+      const filterBtn = document.getElementById('lib-filter-btn');
+      const filterPop = document.getElementById('lib-filter-pop');
+      const filterClear = document.getElementById('lib-filter-clear');
+      if (!grid || !searchEl || !filterBtn || !filterPop) return;
+
+      const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest' };
+
+      // Snapshot each card's derived metadata once.
+      const cards = Array.from(grid.querySelectorAll('.lib-card')).map((el) => {
+        const typeEl = el.querySelector('.lib-type');
+        let type = 'chat';
+        if (typeEl) {
+          if (typeEl.classList.contains('t-dashboard')) type = 'dashboard';
+          else if (typeEl.classList.contains('t-report')) type = 'report';
+          else if (typeEl.classList.contains('t-chat')) type = 'chat';
+        }
+        const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
+        const filed = el.dataset.filed === '1' ? 'filed' : 'unfiled';
+        const name = (el.querySelector('.lib-cname')?.textContent || '').toLowerCase();
+        const sharedTxt = (el.querySelector('.lib-shared')?.textContent || '').toLowerCase();
+        const dateTxt = el.querySelector('.lib-date')?.textContent || '';
+        const time = Date.parse(dateTxt) || 0;
+        return { el, type, shared, filed, name, sharedTxt, dateTxt, time };
+      });
+
+      function anyFilterActive() {
+        return state.q !== '' || state.type !== 'all' || state.shared !== 'all' ||
+               state.folder !== 'all' || state.sort !== 'newest';
+      }
+
+      function apply() {
+        cards.forEach((c) => {
+          let ok = true;
+          if (state.type !== 'all' && c.type !== state.type) ok = false;
+          if (ok && state.shared !== 'all') {
+            if (state.shared === 'with' && c.shared !== 'with') ok = false;
+            if (state.shared === 'by') ok = false; // demo data has none shared by me
+          }
+          if (ok && state.folder !== 'all' && c.filed !== state.folder) ok = false;
+          if (ok && state.q) {
+            const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type;
+            if (!hay.includes(state.q)) ok = false;
+          }
+          c.el.style.display = ok ? '' : 'none';
+        });
+
+        // Reorder the visible cards per the sort chip.
+        const sorted = cards.slice();
+        if (state.sort === 'newest') sorted.sort((a, b) => b.time - a.time);
+        else if (state.sort === 'oldest') sorted.sort((a, b) => a.time - b.time);
+        else if (state.sort === 'az') sorted.sort((a, b) => a.name.localeCompare(b.name));
+        sorted.forEach((c) => grid.appendChild(c.el));
+
+        filterBtn.classList.toggle('has-filters', anyFilterActive());
+      }
+
+      searchEl.addEventListener('input', () => { state.q = searchEl.value.trim().toLowerCase(); apply(); });
+
+      function setPop(open) {
+        filterPop.hidden = !open;
+        filterBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      filterBtn.addEventListener('click', (e) => { e.stopPropagation(); setPop(filterPop.hidden); });
+      filterPop.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => setPop(false));
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setPop(false); });
+
+      // Single-select chip groups.
+      [['lib-filter-type', 'type', 'type'], ['lib-filter-shared', 'shared', 'shared'],
+       ['lib-filter-folder', 'folder', 'folder'], ['lib-filter-sort', 'sort', 'sort']]
+      .forEach(([groupId, key, dataKey]) => {
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        group.addEventListener('click', (e) => {
+          const chip = e.target.closest('.lib-fchip');
+          if (!chip) return;
+          group.querySelectorAll('.lib-fchip').forEach((c) => c.classList.remove('is-on'));
+          chip.classList.add('is-on');
+          state[key] = chip.dataset[dataKey];
+          apply();
+        });
+      });
+
+      filterClear.addEventListener('click', () => {
+        state.type = 'all'; state.shared = 'all'; state.folder = 'all'; state.sort = 'newest';
+        state.q = ''; searchEl.value = '';
+        filterPop.querySelectorAll('.lib-filter-chips').forEach((grp) => {
+          grp.querySelectorAll('.lib-fchip').forEach((c, i) => c.classList.toggle('is-on', i === 0));
+        });
+        apply();
+      });
+
+      apply();
+    })();
+  </script>
+
+  <script src="/livereload.js?snipver=1"></script>
+</body>
+</html>

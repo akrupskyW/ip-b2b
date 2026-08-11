@@ -45,8 +45,8 @@
       --text-muted: #444B55;
       /* AAA (7:1) on surface, bg, surface-2 and surface-3. */
       --text-subtle: #474E58;
-      --border: rgba(17,24,39,0.08);
-      --border-strong: rgba(17,24,39,0.14);
+      --border: rgba(37, 80, 124, 0.16);
+      --border-strong: rgba(37, 80, 124, 0.28);
 
       --primary: #25507C;
       --primary-10: rgba(37, 80, 124, 0.10);
@@ -106,8 +106,8 @@
       /* Lightened to clear AAA (7:1) on every navy surface up to surface-3. */
       --text-muted: #BCC6D3;
       --text-subtle: #B1BAC7;
-      --border: rgba(255,255,255,0.08);
-      --border-strong: rgba(255,255,255,0.14);
+      --border: rgba(139, 159, 175, 0.18);
+      --border-strong: rgba(139, 159, 175, 0.30);
 
       --primary-soft: rgba(37, 80, 124, 0.18);
       --primary-bright: #8B9FAF;
@@ -448,8 +448,7 @@
          nav column's full height AND their drop-shadow renders into that gutter
          instead of being clipped flush at the card edge. Preserves the
          horizontal scroll (overflow-x:auto) that opening panes relies on. */
-      padding: 0 16px var(--modules-bottom-pad);
-      margin-bottom: calc(-1 * var(--modules-bottom-pad));
+      padding: 0 16px;
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -3986,129 +3985,11 @@
     }
 
     /* Topbar menu */
-    /* ===== User-menu popover (matches dashboard style) ===== */
-    .wise-popover {
-      position: fixed;
-      min-width: 220px;
-      max-width: 300px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: var(--shadow-card);
-      z-index: 9999;
-      overflow: hidden;
-      transform: translateY(-6px);
-      opacity: 0;
-      pointer-events: none;
-      transition: transform .2s ease, opacity .18s ease;
-    }
-    .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-    .wise-popover-header {
-      padding: 10px 14px 6px;
-      font-size: 11px;
-      letter-spacing: .12em;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .wise-popover-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 6px;
-      padding: 8px 12px;
-      border-radius: var(--radius-pill);
-      font-size: var(--fs-ui);
-      color: var(--text);
-      cursor: pointer;
-      background: none;
-      border: 0;
-      width: calc(100% - 12px);
-      text-align: left;
-      font-family: inherit;
-      transition: background-color .15s ease, color .15s ease;
-    }
-    .wise-popover-item:hover,
-    .wise-popover-item.is-active {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    html.dark .wise-popover-item:hover {
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-    }
-    html.dark .wise-popover-item.is-active {
-      background: rgba(37, 80, 124, 0.22);
-      color: var(--primary-bright);
-    }
-    .wise-popover-item.danger { color: #DC3038; }
-    .wise-popover-item .material-symbols-outlined,
-    .wise-popover-item .material-symbols-outlined { font-size: 17px; color: var(--text-muted); }
-    .wise-popover-item:hover .material-symbols-outlined,
-    .wise-popover-item:hover .material-symbols-outlined,
-    .wise-popover-item.is-active .material-symbols-outlined,
-    .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary); }
-    html.dark .wise-popover-item.is-active .material-symbols-outlined,
-    html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-bright); }
-    .wise-popover-item.danger .material-symbols-outlined { color: #DC3038; }
-    /* Binary on/off settings: switch glyph on the left (blue on, gray off);
-       no full-row highlight. */
-    .wise-popover-item.wise-toggle-item.is-active { background: none; color: var(--text); }
-    .wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
-    html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-    .wise-popover-item .wise-toggle-ico { font-size: 22px; color: var(--text-muted); transition: color .15s ease; }
-    .wise-popover-item:hover .wise-toggle-ico { color: var(--text-muted); }
-    .wise-popover-item.is-on .wise-toggle-ico,
-    .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
-    html.dark .wise-popover-item.is-on .wise-toggle-ico,
-    html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
-    .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
-    /* Notifications / Agents quick-actions docked at the top of the avatar
-       menu, split by a thin vertical rule. */
-    .wise-popover-actions { display: flex; align-items: stretch; gap: 4px; padding: 8px; }
-    .wise-pop-action {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 9px 6px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-radius: var(--radius-pill);
-      color: var(--text);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .02em;
-      transition: background-color .15s ease, color .15s ease;
-    }
-    .wise-pop-action:hover {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    html.dark .wise-pop-action:hover {
-      background: rgba(37, 80, 124, 0.18);
-      color: var(--primary-bright);
-    }
-    .wise-pop-action .material-symbols-outlined { font-size: 20px; color: var(--text-muted); }
-    .wise-pop-action:hover .material-symbols-outlined { color: var(--primary); }
-    html.dark .wise-pop-action:hover .material-symbols-outlined { color: var(--primary-bright); }
-    .wise-pop-action.has-dot { position: relative; }
-    .wise-pop-action.has-dot::after {
-      content: '';
-      position: absolute;
-      top: 6px;
-      left: 50%;
-      margin-left: 4px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--sec-red, #DC3038);
-    }
-    .wise-pop-vline { width: 1px; align-self: stretch; background: var(--border); margin: 6px 0; }
-    /* ===== end user-menu popover ===== */
+    /* User/appearance popover styling lives in the shared wise.css
+       (.wise-popover*). The per-page copy that used to sit here drifted out of
+       sync (narrower panel, missing the segmented text-size control + Admin
+       badges), which made this page's Appearance panel not match the others.
+       Removed so every navigation module renders the identical popover. */
 
     .topbar-menu-item {
       display: flex;
@@ -4577,9 +4458,10 @@
       max-width: 100%;
       flex: 0 0 auto;
     }
-    /* Intent chips, scrollable variant — a single horizontal line below the
-       score cards with left/right arrow controls (same pattern as the score-card
-       scroller). The wrap matches the score-card rail width so both line up. */
+    /* Intent chips are ALWAYS inline — they wrap onto multiple centered rows and
+       never become a horizontal carousel. The scroll arrows + edge fades are
+       suppressed accordingly. The wrap matches the score-card rail width so both
+       line up. */
     .ws-chips-wrap {
       position: relative;
       width: 100%;
@@ -4587,40 +4469,16 @@
       margin: 0 auto 2rem;
     }
     .ws-chips-wrap .ws-chips {
-      flex-wrap: nowrap;
-      justify-content: flex-start;
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      overflow: visible;
       margin-bottom: 0;
       padding: 4px 2px;
     }
-    .ws-chips-wrap .ws-chips::-webkit-scrollbar { height: 0; width: 0; display: none; }
-    .ws-chips-wrap .ws-chips .chip { scroll-snap-align: start; }
-    /* Soft edge fades cue that the row keeps going. */
+    /* No carousel: hide the chip scroll arrows and the edge fades outright. */
+    .ws-chips-wrap .ws-sc-scroll { display: none !important; }
     .ws-chips-wrap::before,
-    .ws-chips-wrap::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 28px;
-      pointer-events: none;
-      z-index: 4;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .ws-chips-wrap::before {
-      left: 0;
-      background: linear-gradient(to right, var(--bg) 0%, transparent 100%);
-    }
-    .ws-chips-wrap::after {
-      right: 0;
-      background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
-    }
-    .ws-chips-wrap.has-prev::before { opacity: 1; }
-    .ws-chips-wrap.has-next::after { opacity: 1; }
+    .ws-chips-wrap::after { content: none; display: none; }
     .ws-hint {
       font-size: var(--fs-ui);
       color: var(--text-subtle);
@@ -6469,28 +6327,27 @@
       gap: 8px;
     }
     .fl-input-wrap {
-      padding: 0 6px 0 14px !important;
-      min-height: 40px;
-      gap: 4px;
       background: var(--surface-2);
       border-color: var(--border-strong);
     }
+    /* Stacked composer (canonical WISEai rail): the "+" sits left, the database
+       selector row sits atop the text input. Let wiseai-chat.css own the padding. */
+    .fl-input-wrap--stacked { min-height: 40px; }
     .fl-label { display: none !important; }
     .fl-input {
       font-size: 13px;
       font-weight: 400;
-      padding: 8px 0;
     }
     .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
     .fl-icon-btn { width: 32px; height: 32px; }
+    /* Send button matches the canonical 40px .sc-send circle. */
     #send-btn {
-      width: 32px !important;
-      height: 32px !important;
+      width: 40px;
+      height: 40px;
       flex-shrink: 0;
       align-self: center;
     }
-    /* Airplane glyph sized well inside the circle (not touching the edges). */
-    #send-btn .material-symbols-outlined { font-size: 15px !important; line-height: 1; }
+    #send-btn .material-symbols-outlined { font-size: 20px !important; line-height: 1; }
 
     /* =====================================================================
        FONT WEIGHTS — dial back the chunky display weights.
@@ -7325,7 +7182,7 @@
     <div id="menu-panel" class="mp-open">
       <div class="menu-inner">
         <div class="menu-panel-body">
-          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE agent navigation"></nav>
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
         </div>
       </div>
     </div>
@@ -7336,6 +7193,13 @@
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+      import { wireChatComposer } from '../js/wiseai-chat.js';
+
+      /* Upgrade the inline comparison chat input to the canonical WISEai composer:
+         swap the old model-tune selector for the shared database selector. The
+         page keeps its own "+" attach popover, so skip the shared attach wiring. */
+      document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
+
       Object.assign(window, {
         isMenuFooterAnchor,
         positionPopoverInMenuPanel,
@@ -8045,9 +7909,9 @@
                     <button type="button" class="ws-sc-scroll ws-sc-scroll--next" id="ws-sc-next" aria-label="Scroll to see more cards" onclick="scrollScorecards(1)"><span class="material-symbols-outlined">chevron_right</span></button>
                 </div>
             </div>
-            <!-- Quick action chips — one horizontal line below the score cards,
-                 scrolled left/right with the arrow controls (mirrors the
-                 score-card scroller above). -->
+            <!-- Quick action chips — always inline: they wrap onto centered rows
+                 below the score cards and never scroll as a carousel. The arrow
+                 controls below are suppressed via CSS. -->
             <div class="ws-chips-wrap">
             <div class="ws-chips" id="ws-chips" role="list" aria-label="Quick actions">
                 <button class="chip ws-intent-chip" onclick="startComparisonWorkflow()">
@@ -8416,10 +8280,9 @@
         </div><!-- /#settings-screen -->
       </div>
 
-      <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10">
-        <div class="flex gap-2 items-end">
-          <div class="fl-input-wrap fl-input-wrap--lead">
-            <span id="fl-label" class="fl-label">Ask a question or choose an option above</span>
+      <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10" data-wise-composer>
+        <div class="sc-input-row">
+          <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
             <div class="fl-more-wrap" id="fl-more-wrap">
               <button type="button" class="fl-icon-btn fl-more-btn" id="fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" onclick="toggleInputMore(event)">
                 <span class="material-symbols-outlined">add</span>
@@ -8439,29 +8302,16 @@
                 </button>
               </div>
             </div>
-            <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
-            <div class="fl-model-wrap" id="fl-model-wrap">
-              <button type="button" class="fl-icon-btn fl-model-btn" id="fl-model-btn" title="WISE.ai model" aria-haspopup="menu" aria-expanded="false" onclick="toggleModelMenu(event)">
-                <span class="material-symbols-outlined">tune</span>
-              </button>
-              <div class="fl-model-popover" id="fl-model-popover" role="menu">
-                <div class="fl-model-head">WISE.ai model</div>
-                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="swift" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Swift</span><span class="fl-model-desc">Fast answers for everyday work</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
-                <button type="button" class="fl-model-item is-active" role="menuitemradio" aria-checked="true" data-model="core" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Core</span><span class="fl-model-desc">Balanced depth &amp; speed</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
-                <button type="button" class="fl-model-item" role="menuitemradio" aria-checked="false" data-model="deep" onclick="selectModel(event, this)">
-                  <span class="fl-model-meta"><span class="fl-model-name">WISE.ai Deep</span><span class="fl-model-desc">Advanced reasoning for reformulation</span></span>
-                  <span class="fl-model-switch" aria-hidden="true"></span>
-                </button>
+            <div class="fl-input-col">
+              <div class="fl-model-row">
+                <div class="fl-attachments"></div>
+              </div>
+              <div class="fl-input-line">
+                <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
               </div>
             </div>
           </div>
-          <button type="button" id="send-btn" class="btn-primary w-12 h-12 shrink-0 rounded-full text-white flex items-center justify-center">
+          <button type="button" id="send-btn" class="sc-send">
             <span class="material-symbols-outlined">send</span>
           </button>
         </div>

@@ -437,7 +437,18 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },
-  { type: 'item', id: 'wiseai', label: 'WISEai', icon: 'auto_awesome', slug: 'wiseai.html' },
+  {
+    type: 'group',
+    id: 'wiseai',
+    label: 'WISEai',
+    icon: 'auto_awesome',
+    defaultOpen: false,
+    children: [
+      { id: 'wiseai-chat', label: 'Chat', icon: 'forum', slug: 'wiseai.html' },
+      { id: 'library', label: 'Library', icon: 'auto_stories', slug: 'library.html' },
+      { id: 'ingredients', label: 'Ingredient Browser', icon: 'science', slug: 'ingredient-browser.html' },
+    ],
+  },
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
   { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
 
@@ -785,6 +796,8 @@ const EXISTING_PAGES = new Set([
   'reports.html',
   'reformulation.html',
   'wiseai.html',
+  'library.html',
+  'ingredient-browser.html',
   'ai-chat.html',
   'ai-chat-2.html',
   'verification.html',
