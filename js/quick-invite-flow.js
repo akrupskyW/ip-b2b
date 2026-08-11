@@ -27,7 +27,7 @@ const STATUS_CHIP = {
 const FILTERS = [
   { key: null,        label: 'All',       num: 24, sub: 'All invitations',   icon: 'history',       accent: '' },
   { key: 'pending',   label: 'Pending',   num: 4,  sub: 'Awaiting response',  icon: 'hourglass_top', accent: 'adm-stat--amber' },
-  { key: 'accepted',  label: 'Accepted',  num: 5,  sub: 'Have joined',        icon: 'check_circle',  accent: 'adm-stat--green' },
+  { key: 'accepted',  label: 'Accepted',  num: 5,  sub: 'Have joined',        icon: 'check',  accent: 'adm-stat--green' },
   { key: 'expired',   label: 'Expired',   num: 3,  sub: 'Past 7 days',        icon: 'schedule',      accent: '' },
   { key: 'cancelled', label: 'Cancelled', num: 12, sub: 'No longer valid',    icon: 'cancel',        accent: 'adm-stat--red' },
 ];
@@ -81,7 +81,7 @@ let chatApi = null;
 export function setQuickInviteChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -318,14 +318,14 @@ export const QUICK_INVITE_WISEAI = {
       { intent: 'need_attention', icon: 'priority_high', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, metric: '3', metricUnit: ' invites', title: 'Need attention', desc: 'Expired or unaccepted past 7 days — resend or cancel them.', action: 'What needs attention?', ask: 'What needs attention?' },
       { intent: 'show_pending', icon: 'hourglass_top', iconTone: 'brand', pill: { tone: 'up', icon: 'hourglass_top', text: 'Pending' }, metric: '4', metricUnit: ' pending', title: 'Awaiting a response', desc: 'Nudge or cancel the invites still waiting to be accepted.', action: 'Show pending', ask: 'Show pending invites' },
       { intent: 'show_all', icon: 'history', iconTone: 'brand', pill: { tone: 'up', icon: 'history', text: 'All' }, metric: '24', metricUnit: ' total', title: 'All invitations', desc: 'Every invite you\u2019ve sent, most recent first.', action: 'Show all invites', ask: 'Show all invites' },
-      { intent: 'show_accepted', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Accepted' }, title: 'Accepted invitations', desc: '5 people have joined from your invites.', action: 'Show accepted', ask: 'Show accepted' },
+      { intent: 'show_accepted', icon: 'check', iconTone: 'brand', pill: { tone: 'up', icon: 'check', text: 'Accepted' }, title: 'Accepted invitations', desc: '5 people have joined from your invites.', action: 'Show accepted', ask: 'Show accepted' },
       { intent: 'show_cancelled', icon: 'cancel', iconTone: 'brand', pill: { tone: 'up', icon: 'cancel', text: 'Cancelled' }, title: 'Cancelled invitations', desc: 'Invites you withdrew — 12 in total.', action: 'Show cancelled', ask: 'Show cancelled' },
     ],
   },
   intents: [
     { intent: 'need_attention', label: 'What needs attention?', icon: 'priority_high' },
     { intent: 'show_pending',   label: 'Show pending invites',  icon: 'hourglass_top' },
-    { intent: 'show_accepted',  label: 'Show accepted',         icon: 'check_circle' },
+    { intent: 'show_accepted',  label: 'Show accepted',         icon: 'check' },
     { intent: 'show_cancelled', label: 'Show cancelled',        icon: 'cancel' },
     { intent: 'show_all',       label: 'Show all invites',      icon: 'history' },
     { intent: 'export',         label: 'Export CSV',            icon: 'download' },

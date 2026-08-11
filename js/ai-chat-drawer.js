@@ -22,6 +22,80 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
     return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  /* Reveal a reply's text one word at a time so it reads as if it's being typed
+     live rather than popping in whole. Wraps each visible word in a span and
+     fades them in on a quick cadence, leaving markup, icons and (optionally) the
+     source chips untouched. Honors prefers-reduced-motion. */
+  const prefersReducedMotion = (() => {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  })();
+  /* Prime an element to slide in from the left, then reveal a set of them one
+     after another so the source chips animate in left→right after the answer. */
+  function primeRevealFromLeft(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-6px)';
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
+  }
+  function revealStaggered(els, startDelay, gap, done) {
+    const list = (els || []).filter(Boolean);
+    if (!list.length) { if (done) setTimeout(done, startDelay || 0); return; }
+    let idx = 0;
+    const showNext = () => {
+      list[idx].style.opacity = '1';
+      list[idx].style.transform = 'none';
+      idx += 1;
+      const t = $('#aiThread'); if (t) t.scrollTop = t.scrollHeight;
+      if (idx < list.length) setTimeout(showNext, gap);
+      else if (done) setTimeout(done, gap);
+    };
+    setTimeout(showNext, startDelay);
+  }
+  function typeInEl(el, opts = {}) {
+    const done = opts.done;
+    const skipSel = opts.skip || '';
+    if (!el || prefersReducedMotion) { if (done) done(); return; }
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const p = n.parentElement;
+        if (p && p.closest('.material-symbols-rounded, .material-symbols-outlined')) return NodeFilter.FILTER_REJECT;
+        if (skipSel && p && p.closest(skipSel)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const nodes = [];
+    let tn;
+    while ((tn = walker.nextNode())) nodes.push(tn);
+    const words = [];
+    nodes.forEach((node) => {
+      const parts = node.nodeValue.split(/(\s+)/);
+      const frag = document.createDocumentFragment();
+      parts.forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        const span = document.createElement('span');
+        span.style.opacity = '0';
+        span.textContent = part;
+        frag.appendChild(span);
+        words.push(span);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    if (!words.length) { if (done) done(); return; }
+    let i = 0;
+    const scroll = () => { const t = $('#aiThread'); if (t) t.scrollTop = t.scrollHeight; };
+    const step = () => {
+      words[i].style.opacity = '1';
+      i++;
+      scroll();
+      if (i < words.length) setTimeout(step, 70);
+      else if (done) done();
+    };
+    step();
+  }
+
   function buildReply(prompt) {
     const p = prompt.toLowerCase();
     if (p.includes('risk'))
@@ -118,6 +192,18 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
           </div>`;
       thread.appendChild(aiMsg);
       thread.scrollTop = thread.scrollHeight;
+      /* Type the answer in word-by-word; once it's done, bring the source chips
+         in one after another, left→right. */
+      const bubble = aiMsg.querySelector('.msg-bubble');
+      const chipRow = aiMsg.querySelector('.msg-source-chips');
+      const chips = chipRow ? Array.from(chipRow.children) : [];
+      chips.forEach(primeRevealFromLeft);
+      typeInEl(bubble, {
+        skip: '.msg-source-chips',
+        done: () => {
+          revealStaggered(chips, 110, 55, () => { thread.scrollTop = thread.scrollHeight; });
+        },
+      });
     }, 1100);
   }
 
@@ -171,7 +257,7 @@ export function createAiChatDrawer({ $, STATE, rerenderCharts, navigate, showToa
         } else if (a.startsWith('send:')) {
           sendMessage(a.slice(5));
         } else if (a.startsWith('toast:')) {
-          showToast({ title: a.slice(6), icon: 'check_circle', kind: 'success' });
+          showToast({ title: a.slice(6), icon: 'check', kind: 'success' });
         }
       });
     }

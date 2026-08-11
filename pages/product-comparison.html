@@ -3420,6 +3420,29 @@
       background: color-mix(in srgb, #EC4899 14%, transparent);
       color: #EC4899;
     }
+    /* Guiding Stars is an admin-gated control, so the ⋯ row carries a pink
+       "Admin" badge and a real sliding switch (matching the product-portfolio
+       treatment) rather than a plain menu action. The label flexes so the
+       badge + switch are pushed to the right edge. */
+    .pf-module-menu-item .pf-mi-label { flex: 1 1 auto; }
+    .pf-mi-badge {
+      flex-shrink: 0; padding: 2px 6px; border-radius: 999px; line-height: 1;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      color: #EC4899;
+      background: color-mix(in srgb, #EC4899 14%, transparent);
+    }
+    .pf-mi-switch {
+      position: relative; flex-shrink: 0; width: 32px; height: 18px; border-radius: 999px;
+      background: var(--surface-3); border: 1px solid var(--border-strong);
+      transition: background 0.16s ease, border-color 0.16s ease;
+    }
+    html.dark .pf-mi-switch { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+    .pf-mi-knob {
+      position: absolute; top: 1px; left: 1px; width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.3); transition: transform 0.16s ease;
+    }
+    .pf-module-menu-item.pf-mi-gs.is-on .pf-mi-switch { background: #EC4899; border-color: #EC4899; }
+    .pf-module-menu-item.pf-mi-gs.is-on .pf-mi-knob { transform: translateX(14px); }
 
     /* In-chat Guiding Stars intent chip — pink star accent. */
     .sc-reply-chips .chip.chip-gs .material-symbols-outlined,
@@ -4490,7 +4513,7 @@
       .ws-logo { animation: none; transform: none; }
     }
     .ws-heading {
-      font-size: clamp(1.875rem, 1rem + 2.2vw, 2.75rem);
+      font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem);
       font-weight: 800;
       line-height: 1.12;
       color: var(--text);
@@ -5310,7 +5333,9 @@
       background: var(--surface-3);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill);
-      padding: 20px 12px 10px 14px;
+      /* Padding intentionally omitted — the canonical stacked composer padding
+         (wise.css `.fl-input-wrap--stacked`: 5px 8px 5px 6px) owns it so the pill
+         matches pages/wiseai.html exactly. */
       display: flex;
       align-items: center;
       gap: 6px;
@@ -7729,23 +7754,14 @@
             <span class="material-symbols-outlined">more_vert</span>
           </button>
           <div id="wiseai-menu" class="topbar-popover hidden" role="menu">
-            <button type="button" class="topbar-menu-item" onclick="openAddMemberModal(); closeAllMoreMenus()">
-              <span class="material-symbols-outlined topbar-menu-icon">person_add</span>
-              <span>Add team member to chat</span>
-            </button>
-            <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="(window.__wiseChatHistory ? window.__wiseChatHistory.toggle() : toggleHistoryPanel({ fromMenu: true })); closeAllMoreMenus()">
               <span class="material-symbols-outlined topbar-menu-icon">history</span>
               <span>History</span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="restartConversation(); closeAllMoreMenus()">
-              <span class="material-symbols-outlined topbar-menu-icon">add_circle_outline</span>
+              <span class="material-symbols-outlined topbar-menu-icon">add</span>
               <span>Start new conversation</span>
-            </button>
-            <button type="button" class="topbar-menu-item" id="wiseai-copy-transcript-item" onclick="copyTranscript(this)">
-              <span class="material-symbols-outlined topbar-menu-icon">content_copy</span>
-              <span>Copy transcript</span>
             </button>
             <button type="button" class="topbar-menu-item" onclick="exportConversation(); closeAllMoreMenus()">
               <span class="material-symbols-outlined topbar-menu-icon">download</span>
@@ -7917,8 +7933,8 @@
                 <button class="chip ws-intent-chip" onclick="startComparisonWorkflow()">
                     <span class="material-symbols-outlined" style="font-size:16px">compare_arrows</span>Compare Against Competitors
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('customer_profile','Start New Verification','add_circle')">
-                    <span class="material-symbols-outlined" style="font-size:16px">add_circle</span>Start New Verification
+                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('customer_profile','Start New Verification','add')">
+                    <span class="material-symbols-outlined" style="font-size:16px">add</span>Start New Verification
                     <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
                 </button>
                 <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('resume_prompt','Continue Existing','play_circle')">
@@ -7937,8 +7953,8 @@
                     <span class="material-symbols-outlined" style="font-size:16px">restaurant_menu</span>WISE Foods
                     <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('add_food_intro','Add a New Food','add_circle_outline')">
-                    <span class="material-symbols-outlined" style="font-size:16px">add_circle_outline</span>Add a New Food
+                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('add_food_intro','Add a New Food','add')">
+                    <span class="material-symbols-outlined" style="font-size:16px">add</span>Add a New Food
                     <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
                 </button>
                 <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('edit_food_select','Edit an Existing Food','edit_note')">
@@ -8445,7 +8461,7 @@
             <button type="button" class="um-btn um-btn-primary"><span class="material-symbols-outlined">add</span>Create new key</button>
             <div class="um-section-label">Active keys</div>
             <div class="um-card space-y-2">
-              <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Production</span><span class="um-chip"><span class="material-symbols-outlined" style="font-size:13px">check_circle</span>Active</span></div>
+              <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Production</span><span class="um-chip"><span class="material-symbols-outlined" style="font-size:13px">check</span>Active</span></div>
               <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_live_sk_••••••••••8f2a</span><button type="button" class="um-btn" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_live_sk_8f2a')" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
               <div class="text-xs text-oyster-600">Created Mar 4, 2026 · Last used 2h ago</div>
             </div>
@@ -9418,7 +9434,7 @@
           const live = document.querySelector('#verify-flow-panel .vf-live');
           if (live) {
             live.style.background = 'var(--sec-green-10)';
-            live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check_circle</span>DONE';
+            live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check</span>DONE';
           }
         }
       } else {
@@ -9637,7 +9653,7 @@
       const live = document.querySelector('#verify-flow-panel .vf-live');
       if (live) {
         live.style.background = 'var(--sec-green-10)';
-        live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check_circle</span>DONE';
+        live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check</span>DONE';
       }
       addWISEaiMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
       VF_STAGES.forEach((s) => { addUserMessage(s.user); addWISEaiMessage(s.reply); });
@@ -10047,6 +10063,7 @@
       if (!ws) return;
       ws.style.display = '';
       ws.classList.remove('ws-hidden');
+      revealWelcome();
     }
 
     function hideWelcomeScreen(callback) {
@@ -10100,6 +10117,121 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    /* Reveal a WISEai answer one word at a time so it reads as if it's being
+       typed live rather than popping in whole. Each visible word is wrapped in a
+       span and faded in on a quick cadence; markup, icons, media and the
+       meta/feedback rows stay intact. Honors prefers-reduced-motion. */
+    const WISEAI_REDUCED_MOTION = (() => {
+      try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+      catch (_) { return false; }
+    })();
+    function wiseaiTypeInLine(bodyEl, done) {
+      if (!bodyEl) { if (done) done(); return; }
+      const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          const p = n.parentElement;
+          if (p && p.closest('.sc-line-meta, .sc-feedback, .material-symbols-outlined, .material-symbols-rounded, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+      const textNodes = [];
+      let tn;
+      while ((tn = walker.nextNode())) textNodes.push(tn);
+      const words = [];
+      textNodes.forEach((node) => {
+        const parts = node.nodeValue.split(/(\s+)/);
+        const frag = document.createDocumentFragment();
+        parts.forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          const span = document.createElement('span');
+          span.style.opacity = '0';
+          span.textContent = part;
+          frag.appendChild(span);
+          words.push(span);
+        });
+        node.parentNode.replaceChild(frag, node);
+      });
+      if (!words.length) { if (done) done(); return; }
+      const box = document.getElementById('chat-messages');
+      let i = 0;
+      const step = () => {
+        words[i].style.opacity = '1';
+        i++;
+        if (box) box.scrollTop = box.scrollHeight;
+        if (i < words.length) setTimeout(step, 70);
+        else if (done) done();
+      };
+      step();
+    }
+
+    /* Prime an element to slide in from the left, then reveal a set of them one
+       after another so the timestamp and action icons each animate in, in order,
+       once the answer has finished typing. */
+    function wiseaiPrimeLeft(el) {
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-6px)';
+      el.style.transition = 'opacity .2s ease, transform .2s ease';
+    }
+    function wiseaiRevealStaggered(els, startDelay, gap, done) {
+      const box = document.getElementById('chat-messages');
+      const list = (els || []).filter(Boolean);
+      if (!list.length) { if (done) setTimeout(done, startDelay || 0); return; }
+      let idx = 0;
+      const showNext = () => {
+        list[idx].style.opacity = '1';
+        list[idx].style.transform = 'none';
+        idx += 1;
+        if (box) box.scrollTop = box.scrollHeight;
+        if (idx < list.length) setTimeout(showNext, gap);
+        else if (done) setTimeout(done, gap);
+      };
+      setTimeout(showNext, startDelay);
+    }
+
+    /* Prime an element to FLY IN from the right; wiseaiRevealStaggered then
+       clears the transform so it sails right→left and lands in place. Used by
+       the welcome intent chips (and score cards) so they arrive only after the
+       heading has typed in — the exact same reveal the shared chat uses. */
+    function wiseaiPrimeRight(el) {
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(30px)';
+      el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+    }
+
+    /* Welcome-screen reveal. Type the heading WORD-BY-WORD (exactly like every
+       WISEai answer), and only once the copy has landed do the score cards and
+       intent chips fly in from the right in a single top-to-bottom cascade —
+       so the chips animate identically to the words that precede them. Honors
+       reduced-motion (everything just shows). Safe to re-run whenever the
+       welcome is shown again. */
+    let wiseaiWelcomeHeadingText = null;
+    function revealWelcome() {
+      const ws = document.getElementById('welcome-screen');
+      if (!ws || ws.classList.contains('ws-hidden') || ws.style.display === 'none') return;
+      const heading = ws.querySelector('.ws-heading');
+      const cards = Array.from(ws.querySelectorAll('#ws-scorecards .ws-scorecard'));
+      const chips = Array.from(ws.querySelectorAll('#ws-chips .chip')).filter((c) => !c.hidden);
+      const all = cards.concat(chips);
+      if (WISEAI_REDUCED_MOTION) {
+        all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
+        return;
+      }
+      /* Remember the heading's plain text so a re-run starts clean (the typed
+         reveal wraps each word in a span, which would otherwise compound). */
+      if (heading) {
+        if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.textContent;
+        else heading.textContent = wiseaiWelcomeHeadingText;
+      }
+      /* Hold every card + chip back (invisible, nudged right) until the text lands. */
+      all.forEach(wiseaiPrimeRight);
+      const typeText = (el, next) => { if (el) wiseaiTypeInLine(el, next); else next(); };
+      typeText(heading, () => { wiseaiRevealStaggered(all, 90, 60, null); });
+    }
+
     /* Drop a WISEai reply with a grounding caption + timestamp. Pass
        { source: false } for a plain acknowledgement that shouldn't claim a source. */
     function addWISEaiMessage(html, opts = {}) {
@@ -10111,8 +10243,30 @@
         'beforeend',
         `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}${fb}</div></div>`
       );
+      const line = box.lastElementChild;
+      const body = line && line.querySelector('.sc-line-body');
       box.scrollTop = box.scrollHeight;
-      return box.lastElementChild;
+      /* Type the prose in word-by-word, then bring in the timestamp, then the
+         action icons (grounding chip + feedback pill) — text, timestamp, icons,
+         in order. Embedded charts / tables are left intact by the walker. */
+      const canType = body && !WISEAI_REDUCED_MOTION && opts.typewriter !== false;
+      if (canType) {
+        const timeEl = body.querySelector('.sc-line-time');
+        const icons = [];
+        const srcEl = body.querySelector('.sc-trust-chip');
+        if (srcEl) icons.push(srcEl);
+        const fbEl = body.querySelector('.sc-feedback');
+        if (fbEl) icons.push(fbEl);
+        if (timeEl) wiseaiPrimeLeft(timeEl);
+        icons.forEach(wiseaiPrimeLeft);
+        box.scrollTop = box.scrollHeight;
+        wiseaiTypeInLine(body, () => {
+          wiseaiRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
+            wiseaiRevealStaggered(icons, 130, 60, () => { box.scrollTop = box.scrollHeight; });
+          });
+        });
+      }
+      return line;
     }
 
     /* Thumbs up/down feedback affordance shown beneath a WISEai reply
@@ -10174,7 +10328,7 @@
 
     function wiseaiFeedbackThanks(bar, msg) {
       bar.classList.add('sc-fb-done');
-      bar.innerHTML = '<span class="sc-fb-thanks"><span class="material-symbols-outlined">check_circle</span>' +
+      bar.innerHTML = '<span class="sc-fb-thanks"><span class="material-symbols-outlined">check</span>' +
         String(msg).replace(/</g, '&lt;') + '</span>';
     }
 
@@ -10464,10 +10618,12 @@
       document.addEventListener('DOMContentLoaded', initScorecardScroller);
       document.addEventListener('DOMContentLoaded', initChipScroller);
       document.addEventListener('DOMContentLoaded', initChipLocks);
+      document.addEventListener('DOMContentLoaded', revealWelcome);
     } else {
       initScorecardScroller();
       initChipScroller();
       initChipLocks();
+      revealWelcome();
     }
 
     /* ════════════════════════════════════════════════════════════════════
@@ -11930,7 +12086,7 @@
         if (!box) return;
         const chips = list.map((e, i) => {
           const isMatch = i < matchCount;
-          const ic = isMatch ? 'auto_awesome' : 'add_circle';
+          const ic = isMatch ? 'auto_awesome' : 'add';
           const cls = isMatch ? 'chip chip--match' : 'chip';
           return `<button type="button" class="${cls}" onclick="cmpConfirmAddEntity('${e.id}', this)"><span class="material-symbols-outlined">${ic}</span>${e.name}</button>`;
         }).join('');
@@ -12044,7 +12200,7 @@
         if (!box) return;
         const chips = list.map((e, i) => {
           const isMatch = i < matchCount;
-          const ic = isMatch ? 'auto_awesome' : 'add_circle';
+          const ic = isMatch ? 'auto_awesome' : 'add';
           const cls = isMatch ? 'chip chip--match' : 'chip';
           return `<button type="button" class="${cls}" onclick="cmpConfirmSwapSlot('${slotId}','${e.id}', this)"><span class="material-symbols-outlined">${ic}</span>${e.name}</button>`;
         }).join('');
@@ -12198,7 +12354,7 @@
       const items = list.length
         ? list.map((e, i) => {
             const isMatch = i < matchCount;
-            const ic = isMatch ? 'auto_awesome' : 'add_circle';
+            const ic = isMatch ? 'auto_awesome' : 'add';
             return `<button type="button" role="menuitem" class="cmp-kind-menu-item ${isMatch ? 'is-match' : ''}" onclick="cmpKindMenuPick('${e.id}')"><span class="material-symbols-outlined">${ic}</span><span class="cmp-kind-menu-item-name">${e.name}</span></button>`;
           }).join('')
         : '<div class="cmp-kind-menu-empty">No other ' + cmpKindLabel(kind) + ' is available to place here.</div>';
@@ -13909,9 +14065,9 @@
       if (!row) return;
       const chips = CMP_METRICS.filter(m => !m.future && m.id !== 'wisescore').map(m => {
         const on = compareState.metrics.includes(m.id);
-        return `<button type="button" class="chip ${on ? 'chip-primary' : ''}" onclick="cmpToggleMetricChat('${m.id}')"><span class="material-symbols-outlined">${on ? 'check_circle' : 'add_circle'}</span>${cmpMetricShort(m)}</button>`;
+        return `<button type="button" class="chip ${on ? 'chip-primary' : ''}" onclick="cmpToggleMetricChat('${m.id}')"><span class="material-symbols-outlined">${on ? 'check' : 'add'}</span>${cmpMetricShort(m)}</button>`;
       }).join('');
-      row.innerHTML = chips + `<button type="button" class="chip" onclick="cmpMetricsDone(this)"><span class="material-symbols-outlined">check</span>Done</button>`;
+      row.innerHTML = chips + `<button type="button" class="chip chip-primary" onclick="cmpMetricsDone(this)"><span class="material-symbols-outlined">check</span>Done</button>`;
     }
     function cmpToggleMetricChat(id) {
       cmpToggleMetric(id);       /* toggles + re-renders the board */
@@ -13941,7 +14097,7 @@
         const chips = scope.categories.map(c => {
           const on = compareState.category === c;
           const label = c === 'all' ? 'All Categories' : c;
-          return `<button type="button" class="chip ${on ? 'chip-primary' : ''}" onclick="cmpChooseCategory('${c}', this)"><span class="material-symbols-outlined">${on ? 'check_circle' : 'filter_alt'}</span>${label}</button>`;
+          return `<button type="button" class="chip ${on ? 'chip-primary' : ''}" onclick="cmpChooseCategory('${c}', this)"><span class="material-symbols-outlined">${on ? 'check' : 'filter_alt'}</span>${label}</button>`;
         }).join('');
         const row = document.createElement('div');
         row.className = 'sc-reply-chips';
@@ -14431,7 +14587,7 @@
       const live = document.querySelector('#verify-flow-panel .vf-live');
       if (live) {
         live.style.background = 'var(--sec-green-10)';
-        live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check_circle</span>DONE';
+        live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check</span>DONE';
       }
       const box = document.getElementById('chat-messages');
       if (!box) return;
@@ -14716,7 +14872,7 @@
       {
         id: 'resolve',
         module: 'packaging',
-        chip: { icon: 'check_circle', label: 'Resolve packaging conflicts' },
+        chip: { icon: 'check', label: 'Resolve packaging conflicts' },
         user: 'Resolve the packaging conflicts and sync the footnote to NFP+.',
         status: 'Applying approved copy and refreshing the launch checklist…',
         reply: 'Packaging conflicts cleared — preservative claim removed, <em>All-Natural</em> narrowed to ingredient-list scope, and the footnote now matches NFP+. Next I\'ll run <strong>SHIELD</strong> for badge compliance on the revised claims.',
@@ -15025,9 +15181,9 @@
 
     function lrBuildResolve() {
       lrAddSection('lr-packaging-body', 'lr-packaging-empty', 3, 'Resolution',
-        '<div class="wf-badge" style="margin-top:0;"><span class="material-symbols-outlined">check_circle</span>Preservative claim removed from Rev 5 art</div>' +
-        '<div class="wf-badge"><span class="material-symbols-outlined">check_circle</span>“All-Natural” scoped to ingredient list only</div>' +
-        '<div class="wf-badge"><span class="material-symbols-outlined">check_circle</span>Footnote synced — 1 empanada (142g)</div>' +
+        '<div class="wf-badge" style="margin-top:0;"><span class="material-symbols-outlined">check</span>Preservative claim removed from Rev 5 art</div>' +
+        '<div class="wf-badge"><span class="material-symbols-outlined">check</span>“All-Natural” scoped to ingredient list only</div>' +
+        '<div class="wf-badge"><span class="material-symbols-outlined">check</span>Footnote synced — 1 empanada (142g)</div>' +
         '<div style="margin-top:10px;"><span class="wf-tag wf-tag--green" style="margin-left:0;">Packaging · CLEAR</span></div>');
     }
 
@@ -15570,15 +15726,16 @@
         try { localStorage.setItem(WIDTH_STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
       }
 
-      /* Width has three tiers: 0 = single, 1 = double, 2 = triple. The control
-         cycles 0 → 1 → 2 → 0. The icon reflects the tier; the label stays
-         "Width" in every state. Legacy boolean values (true/false) map to 1/0. */
-      const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-      const WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+      /* Width has four tiers: 0 = single, 1 = double, 2 = triple, 3 = fill (take
+         the rest of the row). The control cycles 0 → 1 → 2 → 3 → 0. The icon
+         reflects the tier; the label stays "Width" in every state. Legacy boolean
+         values (true/false) map to 1/0. */
+      const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+      const WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
 
       function tierOf(v) {
         if (v === true) return 1;
-        if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+        if (typeof v === 'number') return Math.max(0, Math.min(3, v | 0));
         return 0;
       }
 
@@ -15588,6 +15745,7 @@
         if (panel) {
           panel.classList.toggle('panel-wide', tier >= 1);
           panel.classList.toggle('panel-triple', tier >= 2);
+          panel.classList.toggle('panel-fill', tier >= 3);
         }
         document.querySelectorAll(`.panel-width-toggle-btn[data-panel="${key}"]`).forEach((btn) => {
           btn.classList.toggle('is-on', tier >= 1);
@@ -15607,6 +15765,7 @@
       function currentTier(key) {
         const panel = document.getElementById(PANEL_IDS[key]);
         if (!panel) return 0;
+        if (panel.classList.contains('panel-fill')) return 3;
         if (panel.classList.contains('panel-triple')) return 2;
         if (panel.classList.contains('panel-wide')) return 1;
         return 0;
@@ -15614,7 +15773,7 @@
 
       window.togglePanelWidth = function(key) {
         if (!PANEL_IDS[key]) return;
-        const next = (currentTier(key) + 1) % 3;
+        const next = (currentTier(key) + 1) % 4;
         const saved = loadWide();
         saved[key] = next;
         saveWide(saved);
@@ -15647,11 +15806,11 @@
        and agent pages — and back — so WISEai is always the same size. */
     /* WISEai width is also a three-tier cycle (0 single · 1 double · 2 triple),
        persisted as a number under `wide`. Legacy booleans map true→1, false→0. */
-    const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-    const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+    const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+    const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
     function wiseaiTierOf(v) {
       if (v === true) return 1;
-      if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+      if (typeof v === 'number') return Math.max(0, Math.min(3, v | 0));
       return 0;
     }
     function persistWISEaiWide(tier) {
@@ -15699,6 +15858,7 @@
       if (!shell) return;
       shell.classList.toggle('panel-wide', tier >= 1);
       shell.classList.toggle('panel-triple', tier >= 2);
+      shell.classList.toggle('panel-fill', tier >= 3);
       if (btn) {
         btn.classList.toggle('is-on', tier >= 1);
         btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
@@ -15710,6 +15870,7 @@
     function wiseaiCurrentTier() {
       const shell = document.getElementById('chat-shell');
       if (!shell) return 0;
+      if (shell.classList.contains('panel-fill')) return 3;
       if (shell.classList.contains('panel-triple')) return 2;
       if (shell.classList.contains('panel-wide')) return 1;
       return 0;
@@ -15717,17 +15878,21 @@
     window.toggleWISEaiWidth = function(btn) {
       const shell = document.getElementById('chat-shell');
       if (!shell) return;
-      const next = (wiseaiCurrentTier() + 1) % 3;
+      const next = (wiseaiCurrentTier() + 1) % 4;
       applyWISEaiWide(next);
       persistWISEaiWide(next);
     };
-    /* Restore the shared WISEai size on load, and keep it in sync if another
-       page/tab changes it. */
+    /* WISEai always loads at its single (minimum) width on every page EXCEPT the
+       flagship pages/wiseai.html — the widened (double/triple) tier is a
+       within-session choice and is intentionally NOT restored across loads, so
+       the chat module is the exact same minimum size every time it loads. This
+       mirrors the shared dock (writeWISEaiDockState({ wide: 0 }) in
+       js/wiseai-dock.js). We still reset the shared key to single so the size
+       stays uniform. A within-session change from another tab is still honored
+       by the `storage` listener below. */
     (function initWISEaiWidth() {
-      try {
-        const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
-        applyWISEaiWide(wiseaiTierOf(raw.wide));
-      } catch (_) {}
+      applyWISEaiWide(0);
+      persistWISEaiWide(0);
     })();
     window.addEventListener('storage', function(e) {
       if (e.key !== 'wise-wiseai-dock') return;
@@ -16066,23 +16231,35 @@
            Stars rating (see cmpToggleGuidingStars); its state is re-synced
            whenever the menu opens or the view is toggled elsewhere. */
         if (key === 'compare') {
-          const gsItem = makeItem({
-            icon: 'star', label: 'Guiding Stars', extraClass: 'pf-mi-gs',
-            onClick: () => { if (typeof cmpToggleGuidingStars === 'function') cmpToggleGuidingStars(); },
+          /* Built by hand (not makeItem) so it can carry the pink "Admin" badge
+             and a real toggle switch — Guiding Stars is an admin-gated control,
+             so this row reads like a settings switch. Flipping it keeps the menu
+             open (like product-portfolio) rather than dismissing it. */
+          const gsItem = document.createElement('button');
+          gsItem.type = 'button';
+          gsItem.className = 'pf-module-menu-item pf-mi-gs';
+          gsItem.setAttribute('role', 'menuitemcheckbox');
+          gsItem.innerHTML =
+            '<span class="material-symbols-outlined">star_outline</span>' +
+            '<span class="pf-mi-label">Guiding Stars</span>' +
+            '<span class="pf-mi-badge">Admin</span>' +
+            '<span class="pf-mi-switch"><span class="pf-mi-knob"></span></span>';
+          const syncGsItem = () => {
+            const on = (typeof compareState !== 'undefined') && !!compareState.guidingStars;
+            gsItem.classList.toggle('is-on', on);
+            gsItem.setAttribute('aria-checked', on ? 'true' : 'false');
+            const ic = gsItem.querySelector('.material-symbols-outlined');
+            if (ic) ic.textContent = on ? 'star' : 'star_outline';
+          };
+          gsItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof cmpToggleGuidingStars === 'function') cmpToggleGuidingStars();
+            syncGsItem();
           });
           pop.appendChild(gsItem);
           const gsSep = document.createElement('div');
           gsSep.className = 'pf-module-menu-sep';
           pop.appendChild(gsSep);
-          const syncGsItem = () => {
-            const on = (typeof compareState !== 'undefined') && !!compareState.guidingStars;
-            gsItem.classList.toggle('is-on', on);
-            gsItem.setAttribute('aria-pressed', on ? 'true' : 'false');
-            const ic = gsItem.querySelector('.material-symbols-outlined');
-            if (ic) ic.textContent = on ? 'star' : 'star_outline';
-            const lbl = gsItem.querySelector('.pf-mi-label');
-            if (lbl) lbl.textContent = on ? 'Guiding Stars · On' : 'Guiding Stars';
-          };
           menu._syncGsItem = syncGsItem;
           syncGsItem();
         }

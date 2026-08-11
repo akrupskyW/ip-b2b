@@ -16,6 +16,27 @@
    SECTION 1 — DESIGN TOKENS  (mirror of pages/wise.css :root / html.dark)
    KEEP IN SYNC with pages/wise.css.
 =================================================================== */
+
+/* Only Material Symbols *Outlined* is loaded on marketing pages, but a few
+   legacy spans still use `.material-symbols-rounded`, which would otherwise
+   render as raw ligature text. Alias it onto the loaded Outlined face so those
+   glyphs render. Mirror of the same rule in pages/wise.css. */
+.material-symbols-rounded {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 :root {
   --bg: #F9F8F3;
   --surface: #FFFFFF;
@@ -1295,6 +1316,9 @@ html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-brig
    track it, since every offset is expressed in terms of --mkt-chat-w. */
 body.mkt-chat-wide { --mkt-chat-w: 560px; }
 body.mkt-chat-wide.mkt-chat-triple { --mkt-chat-w: 720px; }
+/* Fill — the chat rail takes the widest reading column the marketing shell
+   allows (matches the app's fourth "fill" width tier). */
+body.mkt-chat-wide.mkt-chat-triple.mkt-chat-fill { --mkt-chat-w: min(960px, 82vw); }
 
 /* The docked rail — fixed column holding the real chat card. It starts BELOW
    the full-width top nav and runs to the bottom, so the chat is sticky beneath
@@ -1527,7 +1551,7 @@ body.mkt-chat-focus #mkt-wiseai .sc-welcome {
 
 /* Bigger, more confident hero heading inside the chat. */
 body.mkt-chat-focus #mkt-wiseai .ws-heading {
-  font-size: clamp(2rem, 3.6vw, 3rem);
+  font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem);
   line-height: 1.05;
   margin-bottom: 0.5rem;
 }

@@ -57,7 +57,7 @@ function matches(a) {
   return a.cat === filter;
 }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('al-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'al-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');

@@ -27,12 +27,12 @@ export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="ht
 export const OWL_MARK = `<svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="white"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="white"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="white"/></svg>`;
 
 const DEFAULT_INTENTS = [
-  { intent: 'customer_profile', label: 'Start New Verification', icon: 'add_circle' },
+  { intent: 'customer_profile', label: 'Start New Verification', icon: 'add' },
   { intent: 'resume_prompt', label: 'Continue Existing', icon: 'play_circle' },
   { intent: 'faq_intro', label: 'Ask a Question', icon: 'help_outline' },
   { intent: 'choose_agents', label: 'Choose Agents', icon: 'smart_toy' },
   { intent: 'registry_home', label: 'WISE Foods', icon: 'restaurant_menu' },
-  { intent: 'add_food_intro', label: 'Add a New Food', icon: 'add_circle_outline' },
+  { intent: 'add_food_intro', label: 'Add a New Food', icon: 'add' },
   { intent: 'edit_food_select', label: 'Edit an Existing Food', icon: 'edit_note' },
 ];
 
@@ -292,7 +292,7 @@ function buildDbGroupsHtml() {
           return `<button type="button" class="fl-db-item${on ? ' is-active' : ''}" role="menuitemradio" aria-checked="${on ? 'true' : 'false'}" data-db="${esc(it.id)}" data-search="${search}">`
             + `<span class="fl-db-meta"><span class="fl-db-name">${esc(it.name)}</span>${it.desc ? `<span class="fl-db-desc">${esc(it.desc)}</span>` : ''}</span>`
             + `<span class="fl-db-badge">${esc(g.badge)}</span>`
-            + `<span class="fl-db-check material-symbols-outlined" aria-hidden="true">check_circle</span></button>`;
+            + `<span class="fl-db-check material-symbols-outlined" aria-hidden="true">check</span></button>`;
         }).join('')
       : `<div class="fl-db-groupempty">${esc(g.empty || 'None available')}</div>`;
     return `<div class="fl-db-group" data-access="${ak}">
@@ -1183,7 +1183,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
             `<button type="button" class="sc-connector${c.connected ? ' is-connected' : ''}" role="listitem" data-connector="${esc(c.id || c.name)}" title="${c.connected ? 'Connected · ' : 'Connect '}${esc(c.name)}">
               ${connectorLogo(c)}
               <span class="sc-connector-name">${esc(c.name)}</span>
-              <span class="sc-connector-tick material-symbols-outlined" aria-hidden="true">${c.connected ? 'check_circle' : 'add'}</span>
+              <span class="sc-connector-tick material-symbols-outlined" aria-hidden="true">${c.connected ? 'check' : 'add'}</span>
             </button>`
           ).join('')}
         </div>
@@ -1281,7 +1281,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
           ${menuLinksHtml}
-          <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-symbols-outlined topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
@@ -1569,7 +1569,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         <div class="sc-fb" role="group" aria-label="Answer actions">
           <span class="sc-fb-copy-wrap">
             <button type="button" class="sc-fb-btn" data-fb="copy" data-tip="Copy answer" aria-label="Copy answer"><span class="material-symbols-outlined">content_copy</span></button>
-            <span class="sc-fb-copied" role="status" aria-hidden="true"><span class="material-symbols-outlined">check_circle</span>Copied</span>
+            <span class="sc-fb-copied" role="status" aria-hidden="true"><span class="material-symbols-outlined">check</span>Copied</span>
           </span>
           <span class="sc-fb-up-wrap">
             <button type="button" class="sc-fb-btn" data-fb="up" data-tip="Accurate" aria-label="Mark accurate" aria-haspopup="true" aria-pressed="false" aria-expanded="false"><span class="material-symbols-outlined">thumb_up</span></button>
@@ -1590,10 +1590,197 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       </div>`;
   }
 
+  /* ── Word-by-word reveal ──────────────────────────────────────────────────
+     Make every WISEai answer read as if it's being typed live — words fade in
+     one after another on a quick cadence — instead of the whole block popping
+     in at once. We keep the real HTML (bold, links, lists, chips) intact by
+     wrapping each visible WORD in a span and fading the spans in; markup,
+     Material-Symbols ligatures and the meta/footer are left alone. Interactive
+     or rich cards (connect-flow walkthroughs, surfaced-output preview cards,
+     tables, images, media) reveal instantly so their own logic/layout is never
+     torn apart. Honors prefers-reduced-motion. */
+  const prefersReducedMotion = (() => {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  })();
+  function canTypeIn(el) {
+    if (!el) return false;
+    /* Only self-animating / interactive cards pop in whole — their own logic
+       drives the reveal and must not be torn apart. Everything else types in;
+       embedded charts / tables are left intact by the walker below. */
+    return !el.querySelector('.sc-connect-flow, [data-cf-step], .sc-surface-card');
+  }
+  function typeInLine(bodyEl, done, wordDelay) {
+    if (!bodyEl || prefersReducedMotion) { if (done) done(); return; }
+    const delay = typeof wordDelay === 'number' ? wordDelay : 70;
+    const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const p = n.parentElement;
+        /* Leave the meta footer, icon ligatures, and any embedded SVG/table/canvas
+           text alone — wrapping words inside those breaks their rendering. */
+        if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const textNodes = [];
+    let tn;
+    while ((tn = walker.nextNode())) textNodes.push(tn);
+    const words = [];
+    textNodes.forEach((node) => {
+      const parts = node.nodeValue.split(/(\s+)/); // keep whitespace runs intact
+      const frag = document.createDocumentFragment();
+      parts.forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        const span = document.createElement('span');
+        span.className = 'sc-tw';
+        span.style.opacity = '0';
+        span.textContent = part;
+        frag.appendChild(span);
+        words.push(span);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    if (!words.length) { if (done) done(); return; }
+    let i = 0;
+    const step = () => {
+      words[i].style.opacity = '1';
+      i++;
+      scrollDown();
+      if (i < words.length) setTimeout(step, delay);
+      else if (done) done();
+    };
+    step();
+  }
+
+  /* Prime an element to animate in from the left, then reveal a set of them one
+     after another (left→right) so the timestamp, action icons and intent chips
+     each slide in in sequence once the answer has finished typing. */
+  function primeRevealFromLeft(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-6px)';
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
+  }
+  function revealStaggered(els, startDelay, gap, done) {
+    const list = (els || []).filter(Boolean);
+    if (!list.length) { if (done) setTimeout(done, startDelay || 0); return; }
+    let idx = 0;
+    const showNext = () => {
+      const el = list[idx];
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      idx += 1;
+      scrollDown();
+      if (idx < list.length) setTimeout(showNext, gap);
+      else if (done) setTimeout(done, gap);
+    };
+    setTimeout(showNext, startDelay);
+  }
+
+  /* Prime an element to FLY IN from the right; `revealStaggered` then clears the
+     transform so it sails right→left and lands in place. Used by the welcome
+     intent chips so they arrive only after the heading + sub have typed in. */
+  function primeRevealFromRight(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(30px)';
+    el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+  }
+  /* Welcome-screen reveal. The owl + rings are already breathing; here we type
+     the heading, then the sub, WORD-BY-WORD (exactly like every WISEai answer),
+     and only once all that text has landed do we fly the intent chips in from
+     the right so they arrive AFTER the copy — never sitting there before it.
+     Honors reduced-motion (everything just shows). Safe to re-run whenever the
+     welcome is shown again (see reset()). */
+  function revealWelcome() {
+    if (!welcome || welcome.classList.contains('sc-hidden')) return;
+    const heading = welcome.querySelector('.ws-heading');
+    const subEl = welcome.querySelector('.ws-sub');
+    /* The larger "at a glance" scorecards and the small intent chips share ONE
+       fly-in: after the text types, they all sail in from the right in a single
+       top-to-bottom cascade (cards first, then chips) so every card and chip
+       animates identically — never one style for the big ones and another for
+       the small. */
+    const scWrap = welcome.querySelector(`#${id}-scorecards`) || welcome.querySelector('.ws-scorecards');
+    const cards = scWrap ? Array.from(scWrap.querySelectorAll('.ws-scorecard')) : [];
+    const chipsWrap = welcome.querySelector(`#${id}-chips`) || welcome.querySelector('.ws-chips');
+    const chips = chipsWrap ? Array.from(chipsWrap.querySelectorAll('.chip')) : [];
+    const all = cards.concat(chips);
+    if (prefersReducedMotion) {
+      all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
+      return;
+    }
+    /* Hold every card + chip back (invisible, nudged right) until the text finishes. */
+    all.forEach(primeRevealFromRight);
+    const typeText = (el, next, wordDelay) => { if (el) typeInLine(el, next, wordDelay); else next(); };
+    typeText(heading, () => typeText(subEl, () => {
+      revealStaggered(all, 90, 60, null);
+    }, 38)); // sub line types a bit faster than the heading
+  }
+  /* Collect a line's meta pieces in reveal order: the timestamp first, then the
+     action icons (grounding chip, feedback buttons, turn id) left→right. */
+  function metaTimeEl(metaEl) { return metaEl ? metaEl.querySelector('.sc-line-time') : null; }
+  function metaIconEls(metaEl) {
+    const icons = [];
+    if (!metaEl) return icons;
+    const srcEl = metaEl.querySelector('.sc-trust-chip');
+    if (srcEl) icons.push(srcEl);
+    metaEl.querySelectorAll('.sc-fb-btn, .sc-fb-id').forEach((el) => icons.push(el));
+    return icons;
+  }
+  /* Hide the timestamp + icons up-front so they can animate in later. */
+  function primeMeta(metaEl) {
+    const timeEl = metaTimeEl(metaEl);
+    if (timeEl) primeRevealFromLeft(timeEl);
+    metaIconEls(metaEl).forEach(primeRevealFromLeft);
+  }
+  /* Bring in the timestamp, then the icons (left→right), then — if this line
+     should trail the suggested actions — the intent chips (left→right). */
+  function revealMetaThenChips(metaEl, trailChips, whenDone) {
+    const finish = () => { scrollDown(); if (typeof whenDone === 'function') whenDone(); };
+    const timeEl = metaTimeEl(metaEl);
+    const icons = metaIconEls(metaEl);
+    revealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
+      revealStaggered(icons, 130, 55, () => {
+        if (trailChips) {
+          parkInlineChips();
+          /* Intent chips fly in from the RIGHT here too — the exact same
+             animation the welcome uses — so chips read identically whether
+             they're on the welcome or trailing a turn in the transcript. */
+          const chips = ichipsEl ? Array.from(ichipsEl.children) : [];
+          chips.forEach(primeRevealFromRight);
+          revealStaggered(chips, 110, 55, finish);
+        } else {
+          finish();
+        }
+      });
+    });
+  }
+
+  /* Host-built suggested-action chip rows (e.g. the compare board's follow
+     chips) trail an answer, so they must animate in with the same right→left
+     motion the module's own inline chips use — and only AFTER that answer has
+     finished typing. The host holds each row back until its reply's `onDone`
+     fires (see addWISEai), then calls revealChips; primeChips hides the row up
+     front so it never flashes in the meantime. Both honor reduced-motion. */
+  function primeChips(rowEl) {
+    if (!rowEl || prefersReducedMotion) return;
+    Array.from(rowEl.querySelectorAll('.chip')).forEach(primeRevealFromRight);
+  }
+  function revealChips(rowEl) {
+    if (!rowEl) return;
+    const chips = Array.from(rowEl.querySelectorAll('.chip'));
+    if (prefersReducedMotion) { scrollDown(); return; }
+    revealStaggered(chips, 60, 55, scrollDown);
+  }
+
   /* @param {string} html  WISEai's reply markup.
-     @param {object} [meta] { source, feedback } — `source` overrides the
-     grounding caption for a single line (pass '' to drop it); `feedback:false`
-     suppresses the accuracy-feedback row (e.g. on a non-answer status card). */
+     @param {object} [meta] { source, feedback, typewriter } — `source` overrides
+     the grounding caption for a single line (pass '' to drop it); `feedback:false`
+     suppresses the accuracy-feedback row (e.g. on a non-answer status card);
+     `typewriter:false` forces the line to appear whole (no word-by-word reveal). */
   function addWISEai(html, meta = {}) {
     if (!messages) return null;
     const src = meta.source !== undefined ? meta.source : sourceLabel;
@@ -1604,9 +1791,34 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
-    parkInlineChips(); /* trail the latest reply with suggested actions */
-    scrollDown();
+    const body = line && line.querySelector('.sc-line-body');
     refreshDockedTurns();
+    /* Bring a turn in, in order: (1) the text (typed word-by-word for a plain
+       answer; whole for a rich/interactive card), then (2) the timestamp,
+       (3) the action icons (left→right), and finally (4) the intent chips
+       (left→right) — but ONLY if this line should trail them. Surface/preview
+       cards pass { trailChips:false } so the chips stay attached to the actual
+       answer, not to a card posted mid-thinking. Reduced-motion shows it whole. */
+    const metaEl = body && body.querySelector('.sc-line-meta');
+    const trailChips = meta.trailChips !== false;
+    /* Fires once the whole line (text + meta + trailing chips) has settled, so a
+       host can trail its OWN chips behind this specific answer (see revealChips). */
+    const done = () => { if (typeof meta.onDone === 'function') meta.onDone(); };
+    if (prefersReducedMotion) {
+      if (trailChips) parkInlineChips();
+      scrollDown();
+      done();
+      return line;
+    }
+    primeMeta(metaEl);
+    scrollDown();
+    if (meta.typewriter !== false && canTypeIn(body)) {
+      typeInLine(body, () => revealMetaThenChips(metaEl, trailChips, done));
+    } else {
+      /* Card / non-typed line: it's already visible; just animate the meta
+         (and chips) in so nothing reads as pre-loaded. */
+      revealMetaThenChips(metaEl, trailChips, done);
+    }
     return line;
   }
   function showTyping(labelOverride) {
@@ -1672,7 +1884,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     chip.classList.add('is-connected');
     chip.title = `Connected \u00b7 ${name}`;
     const tick = chip.querySelector('.sc-connector-tick');
-    if (tick) tick.textContent = 'check_circle';
+    if (tick) tick.textContent = 'check';
   }
   function connectFlowCardHtml(name, steps, headline) {
     const rows = steps.map((s, i) => `
@@ -1698,7 +1910,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         const prev = rows[i - 1];
         prev.classList.remove('is-active'); prev.classList.add('is-done');
         const st = prev.querySelector('.sc-cf-state');
-        if (st) st.innerHTML = '<span class="material-symbols-outlined">check_circle</span>';
+        if (st) st.innerHTML = '<span class="material-symbols-outlined">check</span>';
       }
       if (i < rows.length) {
         const cur = rows[i];
@@ -1711,7 +1923,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       } else {
         card.classList.add('is-complete');
         const head = card.querySelector('.sc-cf-head');
-        if (head) head.innerHTML = `<span class="sc-cf-check material-symbols-outlined">check_circle</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
+        if (head) head.innerHTML = `<span class="sc-cf-check material-symbols-outlined">check</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
         markConnectorConnected(cid, name);
         if (doneReply) setTimeout(() => addWISEai(doneReply, { source: '' }), 560);
       }
@@ -1732,7 +1944,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const typing = showTyping();
     setTimeout(() => {
       typing?.remove();
-      const line = addWISEai(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false });
+      /* The "Connecting…" card is a mid-turn status card — the real answer
+         (doneReply) lands after it, so let the chips trail that, not the card. */
+      const line = addWISEai(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false, trailChips: false });
       const card = line ? line.querySelector('.sc-connect-flow') : null;
       animateConnectFlow(card, cid, name, steps, doneHead, doneReply);
     }, 600);
@@ -1749,7 +1963,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const cid = esc(c.id || c.name);
     const connected = !!c.connected;
     const cta = connected
-      ? '<span class="wch-conn-cta"><span class="material-symbols-outlined">check_circle</span>Connected</span>'
+      ? '<span class="wch-conn-cta"><span class="material-symbols-outlined">check</span>Connected</span>'
       : '<span class="wch-conn-cta"><span class="material-symbols-outlined">add</span>Connect</span>';
     return `<button type="button" class="wch-conn-row${connected ? ' is-connected' : ''}" data-connector="${cid}" title="${connected ? 'Connected \u00b7 ' : 'Connect '}${esc(c.name)}">
         ${connectorLogo(c)}
@@ -2163,11 +2377,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (inp) inp.focus();
   }
 
-  /* Width changer for the broken-out Turns module (mirrors the History /
-     result-pane width buttons: single → double → triple). */
-  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full'];
-  const TURNS_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
-  const TURNS_W = [turnsBreakoutWidth, Math.round(turnsBreakoutWidth * 1.5), turnsBreakoutWidth * 2];
+  /* Width changer for the broken-out Turns module. Cycles the canonical four
+     tiers shared by every module: single → double → triple → fill → single. */
+  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  const TURNS_W_TITLES = [
+    'Width (single) — tap to widen',
+    'Width (double) — tap to widen',
+    'Width (triple) — tap to widen',
+    'Width (fill) — tap to reset',
+  ];
   let turnsWidthTier = 0;
   function applyTurnsWidth() {
     if (!turnsPanel) return;
@@ -2175,11 +2393,18 @@ export function mountWISEaiChat(rootEl, opts = {}) {
        two flanking modules are equal; tiers scale from whichever base is live. */
     const baseW = stickyOn ? STICKY_MODULE_W : turnsBreakoutWidth;
     const tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
-    const w = tiers[turnsWidthTier] || baseW;
     try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([turnsPanel]); } catch (_) {}
-    turnsPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
-    turnsPanel.style.setProperty('width', w + 'px', 'important');
-    turnsPanel.style.setProperty('max-width', 'none', 'important');
+    if (turnsWidthTier >= 3) {
+      /* Fill — grow to take the rest of the row instead of a fixed column. */
+      turnsPanel.style.setProperty('flex', '1000 1 auto', 'important');
+      turnsPanel.style.setProperty('width', 'auto', 'important');
+      turnsPanel.style.setProperty('max-width', 'none', 'important');
+    } else {
+      const w = tiers[turnsWidthTier] || baseW;
+      turnsPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+      turnsPanel.style.setProperty('width', w + 'px', 'important');
+      turnsPanel.style.setProperty('max-width', 'none', 'important');
+    }
     const btn = turnsPanel.querySelector('.wt-width-btn');
     if (btn) {
       btn.classList.toggle('is-on', turnsWidthTier >= 1);
@@ -2189,7 +2414,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       if (ic) ic.textContent = TURNS_W_ICONS[turnsWidthTier];
     }
   }
-  function cycleTurnsWidth() { turnsWidthTier = (turnsWidthTier + 1) % 3; applyTurnsWidth(); }
+  function cycleTurnsWidth() { turnsWidthTier = (turnsWidthTier + 1) % 4; applyTurnsWidth(); }
 
   function ensureTurnsPanel() {
     if (turnsPanel) return;
@@ -2664,6 +2889,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
+    /* Re-play the welcome reveal (text types in, then chips fly in from the
+       right) so returning to a fresh welcome feels alive, not pre-populated. */
+    revealWelcome();
     /* Clear the live-activity meter so a fresh conversation starts from zero. */
     if (activityEl) {
       Object.assign(telemetry, { turns: 0, ops: 0, tools: 0, tokIn: 0, tokOut: 0, cached: 0, cost: 0, turnStart: 0, last: null });
@@ -2860,7 +3088,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const note = wrap.querySelector('.sc-fb-note');
     if (!note) return;
     if (!text) { note.hidden = true; note.innerHTML = ''; return; }
-    note.innerHTML = `<span class="material-symbols-outlined">${esc(icon || 'check_circle')}</span>${esc(text)}`;
+    note.innerHTML = `<span class="material-symbols-outlined">${esc(icon || 'check')}</span>${esc(text)}`;
     note.hidden = false;
   }
   function copyAnswer(line, btn) {
@@ -3179,13 +3407,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   /* Module width toggle (mirrors the .panel-width-toggle-btn on the other
      modules). Width is a three-tier cycle: 0 = single, 1 = double, 2 = triple.
      The icon reflects the tier; the label/title carry the state. */
-  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-  const SC_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
-  const scTierOf = (v) => (v === true ? 1 : typeof v === 'number' ? Math.max(0, Math.min(2, v | 0)) : 0);
+  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  const SC_WIDTH_TITLES = [
+    'Width (single) — tap to widen',
+    'Width (double) — tap to widen',
+    'Width (triple) — tap to widen',
+    'Width (fill) — tap to reset',
+  ];
+  const scTierOf = (v) => (v === true ? 1 : typeof v === 'number' ? Math.max(0, Math.min(3, v | 0)) : 0);
   const syncWidthUI = (tier) => {
     tier = scTierOf(tier);
     rootEl.classList.toggle('panel-wide', tier >= 1);
     rootEl.classList.toggle('panel-triple', tier >= 2);
+    rootEl.classList.toggle('panel-fill', tier >= 3);
     const btn = rootEl.querySelector('.panel-width-toggle-btn');
     if (btn) {
       btn.classList.toggle('is-on', tier >= 1);
@@ -3199,8 +3433,8 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const widthToggle = e.target.closest('.panel-width-toggle-btn');
     if (!widthToggle || !rootEl.contains(widthToggle)) return;
     e.stopPropagation();
-    const cur = rootEl.classList.contains('panel-triple') ? 2 : rootEl.classList.contains('panel-wide') ? 1 : 0;
-    const next = (cur + 1) % 3;
+    const cur = rootEl.classList.contains('panel-fill') ? 3 : rootEl.classList.contains('panel-triple') ? 2 : rootEl.classList.contains('panel-wide') ? 1 : 0;
+    const next = (cur + 1) % 4;
     syncWidthUI(next);
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });
@@ -3638,6 +3872,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   syncCards();
   syncChips();
 
+  /* Play the welcome in: heading + sub type in word-by-word, then the intent
+     chips fly in from the right and land — so the chips always trail the copy. */
+  revealWelcome();
+
   /* WISEai: pre-dock the Turns module so it lives as its own broken-out module
      from the start (never an in-chat popover) — a real flex sibling docked to
      the right of the chat, shown and ready like the History module. */
@@ -3674,5 +3912,5 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
-  return { addUser, addWISEai, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, root: rootEl };
+  return { addUser, addWISEai, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, root: rootEl };
 }

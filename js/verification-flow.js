@@ -30,7 +30,7 @@ function esc(s) {
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
-function vfToast(msg, icon = 'check_circle') {
+function vfToast(msg, icon = 'check') {
   let wrap = document.getElementById('vf-toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');
@@ -294,7 +294,7 @@ function progressPaneHTML() {
     let fieldsHtml = '';
     if (done || isActive) {
       const rows = stepFields(s.id).map((f) => {
-        const icon = f.done ? 'check_circle' : 'radio_button_unchecked';
+        const icon = f.done ? 'check' : 'radio_button_unchecked';
         const st = f.done ? 'vfp-field--done' : 'vfp-field--active';
         return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
       }).join('');
@@ -686,6 +686,25 @@ function bodyHTML() {
   return paymentStepHTML();
 }
 
+/* When minimized the pane becomes a fixed slim icon rail (the .vfp-inner.is-min
+   CSS collapses it to 64px). But pane-resize.js pins an inline width on every
+   resizable module — with a 300px floor — which would out-specify that rail width
+   and leave the content minimized inside a still-full-width column. So while the
+   rail is showing we (a) tag the pane data-pr-lock so pane-resize stands down
+   (mirrors the History module's rail lock) and (b) drop any inline width it may
+   have pinned, letting the CSS rail width win. */
+function applyProgressRailLock(show) {
+  if (!progressEl) return;
+  if (show && progressMin) {
+    progressEl.setAttribute('data-pr-lock', '');
+    progressEl.style.removeProperty('flex');
+    progressEl.style.removeProperty('width');
+    progressEl.style.removeProperty('max-width');
+  } else {
+    progressEl.removeAttribute('data-pr-lock');
+  }
+}
+
 function renderProgress() {
   if (!progressEl) return;
   /* The progress module only appears once the user has started a selection;
@@ -695,6 +714,7 @@ function renderProgress() {
   progressEl.setAttribute('aria-hidden', show ? 'false' : 'true');
   if (show) progressEl.innerHTML = progressPaneHTML();
   else progressEl.innerHTML = '';
+  applyProgressRailLock(show);
 }
 
 function render(preserveFocus) {

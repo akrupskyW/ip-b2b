@@ -4,6 +4,7 @@
   <script src="../js/auth-guard.js"></script>
 <script src="../js/sortable-tables.js" defer></script>
 <script src="../js/table-pagination.js" defer></script>
+<script src="../js/chip-tooltip.js" defer></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>WISE Design System — Accessibility Review (WCAG 2.1 AAA)</title>
@@ -670,7 +671,7 @@ html.dark .page-updated-tag { color: var(--primary-bright); }
       <div id="typeScale"><!-- injected --></div>
     </div>
     <div class="callout pass">
-      <span class="material-symbols-outlined">check_circle</span>
+      <span class="material-symbols-outlined">check</span>
       <div class="callout-body">
         <div class="callout-title">12px base is dense but fully zoomable to 200%</div>
         <p>WCAG has no hard minimum font size. The 12px (<code>--fs-ui</code>) and 11px (<code>--fs-label</code>) labels stay legible because their text colors now carry AAA-level contrast (≥7:1, see findings 1–2), and the text-scale control (<code>--wise-text-scale</code>) plus browser zoom both reach 200% without clipping — satisfying SC 1.4.4.</p>
@@ -794,7 +795,7 @@ function badge(ratio, threshold) {
   const ok = ratio >= threshold;
   const near = !ok && ratio >= threshold - 0.5;
   const cls = ok ? 'pass' : (near ? 'warn' : 'fail');
-  const icon = ok ? 'check_circle' : (near ? 'error' : 'cancel');
+  const icon = ok ? 'check' : (near ? 'error' : 'cancel');
   const word = ok ? 'Pass' : (near ? 'Close' : 'Fail');
   return `<span class="badge ${cls}"><span class="material-symbols-outlined">${icon}</span>${word}</span>`;
 }
@@ -1166,7 +1167,7 @@ function renderConcerns() {
     el.className = 'concerns all-clear';
     el.innerHTML = '<div class="concerns-head">' +
       '<div class="concerns-title"><span class="material-symbols-outlined">verified</span>Nothing in the red</div>' +
-      '<div class="concerns-tally"><span class="badge pass"><span class="material-symbols-outlined">check_circle</span>0 open concerns</span></div>' +
+      '<div class="concerns-tally"><span class="badge pass"><span class="material-symbols-outlined">check</span>0 open concerns</span></div>' +
       '<div class="concerns-note">Every contrast pairing, page check, target and finding passes in the ' + theme +
       ' theme. Toggle the theme to re-run against the other palette.</div>' +
     '</div>';
@@ -1200,7 +1201,7 @@ function renderConcerns() {
 function renderType() {
   document.getElementById('typeScale').innerHTML = TYPE_SCALE.map(t => {
     const flag = t.px < 12 ? `<span class="badge warn"><span class="material-symbols-outlined">error</span>Dense</span>`
-               : `<span class="badge pass"><span class="material-symbols-outlined">check_circle</span>OK</span>`;
+               : `<span class="badge pass"><span class="material-symbols-outlined">check</span>OK</span>`;
     return `<div class="type-row">
       <div class="type-specimen" style="font-size:${t.px}px;font-weight:${t.px>=20?800:600};">${t.use}</div>
       <div class="type-info">
@@ -1231,7 +1232,7 @@ function renderSpacing() {
 
 function renderTargets() {
   document.getElementById('targetList').innerHTML = TARGETS.map(t => {
-    const b = t.ok === true ? `<span class="badge pass"><span class="material-symbols-outlined">check_circle</span></span>`
+    const b = t.ok === true ? `<span class="badge pass"><span class="material-symbols-outlined">check</span></span>`
             : `<span class="badge warn"><span class="material-symbols-outlined">error</span></span>`;
     return `<li><strong>${t.name}</strong> — ${t.size} ${b}${t.note?`<br><span style="font-size:0.6875rem;color:var(--text-subtle);">${t.note}</span>`:''}</li>`;
   }).join('');
@@ -1239,27 +1240,27 @@ function renderTargets() {
 
 const FINDINGS = [
   {
-    sev: 'pass', icon: 'check_circle',
+    sev: 'pass', icon: 'check',
     title: '1 · AAA — quiet grays deepened to clear 7:1',
     body: 'The muted/subtle grays were AA-only (≈5–6:1). <code>--text-muted</code> is now <code>#444B55</code> (light) / <code>#BCC6D3</code> (dark) and <code>--text-subtle</code> is <code>#474E58</code> / <code>#B1BAC7</code>, so every caption, sub-label and table header clears the AAA 7:1 threshold on every surface — down to the darkest light tint (<code>surface-3</code> #EFEDE2) and the lightest navy (<code>surface-3</code> #15303F). Updated in <code>agent-page.css</code>, <code>index.html</code>, <code>ai-chat.html</code> and the inline mirror here.'
   },
   {
-    sev: 'pass', icon: 'check_circle',
+    sev: 'pass', icon: 'check',
     title: '2 · AAA — semantic ink on tints now 7:1',
     body: 'Badge / delta / status text on its own 16% tint sat at ~5–6:1 (AA). The light inks are deepened — <code>--sec-green-text #245E3B</code>, <code>--ter-amber-text #75360A</code>, <code>--sec-red-text #831F23</code>, <code>--ter-cyan-text #1A2339</code> — and the dark inks softened to pastels — <code>#B6C9BE</code>, <code>#D7BE91</code>, <code>#FFE1DC</code>, <code>#C5CFD7</code> — so each clears 7:1 over its tint while the tinted fills are kept.'
   },
   {
-    sev: 'pass', icon: 'check_circle',
+    sev: 'pass', icon: 'check',
     title: '3 · AAA — primary deepened for text AND buttons',
     body: 'A lighter primary previously left link text and white-on-primary buttons at ~5.9:1 (AA only). Primary is now <code>#25507C</code>, so primary link text clears 7:1 on <code>bg</code> (≈7.9:1) and white-on-primary buttons clear 7:1 too (≈8.3:1). The dark-theme <code>--primary-bright #8B9FAF</code> already runs ~9.7:1. The matching <code>rgba(37, 80, 124,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
   },
   {
-    sev: 'pass', icon: 'check_circle',
+    sev: 'pass', icon: 'check',
     title: '4 · Targets padded to the 24px minimum',
     body: 'The 22×22px nav chevron is now 24×24px (WCAG 2.2 SC 2.5.8); pill/chip controls sit at ~27–31px. The 12px <code>--fs-ui</code> base stays intentional but is fully zoomable — <code>--wise-text-scale</code> and browser zoom both reach 200% without clipping, satisfying SC 1.4.4.'
   },
   {
-    sev: 'pass', icon: 'check_circle',
+    sev: 'pass', icon: 'check',
     title: 'Strengths — body text & focus',
     body: 'Core body text (<code>#111827</code> / <code>#F3F4F6</code>) is excellent (>14:1) in both themes. The 2px primary focus outline with 2px offset and all non-text/UI borders continue to clear the 3:1 SC 1.4.11 minimum. With the token updates above, every graded text pairing now reaches Level AAA.'
   }
@@ -1284,6 +1285,8 @@ function renderFindings() {
    this file (pages/accessibility-review.html): same-dir pages resolve
    directly, root pages via '../'.
 ===================================================================== */
+// Every shipping *.html page in the project. The dev-only iframe seeder
+// (pages/__seed.html) is intentionally omitted — it is a harness, not a page.
 const PAGES = [
   // ----- Root-level entry & marketing site (one level up from pages/) -----
   { title: 'Home (index)',             path: '../index.html' },
@@ -1295,23 +1298,29 @@ const PAGES = [
   { title: 'Marketing · WISEip',       path: '../marketing-enterprise.html' },
   { title: 'Marketing · Non-UPF Verified', path: '../marketing-nonupf.html' },
   { title: 'Marketing · GRAS Reviewed',    path: '../marketing-gras.html' },
+  { title: 'Marketing · Solutions',    path: '../marketing-solutions.html' },
+  { title: 'Marketing · Products',     path: '../marketing-products.html' },
   { title: 'Marketing · Pricing',      path: '../marketing-pricing.html' },
 
   // ----- Authenticated app (same directory) -----
   { title: 'Overview (Dashboard)',     path: 'overview.html' },
   { title: 'Analytics Types',          path: 'analytics-types.html' },
   { title: 'Product Portfolio',        path: 'product-portfolio.html' },
+  { title: 'View Product',             path: 'view-product.html' },
   { title: 'Add Product',              path: 'add-product.html' },
   { title: 'Product Comparison',       path: 'product-comparison.html' },
   { title: 'Reformulation Studio',     path: 'reformulation.html' },
+  { title: 'Ingredient Browser',       path: 'ingredient-browser.html' },
   { title: 'Non-UPF Dashboard',        path: 'non-upf-dashboard.html' },
   { title: 'Non-UPF Verification',     path: 'verification.html' },
   { title: 'GRAS Verification',        path: 'gras-verification.html' },
   { title: 'Audit Queue',              path: 'audit-queue.html' },
-  { title: 'WISEai Chat',              path: 'ai-chat.html' },
-  { title: 'WISEai Chat 2',            path: 'ai-chat-2.html' },
+  { title: 'Report · Guiding Stars',   path: 'report-guiding-stars.html' },
+  { title: 'WISEai Chat',              path: 'wiseai.html' },
+  { title: 'AI Dashboard',             path: 'ai-dashboard.html' },
   { title: 'Studio & AI',              path: 'studio-ai.html' },
   { title: 'Agents',                   path: 'agents.html' },
+  { title: 'Conversation Library',     path: 'conversation-library.html' },
   { title: 'Reports',                  path: 'reports.html' },
   { title: 'Invoices & Downloads',     path: 'invoices.html' },
   { title: 'Alerts',                   path: 'alerts.html' },
@@ -1323,9 +1332,11 @@ const PAGES = [
   { title: 'API Keys',                 path: 'api-keys.html' },
   { title: 'Admin Utilities',          path: 'admin-utils.html' },
   { title: 'Marketing Assets',         path: 'marketing-assets.html' },
+  { title: 'All Modules',              path: 'all-modules.html' },
   { title: 'Help',                     path: 'help.html' },
   { title: 'Docs',                     path: 'docs.html' },
   { title: 'Product Vision Deck',      path: 'app-vision-deck.html' },
+  { title: 'Accessibility Review (this page)', path: 'accessibility-review.html' },
 
   // ----- Auth screens -----
   { title: 'Sign In',                  path: 'login.html' },
@@ -1483,7 +1494,7 @@ function checkVerdict(c) {
   if (c.score >= 0.6) return 'warn';
   return 'fail';
 }
-const VERDICT_ICON = { ok: 'check_circle', warn: 'error', fail: 'cancel' };
+const VERDICT_ICON = { ok: 'check', warn: 'error', fail: 'cancel' };
 
 function renderPageCard(page, result) {
   const { pct, checks } = result;

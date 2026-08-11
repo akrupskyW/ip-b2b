@@ -664,63 +664,13 @@
          and the studio waits. Deep-linking via ?product= skips straight in. -->
     <div id="modules-row" class="is-picking">
 
-      <!-- ═══════════ 1 · WISEai chat (reusable surface) ═══════════ -->
-      <main class="rf-card rf-chat">
-        <div class="chat-topbar">
-          <div class="sc-topbar-lead">
-            <div class="sc-bug">
-              <svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>
-            </div>
-            <div class="sc-topbar-titles">
-              <span class="topbar-title">WISEai<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
-              <span class="rf-topbar-tag" id="rf-topbar-tag">Reformulation · Any product</span>
-            </div>
-          </div>
-          <div class="sc-topbar-controls">
-            <div class="panel-more-wrap" id="rf-chat-menu-wrap">
-              <button type="button" id="rf-chat-menu-btn" class="panel-more-btn" onclick="rfToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-chat-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
-              <div id="rf-chat-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfCopyTranscript(this)"><span class="material-symbols-outlined topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset product &amp; chat</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="rfRestart(); rfCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
-              </div>
-            </div>
-            <button type="button" class="panel-width-toggle-btn" id="rf-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
-          </div>
-        </div>
-
-        <div class="rf-chat-body">
-          <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
-        </div>
-
-        <div class="chat-input-rail shrink-0" data-wise-composer>
-          <div class="sc-input-row">
-            <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
-              <div class="fl-more-wrap">
-                <button type="button" class="fl-icon-btn fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">add</span></button>
-                <div class="fl-more-popover fl-more-popover--left" role="menu">
-                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
-                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
-                  <button type="button" class="fl-more-item"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
-                </div>
-              </div>
-              <div class="fl-input-col">
-                <div class="fl-model-row">
-                  <div class="fl-attachments"></div>
-                </div>
-                <div class="fl-input-line">
-                  <input id="chat-input" type="text" placeholder="Ask WISEai to reformulate this product…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();rfSend();}" />
-                </div>
-              </div>
-            </div>
-            <button type="button" id="rf-send" class="sc-send" onclick="rfSend()" title="Send">
-              <span class="material-symbols-outlined">send</span>
-            </button>
-          </div>
-        </div>
-      </main>
+      <!-- ═══════════ 1 · WISEai chat — the ONE shared WISEai chat module
+           (js/wiseai-chat.js). The reformulation content (product picker, move
+           chips, scoring replies, studio/dashboard mirroring) is fed IN through
+           the module's config so it renders with the full chat UX: three-dot
+           menu (tokens/cost activity, Turns, History, Admin toggles), width
+           toggle and collapse — identical to pages/wiseai.html. ═══════════ -->
+      <main class="rf-card rf-chat" id="rf-chat"></main>
 
       <!-- ═══════════ 2 · Reformulation Studio (calculator) ═══════════ -->
       <section class="rf-card rf-studio" id="rf-studio">
@@ -890,11 +840,6 @@
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
     import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
-    import { wireChatComposer } from '../js/wiseai-chat.js';
-
-    /* Bring the hand-rolled reformulation chat input up to the canonical WISEai
-       composer: database selector + "+" attach popover, styled + wired identically. */
-    document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail));
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
@@ -1024,11 +969,14 @@
        Stars score, and re-renders the dashboard + studio + chat chips together.
        The chat's intent chips are DERIVED from the live recommendations, so they
        always match whatever the product currently is. -->
-  <script>
+  <script type="module">
+    import { mountWISEaiChat } from '../js/wiseai-chat.js';
     (function () {
-      const OWL = document.querySelector('.sc-bug svg').outerHTML;
-      const box = document.getElementById('chat-messages');
-      const input = document.getElementById('chat-input');
+      /* The shared WISEai chat instance — mounted in boot() once the page's
+         reformulation content (products, scoring, replies) is defined. All the
+         transcript helpers below delegate to this handle so the page drives the
+         SAME chat module every other WISE page uses. */
+      let chat = null;
 
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
       const fmt = (n, d = 1) => { const v = Math.round(n * 10 ** d) / 10 ** d; return String(v); };
@@ -1370,79 +1318,66 @@
         const n = (r.keys || []).reduce((sum, k) => sum + (c.debits[k] || 0), 0);
         return { txt: n < 0 ? '−' + Math.abs(n) : '+' + n, cls: n < 0 ? 'rf-chip-pts--neg' : 'rf-chip-pts--pos' };
       }
-      function chipsBlockHtml() {
-        if (!product) return '';
+      /* The shared chat renders suggested moves as its own inline intent chips
+         (trailing the latest reply). We feed it a fresh set derived from the
+         live recommendations after every board change via setMoveChips(); the
+         point delta each move is worth rides along in the chip label. */
+      function moveChipLabel(r, c) {
+        const p = chipPts(r, c);
+        return `${r.chip} · ${p.txt}`;
+      }
+      function moveIntentsAndReplies() {
         const c = compute();
-        const recs = recommendations(c);
-        const inner = !recs.length
-          ? `<span class="rf-chip rf-chip--qualified"><span class="material-symbols-outlined">verified</span>Fully optimized${GS ? ' — ' + c.stars + '★' : ''}</span>`
-          : recs.slice(0, 6).map((r) => {
-              const p = chipPts(r, c);
-              return `<button type="button" class="rf-chip rf-chip--move" data-chip="${r.id}"><span class="material-symbols-outlined">${r.icon}</span>${esc(r.chip)}<span class="rf-chip-pts ${p.cls}">${p.txt}</span></button>`;
-            }).join('');
-        return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
+        const recs = recommendations(c).slice(0, 6);
+        const ints = [];
+        const reps = {};
+        recs.forEach((r) => {
+          const key = 'move:' + r.id;
+          ints.push({ intent: key, label: moveChipLabel(r, c), icon: r.icon });
+          reps[key] = () => applyReplyFor(r.id);
+        });
+        return { ints, reps };
+      }
+      /* Swap the chat's chips to the current reformulation moves. When nothing is
+         left to do we clear them so the "fully optimized" state reads clean. */
+      function setMoveChips() {
+        if (!chat || !product) return;
+        const { ints, reps } = moveIntentsAndReplies();
+        chat.setIntents(ints, reps);
+      }
+      /* Step-0 chips: one per product in the portfolio, so a food can be chosen
+         straight from the chat welcome (mirrors the picker rows in the dashboard). */
+      function productIntents() {
+        return PRODUCTS.map((p) => ({ intent: 'pick:' + p.id, label: p.short, icon: p.icon }));
       }
 
-      /* Food-option chips — the step-0 counterpart of the reformulation chips.
-         Each product in the portfolio gets a tappable chip (with its live
-         Guiding Stars status) so a food can be chosen straight from the chat,
-         mirroring the picker rows in the dashboard. */
-      function pickChipsBlockHtml() {
-        const inner = PRODUCTS.map((p) => {
-          const c = compute({ ...p.baseline });
-          const thumb = p.img
-            ? `<span class="rf-chip-thumb"><img src="${p.img}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.material-symbols-outlined').style.display='flex'"><span class="material-symbols-outlined" style="display:none">${p.icon}</span></span>`
-            : `<span class="rf-chip-thumb"><span class="material-symbols-outlined">${p.icon}</span></span>`;
-          // The picker pill reads out the food's current standing in the numbers
-          // that matter for reformulation — how many blockers it must clear, or
-          // its net points once it's clear — instead of a cryptic "DQ".
-          const label = GS ? 'blocker' : 'flag';
-          const pts = c.dq.length
-            ? `<span class="rf-chip-pts">${c.dq.length} ${label}${c.dq.length > 1 ? 's' : ''}</span>`
-            : `<span class="rf-chip-pts">${c.net >= 0 ? '+' : ''}${c.net} pts</span>`;
-          return `<button type="button" class="rf-chip rf-chip--move rf-chip--food" data-pick-chip="${p.id}">${thumb}${esc(p.short)}${pts}</button>`;
-        }).join('');
-        return `<div class="rf-chips-inline"><div class="rf-chips">${inner}</div></div>`;
-      }
-
-      /* ═══════════ Chat ═══════════ */
-      function nowLabel() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
-      function metaRow() { return '<div class="sc-line-meta"><span class="sc-line-time">' + nowLabel() + '</span></div>'; }
-      /* Only the newest turn carries the chips, so old turns stay clean history. */
-      function stripChips() { box.querySelectorAll('.rf-chips-inline').forEach((n) => n.remove()); }
-      /* Rebuild the chips on the newest turn in place — used when Guiding Stars
-         mode flips, so the "Fully optimized" chip's ★ suffix tracks the mode
-         without posting a fresh turn. */
-      function refreshChips() {
-        const existing = box.querySelector('.rf-chips-inline');
-        if (!existing) return;
-        const html = chipsBlockHtml();
-        if (html) existing.outerHTML = html; else existing.remove();
-      }
+      /* ═══════════ Chat — delegates to the shared WISEai module ═══════════
+         The module owns the transcript, avatars, timestamps, typing indicator
+         and inline chips; these thin wrappers post into it so all the page's
+         existing studio/dashboard mirroring keeps working unchanged. */
       function addUser(text) {
-        stripChips();
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
-        box.scrollTop = box.scrollHeight;
+        if (!chat) return;
+        chat.hideWelcome();
+        chat.addUser(text);
       }
+      /* Post a WISEai line. `opts.chips` marks a board-state reply, so we refresh
+         the trailing move chips to the new board state right after it lands.
+         `opts.onDone` fires once the line has finished animating in (the module's
+         word-by-word type + meta reveal) — used to chain a follow-up line so a
+         multi-part turn animates strictly IN ORDER instead of every line typing
+         at once. `opts.trailChips:false` keeps a line from parking the move chips
+         beneath it (so only the final line of a turn carries them). */
       function addWISEai(html, opts) {
-        stripChips();
-        const meta = opts && opts.noMeta ? '' : metaRow();
-        const chips = opts && opts.chips ? chipsBlockHtml() : (opts && opts.pickChips ? pickChipsBlockHtml() : '');
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + chips + meta + '</div></div>');
-        box.scrollTop = box.scrollHeight;
+        opts = opts || {};
+        if (!chat) return;
+        chat.hideWelcome();
+        chat.addWISEai(html, { trailChips: opts.trailChips, onDone: opts.onDone });
+        if (opts.chips) setTimeout(setMoveChips, 30);
       }
-      function showTyping() {
-        const el = document.createElement('div');
-        el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
-        el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEai is modeling…</span></span></div>';
-        box.appendChild(el); box.scrollTop = box.scrollHeight;
-        return el;
-      }
-      /* Every board-state reply embeds the current chips inside its own bubble. */
-      function respond(html) {
-        const t = showTyping();
-        setTimeout(() => { t.remove(); addWISEai(html, { chips: true }); }, 460);
-      }
+      /* Guiding Stars mode flip just re-labels the move chips (no new turn). */
+      function refreshChips() { setMoveChips(); }
+      /* A board-state reply: post it and refresh the move chips. */
+      function respond(html) { addWISEai(html, { chips: true }); }
 
       function scoreSentence(c) {
         const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
@@ -1476,18 +1411,34 @@
         });
       }
 
-      /* Apply a recommendation by id from ANY surface (dashboard Apply or chat chip). */
-      function applyStep(id, fromChat) {
+      /* Apply a recommendation to the board (no chat side-effects). */
+      function applyEffect(id) {
         const before = compute();
         const rec = recommendations(before).find((r) => r.id === id);
-        if (!rec) return;
+        if (!rec) return null;
         rec.apply();
         const after = render();
         flashStudio(rec.keys);
-        addUser(fromChat ? rec.chip : ('Apply · ' + rec.chip));
-        respond(`Done — <b>${esc(rec.title)}</b>. ${scoreSentence(after)}${after.disqualified ? '' : (after.stars > before.stars ? ' 🎉 that just earned a star.' : '')}`);
+        return { rec, before, after };
       }
-      window.rfApplyFromChip = (id) => applyStep(id, true);
+      /* The reply for a move — used as the chat CHIP's intentReply (the module
+         posts the you-line; this applies the move + narrates it + refreshes chips). */
+      function applyReplyFor(id) {
+        const res = applyEffect(id);
+        if (!res) return 'That move already reflects on the board.';
+        setTimeout(setMoveChips, 30);
+        return `Done — <b>${esc(res.rec.title)}</b>. ${scoreSentence(res.after)}${res.after.disqualified ? '' : (res.after.stars > res.before.stars ? ' 🎉 that just earned a star.' : '')}`;
+      }
+      /* Dashboard "Apply" button: mirror the move as a full you + WISEai turn. */
+      function applyStep(id) {
+        const before = compute();
+        const rec = recommendations(before).find((r) => r.id === id);
+        if (!rec) return;
+        addUser('Apply · ' + rec.chip);
+        respond(applyReplyFor(id));
+      }
+      /* External callers (deep links / tests) can fire a move as if tapped in chat. */
+      window.rfApplyFromChip = (id) => { if (chat) chat.sendIntent('move:' + id); };
 
       /* ── Studio interactions ── */
       let chatDebounce = null;
@@ -1547,64 +1498,44 @@
         render();
       }));
 
-      /* ── Dashboard Apply buttons ── */
+      /* ── Dashboard Apply buttons (move chips in chat are handled by the shared
+         module's onIntent → applyReplyFor) ── */
       document.getElementById('rf-steps').addEventListener('click', (e) => {
         const b = e.target.closest('[data-apply]');
-        if (b) applyStep(b.dataset.apply, false);
-      });
-      /* ── Chat chips (embedded inside the transcript turns) ── */
-      box.addEventListener('click', (e) => {
-        const pc = e.target.closest('[data-pick-chip]');
-        if (pc) { selectProduct(pc.dataset.pickChip); return; }
-        const b = e.target.closest('[data-chip]');
-        if (b) applyStep(b.dataset.chip, true);
+        if (b) applyStep(b.dataset.apply);
       });
 
-      /* ── Free-text conversation ── */
-      window.rfSend = function () {
-        const text = (input.value || '').trim();
-        if (!text) return;
-        input.value = '';
-        addUser(text);
-        if (!product) { respond('Pick a food from the list in the dashboard first — then I can model it against the Guiding Stars algorithm.'); return; }
-        const t = text.toLowerCase();
+      /* ── Free-text conversation — routed by the shared module's `reply` opt.
+         The module posts the you-line + typing indicator; we return WISEai's
+         answer for the current board state. ── */
+      function rfReply(text) {
+        if (!product) return 'Pick a food from the list in the dashboard first — then I can model it against the Guiding Stars algorithm.';
+        const t = String(text || '').toLowerCase();
         const c = compute();
-        let reply;
         if (/star|rating|score|how many|point/.test(t)) {
-          reply = `${scoreSentence(c)} ${pathToNextStar(c).msg}`;
+          return `${scoreSentence(c)} ${pathToNextStar(c).msg}`;
         } else if (/disqualif|dq|blocked|why.*(0|zero)/.test(t)) {
-          reply = c.disqualified
+          return c.disqualified
             ? `Two things block it: ${c.dq.map((d) => d.text).join('; ')}. Clear both and it can start earning stars — the moves are in the chips below.`
             : `Nothing's disqualifying it right now — it earns <b>${c.stars}★</b>.`;
         } else if (/sugar/.test(t)) {
-          reply = `Added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of calories (${fmt(c.s100.addedSugar)} g/100kcal), a <b>${c.debits.addedSugar}</b> debit${c.sugarPct > 40 ? ' and a disqualifier above 40%' : ''}. Drop it below <b>${sugarCapG()} g/serving</b> to clear the cap.`;
+          return `Added sugar is <b>${fmt(c.sugarPct, 0)}%</b> of calories (${fmt(c.s100.addedSugar)} g/100kcal), a <b>${c.debits.addedSugar}</b> debit${c.sugarPct > 40 ? ' and a disqualifier above 40%' : ''}. Drop it below <b>${sugarCapG()} g/serving</b> to clear the cap.`;
         } else if (/additive|preservative|color|dye/.test(t)) {
-          reply = `There are <b>${state.additives}</b> additives to limit — ≥2 disqualifies. Bring it to <b>1 or 0</b> to clear that blocker.`;
+          return `There are <b>${state.additives}</b> additives to limit — ≥2 disqualifies. Bring it to <b>1 or 0</b> to clear that blocker.`;
         } else if (/fiber|whole ?grain|fortif|vitamin|credit/.test(t)) {
-          reply = `Credits available: fiber tiers (+1 each), fortifying vitamins/minerals (+1 each, max +3)${c.grainAlgo ? ', and a named whole-grain ingredient (+1)' : ''}. Tap a green chip below to model it.`;
+          return `Credits available: fiber tiers (+1 each), fortifying vitamins/minerals (+1 each, max +3)${c.grainAlgo ? ', and a named whole-grain ingredient (+1)' : ''}. Tap a green chip below to model it.`;
         } else if (/reformulate|fix|improve|best|fastest|how.*(reach|get)/.test(t)) {
           const recs = recommendations(c).slice(0, 3);
-          reply = `Fastest path: ${recs.map((r) => r.title).join('; ')}. ${pathToNextStar(c).msg} Apply any chip below and everything updates live.`;
-        } else {
-          reply = `I'm modeling this product against the <b>${ALGO_NAME[state.algo]}</b> Guiding Stars algorithm. ${scoreSentence(c)} Ask about the disqualification, debits, credits, or the fastest path to the next star — or tap a chip below to reformulate.`;
+          return `Fastest path: ${recs.map((r) => r.title).join('; ')}. ${pathToNextStar(c).msg} Apply any chip below and everything updates live.`;
         }
-        respond(reply);
-      };
+        return `I'm modeling this product against the <b>${ALGO_NAME[state.algo]}</b> Guiding Stars algorithm. ${scoreSentence(c)} Ask about the disqualification, debits, credits, or the fastest path to the next star — or tap a chip below to reformulate.`;
+      }
 
-      /* ── Chat more-menu ── */
-      window.rfToggleChatMenu = function (e) {
-        if (e) e.stopPropagation();
-        const m = document.getElementById('rf-chat-menu');
-        const btn = document.getElementById('rf-chat-menu-btn');
-        window.rfCloseModuleMenus();
-        const open = m.classList.toggle('hidden') === false;
-        btn.setAttribute('aria-expanded', String(open));
-      };
-      window.rfCloseChatMenu = function () {
-        document.getElementById('rf-chat-menu')?.classList.add('hidden');
-        document.getElementById('rf-chat-menu-btn')?.setAttribute('aria-expanded', 'false');
-      };
-      document.addEventListener('click', (e) => { if (!e.target.closest('#rf-chat-menu-wrap')) window.rfCloseChatMenu(); });
+      /* ── The chat's three-dot menu is now the shared module's own (with the
+         full tokens/cost activity read-out, Turns, History & Admin toggles).
+         Keep a no-op close so the studio/dashboard menu helpers that also
+         dismiss the chat menu keep working. ── */
+      window.rfCloseChatMenu = function () {};
 
       /* ── Module three-dot menus (studio + dashboard) — reuse the shared
          .topbar-popover, so the studio and dashboard carry the same overflow
@@ -1634,27 +1565,49 @@
       });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { window.rfCloseModuleMenus(); window.rfCloseChatMenu(); } });
 
-      /* ── Width toggles — 3-step widen (single → wide → triple) on the chat,
-         studio and dashboard, each mirroring the shared module control. ── */
-      function wireWidthToggle(btnId, moduleEl, labels) {
+      /* ── Width toggles — the canonical four-step cycle (single → double →
+         triple → fill) on the studio and dashboard. These MUST speak the same
+         tier language as the rest of the app (js/pane-width.js): the shared
+         "right-of-chat modules fill by default" helper (js/default-fill.js)
+         reads a module's tier from its width button's canonical title text
+         ("Width (fill) — tap to reset"). A page-local title/icon that can't be
+         mapped back to the fill tier makes that helper click forever — the whole
+         page then blinks — so we drive the control through window.WPaneWidth
+         (with a canonical fallback if it hasn't loaded yet) rather than a bespoke
+         title/icon scheme. ── */
+      const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+      const CANON_TITLES = [
+        'Width (single) — tap to widen',
+        'Width (double) — tap to widen',
+        'Width (triple) — tap to widen',
+        'Width (fill) — tap to reset',
+      ];
+      function wireWidthToggle(btnId, moduleEl) {
         const wBtn = document.getElementById(btnId);
         if (!wBtn || !moduleEl) return;
-        const ICONS = ['width_normal', 'width_wide', 'width_full'];
-        let tier = 0;
-        wBtn.addEventListener('click', () => {
-          tier = (tier + 1) % 3;
-          moduleEl.classList.toggle('panel-wide', tier >= 1);
-          moduleEl.classList.toggle('panel-triple', tier >= 2);
+        const W = window.WPaneWidth;
+        const applyTier = (t) => {
+          if (W) { W.applyClasses(moduleEl, t, 'panel'); W.syncButton(wBtn, t); return t; }
+          moduleEl.classList.toggle('panel-wide', t >= 1);
+          moduleEl.classList.toggle('panel-triple', t >= 2);
+          moduleEl.classList.toggle('panel-fill', t >= 3);
           const ic = wBtn.querySelector('.material-symbols-outlined');
-          if (ic) ic.textContent = ICONS[tier];
-          wBtn.classList.toggle('is-on', tier >= 1);
-          wBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-          wBtn.title = labels[tier];
+          if (ic) ic.textContent = CANON_ICONS[t];
+          wBtn.classList.toggle('is-on', t >= 1);
+          wBtn.setAttribute('aria-pressed', t >= 1 ? 'true' : 'false');
+          wBtn.title = CANON_TITLES[t];
+          return t;
+        };
+        let tier = W ? W.tierOfEl(moduleEl) : 0;
+        applyTier(tier);
+        wBtn.addEventListener('click', () => {
+          tier = W ? W.next(tier) : (tier + 1) % 4;
+          applyTier(tier);
         });
       }
-      wireWidthToggle('rf-width', document.querySelector('.rf-chat'), ['Widen chat', 'Widen chat further', 'Reset chat width']);
-      wireWidthToggle('rf-studio-width', document.getElementById('rf-studio'), ['Widen studio', 'Widen studio further', 'Reset studio width']);
-      wireWidthToggle('rf-dash-width', document.getElementById('rf-dash'), ['Widen dashboard', 'Widen dashboard further', 'Reset dashboard width']);
+      /* The chat's width toggle is now the shared module's own control. */
+      wireWidthToggle('rf-studio-width', document.getElementById('rf-studio'));
+      wireWidthToggle('rf-dash-width', document.getElementById('rf-dash'));
 
       /* ── Guiding Stars mode (admin toggle in the studio + dashboard menus) ──
          OFF by default: reformulate any product against a generic nutrition
@@ -1678,16 +1631,17 @@
       };
       applyGsMode();
 
-      window.rfCopyTranscript = function (el) {
-        const text = Array.from(box.querySelectorAll('.sc-line')).map((l) => {
-          const you = l.classList.contains('sc-line-you');
-          return (you ? 'You: ' : 'WISEai: ') + (l.querySelector('.sc-line-body')?.innerText || '').trim();
-        }).join('\n\n');
-        navigator.clipboard?.writeText(text);
-        if (el) { const s = el.querySelector('span:last-child'); const o = s.textContent; s.textContent = 'Copied!'; setTimeout(() => (s.textContent = o), 1400); }
-        window.rfCloseChatMenu();
+      /* Reset the live label back to the product's original and re-seed the chat
+         opener. (Transcript export/copy now lives in the shared module's menu.) */
+      window.rfRestart = function () {
+        state = { ...ORIGINAL };
+        basis = 'serving';
+        document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving'));
+        document.getElementById('rf-algo').value = state.algo;
+        render();
+        if (chat) chat.reset();
+        if (product) { if (chat) chat.hideWelcome(); seed(); }
       };
-      window.rfRestart = function () { box.innerHTML = ''; state = { ...ORIGINAL }; basis = 'serving'; document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving')); document.getElementById('rf-algo').value = state.algo; render(); seed(); };
       window.rfResetProduct = function () {
         state = { ...ORIGINAL };
         document.getElementById('rf-algo').value = state.algo;
@@ -1710,9 +1664,15 @@
           ? (c.disqualified ? `Right now it's <b>disqualified</b> — ${dqClause(c)}.` : `Right now it <b>qualifies</b> at <b>${c.stars}★</b>.`)
           : (c.disqualified ? `Right now it has <b>${c.dq.length}</b> flag${c.dq.length > 1 ? 's' : ''} to clear — ${dqClause(c)}.` : `Right now it sits at <b>${signed}</b> net nutrition points.`);
         const lead = GS ? 'onto the Guiding Stars board' : 'reformulated';
-        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, { noMeta: true });
         const next = GS ? pathToNextStar(c).msg : 'Tap a move below to lift the score.';
-        addWISEai(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true });
+        /* Two-part opener, played IN ORDER: the second line only begins once the
+           first has finished typing in (onDone). The first line trails no chips
+           so the move chips land only under the final line — never a flash of the
+           picker chips mid-turn. */
+        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, {
+          trailChips: false,
+          onDone: () => addWISEai(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true }),
+        });
       }
 
       /* ═══════════ Step 0 · Product picker (rows, in-module) ═══════════ */
@@ -1937,10 +1897,11 @@
       });
 
       /* Chat's step-0 prompt (the picking turn also lives in the chat module). */
+      /* Step-0: show the shared chat's welcome with a product chip for each food. */
       function seedPickPrompt() {
-        box.innerHTML = '';
-        const board = GS ? 'onto the Guiding Stars board' : 'into the studio';
-        addWISEai('<span class="rf-lead rf-lead--lg">Which food are we reformulating?</span>Tap a food below — or pick from the list in the dashboard. They come straight from <a href="product-portfolio.html" style="color:var(--primary);font-weight:600;text-decoration:none">your portfolio</a>. I\'ll load it ' + board + ' and we\'ll dial it in together.', { noMeta: true, pickChips: true });
+        if (!chat) return;
+        chat.setIntents(productIntents());
+        chat.reset();
       }
 
       /* Dress the dashboard header in the loaded food's brand banner and photo,
@@ -1978,9 +1939,10 @@
         seedPickPrompt();
       };
 
-      function selectProduct(idOrObj) {
+      /* Load a product onto the boards WITHOUT touching the chat transcript. */
+      function selectProductState(idOrObj) {
         const p = (typeof idOrObj === 'object') ? idOrObj : PRODUCTS.find((x) => x.id === idOrObj);
-        if (!p) return;
+        if (!p) return null;
         product = p;
         ORIGINAL = { ...p.baseline };
         state = { ...ORIGINAL };
@@ -1991,8 +1953,15 @@
         setDashMode(false);
         dressDashHead(p);
         if (changeBtn) changeBtn.style.display = '';
-        box.innerHTML = '';
         render();
+        return p;
+      }
+      /* Load a product AND open its conversation (dashboard picker rows + deep
+         links — posts the opener directly, with no preceding you-line). */
+      function selectProduct(idOrObj) {
+        const p = selectProductState(idOrObj);
+        if (!p) return;
+        if (chat) chat.hideWelcome();
         seed();
       }
 
@@ -2003,6 +1972,60 @@
         return PRODUCTS.find((p) => p.id === q) || PRODUCTS.find((p) => digits(p.upc) === digits(q)) || null;
       }
       (function boot() {
+        /* Mount the ONE shared WISEai chat module and feed it the reformulation
+           content. Every transcript wrapper, chip and reply above drives this
+           handle, so the page uses the exact same chat UX (three-dot menu with
+           tokens/cost activity, Turns, History & Admin toggles, width toggle)
+           as pages/wiseai.html — just with reformulation-specific content. */
+        chat = mountWISEaiChat(document.getElementById('rf-chat'), {
+          title: 'WISEai\u2122',
+          heading: 'Which food are we reformulating?',
+          sub: 'Pick a food and I\u2019ll load it into the studio — then we dial in the recipe together, live.',
+          placeholder: 'Ask WISEai to reformulate this product\u2026',
+          userInitials: 'AK',
+          sourceLabel: '',
+          statusLabel: 'WISEai is modeling',
+          chipsFlow: 'wrap',
+          inlineChips: true,
+          historyKey: 'wise-chat-history:reformulation',
+          activity: true,
+          turns: true,
+          turnsSearch: true,
+          turnsShare: true,
+          turnsNotes: true,
+          intents: productIntents(),
+          reply: (text) => rfReply(text),
+          onIntent: (intent) => {
+            /* Product picker chip → load it onto the boards. Let the module post
+               the you-line first, then seed the opener on the next tick. */
+            if (intent && intent.indexOf('pick:') === 0) {
+              const p = selectProductState(intent.slice(5));
+              if (p) setTimeout(() => { if (chat) chat.hideWelcome(); seed(); }, 0);
+              return true;
+            }
+            /* Move chips resolve through intentReplies → applyReplyFor. */
+            return false;
+          },
+        });
+
+        /* History & Projects entry in the three-dot menu (shared module wires
+           data-sc="history" to its in-module History sidebar). */
+        const morePop = document.getElementById('rf-chat').querySelector('.topbar-popover');
+        if (morePop && !morePop.querySelector('[data-sc="history"]')) {
+          const hb = document.createElement('button');
+          hb.type = 'button';
+          hb.className = 'topbar-menu-item sc-mcp-item';
+          hb.setAttribute('data-sc', 'history');
+          hb.setAttribute('role', 'menuitemcheckbox');
+          hb.setAttribute('aria-checked', 'false');
+          hb.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+          const hd = document.createElement('div');
+          hd.className = 'topbar-menu-divider';
+          morePop.insertBefore(hd, morePop.firstChild);
+          morePop.insertBefore(hb, hd);
+        }
+
+        /* ── Boot: deep-link (?product=<id|upc>) from the portfolio, else pick ── */
         const params = new URLSearchParams(location.search);
         /* Guiding Stars is an admin opt-in and off by default, but a deep-link
            from the portfolio's Guiding Stars view can arrive with ?gs=1 so the

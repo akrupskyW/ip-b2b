@@ -76,7 +76,9 @@
   // triple). When one is present the page controls that pane's width, so we must
   // stand down and let the preset win rather than force our pinned width.
   function hasPreset(el) {
-    return !!(el.classList && (el.classList.contains('panel-wide') || el.classList.contains('panel-triple')));
+    return !!(el.classList && (el.classList.contains('panel-wide') || el.classList.contains('panel-triple') ||
+              el.classList.contains('panel-fill') || el.classList.contains('pane-wide') ||
+              el.classList.contains('pane-triple') || el.classList.contains('pane-fill')));
   }
   // A "fill" pane (marked data-pr-fill) is the flexible middle module that
   // absorbs the row's remaining space (e.g. the WISEai chat between the

@@ -514,7 +514,31 @@
         intents: INTENTS,
         intentReplies: INTENT_REPLIES,
         reply,
+        /* Same feature parity as every other WISEai chat module: the live
+           tokens/cost activity read-out and the Turns module (three-dot menu). */
+        activity: true,
+        turns: true,
+        turnsSearch: true,
+        turnsShare: true,
+        turnsNotes: true,
       });
+
+      /* History & Projects entry in the three-dot menu (shared module wires
+         data-sc="history" to its in-module History sidebar). */
+      const morePop = host.querySelector('.topbar-popover');
+      if (morePop && !morePop.querySelector('[data-sc="history"]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'topbar-menu-item sc-mcp-item';
+        btn.setAttribute('data-sc', 'history');
+        btn.setAttribute('role', 'menuitemcheckbox');
+        btn.setAttribute('aria-checked', 'false');
+        btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+        const div = document.createElement('div');
+        div.className = 'topbar-menu-divider';
+        morePop.insertBefore(div, morePop.firstChild);
+        morePop.insertBefore(btn, div);
+      }
     }
   </script>
 </body>

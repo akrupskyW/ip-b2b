@@ -406,7 +406,7 @@ import { setTextSize } from './text-size.js';
     };
     const VERIF_MAP = {
       verified: { cls:'status-ok',   icon:'verified', label:'Verified' },
-      ready:    { cls:'status-info', icon:'check_circle', label:'Ready' },
+      ready:    { cls:'status-info', icon:'check', label:'Ready' },
       review:   { cls:'status-warn', icon:'hourglass_top', label:'Review' },
       missing:  { cls:'status-risk', icon:'error', label:'Missing' },
     };
@@ -474,7 +474,7 @@ import { setTextSize } from './text-size.js';
     function renderVerification(){
       const root = $('#verificationQueue');
       const stateMap = {
-        ready:   { color:'var(--sec-green)',  bg:'var(--sec-green-10)',  icon:'check_circle',   label:'Ready' },
+        ready:   { color:'var(--sec-green)',  bg:'var(--sec-green-10)',  icon:'check',   label:'Ready' },
         review:  { color:'var(--ter-amber)',  bg:'var(--ter-amber-10)',  icon:'hourglass_top',  label:'Review' },
         missing: { color:'var(--ter-cyan)',   bg:'var(--ter-cyan-10)',   icon:'help',           label:'Missing' },
         risk:    { color:'var(--sec-red)',    bg:'var(--sec-red-10)',    icon:'priority_high',  label:'High Risk' },
@@ -1116,7 +1116,7 @@ import { setTextSize } from './text-size.js';
       $('#moduleContent').innerHTML = `
         <div class="kpi-grid">
           ${kpiCardHtml({label:'Queue Total',     value:'38',  delta:'▲ 12', deltaDir:'up', icon:'checklist', color:'var(--primary)',   sparkId:'v-sp-1', delay:.05})}
-          ${kpiCardHtml({label:'Ready',           value:'847', delta:'▲ 64', deltaDir:'up', icon:'check_circle', color:'var(--sec-green)', sparkId:'v-sp-2', delay:.1})}
+          ${kpiCardHtml({label:'Ready',           value:'847', delta:'▲ 64', deltaDir:'up', icon:'check', color:'var(--sec-green)', sparkId:'v-sp-2', delay:.1})}
           ${kpiCardHtml({label:'Review Needed',   value:'24',  delta:'▲ 4',  deltaDir:'down', icon:'hourglass_top', color:'var(--ter-amber)', sparkId:'v-sp-3', delay:.15})}
           ${kpiCardHtml({label:'Missing Docs',    value:'12',  delta:'▼ 3',  deltaDir:'up', icon:'error',     color:'var(--sec-red)',   sparkId:'v-sp-4', delay:.2})}
         </div>
@@ -1137,7 +1137,7 @@ import { setTextSize } from './text-size.js';
         ${panelHtml({icon:'view_kanban', color:'var(--primary)', title:'Verification Board', sub:'Drag to advance (demo)',
           headerRight:`<button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;" data-action="filter"><span class="material-symbols-rounded" style="font-size:16px;">tune</span>Filter</button>`,
           body:`<div class="kanban-grid">
-            ${renderKanbanCol('ready','Ready','check_circle','var(--sec-green)',VERIF_FULL.ready)}
+            ${renderKanbanCol('ready','Ready','check','var(--sec-green)',VERIF_FULL.ready)}
             ${renderKanbanCol('review','Review','hourglass_top','var(--ter-amber)',VERIF_FULL.review)}
             ${renderKanbanCol('missing','Missing','error','var(--sec-red)',VERIF_FULL.missing)}
             ${renderKanbanCol('risk','High Risk','priority_high','var(--ter-violet)',VERIF_FULL.risk)}
@@ -1187,7 +1187,7 @@ import { setTextSize } from './text-size.js';
     }
     function wireKanbanClicks(){
       const COL_META = {
-        ready:   { color:'var(--sec-green)', icon:'check_circle',   label:'Ready' },
+        ready:   { color:'var(--sec-green)', icon:'check',   label:'Ready' },
         review:  { color:'var(--ter-amber)', icon:'hourglass_top',  label:'Review' },
         missing: { color:'var(--sec-red)',   icon:'error',          label:'Missing' },
         risk:    { color:'var(--ter-violet)', icon:'priority_high', label:'High Risk' },
@@ -1218,7 +1218,7 @@ import { setTextSize } from './text-size.js';
                 <div class="detail-section-title">Checklist</div>
                 ${['Ingredient documentation verified','Supplier certifications uploaded','Processing claim substantiated','Labeling reviewed by counsel'].map((c, i) => `
                   <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
-                    <span class="material-symbols-rounded ms-fill" style="font-size:18px;color:${i<2?'var(--sec-green)':'var(--text-subtle)'};">${i<2?'check_circle':'radio_button_unchecked'}</span>
+                    <span class="material-symbols-rounded ms-fill" style="font-size:18px;color:${i<2?'var(--sec-green)':'var(--text-subtle)'};">${i<2?'check':'radio_button_unchecked'}</span>
                     <span style="${i>=2?'color:var(--text-muted);':''}">${c}</span>
                   </div>
                 `).join('')}
@@ -1250,7 +1250,7 @@ import { setTextSize } from './text-size.js';
         <div class="kpi-grid">
           ${kpiCardHtml({label:'Open Claims',         value:'24',  delta:'▲ 6',  deltaDir:'down', icon:'gavel',     color:'var(--ter-amber)', sparkId:'c-sp-1', delay:.05})}
           ${kpiCardHtml({label:'In Review',           value:'14',  delta:'▲ 2',  deltaDir:'down', icon:'hourglass_top', color:'var(--ter-violet)', sparkId:'c-sp-2', delay:.1})}
-          ${kpiCardHtml({label:'Resolved (30d)',      value:'58',  delta:'▲ 12', deltaDir:'up', icon:'check_circle', color:'var(--sec-green)', sparkId:'c-sp-3', delay:.15})}
+          ${kpiCardHtml({label:'Resolved (30d)',      value:'58',  delta:'▲ 12', deltaDir:'up', icon:'check', color:'var(--sec-green)', sparkId:'c-sp-3', delay:.15})}
           ${kpiCardHtml({label:'Avg Resolution',      value:'4.2d', delta:'▼ 0.6d', deltaDir:'up', icon:'schedule',   color:'var(--ter-cyan)',  sparkId:'c-sp-4', delay:.2})}
         </div>
 
@@ -1638,7 +1638,7 @@ import { setTextSize } from './text-size.js';
     }
 
     // ========== TOASTS ==========
-    function showToast({ title, sub, icon='check_circle', kind='' } = {}){
+    function showToast({ title, sub, icon='check', kind='' } = {}){
       const root = $('#toastContainer');
       const t = document.createElement('div');
       t.className = 'toast ' + kind;
@@ -1887,7 +1887,7 @@ import { setTextSize } from './text-size.js';
           <div class="detail-section-title">Checklist</div>
           ${['Ingredient documentation verified','Supplier certifications uploaded','Processing claim substantiated','Labeling reviewed by counsel'].map((item, i) => `
             <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
-              <span class="material-symbols-rounded ms-fill" style="font-size:18px;color:${i<2?'var(--sec-green)':'var(--text-subtle)'};">${i<2?'check_circle':'radio_button_unchecked'}</span>
+              <span class="material-symbols-rounded ms-fill" style="font-size:18px;color:${i<2?'var(--sec-green)':'var(--text-subtle)'};">${i<2?'check':'radio_button_unchecked'}</span>
               <span style="${i>=2?'color:var(--text-muted);':''}">${item}</span>
             </div>
           `).join('')}
@@ -1932,7 +1932,7 @@ import { setTextSize } from './text-size.js';
             <div class="popover-item" data-pop-action="ws-atlas">
               <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;">AF</div>
               <div class="popover-item-body"><div>Atlas Foods</div><div class="popover-item-sub">Enterprise · v4.2</div></div>
-              <span class="material-symbols-rounded ms-fill" style="font-size:16px;color:var(--primary);">check_circle</span>
+              <span class="material-symbols-rounded ms-fill" style="font-size:16px;color:var(--primary);">check</span>
             </div>
             <div class="popover-item" data-pop-action="ws-northgate">
               <div class="ws-avatar" style="width:24px;height:24px;border-radius:7px;font-size:10px;background:linear-gradient(135deg,var(--ter-amber),#A16908);">NG</div>

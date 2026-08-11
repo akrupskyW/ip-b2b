@@ -390,11 +390,11 @@
             <div class="panel-more-wrap" id="gs-chat-menu-wrap">
               <button type="button" id="gs-chat-menu-btn" class="panel-more-btn" onclick="gsToggleChatMenu(event)" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="gs-chat-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="gs-chat-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsCopyTranscript(this)"><span class="material-symbols-outlined topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsExportPlan(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsCopyTranscript(this)"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="gsExportPlan(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export action plan</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset conversation</span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" onclick="gsRestart(); gsCloseChatMenu()"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="gs-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>
@@ -808,7 +808,7 @@
       function recCell(p) {
         const sub = p.blockers
           ? `<div class="gs-blockers">${p.blockers.map((b) => `<span class="gs-blocker">${esc(b)}</span>`).join('')}</div>`
-          : `<span class="gs-move-impact"><span class="material-symbols-outlined">${p.seg === 'earn' ? 'check_circle' : 'trending_up'}</span>${esc(p.tag || '')}</span>`;
+          : `<span class="gs-move-impact"><span class="material-symbols-outlined">${p.seg === 'earn' ? 'check' : 'trending_up'}</span>${esc(p.tag || '')}</span>`;
         return `<div><div class="gs-move">${esc(p.rec)}</div>${sub}</div>`;
       }
       function renderTable() {
@@ -958,11 +958,99 @@
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
         box.scrollTop = box.scrollHeight;
       }
+      /* Reveal a WISEai line's text one word at a time so it reads as if it's
+         being typed live rather than popping in whole. Markup, icons, media, the
+         inline chips and the meta footer are left untouched. Honors
+         prefers-reduced-motion. */
+      const GS_REDUCED_MOTION = (() => {
+        try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+        catch (_) { return false; }
+      })();
+      function gsTypeInLine(bodyEl, done) {
+        if (!bodyEl) { if (done) done(); return; }
+        const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
+          acceptNode(n) {
+            if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+            const p = n.parentElement;
+            if (p && p.closest('.sc-line-meta, .gs-chips-inline, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        });
+        const textNodes = [];
+        let tn;
+        while ((tn = walker.nextNode())) textNodes.push(tn);
+        const words = [];
+        textNodes.forEach((node) => {
+          const parts = node.nodeValue.split(/(\s+)/);
+          const frag = document.createDocumentFragment();
+          parts.forEach((part) => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            const span = document.createElement('span');
+            span.style.opacity = '0';
+            span.textContent = part;
+            frag.appendChild(span);
+            words.push(span);
+          });
+          node.parentNode.replaceChild(frag, node);
+        });
+        if (!words.length) { if (done) done(); return; }
+        let i = 0;
+        const step = () => {
+          words[i].style.opacity = '1';
+          i++;
+          box.scrollTop = box.scrollHeight;
+          if (i < words.length) setTimeout(step, 70);
+          else if (done) done();
+        };
+        step();
+      }
+      /* Prime an element to slide in from the left, then reveal a set of them one
+         after another (left→right) so the timestamp and inline chips each animate
+         in, in order, once the answer has finished typing. */
+      function gsPrimeLeft(el) {
+        if (!el) return;
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(-6px)';
+        el.style.transition = 'opacity .2s ease, transform .2s ease';
+      }
+      function gsRevealStaggered(els, startDelay, gap, done) {
+        const list = (els || []).filter(Boolean);
+        if (!list.length) { if (done) setTimeout(done, startDelay || 0); return; }
+        let idx = 0;
+        const showNext = () => {
+          list[idx].style.opacity = '1';
+          list[idx].style.transform = 'none';
+          idx += 1;
+          box.scrollTop = box.scrollHeight;
+          if (idx < list.length) setTimeout(showNext, gap);
+          else if (done) setTimeout(done, gap);
+        };
+        setTimeout(showNext, startDelay);
+      }
       function addWISEai(html, opts) {
         stripChips();
         const chips = (opts && opts.chips) ? chipsHtml() : '';
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">' + OWL + '</span><div class="sc-line-body">' + html + chips + metaRow() + '</div></div>');
+        const line = box.lastElementChild;
+        const body = line && line.querySelector('.sc-line-body');
         box.scrollTop = box.scrollHeight;
+        /* Type the prose in word-by-word, then bring in the timestamp, then the
+           inline chips (left→right) — text, timestamp, chips, in order. Embedded
+           charts / tables are left intact by the walker. */
+        const canType = body && !GS_REDUCED_MOTION;
+        if (canType) {
+          const timeEl = body.querySelector('.sc-line-time');
+          const chipBtns = Array.from(body.querySelectorAll('.gs-chips-inline .gs-chip'));
+          if (timeEl) gsPrimeLeft(timeEl);
+          chipBtns.forEach(gsPrimeLeft);
+          box.scrollTop = box.scrollHeight;
+          gsTypeInLine(body, () => {
+            gsRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
+              gsRevealStaggered(chipBtns, 120, 55, () => { box.scrollTop = box.scrollHeight; });
+            });
+          });
+        }
       }
       function showTyping() {
         const el = document.createElement('div');
@@ -1004,17 +1092,29 @@
         else respond('This action plan covers <b>628 SKUs</b>. I can walk you through the <b>quick wins</b>, the <b>near-misses</b>, where you\'re <b>losing to competitors</b>, or how your zero-star products are <b>distributed</b> — tap a chip below or ask away.');
       };
 
-      /* Chat width toggle (3-step widen, matches the shared module). */
+      /* Chat width toggle — the canonical four-step cycle (single → double →
+         triple → fill), identical to every other module in the app. */
       (function () {
         const btn = document.getElementById('gs-width');
         const chat = document.querySelector('.gs-chat');
-        const STEPS = ['', 'panel-wide', 'panel-triple'];
-        let i = 0;
+        const ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+        const TITLES = [
+          'Width (single) — tap to widen',
+          'Width (double) — tap to widen',
+          'Width (triple) — tap to widen',
+          'Width (fill) — tap to reset',
+        ];
+        let tier = 0;
         btn.addEventListener('click', () => {
-          chat.classList.remove('panel-wide', 'panel-triple');
-          i = (i + 1) % STEPS.length;
-          if (STEPS[i]) chat.classList.add(STEPS[i]);
-          btn.setAttribute('aria-pressed', String(i !== 0));
+          tier = (tier + 1) % 4;
+          chat.classList.toggle('panel-wide', tier >= 1);
+          chat.classList.toggle('panel-triple', tier >= 2);
+          chat.classList.toggle('panel-fill', tier >= 3);
+          btn.classList.toggle('is-on', tier >= 1);
+          btn.setAttribute('aria-pressed', String(tier !== 0));
+          btn.title = TITLES[tier];
+          const ic = btn.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = ICONS[tier];
         });
       })();
 

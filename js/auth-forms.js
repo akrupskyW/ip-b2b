@@ -190,8 +190,16 @@
   function landing() { return (Auth && Auth.landingUrl && Auth.landingUrl()) || 'product-comparison.html'; }
   function goLanding() { window.location.href = landing(); }
 
+  /* When the page is loaded as a preview (e.g. the All Modules rail embeds every
+     screen in a live iframe), it should render itself in place — not bounce to
+     the landing page — so the preview shows the actual auth screen. */
+  function isPreview() {
+    try { return /[?&]preview=1(?:&|$)/.test(window.location.search); } catch (e) { return false; }
+  }
+
   /* If already signed in, don't sit on an auth page. */
   function bounceIfAuthed() {
+    if (isPreview()) return false;
     if (Auth && Auth.isAuthed && Auth.isAuthed()) { window.location.replace(landing()); return true; }
     return false;
   }

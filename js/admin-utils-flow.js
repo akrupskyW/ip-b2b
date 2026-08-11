@@ -67,7 +67,7 @@ let chatApi = null;
 export function setAdminUtilsChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');

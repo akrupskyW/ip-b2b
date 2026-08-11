@@ -594,6 +594,7 @@ function boot() {
       onToggleWidth: (tier) => {
         body.classList.toggle('mkt-chat-wide', tier >= 1);
         body.classList.toggle('mkt-chat-triple', tier >= 2);
+        body.classList.toggle('mkt-chat-fill', tier >= 3);
       },
       /* Every chat-driven intent (a chip, a scorecard, an inline suggestion, or
          a mirrored body CTA) reflects back onto the page: scroll the matching

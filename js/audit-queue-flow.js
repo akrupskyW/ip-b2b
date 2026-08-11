@@ -20,8 +20,8 @@ function esc(s) {
 const STATUSES = [
   { key: null,        label: 'All',       num: 209, icon: 'inbox',        accent: '' },
   { key: 'open',      label: 'Open',      num: 8,   icon: 'schedule',     accent: 'adm-stat--blue' },
-  { key: 'accepted',  label: 'Accepted',  num: 179, icon: 'check_circle', accent: 'adm-stat--green' },
-  { key: 'new_canon', label: 'New Canon', num: 14,  icon: 'add_circle',   accent: 'adm-stat--blue' },
+  { key: 'accepted',  label: 'Accepted',  num: 179, icon: 'check', accent: 'adm-stat--green' },
+  { key: 'new_canon', label: 'New Canon', num: 14,  icon: 'add',   accent: 'adm-stat--blue' },
   { key: 'rejected',  label: 'Rejected',  num: 4,   icon: 'cancel',       accent: 'adm-stat--red' },
   { key: 'canceled',  label: 'Canceled',  num: 4,   icon: 'block',        accent: '' },
 ];
@@ -43,7 +43,7 @@ const AUDITS = [
 
 /* Chip class + leading icon per brand action. */
 const ACTION_META = {
-  'Suggest New Canon': { cls: 'adm-chip--blue',   icon: 'add_circle' },
+  'Suggest New Canon': { cls: 'adm-chip--blue',   icon: 'add' },
   'Not Sure':          { cls: 'adm-chip--amber',  icon: 'help' },
   'Remapped':          { cls: 'adm-chip--green',  icon: 'sync_alt' },
   'New Canon':         { cls: 'adm-chip--blue',   icon: 'auto_awesome' },
@@ -100,7 +100,7 @@ let chatApi = null;
 export function setAuditQueueChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -370,16 +370,16 @@ export const AUDIT_QUEUE_WISEAI = {
     label: 'Your audit queue at a glance',
     cards: [
       { intent: 'show_open', icon: 'schedule', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Open audits', desc: 'Rows awaiting reviewer action — mostly new-canon suggestions.', action: 'Show open audits', ask: 'Show open audits' },
-      { intent: 'new_canon', icon: 'add_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'New canon suggestions', desc: 'Brand suggestions to create a new canonical ingredient — resolve to add.', action: 'New canon suggestions', ask: 'New canon suggestions' },
+      { intent: 'new_canon', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'New canon suggestions', desc: 'Brand suggestions to create a new canonical ingredient — resolve to add.', action: 'New canon suggestions', ask: 'New canon suggestions' },
       { intent: 'show_all', icon: 'inbox', iconTone: 'brand', pill: { tone: 'up', icon: 'inbox', text: 'All' }, title: 'All audits', desc: 'Every loaded audit row across all statuses, in one view.', action: 'Show all audits', ask: 'Show all audits' },
-      { intent: 'show_accepted', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Accepted' }, title: 'Accepted audits', desc: 'Remapped or flag-only resolutions, filtered in one tap.', action: 'Show accepted', ask: 'Show accepted' },
+      { intent: 'show_accepted', icon: 'check', iconTone: 'brand', pill: { tone: 'up', icon: 'check', text: 'Accepted' }, title: 'Accepted audits', desc: 'Remapped or flag-only resolutions, filtered in one tap.', action: 'Show accepted', ask: 'Show accepted' },
       { intent: 'show_canceled', icon: 'block', iconTone: 'brand', pill: { tone: 'up', icon: 'block', text: 'Canceled' }, title: 'Canceled audits', desc: 'Withdrawn or superseded by a re-analyze.', action: 'Show canceled', ask: 'Show canceled' },
     ],
   },
   intents: [
     { intent: 'show_open',     label: 'Show open audits',      icon: 'schedule' },
-    { intent: 'show_accepted', label: 'Show accepted',         icon: 'check_circle' },
-    { intent: 'new_canon',     label: 'New canon suggestions', icon: 'add_circle' },
+    { intent: 'show_accepted', label: 'Show accepted',         icon: 'check' },
+    { intent: 'new_canon',     label: 'New canon suggestions', icon: 'add' },
     { intent: 'show_canceled', label: 'Show canceled',         icon: 'block' },
     { intent: 'show_all',      label: 'Show all audits',       icon: 'inbox' },
     { intent: 'refresh',       label: 'Refresh the queue',     icon: 'refresh' },

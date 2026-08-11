@@ -31,7 +31,7 @@ function esc(s) {
 }
 
 /* Lightweight toast (reuses the shared .ag-toast styling from agent-overview). */
-function agToastLocal(msg, icon = 'check_circle') {
+function agToastLocal(msg, icon = 'check') {
   let wrap = document.getElementById('ag-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -1599,7 +1599,7 @@ function runDiscovery(host, { onReveal } = {}) {
       bar.classList.add('is-complete');
       if (statusEl) statusEl.textContent = 'Discovery complete';
       const spin = bar.querySelector('.dash-discovery-spin');
-      if (spin) spin.textContent = 'check_circle';
+      if (spin) spin.textContent = 'check';
       setTimeout(resolve, 520);
     };
     requestAnimationFrame(tick);
@@ -1615,7 +1615,7 @@ function scoreCard({ num, denom, rating, ratingTone, note, icon, pct = false }) 
         <div class="dash-score-num"><span class="n">${esc(String(num))}${pct ? '<span class="dash-pct">%</span>' : ''}</span><span class="d">${esc(denom)}</span></div>
         ${icon ? `<span class="dash-score-icon"><span class="material-symbols-outlined">${esc(icon)}</span></span>` : ''}
       </div>
-      <span class="dash-badge dash-badge--${ratingTone}"><span class="material-symbols-outlined" style="font-size:13px;">check_circle</span>${esc(rating)}</span>
+      <span class="dash-badge dash-badge--${ratingTone}"><span class="material-symbols-outlined" style="font-size:13px;">check</span>${esc(rating)}</span>
       <p class="dash-score-note">${note}</p>
     </article>`;
 }
@@ -1930,7 +1930,7 @@ function renderWisescore(d) {
       <div class="dash-card dash-wisescore" style="margin-top:14px;">
         <div>
           <div class="dash-wisescore-num"><span class="n">${w.average}</span><span class="d">/100</span></div>
-          <span class="dash-badge dash-badge--${badgeMod}"><span class="material-symbols-outlined" style="font-size:13px;">check_circle</span>${rating}</span>
+          <span class="dash-badge dash-badge--${badgeMod}"><span class="material-symbols-outlined" style="font-size:13px;">check</span>${rating}</span>
           <p class="dash-wisescore-note">Average score across all <strong>${d.claim.discovered} discovered products</strong> · 12 carry a verified NON-UPF shield.</p>
         </div>
         <div class="dash-claim-divider"></div>

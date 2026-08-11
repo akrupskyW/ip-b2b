@@ -168,7 +168,7 @@
        (valid splits: 6 · 3+3 · 2+2+2 — 5+1 is forbidden) and the scope row
        has 4 (valid: 4 · 2+2 — 3+1 is forbidden). We only ever set 6/3/2 or
        4/2 columns, so every row stays at least two cards wide. */
-    .lib-stats-wrap { container-type: inline-size; }
+    .lib-stats-wrap { container-type: inline-size; margin-top: 16px; }
     .lib-stats-row { display: grid; gap: 10px; }
     .lib-stats-row + .lib-stats-row { margin-top: 10px; }
     .lib-row-type  { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 2+2+2 */
@@ -290,17 +290,8 @@
       font-size: 0.75rem; color: var(--text-subtle);
     }
     .lib-shared .material-symbols-outlined { font-size: 14px !important; }
-    .lib-cfoot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px; }
-    .lib-type {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.75rem; font-weight: 700; color: var(--acc, var(--text-muted));
-    }
-    .lib-type .material-symbols-outlined { font-size: 14px !important; }
-    .lib-type.t-chat { --acc: var(--primary); }
-    html.dark .lib-type.t-chat { --acc: var(--primary-bright); }
-    .lib-type.t-dashboard { --acc: var(--sec-green); }
-    .lib-type.t-report { --acc: #7c6cf0; }
-    .lib-date { font-size: 0.75rem; color: var(--text-subtle); }
+    .lib-cfoot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-top: 2px; }
+    .lib-date { font-size: 0.75rem; color: var(--text-subtle); align-self: flex-start; text-align: left; }
     .lib-counts { display: inline-flex; align-items: center; gap: 10px; }
     .lib-count {
       display: inline-flex; align-items: center; gap: 3px;
@@ -434,7 +425,6 @@
                    second row = scope + folder status (Shared with me / Shared by
                    me / Filed / Unfiled). Every count is derived from the cards
                    actually rendered in the grid below. ==== -->
-              <div class="lib-stats-bar"><span class="lib-stats-label">Your library at a glance</span></div>
               <div class="lib-stats-wrap">
                 <!-- Type row (6 cards — never wraps to a lone card) -->
                 <div class="lib-stats-row lib-row-type" role="group" aria-label="Filter library by type">
@@ -500,7 +490,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">B-optimized ingredient stack cracked a novel food shock</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
                           <span class="lib-date">Aug 10, 2026</span>
                         </div>
                       </div>
@@ -515,7 +504,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Show me all the foods that are just one point away from moderately processed</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
                           <span class="lib-date">Aug 10, 2026</span>
                         </div>
                       </div>
@@ -532,7 +520,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Show me all the foods that are just one point away from being moderately processed?</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts">
                             <span class="lib-count"><span class="material-symbols-outlined">attach_file</span>2</span>
                             <span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span>
@@ -554,7 +541,6 @@
                         <div class="lib-cname">I want to test your ability to come up with codes…</div>
                         <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 6</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>4</span></span>
                           <span class="lib-date">Aug 5, 2026</span>
                         </div>
@@ -573,7 +559,6 @@
                         <div class="lib-cname">can you remember things between conversations?</div>
                         <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 5</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>6</span></span>
                           <span class="lib-date">Aug 5, 2026</span>
                         </div>
@@ -589,7 +574,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Is this ingredient list ultra-processed?</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
                           <span class="lib-date">Aug 4, 2026</span>
                         </div>
                       </div>
@@ -607,7 +591,6 @@
                         <div class="lib-cname">find foods whose ingredient list include the word natto</div>
                         <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
                         </div>
@@ -626,7 +609,6 @@
                         <div class="lib-cname">how many foods have full nfp15?</div>
                         <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>8</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
                         </div>
@@ -645,7 +627,6 @@
                         <div class="lib-cname">how many foods have full nfp15?</div>
                         <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>2</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
                         </div>
@@ -663,7 +644,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Is this ingredient list ultra-processed?</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>2</span></span>
                           <span class="lib-date">Aug 1, 2026</span>
                         </div>
@@ -684,7 +664,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Is this ingredient list ultra-processed?</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-dashboard"><span class="material-symbols-outlined">show_chart</span>Dashboard</span>
                           <span class="lib-date">Jul 29, 2026</span>
                         </div>
                       </div>
@@ -701,7 +680,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">Is this ingredient list ultra-processed?</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-counts">
                             <span class="lib-count"><span class="material-symbols-outlined">attach_file</span>2</span>
                             <span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>14</span>
@@ -722,7 +700,6 @@
                       <div class="lib-cbody">
                         <div class="lib-cname">hello</div>
                         <div class="lib-cfoot">
-                          <span class="lib-type t-chat"><span class="material-symbols-outlined">forum</span>Chat</span>
                           <span class="lib-date">Jul 28, 2026</span>
                         </div>
                       </div>
@@ -759,12 +736,13 @@
 
       // Snapshot each card's derived metadata once.
       const cards = Array.from(grid.querySelectorAll('.lib-card')).map((el) => {
-        const typeEl = el.querySelector('.lib-type');
         let type = 'chat';
-        if (typeEl) {
-          if (typeEl.classList.contains('t-dashboard')) type = 'dashboard';
-          else if (typeEl.classList.contains('t-report')) type = 'report';
-          else if (typeEl.classList.contains('t-chat')) type = 'chat';
+        if (el.querySelector('.lib-chatprev')) {
+          type = 'chat';
+        } else {
+          const badgeTxt = (el.querySelector('.lib-thumb-badge')?.textContent || '').toLowerCase();
+          if (badgeTxt.includes('dashboard')) type = 'dashboard';
+          else if (badgeTxt.includes('report')) type = 'report';
         }
         const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
         const filed = el.dataset.filed === '1' ? 'filed' : 'unfiled';

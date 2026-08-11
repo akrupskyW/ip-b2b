@@ -30,13 +30,13 @@ import { mountWISEaiChat, OWL_BUG } from './wiseai-chat.js';
 
 export const WISEAI_DOCK_KEY = 'wise-wiseai-dock';
 
-/* Width is a three-tier cycle stored under `wide`: 0 single, 1 double, 2 triple.
-   Legacy booleans map true → 1, false → 0. */
-const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
+/* Width is a four-tier cycle stored under `wide`: 0 single, 1 double, 2 triple,
+   3 fill (take the rest of the row). Legacy booleans map true → 1, false → 0. */
+const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
 function widthTierOf(v) {
   if (v === true) return 1;
-  if (typeof v === 'number') return Math.max(0, Math.min(2, v | 0));
+  if (typeof v === 'number') return Math.max(0, Math.min(3, v | 0));
   return 0;
 }
 
@@ -154,6 +154,7 @@ export function applyWISEaiDockState(dock, state = readWISEaiDockState()) {
   dock.classList.add('wiseai-dock-open');
   dock.classList.toggle('panel-wide', tier >= 1);
   dock.classList.toggle('panel-triple', tier >= 2);
+  dock.classList.toggle('panel-fill', tier >= 3);
 
   /* When WISEai is the ONLY module left in the row there are no panes to place,
      so it just centre-docks (capped at double width) until another module

@@ -65,7 +65,7 @@ function escHtml(s) {
    results (the same bottom-sheet / progress-flow language app-wide).
 ==================================================================== */
 
-function agToast(msg, icon = 'check_circle') {
+function agToast(msg, icon = 'check') {
   let wrap = document.getElementById('ag-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -134,7 +134,7 @@ function closeAgSheet() {
 }
 
 function runAgProgress(host, cfg = {}) {
-  const { steps = [], doneTitle = 'Done', doneText = '', doneIcon = 'check_circle', cta = null } = cfg;
+  const { steps = [], doneTitle = 'Done', doneText = '', doneIcon = 'check', cta = null } = cfg;
   host.innerHTML = `
     <div class="ag-flow">
       <div class="ag-flow-bar"><span class="ag-flow-fill" id="ag-flow-fill"></span></div>
@@ -155,7 +155,7 @@ function runAgProgress(host, cfg = {}) {
         prev?.classList.remove('is-active');
         prev?.classList.add('is-done');
         const ic = prev?.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = 'check_circle';
+        if (ic) ic.textContent = 'check';
       }
       if (i < n) {
         const cur = stepEls[i];
@@ -758,6 +758,57 @@ function arrivedByNavigation() {
   }
 }
 
+/* ── WISEai dock feature parity ───────────────────────────────────────────────
+   Every logged-in page mounts the SAME WISEai chat module (the dock), so it must
+   carry the same components + three-dot actions as the flagship pages/wiseai.html
+   — just fed page-specific content. These base opts turn on the features the
+   shared module implements + styles entirely on its own (via injectChatExtras),
+   so they light up on every page regardless of the host page's stylesheet:
+
+     • activity        → the live "…" indicator under the input whose hover
+                          read-out shows this-turn / conversation tokens, cache %
+                          and cost (the "little three dots that show the tokens
+                          and cost").
+     • turns (+ search  → the Turns module (three-dot "Turns" Admin switch): every
+       /share/notes)      turn listed with Fork / Jump / Share / Note. Kept as the
+                          in-chat overlay (not a broken-out flex sibling) because
+                          the docked/sticky-drawer LAYOUT is bespoke to wiseai.html;
+                          the overlay reuses the shared .wch-sidebar shell that
+                          every page already styles.
+
+   Page cfg is spread AFTER these, so any page can still override a default. The
+   "Show/Hide overview cards" and "Hide/Show intent chips" Admin switches appear
+   automatically whenever a page passes scorecards / intents, and "History &
+   Projects" is injected into the menu post-mount (injectWISEaiHistoryMenuItem). */
+const WISEAI_DOCK_PARITY = {
+  activity: true,
+  turns: true,
+  turnsSearch: true,
+  turnsShare: true,
+  turnsNotes: true,
+};
+
+/* Add the "History & Projects" entry to the chat's three-dot menu (the shared
+   module wires data-sc="history" to its in-module History sidebar, but leaves
+   the menu row for the host to inject — mirroring pages/wiseai.html). Styled as
+   an on/off switch so it reads back its open state, and sat at the top of the
+   menu above a divider. Runs once per dock. */
+function injectWISEaiHistoryMenuItem(dock) {
+  const morePop = dock.querySelector('.topbar-popover');
+  if (!morePop || morePop.querySelector('[data-sc="history"]')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'topbar-menu-item sc-mcp-item';
+  btn.setAttribute('data-sc', 'history');
+  btn.setAttribute('role', 'menuitemcheckbox');
+  btn.setAttribute('aria-checked', 'false');
+  btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+  const div = document.createElement('div');
+  div.className = 'topbar-menu-divider';
+  morePop.insertBefore(div, morePop.firstChild);
+  morePop.insertBefore(btn, div);
+}
+
 function setupWISEaiDock() {
   /* Pages can opt out of the persistent WISEai dock with
      `<body data-hide-wiseai>` (e.g. analytics-types.html). */
@@ -953,7 +1004,15 @@ function setupWISEaiDock() {
     };
   }
 
-  const wiseai = mountWISEaiDock(dock, cfg);
+  /* Mount with the shared feature-parity base opts under the page's own cfg, so
+     every dock carries the same components + three-dot actions as wiseai.html
+     (tokens/cost activity read-out, Turns module, Admin toggles) while keeping
+     its page-specific content (sub, intents, scorecards, onIntent …). */
+  const wiseai = mountWISEaiDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
+
+  /* History & Projects is toggled from the chat's own three-dot menu — the
+     shared module wires the action but leaves the menu row for the host. */
+  injectWISEaiHistoryMenuItem(dock);
 
   /* Hand the live chat to the GRAS flow so UI interactions mirror into the
      conversation (and vice-versa) for one shared, mirrored surface. */
@@ -1198,24 +1257,26 @@ function syncDashToggleItems() {
 ==================================================================== */
 
 const MAIN_WIDTH_KEY = 'wise-main-width';
-/* Mirror the portfolio tab-pane width control (#modules-tabbed): the panel
-   shares the row with the fixed WISEai dock, so it defaults to FILLING the
-   available space and the toggle NARROWS it to centred reading widths. This
-   keeps the toggle visibly functional at any panel width (unlike a high cap
-   that a WISEai-constrained panel can never reach). */
-const MAIN_WIDTH_ICONS = ['width_full', 'width_wide', 'width_normal'];
+/* The canonical four-tier width control shared by every module in the app:
+   single → double → triple → fill (take the whole row). `#agent-main` shares
+   the row with the fixed WISEai dock, so it DEFAULTS to fill (tier 3) — the
+   full-width surface every admin/overview page opens with — and the control
+   steps it down through triple / double / single reading widths before wrapping
+   back to fill. Tier → class: 0 narrow · 1 wide · 2 triple · 3 fill (no class). */
+const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
 const MAIN_WIDTH_TITLES = [
-  'Width (full) — tap to narrow',
-  'Width (wide) — tap to narrow',
-  'Width (reading) — tap to reset',
+  'Width (single) — tap to widen',
+  'Width (double) — tap to widen',
+  'Width (triple) — tap to widen',
+  'Width (fill) — tap to reset',
 ];
 
 function readMainWidth() {
   try {
     const n = parseInt(localStorage.getItem(MAIN_WIDTH_KEY), 10);
-    return Number.isFinite(n) ? Math.max(0, Math.min(2, n)) : 0;
+    return Number.isFinite(n) ? Math.max(0, Math.min(3, n)) : 3;
   } catch {
-    return 0;
+    return 3;
   }
 }
 
@@ -1223,18 +1284,21 @@ function readMainWidth() {
    module's width in CSS — header, border + body, not just the inner content)
    and the toggle button's icon/state. */
 function applyMainWidth(tier) {
-  /* tier 0 = full (fills the row, no cap) · 1 = wide (1180) · 2 = reading (820).
-     Apply to #agent-main — the outer flex slot/card — so the entire module
-     resizes. The inner content fills whatever width the module ends up at. */
+  /* tier 0 = single (820 reading) · 1 = double (1180) · 2 = triple (1480) ·
+     3 = fill (no cap, whole row). Apply to #agent-main — the outer flex
+     slot/card — so the entire module resizes; the inner content fills whatever
+     width the module ends up at. The toggle "is on" whenever the width is capped
+     (tiers 0–2); fill is the neutral/reset state. */
   const main = document.getElementById('agent-main');
   if (main) {
+    main.classList.toggle('main-w-narrow', tier === 0);
     main.classList.toggle('main-w-wide', tier === 1);
-    main.classList.toggle('main-w-narrow', tier === 2);
+    main.classList.toggle('main-w-triple', tier === 2);
   }
   const btn = document.getElementById('agent-main-width-btn');
   if (btn) {
-    btn.classList.toggle('is-on', tier >= 1);
-    btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+    btn.classList.toggle('is-on', tier <= 2);
+    btn.setAttribute('aria-pressed', tier <= 2 ? 'true' : 'false');
     btn.title = MAIN_WIDTH_TITLES[tier];
     const icon = btn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = MAIN_WIDTH_ICONS[tier];
@@ -1242,7 +1306,7 @@ function applyMainWidth(tier) {
 }
 
 function cycleMainWidth() {
-  const next = (readMainWidth() + 1) % 3;
+  const next = (readMainWidth() + 1) % 4;
   try { localStorage.setItem(MAIN_WIDTH_KEY, String(next)); } catch {}
   applyMainWidth(next);
 }
@@ -1256,7 +1320,7 @@ function mainPanelControlsHTML() {
         <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="agent-main-more-pop" role="menu">${renderMorePopover()}</div>
       </div>
-      <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[0])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[0]}</span></button>
+      <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[3])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[3]}</span></button>
     </div>`;
 }
 

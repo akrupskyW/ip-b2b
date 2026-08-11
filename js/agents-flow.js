@@ -46,7 +46,7 @@ function ensureState() {
   });
 }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('ag-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');

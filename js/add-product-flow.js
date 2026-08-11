@@ -141,6 +141,62 @@
   function scrollDown() { if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight; }
   function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('sc-hidden'); }
 
+  /* Reveal an already-rendered chat line's text one word at a time so anything
+     WISEai says — or any edit echoed back from the Product Details / Progress
+     modules — reads as if it's being typed live, instead of popping in whole.
+     We keep the real HTML (bold, links, chips) intact by wrapping each visible
+     WORD in a span and fading the spans in on a quick timer; markup, icons and
+     the timestamp footer are left untouched. Honors reduced-motion. */
+  const prefersReducedMotion = (() => {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  })();
+  function typeInLine(bodyEl, done) {
+    if (!bodyEl) { if (done) done(); return; }
+    if (prefersReducedMotion) { if (done) done(); return; }
+    const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const p = n.parentElement;
+        /* Skip the meta/footer, Material-Symbols ligatures, and any nested
+           chip labels that shouldn't be torn apart mid-word. */
+        if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const textNodes = [];
+    let tn;
+    while ((tn = walker.nextNode())) textNodes.push(tn);
+    const words = [];
+    textNodes.forEach((node) => {
+      const parts = node.nodeValue.split(/(\s+)/); // keep the whitespace runs
+      const frag = document.createDocumentFragment();
+      parts.forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        const span = document.createElement('span');
+        span.className = 'ap-tw';
+        span.style.opacity = '0';
+        span.textContent = part;
+        frag.appendChild(span);
+        words.push(span);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    if (!words.length) { if (done) done(); return; }
+    /* Quick cadence; reveal a few words per tick on longer lines so a big
+       paragraph still finishes fast. */
+    let i = 0;
+    const step = () => {
+      words[i].style.opacity = '1';
+      i++;
+      scrollDown();
+      if (i < words.length) setTimeout(step, 70);
+      else if (done) done();
+    };
+    step();
+  }
+
   function addUser(text) {
     hideWelcome();
     messagesEl.insertAdjacentHTML('beforeend',
@@ -155,20 +211,100 @@
   }
   function chipsRow(chips) {
     if (!chips || !chips.length) return '';
+    /* A chip flagged `primary` is the conclusive/result action for the step
+       (e.g. "Done", "Save to Portfolio") — render it as the brand-blue pill so
+       it reads as the emphasized choice. */
     return `<div class="sc-reply-chips">${chips.map((c) =>
-      `<button type="button" class="chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`).join('')}</div>`;
+      `<button type="button" class="chip${c.primary ? ' chip-primary' : ''}" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`).join('')}</div>`;
+  }
+  /* Prime an element to slide in from the left, then reveal a set of them one
+     after another (left→right) so the timestamp and reply chips each animate in,
+     in order, once the answer has finished typing. */
+  function apPrimeLeft(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-6px)';
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
+  }
+  /* Prime an element to FLY IN from the right; apRevealStaggered clears the
+     transform so it sails right→left and lands. Used for the welcome intent
+     chips so they arrive only after the heading + sub have typed in. */
+  function apPrimeRight(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(30px)';
+    el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+  }
+  function apRevealStaggered(els, startDelay, gap, done) {
+    const list = (els || []).filter(Boolean);
+    if (!list.length) { if (done) setTimeout(done, startDelay || 0); return; }
+    let idx = 0;
+    const showNext = () => {
+      list[idx].style.opacity = '1';
+      list[idx].style.transform = 'none';
+      idx += 1;
+      scrollDown();
+      if (idx < list.length) setTimeout(showNext, gap);
+      else if (done) setTimeout(done, gap);
+    };
+    setTimeout(showNext, startDelay);
+  }
+  /* Welcome-screen reveal: type the heading, then the sub, WORD-BY-WORD (just
+     like every WISEai answer), then fly the intent chips in from the right so
+     they land AFTER all the copy — never sitting there before it. Honors
+     reduced-motion (everything just shows). */
+  function revealWelcome() {
+    if (!welcomeEl) return;
+    const heading = welcomeEl.querySelector('.ws-heading');
+    const subEl = welcomeEl.querySelector('.ws-sub');
+    const chips = chipsStartEl ? Array.from(chipsStartEl.querySelectorAll('.chip')) : [];
+    if (prefersReducedMotion) {
+      chips.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
+      return;
+    }
+    chips.forEach(apPrimeRight);
+    const typeText = (el, next) => { if (el) typeInLine(el, next); else next(); };
+    typeText(heading, () => typeText(subEl, () => {
+      apRevealStaggered(chips, 90, 60, null);
+    }));
   }
   function addWISEai(html, chips) {
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
+    /* Insert the line WITHOUT its reply chips, type the reply in word-by-word,
+       then bring in the timestamp, then the chips (left→right) — text, timestamp,
+       chips, in order. */
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>${chipsRow(chips)}`);
+      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+    const line = messagesEl.lastElementChild;
+    const body = line && line.querySelector('.sc-line-body');
+    const metaEl = body && body.querySelector('.sc-line-meta');
+    if (metaEl && !prefersReducedMotion) metaEl.style.opacity = '0';
     scrollDown();
+    typeInLine(body, () => {
+      const row = chipsRow(chips);
+      let chipsEl = null;
+      if (row) { messagesEl.insertAdjacentHTML('beforeend', row); chipsEl = messagesEl.lastElementChild; }
+      if (prefersReducedMotion) { scrollDown(); return; }
+      if (metaEl) metaEl.style.opacity = '';
+      const timeEl = metaEl && metaEl.querySelector('.sc-line-time');
+      const chipBtns = chipsEl ? Array.from(chipsEl.children) : [];
+      if (timeEl) apPrimeLeft(timeEl);
+      /* Reply chips fly in from the RIGHT — the same animation the welcome
+         chips use — so every chip animates identically across the module. */
+      chipBtns.forEach(apPrimeRight);
+      scrollDown();
+      apRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
+        apRevealStaggered(chipBtns, 110, 55, scrollDown);
+      });
+    });
   }
   function addSysNote(text, icon) {
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="ap-sys-note"><span class="material-symbols-outlined">${esc(icon || 'check_circle')}</span><span>${esc(text)}</span></div>`);
+      `<div class="ap-sys-note"><span class="material-symbols-outlined">${esc(icon || 'check')}</span><span>${esc(text)}</span></div>`);
+    const note = messagesEl.lastElementChild;
     scrollDown();
+    typeInLine(note);
   }
   function showTyping() {
     hideWelcome();
@@ -203,16 +339,56 @@
     return `<span class="nfp-edit${empty ? ' nfp-edit-empty' : ''}" contenteditable="true" role="textbox" data-field="${esc(fieldPath)}" data-ph="${esc(placeholder || '')}">${empty ? esc(placeholder || '—') : esc(value)}</span>`;
   }
 
+  /* Product categories — the "proper" finished-product categories mirrored from
+     the Ingredient Browser taxonomy (pages/ingredient-browser.html). */
+  const CATEGORIES = [
+    'Bakery Products',
+    'Beverages',
+    'Confections',
+    'Frozen desserts',
+    'Grain Food Products',
+    'Plant-based Products',
+    'Prepared Condiments',
+    'Prepared Fruit products',
+    'Prepared Soup & Bases',
+    'Processed Meat Foods',
+    'Seafood Products',
+    'Spice & Seasoning Blends',
+    'Vegetables, Dry Snacks',
+  ];
+  function useCatDropdown() {
+    return !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
+  }
+  /* One self-contained dropdown (a native <select>, so it escapes the hero's
+     overflow:hidden clipping) that replaces the old chip + separate "Change"
+     button. Any pre-set value not in the list is preserved as the first option. */
+  function catSelectInner(onPhoto) {
+    const list = CATEGORIES.slice();
+    if (state.category && !list.includes(state.category)) list.unshift(state.category);
+    const err = state.errors.category;
+    const opts = list.map((c) => `<option value="${esc(c)}"${c === state.category ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    const ph = state.category ? '' : '<option value="" disabled selected>Select a category…</option>';
+    return `<div class="nfp-cat-select${onPhoto ? ' nfp-cat-select--onphoto' : ''}${state.category ? '' : ' nfp-cat-select--empty'}${err ? ' nfp-cat-select--err' : ''}">
+        <span class="material-symbols-outlined nfp-cat-select-ic">sell</span>
+        <select class="nfp-cat-native" data-nfp-cat aria-label="Product category">${ph}${opts}</select>
+        <span class="material-symbols-outlined nfp-cat-select-caret">expand_more</span>
+      </div>`;
+  }
+
   /* Category + UPC affordances rendered as overlays inside the combined hero.
      `onPhoto` switches to on-photo (light-on-dark) styling. */
   function heroCatHTML(onPhoto) {
-    const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
     const err = state.errors.category;
+    const note = err ? `<div class="nfp-hero-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : '';
+    if (useCatDropdown()) {
+      return `<div class="nfp-hero-cat">${catSelectInner(onPhoto)}</div>${note}`;
+    }
+    const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
     const inner = state.category
       ? `<span class="nfp-cat-chip${onPhoto ? ' nfp-cat-chip--onphoto' : ''}"><span class="material-symbols-outlined">sell</span>${esc(state.category)}</span>
          <button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-symbols-outlined">edit</span>Change</button>`
       : `<button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`;
-    return `<div class="nfp-hero-cat">${inner}</div>${err ? `<div class="nfp-hero-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}`;
+    return `<div class="nfp-hero-cat">${inner}</div>${note}`;
   }
   function heroUpcHTML(onPhoto) {
     if (!state.upc) {
@@ -226,8 +402,20 @@
      dropzone) with the name, brand, category and UPC all stacked on top of it.
      When a photo exists they overlay it (light-on-dark); before a photo they
      sit on a light panel so every field stays visible and editable. */
+  /* Compact brand monogram (e.g. "Flax4Life" → "F4L") for the hero badge. */
+  function brandMono() {
+    const b = String(state.brand || '').trim();
+    if (!b) return '';
+    const caps = b.replace(/[^A-Za-z0-9]/g, '').match(/[A-Z0-9]/g);
+    let mono = caps ? caps.join('') : '';
+    if (mono.length < 2) mono = b.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase();
+    return mono.slice(0, 3);
+  }
   function richHeroHTML() {
     const onPhoto = !!state.image;
+    /* Opt-in (per page) to the branded hero: icon-only edit affordance plus a
+       small circular brand-logo badge in the top-right corner. */
+    const wantHeroBrand = !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
     const stack = `<div class="nfp-hero-stack${onPhoto ? '' : ' nfp-hero-stack--light'}">
         <div class="nfp-hero-name">${editSpan('productName', state.productName, 'Product name')}</div>
         ${state.brand ? `<div class="nfp-hero-brand">${esc(state.brand)}</div>` : ''}
@@ -244,20 +432,29 @@
         ${stack}
       </div>`;
     }
+    const heroEdit = wantHeroBrand
+      ? `<button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-main" title="Replace photo" aria-label="Replace photo"><span class="material-symbols-outlined">edit</span></button>`
+      : `<button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-symbols-outlined">photo_camera</span>Replace</button>`;
+    const heroLogo = wantHeroBrand && state.brand
+      ? `<span class="nfp-hero-logo" title="${esc(state.brand)}" aria-label="${esc(state.brand)} logo"><span class="nfp-hero-logo-mono">${esc(brandMono())}</span></span>`
+      : '';
     return `<div class="nfp-hero nfp-hero--rich">
       <img class="nfp-hero-img" src="${esc(state.image)}" alt="" onerror="this.src='https://placehold.co/300x260/1A2339/ffffff?text=Product'">
       <div class="nfp-hero-scrim" aria-hidden="true"></div>
-      <button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-symbols-outlined">photo_camera</span>Replace</button>
+      ${heroEdit}
+      ${heroLogo}
       ${stack}
     </div>`;
   }
 
   function categoryHTML() {
     const err = state.errors.category;
-    const chip = state.category
-      ? `<span class="nfp-cat-chip"><span class="material-symbols-outlined">sell</span>${esc(state.category)}</span>
+    const chip = useCatDropdown()
+      ? catSelectInner(false)
+      : (state.category
+        ? `<span class="nfp-cat-chip"><span class="material-symbols-outlined">sell</span>${esc(state.category)}</span>
          <button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-symbols-outlined">edit</span>Change</button>`
-      : `<button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`;
+        : `<button type="button" class="nfp-mini-btn" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`);
     return `<div class="nfp-cat${err ? ' nfp-block-err' : ''}">
       <div class="nfp-cat-label">Category</div>
       <div class="nfp-cat-row">${chip}</div>
@@ -510,7 +707,7 @@
       let fieldsHtml = '';
       if (filled || isActive || err) {
         const rows = stepFields(s.id).map((f) => {
-          const icon = f.err ? 'error_outline' : f.done ? 'check_circle' : 'radio_button_unchecked';
+          const icon = f.err ? 'error_outline' : f.done ? 'check' : 'radio_button_unchecked';
           const st = f.err ? 'vfp-field--err' : f.done ? 'vfp-field--done' : 'vfp-field--active';
           return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
         }).join('');
@@ -568,27 +765,29 @@
   function updateSaveState() {
     const btn = $('nfp-save-btn');
     const status = $('nfp-save-status');
-    if (!btn || !status) return;
+    if (!btn) return;
     const missing = requiredMissing();
     const errs = nfErrorCount();
     const ready = missing.length === 0 && errs === 0;
     btn.disabled = !ready || state.saved;
-    status.title = '';
+    if (status) status.title = '';
     if (state.saved) {
-      status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">check_circle</span><span>Saved to portfolio</span>';
+      if (status) status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">check</span><span>Saved to portfolio</span>';
       btn.innerHTML = '<span class="material-symbols-outlined">check</span>Saved';
     } else if (ready) {
-      status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">task_alt</span><span>Ready to save</span>';
+      if (status) status.innerHTML = '<span class="material-symbols-outlined" style="color:var(--sec-green)">task_alt</span><span>Ready to save</span>';
       btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     } else if (errs) {
-      status.innerHTML = `<span class="material-symbols-outlined" style="color:var(--sec-red)">error_outline</span><span>${errs} field${errs > 1 ? 's' : ''} need attention</span>`;
+      if (status) status.innerHTML = `<span class="material-symbols-outlined" style="color:var(--sec-red)">error_outline</span><span>${errs} field${errs > 1 ? 's' : ''} need attention</span>`;
       btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     } else {
       /* Name exactly which required fields are still empty (out of the total)
          so "N left" never reads as if only those N fields are required. */
       const names = missing.map((m) => m.label);
-      status.innerHTML = `<span class="material-symbols-outlined">info</span><span>Draft — still need <strong>${esc(names.join(', '))}</strong> (${missing.length} of ${REQUIRED.length} required)</span>`;
-      status.title = 'Required to save: ' + names.join(', ');
+      if (status) {
+        status.innerHTML = `<span class="material-symbols-outlined">info</span><span>Draft — still need <strong>${esc(names.join(', '))}</strong> (${missing.length} of ${REQUIRED.length} required)</span>`;
+        status.title = 'Required to save: ' + names.join(', ');
+      }
       btn.innerHTML = '<span class="material-symbols-outlined">save</span>Save to Portfolio';
     }
   }
@@ -727,7 +926,7 @@
             { label: 'Soy', icon: 'add', action: 'addAllergen', arg: 'Soy' },
             { label: 'Tree Nuts', icon: 'add', action: 'addAllergen', arg: 'Tree Nuts' },
             { label: 'None', icon: 'block', action: 'noAllergens' },
-            { label: 'Done', icon: 'check', action: 'allergensDone' },
+            { label: 'Done', icon: 'check', action: 'allergensDone', primary: true },
           ]);
         break;
       case 'upc':
@@ -752,7 +951,7 @@
             [{ label: 'Fix the first one', icon: 'build', action: 'goto:' + firstMissingStep() }]);
         } else {
           addWISEai('Everything required is in and nothing\'s flagged. Ready when you are — hit <strong>Save to Portfolio</strong> on the right, or save from here. Until you save, this stays a draft.',
-            [{ label: 'Save to Portfolio', icon: 'save', action: 'save' }]);
+            [{ label: 'Save to Portfolio', icon: 'save', action: 'save', primary: true }]);
         }
         break;
       }
@@ -1005,7 +1204,13 @@
     if (action.startsWith('field:')) {
       const f = action.slice(6);
       if (f === 'upc') { addUser('Enter the UPC'); promptUpc(); return; }
-      addUser('I\'ll type it'); promptFor(f); return;
+      const FIELD_ASK = {
+        productName: 'What should the product name be?',
+        category: 'What category should this be? (e.g. Bakery \u203a Muffins)',
+        ingredients: 'Paste or type the full ingredient list and I\u2019ll update it.',
+        allergens: 'Which allergens should be declared? List them comma-separated.',
+      };
+      addUser('I\'ll type it'); promptFor(f, FIELD_ASK[f]); return;
     }
     if (action.startsWith('goto:')) { goStep(action.slice(5)); return; }
     if (action.startsWith('skip:')) { skipStep(action.slice(5)); return; }
@@ -1121,14 +1326,15 @@
     });
     renderNFP(); renderProgress();
     wiseSay('Here\'s a fully filled example so you can see the finished shape. Edit anything on the panel, then save — or start your own.',
-      [{ label: 'Save this example', icon: 'save', action: 'goto:save' }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
+      [{ label: 'Save this example', icon: 'save', action: 'goto:save', primary: true }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
   }
   /* View mode — used by view-product.html. Opens with a fully filled-in,
      editable Product Details card (the same finished example loadSample builds),
      but with no "Show me an example" chatter, and reflecting whichever product
      the user opened from the portfolio (name / UPC / photo travel over in the
      URL). Everything on the panel stays editable so they can keep working. */
-  function openFilledProduct() {
+  function openFilledProduct(mode) {
+    const editMode = mode === 'edit';
     const p = SAMPLE_PARSE;
     const params = new URLSearchParams(location.search);
     state.image = p.image; state.category = p.category;
@@ -1147,10 +1353,30 @@
     state.errors = {};
     hideWelcome();
     renderNFP(); renderProgress();
+    if (editMode) {
+      // Retitle the chat topbar for the edit surface (same page as View).
+      const tag = document.querySelector('.ap-topbar-tag');
+      if (tag && tag.firstChild && tag.firstChild.nodeType === 3) {
+        tag.firstChild.textContent = 'Edit Product · ';
+      }
+      addUser(`Edit ${state.productName}`);
+      addWISEai(`Editing <strong>${esc(state.productName)}</strong> — everything\u2019s loaded on the right and every field is editable. Tell me what you\u2019d like to change, or just click any value on the panel. What should we update?`,
+        [
+          { label: 'Edit the Nutrition Facts', icon: 'nutrition', action: 'focusNf' },
+          { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
+          { label: 'Update allergens', icon: 'warning', action: 'field:allergens' },
+          { label: 'Change the category', icon: 'category', action: 'field:category' },
+          { label: 'Replace the photo', icon: 'photo_camera', action: 'mainUpload' },
+          { label: 'Update the UPC', icon: 'qr_code_2', action: 'field:upc' },
+          { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
+          { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
+        ]);
+      return;
+    }
     addWISEai(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right and every field is editable. Click any value to change it, swap the photo, or update the Nutrition Facts, then save your changes back to the portfolio.`,
       [
         { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
-        { label: 'Save changes', icon: 'save', action: 'goto:save' },
+        { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
         { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
       ]);
   }
@@ -1189,6 +1415,10 @@
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
         `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
+
+    // Play the welcome in: heading + sub type in word-by-word, then the intent
+    // chips fly in from the right and land — so the chips always trail the copy.
+    revealWelcome();
 
     // First paint
     renderNFP();
@@ -1243,6 +1473,14 @@
       if (ed) { ed.textContent = ''; ed.classList.remove('nfp-edit-empty'); }
     });
 
+    // Category dropdown — commit the picked category (rebuilds the card).
+    nfpBody.addEventListener('change', (e) => {
+      const sel = e.target.closest('select[data-nfp-cat]');
+      if (!sel) return;
+      const val = sel.value;
+      if (val && val !== state.category) commitField('category', val, { fromPanel: true });
+    });
+
     // Input send
     $('ap-send')?.addEventListener('click', onSubmit);
     inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); onSubmit(); } });
@@ -1271,9 +1509,10 @@
     });
     fileInput?.addEventListener('change', () => onFile(fileInput.files && fileInput.files[0]));
 
-    // Chat width toggle — 3-step widen (single → wide → triple), like the shared module.
-    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full'];
-    const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Reset chat width'];
+    // Chat width toggle — the canonical four-step cycle (single → double →
+    // triple → fill), identical to every other module in the app.
+    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+    const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Widen chat to triple', 'Fill remaining space'];
     let widthTier = 0;
     const widthBtn = $('ap-width');
     function syncWidth() {
@@ -1281,6 +1520,7 @@
       if (chat) {
         chat.classList.toggle('panel-wide', widthTier >= 1);
         chat.classList.toggle('panel-triple', widthTier >= 2);
+        chat.classList.toggle('panel-fill', widthTier >= 3);
       }
       if (widthBtn) {
         const ic = widthBtn.querySelector('.material-symbols-outlined');
@@ -1290,7 +1530,7 @@
         widthBtn.title = WIDTH_TITLES[widthTier];
       }
     }
-    widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 3; syncWidth(); });
+    widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 4; syncWidth(); });
 
     // NFP width toggle — single pane ↔ double pane (photo column on the right).
     const nfpWidthBtn = $('nfp-width');
@@ -1326,9 +1566,8 @@
       const a = item.dataset.ap;
       if (a === 'restart') restart();
       else if (a === 'close') restart();
-      else if (a === 'exit') window.location.href = 'product-portfolio.html';
-      else if (a === 'copy') { copyTranscript(item); }
-      else if (a === 'history') { addWISEai('This session\'s draft lives here until you save it. Past products live in your <strong>Product Portfolio</strong>.'); }
+      else if (a === 'export') exportTranscript();
+      else if (a === 'share') shareTranscript();
     });
     document.addEventListener('click', (e) => {
       if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== menuBtn && !menuBtn?.contains(e.target)) {
@@ -1336,10 +1575,15 @@
       }
     });
 
-    // View mode (view-product.html) — skip the welcome and open straight into a
-    // fully filled-in, editable product instead of the blank builder.
-    if (document.body.dataset.apMode === 'view' || new URLSearchParams(location.search).get('view') === '1') {
-      openFilledProduct();
+    // View / Edit mode (view-product.html) — skip the welcome and open straight
+    // into a fully filled-in, editable product instead of the blank builder.
+    // Edit mode is the exact same surface; only the chat greeting differs (it
+    // asks what you'd like to change and offers per-field options).
+    const modeParams = new URLSearchParams(location.search);
+    const isEditMode = document.body.dataset.apMode === 'edit'
+      || modeParams.get('mode') === 'edit' || modeParams.get('edit') === '1';
+    if (isEditMode || document.body.dataset.apMode === 'view' || modeParams.get('view') === '1') {
+      openFilledProduct(isEditMode ? 'edit' : 'view');
       return;
     }
 
@@ -1349,9 +1593,27 @@
     }, 0);
   }
 
-  function copyTranscript(btn) {
-    const text = Array.from(messagesEl.querySelectorAll('.sc-line-body, .ap-sys-note')).map((n) => n.innerText).join('\n');
-    try { navigator.clipboard.writeText(text); if (btn) { const s = btn.querySelector('span:last-child'); const o = s.textContent; s.textContent = 'Copied!'; setTimeout(() => s.textContent = o, 1200); } } catch (_) {}
+  function getTranscriptText() {
+    return Array.from(messagesEl.querySelectorAll('.sc-line-body, .ap-sys-note')).map((n) => n.innerText).join('\n');
+  }
+
+  function exportTranscript() {
+    const text = getTranscriptText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'wiseai-conversation.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function shareTranscript() {
+    const text = getTranscriptText();
+    if (navigator.share) { navigator.share({ title: 'WISEai conversation', text }).catch(() => {}); return; }
+    try { navigator.clipboard.writeText(text); } catch (_) {}
   }
 
   function handleNfpClick(action, arg) {

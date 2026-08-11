@@ -54,13 +54,13 @@ const STATUSES = [
   { key: null,       label: 'All',           num: 315, sub: 'All organizations',   accent: '' },
   { key: 'invited',  label: 'Invited',       num: 5,   sub: 'Has an active invite', accent: 'adm-stat--blue',  icon: 'mail' },
   { key: 'pending',  label: 'Pending Review', num: 0,  sub: 'Awaiting review',      accent: 'adm-stat--amber', icon: 'hourglass_top' },
-  { key: 'active',   label: 'Active',        num: 15,  sub: 'Has a signable user',  accent: 'adm-stat--green', icon: 'check_circle' },
+  { key: 'active',   label: 'Active',        num: 15,  sub: 'Has a signable user',  accent: 'adm-stat--green', icon: 'check' },
   { key: 'suspended', label: 'Suspended',    num: 0,   sub: 'Account suspended',    accent: 'adm-stat--red',   icon: 'block' },
   { key: 'inactive', label: 'Inactive',      num: 295, sub: 'No users or invites',  accent: '',                icon: 'do_not_disturb_on' },
 ];
 
 const STATUS_CHIP = {
-  active:   { cls: 'adm-chip--green', icon: 'check_circle', label: 'Active' },
+  active:   { cls: 'adm-chip--green', icon: 'check', label: 'Active' },
   inactive: { cls: 'adm-chip--muted', icon: 'do_not_disturb_on', label: 'Inactive' },
   invited:  { cls: 'adm-chip--blue',  icon: 'mail',         label: 'Invited' },
   pending:  { cls: 'adm-chip--amber', icon: 'hourglass_top', label: 'Pending' },
@@ -122,7 +122,7 @@ let chatApi = null;
 export function setOrganizationsChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -421,7 +421,7 @@ export const ORGANIZATIONS_WISEAI = {
   scorecards: {
     label: 'Your organizations at a glance',
     cards: [
-      { intent: 'show_active', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Do next' }, title: 'Active organizations', desc: 'The orgs currently live on the platform, filtered in one tap.', action: 'Show active orgs', ask: 'Show active orgs' },
+      { intent: 'show_active', icon: 'check', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Do next' }, title: 'Active organizations', desc: 'The orgs currently live on the platform, filtered in one tap.', action: 'Show active orgs', ask: 'Show active orgs' },
       { intent: 'add_org', icon: 'add', iconTone: 'brand', pill: { tone: 'up', icon: 'add_business', text: 'Create' }, title: 'Add an organization', desc: 'Spin up a new org — I\u2019ll ask for the company name to start.', action: 'Add an organization', ask: 'Add an organization' },
       { intent: 'quick_invite', icon: 'bolt', iconTone: 'brand', pill: { tone: 'up', icon: 'mail', text: 'Invite' }, title: 'Quick invite', desc: 'Find or create an org and send the invite in one step.', action: 'Quick invite', ask: 'Quick invite' },
       { intent: 'show_invited', icon: 'mail', iconTone: 'brand', pill: { tone: 'up', icon: 'mail', text: 'Invited' }, title: 'Invited organizations', desc: 'Orgs with an open invite still awaiting acceptance.', action: 'Show invited orgs', ask: 'Show invited orgs' },
@@ -429,7 +429,7 @@ export const ORGANIZATIONS_WISEAI = {
     ],
   },
   intents: [
-    { intent: 'show_active',   label: 'Show active orgs',      icon: 'check_circle' },
+    { intent: 'show_active',   label: 'Show active orgs',      icon: 'check' },
     { intent: 'show_invited',  label: 'Show invited orgs',     icon: 'mail' },
     { intent: 'show_inactive', label: 'Show inactive orgs',    icon: 'do_not_disturb_on' },
     { intent: 'show_all',      label: 'Show all',              icon: 'apartment' },

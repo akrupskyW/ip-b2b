@@ -111,7 +111,7 @@ let chatApi = null;
 export function setUserManagementChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -167,7 +167,7 @@ function rowHtml(u) {
     ? `<span class="adm-chip ${ROLE_CHIP[u.role]}">${esc(u.role)}</span>`
     : `<span class="adm-chip adm-chip--outline">No roles</span>`;
   const emailStatus = u.email_status === 'confirmed'
-    ? '<span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check_circle</span>Confirmed</span>'
+    ? '<span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Confirmed</span>'
     : '<span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span>';
   const lockout = u.lockout === 'active'
     ? '<span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">lock_open</span>Active</span>'

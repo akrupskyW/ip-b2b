@@ -231,7 +231,7 @@ export function buildAppearanceBody({
     ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
     ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
     ${jamPlayerSection()}
-    ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Colorblind mode')}
+    ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
     <div class="wise-popover-divider"></div>
     ${colorblindTypeSection()}
     <div class="fz-size">

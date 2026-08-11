@@ -20,12 +20,45 @@ import { initLirTooltip } from './lir-tooltip.js';
    nav (i.e. every page with a #modules-row). Injected here — rather than via a
    per-page <script> tag — so it loads uniformly and survives HTML edits. The
    loaded file self-guards and is a no-op on pages without a #modules-row. */
+/* Load the canonical pane-width spec (js/pane-width.js) FIRST — it defines the
+   universal four-tier model (single · double · triple · fill) shared by every
+   module's width control and injects the `.panel-fill` "take the rest of the
+   row" CSS. Loaded before pane-resize so the resize splitter sees the fill
+   classes and the fill CSS is present the moment any pane opens. */
+(function loadPaneWidth() {
+  try {
+    if (typeof document === 'undefined' || window.__wisePaneWidthLoaded) return;
+    window.__wisePaneWidthLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./pane-width.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 (function loadPaneResize() {
   try {
     if (typeof document === 'undefined' || window.__wisePaneResizeLoaded) return;
     window.__wisePaneResizeLoaded = true;
     var s = document.createElement('script');
     s.src = new URL('./pane-resize.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
+/* Load the "right-of-chat modules fill by default" behaviour (js/default-fill.js)
+   on every page that renders the WISE nav. It drives each right-of-chat module's
+   own width control to the fourth tier — "Fill the Screen" — so any module that
+   opens to the right of the Chat module starts filled. Loaded after pane-width so
+   the fill tier + its CSS exist; self-guards and is a no-op where there is no
+   chat with modules to its right. */
+(function loadDefaultFill() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseDefaultFillLoaded) return;
+    window.__wiseDefaultFillLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./default-fill.js', import.meta.url).href;
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);
   } catch (_) {}
@@ -42,6 +75,24 @@ import { initLirTooltip } from './lir-tooltip.js';
     window.__wisePopoverLayerLoaded = true;
     var s = document.createElement('script');
     s.src = new URL('./popover-layer.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
+/* Load the data-chip explainer tooltip (js/chip-tooltip.js) on every page that
+   renders the WISE nav. It gives every Shield / GRAS status chip an instant
+   hover tooltip explaining what the chip means, with the same thumbs up/down +
+   intent-chip + free-form feedback affordance used on WISEai answers, right
+   below the explanation in the same card. Injected here so it loads uniformly
+   across the app and survives HTML edits; the loaded file self-guards and uses
+   document-level delegation, so chips rendered after load are covered too. */
+(function loadChipTooltip() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseChipTooltipLoaded) return;
+    window.__wiseChipTooltipLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./chip-tooltip.js', import.meta.url).href;
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);
   } catch (_) {}
@@ -445,7 +496,7 @@ export const WISE_APP_NAV = [
     defaultOpen: false,
     children: [
       { id: 'wiseai-chat', label: 'Chat', icon: 'forum', slug: 'wiseai.html' },
-      { id: 'library', label: 'Library', icon: 'auto_stories', slug: 'library.html' },
+      { id: 'library', label: 'Library', icon: 'auto_stories', slug: 'conversation-library.html' },
       { id: 'ingredients', label: 'Ingredient Browser', icon: 'science', slug: 'ingredient-browser.html' },
     ],
   },
@@ -796,7 +847,7 @@ const EXISTING_PAGES = new Set([
   'reports.html',
   'reformulation.html',
   'wiseai.html',
-  'library.html',
+  'conversation-library.html',
   'ingredient-browser.html',
   'ai-chat.html',
   'ai-chat-2.html',

@@ -40,7 +40,7 @@ const INVOICES = [
 
 const STATUS_META = {
   sent:      { label: 'Invoice Sent', icon: 'schedule',     cls: 'inv-chip--sent' },
-  paid:      { label: 'Paid',         icon: 'check_circle', cls: 'inv-chip--paid' },
+  paid:      { label: 'Paid',         icon: 'check', cls: 'inv-chip--paid' },
   failed:    { label: 'Failed',       icon: 'error',        cls: 'inv-chip--failed' },
   cancelled: { label: 'Cancelled',    icon: 'cancel',       cls: 'inv-chip--cancelled' },
 };
@@ -50,7 +50,7 @@ const STATUS_META = {
 const FILTERS = [
   { status: null,        label: 'All',          accent: '' },
   { status: 'sent',      label: 'Invoice Sent', accent: 'inv-stat--sent',      icon: 'schedule' },
-  { status: 'paid',      label: 'Paid',         accent: 'inv-stat--paid',      icon: 'check_circle' },
+  { status: 'paid',      label: 'Paid',         accent: 'inv-stat--paid',      icon: 'check' },
   { status: 'failed',    label: 'Failed',       accent: 'inv-stat--failed',    icon: 'error' },
   { status: 'cancelled', label: 'Cancelled',    accent: 'inv-stat--cancelled', icon: 'cancel' },
 ];
@@ -69,7 +69,7 @@ function pushChat(html) {
 }
 
 /* ---- Toast --------------------------------------------------------- */
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('inv-toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');
@@ -308,7 +308,7 @@ function invById(id) { return INVOICES.find((i) => i.id === id) || null; }
 function runAction(action, id, source) {
   const inv = id ? invById(id) : null;
   let msg = '';
-  let icon = 'check_circle';
+  let icon = 'check';
   let html = '';
 
   switch (action) {
@@ -484,14 +484,14 @@ export const INVOICES_WISEAI = {
     cards: [
       { intent: 'outstanding', icon: 'schedule', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What\u2019s outstanding?', desc: 'Invoice-sent or failed payments — settle up right from the row.', action: 'What\u2019s outstanding?', ask: 'What\u2019s outstanding?' },
       { intent: 'show_failed', icon: 'error', iconTone: 'brand', pill: { tone: 'up', icon: 'autorenew', text: 'Retry' }, title: 'Failed payments', desc: 'Retry any failed charge directly from its row.', action: 'Show failed payments', ask: 'Show failed payments' },
-      { intent: 'show_paid', icon: 'check_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'check_circle', text: 'Paid' }, title: 'Paid invoices', desc: 'Everything already settled, filtered in one tap.', action: 'Show paid', ask: 'Show paid invoices' },
+      { intent: 'show_paid', icon: 'check', iconTone: 'brand', pill: { tone: 'up', icon: 'check', text: 'Paid' }, title: 'Paid invoices', desc: 'Everything already settled, filtered in one tap.', action: 'Show paid', ask: 'Show paid invoices' },
       { intent: 'show_all', icon: 'receipt_long', iconTone: 'brand', pill: { tone: 'up', icon: 'receipt_long', text: 'All' }, title: 'All invoices', desc: 'Your full billing history in one list.', action: 'Show all', ask: 'Show all invoices' },
       { intent: 'download_all', icon: 'download', iconTone: 'brand', pill: { tone: 'up', icon: 'folder_zip', text: 'Export' }, title: 'Download all', desc: 'Grab a ZIP of every invoice for your records.', action: 'Download all', ask: 'Download all' },
     ],
   },
   intents: [
     { intent: 'outstanding', label: 'What\u2019s outstanding?', icon: 'schedule' },
-    { intent: 'show_paid', label: 'Show paid invoices', icon: 'check_circle' },
+    { intent: 'show_paid', label: 'Show paid invoices', icon: 'check' },
     { intent: 'show_failed', label: 'Show failed payments', icon: 'error' },
     { intent: 'show_cancelled', label: 'Show cancelled', icon: 'cancel' },
     { intent: 'show_all', label: 'Show all invoices', icon: 'receipt_long' },

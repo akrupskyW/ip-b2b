@@ -23,6 +23,73 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* Match the Product Portfolio module's headline + button sizing so the
+       Non-UPF dashboard header reads at the same scale. Scoped to this page so
+       the shared adm-* set stays untouched on other admin surfaces. */
+    [data-nav-id="non-upf-dashboard"] .adm-title {
+      font-size: 1.2rem;
+      line-height: 1.15;
+      letter-spacing: normal;
+    }
+    [data-nav-id="non-upf-dashboard"] .adm-head-actions .adm-btn {
+      height: 38px;
+      font-size: 12px;
+    }
+
+    /* ── Product table: rows by default, cards only on mobile ─────────────
+       The shared adm table collapses to stacked cards at a 720px container
+       width, which fires too eagerly when this dashboard is docked beside the
+       chat. Here we keep the row layout and let it scroll horizontally when the
+       container is too narrow for every column; the card layout is opt-in via
+       the toolbar toggle (.adm-table--cards), or forced on true mobile. All
+       rules are scoped to this page so the other admin tables are untouched. */
+    [data-nav-id="non-upf-dashboard"] .adm-table-card { overflow-x: auto; }
+    /* 88 + 220 + 150 + 190 + 160 columns + 4×12 gaps + 24 row padding = 880px:
+       the row's intrinsic minimum, so columns stay aligned as it scrolls. */
+    [data-nav-id="non-upf-dashboard"] .adm-table { min-width: 880px; }
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards { min-width: 0; }
+
+    /* Neutralise the global 720px auto-collapse on this page — the attribute
+       prefix raises specificity so these win over the shared container query.
+       Gated above mobile so the true-mobile block below can still force cards. */
+    @media (min-width: 641px) {
+      @container adm (max-width: 720px) {
+        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-thead { display: grid; }
+        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-trow { grid-template-columns: var(--adm-cols) !important; gap: 12px; padding: 12px 12px; position: static; }
+        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-td--num { justify-content: center; text-align: center; }
+        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-trow .adm-td--end { position: static; top: auto; right: auto; padding: 0; }
+      }
+    }
+
+    /* Cards view (manual toggle). */
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-thead { display: none; }
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-actions { justify-content: flex-start; }
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-td--num { justify-content: flex-start; text-align: left; }
+    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
+
+    /* Rows ⇆ Cards segmented toggle in the toolbar. */
+    [data-nav-id="non-upf-dashboard"] .adm-view-toggle { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; padding: 3px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 999px; }
+    html.dark [data-nav-id="non-upf-dashboard"] .adm-view-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    [data-nav-id="non-upf-dashboard"] .adm-view-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 30px; border: none; background: transparent; border-radius: 999px; color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+    [data-nav-id="non-upf-dashboard"] .adm-view-btn .material-symbols-outlined { font-size: 18px; }
+    [data-nav-id="non-upf-dashboard"] .adm-view-btn:hover { color: var(--text); }
+    [data-nav-id="non-upf-dashboard"] .adm-view-btn.is-active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-1); }
+    html.dark [data-nav-id="non-upf-dashboard"] .adm-view-btn.is-active { background: rgba(255,255,255,0.10); color: var(--primary-bright, #93C5FD); }
+
+    /* True mobile — cards are the only sensible layout, so force them and hide
+       the toggle regardless of the saved preference. */
+    @media (max-width: 640px) {
+      [data-nav-id="non-upf-dashboard"] .adm-table { min-width: 0; }
+      [data-nav-id="non-upf-dashboard"] .adm-thead { display: none; }
+      [data-nav-id="non-upf-dashboard"] .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
+      [data-nav-id="non-upf-dashboard"] .adm-actions { justify-content: flex-start; }
+      [data-nav-id="non-upf-dashboard"] .adm-td--num { justify-content: flex-start; text-align: left; }
+      [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
+      [data-nav-id="non-upf-dashboard"] .adm-view-toggle { display: none; }
+    }
+  </style>
 </head>
 <body data-nav-id="non-upf-dashboard" data-adm-page data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

@@ -39,7 +39,7 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
-function gvToast(msg, icon = 'check_circle') {
+function gvToast(msg, icon = 'check') {
   let wrap = document.getElementById('gv-toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');
@@ -500,7 +500,7 @@ function reportHTML() {
       ? `<button class="gv-row-cta" type="button" data-gv="verify" data-ing="${ing.id}">Verify<span class="material-symbols-outlined">arrow_forward</span></button>`
       : status === 'pending'
         ? `<button class="gv-row-cta gv-row-cta--ghost" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">hourglass_top</span>In review</button>`
-        : `<span class="gv-row-done"><span class="material-symbols-outlined">check_circle</span>Verified</span>`;
+        : `<span class="gv-row-done"><span class="material-symbols-outlined">check</span>Verified</span>`;
     return `
       <tr class="gv-row" data-ing="${ing.id}">
         <td>
@@ -908,7 +908,7 @@ function progressWizardHTML() {
     let fieldsHtml = '';
     if (done || isActive) {
       const rows = stepFields(i).map((f) => {
-        const icon = f.done ? 'check_circle' : 'radio_button_unchecked';
+        const icon = f.done ? 'check' : 'radio_button_unchecked';
         const st = f.done ? 'gvp-field--done' : 'gvp-field--active';
         return `<div class="gvp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="gvp-field-label">${esc(f.label)}</span><span class="gvp-field-val">${esc(f.val)}</span></div>`;
       }).join('');

@@ -90,11 +90,11 @@ const STAT_CHIP = {
 /* Sortable table columns. UPC now lives under the product name, so it is not a
    column of its own — but products stay searchable/sortable by every field. */
 const COLS = [
+  { key: 'actions', label: 'Actions',       sortable: false },
   { key: 'name',    label: 'Product Name',  sortable: true,  value: (p) => p.name.toLowerCase(), type: 'text' },
   { key: 'upf',     label: 'Verification',  sortable: true,  value: (p) => UPF_CHIP[p.upf].label, type: 'text' },
   { key: 'status',  label: 'Status',        sortable: true,  value: (p) => PROD_STATUS[p.status].label, type: 'text' },
   { key: 'updated', label: 'Updated Last',  sortable: true,  value: (p) => Date.parse(`${p.updated} ${p.time}`) || 0, type: 'num' },
-  { key: 'actions', label: 'Actions',       sortable: false, end: true },
 ];
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -112,11 +112,30 @@ let sortKey = null, sortDir = 1;
 let filterOpen = false;
 let docListenersBound = false;
 
+/* Product-table layout: 'rows' (default) or 'cards'. Persisted so the choice
+   survives navigation. True mobile forces cards via CSS regardless. */
+const VIEW_KEY = 'nonupf-table-view';
+let viewMode = 'rows';
+function loadViewMode() {
+  try { return localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'rows'; }
+  catch (e) { return 'rows'; }
+}
+function setViewMode(mode) {
+  viewMode = mode === 'cards' ? 'cards' : 'rows';
+  try { localStorage.setItem(VIEW_KEY, viewMode); } catch (e) { /* ignore */ }
+  hostEl?.querySelector('.adm-table')?.classList.toggle('adm-table--cards', viewMode === 'cards');
+  hostEl?.querySelectorAll('[data-adm-view]').forEach((b) => {
+    const on = b.dataset.admView === viewMode;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+
 let chatApi = null;
 export function setNonUpfChat(api) { chatApi = api; }
 function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -278,7 +297,7 @@ function statCardsHtml() {
     const chipCls = STAT_CHIP[c.key == null ? '' : c.key] || 'adm-chip--muted';
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
-      <span class="adm-vf-stat-num" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">${c.num}</span>
+      <span class="adm-vf-stat-num" data-count-to="${c.num}" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">0</span>
       <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
       ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
@@ -287,7 +306,7 @@ function statCardsHtml() {
 }
 
 /* ---- Product table -------------------------------------------------- */
-const GRID_COLS = 'minmax(220px, 2.4fr) 150px 190px 160px 88px';
+const GRID_COLS = '88px minmax(220px, 2.4fr) 150px 190px 160px';
 
 function theadHtml() {
   return COLS.map((c) => {
@@ -310,11 +329,11 @@ function productRow(p) {
   const st = PROD_STATUS[p.status];
   return `
     <div class="adm-trow" data-adm-prow="${esc(p.upc)}" data-adm-pstatus="${esc(p.status)}" data-adm-pupf="${esc(p.upf)}">
+      <span class="adm-td"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_horiz</span></button></span></span>
       <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:'SF Mono',ui-monospace,Menlo,monospace">UPC · ${esc(p.upc)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${upf.cls}">${esc(upf.label)}</span></span>
       <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-symbols-outlined">${esc(st.icon)}</span>${esc(st.label)}</span></span>
       <span class="adm-td"><span class="adm-idcell-body"><span style="font-weight:600;font-size:0.82rem">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span></span>
-      <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_horiz</span></button></span></span>
     </div>`;
 }
 
@@ -387,6 +406,10 @@ function paint() {
           <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
+        <div class="adm-view-toggle" role="group" aria-label="Table layout">
+          <button type="button" class="adm-view-btn${viewMode === 'rows' ? ' is-active' : ''}" data-adm-view="rows" aria-pressed="${viewMode === 'rows'}" title="Row view" aria-label="Row view"><span class="material-symbols-outlined">table_rows</span></button>
+          <button type="button" class="adm-view-btn${viewMode === 'cards' ? ' is-active' : ''}" data-adm-view="cards" aria-pressed="${viewMode === 'cards'}" title="Card view" aria-label="Card view"><span class="material-symbols-outlined">grid_view</span></button>
+        </div>
       </div>
 
       <div class="adm-chart-grid">
@@ -399,7 +422,7 @@ function paint() {
 
       <div class="adm-card" style="margin-top:16px">
         <div class="adm-table-card">
-          <div class="adm-table" style="--adm-cols:${GRID_COLS}">
+          <div class="adm-table${viewMode === 'cards' ? ' adm-table--cards' : ''}" style="--adm-cols:${GRID_COLS}">
             <div class="adm-thead">${theadHtml()}</div>
             <div data-adm-rows>${orderedProducts().map(productRow).join('')}</div>
             <div class="adm-table-foot"><span data-adm-foot></span></div>
@@ -445,25 +468,39 @@ function sweepDonut(duration = 1400) {
   requestAnimationFrame(tick);
 }
 
-/* Count the center percentage up from 0, easing in sync with the ring sweep. */
-function countUpDonut(duration = 1400) {
-  if (!hostEl) return;
-  const el = hostEl.querySelector('.adm-donut-num[data-count-to]');
+/* Count a single number element up from 0 to its `data-count-to` target,
+   easing so it lands in sync with the ring sweep / bar fills. `suffix` appends
+   a unit (e.g. '%') to every frame. */
+function countUpEl(el, duration = 1400, suffix = '') {
   if (!el) return;
   const to = parseInt(el.dataset.countTo, 10);
   if (!Number.isFinite(to)) return;
-  if (prefersReducedMotion()) { el.textContent = `${to}%`; return; }
+  if (prefersReducedMotion()) { el.textContent = `${to}${suffix}`; return; }
   const start = performance.now();
   const tick = (now) => {
     const t = easeOutCubic(Math.min(1, (now - start) / duration));
-    el.textContent = `${Math.round(to * t)}%`;
+    el.textContent = `${Math.round(to * t)}${suffix}`;
     if (t < 1) requestAnimationFrame(tick);
-    else el.textContent = `${to}%`;
+    else el.textContent = `${to}${suffix}`;
   };
   requestAnimationFrame(tick);
 }
 
-function animateCharts() {
+/* Count the center percentage up from 0, easing in sync with the ring sweep. */
+function countUpDonut(duration = 1400) {
+  if (!hostEl) return;
+  countUpEl(hostEl.querySelector('.adm-donut-num[data-count-to]'), duration, '%');
+}
+
+/* Count every scorecard's headline number up from 0 to its total. */
+function countUpStats(duration = 1200) {
+  if (!hostEl) return;
+  hostEl.querySelectorAll('.adm-vf-stat-num[data-count-to]').forEach((el) => countUpEl(el, duration));
+}
+
+/* Replay just the chart visuals (donut sweep, bar fills, status bars, donut
+   count). Shared by the entrance animation and the click-to-replay. */
+function animateChartVisuals() {
   if (!hostEl) return;
   requestAnimationFrame(() => {
     sweepDonut();
@@ -471,6 +508,12 @@ function animateCharts() {
     hostEl.querySelectorAll('.adm-bar-fill[data-h]').forEach((b) => { b.style.height = b.dataset.h + '%'; });
     hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = s.dataset.w + '%'; });
   });
+}
+
+function animateCharts() {
+  if (!hostEl) return;
+  animateChartVisuals();
+  countUpStats();
 }
 
 /* Clicking a chart card replays its entrance animation — mirrors the
@@ -482,7 +525,15 @@ function replayCharts() {
   hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = '0'; });
   const num = hostEl.querySelector('.adm-donut-num[data-count-to]');
   if (num) num.textContent = '0%';
-  animateCharts();
+  animateChartVisuals();
+}
+
+/* Clicking a single scorecard replays its counter animation up to the score. */
+function replayStatCard(card) {
+  const el = card?.querySelector('.adm-vf-stat-num[data-count-to]');
+  if (!el) return;
+  el.textContent = '0';
+  countUpEl(el, 900);
 }
 
 function applyProductFilter() {
@@ -594,10 +645,110 @@ export function setNonUpfStatus(statusKey) {
     el.classList.toggle('is-active', el.dataset.admVf === (statusKey || '') || (!statusKey && el.dataset.admVf === ''));
   });
   applyProductFilter();
-  hostEl?.querySelector('.adm-table')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function productName(upc) { return (PRODUCTS.find((p) => p.upc === upc) || {}).name || `product ${upc}`; }
+function productByUpc(upc) { return PRODUCTS.find((p) => p.upc === upc) || null; }
+function productName(upc) { return (productByUpc(upc) || {}).name || `product ${upc}`; }
+
+/* Deep-link into the read/edit product page (view-product.html) — the same
+   fully filled-in, editable surface the portfolio table opens. The product's
+   name / UPC / thumbnail travel over in the URL; `mode=edit` opens the exact
+   same page in edit mode, where the chat greets you asking what to change. */
+function viewHref(upc, mode) {
+  const p = productByUpc(upc);
+  const params = new URLSearchParams();
+  if (p) { if (p.name) params.set('name', p.name); if (p.upc) params.set('upc', p.upc); if (p.img) params.set('img', p.img); }
+  if (mode === 'edit') params.set('mode', 'edit');
+  const qs = params.toString();
+  return 'view-product.html' + (qs ? '?' + qs : '');
+}
+
+/* Re-run verification → the Non-UPF verification page. The product context
+   travels in the URL so the flow can deep-link to it when supported. */
+function verifyHref(upc) {
+  const p = productByUpc(upc);
+  const params = new URLSearchParams();
+  if (p) { if (p.name) params.set('name', p.name); if (p.upc) params.set('upc', p.upc); if (p.img) params.set('img', p.img); }
+  const qs = params.toString();
+  return 'verification.html' + (qs ? '?' + qs : '');
+}
+
+/* Duplicate → "Modify fields in a new product": start a brand-new product in
+   the add-product builder, pre-filled with this product's fields and opened in
+   the editable surface (mode=edit). It's a fresh product, so the UPC is left
+   blank for a new one to be assigned. */
+function duplicateEditHref(upc) {
+  const p = productByUpc(upc);
+  const params = new URLSearchParams();
+  if (p) { if (p.name) params.set('name', `${p.name} (Copy)`); if (p.img) params.set('img', p.img); }
+  params.set('mode', 'edit');
+  params.set('dup', '1');
+  return 'add-product.html?' + params.toString();
+}
+
+/* ---- Duplicate modal (portalled to <body>) -------------------------- */
+let dupModalEl = null;
+function dupKeyHandler(e) { if (e.key === 'Escape') closeDupModal(); }
+function closeDupModal() {
+  if (!dupModalEl) return;
+  const scrim = dupModalEl;
+  dupModalEl = null;
+  scrim.classList.remove('is-open');
+  setTimeout(() => scrim.remove(), 220);
+  document.removeEventListener('keydown', dupKeyHandler);
+}
+function openDupModal(upc) {
+  closeDupModal();
+  const name = productName(upc);
+  const scrim = document.createElement('div');
+  scrim.className = 'adm-modal-scrim';
+  scrim.innerHTML = `
+    <div class="adm-modal adm-modal--dup" role="dialog" aria-modal="true" aria-labelledby="adm-dup-title">
+      <button type="button" class="adm-modal-x" data-adm-dup="close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      <div class="adm-modal-head">
+        <span class="adm-modal-eyebrow">Duplicate product</span>
+        <h2 class="adm-modal-title" id="adm-dup-title">Duplicate &ldquo;${esc(name)}&rdquo;</h2>
+        <p class="adm-modal-sub">How would you like to duplicate this product?</p>
+      </div>
+      <div class="adm-modal-body">
+        <button type="button" class="adm-dup-opt" data-adm-dup="copy" data-adm-upc="${esc(upc)}">
+          <span class="adm-dup-opt-ic"><span class="material-symbols-outlined">content_copy</span></span>
+          <span class="adm-dup-opt-body">
+            <span class="adm-dup-opt-title">Duplicate everything</span>
+            <span class="adm-dup-opt-desc">Create an exact copy &mdash; every field, ingredient, and Nutrition Facts value carried over to a new product.</span>
+          </span>
+          <span class="material-symbols-outlined adm-dup-opt-arrow">chevron_right</span>
+        </button>
+        <button type="button" class="adm-dup-opt" data-adm-dup="modify" data-adm-upc="${esc(upc)}">
+          <span class="adm-dup-opt-ic"><span class="material-symbols-outlined">edit_note</span></span>
+          <span class="adm-dup-opt-body">
+            <span class="adm-dup-opt-title">Modify fields in a new product</span>
+            <span class="adm-dup-opt-desc">Start a brand-new product pre-filled with these fields, then change anything before you save.</span>
+          </span>
+          <span class="material-symbols-outlined adm-dup-opt-arrow">chevron_right</span>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+  dupModalEl = scrim;
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+  scrim.addEventListener('click', (e) => {
+    if (e.target === scrim) { closeDupModal(); return; }
+    const opt = e.target.closest('[data-adm-dup]');
+    if (!opt) return;
+    const kind = opt.dataset.admDup;
+    const ctx = opt.dataset.admUpc || upc;
+    if (kind === 'close') { closeDupModal(); return; }
+    if (kind === 'copy') {
+      closeDupModal();
+      toast(`Duplicated ${productName(ctx)}`, 'content_copy');
+      pushChat(`Created an exact copy of <strong>${esc(productName(ctx))}</strong> &mdash; &ldquo;${esc(productName(ctx))} (Copy)&rdquo; has been added to your registry with every field carried over.`);
+      return;
+    }
+    if (kind === 'modify') { closeDupModal(); window.location.href = duplicateEditHref(ctx); return; }
+  });
+  document.addEventListener('keydown', dupKeyHandler);
+}
 
 function runAction(action, ctx) {
   switch (action) {
@@ -608,10 +759,10 @@ function runAction(action, ctx) {
     case 'toggle-filters': setFilterOpen(!filterOpen); break;
     case 'apply-filters': setFilterOpen(false); break;
     case 'clear-filters': clearFilters(); break;
-    case 'open-product': toast(`Opening ${productName(ctx)}`, 'open_in_new'); pushChat(`Opening <strong>${esc(productName(ctx))}</strong> — full ingredient breakdown, processing spectrum, and verification history.`); break;
-    case 'edit-product': toast(`Editing ${productName(ctx)}`, 'edit'); pushChat(`Editing <strong>${esc(productName(ctx))}</strong> — update product data, ingredients, or packaging before re-verifying.`); break;
-    case 'verify-product': toast(`Re-running verification for ${productName(ctx)}`, 'verified'); pushChat(`Re-running Non-UPF verification for <strong>${esc(productName(ctx))}</strong>. I\u2019ll flag any ultra-processed ingredients.`); break;
-    case 'duplicate-product': toast(`Duplicated ${productName(ctx)}`, 'content_copy'); break;
+    case 'open-product': window.location.href = viewHref(ctx); break;
+    case 'edit-product': window.location.href = viewHref(ctx, 'edit'); break;
+    case 'verify-product': window.location.href = verifyHref(ctx); break;
+    case 'duplicate-product': openDupModal(ctx); break;
     case 'delete-product': toast(`Deleted ${productName(ctx)}`, 'delete'); pushChat(`Removed <strong>${esc(productName(ctx))}</strong> from the registry. Say <em>undo</em> to restore it.`); break;
     case 'manage-product': break;
     default: break;
@@ -621,6 +772,7 @@ function runAction(action, ctx) {
 export function renderNonUpfDashboard(mainEl) {
   hostEl = mainEl;
   query = ''; filters = { ...FILTER_DEFAULTS }; sortKey = null; sortDir = 1; filterOpen = false;
+  viewMode = loadViewMode();
   paint();
 
   mainEl.addEventListener('click', (e) => {
@@ -628,10 +780,12 @@ export function renderNonUpfDashboard(mainEl) {
     if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
+    const viewBtn = e.target.closest('[data-adm-view]');
+    if (viewBtn) { setViewMode(viewBtn.dataset.admView); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');
     if (menuBtn) { e.preventDefault(); e.stopPropagation(); openRowMenu(menuBtn, menuBtn.dataset.admUpc || ''); return; }
     const vf = e.target.closest('[data-adm-vf]');
-    if (vf && !e.target.closest('[data-adm-action]')) { const k = vf.dataset.admVf || null; const next = (k === filters._active) ? null : k; setNonUpfStatus(next); filters._active = next; return; }
+    if (vf && !e.target.closest('[data-adm-action]')) { const k = vf.dataset.admVf || null; const next = (k === filters._active) ? null : k; setNonUpfStatus(next); filters._active = next; replayStatCard(vf); return; }
     const act = e.target.closest('[data-adm-action]');
     if (act) { e.preventDefault(); runAction(act.dataset.admAction, act.dataset.admUpc || ''); return; }
   });
@@ -640,7 +794,7 @@ export function renderNonUpfDashboard(mainEl) {
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { e.preventDefault(); toggleSort(sortH.dataset.admSort); return; }
     const vf = e.target.closest('[data-adm-vf]');
-    if (vf) { e.preventDefault(); const k = vf.dataset.admVf || null; setNonUpfStatus(k); }
+    if (vf) { e.preventDefault(); const k = vf.dataset.admVf || null; setNonUpfStatus(k); replayStatCard(vf); }
   });
   mainEl.addEventListener('input', (e) => {
     const s = e.target.closest('[data-adm-search]');

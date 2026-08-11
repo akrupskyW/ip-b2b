@@ -12,8 +12,11 @@
   <script>
     (function () {
       try {
+        /* Loaded as a live preview (e.g. the All Modules rail) — render the
+           marketing home in place instead of bouncing to the app workspace. */
+        var isPreview = /[?&]preview=1(?:&|$)/.test(location.search);
         var raw = localStorage.getItem('wise-auth');
-        if (raw) {
+        if (!isPreview && raw) {
           var u = JSON.parse(raw);
           if (u && u.loggedIn) { location.replace('pages/overview.html'); }
         }
@@ -350,9 +353,9 @@
             <h2 class="mkt-feature-title">Scan any food with WISEcode.<br />Know instantly.</h2>
             <p class="mkt-lede">Behind every ingredient list is industrial processing and confusing names never meant to be understood. WISEcode makes it plain — for you and your family.</p>
             <ul class="mkt-feature-list">
-              <li><span class="material-symbols-outlined">check_circle</span> Instant ultra-processed detection on any product</li>
-              <li><span class="material-symbols-outlined">check_circle</span> Ingredient-by-ingredient breakdowns in plain language</li>
-              <li><span class="material-symbols-outlined">check_circle</span> Personalized nutrition insights for the whole household</li>
+              <li><span class="material-symbols-outlined">check</span> Instant ultra-processed detection on any product</li>
+              <li><span class="material-symbols-outlined">check</span> Ingredient-by-ingredient breakdowns in plain language</li>
+              <li><span class="material-symbols-outlined">check</span> Personalized nutrition insights for the whole household</li>
             </ul>
             <div class="mkt-feature-actions">
               <a class="mkt-btn mkt-btn-primary" href="marketing-app.html">See the WISEcode UPF Detector <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
@@ -388,9 +391,9 @@
             <h2 class="mkt-feature-title">Meet WISEcoach™, your AI nutrition coach — tuned to you.</h2>
             <p class="mkt-lede">WISEcoach analyzes thousands of food attributes against your unique health goals — so you always know exactly what to eat for more energy, better sleep, and a healthier life.</p>
             <ul class="mkt-feature-list">
-              <li><span class="material-symbols-outlined">check_circle</span> Goal-aware guidance for energy, sleep and wellbeing</li>
-              <li><span class="material-symbols-outlined">check_circle</span> Recommendations grounded in real product data</li>
-              <li><span class="material-symbols-outlined">check_circle</span> Learns your preferences and adapts over time</li>
+              <li><span class="material-symbols-outlined">check</span> Goal-aware guidance for energy, sleep and wellbeing</li>
+              <li><span class="material-symbols-outlined">check</span> Recommendations grounded in real product data</li>
+              <li><span class="material-symbols-outlined">check</span> Learns your preferences and adapts over time</li>
             </ul>
             <div class="mkt-feature-actions">
               <a class="mkt-btn mkt-btn-primary" href="marketing-coach.html">Explore WISEcoach <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>
@@ -413,9 +416,9 @@
             <h2 class="mkt-feature-title">WISEip: the food answer engine for brands, retailers &amp; researchers.</h2>
             <p class="mkt-lede">Draw from a database of over one million products to get instant, plain-language answers to any question about any food — and earn the Non-UPF Verified™ Shield.</p>
             <ul class="mkt-feature-list">
-              <li><span class="material-symbols-outlined">check_circle</span> Over one million products, one query away</li>
-              <li><span class="material-symbols-outlined">check_circle</span> Non-UPF verification portal &amp; the Shield</li>
-              <li><span class="material-symbols-outlined">check_circle</span> NFP+™ evaluation against the science-backed UPF standard</li>
+              <li><span class="material-symbols-outlined">check</span> Over one million products, one query away</li>
+              <li><span class="material-symbols-outlined">check</span> Non-UPF verification portal &amp; the Shield</li>
+              <li><span class="material-symbols-outlined">check</span> NFP+™ evaluation against the science-backed UPF standard</li>
             </ul>
             <div class="mkt-feature-actions">
               <a class="mkt-btn mkt-btn-primary" href="marketing-enterprise.html">Explore WISEip <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span></a>

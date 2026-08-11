@@ -81,7 +81,7 @@
     #welcome-screen.sc-welcome { justify-content: safe flex-end; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
     #welcome-screen .ws-heading {
       font-family: 'Noto Serif', serif;
-      font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
+      font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem);
       font-weight: 700; line-height: 1.2; letter-spacing: -0.01em;
       margin: 1.25rem 0 0.75rem;
     }
@@ -489,14 +489,11 @@
             <div class="panel-more-wrap" id="ap-chat-menu-wrap">
               <button type="button" id="ap-chat-menu-btn" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="ap-chat-menu" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="ap-chat-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="history"><span class="material-symbols-outlined topbar-menu-icon">history</span><span>History</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="copy"><span class="material-symbols-outlined topbar-menu-icon">content_copy</span><span>Copy transcript</span></button>
-                <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="restart"><span class="material-symbols-outlined topbar-menu-icon">add_circle_outline</span><span>Start new conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="restart"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
-                <button type="button" class="topbar-menu-item" role="menuitem" data-ap="exit"><span class="material-symbols-outlined topbar-menu-icon">inventory_2</span><span>Back to portfolio</span></button>
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="ap-width" aria-pressed="false" title="Widen chat" aria-label="Chat width"><span class="material-symbols-outlined">width_normal</span></button>

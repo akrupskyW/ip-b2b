@@ -1346,10 +1346,10 @@
       }
     }
 
-    /* ── Width changer (docked module) ── */
-    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full'];
-    var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to reset'];
-    var WCH_W = [breakoutWidth, Math.round(breakoutWidth * 1.5), breakoutWidth * 2];
+    /* ── Width changer (docked module) — the canonical four-step cycle
+       (single → double → triple → fill), identical to every other module. ── */
+    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+    var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
     /* Slim column width used while the module is minimized to its icon rail. */
     var RAIL_W = 66;
     function applyDockWidth() {
@@ -1365,13 +1365,20 @@
          two read as an equal pair); tiers scale from whichever base is active. */
       var baseW = (stickyActive && stickyWidth) ? stickyWidth : breakoutWidth;
       var tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
-      var w = tiers[widthTier] || baseW;
       /* Release any drag-pinned width so the preset wins (mirrors how the panes'
          width buttons stand down the resize splitter). */
       try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
-      sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
-      sidebar.style.setProperty('width', w + 'px', 'important');
-      sidebar.style.setProperty('max-width', 'none', 'important');
+      if (widthTier >= 3) {
+        /* Fill — grow to take the rest of the row instead of a fixed column. */
+        sidebar.style.setProperty('flex', '1000 1 auto', 'important');
+        sidebar.style.setProperty('width', 'auto', 'important');
+        sidebar.style.setProperty('max-width', 'none', 'important');
+      } else {
+        var w = tiers[widthTier] || baseW;
+        sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+        sidebar.style.setProperty('width', w + 'px', 'important');
+        sidebar.style.setProperty('max-width', 'none', 'important');
+      }
       var btn = sidebar.querySelector('.wch-width-btn');
       if (btn) {
         btn.classList.toggle('is-on', widthTier >= 1);
@@ -1381,7 +1388,7 @@
         if (ic) ic.textContent = WCH_W_ICONS[widthTier];
       }
     }
-    function cycleWidth() { widthTier = (widthTier + 1) % 3; applyDockWidth(); }
+    function cycleWidth() { widthTier = (widthTier + 1) % 4; applyDockWidth(); }
     /* ── Icon-rail (minimize) toggle ── */
     function updateRailItem() {
       /* The minimize/maximize toggle now lives as its own icon in the head. */

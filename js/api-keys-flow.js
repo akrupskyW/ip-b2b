@@ -36,7 +36,7 @@ const KEYS = [
   { id: 'k3', name: 'Legacy import (rotate)', full: 'sk_demo_5Lm8No1Pq4Rs7Tu0Vw3Xy6Za9Bc2De5', created: 'Jan 08, 2024', lastUsed: '3 weeks ago', scope: 'Write', status: 'stale' },
 ];
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('ak-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ak-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');

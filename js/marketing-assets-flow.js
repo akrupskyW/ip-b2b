@@ -115,7 +115,7 @@ function folderIcon(name) {
   return 'folder';
 }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('ma-toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');

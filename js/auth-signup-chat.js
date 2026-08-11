@@ -277,9 +277,16 @@
     5: 'Last step — set up your login and confirm the agreements. '
   };
 
+  /* Loaded as a live preview (e.g. the All Modules rail embeds every screen in
+     an iframe) — render the signup flow in place instead of bouncing an already
+     signed-in visitor to the landing page. */
+  function isPreview() {
+    try { return /[?&]preview=1(?:&|$)/.test(location.search); } catch (e) { return false; }
+  }
+
   function initSignup() {
     var auth = window.WiseAuth;
-    if (auth && auth.isAuthed()) { location.replace(auth.landingUrl()); return; }
+    if (!isPreview() && auth && auth.isAuthed()) { location.replace(auth.landingUrl()); return; }
 
     if (window.WiseAuthForms && window.WiseAuthForms.mountNav) window.WiseAuthForms.mountNav('signup');
 
@@ -303,6 +310,54 @@
     var scrollDown = function () { messages.scrollTop = messages.scrollHeight; };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
 
+    /* Reveal a WISE-assistant line's text one word at a time so it reads as if
+       it's being typed live instead of popping in whole. Wraps each visible word
+       in a span and fades them in on a quick cadence, leaving markup, icons and
+       the meta footer untouched. Honors prefers-reduced-motion. */
+    var prefersReducedMotion = (function () {
+      try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+      catch (_) { return false; }
+    })();
+    function typeInLine(bodyEl, done) {
+      if (!bodyEl || prefersReducedMotion) { if (done) done(); return; }
+      var walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (n) {
+          if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          var p = n.parentElement;
+          if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+      var textNodes = [];
+      var tn;
+      while ((tn = walker.nextNode())) textNodes.push(tn);
+      var words = [];
+      textNodes.forEach(function (node) {
+        var parts = node.nodeValue.split(/(\s+)/);
+        var frag = document.createDocumentFragment();
+        parts.forEach(function (part) {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          var span = document.createElement('span');
+          span.style.opacity = '0';
+          span.textContent = part;
+          frag.appendChild(span);
+          words.push(span);
+        });
+        node.parentNode.replaceChild(frag, node);
+      });
+      if (!words.length) { if (done) done(); return; }
+      var i = 0;
+      var step = function () {
+        words[i].style.opacity = '1';
+        i++;
+        scrollDown();
+        if (i < words.length) setTimeout(step, 70);
+        else if (done) done();
+      };
+      step();
+    }
+
     function disablePriorChips() {
       messages.querySelectorAll('.sc-reply-chips:not(.is-done)').forEach(function (el) { el.classList.add('is-done'); });
     }
@@ -322,12 +377,54 @@
       }).join('');
       return '<div class="sc-reply-chips">' + btns + '</div>';
     }
-    function addWISEai(html, options) {
+    /* Prime an element to slide in from the left, then reveal a set of them one
+       after another (left→right) so the timestamp and reply chips each animate
+       in, in order, once the answer has finished typing. */
+    function signupPrimeLeft(el) {
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-6px)';
+      el.style.transition = 'opacity .2s ease, transform .2s ease';
+    }
+    function signupRevealStaggered(els, startDelay, gap, cb) {
+      var list = (els || []).filter(Boolean);
+      if (!list.length) { if (cb) setTimeout(cb, startDelay || 0); return; }
+      var idx = 0;
+      var showNext = function () {
+        list[idx].style.opacity = '1';
+        list[idx].style.transform = 'none';
+        idx++;
+        scrollDown();
+        if (idx < list.length) setTimeout(showNext, gap);
+        else if (cb) setTimeout(cb, gap);
+      };
+      setTimeout(showNext, startDelay);
+    }
+    function addWISEai(html, options, done) {
       messages.insertAdjacentHTML('beforeend',
         '<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISE Assistant">' + OWL_BUG + '</span><div class="sc-line-body">' + html + '<div class="sc-line-meta"><span class="sc-line-time">' + esc(nowLabel()) + '</span></div></div></div>');
-      var chips = chipsHtml(options);
-      if (chips) messages.insertAdjacentHTML('beforeend', chips);
+      var line = messages.lastElementChild;
+      var body = line && line.querySelector('.sc-line-body');
+      var metaEl = body && body.querySelector('.sc-line-meta');
+      if (metaEl) metaEl.style.opacity = '0';
       scrollDown();
+      /* Type the answer in word-by-word, then bring in the timestamp, then the
+         reply chips (left→right) — text, timestamp, chips, in order. */
+      typeInLine(body, function () {
+        if (metaEl) metaEl.style.opacity = '';
+        var chips = chipsHtml(options);
+        var chipsRow = null;
+        if (chips) { messages.insertAdjacentHTML('beforeend', chips); chipsRow = messages.lastElementChild; }
+        if (prefersReducedMotion) { scrollDown(); if (done) done(); return; }
+        var timeEl = metaEl && metaEl.querySelector('.sc-line-time');
+        var chipEls = chipsRow ? Array.prototype.slice.call(chipsRow.children) : [];
+        if (timeEl) signupPrimeLeft(timeEl);
+        chipEls.forEach(signupPrimeLeft);
+        scrollDown();
+        signupRevealStaggered(timeEl ? [timeEl] : [], 120, 0, function () {
+          signupRevealStaggered(chipEls, 110, 55, function () { scrollDown(); if (done) done(); });
+        });
+      });
     }
     function showTyping() {
       var el = document.createElement('div');
@@ -341,8 +438,7 @@
       var typing = showTyping();
       setTimeout(function () {
         typing.remove();
-        addWISEai(html, options);
-        if (cb) cb();
+        addWISEai(html, options, cb);
       }, delay || 550);
     }
     function setInputEnabled(on, placeholder) {
@@ -904,7 +1000,7 @@
             var isActive = activeKeys.indexOf(k) >= 0;
             if ((!isDone && !isActive) || (!inFlow && !isDone)) return '';
             var meta = FIELD_META[k] || { label: k };
-            var icon = isDone ? 'check_circle' : 'radio_button_unchecked';
+            var icon = isDone ? 'check' : 'radio_button_unchecked';
             var stateCls = isDone ? 'sp-field--done' : 'sp-field--active';
             var val = isDone ? '<span class="sp-field-val">' + esc(fieldValueDisplay(k)) + '</span>' : '<span class="sp-field-val">Collecting…</span>';
             return '<div class="sp-field ' + stateCls + '"><span class="material-symbols-outlined">' + icon + '</span><span class="sp-field-label">' + esc(meta.label) + '</span>' + val + '</div>';

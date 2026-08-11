@@ -107,7 +107,7 @@ function pushChat(html) {
 }
 
 /* ---- Toast --------------------------------------------------------- */
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('pf-toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');

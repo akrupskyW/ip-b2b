@@ -363,6 +363,55 @@
     return "Great question. WISE turns the complexity of food into clear answers — I can help with ultra-processed checks, the Non-UPF standard, WISEcoach, or getting the app. Which would you like?";
   }
 
+  /* Reveal a reply's text one word at a time so WISEai reads as if it's typing
+     live rather than popping in whole. Wraps each visible word in a span and
+     fades them in on a quick cadence; markup, icons and media stay intact.
+     Honors prefers-reduced-motion. */
+  var mktPrefersReducedMotion = (function () {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (e) { return false; }
+  })();
+  function typeInEl(el, scroll, done) {
+    if (!el || mktPrefersReducedMotion) { if (done) done(); return; }
+    if (el.querySelector('img, svg, canvas, video, iframe')) { if (done) done(); return; }
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        var p = n.parentElement;
+        if (p && p.closest('.material-symbols-outlined, .material-symbols-rounded')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    var nodes = [];
+    var tn;
+    while ((tn = walker.nextNode())) nodes.push(tn);
+    var words = [];
+    nodes.forEach(function (node) {
+      var parts = node.nodeValue.split(/(\s+)/);
+      var frag = document.createDocumentFragment();
+      parts.forEach(function (part) {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        var span = document.createElement('span');
+        span.style.opacity = '0';
+        span.textContent = part;
+        frag.appendChild(span);
+        words.push(span);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    if (!words.length) { if (done) done(); return; }
+    var i = 0;
+    var step = function () {
+      words[i].style.opacity = '1';
+      i++;
+      if (scroll) scroll();
+      if (i < words.length) setTimeout(step, 70);
+      else if (done) done();
+    };
+    step();
+  }
+
   function initChat() {
     if (document.querySelector('.mkt-chat')) return;
 
@@ -434,7 +483,8 @@
       body.appendChild(typing); scrollDown();
       setTimeout(function () {
         typing.remove();
-        addMsg(chatReply(text), 'ai');
+        var el = addMsg(chatReply(text), 'ai');
+        typeInEl(el, scrollDown);
       }, 650 + Math.random() * 500);
     };
 

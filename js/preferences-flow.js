@@ -73,7 +73,7 @@ function setTextSize(pct) {
   return v;
 }
 
-function toast(msg, icon = 'check_circle') {
+function toast(msg, icon = 'check') {
   let wrap = document.getElementById('prefs-toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'prefs-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
@@ -218,7 +218,7 @@ function flipToggle(key, forceOn) {
   p[key] = typeof forceOn === 'boolean' ? forceOn : !p[key];
   writePrefs(p);
   paint();
-  toast(`${TOGGLE_LABELS[key] || key} ${p[key] ? 'on' : 'off'}`, p[key] ? 'check_circle' : 'block');
+  toast(`${TOGGLE_LABELS[key] || key} ${p[key] ? 'on' : 'off'}`, p[key] ? 'check' : 'block');
 }
 
 function setSeg(key, v) {

@@ -21,6 +21,30 @@
    Loaded by every top-level agent overview page.
 ============================================================= */
 
+/* The app standardized on Material Symbols *Outlined* — that is the only icon
+   family actually loaded (see the <link> in each page's <head>). A number of
+   legacy spans still carry `.material-symbols-rounded`, which has no font
+   behind it and so renders as raw ligature text (e.g. the word "auto_awesome")
+   instead of a glyph — i.e. the icons go missing. Alias the class onto the
+   loaded Outlined face (with the ligature settings the Google stylesheet sets
+   for Outlined) so those glyphs render everywhere. Any per-element sizing rules
+   (.lir-btn .material-symbols-rounded, inline font-size) still win on top. */
+.material-symbols-rounded {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 :root {
   --bg: #F9F8F3;
   --surface: #FFFFFF;
@@ -2784,11 +2808,17 @@ html.dark #menu-panel.mp-pivot .menu-footer { border-left-color: rgba(255, 255, 
    leave the row narrow (a fixed-px cap alone would exceed the available width
    and collapse the tiers into one identical size). The module sits left in the
    row, so narrowing it frees space on its trailing edge. */
-#agent-main.main-w-wide   { max-width: min(1180px, 82%); }
-#agent-main.main-w-narrow { max-width: min(820px, 62%); }
+/* Canonical width tiers, aligned to every other module's single → double →
+   triple → fill control: single = narrowest reading column, fill = the whole
+   row (no cap). `#agent-main` defaults to fill (no class) so admin/overview
+   surfaces still open full-width. */
+#agent-main.main-w-narrow { max-width: min(820px, 62%); }   /* single */
+#agent-main.main-w-wide   { max-width: min(1180px, 82%); }  /* double */
+#agent-main.main-w-triple { max-width: min(1480px, 92%); }  /* triple */
 @media (max-width: 1024px) {
   #agent-main.main-w-wide,
-  #agent-main.main-w-narrow { max-width: none; }
+  #agent-main.main-w-narrow,
+  #agent-main.main-w-triple { max-width: none; }
 }
 .agent-main-inner {
   flex: 1 1 0%;
@@ -3871,7 +3901,7 @@ html.dark .sc-welcome { background: transparent; }
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
 }
-.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: var(--fs-welcome-title); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
+.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
@@ -4033,6 +4063,17 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 }
 .chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 .chip .material-symbols-outlined { font-size: 16px !important; }
+/* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
+   solid brand-blue pill so the conclusive action reads as the emphasized,
+   primary choice among the reply chips. Reuses the app-wide `chip-primary`
+   convention (see auth.css). Scoped to plain `.chip` so welcome intent chips
+   keep their neutral, equal-weight look. */
+.chip.chip-primary {
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+}
+.chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
+.chip.chip-primary .material-symbols-outlined { color: #fff !important; }
+html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
 .ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
@@ -9812,7 +9853,15 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 }
 
 /* Verification stat-card row (Products / Action Required / Verified …). */
-.adm-vf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+/* The scorecard set is 8 tiles (Products + 7 statuses). To keep every row
+   completely full — no ragged last row / blank space on the right — the grid
+   only ever uses a column count that divides 8 evenly (8 → 4 → 2 → 1). Each
+   step down happens once the current count can no longer hold a tile at its
+   ~128px comfortable minimum, so tiles stay uniform width within any layout. */
+.adm-vf-stats { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+@container adm (max-width: 1093px) { .adm-vf-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container adm (max-width: 541px)  { .adm-vf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container adm (max-width: 265px)  { .adm-vf-stats { grid-template-columns: 1fr; } }
 .adm-vf-stat { display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; padding: 16px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-1); text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
 /* Fixed-height chip slot so the chip (whether it wraps to one or two lines)
    always occupies the same vertical band — this keeps the description text
@@ -9866,6 +9915,38 @@ html.dark .adm-util-ic { color: #93C5FD; }
 .adm-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
 .adm-toast.is-in { opacity: 1; transform: none; }
 .adm-toast .material-symbols-outlined { font-size: 17px; }
+
+/* ---- Modal (shared across the admin modules) ----------------------- */
+.adm-modal-scrim { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(15, 26, 33, 0.42); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.2s ease; }
+.adm-modal-scrim.is-open { opacity: 1; }
+.adm-modal { position: relative; width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 18px; box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28)); transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.adm-modal-scrim.is-open .adm-modal { transform: none; }
+html.dark .adm-modal { background: #14242f; border-color: rgba(255,255,255,0.08); }
+.adm-modal-x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: var(--text-subtle); cursor: pointer; }
+.adm-modal-x:hover { background: var(--surface-2); color: var(--text); }
+html.dark .adm-modal-x:hover { background: rgba(255,255,255,0.06); }
+.adm-modal-x .material-symbols-outlined { font-size: 20px; }
+.adm-modal-head { padding: 22px 24px 6px; }
+.adm-modal-eyebrow { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
+html.dark .adm-modal-eyebrow { color: var(--primary-bright, #7FB0E0); }
+.adm-modal-title { margin: 6px 0 0; font-family: 'Noto Serif', Georgia, serif; font-size: 1.28rem; font-weight: 800; color: var(--text); }
+.adm-modal-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+.adm-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
+
+/* Duplicate-flow option cards. */
+.adm-dup-opt { display: flex; align-items: flex-start; gap: 14px; width: 100%; box-sizing: border-box; padding: 16px; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-2); font: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
+html.dark .adm-dup-opt { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.10); }
+.adm-dup-opt:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); background: color-mix(in srgb, var(--primary) 6%, var(--surface-2)); }
+.adm-dup-opt:active { transform: scale(0.995); }
+.adm-dup-opt:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.adm-dup-opt-ic { flex: 0 0 auto; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+html.dark .adm-dup-opt-ic { color: var(--primary-bright, #7FB0E0); }
+.adm-dup-opt-ic .material-symbols-outlined { font-size: 22px; }
+.adm-dup-opt-body { display: flex; flex-direction: column; gap: 3px; flex: 1 1 auto; }
+.adm-dup-opt-title { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+.adm-dup-opt-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+.adm-dup-opt-arrow { flex: 0 0 auto; align-self: center; color: var(--text-subtle); font-size: 20px; }
+.adm-dup-opt:hover .adm-dup-opt-arrow { color: var(--primary); }
 
 /* ---- Quick Invite — composer suggestions, summary strip, history --- */
 .adm-qi-suggest { margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface-2); }

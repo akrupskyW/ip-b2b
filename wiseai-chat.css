@@ -517,7 +517,7 @@ html.dark .sc-welcome { background: transparent; }
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
 }
-.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.4rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
+.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
@@ -680,6 +680,17 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 }
 .chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 .chip .material-symbols-outlined { font-size: 16px !important; }
+/* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
+   solid brand-blue pill so the conclusive action reads as the emphasized,
+   primary choice among the reply chips. Reuses the app-wide `chip-primary`
+   convention (see auth.css). Scoped to plain `.chip` so welcome intent chips
+   keep their neutral, equal-weight look. */
+.chip.chip-primary {
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+}
+.chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
+.chip.chip-primary .material-symbols-outlined { color: #fff !important; }
+html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
 .ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px;
