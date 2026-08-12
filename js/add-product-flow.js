@@ -3,7 +3,7 @@
  * pages/add-product.html.
  *
  * Three modules work as one:
- *   • Chat (left)      — WISEai walks you through collecting each field. You can
+ *   • Chat (left)      — WISEcodeAI walks you through collecting each field. You can
  *                        answer with intent chips, free text, or uploads.
  *   • Product Details  — a live, editable Nutrition-Facts-style card (nfp-*).
  *     (NFP, middle)      Anything you edit here echoes back into the chat, and
@@ -141,60 +141,15 @@
   function scrollDown() { if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight; }
   function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('sc-hidden'); }
 
-  /* Reveal an already-rendered chat line's text one word at a time so anything
-     WISEai says — or any edit echoed back from the Product Details / Progress
-     modules — reads as if it's being typed live, instead of popping in whole.
-     We keep the real HTML (bold, links, chips) intact by wrapping each visible
-     WORD in a span and fading the spans in on a quick timer; markup, icons and
-     the timestamp footer are left untouched. Honors reduced-motion. */
+  /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
+     signature is kept so the timestamp / chip reveal chain runs unchanged. */
   const prefersReducedMotion = (() => {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
   })();
   function typeInLine(bodyEl, done) {
-    if (!bodyEl) { if (done) done(); return; }
-    if (prefersReducedMotion) { if (done) done(); return; }
-    const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
-      acceptNode(n) {
-        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        const p = n.parentElement;
-        /* Skip the meta/footer, Material-Symbols ligatures, and any nested
-           chip labels that shouldn't be torn apart mid-word. */
-        if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    });
-    const textNodes = [];
-    let tn;
-    while ((tn = walker.nextNode())) textNodes.push(tn);
-    const words = [];
-    textNodes.forEach((node) => {
-      const parts = node.nodeValue.split(/(\s+)/); // keep the whitespace runs
-      const frag = document.createDocumentFragment();
-      parts.forEach((part) => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-        const span = document.createElement('span');
-        span.className = 'ap-tw';
-        span.style.opacity = '0';
-        span.textContent = part;
-        frag.appendChild(span);
-        words.push(span);
-      });
-      node.parentNode.replaceChild(frag, node);
-    });
-    if (!words.length) { if (done) done(); return; }
-    /* Quick cadence; reveal a few words per tick on longer lines so a big
-       paragraph still finishes fast. */
-    let i = 0;
-    const step = () => {
-      words[i].style.opacity = '1';
-      i++;
-      scrollDown();
-      if (i < words.length) setTimeout(step, 70);
-      else if (done) done();
-    };
-    step();
+    scrollDown();
+    if (done) done();
   }
 
   function addUser(text) {
@@ -250,7 +205,7 @@
     setTimeout(showNext, startDelay);
   }
   /* Welcome-screen reveal: type the heading, then the sub, WORD-BY-WORD (just
-     like every WISEai answer), then fly the intent chips in from the right so
+     like every WISEcodeAI answer), then fly the intent chips in from the right so
      they land AFTER all the copy — never sitting there before it. Honors
      reduced-motion (everything just shows). */
   function revealWelcome() {
@@ -268,14 +223,14 @@
       apRevealStaggered(chips, 90, 60, null);
     }));
   }
-  function addWISEai(html, chips) {
+  function addWISEcodeAI(html, chips) {
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     /* Insert the line WITHOUT its reply chips, type the reply in word-by-word,
        then bring in the timestamp, then the chips (left→right) — text, timestamp,
        chips, in order. */
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messagesEl.lastElementChild;
     const body = line && line.querySelector('.sc-line-body');
     const metaEl = body && body.querySelector('.sc-line-meta');
@@ -310,15 +265,15 @@
     hideWelcome();
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing';
-    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${OWL}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEai is thinking…</span></span></div>`;
+    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${OWL}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEcodeAI is thinking…</span></span></div>`;
     messagesEl.appendChild(el);
     scrollDown();
     return el;
   }
-  /* Post a WISEai reply after a short "thinking" beat. */
+  /* Post a WISEcodeAI reply after a short "thinking" beat. */
   function wiseSay(html, chips, delay) {
     const t = showTyping();
-    setTimeout(() => { t.remove(); addWISEai(html, chips); }, delay || 560);
+    setTimeout(() => { t.remove(); addWISEcodeAI(html, chips); }, delay || 560);
   }
 
   /* ─────────────────────────── NFP module render ─────────────────────────── */
@@ -886,7 +841,7 @@
     renderProgress();
     switch (id) {
       case 'photo':
-        addWISEai('Let\'s start with a <strong>product photo</strong>. Upload one, snap it, or paste a URL — you can also just tell me the product name to keep going.',
+        addWISEcodeAI('Let\'s start with a <strong>product photo</strong>. Upload one, snap it, or paste a URL — you can also just tell me the product name to keep going.',
           [
             { label: 'Upload a photo', icon: 'upload', action: 'mainUpload' },
             { label: 'Paste a URL', icon: 'link', action: 'url' },
@@ -895,7 +850,7 @@
           ]);
         break;
       case 'category':
-        addWISEai('What <strong>category</strong> does this product belong to? Pick a suggestion or type your own.',
+        addWISEcodeAI('What <strong>category</strong> does this product belong to? Pick a suggestion or type your own.',
           [
             { label: 'Bakery › Muffins', icon: 'sell', action: 'setCat', arg: 'Bakery › Muffins' },
             { label: 'Snacks › Bars', icon: 'sell', action: 'setCat', arg: 'Snacks › Bars' },
@@ -904,21 +859,21 @@
           ]);
         break;
       case 'ingredients':
-        addWISEai('Now the <strong>ingredient list</strong>. Paste it as text, upload a label photo and I\'ll read it, or type it in.',
+        addWISEcodeAI('Now the <strong>ingredient list</strong>. Paste it as text, upload a label photo and I\'ll read it, or type it in.',
           [
             { label: 'Upload label photo', icon: 'document_scanner', action: 'labelUpload' },
             { label: 'Paste / type list', icon: 'edit', action: 'field:ingredients' },
           ]);
         break;
       case 'nutrition':
-        addWISEai('Time for the <strong>Nutrition Facts</strong>. Upload the panel and I\'ll parse it, or fill the values directly in <strong>Product Details</strong> on the right — I\'ll flag anything I can\'t read.',
+        addWISEcodeAI('Time for the <strong>Nutrition Facts</strong>. Upload the panel and I\'ll parse it, or fill the values directly in <strong>Product Details</strong> on the right — I\'ll flag anything I can\'t read.',
           [
             { label: 'Upload NFP photo', icon: 'document_scanner', action: 'labelUpload' },
             { label: 'I\'ll type it in', icon: 'edit', action: 'focusNf' },
           ]);
         break;
       case 'allergens':
-        addWISEai('Any <strong>allergens</strong> to declare? Tap the common ones, or tell me there are none.',
+        addWISEcodeAI('Any <strong>allergens</strong> to declare? Tap the common ones, or tell me there are none.',
           [
             { label: 'Milk', icon: 'add', action: 'addAllergen', arg: 'Milk' },
             { label: 'Eggs', icon: 'add', action: 'addAllergen', arg: 'Eggs' },
@@ -930,7 +885,7 @@
           ]);
         break;
       case 'upc':
-        addWISEai('Does this product have a <strong>UPC / barcode</strong>? Type the digits or upload a photo of the barcode and I\'ll read the number. No UPC yet? You can skip — WISEai can help you request one later.',
+        addWISEcodeAI('Does this product have a <strong>UPC / barcode</strong>? Type the digits or upload a photo of the barcode and I\'ll read the number. No UPC yet? You can skip — WISEcodeAI can help you request one later.',
           [
             { label: 'Enter UPC', icon: 'edit', action: 'field:upc' },
             { label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' },
@@ -938,7 +893,7 @@
           ]);
         break;
       case 'photos':
-        addWISEai('Want to add <strong>more product images</strong> — angles, packaging, lifestyle shots? Add as many as you like, or move on.',
+        addWISEcodeAI('Want to add <strong>more product images</strong> — angles, packaging, lifestyle shots? Add as many as you like, or move on.',
           [
             { label: 'Add images', icon: 'add_photo_alternate', action: 'photosUpload' },
             { label: 'That\'s enough', icon: 'check', action: 'skip:photos' },
@@ -947,10 +902,10 @@
       case 'save': {
         const missing = requiredMissing();
         if (missing.length || nfErrorCount()) {
-          addWISEai(`We\'re almost there. Still needed before saving: <strong>${esc(missing.map((m) => m.label).join(', ') || 'fix flagged nutrients')}</strong>.`,
+          addWISEcodeAI(`We\'re almost there. Still needed before saving: <strong>${esc(missing.map((m) => m.label).join(', ') || 'fix flagged nutrients')}</strong>.`,
             [{ label: 'Fix the first one', icon: 'build', action: 'goto:' + firstMissingStep() }]);
         } else {
-          addWISEai('Everything required is in and nothing\'s flagged. Ready when you are — hit <strong>Save to Portfolio</strong> on the right, or save from here. Until you save, this stays a draft.',
+          addWISEcodeAI('Everything required is in and nothing\'s flagged. Ready when you are — hit <strong>Save to Portfolio</strong> on the right, or save from here. Until you save, this stays a draft.',
             [{ label: 'Save to Portfolio', icon: 'save', action: 'save', primary: true }]);
         }
         break;
@@ -971,7 +926,7 @@
      an attached image is read as a barcode (not stored as the product photo). */
   function promptUpc() {
     state.awaiting = 'upc';
-    addWISEai('Add the <strong>UPC</strong> — type the 12 digits, or upload a photo of the barcode and I\'ll read the number and build a clean barcode.',
+    addWISEcodeAI('Add the <strong>UPC</strong> — type the 12 digits, or upload a photo of the barcode and I\'ll read the number and build a clean barcode.',
       [{ label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' }]);
     if (inputEl) { inputEl.placeholder = 'Type the 12-digit UPC…'; inputEl.focus(); }
   }
@@ -979,7 +934,7 @@
   /* Ask the user to type a value into the chat input for a specific field. */
   function promptFor(field, question) {
     state.awaiting = field;
-    if (question) addWISEai(question);
+    if (question) addWISEcodeAI(question);
     if (inputEl) {
       const hints = {
         productName: 'Type the product name…',
@@ -1058,7 +1013,7 @@
       state.done.allergens = true;
       Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
       renderNFP(); renderProgress();
-      addWISEai(`Read your <strong>${esc(kind || 'file')}</strong> — I pulled the product name, category, ingredients, allergens and the full Nutrition Facts into <strong>Product Details</strong>. Review anything, then add a photo and UPC and save.`,
+      addWISEcodeAI(`Read your <strong>${esc(kind || 'file')}</strong> — I pulled the product name, category, ingredients, allergens and the full Nutrition Facts into <strong>Product Details</strong>. Review anything, then add a photo and UPC and save.`,
         [
           { label: 'Add a photo', icon: 'add_photo_alternate', action: 'mainUpload' },
           { label: 'Add a UPC', icon: 'qr_code_2', action: 'field:upc' },
@@ -1091,7 +1046,7 @@
       state.awaiting = null;
       if (inputEl) inputEl.placeholder = 'Type a value, paste a URL, or ask me anything…';
       renderNFP(); renderProgress();
-      addWISEai(`Scanned the barcode — I read UPC <strong>${esc(formatUpc(digits))}</strong> and rebuilt a clean barcode on the panel. I did <em>not</em> touch your product photo. Look right?`,
+      addWISEcodeAI(`Scanned the barcode — I read UPC <strong>${esc(formatUpc(digits))}</strong> and rebuilt a clean barcode on the panel. I did <em>not</em> touch your product photo. Look right?`,
         [
           { label: 'Looks right — continue', icon: 'arrow_forward', action: 'goto:' + nextStep() },
           { label: 'Edit the digits', icon: 'edit', action: 'field:upc' },
@@ -1155,7 +1110,7 @@
       Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
       state.errors = Object.assign({}, state.errors, p.errors);
       renderNFP(); renderProgress();
-      addWISEai('I read most of the label into <strong>Product Details</strong> — name, category, ingredients, allergens and the Nutrition Facts. But the bottom row of micronutrients (<strong>Vitamin D, Calcium, Iron, Potassium</strong>) came through <strong>unreadable — low resolution</strong>. They\'re flagged red on the panel. Fix them there, upload a sharper crop, or type them here.',
+      addWISEcodeAI('I read most of the label into <strong>Product Details</strong> — name, category, ingredients, allergens and the Nutrition Facts. But the bottom row of micronutrients (<strong>Vitamin D, Calcium, Iron, Potassium</strong>) came through <strong>unreadable — low resolution</strong>. They\'re flagged red on the panel. Fix them there, upload a sharper crop, or type them here.',
         [
           { label: 'Upload a sharper photo', icon: 'document_scanner', action: 'labelUpload' },
           { label: 'I\'ll type the flagged values', icon: 'edit', action: 'focusNf' },
@@ -1180,7 +1135,7 @@
       Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
       // URL sources give clean nutrition — no errors here.
       renderNFP(); renderProgress();
-      addWISEai('Pulled that product page in — photo, name, category, ingredients, allergens and full Nutrition Facts are all in <strong>Product Details</strong>. Give it a look and edit anything that\'s off. Add a UPC and more photos, then save.',
+      addWISEcodeAI('Pulled that product page in — photo, name, category, ingredients, allergens and full Nutrition Facts are all in <strong>Product Details</strong>. Give it a look and edit anything that\'s off. Add a UPC and more photos, then save.',
         [
           { label: 'Add a UPC', icon: 'qr_code_2', action: 'field:upc' },
           { label: 'Add more photos', icon: 'add_photo_alternate', action: 'photosUpload' },
@@ -1241,7 +1196,7 @@
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
       setTimeout(() => { placeCaret(el); }, 300);
-      addWISEai('Go ahead — click any red field on the panel and type the correct value. Each one clears as you fix it.');
+      addWISEcodeAI('Go ahead — click any red field on the panel and type the correct value. Each one clears as you fix it.');
     }
   }
   function placeCaret(el) {
@@ -1360,7 +1315,7 @@
         tag.firstChild.textContent = 'Edit Product · ';
       }
       addUser(`Edit ${state.productName}`);
-      addWISEai(`Editing <strong>${esc(state.productName)}</strong> — everything\u2019s loaded on the right and every field is editable. Tell me what you\u2019d like to change, or just click any value on the panel. What should we update?`,
+      addWISEcodeAI(`Editing <strong>${esc(state.productName)}</strong> — everything\u2019s loaded on the right and every field is editable. Tell me what you\u2019d like to change, or just click any value on the panel. What should we update?`,
         [
           { label: 'Edit the Nutrition Facts', icon: 'nutrition', action: 'focusNf' },
           { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
@@ -1373,7 +1328,7 @@
         ]);
       return;
     }
-    addWISEai(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right and every field is editable. Click any value to change it, swap the photo, or update the Nutrition Facts, then save your changes back to the portfolio.`,
+    addWISEcodeAI(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right and every field is editable. Click any value to change it, swap the photo, or update the Nutrition Facts, then save your changes back to the portfolio.`,
       [
         { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
         { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
@@ -1612,7 +1567,7 @@
 
   function shareTranscript() {
     const text = getTranscriptText();
-    if (navigator.share) { navigator.share({ title: 'WISEai conversation', text }).catch(() => {}); return; }
+    if (navigator.share) { navigator.share({ title: 'WISEcodeAI conversation', text }).catch(() => {}); return; }
     try { navigator.clipboard.writeText(text); } catch (_) {}
   }
 

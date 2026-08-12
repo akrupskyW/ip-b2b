@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!--
-  WISE · WISEai Library (Studio)
+  WISE · WISEcodeAI Library (Studio)
 
-  Every report, dashboard, chat, MCP result, and reference from WISEai work,
+  Every report, dashboard, chat, MCP result, and reference from WISEcodeAI work,
   collected in one browsable library. Visually modeled on reports.html: same
-  module shell (`<body data-nav-id="library">`), the persistent WISEai chat
+  module shell (`<body data-nav-id="library">`), the persistent WISEcodeAI chat
   docked to the left of the content module, and the shared design tokens from
   wise.css. Everything bespoke here is prefixed `lib-`.
 -->
@@ -13,7 +13,7 @@
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISE · WISEai Library</title>
+  <title>WISE · WISEcodeAI Library</title>
   <script src="../js/text-size-fouc.js"></script>
   <script>
     /* FOUC guard — apply the persisted theme before first paint so the page
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="wise.css" />
   <style>
     /* ===================================================================
-       WISEai Library — everything reuses the shared design tokens
+       WISEcodeAI Library — everything reuses the shared design tokens
        (--surface, --primary, --sec-green …) from wise.css and is prefixed
        `lib-` so it can't collide with shell/module styles.
 
@@ -300,9 +300,9 @@
     .lib-count .material-symbols-outlined { font-size: 14px !important; }
 
     /* ===================================================================
-       Workspace layout — mirror reports.html: the persistent WISEai chat
+       Workspace layout — mirror reports.html: the persistent WISEcodeAI chat
        sits directly right of the nav, and the Library module docks to its
-       right. The shared shell (js/agent-overview.js) drops the WISEai dock
+       right. The shared shell (js/agent-overview.js) drops the WISEcodeAI dock
        into #modules-row; here we just re-order the row (page-scoped) so the
        chat is the centre column and the Library is the module on the right.
     =================================================================== */
@@ -331,6 +331,7 @@
     body[data-nav-id="library"] #agent-main-header { display: none; }
     body[data-nav-id="library"] .agent-main-scroll { padding: 0; }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="library">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
@@ -355,7 +356,7 @@
               <div class="lib-masthead">
                 <div>
                   <div class="lib-title-row">
-                    <h1 class="lib-title-main">WISEai Library</h1>
+                    <h1 class="lib-title-main">WISEcodeAI Library</h1>
                   </div>
                   <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place.</p>
                 </div>
@@ -892,7 +893,7 @@
         apply();
       });
 
-      /* ---- Chat bridge — the WISEai dock's intent chips fire these hooks
+      /* ---- Chat bridge — the WISEcodeAI dock's intent chips fire these hooks
          (wired in js/agent-overview.js) so a chip in the chat applies the exact
          same filter as its twin score card, and the reply narrates it with the
          live count. ---- */

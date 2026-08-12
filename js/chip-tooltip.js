@@ -5,7 +5,7 @@
  * gets an instant hover/focus tooltip that says, in plain language, exactly what
  * that chip means. Directly beneath the explanation — inside the very same
  * floating card — sits the same thumbs up / thumbs down feedback affordance used
- * on WISEai answers (see feedbackRowHtml in wiseai-chat.js): a verdict pair that
+ * on WISEcodeAI answers (see feedbackRowHtml in wiseai-chat.js): a verdict pair that
  * reveals an intent-chip set plus a free-form note, so a user can tell us whether
  * the label was right and why.
  *
@@ -36,7 +36,7 @@
     });
   }
 
-  /* ── Intent taxonomies (mirrors the WISEai answer feedback) ──────────────── */
+  /* ── Intent taxonomies (mirrors the WISEcodeAI answer feedback) ──────────────── */
   var DOWN_REASONS = [
     { reason: 'wrong-status', label: 'Wrong status' },
     { reason: 'confusing', label: 'Confusing' },
@@ -179,7 +179,7 @@
   }
 
   /* ── One-time styles ──────────────────────────────────────────────────────
-     Self-contained so the card looks right on pages that never mount the WISEai
+     Self-contained so the card looks right on pages that never mount the WISEcodeAI
      chat (whose sc-fb CSS would otherwise be absent). Visual language matches
      the answer-feedback popover. */
   function ensureStyles() {

@@ -20,7 +20,7 @@ import {
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
-import { mountWISEaiDock, setWISEaiDockPosition, wiseaiDockMode, writeWISEaiDockState, isWISEaiClosed, restartWISEaiChat, setWISEaiCollapsed } from './wiseai-dock.js';
+import { mountWISEcodeAIDock, setWISEcodeAIDockPosition, wiseaiDockMode, writeWISEcodeAIDockState, isWISEcodeAIClosed, restartWISEcodeAIChat, setWISEcodeAICollapsed } from './wiseai-dock.js';
 import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
@@ -322,7 +322,7 @@ function renderMain(agent) {
     ${cards}`;
 }
 
-/* A blank shell page (menu + top bar + WISEai dock, empty main) used for
+/* A blank shell page (menu + top bar + WISEcodeAI dock, empty main) used for
    product destinations that don't yet have bespoke content — e.g. the
    top-level Dashboard. Driven by `<body data-product-id="…">` (no agent id). */
 
@@ -412,7 +412,7 @@ function bootstrapBlankPage(productId) {
   /* Give the dashboard's main panel the same header cluster (⋯ menu + width
      toggle) every other pane has, so the functions survive header-float. */
   if (isDashboard) setupMainPanelControls();
-  setupWISEaiDock();
+  setupWISEcodeAIDock();
 }
 
 /* ====================================================================
@@ -474,12 +474,12 @@ function bootstrapAppNavPage(navId) {
   const mainEl = document.getElementById('agent-main-scroll');
   if (navId === 'verification') {
     /* Non-UPF Verification flow (the first of several verification types).
-       Renders the Select → Attest → Payment wizard beside the WISEai dock. */
+       Renders the Select → Attest → Payment wizard beside the WISEcodeAI dock. */
     document.title = 'WISE · Non-UPF Verification';
     if (mainEl) renderVerificationFlow(mainEl);
   } else if (navId === 'gras-verification') {
     /* GRAS Verification flow (the ingredient-level verification type).
-       Renders the 5-step documentation wizard beside the WISEai dock. */
+       Renders the 5-step documentation wizard beside the WISEcodeAI dock. */
     document.title = 'WISE · GRAS Verification';
     if (mainEl) renderGrasVerificationFlow(mainEl);
   } else if (navId === 'marketing-assets') {
@@ -570,7 +570,7 @@ function bootstrapAppNavPage(navId) {
   applyBodyAppearanceDefaults();
   setupTrailingRail();
   setupMainPanelControls();
-  setupWISEaiDock();
+  setupWISEcodeAIDock();
 }
 
 export function bootstrapAgentPage() {
@@ -634,7 +634,7 @@ export function bootstrapAgentPage() {
   setupTrailingRail();
   /* Same header cluster (⋯ menu + width toggle) as every other pane. */
   setupMainPanelControls();
-  setupWISEaiDock();
+  setupWISEcodeAIDock();
 
   if (location.hash) {
     requestAnimationFrame(() => {
@@ -645,16 +645,16 @@ export function bootstrapAgentPage() {
 }
 
 /* ====================================================================
-   Persistent WISEai dock.
-     The shared WISEai chat lives in the modules row on every agent page,
+   Persistent WISEcodeAI dock.
+     The shared WISEcodeAI chat lives in the modules row on every agent page,
      in the exact same place + size as the portfolio and chat pages — its
-     width and side are restored from localStorage via mountWISEaiDock, so
-     WISEai stays uniform as you move between pages.
+     width and side are restored from localStorage via mountWISEcodeAIDock, so
+     WISEcodeAI stays uniform as you move between pages.
 ==================================================================== */
 
-/* Intent chips surfaced in the WISEai dock on the Dashboard page. There is one
+/* Intent chips surfaced in the WISEcodeAI dock on the Dashboard page. There is one
    chip for EVERY action the Dashboard (overview.html) exposes, so anything you
-   can do on the page is also one tap away from WISEai. Each chip maps 1:1 to an
+   can do on the page is also one tap away from WISEcodeAI. Each chip maps 1:1 to an
    on-page control via DASHBOARD_WISEAI_ACTIONS below — clicking a chip triggers
    that exact control, so the chip does precisely what the button does (navigate,
    open a report, compare brands, or edit the logo). Laid out as a plain wrapped
@@ -694,7 +694,7 @@ const DASHBOARD_WISEAI_REPORTS = {
   open_insights_report: 'insights',
 };
 
-/* Intent chips for the Reports page WISEai dock — every chip is something you
+/* Intent chips for the Reports page WISEcodeAI dock — every chip is something you
    can actually DO with the reports next to it. The "Open …" report chips open
    the brand report INLINE on the module surface to the right (same surface the
    Dashboard uses); the rest continue the conversation with an on-topic answer. */
@@ -709,7 +709,7 @@ const REPORTS_WISEAI_INTENTS = [
   { intent: 'unlock_studio',     label: 'Unlock the full Studio',   icon: 'lock_open' },
 ];
 
-/* Intent chips for the WISEai Library page dock. Every chip maps 1:1 to a real
+/* Intent chips for the WISEcodeAI Library page dock. Every chip maps 1:1 to a real
    filter you can apply in the Library module beside it — the same set of item
    types and the "shared with me" scope surfaced by the score cards and the
    funnel popover. onIntent drives the on-page filter (via window.__wiseLibraryIntent)
@@ -738,7 +738,7 @@ const LIBRARY_WISEAI_REPLIES = {
   lib_shared:     'Showing everything <strong>shared with you</strong>.',
 };
 
-/* Intent chips for the Ingredient Browser page WISEai dock. Every chip maps 1:1
+/* Intent chips for the Ingredient Browser page WISEcodeAI dock. Every chip maps 1:1
    to a real way you can slice the registry in the module beside it — the search,
    the GRAS-status score cards, and each dropdown/flag group inside the funnel
    popover. onIntent drives the on-page control (via window.__ibIntent — it
@@ -766,7 +766,7 @@ const INGREDIENTS_WISEAI_REPLIES = {
   explain_gras: 'GRAS means \u201cGenerally Recognized As Safe.\u201d In this registry every ingredient carries a GRAS status: <strong>GRAS</strong> (evidence + expert consensus), <strong>In review</strong> (being assessed), <strong>Historical</strong> (long use but not formally affirmed), <strong>Unclear</strong> (not enough evidence), or <strong>Unsafe</strong>. Want me to filter by one?',
 };
 
-/* Intent chips for the Marketing Assets page WISEai dock. Every chip maps 1:1
+/* Intent chips for the Marketing Assets page WISEcodeAI dock. Every chip maps 1:1
    to something you can actually do in the module beside it — open a specific
    toolkit, pull the Non-UPF shield, grab the brand standards, or expand the
    whole library. Rendered as a stacked/wrapped grid (chipsFlow: 'wrap'), not a
@@ -802,7 +802,7 @@ const REPORTS_WISEAI_REPLIES = {
 
 /* True only when the page was reached by a real navigation (clicking a link /
    typing the URL), not a reload or back/forward. Used so pages that force the
-   WISEai chat open on arrival don't fight an explicit "Close conversation" the
+   WISEcodeAI chat open on arrival don't fight an explicit "Close conversation" the
    user made moments earlier — a reload (e.g. livereload on file save) then keeps
    the chat closed. Falls back to `true` if the timing API is unavailable, so the
    default stays "show the chat". */
@@ -818,8 +818,8 @@ function arrivedByNavigation() {
   }
 }
 
-/* ── WISEai dock feature parity ───────────────────────────────────────────────
-   Every logged-in page mounts the SAME WISEai chat module (the dock), so it must
+/* ── WISEcodeAI dock feature parity ───────────────────────────────────────────────
+   Every logged-in page mounts the SAME WISEcodeAI chat module (the dock), so it must
    carry the same components + three-dot actions as the flagship pages/wiseai.html
    — just fed page-specific content. These base opts turn on the features the
    shared module implements + styles entirely on its own (via injectChatExtras),
@@ -844,7 +844,7 @@ function arrivedByNavigation() {
    Page cfg is spread AFTER these, so any page can still override a default. The
    "Show/Hide overview cards" and "Hide/Show intent chips" Admin switches appear
    automatically whenever a page passes scorecards / intents, and "History &
-   Projects" is injected into the menu post-mount (injectWISEaiHistoryMenuItem). */
+   Projects" is injected into the menu post-mount (injectWISEcodeAIHistoryMenuItem). */
 const WISEAI_DOCK_PARITY = {
   activity: true,
   turns: true,
@@ -868,7 +868,7 @@ const WISEAI_DOCK_PARITY = {
    the menu row for the host to inject — mirroring pages/wiseai.html). Styled as
    an on/off switch so it reads back its open state, and sat at the top of the
    menu above a divider. Runs once per dock. */
-function injectWISEaiHistoryMenuItem(dock) {
+function injectWISEcodeAIHistoryMenuItem(dock) {
   const morePop = dock.querySelector('.topbar-popover');
   if (!morePop || morePop.querySelector('[data-sc="history"]')) return;
   const btn = document.createElement('button');
@@ -884,16 +884,16 @@ function injectWISEaiHistoryMenuItem(dock) {
   morePop.insertBefore(btn, div);
 }
 
-function setupWISEaiDock() {
-  /* Pages can opt out of the persistent WISEai dock with
+function setupWISEcodeAIDock() {
+  /* Pages can opt out of the persistent WISEcodeAI dock with
      `<body data-hide-wiseai>` (e.g. analytics-types.html). */
-  if (document.body.dataset.hideWISEai) return;
+  if (document.body.dataset.hideWISEcodeAI) return;
   const row = document.getElementById('modules-row');
   if (!row || document.getElementById('wiseai-dock-panel')) return;
   const dock = document.createElement('aside');
   dock.id = 'wiseai-dock-panel';
   dock.className = 'wiseai-dock wiseai-dock-open';
-  dock.setAttribute('aria-label', 'WISEai™ chat');
+  dock.setAttribute('aria-label', 'WISEcodeAI™ chat');
   row.appendChild(dock);
 
   const isDashboard = document.body.dataset.productId === 'dashboard';
@@ -905,7 +905,7 @@ function setupWISEaiDock() {
   const isMarketing = document.body.dataset.navId === 'marketing-assets';
 
   /* Account-level modules (opened from the profile menu) — each pairs its own
-     surface with the WISEai dock and its own intent chips. Keyed by navId so a
+     surface with the WISEcodeAI dock and its own intent chips. Keyed by navId so a
      single map wires the render, the dock config, and the force-open behavior. */
   const ACCOUNT_WISEAI = {
     profile: PROFILE_WISEAI,
@@ -916,7 +916,7 @@ function setupWISEaiDock() {
     docs: DOCS_WISEAI,
     agents: AGENTS_WISEAI,
     alerts: ALERTS_WISEAI,
-    /* WISEcode Admin surfaces — each pairs its board with the WISEai dock. */
+    /* WISEcode Admin surfaces — each pairs its board with the WISEcodeAI dock. */
     organizations: ORGANIZATIONS_WISEAI,
     'quick-invite': QUICK_INVITE_WISEAI,
     'user-management': USER_MANAGEMENT_WISEAI,
@@ -927,33 +927,33 @@ function setupWISEaiDock() {
   };
   const accountWiseai = ACCOUNT_WISEAI[document.body.dataset.navId];
 
-  /* The Verification and Reports pages are a chat + surface pairing, so WISEai
+  /* The Verification and Reports pages are a chat + surface pairing, so WISEcodeAI
      should be showing when you first NAVIGATE here — we clear any "collapsed"
      state carried over from another page. But if you explicitly close the chat
      ON this page, that must stick: a reload (incl. livereload during editing) or
      a back/forward must NOT re-open it, otherwise "Close conversation" looks like
      it just restarts the chat. So only force-open on a genuine navigation. */
   if ((isVerification || isGras || isReports || isLibrary || isIngredients || isMarketing || accountWiseai) && arrivedByNavigation()) {
-    writeWISEaiDockState({ collapsed: false });
+    writeWISEcodeAIDockState({ collapsed: false });
   }
 
-  /* Pages can pin the WISEai dock to a fixed default via `<body data-default-dock>`
+  /* Pages can pin the WISEcodeAI dock to a fixed default via `<body data-default-dock>`
      so the chat always opens the same way regardless of the persisted preference
      — e.g. the chat + surface pages (verification, profile, invoices …) pin
      `left`, which means "keep the surface module(s) to the RIGHT of the chat".
-     Because WISEai is always the centre anchor, the value is read as a pane
+     Because WISEcodeAI is always the centre anchor, the value is read as a pane
      count: the legacy left/center/right map onto 2/1/0 panes-to-the-right (and
      the new center/right1/right2 ids are accepted too). Written before mount so
-     applyWISEaiDockState() picks it up on restore. */
+     applyWISEcodeAIDockState() picks it up on restore. */
   const dockDefault = document.body.dataset.defaultDock;
   const DEFAULT_DOCK_RIGHT = { left: 2, center: 1, right: 0, center0: 0, right1: 1, right2: 2 };
   if (dockDefault in DEFAULT_DOCK_RIGHT) {
-    writeWISEaiDockState({ right: DEFAULT_DOCK_RIGHT[dockDefault] });
+    writeWISEcodeAIDockState({ right: DEFAULT_DOCK_RIGHT[dockDefault] });
   }
 
   let cfg;
   if (accountWiseai) {
-    /* Account modules ship a complete WISEai config (sub + intents + replies +
+    /* Account modules ship a complete WISEcodeAI config (sub + intents + replies +
        onIntent that drives the module's own surface), so use it as-is. */
     cfg = { ...accountWiseai };
   } else if (isVerification) {
@@ -1004,7 +1004,7 @@ function setupWISEaiDock() {
           { intent: 'explain_score', icon: 'help_outline', iconTone: 'brand', pill: { tone: 'up', icon: 'menu_book', text: 'Learn' }, title: 'Explain my UPF score', desc: 'How each product is classified against the NOVA scale — 92% lands Non-UPF.', action: 'Explain my score', ask: 'Explain my UPF score' },
           { intent: 'ingredient_quality', icon: 'science', iconTone: 'brand', pill: { tone: 'up', icon: 'insights', text: 'Deep dive' }, title: 'Ingredient quality', desc: 'Additives, clean-label share and seed oils — scored one metric at a time.', action: 'Ingredient quality', ask: 'Ingredient quality' },
           { intent: 'compare_products', icon: 'compare_arrows', iconTone: 'brand', pill: { tone: 'up', icon: 'compare_arrows', text: 'Compare' }, title: 'Compare two products', desc: 'Line up any two SKUs across UPF class, ingredient quality and flags.', action: 'Compare products', ask: 'Compare two products' },
-          { variant: 'wiseai', intent: 'unlock_studio', icon: 'lock_open', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Unlock the full Studio', desc: 'GRAS, Insights, Nutrient-Quality and Health-Outcomes reports across your portfolio.', action: 'Unlock the full Studio', ask: 'Unlock the full Studio' },
+          { variant: 'wiseai', intent: 'unlock_studio', icon: 'lock_open', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEcodeAI' }, title: 'Unlock the full Studio', desc: 'GRAS, Insights, Nutrient-Quality and Health-Outcomes reports across your portfolio.', action: 'Unlock the full Studio', ask: 'Unlock the full Studio' },
         ],
       },
       intents: REPORTS_WISEAI_INTENTS,
@@ -1035,7 +1035,7 @@ function setupWISEaiDock() {
     };
   } else if (isLibrary) {
     cfg = {
-      sub: 'Search and open anything from your WISEai library.',
+      sub: 'Search and open anything from your WISEcodeAI library.',
       chipsFlow: 'wrap',
       intents: LIBRARY_WISEAI_INTENTS,
       /* Count-aware narration built by the Library module (falls back to the
@@ -1057,7 +1057,7 @@ function setupWISEaiDock() {
        registry (search, GRAS status, category, processing level, allergens,
        flags) plus a plain-language "what is GRAS?". Each chip narrates the
        answer AND drives the browser to its right via the page's __ibIntent
-       bridge, so anything you can do on the page is one tap away from WISEai. */
+       bridge, so anything you can do on the page is one tap away from WISEcodeAI. */
     cfg = {
       sub: 'Search, filter and understand any ingredient in the WISEcode registry.',
       chipsFlow: 'wrap',
@@ -1132,11 +1132,11 @@ function setupWISEaiDock() {
      every dock carries the same components + three-dot actions as wiseai.html
      (tokens/cost activity read-out, Turns module, Admin toggles) while keeping
      its page-specific content (sub, intents, scorecards, onIntent …). */
-  const wiseai = mountWISEaiDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
+  const wiseai = mountWISEcodeAIDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
 
   /* History & Projects is toggled from the chat's own three-dot menu — the
      shared module wires the action but leaves the menu row for the host. */
-  injectWISEaiHistoryMenuItem(dock);
+  injectWISEcodeAIHistoryMenuItem(dock);
 
   /* Hand the live chat to the GRAS flow so UI interactions mirror into the
      conversation (and vice-versa) for one shared, mirrored surface. */
@@ -1376,14 +1376,14 @@ function syncDashToggleItems() {
      more-options (⋯) menu + a width/resize toggle. The central agent /
      dashboard panel was the only one missing it, so its header (and the
      pinned controls kept in headerless "header-float" mode) had no
-     functions. This mirrors the WISEai dock / portfolio module clusters
+     functions. This mirrors the WISEcodeAI dock / portfolio module clusters
      so the main panel reads + behaves like every other pane.
 ==================================================================== */
 
 const MAIN_WIDTH_KEY = 'wise-main-width';
 /* The canonical four-tier width control shared by every module in the app:
    single → double → triple → fill (take the whole row). `#agent-main` shares
-   the row with the fixed WISEai dock, so it DEFAULTS to fill (tier 3) — the
+   the row with the fixed WISEcodeAI dock, so it DEFAULTS to fill (tier 3) — the
    full-width surface every admin/overview page opens with — and the control
    steps it down through triple / double / single reading widths before wrapping
    back to fill. Tier → class: 0 narrow · 1 wide · 2 triple · 3 fill (no class). */
@@ -1436,7 +1436,7 @@ function cycleMainWidth() {
 }
 
 /* Markup for the main-panel control cluster — same classes (so the same
-   shared styles apply) as the WISEai dock's `.sc-topbar-controls`. */
+   shared styles apply) as the WISEcodeAI dock's `.sc-topbar-controls`. */
 function mainPanelControlsHTML() {
   return `
     <div class="panel-controls">
@@ -1678,16 +1678,16 @@ function refreshAppearancePopover() {
 }
 
 function renderAppearanceBody(pop) {
-  /* Only offer the "WISEai chat" on/off toggle where the shared dock actually
+  /* Only offer the "WISEcodeAI chat" on/off toggle where the shared dock actually
      lives on the page (pages can opt out via `<body data-hide-wiseai>`). */
-  const hasWISEaiDock = !!document.getElementById('wiseai-dock-panel');
+  const hasWISEcodeAIDock = !!document.getElementById('wiseai-dock-panel');
   pop.innerHTML = buildAppearanceBody({
     showPivot: true,
     isPivoted: isMenuPivoted(),
     isDark: isDarkMode(),
     wiseaiDockMode: wiseaiDockMode(),
-    showWISEaiChat: hasWISEaiDock,
-    wiseaiChatOn: !isWISEaiClosed(),
+    showWISEcodeAIChat: hasWISEcodeAIDock,
+    wiseaiChatOn: !isWISEcodeAIClosed(),
   });
 }
 
@@ -1712,10 +1712,10 @@ function openAppearancePopover(anchor) {
     onClose: closeAppearancePopover,
     togglePivot: () => toggleMenuPivot(),
     toggleTheme: () => setDarkMode(!isDarkMode()),
-    setDock: (m) => setWISEaiDockPosition(m),
+    setDock: (m) => setWISEcodeAIDockPosition(m),
     /* Off → fresh-restart the chat back into its welcome state; on → close it
        (folds to the floating owl, same as "Close conversation"). */
-    toggleWiseaiChat: () => { if (isWISEaiClosed()) restartWISEaiChat(); else setWISEaiCollapsed(true); },
+    toggleWiseaiChat: () => { if (isWISEcodeAIClosed()) restartWISEcodeAIChat(); else setWISEcodeAICollapsed(true); },
   });
 }
 

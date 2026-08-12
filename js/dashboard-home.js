@@ -1396,13 +1396,13 @@ const REPORTS = {
   },
 };
 
-/* The live WISEai chat, handed over by agent-overview once the dock is up, so a
+/* The live WISEcodeAI chat, handed over by agent-overview once the dock is up, so a
    report opened on the surface mirrors into the conversation (and vice-versa) —
    the exact chat ↔ surface pairing the verification flows use. */
 let dashChatApi = null;
 export function setDashChat(api) { dashChatApi = api; }
 
-/* Post a mirrored turn into the chat — the action as a "you" line + WISEai's
+/* Post a mirrored turn into the chat — the action as a "you" line + WISEcodeAI's
    narration — so opening a report on the surface reads like asking for it. Pass
    an empty userLabel to add only the reply (the intent-chip path already added
    the "you" line). */
@@ -1410,7 +1410,7 @@ function pushDashChat(userLabel, replyHtml) {
   if (!dashChatApi) return;
   dashChatApi.hideWelcome?.();
   if (userLabel) dashChatApi.addUser(userLabel);
-  if (replyHtml) dashChatApi.addWISEai(replyHtml);
+  if (replyHtml) dashChatApi.addWISEcodeAI(replyHtml);
 }
 
 /* Compact narration for the chat when a report opens on the surface. */
@@ -1472,8 +1472,8 @@ function reportSurfaceHTML(cfg, d, backLabel = 'Back to dashboard') {
 }
 
 /* Open a report INLINE in the main panel (the interface on the right of the
-   WISEai chat), replacing the dashboard — never a modal overlay. `mirror` posts
-   the you + WISEai turn into the chat; pass { mirror: false } on the intent-chip
+   WISEcodeAI chat), replacing the dashboard — never a modal overlay. `mirror` posts
+   the you + WISEcodeAI turn into the chat; pass { mirror: false } on the intent-chip
    path where the dock already added the "you" line + reply.
 
    On pages that don't render the dashboard (e.g. the Reports library), pass
@@ -2916,8 +2916,8 @@ export function renderDashboardHome(host) {
     <div class="dash${discovering ? ' is-skeleton' : ''}${_starsActive ? ' dash--stars' : ''}">
       ${_starsActive ? renderStars(DATA_STARS) : `
       ${renderClaim(d)}
-      ${document.body.dataset.hideWISEai ? renderTopPerformers(d) : ''}
-      ${document.body.dataset.hideWISEai ? renderTopPerformersHero(d) : ''}
+      ${document.body.dataset.hideWISEcodeAI ? renderTopPerformers(d) : ''}
+      ${document.body.dataset.hideWISEcodeAI ? renderTopPerformersHero(d) : ''}
       <section class="dash-two-up" id="dash-charts">
         ${renderUpf(d)}
         ${renderGras(d)}
@@ -2930,7 +2930,7 @@ export function renderDashboardHome(host) {
       ${renderMetricSpotlight(d)}
       ${renderIngredientFlags(d)}
       ${renderScoreDistribution(d)}
-      ${document.body.dataset.hideWISEai ? renderFocusScatter(d) : ''}`}
+      ${document.body.dataset.hideWISEcodeAI ? renderFocusScatter(d) : ''}`}
     </div>`;
 
   /* Wire interactions only once per host element. On re-renders triggered by
@@ -3084,7 +3084,7 @@ export function renderDashboardHome(host) {
       }
 
       /* Report surface — from the card kebab and the in-card report links. The
-         report opens INLINE in this panel (right of the WISEai chat) and mirrors
+         report opens INLINE in this panel (right of the WISEcodeAI chat) and mirrors
          into the chat; no modal overlay. The GRAS bar chart ("grasbars") shares
          the GRAS report. */
       const rep = a.match(/^(upf|gras|grasbars)-report$/);
@@ -3119,7 +3119,7 @@ export function renderDashboardHome(host) {
         const card = rawCard === 'grasbars' ? 'gras' : rawCard;
         const label = { upf: 'Brand UPF report', gras: 'Brand GRAS report', radar: 'WISEscore pillar metrics' }[card];
         if (op === 'chat') {
-          /* Continue the conversation in the WISEai dock that already lives on
+          /* Continue the conversation in the WISEcodeAI dock that already lives on
              this page — no navigation to a separate chat page. For the UPF/GRAS
              scorecards we mirror in the same narration the report surface uses;
              the pillar radar has no report, so it gets a short lead-in. */

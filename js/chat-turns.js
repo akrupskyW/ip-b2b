@@ -6,7 +6,7 @@
  * pages/wiseai.html: a right-docked "sticky drawer" (a real flex sibling of the
  * chat in #modules-row, dressed by the shared .wch-sidebar.wch-docked rules
  * from chat-history.js) that lists every TURN of the conversation — the user's
- * line plus the WISEai replies that follow it — each with Fork / Share / Jump
+ * line plus the WISEcodeAI replies that follow it — each with Fork / Share / Jump
  * controls and a search box. It reads the SAME `.sc-line` transcript markup
  * those pages already emit, so nothing about the chat itself changes.
  *
@@ -231,7 +231,7 @@
       return '<div class="wt-turn" data-turn="' + i + '">' +
         '<div class="wt-turn-head">' +
           '<span class="wt-turn-num">' + (i + 1) + '</span>' +
-          '<span class="wt-turn-q">' + (q ? esc(q) : '<em>WISEai\u2122 opened the conversation</em>') + '</span>' +
+          '<span class="wt-turn-q">' + (q ? esc(q) : '<em>WISEcodeAI\u2122 opened the conversation</em>') + '</span>' +
         '</div>' +
         (a ? '<div class="wt-turn-a">' + esc(a) + '</div>' : '') +
         (chips ? '<div class="wt-chips">' + chips + '</div>' : '') +

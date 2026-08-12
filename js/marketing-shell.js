@@ -7,7 +7,7 @@
      1) The primary navigation — defined ONCE here (NAV_HTML) and injected
         into every page, so there is a single source of truth for the nav.
 
-     2) The WISEai chat — mounted ONCE into a docked rail and NEVER torn
+     2) The WISEcodeAI chat — mounted ONCE into a docked rail and NEVER torn
         down. Moving between marketing pages is a soft, client-side route
         swap (only #mkt-body-module is replaced), so the conversation keeps
         going regardless of which page you're on. The only thing that changes
@@ -20,7 +20,7 @@
    Loaded as a module AFTER js/marketing.js (which exposes window.WiseMarketing
    and, seeing window.__WISE_MKT_SHELL__, defers its own boot to us).
 ===================================================================== */
-import { mountWISEaiChat, OWL_BUG, OWL_MARK } from './wiseai-chat.js';
+import { mountWISEcodeAIChat, OWL_BUG, OWL_MARK } from './wiseai-chat.js';
 
 /* App-store glyphs reused inside the "Get the app" reply. */
 const APPLE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.13 3-.79.9-2.1 1.6-3.19 1.51-.14-1.1.42-2.27 1.09-3 .77-.85 2.14-1.5 3.23-1.51zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.78-4.05-3.35-2.77-4.4-3.06-9.56-1.35-12.3 1.21-1.95 3.13-3.09 4.93-3.09 1.84 0 2.99 1.01 4.51 1.01 1.47 0 2.37-1.01 4.5-1.01 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.22 9.84z"/></svg>';
@@ -76,7 +76,7 @@ const NAV_HTML = `
           <a class="mkt-nav-menu-item" href="marketing-wiseai.html" data-route="wiseai">
             <span class="mkt-nav-menu-icon material-symbols-outlined" aria-hidden="true">forum</span>
             <span class="mkt-nav-menu-text">
-              <span class="mkt-nav-menu-title">WISEai<sup class="mkt-tm">™</sup></span>
+              <span class="mkt-nav-menu-title">WISEcodeAI<sup class="mkt-tm">™</sup></span>
               <span class="mkt-nav-menu-desc">Ask anything about any food, in plain language.</span>
             </span>
           </a>
@@ -145,7 +145,7 @@ const FOOTER_HTML = `
         </div>
         <div class="mkt-footer-col">
           <h4>Company</h4>
-          <a href="marketing-wiseai.html">WISEai™</a>
+          <a href="marketing-wiseai.html">WISEcodeAI™</a>
           <a href="marketing-alliance.html">WISEalliance™</a>
           <a href="pages/login.html">Sign in</a>
           <a href="pages/create-account.html">Create account</a>
@@ -161,9 +161,9 @@ const FOOTER_HTML = `
 /* The docked chat rail + scanner rail + mobile launcher. Injected once and
    never replaced by the router. */
 const SHELL_HTML = `
-  <aside id="mkt-chat-rail" aria-label="WISEai assistant"><div id="mkt-wiseai"></div></aside>
+  <aside id="mkt-chat-rail" aria-label="WISEcodeAI assistant"><div id="mkt-wiseai"></div></aside>
   <div id="mkt-chat-scrim" hidden></div>
-  <button type="button" id="mkt-chat-fab" aria-label="Open WISEai"></button>
+  <button type="button" id="mkt-chat-fab" aria-label="Open WISEcodeAI"></button>
   <aside id="mkt-scanner-panel" aria-label="WISE Web Scanner">
     <div class="mkt-scanner-card">
       <button type="button" class="mkt-scanner-close" data-scanner-close title="Close scanner" aria-label="Close scanner"><span class="material-symbols-outlined">close</span></button>
@@ -242,7 +242,7 @@ const INTENT_REPLIES = {
       <li><strong>WISEcode UPF Detector™</strong> — scan any product for an instant ultra-processed verdict.</li>
       <li><strong>WISEcoach™</strong> — an AI nutrition coach that weighs thousands of food attributes against your goals.</li>
       <li><strong>WISEip™</strong> — verification, reformulation and the food answer engine for brands and retailers.</li>
-      <li><strong>WISEai™</strong> — that's me: ask anything about any food, in plain language.</li>
+      <li><strong>WISEcodeAI™</strong> — that's me: ask anything about any food, in plain language.</li>
       <li><strong>WISEalliance™</strong> — the independent scientists who validate the science underneath all of it.</li>
     </ul>
     <p>See them side by side on the <a href="marketing-products.html">Products page →</a>, or tell me your role and I'll point you to the right one.</p>`,
@@ -291,7 +291,7 @@ const INTENT_ASKS = {
 };
 
 /* ---------------------------------------------------------------------
-   Large "start here" intent tiles for the full-page WISEai focus surface.
+   Large "start here" intent tiles for the full-page WISEcodeAI focus surface.
    These render through the shared chat's scorecard rail (a clicked tile drives
    a chat turn on its own intent, exactly like an intent chip). They're mounted
    once with the persistent chat and only shown on the focus route (CSS hides
@@ -319,14 +319,14 @@ function marketingReply(text) {
   if (/brand|retail|enterprise|business|api|database/.test(t))
     return `For brands, retailers and researchers, WISEcode answers any food question across 1M+ products, plus Non-UPF verification. Ready to set up? <a href="pages/create-account.html">Create your account →</a>`;
   if (/price|cost|free|how much/.test(t)) return "The WISEcode app is free to download and scan. Verification and enterprise plans are tailored — reach out from the <a href=\"marketing-enterprise.html\">WISEip</a> page.";
-  if (/hi|hello|hey|help/.test(t)) return "Hi! I'm WISEai. Ask me about any food, the Non-UPF standard, WISEcoach, or getting the app.";
+  if (/hi|hello|hey|help/.test(t)) return "Hi! I'm WISEcodeAI. Ask me about any food, the Non-UPF standard, WISEcoach, or getting the app.";
   return "Great question. WISE turns the complexity of food into clear answers — I can help with ultra-processed checks, the Non-UPF standard, WISEcoach, or getting the app. Which would you like?";
 }
 
 /* ---------------------------------------------------------------------
    Per-route config: the file it lives at, its <title>, the intent chips the
    chat should surface there, and whether the chat takes over the page ("Just
-   WISEai" focus mode). The chips are the ONLY thing that changes per page —
+   WISEcodeAI" focus mode). The chips are the ONLY thing that changes per page —
    the conversation itself is continuous.
 --------------------------------------------------------------------- */
 const ROUTES = {
@@ -430,9 +430,9 @@ const ROUTES = {
   },
   wiseai: {
     file: 'marketing-wiseai.html',
-    title: 'WISEai™ · WISE',
+    title: 'WISEcodeAI™ · WISE',
     focus: true,
-    announce: `This is <strong>WISEai™</strong> — ask me anything about your food. Right where we left off, plus a few ways to start:`,
+    announce: `This is <strong>WISEcodeAI™</strong> — ask me anything about your food. Right where we left off, plus a few ways to start:`,
     /* The three flagship journeys live in the large tiles (WISEAI_SCORECARDS);
        these smaller pill chips carry the secondary, more practical follow-ups. */
     intents: [
@@ -529,7 +529,7 @@ function boot() {
     if (galaxyOwl && !galaxyOwl.querySelector('svg')) galaxyOwl.innerHTML = OWL_MARK;
   };
 
-  /* ---- Mount the persistent WISEai chat ONCE ---- */
+  /* ---- Mount the persistent WISEcodeAI chat ONCE ---- */
   const initialRoute = resolveRoute(location.pathname, body.dataset.mktRoute);
   /* The route the persistent chat currently reflects. Tracked so a page switch
      only prompts a fresh acknowledgement + chips when the route truly changes
@@ -538,12 +538,12 @@ function boot() {
   const host = document.getElementById('mkt-wiseai');
   let chat = null;
   if (host) {
-    chat = mountWISEaiChat(host, {
-      title: 'WISEai™',
+    chat = mountWISEcodeAIChat(host, {
+      title: 'WISEcodeAI™',
       /* Marketing rail wants a bare topbar — no owl, no title, no "agents
          running" pill. Just the three-dot menu and the width toggle. */
       hideBranding: true,
-      heading: 'What can WISEai™ help with?',
+      heading: 'What can WISEcodeAI™ help with?',
       sub: 'Your food-truth assistant — scan, learn, decide',
       placeholder: 'Ask about any food…',
       intents: ROUTES[initialRoute].intents,
@@ -568,7 +568,7 @@ function boot() {
         { key: 'app', label: 'WISEcode UPF Detector', icon: 'search' },
         { key: 'coach', label: 'WISEcoach™', icon: 'restaurant_menu' },
         { key: 'enterprise', label: 'WISEip', icon: 'dataset' },
-        { key: 'wiseai', label: 'WISEai™', icon: 'forum' },
+        { key: 'wiseai', label: 'WISEcodeAI™', icon: 'forum' },
         { key: 'alliance', label: 'WISEalliance™', icon: 'groups' },
         { key: 'pricing', label: 'Pricing', icon: 'sell' },
         { key: 'getapp', label: 'Get the app', icon: 'get_app' },
@@ -728,7 +728,7 @@ function boot() {
           that section's intent — so untagged CTAs across every page still land
           the visitor on the right thread instead of doing nothing.
 
-     Either way it drives a real chat turn (user line + routed WISEai reply) and
+     Either way it drives a real chat turn (user line + routed WISEcodeAI reply) and
      the same side-effects a matching chip would (open the scanner, flash the
      section, etc.). Links that navigate to ANOTHER marketing route are left to
      the client-side router, which already announces the page switch in the chat
@@ -812,7 +812,7 @@ function resolveRoute(pathname, hint) {
   return FILE_TO_ROUTE[fileOf(pathname)] || 'home';
 }
 
-/* Per-route chrome: <title>, active nav link, and the "Just WISEai" focus mode
+/* Per-route chrome: <title>, active nav link, and the "Just WISEcodeAI" focus mode
    that lets the persistent chat take over the page. */
 function applyRouteChrome(routeKey, setChatOpen) {
   const route = ROUTES[routeKey];
@@ -839,7 +839,7 @@ function applyRouteChrome(routeKey, setChatOpen) {
 
   const focus = !!route.focus;
   document.body.classList.toggle('mkt-chat-focus', focus);
-  // On the focused "Just WISEai" route, make sure the chat is visible on mobile.
+  // On the focused "Just WISEcodeAI" route, make sure the chat is visible on mobile.
   if (focus && window.matchMedia('(max-width: 900px)').matches) setChatOpen && setChatOpen(true);
   else if (!focus && window.matchMedia('(max-width: 900px)').matches) setChatOpen && setChatOpen(false);
 }

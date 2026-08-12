@@ -2,7 +2,7 @@
  * Non-UPF Verification Dashboard — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on non-upf-dashboard.html, paired with the
- * WISEai dock. Mirrors the analytics-types.html chart language (custom SVG
+ * WISEcodeAI dock. Mirrors the analytics-types.html chart language (custom SVG
  * donut, a vertical processing-spectrum bar chart, and a verification-status
  * progress list) over a filterable product table. Uses the shared,
  * token-driven `adm-*` component set from wise.css.
@@ -133,7 +133,7 @@ function setViewMode(mode) {
 
 let chatApi = null;
 export function setNonUpfChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

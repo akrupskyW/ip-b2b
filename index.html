@@ -35,7 +35,7 @@
   </script>
 
   <!-- Hand the page over to the shared marketing shell (js/marketing-shell.js):
-       it injects the shared nav + persistent WISEai chat and runs the
+       it injects the shared nav + persistent WISEcodeAI chat and runs the
        client-side router. js/marketing.js sees this flag and defers its boot. -->
   <script>window.__WISE_MKT_SHELL__ = true;</script>
 
@@ -44,7 +44,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-  <!-- Legacy Material Icons — the shared WISEai chat module (js/wiseai-chat.js)
+  <!-- Legacy Material Icons — the shared WISEcodeAI chat module (js/wiseai-chat.js)
        renders its controls with <span class="material-symbols-outlined">. -->
 
   <!-- Tailwind (CDN) — utilities are mapped to the shared design tokens so
@@ -68,19 +68,19 @@
     };
   </script>
   <link rel="stylesheet" href="marketing.css" />
-  <!-- The exact product WISEai chat module styles (mirror of wise.css Section 2). -->
+  <!-- The exact product WISEcodeAI chat module styles (mirror of wise.css Section 2). -->
   <link rel="stylesheet" href="wiseai-chat.css" />
 </head>
 <body class="mkt mkt-appshell" data-mkt-route="home">
 
-  <!-- The shared nav + persistent WISEai chat rail + WISE Web Scanner are
+  <!-- The shared nav + persistent WISEcodeAI chat rail + WISE Web Scanner are
        injected by js/marketing-shell.js as siblings of #mkt-body-module, so the
        client-side router can swap the body content below without ever tearing
        down (or reloading) the chat conversation. -->
 
   <!-- ============================================================
        Body content module — the whole marketing page, full-bleed inside the
-       space beside the WISEai rail. ONLY this region is swapped when you move
+       space beside the WISEcodeAI rail. ONLY this region is swapped when you move
        between marketing pages.
   ============================================================= -->
   <div id="mkt-body-module">
@@ -263,10 +263,10 @@
             </div>
           </article>
           <article class="mkt-pillar mkt-pillar--media mkt-reveal">
-            <img class="mkt-pillar-media" src="assets/marketing/screens/app-chat.png" alt="WISEai" loading="lazy" />
+            <img class="mkt-pillar-media" src="assets/marketing/screens/app-chat.png" alt="WISEcodeAI" loading="lazy" />
             <div class="mkt-pillar-content">
               <span class="mkt-pillar-kicker">For Everyone</span>
-              <h3 class="mkt-pillar-title">WISEai™</h3>
+              <h3 class="mkt-pillar-title">WISEcodeAI™</h3>
               <p class="mkt-pillar-body">Your food-truth assistant — ask anything about any food, the Non-UPF standard or WISEcoach, and get instant, plain-language answers.</p>
               <a class="mkt-pillar-link" href="marketing-wiseai.html">Learn more <span class="material-symbols-outlined" style="font-size:18px">arrow_outward</span></a>
             </div>

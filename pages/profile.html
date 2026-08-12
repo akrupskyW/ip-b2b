@@ -29,7 +29,7 @@
   <style>
     /* =====================================================================
        Organization Profile — an account surface rendered by js/profile-flow.js
-       into #agent-main-scroll. It pairs the persistent WISEai chat dock (left)
+       into #agent-main-scroll. It pairs the persistent WISEcodeAI chat dock (left)
        with an editable org / contact / brand form (right): every intent chip
        drives a field here, and every on-form edit narrates back into the chat.
        Everything is token-driven so it tracks light/dark exactly.
@@ -138,6 +138,7 @@
       .pf-head-actions .pf-btn { width: 100%; }
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="profile" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

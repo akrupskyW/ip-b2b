@@ -3,7 +3,7 @@
  *
  * A developer-console surface rendered into #agent-main-scroll on api-keys.html.
  * It shows usage headline stats and a table of API keys with create / reveal /
- * copy / revoke, plus a one-time "new key" banner. The persistent WISEai dock
+ * copy / revoke, plus a one-time "new key" banner. The persistent WISEcodeAI dock
  * drives it: intent chips create a key, reveal the masked values, jump to usage,
  * or open the reference docs — and each on-page action narrates back.
  *
@@ -157,7 +157,7 @@ function createKey() {
   toast('New API key created', 'vpn_key');
 }
 
-/* ---- WISEai bridge -------------------------------------------------- */
+/* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export function runApiKeysIntent(action) {
   switch (action) {

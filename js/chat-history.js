@@ -277,7 +277,7 @@
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
       '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',
       /* The chat rides above the docked drawers so they read as tucking behind
-         it. The persistent WISEai dock manages its own (higher) z-index. */
+         it. The persistent WISEcodeAI dock manages its own (higher) z-index. */
       '#modules-row > .wch-chat-anchor:not(.wiseai-dock){position:relative;z-index:3;}',
       '#modules-row.modules-sticky{position:relative;}',
       '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:2;}',

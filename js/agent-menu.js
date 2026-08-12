@@ -3,7 +3,7 @@ import { initLirTooltip } from './lir-tooltip.js';
 
 /* Give every page that renders the WISE nav the shared floating tooltip. This
    covers the per-module header controls uniformly — the three-dot "More
-   options" menu, the width changer, move-side and close — on the WISEai chat,
+   options" menu, the width changer, move-side and close — on the WISEcodeAI chat,
    result panes and all agent modules, without each page wiring it up. It is
    idempotent (guards on window.__lirTooltipReady) and uses document-level
    delegation, so it also covers modules rendered after load. */
@@ -83,7 +83,7 @@ import { initLirTooltip } from './lir-tooltip.js';
 /* Load the data-chip explainer tooltip (js/chip-tooltip.js) on every page that
    renders the WISE nav. It gives every Shield / GRAS status chip an instant
    hover tooltip explaining what the chip means, with the same thumbs up/down +
-   intent-chip + free-form feedback affordance used on WISEai answers, right
+   intent-chip + free-form feedback affordance used on WISEcodeAI answers, right
    below the explanation in the same card. Injected here so it loads uniformly
    across the app and survives HTML edits; the loaded file self-guards and uses
    document-level delegation, so chips rendered after load are covered too. */
@@ -491,7 +491,7 @@ export const WISE_APP_NAV = [
   {
     type: 'group',
     id: 'wiseai',
-    label: 'WISEai',
+    label: 'WISEcodeAI',
     icon: 'auto_awesome',
     defaultOpen: false,
     children: [

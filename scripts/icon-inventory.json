@@ -927,7 +927,7 @@
         {
           "file": "pages/product-comparison.html",
           "line": 7993,
-          "label": "WISEai"
+          "label": "WISEcodeAI"
         },
         {
           "file": "pages/login.html",
@@ -1343,7 +1343,7 @@
         {
           "file": "pages/app-vision-deck.html",
           "line": 1764,
-          "label": "WISEai"
+          "label": "WISEcodeAI"
         },
         {
           "file": "pages/app-vision-deck.html",
@@ -2925,12 +2925,12 @@
         {
           "file": "pages/product-comparison.html",
           "line": 13343,
-          "label": "Ask WISEai about this metric"
+          "label": "Ask WISEcodeAI about this metric"
         },
         {
           "file": "pages/product-comparison.html",
           "line": 13432,
-          "label": "Chat with WISEai about"
+          "label": "Chat with WISEcodeAI about"
         }
       ]
     },
@@ -3276,7 +3276,7 @@
         {
           "file": "pages/product-portfolio.html",
           "line": 8647,
-          "label": "Ask WISEai a Question"
+          "label": "Ask WISEcodeAI a Question"
         }
       ]
     },
@@ -6659,12 +6659,12 @@
         {
           "file": "js/wiseai-chat.js",
           "line": 1213,
-          "label": "WISEai\u2122 cites where its answer comes from"
+          "label": "WISEcodeAI\u2122 cites where its answer comes from"
         },
         {
           "file": "js/wiseai-chat.js",
           "line": 2317,
-          "label": "WISEai\u2122 cites where its answer comes from"
+          "label": "WISEcodeAI\u2122 cites where its answer comes from"
         },
         {
           "file": "js/gras-verification-flow.js",
@@ -6990,12 +6990,12 @@
         "Material Symbols (outlined)"
       ],
       "count": 54,
-      "label": "WISEai\u2122 module width",
+      "label": "WISEcodeAI\u2122 module width",
       "placements": [
         {
           "file": "js/wiseai-chat.js",
           "line": 946,
-          "label": "WISEai\u2122 module width"
+          "label": "WISEcodeAI\u2122 module width"
         },
         {
           "file": "js/wiseai-chat.js",

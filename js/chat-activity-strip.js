@@ -20,6 +20,11 @@
  * this module just scans `.chat-messages-area` for those and (re)places ticks
  * whenever the transcript grows, reflows, or the module resizes. Toggled from
  * the shared Appearance popover ("Activity strip").
+ *
+ * Ticks are clickable: a click scrolls the transcript to the landmark and
+ * flashes it. The pane-resize drag handle shares this edge and its fixed
+ * overlay sits above the strip, so pane-resize.js forwards any plain click
+ * (mousedown+up with no drag) through to the tick beneath it.
  */
 
 const LS_KEY = 'wise-activity-strip';
@@ -169,8 +174,33 @@ function refresh(state) {
     tick.className = `wa-activity-tick wa-activity-tick--${type}`;
     tick.style.top = `${(frac * 100).toFixed(3)}%`;
     tick.title = meta.label;
+    tick.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      scrollToLandmark(messages, el);
+    });
     frag.appendChild(tick);
   });
 
   strip.replaceChildren(frag);
+}
+
+/* Bring a landmark into view (centered in the transcript's scrollport) and
+   flash it so the eye lands on the right row. */
+function scrollToLandmark(messages, el) {
+  if (!el || !messages.contains(el)) return;
+  const cRect = messages.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const top = (r.top - cRect.top) + messages.scrollTop
+    - Math.max(0, (messages.clientHeight - r.height) / 2);
+  const reduce = typeof matchMedia === 'function'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  messages.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+
+  /* Restart the flash even if the same landmark is clicked twice in a row. */
+  el.classList.remove('wa-activity-flash');
+  void el.offsetWidth;
+  el.classList.add('wa-activity-flash');
+  clearTimeout(el.__waFlashT);
+  el.__waFlashT = setTimeout(() => el.classList.remove('wa-activity-flash'), 1600);
 }

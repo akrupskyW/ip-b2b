@@ -15,7 +15,7 @@
      • the universal `.panel-fill` CSS that makes ANY pane at the fill tier grow
        to absorb the row's leftover space — no matter whether that pane sizes
        itself with fixed pixel widths (the utility panels) or with flex-grow
-       (the WISEai result panes). The per-page toggle handlers keep their own
+       (the WISEcodeAI result panes). The per-page toggle handlers keep their own
        target-resolution + persistence; they only need to add/remove these
        classes for the tier the shared spec hands them.
 
@@ -57,7 +57,7 @@
   function next(v) { return (clamp(v) + 1) % TIERS; }
 
   /* Read a pane's current tier from its width classes. Supports both class
-     schemes in the app: the utility/panel scheme (panel-*) and the WISEai
+     schemes in the app: the utility/panel scheme (panel-*) and the WISEcodeAI
      result-pane scheme (pane-*). */
   function tierOfEl(el) {
     if (!el || !el.classList) return 0;
@@ -98,7 +98,7 @@
   /* Universal "fill" tier. A pane at the fill tier grows (grow:1000) to take the
      row's remaining space regardless of any fixed width its own stylesheet sets
      — one rule covers the fixed-pixel utility panels AND anything else that opts
-     in with .panel-fill. The `.pane-fill` (WISEai result panes) keep their own
+     in with .panel-fill. The `.pane-fill` (WISEcodeAI result panes) keep their own
      flex-grow rule in wiseai.html; we still list it so drag-resize + querying
      treat them consistently. Fixed-width inner wrappers (…-inner) are stretched
      so a filled pane shows content across its new width instead of a gutter. */

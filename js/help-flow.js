@@ -3,7 +3,7 @@
  *
  * A help-center surface rendered into #agent-main-scroll on help.html: a search
  * box, browse-by-topic cards, expandable FAQs, and a contact-support panel. The
- * persistent WISEai dock drives it — intent chips search the FAQs, expand a
+ * persistent WISEcodeAI dock drives it — intent chips search the FAQs, expand a
  * topic, or open a support channel — and each on-page action narrates back.
  */
 
@@ -102,7 +102,7 @@ function paint() {
         <div class="hc-support-cards">
           <button type="button" class="hc-support-card" data-hc-action="chat">
             <span class="hc-support-ic"><span class="material-symbols-outlined">forum</span></span>
-            <span class="hc-support-title">Chat with WISEai</span>
+            <span class="hc-support-title">Chat with WISEcodeAI</span>
             <span class="hc-support-desc">Instant answers from the assistant</span>
           </button>
           <button type="button" class="hc-support-card" data-hc-action="email">
@@ -152,7 +152,7 @@ function setQuery(q) {
   paint();
 }
 
-/* ---- WISEai bridge -------------------------------------------------- */
+/* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export function runHelpIntent(action) {
   switch (action) {

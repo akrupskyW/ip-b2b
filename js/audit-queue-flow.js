@@ -2,7 +2,7 @@
  * Ingredient Audit Review (Audit Queue) — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on audit-queue.html, paired with the
- * WISEai dock. Reviewers triage ingredient mappings flagged by brand users:
+ * WISEcodeAI dock. Reviewers triage ingredient mappings flagged by brand users:
  * single-line status filter tiles, a search pill with an in-pill filter
  * popover (action / brand / flagged-date range), and a sortable grid table
  * with a per-row Resolve action. Uses the shared token-driven `adm-*`
@@ -84,7 +84,7 @@ const COLS = [
   { key: 'actions', label: '',                 sortable: false, end: true },
 ];
 /* min:0 tracks let every flexible column shrink so the table fits the narrow
-   board beside the WISEai dock (text truncates/clamps). */
+   board beside the WISEcodeAI dock (text truncates/clamps). */
 const GRID_COLS = 'minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.85fr) 156px minmax(0,2.3fr) 88px 112px';
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -98,7 +98,7 @@ let docListenersBound = false;
 
 let chatApi = null;
 export function setAuditQueueChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

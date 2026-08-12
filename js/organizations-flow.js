@@ -2,10 +2,10 @@
  * Organizations — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on organizations.html (an app-nav shell
- * page) and paired with the persistent WISEai dock to its LEFT. Mirrors the
- * Product Portfolio / Invoices module language: a serif header, at-a-glance
- * count tiles, a status filter strip, a live search, and a grid "table" of
- * customer organizations with per-row admin actions.
+ * page) and paired with the persistent WISEcodeAI dock to its LEFT. Mirrors the
+ * Product Portfolio / Invoices module language: a serif header, a live
+ * search, at-a-glance count tiles, a status filter strip, and a grid "table"
+ * of customer organizations with per-row admin actions.
  *
  * All classes are the shared, token-driven `adm-*` set in wise.css, so the
  * surface tracks light/dark exactly like the rest of the app.
@@ -19,7 +19,6 @@ function esc(s) {
 
 /* ---- At-a-glance organization counts (top metric strip) ------------- */
 const COUNTS = [
-  { id: 'total',     icon: 'apartment',    label: 'Total Orgs',           num: 315, sub: 'All organizations' },
   { id: 'active',    icon: 'bolt',         label: 'Active Orgs',          num: 15,  sub: 'Active status', accent: true },
   { id: 'nonupf',    icon: 'verified',     label: 'Non-UPF Partners',     num: 49,  sub: 'Have a verified shield' },
   { id: 'selfreg',   icon: 'how_to_reg',   label: 'Self Registered',      num: 12,  sub: 'Signed up directly' },
@@ -92,14 +91,14 @@ function initials(name) {
 
 /* ---- Sorting -------------------------------------------------------- */
 const COLS = [
+  { key: 'actions',  label: 'Actions',        sortable: false },
   { key: 'name',     label: 'Company + Type', sortable: true,  value: (o) => o.name.toLowerCase(), type: 'text' },
   { key: 'status',   label: 'Status',         sortable: true,  value: (o) => o.status, type: 'text' },
   { key: 'joined',   label: 'Joined',         sortable: true,  value: (o) => (o.joined === '—' ? 0 : Date.parse(o.joined) || 0), type: 'num' },
   { key: 'users',    label: 'Users',          sortable: true,  value: (o) => o.users, type: 'num', num: true },
   { key: 'products', label: 'Products',       sortable: true,  value: (o) => o.products, type: 'num', num: true },
-  { key: 'actions',  label: 'Actions',        sortable: false, end: true },
 ];
-const GRID_COLS = 'minmax(210px, 2.2fr) 128px 148px 80px 96px 72px';
+const GRID_COLS = '72px minmax(210px, 2.2fr) 128px 148px 80px 96px';
 
 /* ---- Per-row actions (collapsed into a three-dot menu) -------------- */
 const ROW_ACTIONS = [
@@ -120,7 +119,7 @@ let sortDir = 1;
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
 export function setOrganizationsChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');
@@ -181,12 +180,12 @@ function rowHtml(o) {
     : `<span class="adm-idcell-body"><span style="font-weight:600">${esc(o.joined)}</span>${o.via ? `<span class="adm-idcell-sub">${esc(o.via)}</span>` : ''}</span>`;
   return `
     <div class="adm-trow" data-adm-row="${esc(o.name)}" data-adm-status="${esc(o.status)}">
+      <span class="adm-td adm-td--actions">${rowMenuHtml(o)}</span>
       <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">${esc(initials(o.name))}</span><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(o.name)}</span><span class="adm-idcell-sub">${esc(o.type)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${chip.cls}"><span class="material-symbols-outlined">${esc(chip.icon)}</span>${esc(chip.label)}</span></span>
       <span class="adm-td" style="font-size:0.8rem">${joined}</span>
       <span class="adm-td adm-td--num${o.users ? ' is-hot' : ''}">${o.users}</span>
       <span class="adm-td adm-td--num${o.products ? ' is-hot' : ''}">${o.products}</span>
-      <span class="adm-td adm-td--end">${rowMenuHtml(o)}</span>
     </div>`;
 }
 
@@ -221,9 +220,7 @@ function paint() {
         </div>
       </header>
 
-      <div class="adm-metrics">${metricsHtml()}</div>
-
-      <div class="adm-toolbar" style="margin-top:18px">
+      <div class="adm-toolbar">
         <div class="adm-search-inline has-filter">
           <span class="material-symbols-outlined">search</span>
           <input type="text" class="adm-search" data-adm-search placeholder="Search organization, brand, contact, or email…" aria-label="Search organizations" value="${esc(query)}" />
@@ -231,7 +228,9 @@ function paint() {
         </div>
       </div>
 
-      <div class="adm-stats" style="margin-bottom:14px">${statsHtml()}</div>
+      <div class="adm-metrics">${metricsHtml()}</div>
+
+      <div class="adm-stats" style="margin-top:18px; margin-bottom:14px">${statsHtml()}</div>
 
       <div class="adm-card">
         <div class="adm-table-card">
@@ -317,8 +316,30 @@ function closeRowMenus(keep) {
     const btn = menu.querySelector('.adm-rowmenu-btn');
     if (btn) btn.setAttribute('aria-expanded', 'false');
     const pop = menu.querySelector('.adm-rowmenu-pop');
-    if (pop) pop.hidden = true;
+    if (pop) { pop.hidden = true; pop.style.cssText = ''; }
   });
+}
+
+/* Anchor the menu to the button with fixed positioning so it can never be
+   clipped by the scrollable main pane (or any other overflow ancestor). */
+function placeRowMenu(menuBtn, pop) {
+  const PAD = 8;
+  pop.style.position = 'fixed';
+  pop.style.zIndex = '1000';
+  pop.style.visibility = 'hidden';
+  pop.style.right = 'auto';
+  pop.hidden = false;
+  const btnRect = menuBtn.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  // Right-align to the button, then clamp inside the viewport.
+  let left = btnRect.right - w;
+  left = Math.max(PAD, Math.min(left, window.innerWidth - w - PAD));
+  // Open below; flip above if there isn't room.
+  let top = btnRect.bottom + 4;
+  if (top + h > window.innerHeight - PAD) top = Math.max(PAD, btnRect.top - h - 4);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+  pop.style.visibility = '';
 }
 
 function repaintMetrics() {
@@ -381,7 +402,10 @@ export function renderOrganizations(mainEl) {
       menu.classList.toggle('is-open', open);
       menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       const pop = menu.querySelector('.adm-rowmenu-pop');
-      if (pop) pop.hidden = !open;
+      if (pop) {
+        if (open) placeRowMenu(menuBtn, pop);
+        else { pop.hidden = true; pop.style.cssText = ''; }
+      }
       return;
     }
     const filter = e.target.closest('[data-adm-filter]');
@@ -396,6 +420,9 @@ export function renderOrganizations(mainEl) {
     if (e.target.closest && e.target.closest('.adm-rowmenu')) return;
     closeRowMenus(null);
   });
+  // Fixed-position menus don't track their button while scrolling — close them.
+  window.addEventListener('scroll', () => closeRowMenus(null), { capture: true, passive: true });
+  window.addEventListener('resize', () => closeRowMenus(null));
   mainEl.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const sortH = e.target.closest('[data-adm-sort]');
@@ -409,7 +436,7 @@ export function renderOrganizations(mainEl) {
 }
 
 /* ==================================================================== */
-/* WISEai bridge                                                        */
+/* WISEcodeAI bridge                                                        */
 /* ==================================================================== */
 function countFor(status) { return status ? ORGS.filter((o) => o.status === status).length : ORGS.length; }
 

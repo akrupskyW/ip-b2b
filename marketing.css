@@ -831,7 +831,7 @@ html.dark .mkt-feature-list .material-symbols-outlined { color: #6FD79E; }
 
 /* ---------- Pricing plans ----------
    Reusable plan cards for the Pricing page. Each product family (free consumer
-   apps, WISEai token tiers, WISEip for brands, WISEalliance) drops its plans
+   apps, WISEcodeAI token tiers, WISEip for brands, WISEalliance) drops its plans
    into a .mkt-pricing-grid; the card itself is shape-agnostic so a free plan, a
    metered tier and a "let's talk" plan all read consistently. */
 .mkt-pricing-grid {
@@ -854,7 +854,7 @@ html.dark .mkt-feature-list .material-symbols-outlined { color: #6FD79E; }
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .mkt-plan:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: var(--primary-20); }
-/* Highlighted plan (e.g. the recommended WISEai tier). */
+/* Highlighted plan (e.g. the recommended WISEcodeAI tier). */
 .mkt-plan--featured { border-color: var(--primary); box-shadow: var(--shadow-2); }
 html.dark .mkt-plan--featured { border-color: var(--primary-bright); }
 .mkt-plan-badge {
@@ -884,8 +884,8 @@ html.dark .mkt-plan-features .material-symbols-outlined { color: #6FD79E; }
 .mkt-plan-cta { margin-top: auto; }
 .mkt-plan-cta .mkt-btn { width: 100%; }
 
-/* ---------- Synced pricing rows (WISEai tiers) ----------
-   When the three WISEai plans sit side by side, align every comparison row
+/* ---------- Synced pricing rows (WISEcodeAI tiers) ----------
+   When the three WISEcodeAI plans sit side by side, align every comparison row
    across the cards with subgrid: the name, price, note, divider, each feature
    line and the CTA line up perfectly from Basic to Pro. Cards can end up
    different heights and the rows still match. Below the 3-up breakpoint the
@@ -959,8 +959,8 @@ html.dark .mkt-plan-features .material-symbols-outlined { color: #6FD79E; }
 html.dark .mkt-footer-col a:hover { color: var(--primary-bright); }
 .mkt-footer-bottom { max-width: var(--mkt-maxw); margin: clamp(36px, 5vw, 56px) auto 0; padding: 24px var(--mkt-gutter) 0; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; color: var(--text-subtle); font-size: 0.85rem; }
 
-/* ---------- WISEai chat dock ----------
-   A self-contained marketing chat surface that mirrors the app's WISEai
+/* ---------- WISEcodeAI chat dock ----------
+   A self-contained marketing chat surface that mirrors the app's WISEcodeAI
    module (owl mark, title, suggestion chips, message bubbles) using the
    shared tokens. Desktop: a sticky left rail. Mobile: collapses to a floating
    owl icon that expands to a full-screen chat. */
@@ -1219,7 +1219,7 @@ html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-brig
   to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* --- The WISE owl core (the sun) — the EXACT pulsating owl from the WISEai
+/* --- The WISE owl core (the sun) — the EXACT pulsating owl from the WISEcodeAI
    chat welcome screen. It reuses .ws-logo / .ws-pulse-ring from wiseai-chat.css
    (same primary color, same breathing + ring-bloom animation, same UX); we only
    scale it up here to read as the galaxy's glowing center. --- */
@@ -1333,7 +1333,7 @@ html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-brig
 }
 
 /* ===================================================================
-   APP-STYLE SHELL — WISEai docked as a left rail (the EXACT product chat
+   APP-STYLE SHELL — WISEcodeAI docked as a left rail (the EXACT product chat
    module), with the whole page living beside it as a full-bleed body
    content module. The rail is fixed so it never floats over content.
 =================================================================== */
@@ -1390,7 +1390,7 @@ body.mkt-chat-wide.mkt-chat-triple.mkt-chat-fill { --mkt-chat-w: min(960px, 82vw
 body.mkt-scanner-open.mkt-appshell .mkt-footer {
   margin-left: calc(var(--mkt-chat-w) + var(--mkt-scanner-w));
 }
-/* Focus mode ("Just WISEai") hides the page body — hide the footer with it. */
+/* Focus mode ("Just WISEcodeAI") hides the page body — hide the footer with it. */
 body.mkt-chat-focus.mkt-appshell .mkt-footer { display: none; }
 @media (max-width: 900px) {
   .mkt-appshell .mkt-footer,
@@ -1459,7 +1459,7 @@ html.dark #mkt-chat-rail #mkt-wiseai .chat-topbar {
 
 /* ===================================================================
    WISE WEB SCANNER MODULE — docked as a second rail right beside the
-   WISEai chat when the "Is my food ultra-processed?" intent fires. It
+   WISEcodeAI chat when the "Is my food ultra-processed?" intent fires. It
    slides in, reflows the body module + floating nav, and embeds the full
    standalone scanner in an iframe (its own theme/tokens).
 =================================================================== */
@@ -1519,7 +1519,7 @@ body.mkt-scanner-open.mkt-appshell #mkt-body-module {
 }
 
 /* ===================================================================
-   "JUST WISEai" FOCUS MODE — the same persistent chat rail, but taking over
+   "JUST WISEcodeAI" FOCUS MODE — the same persistent chat rail, but taking over
    the page. The body module steps aside and the docked chat fills the shell,
    so navigating to (or away from) marketing-wiseai.html never reloads or
    restarts the conversation — it just expands / contracts the one chat.
@@ -1625,7 +1625,7 @@ body.mkt-chat-focus #mkt-scanner-panel { z-index: 90; }
 /* A hair of dimming while a soft route swap is in flight. */
 body.mkt-routing #mkt-body-module { opacity: 0.55; transition: opacity .12s ease; }
 
-/* ---- Rich WISEai replies on the marketing surface ---- */
+/* ---- Rich WISEcodeAI replies on the marketing surface ---- */
 #mkt-wiseai .sc-line-wiseai .sc-line-body p { margin: 0 0 8px; }
 #mkt-wiseai .sc-line-wiseai .sc-line-body p:last-of-type { margin-bottom: 0; }
 #mkt-wiseai .sc-line-wiseai .sc-line-body ul {
@@ -1633,7 +1633,7 @@ body.mkt-routing #mkt-body-module { opacity: 0.55; transition: opacity .12s ease
 }
 #mkt-wiseai .sc-line-wiseai .sc-line-body li { line-height: 1.45; }
 
-/* "Get the app" — QR code + store badges rendered inside a WISEai reply. */
+/* "Get the app" — QR code + store badges rendered inside a WISEcodeAI reply. */
 #mkt-wiseai .mkt-chat-getapp {
   display: flex; gap: 14px; align-items: center; margin-top: 12px; flex-wrap: wrap;
 }
@@ -1654,7 +1654,7 @@ body.mkt-routing #mkt-body-module { opacity: 0.55; transition: opacity .12s ease
 #mkt-wiseai .mkt-store-badge strong { display: block; font-size: 13px; line-height: 1.25; }
 
 /* ===================================================================
-   DEDICATED WISEai PAGE (marketing-wiseai.html) — the EXACT shared chat
+   DEDICATED WISEcodeAI PAGE (marketing-wiseai.html) — the EXACT shared chat
    module on its own, full-bleed width + height beneath the floating nav.
 =================================================================== */
 body.mkt-wiseai-page { height: 100dvh; overflow: hidden; }

@@ -29,7 +29,7 @@
     body[data-nav-id="invoices"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="invoices"] #modules-row { margin-top: 0; }
 
-    /* WISEai chat on this surface reads bottom-up: the welcome anchors to the
+    /* WISEcodeAI chat on this surface reads bottom-up: the welcome anchors to the
        bottom of the pane (just above the input) and grows upward, so there's no
        dead gap between the last chip and the composer. `safe` keeps the top
        reachable when the content is taller than the pane. */
@@ -207,6 +207,7 @@
       .inv-wrap { padding: 20px 20px 48px; }
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="invoices" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

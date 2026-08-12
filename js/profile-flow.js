@@ -6,7 +6,7 @@
  * organization as an editable form — org details, contact info, mailing
  * address, website / EIN, associated brand, plus brand logo + banner uploads.
  *
- * It is built to work HAND-IN-HAND with the persistent WISEai chat dock that
+ * It is built to work HAND-IN-HAND with the persistent WISEcodeAI chat dock that
  * sits to its LEFT (profile.html pins `data-default-dock="left"`):
  *
  *   • chat → form  Every intent chip (and typed request like "change the email
@@ -103,7 +103,7 @@ export function setProfileChat(api) { chatApi = api; }
 function pushChat(html) {
   if (!chatApi || !html) return;
   chatApi.hideWelcome?.();
-  chatApi.addWISEai(html);
+  chatApi.addWISEcodeAI(html);
 }
 
 /* ---- Toast --------------------------------------------------------- */
@@ -257,7 +257,7 @@ function focusUpload(kind) {
 /* ==================================================================== */
 
 /**
- * Apply a value to a field and return the WISEai confirmation HTML.
+ * Apply a value to a field and return the WISEcodeAI confirmation HTML.
  *   source 'chat' → set the DOM control too (the chat drove it)
  *   source 'form' → the DOM already holds the value (the user typed it)
  */
@@ -385,7 +385,7 @@ export function renderProfile(mainEl) {
 }
 
 /* ==================================================================== */
-/* WISEai bridge (chat → form)                                          */
+/* WISEcodeAI bridge (chat → form)                                          */
 /* ==================================================================== */
 
 /* Route a bare intent id to the right on-form action + arm the field so the

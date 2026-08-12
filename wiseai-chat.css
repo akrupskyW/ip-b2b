@@ -29,7 +29,7 @@
 }
 
 /* ===================================================================
-   WISEai chat module — the EXACT shared chat surface used in the WISE
+   WISEcodeAI chat module — the EXACT shared chat surface used in the WISE
    product. Extracted verbatim from Section 2 of pages/wise.css ("was
    wiseai-chat.css") so marketing pages can mount the real component via
    js/wiseai-chat.js. KEEP IN SYNC with pages/wise.css Section 2.
@@ -44,18 +44,18 @@
 }
 
 /* =============================================================
-   WISEai Chat Module — the ONE shared chat surface for WISE.
+   WISEcodeAI Chat Module — the ONE shared chat surface for WISE.
    A framework-free extraction of the chat module in
    pages/ai-chat.html (welcome screen + WISE-owl, intent chips,
    plain message lines, floating-label input rail) so the exact
-   same component can be mounted on any page via mountWISEaiChat().
+   same component can be mounted on any page via mountWISEcodeAIChat().
 
    Depends only on the design tokens declared in agent-page.css
    (--primary, --surface, --border, etc.). Adds the few extra
    tokens the chat needs as scoped fallbacks below.
 ============================================================= */
 
-/* Sized right-rail dock that any module can drop the WISEai card into. */
+/* Sized right-rail dock that any module can drop the WISEcodeAI card into. */
 .wiseai-dock {
   display: none;
   flex-shrink: 0;
@@ -65,7 +65,7 @@
   max-height: 100%;
   order: 99;
 }
-/* Stay pinned during horizontal scroll, like the #menu-panel rail, so WISEai
+/* Stay pinned during horizontal scroll, like the #menu-panel rail, so WISEcodeAI
    never scrolls off-screen — it sticks to the edge it's docked to. A sticky
    element only pins when it has a SINGLE inline inset; setting both left:0 and
    right:0 makes the constraint rect span the whole scrollport, so a narrower
@@ -81,14 +81,14 @@
    portfolio #pf-chat-panel dock). */
 .wiseai-dock.wiseai-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
 @media (max-width: 1100px) { .wiseai-dock.wiseai-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
-/* WISEai width cycles through three tiers: single (380/330px), double
+/* WISEcodeAI width cycles through three tiers: single (380/330px), double
    (680/560px), and triple (980/800px). The header width icon reflects the tier;
    the base max-width above is overridden per-tier so triple can grow past
    double, while min-width keeps it from shrinking below single. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). The width
    is a DEFINITE length (so the sticky-clamp still works) but viewport-capped —
-   exactly like ai-chat.html's #chat-shell — so widening WISEai never overflows
+   exactly like ai-chat.html's #chat-shell — so widening WISEcodeAI never overflows
    the modules row on a narrow screen. */
 .wiseai-dock.wiseai-dock-open.panel-wide {
   --wiseai-w: min(680px, 90vw);
@@ -100,7 +100,7 @@
 @media (max-width: 1100px) {
   .wiseai-dock.wiseai-dock-open.panel-wide { --wiseai-w: min(560px, 90vw); }
 }
-/* Triple-width (third tier) — lifts the double cap so WISEai can grow further. */
+/* Triple-width (third tier) — lifts the double cap so WISEcodeAI can grow further. */
 .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple {
   --wiseai-w: min(980px, 96vw);
   flex: 0 0 var(--wiseai-w);
@@ -111,13 +111,13 @@
 @media (max-width: 1100px) {
   .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple { --wiseai-w: min(800px, 96vw); }
 }
-/* Solo state — when WISEai is the ONLY module left in the row it must not
+/* Solo state — when WISEcodeAI is the ONLY module left in the row it must not
    stretch to fill the empty space. It stays capped at (at most) double width
    (above) and is centre-docked, overriding any left/right preference. Auto
    margins centre the lone flex item; js/wiseai-dock.js also forces the
    wiseai-dock-center class so it stays sticky-clamped. */
 .wiseai-dock.wiseai-dock-open.wiseai-dock-solo {
-  /* Alone in the row, WISEai may grow to fill the empty space, but stays capped
+  /* Alone in the row, WISEcodeAI may grow to fill the empty space, but stays capped
      at (at most) double width. Overrides the fixed single-tier flex above. */
   flex: 1 1 auto;
   max-width: 680px;
@@ -129,9 +129,9 @@
    and pins it to the LEFT edge instead. Persisted via js/wiseai-dock.js so the
    side carries across page switches. */
 .wiseai-dock.wiseai-dock-open.wiseai-dock-left { order: -1; left: 0; right: auto; }
-/* When the sticky menu rail is open, pin the LEFT-docked WISEai just to the
+/* When the sticky menu rail is open, pin the LEFT-docked WISEcodeAI just to the
    RIGHT of it (260px rail + 8px row gap) so the two sit side-by-side as frozen
-   columns instead of WISEai disappearing behind the higher-z menu. */
+   columns instead of WISEcodeAI disappearing behind the higher-z menu. */
 #menu-panel.mp-open ~ .wiseai-dock.wiseai-dock-open.wiseai-dock-left { left: 268px; }
 /* Center mode = the DEFAULT "floating in the middle" state. Unlike left/right
    (which lock to one edge with a SINGLE inset), center keeps BOTH insets
@@ -160,7 +160,7 @@
    modules re-flow and resize across their single/double/triple widths. */
 .wiseai-dock.wiseai-dock-open.wiseai-dock-collapsed { display: none; }
 
-/* Floating circle — the collapsed WISEai module. A fixed FAB carrying the
+/* Floating circle — the collapsed WISEcodeAI module. A fixed FAB carrying the
    WISE-owl bug; click it to reopen the module. Hidden until `is-shown`. */
 .wiseai-dock-fab {
   position: fixed;
@@ -386,6 +386,16 @@ html.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel
   opacity: 1;
   box-shadow: none;
 }
+/* Blue chat surface (chat-tint) repaints the module background — the backing
+   circles must use the SAME mix or they read as white/navy dots on the blue. */
+html.chat-tint:not(.dark).header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.chat-tint:not(.dark).header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  background: color-mix(in srgb, var(--primary) 5%, #fff);
+}
+html.dark.chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn,
+html.dark.chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+}
 
 /* Wide state — legacy hook when panel-wide is applied to an inner card; the
    dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
@@ -426,7 +436,7 @@ html.dark .chat-messages-area { background: transparent; }
    readability; the meta row (timestamp + grounding) stays small below. */
 /* gap (12px) + avatar (30px) match the header's icon→title spacing so the
    avatar column lines up under the topbar owl and the body text lines up under
-   the "WISEai™" title. */
+   the "WISEcodeAI™" title. */
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
   margin-bottom: 1.1rem; color: var(--text);
@@ -437,8 +447,8 @@ html.dark .chat-messages-area { background: transparent; }
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
 }
-/* Per-line profile avatars in place of the old "You" / "WISEai™" labels.
-   WISEai = the WISE-owl bug (same mark as the header) in a brand-blue circle.
+/* Per-line profile avatars in place of the old "You" / "WISEcodeAI™" labels.
+   WISEcodeAI = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */
 .sc-avatar {
   flex-shrink: 0;
@@ -449,7 +459,7 @@ html.dark .chat-messages-area { background: transparent; }
   user-select: none;
 }
 .sc-avatar svg { width: 18px; height: auto; }
-/* The WISEai owl bug rides on a black chip in every chat module app-wide (the
+/* The WISEcodeAI owl bug rides on a black chip in every chat module app-wide (the
    canonical product-comparison / product-portfolio pages set this explicitly). Kept as the
    shared default so any page using the base classes matches without a local override. */
 .sc-avatar-wiseai {
@@ -472,7 +482,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 @keyframes scBlink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
 /* Thinking indicator — a single quiet spinner paired with a live, contextual
    status message (e.g. "Building your dashboard"). Replaces the old three
-   bouncing dots so the wait always says what WISEai is actually doing. */
+   bouncing dots so the wait always says what WISEcodeAI is actually doing. */
 .sc-typing-spin {
   width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; box-sizing: border-box;
   border: 2px solid color-mix(in srgb, var(--text-subtle) 32%, transparent);
@@ -481,7 +491,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 @keyframes scSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-typing-spin { animation: none; } }
 /* Conversation-in-progress indicator — a light-blue progress ring wrapped
-   around the WISEai owl avatar (the owl chip rides on top as a layer above the
+   around the WISEcodeAI owl avatar (the owl chip rides on top as a layer above the
    ring), replacing the separate inline spinner. The status label sits directly
    to its right (the flex .sc-line-body column). */
 .sc-line-typing .sc-avatar-wiseai { position: relative; }
@@ -503,7 +513,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
      bottom, not stacked at the top with dead space below. `safe` flips back to
      top-alignment the moment the content is taller than the dock, and overflow-y
      lets you scroll up to the logo — otherwise a short dock would clip it behind
-     the input rail. Applies to every WISEai surface. */
+     the input rail. Applies to every WISEcodeAI surface. */
   justify-content: safe flex-end; overflow-y: auto;
   padding: 2rem; font-size: var(--fs-ui);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -512,7 +522,7 @@ html.dark .sc-welcome { background: transparent; }
 .sc-welcome.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
 
 /* Keep the large welcome cards (scorecards) and the intent chips centered no
-   matter how wide the chat gets (e.g. the full-width WISEai surface). The
+   matter how wide the chat gets (e.g. the full-width WISEcodeAI surface). The
    welcome column already centers its items; capping these full-width blocks to
    a comfortable max-width + auto side margins keeps them as a centered cluster
    instead of stretching edge-to-edge. Harmless in the narrow docked layout,
@@ -546,9 +556,26 @@ html.dark .sc-welcome { background: transparent; }
   0%, 100% { box-shadow: 0 0 24px rgba(37, 80, 124, 0.45), 0 0 48px rgba(37, 80, 124, 0.18); transform: scale(1); }
   50% { box-shadow: 0 0 36px rgba(37, 80, 124, 0.55), 0 0 72px rgba(37, 80, 124, 0.28); transform: scale(1.04); }
 }
+/* Slow, simple echo of the ring-bloom — but INSIDE the owl's eyes. A CSS-only
+   overlay (the SVG mark is untouched): the background is painted in the SAME
+   viewBox as the owl, so its two soft primary-blue glows land exactly on the
+   eyes at any logo size. padding:inherit + a content-box background make the
+   overlay share the owl svg's content box (matching its preserveAspectRatio),
+   so no per-context positioning math is needed. It only breathes opacity —
+   slower and gentler than the expanding pulse rings, in the same brand blue. */
+.ws-logo::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  padding: inherit; box-sizing: border-box;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 193 100'><defs><radialGradient id='wseye'><stop offset='0' stop-color='rgb(37,80,124)' stop-opacity='0.9'/><stop offset='0.55' stop-color='rgb(37,80,124)' stop-opacity='0.4'/><stop offset='1' stop-color='rgb(37,80,124)' stop-opacity='0'/></radialGradient></defs><circle cx='63.486' cy='54.078' r='14' fill='url(%23wseye)'/><circle cx='129.254' cy='54.078' r='14' fill='url(%23wseye)'/></svg>");
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+  background-origin: content-box; background-clip: content-box;
+  opacity: 0; animation: wsEyePulse 7s ease-in-out infinite;
+}
+@keyframes wsEyePulse { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) {
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
+  .ws-logo::after { animation: none; opacity: 0.3; }
 }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
@@ -580,7 +607,7 @@ html.dark .ws-heading { color: var(--text); }
 .ws-chips-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
 html.dark .ws-chips-wrap::after { background: linear-gradient(to left, var(--surface) 0%, transparent 100%); }
-/* Inside the WISEai dock the card surface is the navy gradient (#1A2339), not
+/* Inside the WISEcodeAI dock the card surface is the navy gradient (#1A2339), not
    --surface — so the edge fades must blend into that, otherwise they read as a
    darker band beside the chips in dark mode. */
 html.dark .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
@@ -589,7 +616,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-wrap.has-next::after { opacity: 1; }
 .ws-hint { font-size: var(--fs-ui); color: var(--text-subtle); text-align: center; letter-spacing: 0.02em; margin: 0; }
 
-/* Persistent intent-chip rail (opt-in via mountWISEaiChat({ persistChips:true }))
+/* Persistent intent-chip rail (opt-in via mountWISEcodeAIChat({ persistChips:true }))
    — a single horizontal, snap-scrolling row of every conversational route,
    docked just above the input for the whole conversation. Hidden while the
    welcome screen is up (which already shows the chips); revealed once the
@@ -599,9 +626,9 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-bar .ws-chips { margin-bottom: 0; padding: 2px 2px; }
 .ws-chips-bar::before, .ws-chips-bar::after { width: 20px; }
 
-/* Inline intent chips (opt-in via mountWISEaiChat({ inlineChips:true })) — a
+/* Inline intent chips (opt-in via mountWISEcodeAIChat({ inlineChips:true })) — a
    block of suggested actions that lives inside the transcript, trailing the
-   latest WISEai reply like a regular chat's suggested replies. Left-aligned and
+   latest WISEcodeAI reply like a regular chat's suggested replies. Left-aligned and
    indented to sit under the assistant's message body (avatar 30px + 12px gap). */
 .sc-inline-chips {
   display: flex; flex-wrap: wrap; gap: 8px;
@@ -638,7 +665,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 html.dark .sc-open-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
 
-/* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
+/* ===== Welcome score cards (opt-in via mountWISEcodeAIChat({ scorecards })) =====
    The "Your portfolio at a glance" rail, ported into the shared dock: a
    horizontal, snap-scrolling row of cards with floating scroll controls and
    soft edge fades. Two variants (intro / wiseai) carry a sleeker tinted backdrop
@@ -666,11 +693,15 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
   display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left;
   flex: 0 0 244px; min-width: 244px; scroll-snap-align: start;
   padding: 14px 16px; aspect-ratio: 16 / 9;
-  background: var(--surface-2); border: 1px solid var(--border-strong);
+  /* Same blue-tinted surface as the intent chips below (.chip / .ws-intent-chip)
+     so the welcome's large cards and small chips read as one family. */
+  background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
   border-radius: 10px !important; cursor: pointer; font-family: inherit;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.ws-scorecard:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12); transform: translateY(-2px); }
+.ws-scorecard:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12); transform: translateY(-2px); }
+html.dark .ws-scorecard { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
+html.dark .ws-scorecard:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 20%, transparent); }
 .ws-scorecard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 /* Bare chevrons sitting just off the rail edges — no chunky circle. The edge
    fades below provide the backdrop that keeps the glyphs legible. */
@@ -703,13 +734,13 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 /* Bare glyphs — no chip behind them — sized up a touch for presence. */
 .ws-sc-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ws-sc-icon .material-symbols-outlined { font-size: 24px !important; }
-/* Metric cards: neutral (foreground) icon — intro/WISEai keep the brand accent. */
+/* Metric cards: neutral (foreground) icon — intro/WISEcodeAI keep the brand accent. */
 .ws-sc-icon--brand,
 .ws-sc-icon--warn,
 .ws-sc-icon--alert { color: var(--text); }
 .ws-sc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
 .ws-sc-pill .material-symbols-outlined { font-size: 12px !important; }
-/* Metric-card pills: neutral grey "shades of black" (intro/WISEai keep accent). */
+/* Metric-card pills: neutral grey "shades of black" (intro/WISEcodeAI keep accent). */
 .ws-sc-pill--up,
 .ws-sc-pill--warn,
 .ws-sc-pill--alert { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
@@ -970,17 +1001,10 @@ html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, 
 .wiseai-dock .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
 
 /* ===== Inline conversation event marker — e.g. a mid-thread database switch.
-   Reads as a quiet user action (plain inline text, no container/icon), with the
-   leading phrase carried in the brand accent color. */
-.sc-line-event { display: flex; justify-content: flex-start; margin: 6px 0; }
-.sc-event {
-  display: inline-flex; align-items: baseline; gap: 8px; max-width: 92%;
-  color: var(--text-muted); font-size: 12.5px; line-height: 1.4;
-}
-.sc-event-text { min-width: 0; }
-.sc-event-label { color: var(--primary); font-weight: 600; }
-.sc-event-text strong { color: var(--text); font-weight: 700; }
-.sc-event-time { font-size: 10.5px; color: var(--text-subtle); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+   Rendered as a line from the member (their avatar + the standard message type
+   size), with the leading phrase carried in the brand accent color. */
+.sc-line-event .sc-event-label { color: var(--primary); font-weight: 600; }
+.sc-line-event .sc-line-body strong { color: var(--text); font-weight: 700; }
 
 /* ===== Database selector popover — grouped, searchable, filterable ===== */
 .fl-db-popover { padding: 0; min-width: 340px; max-width: 380px; gap: 0; overflow: hidden; }
@@ -1180,6 +1204,17 @@ html.chat-tint:not(.dark) .chat-input-rail,
 html.chat-tint:not(.dark) .sc-welcome,
 html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
 html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+/* Carousel edge fades (large scorecards + small intent chips) must blend into
+   the tinted welcome surface — with the default fades (var(--bg)) they read as
+   linen bands at the rail edges over the blue-washed chat. */
+html.chat-tint:not(.dark) .sc-welcome .ws-scorecards-wrap::before,
+html.chat-tint:not(.dark) .sc-welcome .ws-chips-wrap::before { background: linear-gradient(to right, color-mix(in srgb, var(--primary) 5%, #fff) 0%, transparent 100%); }
+html.chat-tint:not(.dark) .sc-welcome .ws-scorecards-wrap::after,
+html.chat-tint:not(.dark) .sc-welcome .ws-chips-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary) 5%, #fff) 0%, transparent 100%); }
+html.dark.chat-tint .sc-card .ws-scorecards-wrap::before,
+html.dark.chat-tint .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
+html.dark.chat-tint .sc-card .ws-scorecards-wrap::after,
+html.dark.chat-tint .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
@@ -1302,7 +1337,7 @@ html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, 
 
 /* =============================================================
    Microcopy & trust
-   Small, low-contrast signals that tell the user how WISEai treats
+   Small, low-contrast signals that tell the user how WISEcodeAI treats
    their data, time-stamp every line, ground each reply in a source,
    and keep a standing "verify before you act" reminder in view.
 ============================================================= */
@@ -1320,7 +1355,7 @@ html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, 
 .sc-trust-badge .material-symbols-outlined { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
 html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
-/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEai). */
+/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEcodeAI). */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
   margin-top: 4px;
@@ -1335,7 +1370,7 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
 .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 
-/* Typing indicator now carries a status label ("WISEai is checking…"). */
+/* Typing indicator now carries a status label ("WISEcodeAI is checking…"). */
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
 .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
 
@@ -1354,7 +1389,7 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
    pages/ai-chat.html. Slides over the message area (like the
    welcome screen) when the user clicks the "N agents running"
    pill / "Choose Agents" chip — so the same roster control is
-   available wherever the shared WISEai chat is mounted.
+   available wherever the shared WISEcodeAI chat is mounted.
 ============================================================= */
 .sc-settings {
   position: absolute; inset: 0; z-index: 11;

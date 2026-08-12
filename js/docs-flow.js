@@ -2,7 +2,7 @@
  * Docs module.
  *
  * A documentation browser rendered into #agent-main-scroll on docs.html: a
- * sidebar of grouped articles beside a reading pane. The persistent WISEai dock
+ * sidebar of grouped articles beside a reading pane. The persistent WISEcodeAI dock
  * drives it — intent chips open the quickstart, the API reference, the SDK guide
  * or the changelog — and each on-page selection narrates back into the chat.
  */
@@ -57,7 +57,7 @@ const ARTICLES = {
       <p>Each product is classified against the NOVA scale. Flagged ingredients are highlighted so you can see exactly what pushes a product into the ultra-processed tier.</p>
       <h3>3 · Verify</h3>
       <p>Select pre-qualified SKUs, sign the attestation, and pay per SKU. WISE mints a shield you can use on packaging and marketing.</p>
-      <div class="dc-callout"><span class="material-symbols-outlined">lightbulb</span><div>Tip: the WISEai assistant can run the entire verification flow for you — just ask it to “verify all pre-qualified foods.”</div></div>`,
+      <div class="dc-callout"><span class="material-symbols-outlined">lightbulb</span><div>Tip: the WISEcodeAI assistant can run the entire verification flow for you — just ask it to “verify all pre-qualified foods.”</div></div>`,
   },
   concepts: {
     title: 'Core concepts',
@@ -72,7 +72,7 @@ const ARTICLES = {
   },
   workspace: {
     title: 'Your workspace',
-    body: `<p>The left rail is your primary navigation — Overview, Portfolio, Studio, Organization and Admin. The WISEai chat docks alongside every page and can drive the interface for you.</p>
+    body: `<p>The left rail is your primary navigation — Overview, Portfolio, Studio, Organization and Admin. The WISEcodeAI chat docks alongside every page and can drive the interface for you.</p>
       <h3>Personalizing it</h3>
       <p>Under <strong>Preferences</strong> you can switch theme, scale text, choose where the chat docks, and tune notifications.</p>`,
   },
@@ -83,7 +83,7 @@ const ARTICLES = {
       <p>Classifies finished products against the NOVA scale. Select SKUs, attest that your data matches packaging, and pay per SKU.</p>
       <h3>GRAS</h3>
       <p>Works at the ingredient level, documenting Generally Recognized As Safe status for each additive across five documentation steps.</p>
-      <div class="dc-callout"><span class="material-symbols-outlined">verified</span><div>Both flows can be driven end-to-end from the WISEai chat.</div></div>`,
+      <div class="dc-callout"><span class="material-symbols-outlined">verified</span><div>Both flows can be driven end-to-end from the WISEcodeAI chat.</div></div>`,
   },
   reports: {
     title: 'Reading reports',
@@ -182,7 +182,7 @@ function openArticle(id) {
   hostEl?.querySelector('.dc-article')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-/* ---- WISEai bridge -------------------------------------------------- */
+/* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export const DOCS_WISEAI = {
   sub: 'Ask about any part of WISE — I\u2019ll open the right doc.',

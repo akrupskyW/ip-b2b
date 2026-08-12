@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
-  WISE · Ingredient Browser (Studio · WISEai)
+  WISE · Ingredient Browser (Studio · WISEcodeAI)
 
   A browsable, filterable registry of every ingredient in the WISEcode
-  database. Sits under the WISEai group in the workspace nav, beside Chat and
+  database. Sits under the WISEcodeAI group in the workspace nav, beside Chat and
   Library. Uses the exact same module shell as library.html
   (`<body data-nav-id="ingredients">` + js/agent-overview.js) and reuses the
   Product Portfolio module's design language — the canonical app search with a
@@ -349,9 +349,9 @@
 
     /* ===================================================================
        Workspace layout — mirror library.html / reports.html: the persistent
-       WISEai chat sits directly right of the nav, and the Ingredient Browser
+       WISEcodeAI chat sits directly right of the nav, and the Ingredient Browser
        module docks to its right. The shared shell (js/agent-overview.js) drops
-       the WISEai dock into #modules-row; here we re-order the row (page-scoped)
+       the WISEcodeAI dock into #modules-row; here we re-order the row (page-scoped)
        so the chat is the centre column and the browser is the module on the
        right, and we drop the 60px module header bar so the serif masthead leads
        the scroll body.
@@ -376,6 +376,7 @@
        chip rather than a duplicate serif title. */
     body[data-nav-id="ingredients"] .agent-main-scroll { padding: 0; }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="ingredients">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
@@ -1083,7 +1084,7 @@
         });
       });
 
-      /* ---- WISEai bridge ----
+      /* ---- WISEcodeAI bridge ----
          Lets the docked chat's intent chips drive the browser: focus the search,
          or open the filter popover pre-focused on the relevant control. Keyed to
          the chat intents wired in js/agent-overview.js (INGREDIENTS cfg). The

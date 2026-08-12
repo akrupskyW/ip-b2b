@@ -1,25 +1,25 @@
 /**
- * WISEai Chat Module — the ONE shared chat surface for WISE.
+ * WISEcodeAI Chat Module — the ONE shared chat surface for WISE.
  *
  * A framework-free, mountable extraction of the chat module in
  * pages/ai-chat.html so the exact same component (WISE-owl welcome screen,
  * intent chips, plain message lines, floating-label input rail) can be
  * dropped into any page instead of bespoke one-off chats.
  *
- *   import { mountWISEaiChat } from './wiseai-chat.js';
- *   mountWISEaiChat(document.getElementById('host'), { ... });
+ *   import { mountWISEcodeAIChat } from './wiseai-chat.js';
+ *   mountWISEcodeAIChat(document.getElementById('host'), { ... });
  *
  * Requires the design tokens from agent-page.css and the styles in
  * wiseai-chat.css to be loaded on the host page.
  */
 
 /* Side-effect import: registers window.WiseChatHistory (the shared in-module
-   history sidebar) so every mounted WISEai surface gets the same history +
+   history sidebar) so every mounted WISEcodeAI surface gets the same history +
    "start new conversation" behaviour. */
 import './chat-history.js';
 
 /* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
-   WISEai dock can reuse the exact same mark for its collapsed floating circle. */
+   WISEcodeAI dock can reuse the exact same mark for its collapsed floating circle. */
 export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>`;
 
 /* WISE-owl mark used inside the welcome circle (white on primary). Exported so
@@ -51,16 +51,16 @@ const DEFAULT_INTENT_REPLIES = {
 };
 
 /* Default agent roster shown in the in-chat "Agent Settings" panel — mirrors
-   the roster in pages/ai-chat.html so the shared WISEai surface exposes the
+   the roster in pages/ai-chat.html so the shared WISEcodeAI surface exposes the
    same agents everywhere it's mounted. Callers can override via opts.agents.
    `group` buckets a row under "Core" or "Specialist"; `required` agents
-   (WISEai) can't be switched off. */
+   (WISEcodeAI) can't be switched off. */
 const DEFAULT_AGENTS = [
   {
-    id: 'wise', name: 'WISEai™', version: 'v3.2', group: 'core',
+    id: 'wise', name: 'WISEcodeAI™', version: 'v3.2', group: 'core',
     icon: 'verified', color: 'var(--primary)', bg: '',
     tagline: 'Verification Orchestrator',
-    desc: 'The core WISEai™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.',
+    desc: 'The core WISEcodeAI™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.',
     tags: ['Verification', 'Routing', 'Payments', 'Onboarding'],
     required: true, on: true,
   },
@@ -120,10 +120,10 @@ const DEFAULT_AGENTS = [
    is swapped for the connector's display name. Kept deliberately generic — the
    real per-source OAuth/scoping steps can be filled in later. */
 const CONNECTOR_CONNECT_STEPS = [
-  { icon: 'lock_open',   title: 'Authorize access',    desc: 'Open {brand}\u2019s secure sign-in and grant WISEai read-only access.' },
+  { icon: 'lock_open',   title: 'Authorize access',    desc: 'Open {brand}\u2019s secure sign-in and grant WISEcodeAI read-only access.' },
   { icon: 'tune',        title: 'Choose data scope',   desc: 'Share product catalog, pricing, availability & nutrition fields.' },
   { icon: 'hub',         title: 'Match to WISE Foods', desc: 'Cross-reference {brand} UPCs against the verified WISE Foods registry.' },
-  { icon: 'inventory_2', title: 'Sync catalog',        desc: 'Import verified products so WISEai can score them in real time.' },
+  { icon: 'inventory_2', title: 'Sync catalog',        desc: 'Import verified products so WISEcodeAI can score them in real time.' },
 ];
 const CONNECTOR_REFRESH_STEPS = [
   { icon: 'verified_user', title: 'Verify connection',   desc: 'Confirm {brand}\u2019s authorization is still valid.' },
@@ -200,7 +200,7 @@ function nowLabel() {
   }
 }
 
-/* Standing reminder under the input that WISEai is an assistant, not the
+/* Standing reminder under the input that WISEcodeAI is an assistant, not the
    source of record — the single most important piece of AI trust microcopy. */
 const DEFAULT_DISCLAIMER = '';
 
@@ -355,9 +355,9 @@ function buildModelSelectorHtml(id) {
 }
 
 /* ── Standalone composer (shared by the bespoke page chats) ─────────────────
-   The canonical WISEai chat above renders its input rail (the stacked composer:
+   The canonical WISEcodeAI chat above renders its input rail (the stacked composer:
    "+" attach on the left, the database selector + attachments row on top, the
-   text input beneath) inside mountWISEaiChat. A handful of pages run their OWN
+   text input beneath) inside mountWISEcodeAIChat. A handful of pages run their OWN
    chat (reformulation, the add/view-product wizard, guiding-stars, the product
    comparison / portfolio rails) and hand-roll their input. These helpers let
    those pages render + wire the EXACT same composer so the input section looks
@@ -494,20 +494,22 @@ export function wireChatComposer(railEl, opts = {}) {
     return !!(messages && messages.querySelector('.sc-line-you, .sc-line-wiseai'));
   }
 
-  /* Drop a muted, highlighted marker into the transcript so a mid-conversation
-     database switch is visible as an explicit user action and the thread keeps
-     flowing after it. Mirrors addDbChangeNote() in the canonical mount. */
+  /* Drop a marker into the transcript so a mid-conversation database switch is
+     visible as an explicit user action and the thread keeps flowing after it.
+     Rendered as a line FROM the member — their avatar + the standard message
+     type — since switching is something they did. Mirrors addDbChangeNote()
+     in the canonical mount. */
   function addDbChangeNote(messages, prev, next) {
     if (!messages || !next) return;
+    const userAvatar = opts.userAvatar || esc(opts.userInitials || 'AK');
     const body = prev
-      ? `<span class="sc-event-label">Database switched from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
-      : `<span class="sc-event-label">Database set to</span> <strong>${esc(next.name)}</strong>`;
+      ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
+      : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
-      + `<span class="sc-event">`
-      + `<span class="sc-event-text">${body}</span>`
-      + `<span class="sc-event-time">${esc(nowLabel())}</span>`
-      + `</span></div>`);
+      `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
+      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
+      + `</div>`);
     messages.scrollTop = messages.scrollHeight;
   }
 
@@ -675,7 +677,8 @@ function injectChatExtras() {
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
     .ws-scorecard--locked { cursor: default; opacity: .7; }
-    .ws-scorecard--locked:hover { background: var(--surface-2); border-color: var(--border-strong); box-shadow: none; transform: none; }
+    .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); box-shadow: none; transform: none; }
+    html.dark .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
     .ws-sc-lock { font-size: 18px !important; color: var(--text-subtle); }
     .ws-sc-action--locked { color: var(--text-subtle); align-self: flex-end; }
 
@@ -966,10 +969,10 @@ function defaultReply(text, intent) {
     return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
   if (/(agent|choose)/.test(q))
     return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-  return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEai™ layout and controls.';
+  return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEcodeAI™ layout and controls.';
 }
 
-/* Pick 1–2 short, human status lines describing what WISEai is actually doing
+/* Pick 1–2 short, human status lines describing what WISEcodeAI is actually doing
    for this turn (e.g. "Building your dashboard", "Gathering the details").
    These are shown ONE AT A TIME in the thinking indicator, in place of the old
    bouncing dots, so the wait reflects the answer being built. */
@@ -995,7 +998,7 @@ function statusStepsFor(text, intent) {
 }
 
 /* Build the in-chat "Agent Settings" overlay from an agent roster. Mirrors the
-   #settings-screen markup in pages/ai-chat.html, scoped to the WISEai card so
+   #settings-screen markup in pages/ai-chat.html, scoped to the WISEcodeAI card so
    the same panel is available wherever the shared chat is mounted. */
 function buildAgentsPanelHtml(agents, id) {
   const row = (a) => `
@@ -1034,7 +1037,7 @@ function buildAgentsPanelHtml(agents, id) {
         <div class="ss-info-icon"><span class="material-symbols-outlined">info</span></div>
         <div>
           <p class="ss-info-title">How agents work together</p>
-          <p class="ss-info-desc">WISEai™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEai™ is always required.</p>
+          <p class="ss-info-desc">WISEcodeAI™ orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEcodeAI™ is always required.</p>
         </div>
       </div>
       <p class="ss-section-title">Core Agents</p>
@@ -1048,7 +1051,7 @@ function buildAgentsPanelHtml(agents, id) {
  * ai-chat.html renders inside the shared dock. Each card descriptor:
  *   { variant: 'metric'|'intro'|'wiseai', icon, iconTone, pill:{tone,icon,text},
  *     metric, metricUnit, title, desc, action, intent, ask }
- * Cards drive a chat turn on click (handled in mountWISEaiChat) via {intent, ask}.
+ * Cards drive a chat turn on click (handled in mountWISEcodeAIChat) via {intent, ask}.
  */
 function buildScorecardsHtml(sc, id) {
   if (!sc || !Array.isArray(sc.cards) || !sc.cards.length) return '';
@@ -1099,14 +1102,14 @@ function buildScorecardsHtml(sc, id) {
 let _seq = 0;
 
 /**
- * Mount the shared WISEai chat into `rootEl`.
+ * Mount the shared WISEcodeAI chat into `rootEl`.
  * @param {HTMLElement} rootEl
  * @param {object} [opts]
- *   title        {string}  topbar title (default 'WISEai')
+ *   title        {string}  topbar title (default 'WISEcodeAI')
  *   agentCount   {number}  "N agents running" pill (default: # of on agents)
  *   agents       {Array}   agent roster for the in-chat settings panel
  *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
- *   heading      {string}  welcome heading (default 'What can WISEai help with?')
+ *   heading      {string}  welcome heading (default 'What can WISEcodeAI help with?')
  *   sub          {string}  welcome subheading
  *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?}] — `ask`
  *                          (optional) is the full question posted as the user's
@@ -1116,16 +1119,16 @@ let _seq = 0;
  *   placeholder  {string}  input placeholder
  *   flLabel      {string}  floating label text
  *   disclaimer   {string}  standing AI-limitations note under the input ('' hides)
- *   sourceLabel  {string}  grounding caption appended to each WISEai reply ('' hides)
- *   statusLabel  {string}  what WISEai is "doing" while the typing dots show
+ *   sourceLabel  {string}  grounding caption appended to each WISEcodeAI reply ('' hides)
+ *   statusLabel  {string}  what WISEcodeAI is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
- *   reply        {fn}      (text,intent) => html string for WISEai's response
- * @returns {{ addUser, addWISEai, reset, root }}
+ *   reply        {fn}      (text,intent) => html string for WISEcodeAI's response
+ * @returns {{ addUser, addWISEcodeAI, reset, root }}
  */
-export function mountWISEaiChat(rootEl, opts = {}) {
+export function mountWISEcodeAIChat(rootEl, opts = {}) {
   if (!rootEl) return null;
   injectChatExtras();
   /* Tag the chat root so the shared docked/sticky-module CSS (injected by
@@ -1133,7 +1136,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      drawers when they tuck in behind it. */
   rootEl.classList.add('wch-chat-anchor');
   const id = `sc${++_seq}`;
-  const title = opts.title || 'WISEai™';
+  const title = opts.title || 'WISEcodeAI™';
   /* Agent roster powering the in-chat settings panel + the "N agents running"
      pill. Clone so a caller's array isn't mutated as toggles flip. */
   const agents = (Array.isArray(opts.agents) ? opts.agents : DEFAULT_AGENTS).map((a) => ({ ...a }));
@@ -1144,7 +1147,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      three-dot menu and the width toggle. Used by the marketing shell so the
      docked chat rail carries just those two controls. */
   const hideBranding = opts.hideBranding === true;
-  const heading = opts.heading || 'What can WISEai™ help with?';
+  const heading = opts.heading || 'What can WISEcodeAI™ help with?';
   const sub = opts.sub !== undefined ? opts.sub : 'Your AI Verification assistant — NON-UPF & beyond';
   /* Every trademark mark in the welcome heading is dropped a size so it reads as
      a superscript ™ rather than a full-height glyph. */
@@ -1185,13 +1188,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   const statusLabel = opts.statusLabel || `${title} is thinking`;
 
   /* Opt-in live-activity indicator: a small trio of dots docked under the input
-     that quietly pulses whenever WISEai is working (a typing line is on screen)
+     that quietly pulses whenever WISEcodeAI is working (a typing line is on screen)
      and, on hover, reveals a compact telemetry read-out (tokens, cache, cost,
      turns) for the current turn and the whole conversation. */
   const activityOn = opts.activity === true;
 
   /* ── "Open module" intent chips ───────────────────────────────────────────
-     Any WISEai reply that narrates opening a companion module ("Opened the
+     Any WISEcodeAI reply that narrates opening a companion module ("Opened the
      full ranking in Results & Details →", "Spider chart → Visuals", …) has
      that narration turned into a real, clickable chip. Tapping it (re)opens
      that module beside the chat; when a host provides an `onOpenModule`
@@ -1248,7 +1251,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      the chat) — History + Turns adopt the same base so they read as an equal
      pair; drag-resize still overrides it per side. */
   const STICKY_MODULE_W = opts.stickyModulesWidth || 280;
-  /* WISEai opts: open Turns docked from the start (its own module, never an
+  /* WISEcodeAI opts: open Turns docked from the start (its own module, never an
      in-chat popover), dress its header like the result panes (three-dot menu +
      width changer), pin a search box above the list, and give each turn Share +
      Note (annotate) controls. */
@@ -1270,7 +1273,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   let outputsHidden = opts.outputsToggleDefault === true;
 
   /* Answer-quality feedback — a thumbs up / thumbs down (+ copy) row trailing
-     each WISEai answer. Thumbs down reveals a "what was wrong?" chip set so the
+     each WISEcodeAI answer. Thumbs down reveals a "what was wrong?" chip set so the
      user can qualify the miss. Opt-out via `feedback: false`; reasons are
      configurable via `feedbackReasons`. `opts.onFeedback(verdict, reason)` fires
      on each interaction. */
@@ -1422,7 +1425,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="WISEai™ module width"><span class="material-symbols-outlined">width_normal</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="${id}-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="WISEcodeAI™ module width"><span class="material-symbols-outlined">width_normal</span></button>
       </div>
     </div>
 
@@ -1501,7 +1504,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   }
 
   /* ── Live-activity indicator (opt-in via `activity: true`) ──────────────────
-     A small trio of dots under the input that pulses whenever WISEai is working
+     A small trio of dots under the input that pulses whenever WISEcodeAI is working
      (a typing line is on screen) and, on hover, reveals a compact telemetry
      read-out. The numbers are illustrative — we accrue believable token / cache
      / cost figures per turn so the read-out feels live across a conversation. */
@@ -1575,10 +1578,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   }
 
   /* Inline intent chips — an opt-in (`inlineChips: true`) block of suggested
-     actions that lives IN the transcript, trailing the latest WISEai turn, just
+     actions that lives IN the transcript, trailing the latest WISEcodeAI turn, just
      like a normal chat's suggested replies (NOT a docked bottom carousel). We
      keep a single element and re-park it at the end of the thread after every
-     reply, and detach it while the user is typing / WISEai is thinking. */
+     reply, and detach it while the user is typing / WISEcodeAI is thinking. */
   const inlineChips = opts.inlineChips === true;
   let ichipsEl = null;
   function parkInlineChips() {
@@ -1646,7 +1649,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   function addUser(text, atts) {
     if (!messages) return;
-    detachInlineChips(); /* chips reappear after WISEai's next reply */
+    detachInlineChips(); /* chips reappear after WISEcodeAI's next reply */
     let attHtml = '';
     if (Array.isArray(atts) && atts.length) {
       const items = atts.map((a) => {
@@ -1663,7 +1666,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     scrollDown();
     refreshDockedTurns();
   }
-  /* Actions row appended beneath a WISEai answer. Left cluster: copy + thumbs
+  /* Actions row appended beneath a WISEcodeAI answer. Left cluster: copy + thumbs
      up / thumbs down (thumbs down reveals the reason chips, see feedbackReasons).
      Right cluster (pinned far-right): re-run this prompt in a new chat
      (auto_read_play), edit-then-run in a new chat (bubble), fork the whole turn
@@ -1714,15 +1717,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       </div>`;
   }
 
-  /* ── Word-by-word reveal ──────────────────────────────────────────────────
-     Make every WISEai answer read as if it's being typed live — words fade in
-     one after another on a quick cadence — instead of the whole block popping
-     in at once. We keep the real HTML (bold, links, lists, chips) intact by
-     wrapping each visible WORD in a span and fading the spans in; markup,
-     Material-Symbols ligatures and the meta/footer are left alone. Interactive
-     or rich cards (connect-flow walkthroughs, surfaced-output preview cards,
-     tables, images, media) reveal instantly so their own logic/layout is never
-     torn apart. Honors prefers-reduced-motion. */
+  /* ── Word-by-word reveal (DISABLED) ──────────────────────────────────────
+     Text animation is turned off: every WISEcodeAI answer appears whole. The
+     typeInLine signature is kept so the downstream reveal chain (timestamp,
+     action icons, chips) keeps firing in the same order. */
   const prefersReducedMotion = (() => {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
@@ -1735,47 +1733,10 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     return !el.querySelector('.sc-connect-flow, [data-cf-step], .sc-surface-card');
   }
   function typeInLine(bodyEl, done, wordDelay) {
-    if (!bodyEl || prefersReducedMotion) { if (done) done(); return; }
-    const delay = typeof wordDelay === 'number' ? wordDelay : 70;
-    const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
-      acceptNode(n) {
-        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        const p = n.parentElement;
-        /* Leave the meta footer, icon ligatures, and any embedded SVG/table/canvas
-           text alone — wrapping words inside those breaks their rendering. */
-        if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    });
-    const textNodes = [];
-    let tn;
-    while ((tn = walker.nextNode())) textNodes.push(tn);
-    const words = [];
-    textNodes.forEach((node) => {
-      const parts = node.nodeValue.split(/(\s+)/); // keep whitespace runs intact
-      const frag = document.createDocumentFragment();
-      parts.forEach((part) => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-        const span = document.createElement('span');
-        span.className = 'sc-tw';
-        span.style.opacity = '0';
-        span.textContent = part;
-        frag.appendChild(span);
-        words.push(span);
-      });
-      node.parentNode.replaceChild(frag, node);
-    });
-    if (!words.length) { if (done) done(); return; }
-    let i = 0;
-    const step = () => {
-      words[i].style.opacity = '1';
-      i++;
-      scrollDown();
-      if (i < words.length) setTimeout(step, delay);
-      else if (done) done();
-    };
-    step();
+    /* Text animation disabled — replies land whole. The callback still fires
+       so the timestamp / chip reveal chain runs unchanged. */
+    scrollDown();
+    if (done) done();
   }
 
   /* Prime an element to animate in from the left, then reveal a set of them one
@@ -1813,7 +1774,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
   }
   /* Welcome-screen reveal. The owl + rings are already breathing; here we type
-     the heading, then the sub, WORD-BY-WORD (exactly like every WISEai answer),
+     the heading, then the sub, WORD-BY-WORD (exactly like every WISEcodeAI answer),
      and only once all that text has landed do we fly the intent chips in from
      the right so they arrive AFTER the copy — never sitting there before it.
      Honors reduced-motion (everything just shows). Safe to re-run whenever the
@@ -1887,7 +1848,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      chips) trail an answer, so they must animate in with the same right→left
      motion the module's own inline chips use — and only AFTER that answer has
      finished typing. The host holds each row back until its reply's `onDone`
-     fires (see addWISEai), then calls revealChips; primeChips hides the row up
+     fires (see addWISEcodeAI), then calls revealChips; primeChips hides the row up
      front so it never flashes in the meantime. Both honor reduced-motion. */
   function primeChips(rowEl) {
     if (!rowEl || prefersReducedMotion) return;
@@ -1988,18 +1949,18 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     document.dispatchEvent(new CustomEvent('wiseai:open-module', { detail: { module: name, root: rootEl, chip: chipEl } }));
   }
 
-  /* @param {string} html  WISEai's reply markup.
+  /* @param {string} html  WISEcodeAI's reply markup.
      @param {object} [meta] { source, feedback, typewriter } — `source` overrides
      the grounding caption for a single line (pass '' to drop it); `feedback:false`
      suppresses the accuracy-feedback row (e.g. on a non-answer status card);
      `typewriter:false` forces the line to appear whole (no word-by-word reveal). */
-  function addWISEai(html, meta = {}) {
+  function addWISEcodeAI(html, meta = {}) {
     if (!messages) return null;
     html = transformOpenChips(html, meta);
     const src = meta.source !== undefined ? meta.source : sourceLabel;
     const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml() : '';
     const footer = `<div class="sc-line-meta">${
-      src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
+      src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
     }<span class="sc-line-time">${esc(nowLabel())}</span>${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
@@ -2072,16 +2033,16 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function wiseaiRespond(text, intent) {
     const steps = statusStepsFor(text, intent);
     const typing = showTyping(steps[0]);
-    cycleStatus(typing, steps, () => { typing?.remove(); addWISEai(reply(text, intent)); });
+    cycleStatus(typing, steps, () => { typing?.remove(); addWISEcodeAI(reply(text, intent)); });
   }
-  /* Post a user line followed by a FIXED WISEai reply (bypasses the reply
+  /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
      resolver) — used by controls like the brand connectors where the answer is
      the action's own confirmation, not a routed intent response. */
   function respondFixed(userText, replyHtml, meta) {
     hideWelcome();
     if (userText) addUser(userText);
     const typing = showTyping();
-    setTimeout(() => { typing?.remove(); addWISEai(replyHtml, meta || { source: '' }); }, 600);
+    setTimeout(() => { typing?.remove(); addWISEcodeAI(replyHtml, meta || { source: '' }); }, 600);
   }
 
   /* ── Data-source connection walkthrough ──────────────────────────────────
@@ -2145,7 +2106,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         const head = card.querySelector('.sc-cf-head');
         if (head) head.innerHTML = `<span class="sc-cf-check material-symbols-outlined">check</span><span class="sc-cf-head-text">${esc(doneHead)}</span>`;
         markConnectorConnected(cid, name);
-        if (doneReply) setTimeout(() => addWISEai(doneReply, { source: '' }), 560);
+        if (doneReply) setTimeout(() => addWISEcodeAI(doneReply, { source: '' }), 560);
       }
     };
     step();
@@ -2166,7 +2127,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       typing?.remove();
       /* The "Connecting…" card is a mid-turn status card — the real answer
          (doneReply) lands after it, so let the chips trail that, not the card. */
-      const line = addWISEai(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false, trailChips: false });
+      const line = addWISEcodeAI(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false, trailChips: false });
       const card = line ? line.querySelector('.sc-connect-flow') : null;
       /* A brand-new connection is an "added data source" landmark for the
          activity strip; a re-sync of an already-connected source is not. */
@@ -2212,7 +2173,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
         `<span class="wch-head-title"><span class="material-symbols-outlined">hub</span>${esc(connectorsLabel || 'Connect a data source')}</span>` +
         '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
-      '<p class="wch-conn-intro">Link a retailer or food-data source so WISEai\u2122 can pull verified product, pricing &amp; nutrition data.</p>' +
+      '<p class="wch-conn-intro">Link a retailer or food-data source so WISEcodeAI\u2122 can pull verified product, pricing &amp; nutrition data.</p>' +
       '<div class="wch-list wch-conn-list" role="list"></div>';
     paneHost.appendChild(connScrim);
     paneHost.appendChild(connPanel);
@@ -2263,7 +2224,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   /* ── Turns Module — a "Fork from here" side panel ────────────────────────
      A right-docked overlay (same shell + open/close animation as History) that
      lists every TURN in the current conversation. A turn is one exchange: the
-     user's line plus the WISEai reply(s) that follow it. Each turn carries a
+     user's line plus the WISEcodeAI reply(s) that follow it. Each turn carries a
      "Fork from here" button — click it and the whole conversation UP TO that
      turn (answers, tables, charts, reports, references — verbatim, nothing
      re-run) is copied into a brand-new chat of your own, filed in History with
@@ -2542,7 +2503,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (index < 0 || index >= turns.length) return;
     const q = turns[index].you ? lineText(turns[index].you) : (title + ' — turn ' + (index + 1));
     let url = location.href.split('#')[0] + '#turn-' + (index + 1);
-    const shareData = { title: 'WISEai™ turn', text: q, url };
+    const shareData = { title: 'WISEcodeAI™ turn', text: q, url };
     if (navigator.share) { navigator.share(shareData).catch(() => {}); turnsToast('Shared'); return; }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(() => turnsToast('Link copied')).catch(() => turnsToast('Link copied'));
@@ -3144,7 +3105,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const noun = atts.length === 1 ? 'attachment' : 'attachments';
     wiseaiRespond(v || `Reviewing ${atts.length} ${noun}`);
   }
-  /* Programmatically post a user message + WISEai reply (used by host modules
+  /* Programmatically post a user message + WISEcodeAI reply (used by host modules
      to route a contextual question into the shared chat). */
   function ask(text) {
     const v = String(text || '').trim();
@@ -3175,7 +3136,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   /* Build an authentic transcript HTML string from a compact list of turns —
      [{ role:'you'|'wiseai', text?, html?, source? }] — using the exact same
-     line markup addUser/addWISEai emit, so seeded history threads restore into
+     line markup addUser/addWISEcodeAI emit, so seeded history threads restore into
      the chat looking indistinguishable from real ones. */
   function seedClock(ts) {
     try { return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
@@ -3191,7 +3152,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const src = t.source !== undefined ? t.source : sourceLabel;
       const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml() : '';
       const footer = `<div class="sc-line-meta">${
-        src ? `<span class="sc-trust-chip" title="WISEai™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
+        src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
       }<span class="sc-line-time">${esc(clock)}</span>${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
@@ -3220,7 +3181,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   }
 
   /* Mount the shared in-module history sidebar into the chat body. Threads are
-     namespaced by surface (opts.historyKey) so different WISEai surfaces keep
+     namespaced by surface (opts.historyKey) so different WISEcodeAI surfaces keep
      their own history; the default shares one dock-wide history. */
   if (window.WiseChatHistory && messages) {
     chatHistory = window.WiseChatHistory.mount(rootEl, {
@@ -3239,7 +3200,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       breakoutWidth: opts.historyBreakoutWidth || 300,
       /* Narrower shared width used while sticky (equal to Turns). */
       stickyWidth: STICKY_MODULE_W,
-      /* WISEai opts: start docked as a first-class module, dress the docked
+      /* WISEcodeAI opts: start docked as a first-class module, dress the docked
          header like a result pane (three-dot menu + width changer), and add an
          MCP-usage filter toggle beside the search. */
       breakoutDefault: opts.historyBreakoutDefault === true,
@@ -3426,7 +3387,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       pop.hidden = true;
       const btn = wrap.querySelector(`[data-fb="${kind}"]`);
       if (btn) btn.setAttribute('aria-expanded', 'false');
-      fbNote(wrap, 'Thanks — your feedback helps WISEai\u2122 improve.', kind === 'up' ? 'thumb_up' : 'favorite');
+      fbNote(wrap, 'Thanks — your feedback helps WISEcodeAI\u2122 improve.', kind === 'up' ? 'thumb_up' : 'favorite');
       if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, { note: text });
       return;
     }
@@ -3440,7 +3401,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       const anyOn = pop.querySelector('.sc-fb-reason.is-on');
       const msg = kind === 'up'
         ? 'Thanks — glad this hit the mark.'
-        : 'Thanks — your feedback helps WISEai\u2122 improve.';
+        : 'Thanks — your feedback helps WISEcodeAI\u2122 improve.';
       fbNote(wrap, anyOn ? msg : '', kind === 'up' ? 'thumb_up' : 'favorite');
       if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, reason.getAttribute('data-reason'));
     }
@@ -3766,19 +3727,20 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     return !!(messages && messages.querySelector('.sc-line-you, .sc-line-wiseai'));
   }
 
-  /* Drop a muted, highlighted marker into the transcript so a mid-conversation
-     database switch is visible and the thread keeps flowing after it. */
+  /* Drop a marker into the transcript so a mid-conversation database switch is
+     visible and the thread keeps flowing after it. Rendered as a line FROM the
+     member — their avatar + the standard message type — since switching is
+     something they did. */
   function addDbChangeNote(prev, next) {
     if (!messages || !next) return;
     const body = prev
-      ? `<span class="sc-event-label">Database switched from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
-      : `<span class="sc-event-label">Database set to</span> <strong>${esc(next.name)}</strong>`;
+      ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
+      : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
-      + `<span class="sc-event">`
-      + `<span class="sc-event-text">${body}</span>`
-      + `<span class="sc-event-time">${esc(nowLabel())}</span>`
-      + `</span></div>`);
+      `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
+      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
+      + `</div>`);
     scrollDown();
     refreshDockedTurns();
   }
@@ -3939,7 +3901,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     }
     if (e.target.closest('.sc-connector-more')) {
       if (typeof opts.onConnectorMore === 'function') { opts.onConnectorMore(); return; }
-      respondFixed('Show me all available connectors', 'WISEai™ can connect to retailer and food-data platforms — Kroger, Instacart, Walmart, USDA FoodData Central, Open Food Facts, NielsenIQ and more. Pick one from the rail beneath the input to start a secure connection, or tell me which source you’d like to link.');
+      respondFixed('Show me all available connectors', 'WISEcodeAI™ can connect to retailer and food-data platforms — Kroger, Instacart, Walmart, USDA FoodData Central, Open Food Facts, NielsenIQ and more. Pick one from the rail beneath the input to start a secure connection, or tell me which source you’d like to link.');
     }
   });
 
@@ -3965,7 +3927,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (action === 'add-member') {
       closeMore();
       if (typeof opts.onAddMember === 'function') opts.onAddMember();
-      else addWISEai('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this WISEai™ conversation.');
+      else addWISEcodeAI('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this WISEcodeAI™ conversation.');
     }
     else if (action === 'history') {
       /* When the entry is styled as an on/off switch (sc-mcp-item) keep the menu
@@ -3976,7 +3938,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       dismissTurnsOverlay();
       if (chatHistory) chatHistory.toggle();
       else if (typeof opts.onHistory === 'function') opts.onHistory();
-      else addWISEai('History &amp; Projects lets you jump back into past WISEai™ conversations. It’s coming to this workspace soon.');
+      else addWISEcodeAI('History &amp; Projects lets you jump back into past WISEcodeAI™ conversations. It’s coming to this workspace soon.');
       if (asToggle) syncHistoryMenu();
     }
     else if (action === 'connect') {
@@ -4039,14 +4001,14 @@ export function mountWISEaiChat(rootEl, opts = {}) {
       closeAgents();
     } else if (action === 'export') {
       closeMore();
-      const blob = new Blob(['WISEai™ export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['WISEcodeAI™ export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseai-chat.txt';
       a.click();
     } else if (action === 'share') {
       closeMore();
-      /* Let the host own the Share UX (e.g. WISEai's in-app share panel). Falls
+      /* Let the host own the Share UX (e.g. WISEcodeAI's in-app share panel). Falls
          back to the native share sheet / clipboard when no hook is provided. */
       if (typeof opts.onShare === 'function') {
         opts.onShare();
@@ -4110,14 +4072,14 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   /* Announce a context switch WITHOUT resetting the conversation: swap in the
      new context's chips, then — only when a conversation is already underway —
-     drop a short WISEai acknowledgement so the user sees the assistant noticed
+     drop a short WISEcodeAI acknowledgement so the user sees the assistant noticed
      the page changed. The freshly-swapped inline chips re-park beneath it, so
      the new page's quick actions are offered right away. On the welcome screen
      (no conversation yet) the chips speak for themselves and no line is added. */
   function announceRoute(message, newIntents, newReplies) {
     setIntents(newIntents, newReplies);
     const conversing = welcome ? welcome.classList.contains('sc-hidden') : true;
-    if (conversing && message) addWISEai(message, { source: '' });
+    if (conversing && message) addWISEcodeAI(message, { source: '' });
   }
 
   /* Apply the remembered overview-cards + intent-chips preferences now the DOM exists. */
@@ -4128,7 +4090,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      chips fly in from the right and land — so the chips always trail the copy. */
   revealWelcome();
 
-  /* WISEai: pre-dock the Turns module so it lives as its own broken-out module
+  /* WISEcodeAI: pre-dock the Turns module so it lives as its own broken-out module
      from the start (never an in-chat popover) — a real flex sibling docked to
      the right of the chat, shown and ready like the History module. */
   if (turnsBreakout) {
@@ -4164,5 +4126,5 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
-  return { addUser, addWISEai, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, root: rootEl };
+  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
 }

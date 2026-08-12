@@ -2,7 +2,7 @@
  * User & Role Management — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on user-management.html, paired with the
- * WISEai dock. A filterable directory of platform users: at-a-glance status
+ * WISEcodeAI dock. A filterable directory of platform users: at-a-glance status
  * scorecards, a search with an in-pill filter popover, and a grid table whose
  * first column stacks each user's handle, email, ID, and name. Uses the shared
  * token-driven `adm-*` component set from wise.css.
@@ -109,7 +109,7 @@ let docListenersBound = false;
 
 let chatApi = null;
 export function setUserManagementChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

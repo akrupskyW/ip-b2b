@@ -31,7 +31,7 @@
     /* =====================================================================
        Typography lock-in (aha.html only) — Noto Serif is the display face for
        H1/H2-level headings, the big stat numerals, and CTAs across the
-       dashboard + WISEai welcome. Body copy, labels, eyebrows, pills and
+       dashboard + WISEcodeAI welcome. Body copy, labels, eyebrows, pills and
        descriptions stay in DM Sans. Scoped to body[data-product-id="dashboard"]
        so the shared agent-page.css / wiseai-chat.css aren't touched elsewhere.
     ===================================================================== */
@@ -99,7 +99,7 @@
     }
 
     /* =====================================================================
-       WISEai welcome layout (this page only) — the welcome reads like a chat
+       WISEcodeAI welcome layout (this page only) — the welcome reads like a chat
        transcript: it isn't pinned to the top, it sits toward the BOTTOM (just
        above the input rail) and grows upward as content is added. The large
        "at a glance" cards start hidden (see cardsHiddenDefault in
@@ -116,11 +116,12 @@
       margin-bottom: 0;
     }
 
-    /* Larger "What can WISEai™ help with?" headline. */
+    /* Larger "What can WISEcodeAI™ help with?" headline. */
     body[data-product-id="dashboard"] .sc-welcome .ws-heading {
       font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem);
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="0" data-default-header="1" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

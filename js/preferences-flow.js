@@ -4,7 +4,7 @@
  * A settings surface rendered into #agent-main-scroll on preferences.html. It
  * groups the app's real appearance controls (theme + text size, persisted to the
  * same localStorage keys the shell reads) with notification, workspace and
- * accessibility toggles. The persistent WISEai dock drives every switch: its
+ * accessibility toggles. The persistent WISEcodeAI dock drives every switch: its
  * intent chips flip the theme, bump text size, mute notifications, etc., and
  * each on-page control narrates back into the conversation.
  *
@@ -150,7 +150,7 @@ function paint() {
       <section class="prefs-group">
         <h2 class="prefs-group-title"><span class="material-symbols-outlined">tune</span>Workspace</h2>
         <div class="prefs-card">
-          ${segRow({ key: 'dock', label: 'WISEai chat position', sub: 'Where the assistant docks', options: [{ v: 'left', label: 'Left' }, { v: 'center', label: 'Center' }, { v: 'right', label: 'Right' }], value: p.dock })}
+          ${segRow({ key: 'dock', label: 'WISEcodeAI chat position', sub: 'Where the assistant docks', options: [{ v: 'left', label: 'Left' }, { v: 'center', label: 'Center' }, { v: 'right', label: 'Right' }], value: p.dock })}
           <div class="prefs-row">
             <div class="prefs-row-body">
               <div class="prefs-row-label">Language</div>
@@ -237,7 +237,7 @@ function bumpTextSize(delta) {
   toast(`Text size ${v}%`, 'format_size');
 }
 
-/* ---- WISEai bridge -------------------------------------------------- */
+/* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export const PREFERENCES_WISEAI = {
   sub: 'Tune appearance, notifications and workspace — just ask.',
@@ -250,7 +250,7 @@ export const PREFERENCES_WISEAI = {
     cards: [
       { intent: 'toggle_theme', icon: 'dark_mode', iconTone: 'brand', pill: { tone: 'up', icon: 'contrast', text: 'Do next' }, title: 'Switch light / dark', desc: 'Flip the theme everywhere — saved to your preferences.', action: 'Switch theme', ask: 'Switch light / dark' },
       { intent: 'bigger_text', icon: 'format_size', iconTone: 'brand', pill: { tone: 'up', icon: 'text_increase', text: 'Adjust' }, title: 'Make text bigger', desc: 'Bump interface text up a notch for easier reading.', action: 'Make text bigger', ask: 'Make text bigger' },
-      { intent: 'dock_right', icon: 'view_sidebar', iconTone: 'brand', pill: { tone: 'up', icon: 'view_sidebar', text: 'Layout' }, title: 'Move chat to the right', desc: 'Dock WISEai on the right across the whole app.', action: 'Move chat right', ask: 'Move chat to the right' },
+      { intent: 'dock_right', icon: 'view_sidebar', iconTone: 'brand', pill: { tone: 'up', icon: 'view_sidebar', text: 'Layout' }, title: 'Move chat to the right', desc: 'Dock WISEcodeAI on the right across the whole app.', action: 'Move chat right', ask: 'Move chat to the right' },
       { intent: 'mute_email', icon: 'notifications_off', iconTone: 'brand', pill: { tone: 'up', icon: 'notifications_off', text: 'Notify' }, title: 'Mute email notifications', desc: 'Silence emails — you\u2019ll still see in-app alerts.', action: 'Mute email', ask: 'Mute email notifications' },
       { intent: 'reduce_motion', icon: 'motion_photos_off', iconTone: 'brand', pill: { tone: 'up', icon: 'motion_photos_off', text: 'Adjust' }, title: 'Reduce motion', desc: 'Minimize animations and transitions across the app.', action: 'Reduce motion', ask: 'Reduce motion' },
     ],
@@ -266,7 +266,7 @@ export const PREFERENCES_WISEAI = {
     toggle_theme: () => `Switched to <strong>${isDark() ? 'dark' : 'light'}</strong> theme — applied everywhere and saved to your preferences.`,
     bigger_text: () => `Bumped interface text to <strong>${textSize()}%</strong>. I can keep going or dial it back if that's too large.`,
     mute_email: 'Muted <strong>email notifications</strong> — you\u2019ll still see in-app alerts. Flip it back anytime under Notifications.',
-    dock_right: 'Set your WISEai chat to dock on the <strong>right</strong>. It\u2019ll open there across the app from now on.',
+    dock_right: 'Set your WISEcodeAI chat to dock on the <strong>right</strong>. It\u2019ll open there across the app from now on.',
     reduce_motion: () => `Reduced motion is now <strong>${readPrefs().reduce_motion ? 'on' : 'off'}</strong> — animations and transitions are minimized.`,
   },
   onIntent: (intent) => {

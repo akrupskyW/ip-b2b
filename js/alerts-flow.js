@@ -4,7 +4,7 @@
  * A full-page alerts inbox rendered into #agent-main-scroll on alerts.html (the
  * side-panel bell stays available elsewhere; this is the roomy, filterable
  * view). Alerts group by day, can be filtered by category, marked read, or
- * cleared. The persistent WISEai dock drives it — intent chips filter to
+ * cleared. The persistent WISEcodeAI dock drives it — intent chips filter to
  * unread, mark everything read, or jump to a category — and each on-page action
  * narrates back into the conversation.
  */
@@ -160,7 +160,7 @@ function markAllRead() {
   toast('All alerts marked read', 'done_all');
 }
 
-/* ---- WISEai bridge -------------------------------------------------- */
+/* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export function runAlertsIntent(action) {
   switch (action) {

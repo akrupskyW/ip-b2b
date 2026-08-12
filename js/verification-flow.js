@@ -2,7 +2,7 @@
  * Non-UPF Verification flow module.
  *
  * A self-contained, 3-step wizard rendered into #agent-main-scroll on
- * verification.html (an app-nav shell page). The persistent WISEai chat docks
+ * verification.html (an app-nav shell page). The persistent WISEcodeAI chat docks
  * to the LEFT (via data-default-dock="left"); this module is the "right"
  * surface — the twin of the ai-chat split/dock pattern.
  *
@@ -828,7 +828,7 @@ function onAction(action, el) {
 }
 
 /* Create the right-hand progress pane inside #modules-row (once). It sits after
-   #agent-main in the flex row; the left-docked WISEai chat keeps order:-1, so
+   #agent-main in the flex row; the left-docked WISEcodeAI chat keeps order:-1, so
    the row reads chat → flow → progress. */
 function mountProgressPane() {
   const row = document.getElementById('modules-row');
@@ -855,7 +855,7 @@ export function renderVerificationFlow(mainEl) {
   rootEl = mainEl.querySelector('.vf-root');
 
   /* Progress module — a sibling pane docked to the RIGHT of the flow inside
-     #modules-row (the WISEai chat docks to the left). Mirrors the account-
+     #modules-row (the WISEcodeAI chat docks to the left). Mirrors the account-
      creation setup pane. Created once; updated on every render(). */
   mountProgressPane();
   render();
@@ -908,7 +908,7 @@ export function renderVerificationFlow(mainEl) {
 }
 
 /* ------------------------------------------------------------------ */
-/* WISEai dock configuration for the verification page                 */
+/* WISEcodeAI dock configuration for the verification page                 */
 /* ------------------------------------------------------------------ */
 
 const plural = (n) => (n === 1 ? '' : 's');
@@ -932,7 +932,7 @@ export const VERIFICATION_WISEAI = {
       { intent: 'go_payment', icon: 'payments', iconTone: 'brand', pill: { tone: 'up', icon: 'payments', text: 'Pay' }, title: 'Review & pay', desc: 'Choose a method, review your total, accept the VSA, and finalize.', action: 'Go to payment', ask: 'Go to payment' },
       { intent: 'go_attest', icon: 'fact_check', iconTone: 'brand', pill: { tone: 'up', icon: 'fact_check', text: 'Attest' }, title: 'Continue to attestation', desc: 'Move your selected foods into attestation, ready to sign.', action: 'Continue to attestation', ask: 'Continue to attestation' },
       { intent: 'do_attest', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Sign' }, title: 'Sign the attestation', desc: 'Confirm your Non-UPF attestation to lock in the claim.', action: 'Sign the attestation', ask: 'Sign the attestation' },
-      { variant: 'wiseai', intent: 'explain_flow', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'Let WISEai run verification', desc: 'Select \u2192 Attest \u2192 Pay — I can drive every step for you.', action: 'How does verification work?', ask: 'How does verification work?' },
+      { variant: 'wiseai', intent: 'explain_flow', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEcodeAI' }, title: 'Let WISEcodeAI run verification', desc: 'Select \u2192 Attest \u2192 Pay — I can drive every step for you.', action: 'How does verification work?', ask: 'How does verification work?' },
     ],
   },
   intents: [

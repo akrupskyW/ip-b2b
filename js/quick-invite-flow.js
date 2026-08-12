@@ -2,7 +2,7 @@
  * Quick Invite — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on quick-invite.html and paired with the
- * WISEai dock. A one-step org invite composer on top of a filterable Invite
+ * WISEcodeAI dock. A one-step org invite composer on top of a filterable Invite
  * History board — at-a-glance totals, status filter chips, a salesperson
  * filter, live search, and per-invite actions (copy link, resend, cancel).
  *
@@ -79,7 +79,7 @@ let sortKey = null, sortDir = 1;
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
 export function setQuickInviteChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

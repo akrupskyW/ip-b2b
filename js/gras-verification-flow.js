@@ -8,7 +8,7 @@
  * applies portfolio-wide.
  *
  * Rendered into #agent-main-scroll on gras-verification.html (an app-nav shell
- * page). The persistent WISEai chat docks to the LEFT (via
+ * page). The persistent WISEcodeAI chat docks to the LEFT (via
  * data-default-dock="left"); this module is the "right" surface, with a
  * dedicated progress pane docked to its right — the exact same chat → flow →
  * progress arrangement as the Non-UPF flow.
@@ -1046,7 +1046,7 @@ function onAction(action, el) {
     default: break;
   }
   /* Mirror the interaction into the chat so clicking the UI reads like driving
-     it from WISEai — the same you + reply turn a chip would produce. */
+     it from WISEcodeAI — the same you + reply turn a chip would produce. */
   mirrorUIAction(action, el);
 }
 
@@ -1105,7 +1105,7 @@ export function renderGrasVerificationFlow(mainEl) {
 }
 
 /* ------------------------------------------------------------------ */
-/* WISEai chat module (dock configuration)                             */
+/* WISEcodeAI chat module (dock configuration)                             */
 /* ------------------------------------------------------------------ */
 
 /* The mounted shared-chat instance, handed over by agent-overview once the dock
@@ -1113,13 +1113,13 @@ export function renderGrasVerificationFlow(mainEl) {
 let chatApi = null;
 export function setGrasChat(api) { chatApi = api; }
 
-/* Post a mirrored turn into the chat — the action as a "you" line + WISEai's
+/* Post a mirrored turn into the chat — the action as a "you" line + WISEcodeAI's
    narration — so clicking in the flow reads exactly like driving it from chat. */
 function pushChat(userLabel, replyHtml) {
   if (!chatApi) return;
   chatApi.hideWelcome?.();
   if (userLabel) chatApi.addUser(userLabel);
-  if (replyHtml) chatApi.addWISEai(replyHtml);
+  if (replyHtml) chatApi.addWISEcodeAI(replyHtml);
 }
 
 /* Highest-leverage still-flagged ingredient (falls back to the first). */
@@ -1182,7 +1182,7 @@ function stepNarration() {
   return `Everything's ready on <strong>Review &amp; submit</strong> — submit to send the packet to WISEcode.`;
 }
 
-/* Mirror a direct UI interaction into the chat as a you + WISEai turn, reading
+/* Mirror a direct UI interaction into the chat as a you + WISEcodeAI turn, reading
    post-action state so the narration matches what the surface now shows. */
 function mirrorUIAction(action, el) {
   const ing = ingredientById(state.activeIngredientId);
@@ -1241,7 +1241,7 @@ export const GRAS_WISEAI = {
   sub: 'Your GRAS verification assistant — I can run the whole documentation flow for you.',
   chipsFlow: 'wrap',
   /* Render the intent chips INLINE in the transcript (like a regular chat's
-     suggested replies) — trailing the latest WISEai turn — instead of a docked
+     suggested replies) — trailing the latest WISEcodeAI turn — instead of a docked
      rail, so every route stays one tap away without a weird bottom carousel. */
   inlineChips: true,
   sourceLabel: '',
@@ -1256,7 +1256,7 @@ export const GRAS_WISEAI = {
       { intent: 'view_submissions', icon: 'assignment_turned_in', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'Open the review queue', desc: 'Track everything you\u2019ve submitted for WISEcode review in one place.', action: 'Open the review queue', ask: 'Open the review queue' },
       { intent: 'autofill_docs', icon: 'upload_file', iconTone: 'brand', pill: { tone: 'up', icon: 'upload_file', text: 'Docs' }, title: 'Attach & fill the documents', desc: 'Auto-fill the GRAS documentation for your ingredient in one pass.', action: 'Attach & fill the documents', ask: 'Attach & fill the documents' },
       { intent: 'sign_attestation', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'verified_user', text: 'Sign' }, title: 'Sign the attestation', desc: 'Confirm your GRAS attestation to submit for WISEcode review.', action: 'Sign the attestation', ask: 'Sign the attestation' },
-      { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEai' }, title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
+      { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEcodeAI' }, title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
     ],
   },
   intents: [

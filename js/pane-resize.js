@@ -57,7 +57,7 @@
     for (var c = row.firstElementChild; c; c = c.nextElementSibling)
       if (!isOverlay(c) && !isNav(c) && isVisible(c)) out.push(c);
     // Order panes by their VISUAL position, not DOM order. Some pages reorder
-    // the row with CSS `order` (e.g. the WISEai Library / reports docks the chat
+    // the row with CSS `order` (e.g. the WISEcodeAI Library / reports docks the chat
     // to the LEFT of the module via `order:-1`, even though the dock is appended
     // LAST in the DOM). Seam handles must sit between visually-adjacent panes:
     // if we kept DOM order here, a split's "left" pane could be the one that is
@@ -93,11 +93,11 @@
               el.classList.contains('pane-triple') || el.classList.contains('pane-fill')));
   }
   // A "fill" pane (marked data-pr-fill) is the flexible middle module that
-  // absorbs the row's remaining space (e.g. the WISEai chat between the
+  // absorbs the row's remaining space (e.g. the WISEcodeAI chat between the
   // broken-out History / Turns modules) — we never pin it or restore a saved
   // width onto it; drags adjust its NEIGHBOUR instead. BUT the flag is only a
   // hint: a page may pin that same element to a FIXED column via CSS in some
-  // states (e.g. WISEai fixes the chat to a 420px column once a result pane
+  // states (e.g. WISEcodeAI fixes the chat to a 420px column once a result pane
   // opens, making the RESULT panes the flexible fillers). If we still treated
   // it as the absorber there, a drag on an adjacent seam would "restore" it to
   // its CSS width on release — snapping it back to its original place. So a
@@ -153,7 +153,7 @@
     var ps = panes(row);
     // A single visible pane always fills the row — never restore a saved fixed
     // width onto it (a lone pane has no drag handle, so any stored width is a
-    // leftover from a multi-pane layout, e.g. the WISEai chat after its result
+    // leftover from a multi-pane layout, e.g. the WISEcodeAI chat after its result
     // panes were closed). Re-pinning it would wrongly hold it narrow.
     if (ps.length < 2) return;
     var stored = readPage();
@@ -272,6 +272,7 @@
     var row = entry.row;
     var rr = row.getBoundingClientRect();
     var startX = ev.clientX;
+    var startY = ev.clientY;
     var moved = false;
     var mode = sp.mode, left = sp.left || null, right = sp.right || null;
 
@@ -350,6 +351,7 @@
         if (isSplit) frozen.forEach(function (o) { restore(o.el, o.s); });
         else if (target) restore(target, targetSnap);
         layout(entry);
+        forwardClickToTick(handle, startX, startY);
         return;
       }
 
@@ -379,6 +381,21 @@
     document.addEventListener('mousemove', move, true);
     document.addEventListener('mouseup', end, true);
     window.addEventListener('blur', end);
+  }
+
+  /* The chat's activity strip (js/chat-activity-strip.js) lives on the same
+     module edge as a seam handle, and this fixed overlay hit-tests above it —
+     so a plain click meant for a minimap tick would otherwise die on the
+     handle. When a mousedown ends without any drag, peek beneath the handle
+     and, if an activity tick is there, pass the click on to it. Scoped to
+     ticks only so the seam never "clicks" arbitrary pane content. */
+  function forwardClickToTick(handle, x, y) {
+    var prev = handle.style.pointerEvents;
+    handle.style.pointerEvents = 'none';
+    var under = document.elementFromPoint(x, y);
+    handle.style.pointerEvents = prev;
+    var tick = under && under.closest ? under.closest('.wa-activity-tick') : null;
+    if (tick) tick.click();
   }
 
   function resetHandle(entry, handle, ev) {

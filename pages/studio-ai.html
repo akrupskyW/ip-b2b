@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISEai — Studio &amp; AI · Private Beta</title>
+  <title>WISEcodeAI — Studio &amp; AI · Private Beta</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -181,6 +181,7 @@
 
     @media (max-width: 960px) { .sa-chat { flex-basis: 380px; width: 380px; } }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body>
   <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
@@ -202,7 +203,7 @@
 
     <!-- Chat + coming-soon modules share the shell's "modules" grid area -->
     <div id="modules-row">
-    <!-- Center chat — the ONE shared WISEai chat module (js/wiseai-chat.js),
+    <!-- Center chat — the ONE shared WISEcodeAI chat module (js/wiseai-chat.js),
          mounted with Studio & AI–specific content below. -->
     <main class="sa-chat" id="sa-chat"></main>
 
@@ -407,7 +408,7 @@
           showPivot: true,
           isPivoted: !!window.isMenuPivoted?.(),
           isDark: document.documentElement.classList.contains('dark'),
-          showWISEaiDock: false,
+          showWISEcodeAIDock: false,
         });
       }
       function openAppearancePopover(anchor) {
@@ -464,11 +465,11 @@
     })();
   </script>
 
-  <!-- Studio & AI chat — mounts the ONE shared WISEai chat module
+  <!-- Studio & AI chat — mounts the ONE shared WISEcodeAI chat module
        (js/wiseai-chat.js) with Studio & AI–specific content (heading, intent
        chips, and waitlist-oriented canned replies; the feature is pre-launch). -->
   <script type="module">
-    import { mountWISEaiChat } from '../js/wiseai-chat.js';
+    import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
 
     /* Page-specific content — the same template, Studio & AI's own copy. */
     const INTENTS = [
@@ -501,8 +502,8 @@
 
     const host = document.getElementById('sa-chat');
     if (host) {
-      mountWISEaiChat(host, {
-        title: 'WISEai™',
+      mountWISEcodeAIChat(host, {
+        title: 'WISEcodeAI™',
         heading: 'Studio & AI — now in private beta',
         sub: 'Studio turns your portfolio into verified, board-ready reports. AI lets you ask your verified data anything and build reports of your own.',
         placeholder: 'Ask about Studio & AI…',
@@ -514,7 +515,7 @@
         intents: INTENTS,
         intentReplies: INTENT_REPLIES,
         reply,
-        /* Same feature parity as every other WISEai chat module: the live
+        /* Same feature parity as every other WISEcodeAI chat module: the live
            tokens/cost activity read-out and the Turns module (three-dot menu). */
         activity: true,
         turns: true,

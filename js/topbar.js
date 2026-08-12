@@ -393,7 +393,7 @@ export function restoreHeaderFloat() {
 
 /* Full bleed — open EVERY module top-to-bottom (drop its top/bottom borders,
    corner rounding, shadow and bounce-in, and collapse the vertical gaps around
-   it) so every module — the nav rail, WISEai, and every content module alike —
+   it) so every module — the nav rail, WISEcodeAI, and every content module alike —
    fills the full height of the screen while staying switchable from the rail.
    Driven by a `full-bleed` class on <html> so it reaches every module on every
    page; persisted so it survives navigation. */
@@ -472,6 +472,28 @@ export function applyChatTint(on) {
 /** Restore the persisted chat-tint state onto the document. */
 export function restoreChatTint() {
   applyChatTint(isChatTintOn());
+}
+
+/* Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
+   edge of every page (js/cwr-toggle.js). Hidden by default; this Appearance
+   toggle reveals it. Driven by a `cwr-ui-on` class on <html> — cwr-toggle.js
+   gates BOTH the widget and the crawl/walk mode CSS on that class, so turning
+   this off also suspends any chat-hiding the mode was doing (the stored mode
+   itself is kept for when the switch comes back on). */
+const CWR_UI_KEY = 'wise-cwr-ui';
+
+/** True when the floating Crawl · Walk · Run switch is shown. Defaults OFF. */
+export function isCwrUiOn() {
+  try { return localStorage.getItem(CWR_UI_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the cwr-ui-on class on <html> and persist it. */
+export function applyCwrUi(on) {
+  document.documentElement.classList.toggle('cwr-ui-on', !!on);
+  try { localStorage.setItem(CWR_UI_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:cwr-ui', { detail: { on: !!on } }));
+  } catch {}
 }
 
 /* Module spacing — admin-only control for the horizontal gap BETWEEN the modules

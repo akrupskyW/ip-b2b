@@ -517,7 +517,7 @@ function download(node) {
 }
 
 /* ------------------------------------------------------------------ */
-/* WISEai intents — each chip in the dock maps to a real thing you can  */
+/* WISEcodeAI intents — each chip in the dock maps to a real thing you can  */
 /* do in this module (open a toolkit, grab the shield, expand it all).  */
 /* ------------------------------------------------------------------ */
 
@@ -816,7 +816,7 @@ export function renderMarketingAssets(host) {
     repaint(host);
   });
 
-  /* Expose the intent + reply hooks so the WISEai dock drives real actions in
+  /* Expose the intent + reply hooks so the WISEcodeAI dock drives real actions in
      this module (open a toolkit, grab the shield, expand everything) AND so its
      replies can carry contextual download/open chips right in the thread. */
   activeHost = host;
@@ -826,7 +826,7 @@ export function renderMarketingAssets(host) {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
 }
 
-/* The WISEai dock lives in a separate part of the document (not inside `host`),
+/* The WISEcodeAI dock lives in a separate part of the document (not inside `host`),
    so the follow-up chips in its replies are wired with a single document-level
    delegate. Registered once; it always targets the most recently rendered host. */
 let activeHost = null;

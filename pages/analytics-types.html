@@ -31,7 +31,7 @@
     /* =====================================================================
        Typography lock-in (aha.html only) — Noto Serif is the display face for
        H1/H2-level headings, the big stat numerals, and CTAs across the
-       dashboard + WISEai welcome. Body copy, labels, eyebrows, pills and
+       dashboard + WISEcodeAI welcome. Body copy, labels, eyebrows, pills and
        descriptions stay in DM Sans. Scoped to body[data-product-id="dashboard"]
        so the shared agent-page.css / wiseai-chat.css aren't touched elsewhere.
     ===================================================================== */
@@ -85,7 +85,7 @@
     ===================================================================== */
     /* Navigation rail */
     #menu-panel { display: none !important; }
-    /* WISEai dock module */
+    /* WISEcodeAI dock module */
     #wiseai-dock-panel { display: none !important; }
     /* Top welcome hero (brand banner image) */
     .dash-hero { display: none !important; }
@@ -409,7 +409,7 @@
     /* =====================================================================
        Matrix responsiveness — keyed to the dashboard column width via the
        shared `dash` query container (.dash on this page). The module resize
-       toggle (full → wide → reading) and the WISEai panel both change that
+       toggle (full → wide → reading) and the WISEcodeAI panel both change that
        width; as it tightens we trade horizontal scroll for graceful shrink:
        the name column and heat cells get narrower. Default (roomy): the grid
        keeps an 860px min and scrolls if the column is narrower still.
@@ -1553,6 +1553,7 @@
       .rpt-hero-body { padding-right: 0; }
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-product-id="dashboard" data-default-pivot="0" data-default-full-bleed="0" data-default-header="1" data-hide-nav="1" data-hide-wiseai="1">
   <!-- Page header — WISEcode brand lock-up (left) + report meta / export (right).

@@ -569,7 +569,7 @@ body.auth-chat { height: 100dvh; height: 100vh; overflow: hidden; }
 #ac-messages { display: flex; flex-direction: column; }
 #ac-messages > :first-child { margin-top: auto; }
 
-/* ── Core chat primitives — the shared WISEai chat surface, self-contained here
+/* ── Core chat primitives — the shared WISEcodeAI chat surface, self-contained here
    so the signup page needs only auth.css (the app build keeps these in wise.css). ── */
 .sc-card {
   --fs-welcome-title: 1.0625rem;
@@ -611,7 +611,7 @@ html.dark .sc-question { color: var(--primary-bright); }
 .sc-line-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
 html.dark .sc-line-body a { color: var(--primary-bright); }
 /* Large welcome-style heading inside a chat line — mirrors the product-comparison
-   WISEai header (.ws-heading): big, tight, and bold. */
+   WISEcodeAI header (.ws-heading): big, tight, and bold. */
 .sc-line-heading {
   display: block;
   font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif;
@@ -651,7 +651,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 @keyframes scSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-typing-spin { animation: none; } }
 /* Conversation-in-progress indicator — a light-blue progress ring wrapped
-   around the WISEai owl avatar (the owl chip rides on top as a layer above the
+   around the WISEcodeAI owl avatar (the owl chip rides on top as a layer above the
    ring), replacing the separate inline spinner. The status label sits directly
    to its right (the flex .sc-line-body column). */
 .sc-line-typing .sc-avatar-wiseai { position: relative; }
@@ -697,9 +697,26 @@ html.dark .sc-welcome { background: transparent; }
   0%, 100% { box-shadow: 0 0 24px rgba(37, 80, 124, 0.45), 0 0 48px rgba(37, 80, 124, 0.18); transform: scale(1); }
   50% { box-shadow: 0 0 36px rgba(37, 80, 124, 0.55), 0 0 72px rgba(37, 80, 124, 0.28); transform: scale(1.04); }
 }
+/* Slow, simple echo of the ring-bloom — but INSIDE the owl's eyes. A CSS-only
+   overlay (the SVG mark is untouched): the background is painted in the SAME
+   viewBox as the owl, so its two soft primary-blue glows land exactly on the
+   eyes at any logo size. padding:inherit + a content-box background make the
+   overlay share the owl svg's content box (matching its preserveAspectRatio),
+   so no per-context positioning math is needed. It only breathes opacity —
+   slower and gentler than the expanding pulse rings, in the same brand blue. */
+.ws-logo::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  padding: inherit; box-sizing: border-box;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 193 100'><defs><radialGradient id='wseye'><stop offset='0' stop-color='rgb(37,80,124)' stop-opacity='0.9'/><stop offset='0.55' stop-color='rgb(37,80,124)' stop-opacity='0.4'/><stop offset='1' stop-color='rgb(37,80,124)' stop-opacity='0'/></radialGradient></defs><circle cx='63.486' cy='54.078' r='14' fill='url(%23wseye)'/><circle cx='129.254' cy='54.078' r='14' fill='url(%23wseye)'/></svg>");
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+  background-origin: content-box; background-clip: content-box;
+  opacity: 0; animation: wsEyePulse 7s ease-in-out infinite;
+}
+@keyframes wsEyePulse { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) {
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
+  .ws-logo::after { animation: none; opacity: 0.3; }
 }
 .ws-heading { font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 600; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
 .ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }

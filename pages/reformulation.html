@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISEai — Reformulation Studio · Guiding Stars</title>
+  <title>WISEcodeAI — Reformulation Studio · Guiding Stars</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,7 +15,7 @@
     /* ═══════════ Reformulation Studio — page-specific shell ═══════════
        Reuses the shared WISE palette + chat classes (wiseai-chat.css). Everything
        bespoke here is prefixed rf-. Three synced modules share the shell's
-       "modules" grid area: the WISEai chat (left), the Reformulation Studio
+       "modules" grid area: the WISEcodeAI chat (left), the Reformulation Studio
        calculator (center: WISE sliders + toggles that live-update the score and
        the star you can reach), and the Reformulation Dashboard (right:
        disqualification + recommendations, then a debits/credits trade-off). */
@@ -99,7 +99,7 @@
     .rf-lead .rf-accent { color: var(--primary); }
 
     /* Intent chips live INLINE in the conversation — they trail the latest
-       WISEai turn (in line with the text), scroll with the transcript, and
+       WISEcodeAI turn (in line with the text), scroll with the transcript, and
        always mirror the current reformulation state. One tap applies a step. */
     .rf-chips-inline { margin: 11px 0 2px; }
     .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -639,6 +639,7 @@
       .rf-sec-title { font-size: 15.5px; }
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body>
   <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
@@ -664,7 +665,7 @@
          and the studio waits. Deep-linking via ?product= skips straight in. -->
     <div id="modules-row" class="is-picking">
 
-      <!-- ═══════════ 1 · WISEai chat — the ONE shared WISEai chat module
+      <!-- ═══════════ 1 · WISEcodeAI chat — the ONE shared WISEcodeAI chat module
            (js/wiseai-chat.js). The reformulation content (product picker, move
            chips, scoring replies, studio/dashboard mirroring) is fed IN through
            the module's config so it renders with the full chat UX: three-dot
@@ -909,7 +910,7 @@
           showPivot: true,
           isPivoted: !!window.isMenuPivoted?.(),
           isDark: document.documentElement.classList.contains('dark'),
-          showWISEaiDock: false,
+          showWISEcodeAIDock: false,
         });
       }
       function openAppearancePopover(anchor) {
@@ -970,9 +971,9 @@
        The chat's intent chips are DERIVED from the live recommendations, so they
        always match whatever the product currently is. -->
   <script type="module">
-    import { mountWISEaiChat } from '../js/wiseai-chat.js';
+    import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
     (function () {
-      /* The shared WISEai chat instance — mounted in boot() once the page's
+      /* The shared WISEcodeAI chat instance — mounted in boot() once the page's
          reformulation content (products, scoring, replies) is defined. All the
          transcript helpers below delegate to this handle so the page drives the
          SAME chat module every other WISE page uses. */
@@ -1303,7 +1304,7 @@
           </div>`;
       }
 
-      /* Intent chips — built as a block that is embedded INSIDE a WISEai turn
+      /* Intent chips — built as a block that is embedded INSIDE a WISEcodeAI turn
          (part of the transcript), never a sticky bottom dock. Derived from the
          live recommendations so whichever turn carries them is always current. */
       /* Each intent chip carries the point delta the move is worth: credits show
@@ -1351,7 +1352,7 @@
         return PRODUCTS.map((p) => ({ intent: 'pick:' + p.id, label: p.short, icon: p.icon }));
       }
 
-      /* ═══════════ Chat — delegates to the shared WISEai module ═══════════
+      /* ═══════════ Chat — delegates to the shared WISEcodeAI module ═══════════
          The module owns the transcript, avatars, timestamps, typing indicator
          and inline chips; these thin wrappers post into it so all the page's
          existing studio/dashboard mirroring keeps working unchanged. */
@@ -1360,24 +1361,24 @@
         chat.hideWelcome();
         chat.addUser(text);
       }
-      /* Post a WISEai line. `opts.chips` marks a board-state reply, so we refresh
+      /* Post a WISEcodeAI line. `opts.chips` marks a board-state reply, so we refresh
          the trailing move chips to the new board state right after it lands.
          `opts.onDone` fires once the line has finished animating in (the module's
          word-by-word type + meta reveal) — used to chain a follow-up line so a
          multi-part turn animates strictly IN ORDER instead of every line typing
          at once. `opts.trailChips:false` keeps a line from parking the move chips
          beneath it (so only the final line of a turn carries them). */
-      function addWISEai(html, opts) {
+      function addWISEcodeAI(html, opts) {
         opts = opts || {};
         if (!chat) return;
         chat.hideWelcome();
-        chat.addWISEai(html, { trailChips: opts.trailChips, onDone: opts.onDone });
+        chat.addWISEcodeAI(html, { trailChips: opts.trailChips, onDone: opts.onDone });
         if (opts.chips) setTimeout(setMoveChips, 30);
       }
       /* Guiding Stars mode flip just re-labels the move chips (no new turn). */
       function refreshChips() { setMoveChips(); }
       /* A board-state reply: post it and refresh the move chips. */
-      function respond(html) { addWISEai(html, { chips: true }); }
+      function respond(html) { addWISEcodeAI(html, { chips: true }); }
 
       function scoreSentence(c) {
         const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
@@ -1429,7 +1430,7 @@
         setTimeout(setMoveChips, 30);
         return `Done — <b>${esc(res.rec.title)}</b>. ${scoreSentence(res.after)}${res.after.disqualified ? '' : (res.after.stars > res.before.stars ? ' 🎉 that just earned a star.' : '')}`;
       }
-      /* Dashboard "Apply" button: mirror the move as a full you + WISEai turn. */
+      /* Dashboard "Apply" button: mirror the move as a full you + WISEcodeAI turn. */
       function applyStep(id) {
         const before = compute();
         const rec = recommendations(before).find((r) => r.id === id);
@@ -1506,7 +1507,7 @@
       });
 
       /* ── Free-text conversation — routed by the shared module's `reply` opt.
-         The module posts the you-line + typing indicator; we return WISEai's
+         The module posts the you-line + typing indicator; we return WISEcodeAI's
          answer for the current board state. ── */
       function rfReply(text) {
         if (!product) return 'Pick a food from the list in the dashboard first — then I can model it against the Guiding Stars algorithm.';
@@ -1669,9 +1670,9 @@
            first has finished typing in (onDone). The first line trails no chips
            so the move chips land only under the final line — never a flash of the
            picker chips mid-turn. */
-        addWISEai(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, {
+        addWISEcodeAI(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, {
           trailChips: false,
-          onDone: () => addWISEai(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true }),
+          onDone: () => addWISEcodeAI(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true }),
         });
       }
 
@@ -1972,19 +1973,19 @@
         return PRODUCTS.find((p) => p.id === q) || PRODUCTS.find((p) => digits(p.upc) === digits(q)) || null;
       }
       (function boot() {
-        /* Mount the ONE shared WISEai chat module and feed it the reformulation
+        /* Mount the ONE shared WISEcodeAI chat module and feed it the reformulation
            content. Every transcript wrapper, chip and reply above drives this
            handle, so the page uses the exact same chat UX (three-dot menu with
            tokens/cost activity, Turns, History & Admin toggles, width toggle)
            as pages/wiseai.html — just with reformulation-specific content. */
-        chat = mountWISEaiChat(document.getElementById('rf-chat'), {
-          title: 'WISEai\u2122',
+        chat = mountWISEcodeAIChat(document.getElementById('rf-chat'), {
+          title: 'WISEcodeAI\u2122',
           heading: 'Which food are we reformulating?',
           sub: 'Pick a food and I\u2019ll load it into the studio — then we dial in the recipe together, live.',
-          placeholder: 'Ask WISEai to reformulate this product\u2026',
+          placeholder: 'Ask WISEcodeAI to reformulate this product\u2026',
           userInitials: 'AK',
           sourceLabel: '',
-          statusLabel: 'WISEai is modeling',
+          statusLabel: 'WISEcodeAI is modeling',
           chipsFlow: 'wrap',
           inlineChips: true,
           historyKey: 'wise-chat-history:reformulation',

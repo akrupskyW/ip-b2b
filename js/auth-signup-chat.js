@@ -2,7 +2,7 @@
    WISE — conversational account creation
 
    Runs the "create account" flow as a conversation inside the shared
-   WISEai chat surface (wiseai-chat.css), collecting every field the form
+   WISEcodeAI chat surface (wiseai-chat.css), collecting every field the form
    version gathered — grouped into 3 macro steps — while a right-hand
    "Account setup" progress pane mirrors the verification-sidebar stepper.
 
@@ -310,52 +310,15 @@
     var scrollDown = function () { messages.scrollTop = messages.scrollHeight; };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
 
-    /* Reveal a WISE-assistant line's text one word at a time so it reads as if
-       it's being typed live instead of popping in whole. Wraps each visible word
-       in a span and fades them in on a quick cadence, leaving markup, icons and
-       the meta footer untouched. Honors prefers-reduced-motion. */
+    /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
+       signature is kept so the timestamp / chip reveal chain runs unchanged. */
     var prefersReducedMotion = (function () {
       try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
       catch (_) { return false; }
     })();
     function typeInLine(bodyEl, done) {
-      if (!bodyEl || prefersReducedMotion) { if (done) done(); return; }
-      var walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
-        acceptNode: function (n) {
-          if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-          var p = n.parentElement;
-          if (p && p.closest('.sc-line-meta, .material-symbols-outlined, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
-      var textNodes = [];
-      var tn;
-      while ((tn = walker.nextNode())) textNodes.push(tn);
-      var words = [];
-      textNodes.forEach(function (node) {
-        var parts = node.nodeValue.split(/(\s+)/);
-        var frag = document.createDocumentFragment();
-        parts.forEach(function (part) {
-          if (!part) return;
-          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-          var span = document.createElement('span');
-          span.style.opacity = '0';
-          span.textContent = part;
-          frag.appendChild(span);
-          words.push(span);
-        });
-        node.parentNode.replaceChild(frag, node);
-      });
-      if (!words.length) { if (done) done(); return; }
-      var i = 0;
-      var step = function () {
-        words[i].style.opacity = '1';
-        i++;
-        scrollDown();
-        if (i < words.length) setTimeout(step, 70);
-        else if (done) done();
-      };
-      step();
+      scrollDown();
+      if (done) done();
     }
 
     function disablePriorChips() {
@@ -400,7 +363,7 @@
       };
       setTimeout(showNext, startDelay);
     }
-    function addWISEai(html, options, done) {
+    function addWISEcodeAI(html, options, done) {
       messages.insertAdjacentHTML('beforeend',
         '<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISE Assistant">' + OWL_BUG + '</span><div class="sc-line-body">' + html + '<div class="sc-line-meta"><span class="sc-line-time">' + esc(nowLabel()) + '</span></div></div></div>');
       var line = messages.lastElementChild;
@@ -438,7 +401,7 @@
       var typing = showTyping();
       setTimeout(function () {
         typing.remove();
-        addWISEai(html, options, cb);
+        addWISEcodeAI(html, options, cb);
       }, delay || 550);
     }
     function setInputEnabled(on, placeholder) {
@@ -898,7 +861,7 @@
 
     /* opts.dest === 'overview' skips the remaining/optional questions, creates the
        account, and drops the user straight onto the workspace overview. Otherwise
-       the flow finishes normally and lands on the default (WISEai) surface. */
+       the flow finishes normally and lands on the default (WISEcodeAI) surface. */
     function finishFlow(opts) {
       opts = opts || {};
       var toOverview = opts.dest === 'overview';
@@ -929,7 +892,7 @@
           invites: a.invites || []
         };
         auth.signup(reg);
-        var tail = toOverview ? 'taking you to your overview…' : 'taking you to WISEai…';
+        var tail = toOverview ? 'taking you to your overview…' : 'taking you to WISEcodeAI…';
         wiseaiSay('<span class="ac-success"><span class="material-symbols-outlined">celebration</span>Welcome to WISEcode, ' + esc((a.name || '').split(' ')[0] || 'there') + '!</span> Your account is ready — ' + tail, null,
           function () { setTimeout(function () { location.href = destUrl; }, 1000); });
       });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISEai — AI Verification Assistant</title>
+  <title>WISEcodeAI — AI Verification Assistant</title>
   <!-- Auth: redirect to sign-in if there is no session, then load the auth API. -->
   <script src="../js/auth-guard.js"></script>
   <script src="../js/auth.js"></script>
@@ -520,7 +520,7 @@
 
     /* Single (default) tier — a fixed-width single pane. The chat is pinned to a
        definite 380px so it reads as ONE column and never balloons to fill the
-       modules row (matches the WISEai dock + portfolio #pf-chat-panel dock). */
+       modules row (matches the WISEcodeAI dock + portfolio #pf-chat-panel dock). */
     #chat-shell {
       flex: 0 0 380px;
       width: 380px;
@@ -547,7 +547,7 @@
         max-width: 330px;
       }
     }
-    /* WISEai "double width": the chat grows to a wider, viewport-capped definite
+    /* WISEcodeAI "double width": the chat grows to a wider, viewport-capped definite
        length so single → double is a clear step up. Most visible when side
        modules are open beside the chat. */
     #chat-shell.panel-wide {
@@ -647,7 +647,7 @@
       min-height: var(--panel-header-h);
       box-sizing: border-box;
     }
-    /* WISEai header title — MUST be pixel-identical to the canonical WISEai module
+    /* WISEcodeAI header title — MUST be pixel-identical to the canonical WISEcodeAI module
        on every other page (wiseai-chat.css `.sc-topbar-titles .topbar-title`):
        var(--fs-ui) / weight 700 / line-height 1.2 to match the other module
        header titles. Two ai-chat-only rules fight this and
@@ -657,14 +657,14 @@
          2. `.chat-topbar .topbar-title { font-weight: 600 !important }` (the
             font-weight dial-back block) was thinning it to 600.
        `#chat-shell-wrap .chat-topbar .topbar-title` (id+2 classes) outranks both,
-       so the WISEai header now matches Portfolio exactly. */
+       so the WISEcodeAI header now matches Portfolio exactly. */
     #chat-shell-wrap .chat-topbar .topbar-title {
       color: var(--text);
       font-weight: 700 !important;
       font-size: var(--fs-ui) !important;
       line-height: 1.2;
     }
-    /* Trademark mark in the WISEai title — small superscript, not full-size. */
+    /* Trademark mark in the WISEcodeAI title — small superscript, not full-size. */
     .topbar-title .title-tm {
       font-size: 0.6em;
       font-weight: 600;
@@ -690,7 +690,7 @@
          once the transcript outgrows the pane. */
       display: flex;
       flex-direction: column;
-      /* This chat lives in a NARROW side module (not the full-width WISEai
+      /* This chat lives in a NARROW side module (not the full-width WISEcodeAI
          page), so the canonical 3rem side padding — plus the avatar column and
          gap — squeezed the readable transcript into a tight column that wrapped
          far too early. Pulled the inline padding in so the transcript uses the
@@ -771,7 +771,7 @@
            of the visible viewport. Other panels scroll behind it.
          • `z-index: 50` → renders above scrolling siblings.
          • `mp-open` in HTML → visible from page load.
-       Toggling any other module (History / WISEai / PULSE / Settings / NFP+ /
+       Toggling any other module (History / WISEcodeAI / PULSE / Settings / NFP+ /
        Notifications) cannot move this card. It is anchored. */
     #menu-panel {
       display: none;
@@ -839,7 +839,7 @@
     #topbar-row > .topbar-logo { display: none !important; }
 
     /* Chat-shell ONLY (layout, not component visuals): the menu panel sits in
-       #modules-row directly beside the History / WISEai panels, whose headers
+       #modules-row directly beside the History / WISEcodeAI panels, whose headers
        are --panel-header-h (60px) tall. The shared brand strip is sized to the
        (hidden) 54px app top-bar, so here we re-pin its height to the panel
        header height and center the owl, so the collapsed logo lines up exactly
@@ -906,7 +906,7 @@
        they live in #panels-row / #panels-row-right, toggle on a `.open` class,
        flip left↔right, and expand to double width. One shared `.util-panel`
        class drives all five so each opens from the avatar menu the same way the
-       History / WISEai / VAULT modules open from the rail. */
+       History / WISEcodeAI / VAULT modules open from the rail. */
     #profile-panel,
     #prefs-panel,
     #apikeys-panel,
@@ -1127,7 +1127,7 @@
     }
     .history-view-pin .material-symbols-outlined { font-size: 13px; opacity: 0.85; }
 
-    /* WISEai + UPF */
+    /* WISEcodeAI + UPF */
     #wiseai-panel,
     #upf-panel {
       display: none;
@@ -1787,7 +1787,7 @@
     }
 
     /* ── Reformulation Plan workflow module ─────────────────────────────
-       A right-side module WISEai builds out step by step. Shares the
+       A right-side module WISEcodeAI builds out step by step. Shares the
        neutral surface, radius, shadow, bounce and width-toggle behaviour of
        the History / account modules so it reads as a first-class module. */
     #workflow-panel {
@@ -2041,7 +2041,7 @@
     }
 
     /* ── WISE Verification workflow module ──────────────────────────────
-       A richer, "live" sibling to the Reformulation Plan: WISEai runs an
+       A richer, "live" sibling to the Reformulation Plan: WISEcodeAI runs an
        end-to-end verification (Profile → Audit → Select → Analyze → Attest →
        Pay → Verified Shield) and assembles the module stage by stage. Opens
        double-width by default. Shares the neutral module surface + controls. */
@@ -3493,7 +3493,7 @@
 
     /* Per-cell chat affordance for the Guiding Stars rows — the forum icon rides
        in the top-right of each entity cell and fades in on hover/focus, so every
-       product × line item can spawn a WISEai chat about that exact value. */
+       product × line item can spawn a WISEcodeAI chat about that exact value. */
     .cmp-gs-cell { position: relative; }
     .cmp-gs-cellchat {
       position: absolute; top: 4px; right: 4px; z-index: 2;
@@ -4635,7 +4635,9 @@
       scroll-snap-align: start;
       padding: 14px 16px;
       aspect-ratio: 16 / 9;
-      background: var(--surface-2);
+      /* Same blue-tinted surface as the small intent chips (.chip /
+         .ws-intent-chip) so both intent surfaces read as one family. */
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border: 1px solid var(--border-strong);
       border-radius: 10px !important;
       cursor: pointer;
@@ -4690,14 +4692,25 @@
       right: 0;
       background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
     }
+    /* Blend the rail edge fades into the CHAT surface, not the page background —
+       chat-tint washes the welcome 5% brand-blue (see #welcome-screen below) and
+       dark paints the shell navy, so var(--bg) fades read as stray linen bands. */
+    html.chat-tint:not(.dark) .ws-scorecards-wrap::before { background: linear-gradient(to right, color-mix(in srgb, var(--primary) 5%, #fff) 0%, transparent 100%); }
+    html.chat-tint:not(.dark) .ws-scorecards-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary) 5%, #fff) 0%, transparent 100%); }
+    html.dark .ws-scorecards-wrap::before { background: linear-gradient(to right, #1A2339 0%, transparent 100%); }
+    html.dark .ws-scorecards-wrap::after { background: linear-gradient(to left, #1A2339 0%, transparent 100%); }
+    html.dark.chat-tint .ws-scorecards-wrap::before { background: linear-gradient(to right, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
+    html.dark.chat-tint .ws-scorecards-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
     .ws-scorecards-wrap.has-prev::before { opacity: 1; }
     .ws-scorecards-wrap.has-next::after { opacity: 1; }
     .ws-scorecard:hover {
-      background: var(--surface-3);
+      background: color-mix(in srgb, var(--primary) 16%, #fff);
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong));
       box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12);
       transform: translateY(-2px);
     }
+    html.dark .ws-scorecard { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
+    html.dark .ws-scorecard:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 20%, transparent); }
     .ws-scorecard:focus-visible {
       outline: 2px solid var(--primary);
       outline-offset: 2px;
@@ -4716,7 +4729,7 @@
       flex-shrink: 0;
     }
     .ws-sc-icon .material-symbols-outlined { font-size: 24px !important; }
-    /* Metric cards: neutral (foreground) icon — the intro/WISEai cards keep the
+    /* Metric cards: neutral (foreground) icon — the intro/WISEcodeAI cards keep the
        brand accent below. */
     .ws-sc-icon--brand,
     .ws-sc-icon--warn,
@@ -4733,7 +4746,7 @@
       white-space: nowrap;
     }
     .ws-sc-pill .material-symbols-outlined { font-size: 12px !important; }
-    /* Metric-card pills: neutral grey "shades of black" (intro/WISEai pills keep
+    /* Metric-card pills: neutral grey "shades of black" (intro/WISEcodeAI pills keep
        the brand accent below). */
     .ws-sc-pill--up,
     .ws-sc-pill--warn,
@@ -4830,7 +4843,7 @@
 
     /* ===== Microcopy & trust =====
        Kept byte-for-byte in step with pages/wiseai-chat.css so the inline chat
-       on this page and the shared mountWISEaiChat() surface read identically:
+       on this page and the shared mountWISEcodeAIChat() surface read identically:
        welcome trust badges, per-line timestamps + grounding caption, a
        descriptive typing status, and the standing AI-limitations disclaimer. */
     .ws-trust {
@@ -4848,10 +4861,10 @@
 
     /* Message lines: profile-avatar column + larger, high-contrast body copy
        (the timestamp / grounding meta row stays small). Mirrors wiseai-chat.css.
-       WISEai's avatar is the WISE-owl bug; "You" is the member's initials,
+       WISEcodeAI's avatar is the WISE-owl bug; "You" is the member's initials,
        matching the top-bar .topbar-profile chip. */
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
-       avatar lines up under the topbar owl and body text under "WISEai". */
+       avatar lines up under the topbar owl and body text under "WISEcodeAI". */
     .sc-line { display: flex; align-items: flex-start; gap: 12px; }
     .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text); }
     .sc-avatar {
@@ -4989,7 +5002,7 @@
       filter: brightness(1.05);
       color: #fff;
     }
-    /* WISEai welcome-screen intent chips must read with equal visual weight —
+    /* WISEcodeAI welcome-screen intent chips must read with equal visual weight —
        no chip should look pre-selected. This locks them to the neutral
        `.chip` look even if `chip-primary` (or similar) is added downstream. */
     .ws-intent-chip,
@@ -6149,7 +6162,7 @@
       box-shadow: var(--shadow-2);
     }
 
-    /* History / WISEai / UPF panels — same card surface as chat.
+    /* History / WISEcodeAI / UPF panels — same card surface as chat.
        Per-agent panels (TIER / SHIELD / LENS / VAULT) ride the same tokens so
        they look at home in both dark and light themes. */
     #history-panel .panel-inner,
@@ -6369,7 +6382,7 @@
        send button cleanly aligned and sized to match.
        ===================================================================== */
     .chat-input-rail {
-      /* Matches the canonical WISEai module input rail (wiseai-chat.css /
+      /* Matches the canonical WISEcodeAI module input rail (wiseai-chat.css /
          wise.css `.chat-input-rail`): 12px block, 32px inline. */
       padding: 12px 32px !important;
       background: var(--bg) !important;
@@ -6383,7 +6396,7 @@
       background: color-mix(in srgb, var(--primary) 10%, #fff);
       border-color: var(--border-strong);
     }
-    /* Stacked composer (canonical WISEai rail): the "+" sits left, the database
+    /* Stacked composer (canonical WISEcodeAI rail): the "+" sits left, the database
        selector row sits atop the text input. Let wiseai-chat.css own the padding. */
     .fl-input-wrap--stacked { min-height: 40px; }
     .fl-label { display: none !important; }
@@ -6415,6 +6428,29 @@
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */
     html.chat-tint:not(.dark) .chat-input-rail {
+      background: color-mix(in srgb, var(--primary) 5%, #fff) !important;
+    }
+    /* Dark: match the shared WISEcodeAI module (wise.css .sc-card / .sc-welcome,
+       as seen on overview.html). The welcome overlay and input rail go
+       transparent so the card's navy — and the chat-tint blue wash — show
+       through; previously they painted var(--bg) (#05141C) and the whole chat
+       read near-black. */
+    html.dark #welcome-screen { background: transparent; }
+    html.dark .chat-input-rail {
+      background: transparent !important;
+      border-top-color: transparent !important;
+    }
+    /* The blue chat-surface wash (Appearance ▸ "Blue chat surface") — same
+       color as html.dark.chat-tint .sc-card in wise.css. Outranks the flat
+       #1A2339 html.dark #chat-shell rule above. */
+    html.dark.chat-tint #chat-shell {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) !important;
+    }
+    /* Light + chat tint: same 5% brand-blue wash the shared .sc-card /
+       .sc-welcome get in wise.css, so the card and welcome overlay match
+       overview.html instead of showing the cream var(--bg) page background. */
+    html.chat-tint:not(.dark) #welcome-screen,
+    html.chat-tint:not(.dark) #chat-shell {
       background: color-mix(in srgb, var(--primary) 5%, #fff) !important;
     }
 
@@ -6629,7 +6665,7 @@
        One horizontal-dots (more_horiz) trigger that gathers every per-module
        control — move side and width toggle — into a single
        dropdown. Built by consolidatePanelControls() so every module header on
-       the page reads the same (WISEai excepted). */
+       the page reads the same (WISEcodeAI excepted). */
     .panel-controls.pf-menuized { flex-direction: row; min-width: 0; gap: 0; }
     .pf-module-menu { position: relative; display: inline-flex; flex-shrink: 0; }
     .pf-module-menu-btn {
@@ -6816,7 +6852,7 @@
        special-cased `height: auto` (originally for tall stacked controls).
        Now that consolidatePanelControls() collapses every header's controls
        into a single more_horiz menu, they must read at the exact same
-       --panel-header-h rhythm as History / WISEai / PULSE / TIER / etc. The
+       --panel-header-h rhythm as History / WISEcodeAI / PULSE / TIER / etc. The
        #id + !important guarantees the lock survives every runtime state
        (stacked, menuized, or mid-consolidation) so the strip can never render
        short again. */
@@ -6882,11 +6918,11 @@
     }
 
     /* ===== FULL BLEED (Appearance → "Full bleed") =====
-       On the WISEai page the chat is the primary workspace (not a docked WISEai),
+       On the WISEcodeAI page the chat is the primary workspace (not a docked WISEcodeAI),
        so full bleed has to make the whole shell run edge-to-edge and shed the
        module card frames — otherwise the toggle appears to do nothing here. The
-       shared agent-page.css rules deliberately keep the chat/WISEai as an inset
-       floating card (correct where WISEai is only a side dock), and its module
+       shared agent-page.css rules deliberately keep the chat/WISEcodeAI as an inset
+       floating card (correct where WISEcodeAI is only a side dock), and its module
        card-strip list doesn't cover this page's own inner classes (.panel-inner,
        .wiseai-inner, .cmp-inner, …). We override both so the toggle behaves like
        the containerless full bleed on every other shell. */
@@ -6902,7 +6938,7 @@
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
-    /* 3) Chat + docked WISEai fill the full module height (undo the shared shorter
+    /* 3) Chat + docked WISEcodeAI fill the full module height (undo the shared shorter
        / offset card so nothing floats with a top/bottom gap). */
     html.full-bleed #chat-shell,
     html.full-bleed #wiseai-dock-panel {
@@ -7214,7 +7250,7 @@
     }
 
     /* ── Doubled module gutters ──────────────────────────────────────────────
-       Every side-panel module (History, WISEai, UPF, Tier, Shield, Lens, Vault,
+       Every side-panel module (History, WISEcodeAI, UPF, Tier, Shield, Lens, Vault,
        Notifications, Profile, Preferences, Workflow, Verify Flow, etc.) draws its
        left/right content padding from a Tailwind px-3 / p-3 utility (12px) on the
        shared .side-panel-body, and a `padding: 12px` on the header family. This
@@ -7236,6 +7272,7 @@
       padding-right: 24px !important;
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body class="ai-chat-page">
   <button type="button" id="topbar-overlay-close" class="hidden" onclick="onTopbarOverlayCloseClick(event)" title="Close" aria-label="Close">
@@ -7264,7 +7301,7 @@
       import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
       import { wireChatComposer } from '../js/wiseai-chat.js';
 
-      /* Upgrade the inline comparison chat input to the canonical WISEai composer:
+      /* Upgrade the inline comparison chat input to the canonical WISEcodeAI composer:
          swap the old model-tune selector for the shared database selector. The
          page keeps its own "+" attach popover, so skip the shared attach wiring. */
       document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
@@ -7538,7 +7575,7 @@
               <span class="material-symbols-outlined text-[15px] text-amber-400">search</span>
             </div>
             <div>
-              <div class="text-xs font-bold text-oyster-100">WISEai</div>
+              <div class="text-xs font-bold text-oyster-100">WISEcodeAI</div>
               <p class="text-xs text-oyster-600">WISE Foods</p>
             </div>
           </div>
@@ -7784,7 +7821,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
-            <span class="topbar-title">WISEai<sup class="title-tm">™</sup></span>
+            <span class="topbar-title">WISEcodeAI<sup class="title-tm">™</sup></span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-symbols-outlined" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -7794,7 +7831,7 @@
         </div>
         <div class="flex items-center gap-1" style="margin-left:auto;">
         <div class="panel-more-wrap" id="wiseai-menu-wrap" style="margin-left:0;">
-          <button id="wiseai-menu-btn" type="button" class="panel-more-btn" onclick="toggleWISEaiMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="wiseai-menu" aria-label="More options">
+          <button id="wiseai-menu-btn" type="button" class="panel-more-btn" onclick="toggleWISEcodeAIMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="wiseai-menu" aria-label="More options">
             <span class="material-symbols-outlined">more_vert</span>
           </button>
           <div id="wiseai-menu" class="topbar-popover hidden" role="menu">
@@ -7802,7 +7839,7 @@
                  docked sticky History module (never an in-chat overlay),
                  matching the three-dot menu on pages/wiseai.html. Keeps the
                  menu open so the switch state reads back. -->
-            <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="history" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEaiHistoryModule(event)">
+            <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="history" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEcodeAIHistoryModule(event)">
               <span class="material-symbols-outlined topbar-menu-icon">history</span>
               <span>History &amp; Projects</span>
               <span class="sc-switch" aria-hidden="true"></span>
@@ -7823,7 +7860,7 @@
             <div class="topbar-menu-divider"></div>
             <!-- Turns — Admin switch for the docked sticky Turns module (fork /
                  share / jump any turn), same as pages/wiseai.html. -->
-            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEaiTurnsModule(event)">
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEcodeAITurnsModule(event)">
               <span class="material-symbols-outlined topbar-menu-icon">alt_route</span>
               <span>Turns</span>
               <span class="topbar-menu-badge">Admin</span>
@@ -7845,7 +7882,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="panel-width-toggle-btn" id="wiseai-width-btn" data-panel="wiseai" onclick="toggleWISEaiWidth(this)" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand WISEai module width"><span class="material-symbols-outlined">width_normal</span></button>
+        <button type="button" class="panel-width-toggle-btn" id="wiseai-width-btn" data-panel="wiseai" onclick="toggleWISEcodeAIWidth(this)" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Expand WISEcodeAI module width"><span class="material-symbols-outlined">width_normal</span></button>
         </div>
       </div>
 
@@ -7869,7 +7906,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can WISEai help with?</h1>
+            <h1 class="ws-heading">What can WISEcodeAI help with?</h1>
             <!-- Portfolio score cards — richer, actionable signals above the intent chips.
                  They scroll horizontally (there are always more than fit on screen), with a
                  prioritisation filter pinned to the far right of the section bar and a
@@ -7924,15 +7961,15 @@
                             <div class="ws-sc-desc">UPF status, compliance, and ingredient health — every UPC, one view.</div>
                             <div class="ws-sc-action">Take the tour<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--wiseai is-locked" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can WISEai help me work through my portfolio?','auto_awesome')">
+                        <button class="ws-scorecard ws-scorecard--intro ws-scorecard--wiseai is-locked" role="listitem" data-order="2" data-urgent="0" data-impact="0" data-recent="0" onclick="welcomeChipClick('faq_intro','How can WISEcodeAI help me work through my portfolio?','auto_awesome')">
                             <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-symbols-outlined">lock</span></span>
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--wiseai"><span class="material-symbols-outlined">smart_toy</span></span>
-                                <span class="ws-sc-pill ws-sc-pill--wiseai"><span class="material-symbols-outlined">bolt</span>WISEai</span>
+                                <span class="ws-sc-pill ws-sc-pill--wiseai"><span class="material-symbols-outlined">bolt</span>WISEcodeAI</span>
                             </div>
-                            <div class="ws-sc-intro-title">Let WISEai do the heavy lifting</div>
-                            <div class="ws-sc-desc">Ask, verify, or reformulate — WISEai drafts it, you decide.</div>
-                            <div class="ws-sc-action">Ask WISEai anything<span class="material-symbols-outlined">arrow_outward</span></div>
+                            <div class="ws-sc-intro-title">Let WISEcodeAI do the heavy lifting</div>
+                            <div class="ws-sc-desc">Ask, verify, or reformulate — WISEcodeAI drafts it, you decide.</div>
+                            <div class="ws-sc-action">Ask WISEcodeAI anything<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard is-locked" role="listitem" data-order="3" data-urgent="4" data-impact="5" data-recent="3" onclick="startVerificationWorkflow()">
                             <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this card"><span class="material-symbols-outlined">lock</span></span>
@@ -8079,7 +8116,7 @@
                     </div>
                     <div>
                         <p class="ss-info-title">How agents work together</p>
-                        <p class="ss-info-desc">WISEai orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEai is always required.</p>
+                        <p class="ss-info-desc">WISEcodeAI orchestrates all active agents automatically. Enable agents based on the tasks you perform most — more agents = richer context, more capabilities. WISEcodeAI is always required.</p>
                     </div>
                 </div>
 
@@ -8093,11 +8130,11 @@
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
-                            WISEai
+                            WISEcodeAI
                             <span class="ss-version-badge">v3.2</span>
                         </div>
                         <p class="ss-agent-tagline">Verification Orchestrator</p>
-                        <p class="ss-agent-desc">The core WISEai agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.</p>
+                        <p class="ss-agent-desc">The core WISEcodeAI agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.</p>
                         <div>
                             <span class="ss-capability-tag">Verification</span>
                             <span class="ss-capability-tag">Routing</span>
@@ -8136,7 +8173,7 @@
                     </label>
                 </div>
 
-                    <!-- WISEai WISE Foods (settings) -->
+                    <!-- WISEcodeAI WISE Foods (settings) -->
                     <div class="ss-agent-row" id="ssr-wiseai">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#4D1007;">
                         <span class="material-symbols-outlined" style="font-size:20px;color:#FFC434">search</span>
@@ -8280,7 +8317,7 @@
                     <div class="ss-pref-row">
                         <div>
                             <p class="ss-pref-title">Response style</p>
-                            <p class="ss-pref-desc">How detailed WISEai's responses should be</p>
+                            <p class="ss-pref-desc">How detailed WISEcodeAI's responses should be</p>
                         </div>
                         <select class="font-semibold">
                             <option>Concise</option>
@@ -8320,7 +8357,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-symbols-outlined" style="font-size:14px">circle</span>
-                            <span>WISEai <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
+                            <span>WISEcodeAI <span class="ss-version-badge" style="margin-left:3px;">v3.2</span></span>
                         </div>
                         <div class="flex items-center gap-2 ss-version-row">
                             <span class="material-symbols-outlined" style="font-size:14px">circle</span>
@@ -8654,7 +8691,7 @@
               <div class="wf-empty" id="lr-claims-empty">
                 <span class="material-symbols-outlined">campaign</span>
                 <p class="wf-empty-title">No claims loaded</p>
-                <p class="wf-empty-sub">Answer WISEai's prompts in the chat and each claims section will appear here.</p>
+                <p class="wf-empty-sub">Answer WISEcodeAI's prompts in the chat and each claims section will appear here.</p>
               </div>
             </div>
           </div>
@@ -8686,7 +8723,7 @@
               <div class="wf-empty" id="lr-packaging-empty">
                 <span class="material-symbols-outlined">inventory_2</span>
                 <p class="wf-empty-title">Not opened yet</p>
-                <p class="wf-empty-sub">If WISEai spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
+                <p class="wf-empty-sub">If WISEcodeAI spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>
               </div>
             </div>
           </div>
@@ -8941,7 +8978,7 @@
       </div>
     </aside>
 
-    <!-- Reformulation Plan — a workflow module that WISEai builds out, one
+    <!-- Reformulation Plan — a workflow module that WISEcodeAI builds out, one
          conversational step at a time. Opens empty when the workflow starts
          (startReformulationWorkflow) and fills in as the user clicks through
          the in-chat intent chips. Mirrors the other right-side modules' shell:
@@ -8956,7 +8993,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Reformulation Plan</div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by WISEai</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="wf-subtitle">Guided by WISEcodeAI</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="workflow" role="group" aria-label="Dock Reformulation Plan panel">
@@ -8980,13 +9017,13 @@
           <div class="wf-empty" id="wf-empty">
             <span class="material-symbols-outlined">auto_fix_high</span>
             <p class="wf-empty-title">Your plan is empty</p>
-            <p class="wf-empty-sub">Answer WISEai's prompts in the chat and each step will appear here.</p>
+            <p class="wf-empty-sub">Answer WISEcodeAI's prompts in the chat and each step will appear here.</p>
           </div>
         </div>
       </div>
     </aside>
 
-    <!-- WISE Verification — a live, in-the-moment workflow module. WISEai
+    <!-- WISE Verification — a live, in-the-moment workflow module. WISEcodeAI
          runs an end-to-end verification and assembles this board stage by
          stage as the user clicks through the in-chat intent chips. Opens
          double-width by default. Mirrors the reference verification-flow
@@ -8999,7 +9036,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100 flex items-center gap-2">WISE Verification <span class="vf-live"><span class="vf-live-dot"></span>LIVE</span></div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">WISEai is running your verification</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="vf-subtitle">WISEcodeAI is running your verification</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="verifyflow" role="group" aria-label="Dock WISE Verification panel">
@@ -9026,13 +9063,13 @@
           <div class="vf-empty" id="vf-empty">
             <span class="material-symbols-outlined">verified_user</span>
             <p class="vf-empty-title">Verification not started</p>
-            <p class="vf-empty-sub">Click through WISEai's prompts in the chat — each stage of the verification will assemble here in real time.</p>
+            <p class="vf-empty-sub">Click through WISEcodeAI's prompts in the chat — each stage of the verification will assemble here in real time.</p>
           </div>
         </div>
       </div>
     </aside>
 
-    <!-- Competitive Comparison — the "Compare Foods" board. WISEai drives the
+    <!-- Competitive Comparison — the "Compare Foods" board. WISEcodeAI drives the
          conversation in the chat with intent chips; every chart, grade bar, and
          head-to-head comparison renders here on the right. The module supports
          all four PRD scopes (Product/Portfolio × 1/Many) plus a metric picker,
@@ -9135,7 +9172,7 @@
 
   <script>
     const AGENTS = {
-      wise:   { name: 'WISEai', color: '#25507C', icon: 'verified',     required: true,  on: true,  announce: null },
+      wise:   { name: 'WISEcodeAI', color: '#25507C', icon: 'verified',     required: true,  on: true,  announce: null },
       nova:   { name: 'TIER',       color: '#6D947C', icon: 'auto_awesome', required: false, on: false, announce: { on: 'TIER UPF scoring active — I’ll classify processing tiers and surface ultra-processed markers for every product you verify.', off: 'TIER paused — UPF scoring disabled for this session.' } },
       wiseai:  { name: 'WISE Foods', color: '#FFC434', icon: 'search',       required: false, on: false, announce: { on: 'WISE Foods activated — the registry panel is open. Pick any row to pull a product into the conversation.', off: 'WISE Foods paused — registry panel closed.' } },
       shield: { name: 'SHIELD',     color: '#25507C', icon: 'shield',       required: false, on: false, announce: { on: 'SHIELD compliance mode enabled — I’ll flag badge requirements and validation checks as you work.', off: 'SHIELD paused — compliance checking disabled.' } },
@@ -9215,7 +9252,7 @@
       const pop = document.getElementById('topbar-menu');
       const btn = document.getElementById('topbar-menu-btn');
       if (!pop) return;
-      closeWISEaiMenu();
+      closeWISEcodeAIMenu();
       const opening = pop.classList.contains('hidden');
       pop.classList.toggle('hidden', !opening);
       if (btn) {
@@ -9233,9 +9270,9 @@
       }
     }
 
-    /* WISEai panel header's mirror of the global "More" menu — same items,
+    /* WISEcodeAI panel header's mirror of the global "More" menu — same items,
        anchored to the wiseai-panel-header's right edge. */
-    function toggleWISEaiMenu(e) {
+    function toggleWISEcodeAIMenu(e) {
       if (e) e.stopPropagation();
       const pop = document.getElementById('wiseai-menu');
       const btn = document.getElementById('wiseai-menu-btn');
@@ -9248,7 +9285,7 @@
         btn.classList.toggle('is-open', opening);
       }
     }
-    function closeWISEaiMenu() {
+    function closeWISEcodeAIMenu() {
       const pop = document.getElementById('wiseai-menu');
       const btn = document.getElementById('wiseai-menu-btn');
       if (pop) pop.classList.add('hidden');
@@ -9259,7 +9296,7 @@
     }
     function closeAllMoreMenus() {
       closeTopbarMenu();
-      closeWISEaiMenu();
+      closeWISEcodeAIMenu();
     }
 
     /* Large "at a glance" overview cards: hidden by default, toggled from the
@@ -9591,10 +9628,10 @@
       restoreViewSnapshot(view.snapshot);
       switchHistoryTab('views');
       renderViewsTab();
-      const typing = showWISEaiTyping('Restoring your saved view…');
+      const typing = showWISEcodeAITyping('Restoring your saved view…');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
+        addWISEcodeAIMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
       }, 500);
     }
 
@@ -9657,12 +9694,12 @@
       resetModules();
       chat.innerHTML = '';
       hideWS();
-      addWISEaiMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation.', { source: false });
+      addWISEcodeAIMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation.', { source: false });
       ['scoreTrend', 'flags', 'projectFix'].forEach((id) => {
         const n = DATA_NODES[id];
         if (!n) return;
         addUserMessage(n.user);
-        addWISEaiMessage(n.reply + (n.viz ? n.viz() : ''));
+        addWISEcodeAIMessage(n.reply + (n.viz ? n.viz() : ''));
       });
       SAVED_VIEWS.push({
         id: 'data-portfolio-deepdive',
@@ -9683,9 +9720,9 @@
       const wfSub = document.getElementById('wf-subtitle');
       if (wfSub) wfSub.textContent = 'Plan ready · 4 of 4 steps';
       document.getElementById('workflow-panel')?.classList.add('wf-open');
-      addWISEaiMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — we’ll fill it in one step at a time.', { source: false });
-      WF_STEPS.forEach((s) => { addUserMessage(s.user); addWISEaiMessage(s.reply); });
-      addWISEaiMessage('Your reformulation plan is ready — I exported it as a shareable brief, projected <strong>88/100</strong> after the swaps.', { source: false });
+      addWISEcodeAIMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — we’ll fill it in one step at a time.', { source: false });
+      WF_STEPS.forEach((s) => { addUserMessage(s.user); addWISEcodeAIMessage(s.reply); });
+      addWISEcodeAIMessage('Your reformulation plan is ready — I exported it as a shareable brief, projected <strong>88/100</strong> after the swaps.', { source: false });
       SAVED_VIEWS.push({
         id: 'reformulation-granola',
         title: 'Reformulation — Mixed Berry Granola',
@@ -9719,8 +9756,8 @@
         live.style.background = 'var(--sec-green-10)';
         live.innerHTML = '<span class="material-symbols-outlined" style="font-size:12px">check</span>DONE';
       }
-      addWISEaiMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
-      VF_STAGES.forEach((s) => { addUserMessage(s.user); addWISEaiMessage(s.reply); });
+      addWISEcodeAIMessage('Let’s run a <strong>live WISE Verification</strong> for Nutrient Survival. The board on the right fills in stage by stage: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>.', { source: false });
+      VF_STAGES.forEach((s) => { addUserMessage(s.user); addWISEcodeAIMessage(s.reply); });
       SAVED_VIEWS.push({
         id: 'verification-nutrient-survival',
         title: 'Live Verification — Nutrient Survival',
@@ -9764,7 +9801,7 @@
     /* Thin aliases — HTML onclick handlers stay readable, and existing call
        sites (welcome shims, boot, keyboard handler) keep working unchanged. */
     function toggleUpfPanel(force)    { togglePanel('pulse',  force); }
-    function toggleWISEaiPanel(force)  { togglePanel('wiseai',  force); }
+    function toggleWISEcodeAIPanel(force)  { togglePanel('wiseai',  force); }
     function toggleTierPanel(force)   { togglePanel('nova',   force); }
     function toggleShieldPanel(force) { togglePanel('shield', force); }
     function toggleLensPanel(force)   { togglePanel('lens',   force); }
@@ -10148,14 +10185,14 @@
 
     /* ── Microcopy & trust helpers ──────────────────────────────────────
        Kept in lockstep with js/wiseai-chat.js so the inline chat here and the
-       shared mountWISEaiChat() surface behave identically: every line is
-       time-stamped, every WISEai reply is grounded in a cited source, and the
-       typing indicator says what WISEai is actually doing. */
+       shared mountWISEcodeAIChat() surface behave identically: every line is
+       time-stamped, every WISEcodeAI reply is grounded in a cited source, and the
+       typing indicator says what WISEcodeAI is actually doing. */
     const WISEAI_SOURCE_LABEL = '';
-    const WISEAI_STATUS_LABEL = 'WISEai is checking the registry';
+    const WISEAI_STATUS_LABEL = 'WISEcodeAI is checking the registry';
 
     /* WISE-owl "bug" (same mark as the topbar) used as the per-line profile
-       avatar in place of the "You" / "WISEai" name labels. Inherits
+       avatar in place of the "You" / "WISEcodeAI" name labels. Inherits
        currentColor so the avatar circle's color drives the mark. */
     /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK"). */
     const WISEAI_USER_AVATAR = 'MC';
@@ -10167,7 +10204,7 @@
     }
     function wiseaiMetaRow(withSource) {
       const src = withSource && WISEAI_SOURCE_LABEL
-        ? `<span class="sc-trust-chip" title="WISEai cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${WISEAI_SOURCE_LABEL}</span>`
+        ? `<span class="sc-trust-chip" title="WISEcodeAI cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${WISEAI_SOURCE_LABEL}</span>`
         : '';
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${wiseaiNowLabel()}</span></div>`;
     }
@@ -10184,53 +10221,17 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    /* Reveal a WISEai answer one word at a time so it reads as if it's being
-       typed live rather than popping in whole. Each visible word is wrapped in a
-       span and faded in on a quick cadence; markup, icons, media and the
-       meta/feedback rows stay intact. Honors prefers-reduced-motion. */
+    /* Word-by-word reveal DISABLED — chat text appears whole. The
+       wiseaiTypeInLine signature is kept so the timestamp / chip reveal chain
+       runs unchanged. */
     const WISEAI_REDUCED_MOTION = (() => {
       try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
       catch (_) { return false; }
     })();
     function wiseaiTypeInLine(bodyEl, done) {
-      if (!bodyEl) { if (done) done(); return; }
-      const walker = document.createTreeWalker(bodyEl, NodeFilter.SHOW_TEXT, {
-        acceptNode(n) {
-          if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-          const p = n.parentElement;
-          if (p && p.closest('.sc-line-meta, .sc-feedback, .material-symbols-outlined, .material-symbols-rounded, svg, table, canvas')) return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
-      const textNodes = [];
-      let tn;
-      while ((tn = walker.nextNode())) textNodes.push(tn);
-      const words = [];
-      textNodes.forEach((node) => {
-        const parts = node.nodeValue.split(/(\s+)/);
-        const frag = document.createDocumentFragment();
-        parts.forEach((part) => {
-          if (!part) return;
-          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-          const span = document.createElement('span');
-          span.style.opacity = '0';
-          span.textContent = part;
-          frag.appendChild(span);
-          words.push(span);
-        });
-        node.parentNode.replaceChild(frag, node);
-      });
-      if (!words.length) { if (done) done(); return; }
       const box = document.getElementById('chat-messages');
-      let i = 0;
-      const step = () => {
-        words[i].style.opacity = '1';
-        i++;
-        if (box) box.scrollTop = box.scrollHeight;
-        if (i < words.length) setTimeout(step, 70);
-        else if (done) done();
-      };
-      step();
+      if (box) box.scrollTop = box.scrollHeight;
+      if (done) done();
     }
 
     /* Prime an element to slide in from the left, then reveal a set of them one
@@ -10274,7 +10275,7 @@
        has finished typing, and must then fly in one after another — never sit
        there half-way through a reply. Rather than thread a callback through
        every place a chip row is built (there are many), we (a) expose a
-       per-reply "done typing" promise that addWISEaiMessage rebinds and
+       per-reply "done typing" promise that addWISEcodeAIMessage rebinds and
        resolves once the line has fully typed + its meta has landed, and (b)
        watch the transcript for any `.sc-reply-chips` row: the instant one is
        inserted we hide its chips and hold them back until the current reply's
@@ -10327,7 +10328,7 @@
     }
 
     /* Welcome-screen reveal. Type the heading WORD-BY-WORD (exactly like every
-       WISEai answer), and only once the copy has landed do the score cards and
+       WISEcodeAI answer), and only once the copy has landed do the score cards and
        intent chips fly in from the right in a single top-to-bottom cascade —
        so the chips animate identically to the words that precede them. Honors
        reduced-motion (everything just shows). Safe to re-run whenever the
@@ -10356,9 +10357,9 @@
       typeText(heading, () => { wiseaiRevealStaggered(all, 90, 60, null); });
     }
 
-    /* Drop a WISEai reply with a grounding caption + timestamp. Pass
+    /* Drop a WISEcodeAI reply with a grounding caption + timestamp. Pass
        { source: false } for a plain acknowledgement that shouldn't claim a source. */
-    function addWISEaiMessage(html, opts = {}) {
+    function addWISEcodeAIMessage(html, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
       wiseaiEnsureChipObserver();
@@ -10366,7 +10367,7 @@
       const fb = opts.feedback ? wiseaiFeedbackBar() : '';
       box.insertAdjacentHTML(
         'beforeend',
-        `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}${fb}</div></div>`
+        `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}${fb}</div></div>`
       );
       const line = box.lastElementChild;
       const body = line && line.querySelector('.sc-line-body');
@@ -10402,7 +10403,7 @@
       return line;
     }
 
-    /* Thumbs up/down feedback affordance shown beneath a WISEai reply
+    /* Thumbs up/down feedback affordance shown beneath a WISEcodeAI reply
        (opt in with { feedback: true }). Thumbs-down opens a mini popover of
        quick reasons so the member can flag *what* was off in one tap. */
     function wiseaiFeedbackBar() {
@@ -10473,13 +10474,13 @@
       });
     });
 
-    function showWISEaiTyping(statusLabel) {
+    function showWISEcodeAITyping(statusLabel) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
       const label = statusLabel || WISEAI_STATUS_LABEL;
       const el = document.createElement('div');
       el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
-      el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEai">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${label}…</span></span></div>`;
+      el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${label}…</span></span></div>`;
       box.appendChild(el);
       box.scrollTop = box.scrollHeight;
       return el;
@@ -10512,10 +10513,10 @@
         return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
       if (/(agent|choose)/.test(q))
         return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEai layout and controls.';
+      return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEcodeAI layout and controls.';
     }
 
-    /* Pick 1–2 short, human status lines describing what WISEai is doing for
+    /* Pick 1–2 short, human status lines describing what WISEcodeAI is doing for
        this turn (shown ONE AT A TIME in the thinking indicator, in place of the
        old bouncing dots), based on the intent / question. */
     function statusStepsFor(text, intent) {
@@ -10538,7 +10539,7 @@
     }
     /* Advance the indicator's status message through `steps` one at a time, in
        the same line, then run `done()` after the last has shown. */
-    function cycleWISEaiStatus(el, steps, done) {
+    function cycleWISEcodeAIStatus(el, steps, done) {
       const STEP = 620;
       const lbl = el && el.querySelector('.sc-typing-label');
       let i = 1;
@@ -10555,11 +10556,11 @@
     }
     function wiseaiRespond(text, intent) {
       const steps = statusStepsFor(text, intent);
-      const typing = showWISEaiTyping(steps[0]);
-      cycleWISEaiStatus(typing, steps, function() { if (typing) typing.remove(); addWISEaiMessage(wiseaiReply(text, intent)); });
+      const typing = showWISEcodeAITyping(steps[0]);
+      cycleWISEcodeAIStatus(typing, steps, function() { if (typing) typing.remove(); addWISEcodeAIMessage(wiseaiReply(text, intent)); });
     }
 
-    /* Each intent chip on the WISEai welcome screen pairs with the side
+    /* Each intent chip on the WISEcodeAI welcome screen pairs with the side
        module that becomes its "summary" beside the chat. The verification
        summary is reserved for "Start New Verification" only — every other
        intent either opens its own paired panel or leaves the summary slot
@@ -10763,7 +10764,7 @@
        EXPLORE MY DATA & CHARTS  (fully inline)
        Unlike the Reformulation / Verification flows, this intent never opens
        a side module. Every answer — stats, bars, donuts, trends — renders
-       INLINE inside WISEai's chat reply, and each result offers "build on
+       INLINE inside WISEcodeAI's chat reply, and each result offers "build on
        this" chips so the user keeps a single, growing conversation about
        their portfolio data. Each node = one query the user can run.
        ════════════════════════════════════════════════════════════════════ */
@@ -10958,10 +10959,10 @@
         dataVisited = new Set();
         dataStarted = true;
         addUserMessage('Explore My Data & Charts');
-        const typing = showWISEaiTyping('WISEai is pulling your portfolio data');
+        const typing = showWISEcodeAITyping('WISEcodeAI is pulling your portfolio data');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
+          addWISEcodeAIMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
           dataOfferChips(DATA_STARTERS);
         }, 600);
       });
@@ -11023,11 +11024,11 @@
       if (!node) return;
       btn?.closest('.sc-reply-chips')?.remove();
       addUserMessage(node.user);
-      const typing = showWISEaiTyping(node.status);
+      const typing = showWISEcodeAITyping(node.status);
       setTimeout(() => {
         typing?.remove();
         const viz = node.viz ? node.viz() : '';
-        addWISEaiMessage(node.reply + viz);
+        addWISEcodeAIMessage(node.reply + viz);
         dataVisited.add(id);
         let follow = (node.follow || []).filter(f => !dataVisited.has(f));
         if (!follow.length) follow = DATA_STARTERS.filter(f => !dataVisited.has(f));
@@ -11039,16 +11040,16 @@
     /* ════════════════════════════════════════════════════════════════════
        REFORMULATION PLAN WORKFLOW
        A chip on the welcome screen kicks off a guided, multi-step workflow.
-       WISEai opens an (empty) Reformulation Plan module on the right, then
+       WISEcodeAI opens an (empty) Reformulation Plan module on the right, then
        offers the next step as an in-chat intent chip. Each chip the user
-       clicks posts their choice, draws WISEai's reply, and BUILDS OUT one
+       clicks posts their choice, draws WISEcodeAI's reply, and BUILDS OUT one
        more section of the module — so the artifact assembles itself as the
        conversation advances. The module reuses the shared module shell, so it
        looks and behaves like every other panel on the page.
        ════════════════════════════════════════════════════════════════════ */
 
     /* Ordered steps. Each step's `chip` is what the user clicks to trigger it;
-       `user` is the message that posts on their behalf; `reply` is WISEai's
+       `user` is the message that posts on their behalf; `reply` is WISEcodeAI's
        answer; `build` paints the matching section into the module. */
     const WF_STEPS = [
       {
@@ -11090,10 +11091,10 @@
         wfResetModule();
         openWorkflowPanel();
         addUserMessage('Build a Reformulation Plan');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
+          addWISEcodeAIMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
           wfOfferStep(0);
         }, 600);
       });
@@ -11122,10 +11123,10 @@
       if (!step) return;
       document.getElementById('wf-chips-' + step.id)?.remove();
       addUserMessage(step.user);
-      const typing = showWISEaiTyping();
+      const typing = showWISEcodeAITyping();
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(step.reply);
+        addWISEcodeAIMessage(step.reply);
         try { step.build(); } catch (_) {}
         wfStepIndex = Math.max(wfStepIndex, index + 1);
         wfUpdateProgress();
@@ -11156,17 +11157,17 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'export') {
         addUserMessage('Export the plan');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Exported your <strong>Reformulation Plan</strong> as a shareable brief — target product, flagged additives, clean-label swaps, and the projected <strong>88/100</strong> score are all included.', { source: false });
+          addWISEcodeAIMessage('Exported your <strong>Reformulation Plan</strong> as a shareable brief — target product, flagged additives, clean-label swaps, and the projected <strong>88/100</strong> score are all included.', { source: false });
         }, 600);
       } else {
         addUserMessage('Start verification on the reformulated product');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Handing this to the verification flow — I’ll carry the reformulated recipe into <strong>Confirm → Attest → Activate</strong> so the NON-UPF claim is backed end-to-end.');
+          addWISEcodeAIMessage('Handing this to the verification flow — I’ll carry the reformulated recipe into <strong>Confirm → Attest → Activate</strong> so the NON-UPF claim is backed end-to-end.');
         }, 600);
       }
     }
@@ -11197,11 +11198,11 @@
           '<div class="wf-empty" id="wf-empty">' +
           '<span class="material-symbols-outlined">auto_fix_high</span>' +
           '<p class="wf-empty-title">Your plan is empty</p>' +
-          '<p class="wf-empty-sub">Answer WISEai\'s prompts in the chat and each step will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer WISEcodeAI\'s prompts in the chat and each step will appear here.</p>' +
           '</div>';
       }
       const sub = document.getElementById('wf-subtitle');
-      if (sub) sub.textContent = 'Guided by WISEai';
+      if (sub) sub.textContent = 'Guided by WISEcodeAI';
       wfUpdateProgress();
     }
 
@@ -11263,7 +11264,7 @@
 
     /* ════════════════════════════════════════════════════════════════════
        COMPETITIVE COMPARISON  ("Compare Foods")
-       WISEai drives the conversation in the chat with intent chips; every
+       WISEcodeAI drives the conversation in the chat with intent chips; every
        chart, grade bar, and head-to-head comparison renders in the Compare
        board on the right. Supports all four PRD scopes (Product/Portfolio ×
        1/Many) plus a live metric picker, category filter, and category-
@@ -11336,7 +11337,7 @@
     const cmpMetricColor = (id) => CMP_METRIC_COLOR[id] || 'var(--primary)';
 
     /* Per-metric copy. `desc` is the verbose one-liner shown under each metric
-       in the board rail; `long` is the fuller explanation WISEai drops into the
+       in the board rail; `long` is the fuller explanation WISEcodeAI drops into the
        chat when the "Learn more" pod is tapped. */
     const CMP_METRIC_INFO = {
       wisescore: { desc: 'The overall 0–100 grade rolling up nutrition, ingredients and processing into one score.',
@@ -11661,7 +11662,7 @@
     };
 
     /* ── Suggestion pools for the "Add brand / Add product" button ─────────
-       When the board's Add button is pressed, WISEai posts a chat prompt with
+       When the board's Add button is pressed, WISEcodeAI posts a chat prompt with
        up to ~10 pickable chips. The board's own shelf set is usually only 2–5
        entities (often all already shown), so these pools give the assistant a
        deep bench of realistic competitors to suggest — the first few are
@@ -12024,7 +12025,7 @@
     function cmpAddPickKind(kind) {
       cmpCloseAddMenu();
       if (compareState.shown.length >= 5) {
-        addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
       /* Locked to the board's kind so a comparison can never become mixed. */
@@ -12075,12 +12076,12 @@
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
       if (compareState.shown.length >= 5) {
-        addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 competitors). Remove one to add another.', { source: false });
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 competitors). Remove one to add another.', { source: false });
         return;
       }
       const next = scope.entities.find(e => !compareState.shown.includes(e.id));
       if (!next) {
-        addWISEaiMessage('That’s every entity in this demo set — all <strong>' + compareState.shown.length + '</strong> are already on the board.', { source: false });
+        addWISEcodeAIMessage('That’s every entity in this demo set — all <strong>' + compareState.shown.length + '</strong> are already on the board.', { source: false });
         return;
       }
       compareState.shown.push(next.id);
@@ -12096,7 +12097,7 @@
     }
 
     /* Adding a competitor is always driven THROUGH the chat — the board's
-       "Add" button never silently drops in a random entity. It asks WISEai,
+       "Add" button never silently drops in a random entity. It asks WISEcodeAI,
        which posts a prompt with the specific brands/products you can pick. */
     /* Build the pickable candidate list for the Add prompt: the board's own
        shelf-set members that aren't shown yet (the strongest matches) come
@@ -12168,7 +12169,7 @@
     function cmpPromptAddKind(kind, btn) {
       if (compareState.shown.length >= 5) {
         btn?.closest('.sc-reply-chips')?.remove();
-        addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
       /* Locked to the board's kind — the requested kind is ignored if it
@@ -12185,7 +12186,7 @@
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
       if (compareState.shown.length >= 5) {
-        addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
       document.getElementById('cmp-add-chips')?.remove();
@@ -12204,17 +12205,17 @@
       const label = cmpKindLabel(kind);
       const { list, matchCount } = cmpAddCandidates(scope, kind);
       document.getElementById('cmp-add-chips')?.remove();
-      const typing = showWISEaiTyping('WISEai is finding ' + label + 's you can add');
+      const typing = showWISEcodeAITyping('WISEcodeAI is finding ' + label + 's you can add');
       setTimeout(() => {
         typing?.remove();
         if (!list.length) {
-          addWISEaiMessage('I couldn’t find another ' + label + ' to add here. Remove one on the board first, then try again.', { source: false });
+          addWISEcodeAIMessage('I couldn’t find another ' + label + ' to add here. Remove one on the board first, then try again.', { source: false });
           return;
         }
         const lead = kind === 'category'
           ? 'Which <strong>category</strong> would you like to drop in as a peer? Each is the average profile across every product WISEcode scored in it.'
           : 'Which ' + label + ' would you like to add? The <strong>starred</strong> ones are the closest matches to your current board.';
-        addWISEaiMessage(lead + ' I’ll drop it onto the board as a pending column, then fold it into the ranking.', { source: false });
+        addWISEcodeAIMessage(lead + ' I’ll drop it onto the board as a pending column, then fold it into the ranking.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const chips = list.map((e, i) => {
@@ -12263,15 +12264,15 @@
       document.getElementById('cmp-add-chips')?.remove();
       /* Guard cases get a visible reply instead of a silent no-op. */
       if (compareState.shown.includes(id)) {
-        addWISEaiMessage('<strong>' + ent.name + '</strong> is already on the board.', { source: false });
+        addWISEcodeAIMessage('<strong>' + ent.name + '</strong> is already on the board.', { source: false });
         return;
       }
       if (compareState.shown.length >= 5) {
-        addWISEaiMessage('You’ve hit the <strong>5-item limit</strong> (1 primary + 4 competitors). Remove one on the board to add another.', { source: false });
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> (1 primary + 4 competitors). Remove one on the board to add another.', { source: false });
         return;
       }
       addUserMessage('Add ' + ent.name);
-      const typing = showWISEaiTyping('Dropping ' + ent.name + ' onto the board');
+      const typing = showWISEcodeAITyping('Dropping ' + ent.name + ' onto the board');
       setTimeout(() => {
         typing?.remove();
         compareState.shown.push(id);
@@ -12279,7 +12280,7 @@
         compareState.stale = true;
         renderCompare();               /* new column lands as a pending ghost… */
         scrollPanelIntoView('compare-panel');
-        addWISEaiMessage('Added <strong>' + ent.name + '</strong> — scoring it and folding it into the ranking now…', { source: false });
+        addWISEcodeAIMessage('Added <strong>' + ent.name + '</strong> — scoring it and folding it into the ranking now…', { source: false });
         /* …then auto-fold it in so the board always resolves. Previously this
            waited on a manual "Recalculate" click, which left the column stuck
            as a shimmering skeleton if that button was never pressed. */
@@ -12298,10 +12299,10 @@
       document.getElementById('cmp-swap-chips')?.remove();
       document.getElementById('cmp-swap-pick-chips')?.remove();
       addUserMessage('Change a comparison slot to a different type');
-      const typing = showWISEaiTyping();
+      const typing = showWISEcodeAITyping();
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('Swap <strong>' + (ent.name || 'this slot') + '</strong> to a different type — a <strong>product</strong>, whole <strong>portfolio</strong>, or a <strong>category</strong> average. I’ll replace it and re-rank.', { source: false });
+        addWISEcodeAIMessage('Swap <strong>' + (ent.name || 'this slot') + '</strong> to a different type — a <strong>product</strong>, whole <strong>portfolio</strong>, or a <strong>category</strong> average. I’ll replace it and re-rank.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const row = document.createElement('div');
@@ -12321,14 +12322,14 @@
       if (!scope) return;
       const label = cmpKindLabel(kind);
       const { list, matchCount } = cmpAddCandidates(scope, kind);
-      const typing = showWISEaiTyping('WISEai is finding ' + label + 's');
+      const typing = showWISEcodeAITyping('WISEcodeAI is finding ' + label + 's');
       setTimeout(() => {
         typing?.remove();
         if (!list.length) {
-          addWISEaiMessage('No other ' + label + ' is available to place in that slot.', { source: false });
+          addWISEcodeAIMessage('No other ' + label + ' is available to place in that slot.', { source: false });
           return;
         }
-        addWISEaiMessage('Pick the ' + label + ' to place in that slot:', { source: false });
+        addWISEcodeAIMessage('Pick the ' + label + ' to place in that slot:', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const chips = list.map((e, i) => {
@@ -12355,10 +12356,10 @@
       if (!scope) return;
       const idx = compareState.shown.indexOf(slotId);
       if (idx < 0) return;
-      if (pickId === slotId) { addWISEaiMessage('That slot already holds that item.', { source: false }); return; }
+      if (pickId === slotId) { addWISEcodeAIMessage('That slot already holds that item.', { source: false }); return; }
       if (compareState.shown.includes(pickId)) {
         const dupe = scope.entities.find(e => e.id === pickId) || cmpResolvePickIntoScope(scope, pickId) || {};
-        addWISEaiMessage('<strong>' + (dupe.name || 'That item') + '</strong> is already on the board.', { source: false });
+        addWISEcodeAIMessage('<strong>' + (dupe.name || 'That item') + '</strong> is already on the board.', { source: false });
         return;
       }
       const ent = cmpResolvePickIntoScope(scope, pickId);
@@ -12383,7 +12384,7 @@
         ent.primary = true; old.primary = false;
       }
       addUserMessage(reKey ? ('Compare ' + cmpKindLabel(newKind) + 's instead') : ('Swap in ' + ent.name));
-      const typing = showWISEaiTyping(reKey ? ('Rebuilding as a ' + cmpKindLabel(newKind) + ' comparison') : ('Swapping in ' + ent.name));
+      const typing = showWISEcodeAITyping(reKey ? ('Rebuilding as a ' + cmpKindLabel(newKind) + ' comparison') : ('Swapping in ' + ent.name));
       setTimeout(() => {
         typing?.remove();
         if (reKey) {
@@ -12398,7 +12399,7 @@
         compareState.stale = true;
         renderCompare();
         scrollPanelIntoView('compare-panel');
-        addWISEaiMessage(reKey
+        addWISEcodeAIMessage(reKey
           ? ('Switched the anchor to <strong>' + ent.name + '</strong> — this is now a <strong>' + cmpKindLabel(newKind) + '</strong> comparison. Add more ' + cmpKindLabel(newKind) + 's on the right to build it out.')
           : ('Swapped in <strong>' + ent.name + '</strong> — scoring and re-ranking now…'), { source: false });
         setTimeout(() => cmpRecalculate({ auto: true }), 520);
@@ -12533,9 +12534,9 @@
       compareState.recalcing = true;
       renderCompare();
       scrollPanelIntoView('compare-panel');
-      const typing = showWISEaiTyping(auto
-        ? ('WISEai is scoring the new ' + (scope.noun === 'portfolio' ? 'brand' : 'product') + ' and re-ranking')
-        : 'WISEai is recomputing scores and re-ranking');
+      const typing = showWISEcodeAITyping(auto
+        ? ('WISEcodeAI is scoring the new ' + (scope.noun === 'portfolio' ? 'brand' : 'product') + ' and re-ranking')
+        : 'WISEcodeAI is recomputing scores and re-ranking');
 
       setTimeout(() => {
         typing?.remove();
@@ -12556,7 +12557,7 @@
         const winnerNote = winner
           ? '<strong>' + winner.name + '</strong> leads with a WISEscore of <strong>' + Math.round(cmpScoreFor(winner, 'wisescore')) + '</strong>. '
           : '';
-        addWISEaiMessage('Recalculated — all <strong>' + afterLive.length + '</strong> ' + nounPlural + ' rescored. ' + newcomerNote + winnerNote + 'Ranking, grade bars, takeaways and any category read all refreshed.', { source: false });
+        addWISEcodeAIMessage('Recalculated — all <strong>' + afterLive.length + '</strong> ' + nounPlural + ' rescored. ' + newcomerNote + winnerNote + 'Ranking, grade bars, takeaways and any category read all refreshed.', { source: false });
 
         if (compareState.followDone) delete compareState.followDone.add;
         cmpOfferFollowChips();
@@ -13479,7 +13480,7 @@
       } else {
         cells.push('<div class="cmp-cell cmp-cell--rail cmp-hcell cmp-hcell--corner">' +
           '<div class="cmp-corner-score"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay scores" aria-label="Replay WISEscores" style="--mic:' + cmpMetricColor('wisescore') + '" onclick="cmpReplayGauges()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayGauges()}"><span class="material-symbols-outlined">verified</span></span><div class="cmp-rail-metric-name">WISEscore</div></div><div class="cmp-rail-body">' +
-          '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-symbols-outlined">forum</span></a></div>' +
+          '<div class="cmp-rail-metric-desc">' + cmpMetricDesc('wisescore') + ' <a class="cmp-rail-learn" title="Ask WISEcodeAI about this metric" aria-label="Ask WISEcodeAI about this metric" onclick="cmpExplainMetric(\'wisescore\')"><span class="material-symbols-outlined">forum</span></a></div>' +
           '</div></div></div>' +
         '</div>');
       }
@@ -13568,7 +13569,7 @@
              conversation in the chat module. */
           cells.push(
             '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + r.label + ' bars" style="--mic:' + r.color + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-symbols-outlined">' + r.icon + '</span></span><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-lbl">' + r.label + '</span></div></div><div class="cmp-rail-body">' +
-            '<div class="cmp-rail-metric-desc">' + r.desc + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about ' + r.label + '" aria-label="Chat with WISEai about ' + r.label + '" onclick="cmpExplainGs(\'' + r.key + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpExplainGs(\'' + r.key + '\')}"><span class="material-symbols-outlined">forum</span></a></div>' +
+            '<div class="cmp-rail-metric-desc">' + r.desc + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about ' + r.label + '" aria-label="Chat with WISEcodeAI about ' + r.label + '" onclick="cmpExplainGs(\'' + r.key + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpExplainGs(\'' + r.key + '\')}"><span class="material-symbols-outlined">forum</span></a></div>' +
             '</div></div></div>');
           /* Numeric rows: find the row's best/worst live value for the bar
              scale + colour, so each row reads like the WISEcode bars. */
@@ -13584,7 +13585,7 @@
             const val = r.get(card);
             /* Every cell carries a chat link so you can drill into that exact
                product × metric, mirroring the WISEcode insight cell. */
-            const chatLink = '<a class="cmp-gs-cellchat" role="button" tabindex="0" title="Chat about ' + ent.name + ' · ' + r.label + '" aria-label="Chat with WISEai about ' + ent.name + ' ' + r.label + '" onclick="event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')}"><span class="material-symbols-outlined">forum</span></a>';
+            const chatLink = '<a class="cmp-gs-cellchat" role="button" tabindex="0" title="Chat about ' + ent.name + ' · ' + r.label + '" aria-label="Chat with WISEcodeAI about ' + ent.name + ' ' + r.label + '" onclick="event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();cmpExplainGs(\'' + r.key + '\',\'' + ent.id + '\')}"><span class="material-symbols-outlined">forum</span></a>';
             if (r.type === 'text') {
               cells.push('<div class="cmp-cell cmp-cell--entity cmp-gs-cell' + pc + '"><span class="cmp-gs-rowval cmp-gs-text">' + (val || '—') + '</span>' + chatLink + '</div>');
             } else if (r.type === 'flag') {
@@ -13614,7 +13615,7 @@
           const avg = showAvg ? cmpAvgFor(scope, m.id, compareState.category) : null;
           cells.push(
             '<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic cmp-rail-metric-ic--btn" role="button" tabindex="0" title="Replay this row" aria-label="Replay ' + cmpMetricShort(m) + ' bars" style="--mic:' + cmpMetricColor(m.id) + '" onclick="cmpReplayRow(' + mi + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpReplayRow(' + mi + ')}"><span class="material-symbols-outlined">' + m.icon + '</span></span><div class="cmp-rail-metric-name"><span class="cmp-rail-metric-lbl">' + cmpMetricRailName(m) + '</span>' + (avg != null ? '<span class="cmp-rail-metric-avg">avg ' + Math.round(avg) + '</span>' : '') + '</div></div><div class="cmp-rail-body">' +
-            '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEai about this metric" aria-label="Ask WISEai about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-symbols-outlined">forum</span></a></div>' +
+            '<div class="cmp-rail-metric-desc">' + cmpMetricDesc(m.id) + ' <a class="cmp-rail-learn" title="Ask WISEcodeAI about this metric" aria-label="Ask WISEcodeAI about this metric" onclick="cmpExplainMetric(\'' + m.id + '\')"><span class="material-symbols-outlined">forum</span></a></div>' +
             '</div></div></div>');
           ordered.forEach(ent => {
             const pc = ent.primary ? ' is-primary' : '';
@@ -13636,14 +13637,14 @@
            metric rail shows. It re-derives on each render, so it stays in sync
            as entities/metrics/category change. */
         cells.push('<div class="cmp-cell cmp-cell--rail"><div class="cmp-rail-metric"><div class="cmp-rail-metric-lead"><span class="cmp-rail-metric-ic" style="--mic:#C9A227"><span class="material-symbols-outlined">auto_awesome</span></span><div class="cmp-rail-metric-name">Insight</div></div><div class="cmp-rail-body">' +
-          '<div class="cmp-rail-metric-desc">' + cmpOverallInsight(scope, metrics, ordered, pendingSet) + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about the overall read" aria-label="Chat with WISEai about the overall comparison" onclick="cmpChatOverall()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatOverall()}"><span class="material-symbols-outlined">forum</span></a></div>' +
+          '<div class="cmp-rail-metric-desc">' + cmpOverallInsight(scope, metrics, ordered, pendingSet) + ' <a class="cmp-rail-learn" role="button" tabindex="0" title="Chat about the overall read" aria-label="Chat with WISEcodeAI about the overall comparison" onclick="cmpChatOverall()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatOverall()}"><span class="material-symbols-outlined">forum</span></a></div>' +
           '</div></div></div>');
         ordered.forEach(ent => {
           const pc = ent.primary ? ' is-primary' : '';
           if (pendingSet.has(ent.id)) { cells.push('<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-pending-badge"><span class="material-symbols-outlined">schedule</span>Recalculate to generate</span></div>'); return; }
           if (ent.na) { cells.push('<div class="cmp-cell cmp-cell--entity' + pc + '"><span class="cmp-metric-na">—</span></div>'); return; }
           cells.push('<div class="cmp-cell cmp-cell--entity cmp-insight' + pc + '"><div class="cmp-insight-body">' + (ent.insight || '') +
-            ' <a class="cmp-insight-chat" role="button" tabindex="0" title="Chat about this insight" aria-label="Chat with WISEai about this insight" onclick="cmpChatInsight(\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatInsight(\'' + ent.id + '\')}"><span class="material-symbols-outlined">forum</span></a>' +
+            ' <a class="cmp-insight-chat" role="button" tabindex="0" title="Chat about this insight" aria-label="Chat with WISEcodeAI about this insight" onclick="cmpChatInsight(\'' + ent.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();cmpChatInsight(\'' + ent.id + '\')}"><span class="material-symbols-outlined">forum</span></a>' +
             '</div></div>');
         });
       }
@@ -13715,7 +13716,7 @@
           `<div class="cmp-takeaway-sub-lbl">${c.subLabel}</div>` +
           `<hr class="cmp-takeaway-sep">` +
           `<div class="cmp-takeaway-insight"><span class="cmp-takeaway-insight-body">${c.why}` +
-            `<a class="cmp-takeaway-chat" role="button" tabindex="0" title="Chat about this takeaway" aria-label="Chat with WISEai about this takeaway" onclick="cmpChatTakeaway('${c.entId}','${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cmpChatTakeaway('${c.entId}','${c.key}')}"><span class="material-symbols-outlined">forum</span></a></span>` +
+            `<a class="cmp-takeaway-chat" role="button" tabindex="0" title="Chat about this takeaway" aria-label="Chat with WISEcodeAI about this takeaway" onclick="cmpChatTakeaway('${c.entId}','${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cmpChatTakeaway('${c.entId}','${c.key}')}"><span class="material-symbols-outlined">forum</span></a></span>` +
           `</div>` +
         `</div>`).join('') +
         '</div></div>';
@@ -13786,7 +13787,7 @@
         compareResetState();
         openComparePanel();
         addUserMessage('Compare my food', { lead: true });
-        const typing = showWISEaiTyping('WISEai is loading your food');
+        const typing = showWISEcodeAITyping('WISEcodeAI is loading your food');
         setTimeout(() => {
           typing?.remove();
           cmpSetScope('portfolio_vs_portfolio');   /* populates the scope + metrics */
@@ -13796,7 +13797,7 @@
           compareState.shown = [prim.id];
           renderCompare();
           scrollPanelIntoView('compare-panel');
-          addWISEaiMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the right — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
+          addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the right — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
         }, 650);
       });
@@ -13905,10 +13906,10 @@
       btn?.closest('#cmp-scope-chips')?.remove();
       compareState.followDone = {};
       addUserMessage(s.userMsg);
-      const typing = showWISEaiTyping('WISEai is assembling the comparison');
+      const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(s.wiseaiReply);
+        addWISEcodeAIMessage(s.wiseaiReply);
         cmpApplyScenario(s);
         cmpOfferFollowChips();
       }, 680);
@@ -13921,10 +13922,10 @@
       btn?.closest('.sc-reply-chips')?.remove();
       compareState.followDone = {};
       addUserMessage(scope.userMsg);
-      const typing = showWISEaiTyping('WISEai is assembling the comparison');
+      const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(scope.wiseaiReply);
+        addWISEcodeAIMessage(scope.wiseaiReply);
         cmpSetScope(key);
         cmpOfferFollowChips();
       }, 680);
@@ -13936,10 +13937,10 @@
     function cmpPromptKind() {
       document.getElementById('cmp-kind-scope-chips')?.remove();
       addUserMessage('Change the comparison type');
-      const typing = showWISEaiTyping();
+      const typing = showWISEcodeAITyping();
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('What do you want to compare — individual <strong>products</strong>, whole <strong>portfolios</strong>, or <strong>categories</strong>? I’ll rebuild the board for that type.', { source: false });
+        addWISEcodeAIMessage('What do you want to compare — individual <strong>products</strong>, whole <strong>portfolios</strong>, or <strong>categories</strong>? I’ll rebuild the board for that type.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const cur = CMP_SCOPES[compareState.scope];
@@ -13966,7 +13967,7 @@
       compareState.followDone = {};
       const noun = scope.noun;
       addUserMessage('Compare ' + (noun === 'category' ? 'categories' : noun + 's'));
-      const typing = showWISEaiTyping('WISEai is rebuilding the board');
+      const typing = showWISEcodeAITyping('WISEcodeAI is rebuilding the board');
       setTimeout(() => {
         typing?.remove();
         cmpSetScope(key);
@@ -13982,7 +13983,7 @@
         } else {
           reply = 'Switched to a <strong>category</strong> comparison — each column is the average profile across every product WISEcode scored in that category. Add or swap categories anytime.';
         }
-        addWISEaiMessage(reply, { source: false });
+        addWISEcodeAIMessage(reply, { source: false });
         cmpOfferFollowChips();
       }, 640);
     }
@@ -14055,11 +14056,11 @@
       if (action === 'gs') {
         const on = !compareState.guidingStars;
         addUserMessage(on ? 'Show me the Guiding Stars ratings.' : 'Back to the WISEcode comparison.');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
           cmpToggleGuidingStars(on); scrollPanelIntoView('compare-panel');
-          addWISEaiMessage(on
+          addWISEcodeAIMessage(on
             ? 'Switched the board to the <strong>Guiding Stars</strong> rating. Each product earns <strong>debit points</strong> for saturated fat, sugar, sodium, trans fat and additives, and <strong>credit points</strong> for fiber, vitamins/minerals and whole grain — netted into a <strong>0–3 star</strong> rating. Products with a heavy additive load or high processing are <em>disqualified</em>.'
             : 'Back to the <strong>WISEcode</strong> comparison — the 0–100 metric bars and charts. Flip <strong>Guiding Stars</strong> on anytime to see the star ratings.', { source: false });
           cmpOfferFollowChips();
@@ -14068,22 +14069,22 @@
       }
       if (action === 'gs_explain') {
         addUserMessage('How are the Guiding Stars scored?');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Guiding Stars sums <strong>debit points</strong> (saturated fat, added sugar, sodium, trans fat, and cosmetic/non-GRAS additives — all measured per 100 kcal) against <strong>credit points</strong> (fiber, vitamins &amp; minerals, and whole grain). The net score maps to <strong>1★</strong> (good), <strong>2★</strong> (better) or <strong>3★</strong> (best); a product that clears none, or trips a disqualifier, shows <strong>0★</strong>.', { source: false });
+          addWISEcodeAIMessage('Guiding Stars sums <strong>debit points</strong> (saturated fat, added sugar, sodium, trans fat, and cosmetic/non-GRAS additives — all measured per 100 kcal) against <strong>credit points</strong> (fiber, vitamins &amp; minerals, and whole grain). The net score maps to <strong>1★</strong> (good), <strong>2★</strong> (better) or <strong>3★</strong> (best); a product that clears none, or trips a disqualifier, shows <strong>0★</strong>.', { source: false });
           cmpOfferFollowChips();
         }, delay);
         return;
       }
       if (action === 'gs_dq') {
         addUserMessage('Why is a product disqualified?');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
           const dq = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).filter(e => !e.na).filter(e => cmpGuidingStarsData(e).disqualified);
           const names = dq.map(e => '<strong>' + e.name + '</strong>').join(', ');
-          addWISEaiMessage((dq.length
+          addWISEcodeAIMessage((dq.length
             ? names + (dq.length > 1 ? ' are' : ' is') + ' <strong>disqualified</strong> — a heavy additive load or a high level of processing keeps a product out of the star system entirely, so it can only score <strong>0★</strong> regardless of its debit/credit tally.'
             : 'Nothing on the board is currently disqualified — every product clears the additive and processing gates, so each one earns its stars from the debit/credit tally.'), { source: false });
           cmpOfferFollowChips();
@@ -14094,11 +14095,11 @@
       if (action === 'avg') {
         const on = !compareState.showAvg;
         addUserMessage(on ? 'Show the category average.' : 'Hide the category average.');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
           compareState.showAvg = on; renderCompare(); scrollPanelIntoView('compare-panel');
-          addWISEaiMessage(on
+          addWISEcodeAIMessage(on
             ? 'Turned on the <strong>category average</strong> — the dotted line on each metric bar marks where the category sits, so every gap reads at a glance. It works even with no named competitor selected.'
             : 'Hid the <strong>category average</strong> benchmark line.', { source: false });
           cmpOfferFollowChips();
@@ -14107,21 +14108,21 @@
       }
       if (action === 'rank') {
         addUserMessage('Rank the shelf set for me.');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
           const live = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).filter(e => !e.na).sort((a, b) => cmpScoreFor(b, 'wisescore') - cmpScoreFor(a, 'wisescore'));
-          addWISEaiMessage('Ranked by composite WISEscore: ' + live.map((e, i) => (i + 1) + '. <strong>' + e.name + '</strong> (' + Math.round(cmpScoreFor(e, 'wisescore')) + ')').join(' · ') + '.', { source: false });
+          addWISEcodeAIMessage('Ranked by composite WISEscore: ' + live.map((e, i) => (i + 1) + '. <strong>' + e.name + '</strong> (' + Math.round(cmpScoreFor(e, 'wisescore')) + ')').join(' · ') + '.', { source: false });
           cmpOfferFollowChips();
         }, delay);
         return;
       }
       if (action === 'switch') {
         addUserMessage('Let me try a different comparison.');
-        const typing = showWISEaiTyping();
+        const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Sure — pick another comparison below and I’ll rebuild the board.', { source: false });
+          addWISEcodeAIMessage('Sure — pick another comparison below and I’ll rebuild the board.', { source: false });
           cmpOfferScopeChips();
         }, delay);
         return;
@@ -14135,15 +14136,15 @@
       document.getElementById('cmp-remove-chips')?.remove();
       const removable = cmpEntitiesShown().filter(e => !e.primary);
       if (compareState.shown.length <= 2 || !removable.length) {
-        addWISEaiMessage('There’s nothing to drop — a comparison needs at least the primary ' + scope.noun + ' and one competitor.', { source: false });
+        addWISEcodeAIMessage('There’s nothing to drop — a comparison needs at least the primary ' + scope.noun + ' and one competitor.', { source: false });
         cmpOfferFollowChips();
         return;
       }
       addUserMessage('Remove a ' + scope.noun + ' from the comparison');
-      const typing = showWISEaiTyping('WISEai is listing what you can remove');
+      const typing = showWISEcodeAITyping('WISEcodeAI is listing what you can remove');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('Which ' + scope.noun + ' should I drop from the board?', { source: false });
+        addWISEcodeAIMessage('Which ' + scope.noun + ' should I drop from the board?', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const chips = removable.map(e =>
@@ -14164,12 +14165,12 @@
       const ent = scope && scope.entities.find(e => e.id === id);
       if (!ent) return;
       addUserMessage('Remove ' + ent.name);
-      const typing = showWISEaiTyping('Removing ' + ent.name + ' from the board');
+      const typing = showWISEcodeAITyping('Removing ' + ent.name + ' from the board');
       setTimeout(() => {
         typing?.remove();
         cmpRemoveEntity(id);
         scrollPanelIntoView('compare-panel');
-        addWISEaiMessage('Removed <strong>' + ent.name + '</strong> from the comparison and re-ranked the remaining ' + scope.noun + 's.', { source: false });
+        addWISEcodeAIMessage('Removed <strong>' + ent.name + '</strong> from the comparison and re-ranked the remaining ' + scope.noun + 's.', { source: false });
         cmpOfferFollowChips();
       }, 500);
     }
@@ -14179,10 +14180,10 @@
     function cmpPromptMetrics() {
       document.getElementById('cmp-metric-chips')?.remove();
       addUserMessage('Choose which metrics to compare');
-      const typing = showWISEaiTyping('WISEai is loading the metric set');
+      const typing = showWISEcodeAITyping('WISEcodeAI is loading the metric set');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('Toggle any metric on or off and the board updates live. Tap <strong>Done</strong> when the set looks right.', { source: false });
+        addWISEcodeAIMessage('Toggle any metric on or off and the board updates live. Tap <strong>Done</strong> when the set looks right.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const row = document.createElement('div');
@@ -14211,7 +14212,7 @@
       btn?.closest('.sc-reply-chips')?.remove();
       document.getElementById('cmp-metric-chips')?.remove();
       const names = compareState.metrics.map(id => cmpMetricShort(CMP_METRIC_BY_ID[id])).filter(Boolean).join(', ');
-      addWISEaiMessage('Metric set updated — now comparing on <strong>' + names + '</strong>.', { source: false });
+      addWISEcodeAIMessage('Metric set updated — now comparing on <strong>' + names + '</strong>.', { source: false });
       cmpOfferFollowChips();
     }
 
@@ -14221,10 +14222,10 @@
       if (!scope || !scope.categories) return;
       document.getElementById('cmp-cat-chips')?.remove();
       addUserMessage('Filter the comparison by category');
-      const typing = showWISEaiTyping('WISEai is pulling the category filters');
+      const typing = showWISEcodeAITyping('WISEcodeAI is pulling the category filters');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage('Pick a category to narrow every portfolio to it — or choose <strong>All Categories</strong> for the full assortment.', { source: false });
+        addWISEcodeAIMessage('Pick a category to narrow every portfolio to it — or choose <strong>All Categories</strong> for the full assortment.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
         const chips = scope.categories.map(c => {
@@ -14247,18 +14248,18 @@
       if (!scope) return;
       const label = cat === 'all' ? 'all categories' : cat;
       addUserMessage(cat === 'all' ? 'Show all categories' : 'Filter to ' + cat);
-      const typing = showWISEaiTyping();
+      const typing = showWISEcodeAITyping();
       setTimeout(() => {
         typing?.remove();
         compareState.category = cat; renderCompare(); scrollPanelIntoView('compare-panel');
         const zero = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).find(e => e.na);
-        addWISEaiMessage('Filtered to <strong>' + label + '</strong> — counts and scores narrowed accordingly.' + (cat !== 'all' && zero ? ' <strong>' + zero.name + '</strong> has no products here, so it reads <em>N/A</em> rather than a plotted zero.' : ''), { source: false });
+        addWISEcodeAIMessage('Filtered to <strong>' + label + '</strong> — counts and scores narrowed accordingly.' + (cat !== 'all' && zero ? ' <strong>' + zero.name + '</strong> has no products here, so it reads <em>N/A</em> rather than a plotted zero.' : ''), { source: false });
         cmpOfferFollowChips();
       }, 520);
     }
 
     /* "Learn more" pod on each metric in the board rail — routes straight into
-       the chat and has WISEai explain that metric in depth, then leaves the
+       the chat and has WISEcodeAI explain that metric in depth, then leaves the
        comparison controls in place so the flow never dead-ends. */
     function cmpExplainMetric(id) {
       const m = CMP_METRIC_BY_ID[id];
@@ -14266,10 +14267,10 @@
       const label = cmpMetricShort(m);
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Tell me more about ' + label + '.');
-      const typing = showWISEaiTyping('WISEai is pulling the ' + label + ' definition');
+      const typing = showWISEcodeAITyping('WISEcodeAI is pulling the ' + label + ' definition');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(cmpMetricLong(id), { source: false, feedback: true });
+        addWISEcodeAIMessage(cmpMetricLong(id), { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
     }
@@ -14307,7 +14308,7 @@
       addUserMessage(ent
         ? 'Tell me about ' + ent.name + '’s ' + r.label + ' in Guiding Stars.'
         : 'Tell me more about ' + r.label + ' in Guiding Stars.');
-      const typing = showWISEaiTyping('WISEai is pulling the ' + r.label + ' detail');
+      const typing = showWISEcodeAITyping('WISEcodeAI is pulling the ' + r.label + ' detail');
       setTimeout(() => {
         typing?.remove();
         let msg = CMP_GS_LONG[key] || r.desc;
@@ -14321,7 +14322,7 @@
           else read = 'comes in at <strong>' + raw + (r.unit ? ' ' + r.unit : '') + '</strong>';
           msg += '<br><br>For <strong>' + ent.name + '</strong>: it ' + read + ' (overall ' + gsd.stars + '★, score ' + (gsd.score > 0 ? '+' : '') + gsd.score + ').';
         }
-        addWISEaiMessage(msg, { source: false, feedback: true });
+        addWISEcodeAIMessage(msg, { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
     }
@@ -14358,7 +14359,7 @@
         ? ' ' + pendingCount + ' pending ' + (pendingCount > 1 ? nounPl : noun) + ' — recalculate to fold ' + (pendingCount > 1 ? 'them' : 'it') + ' in.'
         : '';
 
-      if (!live.length) return 'Add ' + nounPl + ' to the board and WISEai will summarize how they stack up here.' + pendBit;
+      if (!live.length) return 'Add ' + nounPl + ' to the board and WISEcodeAI will summarize how they stack up here.' + pendBit;
 
       const byScore = live.slice().sort((a, b) => cmpScoreFor(b, 'wisescore') - cmpScoreFor(a, 'wisescore'));
       const leader = byScore[0];
@@ -14524,10 +14525,10 @@
       const score = Math.round(cmpScoreFor(ent, meta.metric));
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?');
-      const typing = showWISEaiTyping('WISEai is breaking down ' + ent.name);
+      const typing = showWISEcodeAITyping('WISEcodeAI is breaking down ' + ent.name);
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(cmpTakeawayWhy(key, ent, score) +
+        addWISEcodeAIMessage(cmpTakeawayWhy(key, ent, score) +
           ' Want me to show the ingredients behind it, compare it against another product, or flag where it still has room to improve?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
@@ -14544,10 +14545,10 @@
       const ordered = ents;
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('What’s the overall read on this comparison?');
-      const typing = showWISEaiTyping('WISEai is summarizing the board');
+      const typing = showWISEcodeAITyping('WISEcodeAI is summarizing the board');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(cmpOverallInsight(scope, metrics, ordered, pendingSet) +
+        addWISEcodeAIMessage(cmpOverallInsight(scope, metrics, ordered, pendingSet) +
           ' Want me to break down what’s driving the leader, swap in another ' + (scope.noun || 'product') + ', or focus on a specific metric?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
@@ -14563,11 +14564,11 @@
       const ent = cmpResolveEntity(scope, base);
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Let’s talk about ' + ent.name + '.');
-      const typing = showWISEaiTyping('WISEai is pulling up ' + ent.name);
+      const typing = showWISEcodeAITyping('WISEcodeAI is pulling up ' + ent.name);
       setTimeout(() => {
         typing?.remove();
         const lead = ent.insight ? ' ' + ent.insight : '';
-        addWISEaiMessage('Happy to dig into <strong>' + ent.name + '</strong>.' + lead +
+        addWISEcodeAIMessage('Happy to dig into <strong>' + ent.name + '</strong>.' + lead +
           ' Want me to break down the ingredients driving this, compare it on a specific metric, or flag where it could improve?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
       }, 640);
@@ -14575,7 +14576,7 @@
 
     /* ════════════════════════════════════════════════════════════════════
        LIVE WISE VERIFICATION WORKFLOW
-       A deeper, "live and in-the-moment" workflow. WISEai runs an
+       A deeper, "live and in-the-moment" workflow. WISEcodeAI runs an
        end-to-end verification for the Nutrient Survival portfolio and
        assembles a double-width module stage by stage as the user clicks
        through the in-chat intent chips — Profile → Portfolio Audit →
@@ -14669,10 +14670,10 @@
         vfResetModule();
         openVerificationPanel();
         addUserMessage('Run a Live Verification');
-        const typing = showWISEaiTyping('Spinning up the verification workspace…');
+        const typing = showWISEcodeAITyping('Spinning up the verification workspace…');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Let’s run a <strong>live WISE Verification</strong>. I’ve opened a verification board on the right — it’ll fill in stage by stage as we go: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>. First, which portfolio are we verifying?', { source: false });
+          addWISEcodeAIMessage('Let’s run a <strong>live WISE Verification</strong>. I’ve opened a verification board on the right — it’ll fill in stage by stage as we go: <strong>Profile → Audit → Select → Analyze → Attest → Pay → Verified</strong>. First, which portfolio are we verifying?', { source: false });
           vfOfferStage(0);
         }, 650);
       });
@@ -14700,10 +14701,10 @@
       addUserMessage(stage.user);
       /* Mark the stepper's current stage as actively working. */
       vfSetStepActive(index);
-      const typing = showWISEaiTyping(stage.status);
+      const typing = showWISEcodeAITyping(stage.status);
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(stage.reply);
+        addWISEcodeAIMessage(stage.reply);
         try { stage.build(); } catch (_) {}
         vfStageIndex = Math.max(vfStageIndex, index + 1);
         vfMarkStepDone(index);
@@ -14737,12 +14738,12 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'toolkit') {
         addUserMessage('Download the marketing toolkit');
-        const t = showWISEaiTyping('Packaging your NON-UPF toolkit…');
-        setTimeout(() => { t?.remove(); addWISEaiMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); }, 600);
+        const t = showWISEcodeAITyping('Packaging your NON-UPF toolkit…');
+        setTimeout(() => { t?.remove(); addWISEcodeAIMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); }, 600);
       } else {
         addUserMessage('Show the verification certificate');
-        const t = showWISEaiTyping('Retrieving certificate…');
-        setTimeout(() => { t?.remove(); addWISEaiMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); }, 600);
+        const t = showWISEcodeAITyping('Retrieving certificate…');
+        setTimeout(() => { t?.remove(); addWISEcodeAIMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); }, 600);
       }
     }
 
@@ -14775,11 +14776,11 @@
           '<div class="vf-empty" id="vf-empty">' +
           '<span class="material-symbols-outlined">verified_user</span>' +
           '<p class="vf-empty-title">Verification not started</p>' +
-          '<p class="vf-empty-sub">Click through WISEai\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
+          '<p class="vf-empty-sub">Click through WISEcodeAI\'s prompts in the chat — each stage of the verification will assemble here in real time.</p>' +
           '</div>';
       }
       const sub = document.getElementById('vf-subtitle');
-      if (sub) sub.textContent = 'WISEai is running your verification';
+      if (sub) sub.textContent = 'WISEcodeAI is running your verification';
       vfRenderStepper();
       vfUpdateProgress();
     }
@@ -15062,10 +15063,10 @@
         lrResetModules();
         lrOpenClaimsPanel();
         addUserMessage('Prep Launch Readiness');
-        const typing = showWISEaiTyping('Setting up launch boards…');
+        const typing = showWISEcodeAITyping('Setting up launch boards…');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
+          addWISEcodeAIMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
           lrOfferStep(0);
         }, 600);
       });
@@ -15093,10 +15094,10 @@
       addUserMessage(step.user);
       if (step.intentShift) lrOpenPackagingPanel();
       if (step.openNav) lrOpenNavPanels(step.openNav);
-      const typing = showWISEaiTyping(step.status || 'Working…');
+      const typing = showWISEcodeAITyping(step.status || 'Working…');
       setTimeout(() => {
         typing?.remove();
-        addWISEaiMessage(step.reply);
+        addWISEcodeAIMessage(step.reply);
         try { step.build(); } catch (_) {}
         lrStepIndex = Math.max(lrStepIndex, index + 1);
         if (step.module === 'claims') {
@@ -15131,27 +15132,27 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'brief') {
         addUserMessage('Export the launch brief');
-        const typing = showWISEaiTyping('Compiling launch brief…');
+        const typing = showWISEcodeAITyping('Compiling launch brief…');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
+          addWISEcodeAIMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
         }, 600);
       } else if (kind === 'view') {
         addUserMessage('Open the saved view');
         switchHistoryTab('views');
         renderViewsTab();
         scrollPanelIntoView('history-panel');
-        const typing = showWISEaiTyping('Opening saved view…');
+        const typing = showWISEcodeAITyping('Opening saved view…');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
+          addWISEcodeAIMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
         }, 500);
       } else {
         addUserMessage('Start verification for the launch UPC');
-        const typing = showWISEaiTyping('Handing off to verification…');
+        const typing = showWISEcodeAITyping('Handing off to verification…');
         setTimeout(() => {
           typing?.remove();
-          addWISEaiMessage('Routing Chipotle Chicken Empanadas into <strong>Confirm → Attest → Activate</strong> — the reconciled claims and label copy will carry forward automatically.');
+          addWISEcodeAIMessage('Routing Chipotle Chicken Empanadas into <strong>Confirm → Attest → Activate</strong> — the reconciled claims and label copy will carry forward automatically.');
         }, 600);
       }
     }
@@ -15215,7 +15216,7 @@
           '<div class="wf-empty" id="lr-claims-empty">' +
           '<span class="material-symbols-outlined">campaign</span>' +
           '<p class="wf-empty-title">No claims loaded</p>' +
-          '<p class="wf-empty-sub">Answer WISEai\'s prompts in the chat and each claims section will appear here.</p>' +
+          '<p class="wf-empty-sub">Answer WISEcodeAI\'s prompts in the chat and each claims section will appear here.</p>' +
           '</div>';
       }
       const pkgBody = document.getElementById('lr-packaging-body');
@@ -15224,7 +15225,7 @@
           '<div class="wf-empty" id="lr-packaging-empty">' +
           '<span class="material-symbols-outlined">inventory_2</span>' +
           '<p class="wf-empty-title">Not opened yet</p>' +
-          '<p class="wf-empty-sub">If WISEai spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
+          '<p class="wf-empty-sub">If WISEcodeAI spots a label or packaging mismatch, this board opens stacked under Claims Review.</p>' +
           '</div>';
       }
       document.getElementById('launch-claims-panel')?.classList.remove('lr-open', 'panel-wide');
@@ -15372,10 +15373,10 @@
           const name = String(f.name).replace(/</g, '&lt;');
           hideWelcomeScreen(function() {
             addUserMessage('📎 ' + name);
-            const t = showWISEaiTyping('Reviewing ' + name);
+            const t = showWISEcodeAITyping('Reviewing ' + name);
             setTimeout(function() {
               if (t) t.remove();
-              addWISEaiMessage('Got it — I’ve received <strong>' + name + '</strong> and can reference it in this conversation.', { source: false });
+              addWISEcodeAIMessage('Got it — I’ve received <strong>' + name + '</strong> and can reference it in this conversation.', { source: false });
             }, 600);
           });
           fi.value = '';
@@ -15449,7 +15450,7 @@
         clone.querySelectorAll('.sc-line-meta, .sc-feedback').forEach(n => n.remove());
         const text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
         if (!text) return;
-        const who = line.classList.contains('sc-line-you') ? 'You' : 'WISEai';
+        const who = line.classList.contains('sc-line-you') ? 'You' : 'WISEcodeAI';
         const time = (line.querySelector('.sc-line-time')?.textContent || '').trim();
         lines.push((time ? `[${time}] ` : '') + who + ': ' + text);
       });
@@ -15491,7 +15492,7 @@
     }
 
     function exportConversation() {
-      const blob = new Blob(['WISEai export placeholder\n'], { type: 'text/plain' });
+      const blob = new Blob(['WISEcodeAI export placeholder\n'], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'wiseowl-chat.txt';
@@ -15499,7 +15500,7 @@
     }
     function shareConversation() {
       const url = window.location.href;
-      if (navigator.share) navigator.share({ title: 'WISEai', url });
+      if (navigator.share) navigator.share({ title: 'WISEcodeAI', url });
       else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Link copied'));
       else alert(url);
     }
@@ -15537,7 +15538,7 @@
 
     document.addEventListener('click', (e) => {
       if (!document.getElementById('topbar-menu-wrap')?.contains(e.target)) closeTopbarMenu();
-      if (!document.getElementById('wiseai-menu-wrap')?.contains(e.target)) closeWISEaiMenu();
+      if (!document.getElementById('wiseai-menu-wrap')?.contains(e.target)) closeWISEcodeAIMenu();
       const lirWrap = document.getElementById('lir-more-wrap');
       if (lirWrap && !lirWrap.contains(e.target)) closeLirMorePopover();
     });
@@ -15930,14 +15931,14 @@
       });
     })();
 
-    /* WISEai chat width toggle — mirrors the .panel-width-toggle-btn on the
-       side modules. WISEai is the flexible centre column, so "wide" flags the
+    /* WISEcodeAI chat width toggle — mirrors the .panel-width-toggle-btn on the
+       side modules. WISEcodeAI is the flexible centre column, so "wide" flags the
        shell (#chat-shell.panel-wide) and reflects the pressed state. */
-    /* WISEai's size is shared across the whole app via the `wise-wiseai-dock`
+    /* WISEcodeAI's size is shared across the whole app via the `wise-wiseai-dock`
        localStorage key (see js/wiseai-dock.js). Persisting it here means the
-       width you set on this page carries to the WISEai dock on the portfolio
-       and agent pages — and back — so WISEai is always the same size. */
-    /* WISEai width is also a three-tier cycle (0 single · 1 double · 2 triple),
+       width you set on this page carries to the WISEcodeAI dock on the portfolio
+       and agent pages — and back — so WISEcodeAI is always the same size. */
+    /* WISEcodeAI width is also a three-tier cycle (0 single · 1 double · 2 triple),
        persisted as a number under `wide`. Legacy booleans map true→1, false→0. */
     const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
     const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
@@ -15946,7 +15947,7 @@
       if (typeof v === 'number') return Math.max(0, Math.min(3, v | 0));
       return 0;
     }
-    function persistWISEaiWide(tier) {
+    function persistWISEcodeAIWide(tier) {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
         raw.wide = wiseaiTierOf(tier);
@@ -15954,12 +15955,12 @@
       } catch (_) {}
     }
 
-    /* WISEai is always the centre anchor; the control chooses how many module
+    /* WISEcodeAI is always the centre anchor; the control chooses how many module
        panes sit to its RIGHT (0 = chat only, 1 = one pane, 2 = a second pane),
        shared via the same `wise-wiseai-dock` key. On THIS page the chat IS the
        centre column, so the count only persists for the portfolio and agent
-       pages where WISEai rides as a dock and actually re-orders the row. See
-       applyWISEaiDockState() in js/wiseai-dock.js. */
+       pages where WISEcodeAI rides as a dock and actually re-orders the row. See
+       applyWISEcodeAIDockState() in js/wiseai-dock.js. */
     function wiseaiRightPanes() {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
@@ -15974,7 +15975,7 @@
     function wiseaiDockMode() {
       return ['center', 'right1', 'right2'][wiseaiRightPanes()] || 'center';
     }
-    function setWISEaiDockPosition(mode) {
+    function setWISEcodeAIDockPosition(mode) {
       try {
         const raw = JSON.parse(localStorage.getItem('wise-wiseai-dock') || '{}') || {};
         const map = { center: 0, right1: 1, right2: 2, right: 0, left: 2 };
@@ -15984,7 +15985,7 @@
         localStorage.setItem('wise-wiseai-dock', JSON.stringify(raw));
       } catch (_) {}
     }
-    function applyWISEaiWide(tier) {
+    function applyWISEcodeAIWide(tier) {
       tier = wiseaiTierOf(tier);
       const shell = document.getElementById('chat-shell');
       const btn = document.getElementById('wiseai-width-btn');
@@ -16008,30 +16009,30 @@
       if (shell.classList.contains('panel-wide')) return 1;
       return 0;
     }
-    window.toggleWISEaiWidth = function(btn) {
+    window.toggleWISEcodeAIWidth = function(btn) {
       const shell = document.getElementById('chat-shell');
       if (!shell) return;
       const next = (wiseaiCurrentTier() + 1) % 4;
-      applyWISEaiWide(next);
-      persistWISEaiWide(next);
+      applyWISEcodeAIWide(next);
+      persistWISEcodeAIWide(next);
     };
-    /* WISEai always loads at its single (minimum) width on every page EXCEPT the
+    /* WISEcodeAI always loads at its single (minimum) width on every page EXCEPT the
        flagship pages/wiseai.html — the widened (double/triple) tier is a
        within-session choice and is intentionally NOT restored across loads, so
        the chat module is the exact same minimum size every time it loads. This
-       mirrors the shared dock (writeWISEaiDockState({ wide: 0 }) in
+       mirrors the shared dock (writeWISEcodeAIDockState({ wide: 0 }) in
        js/wiseai-dock.js). We still reset the shared key to single so the size
        stays uniform. A within-session change from another tab is still honored
        by the `storage` listener below. */
-    (function initWISEaiWidth() {
-      applyWISEaiWide(0);
-      persistWISEaiWide(0);
+    (function initWISEcodeAIWidth() {
+      applyWISEcodeAIWide(0);
+      persistWISEcodeAIWide(0);
     })();
     window.addEventListener('storage', function(e) {
       if (e.key !== 'wise-wiseai-dock') return;
       try {
         const raw = JSON.parse(e.newValue || '{}') || {};
-        applyWISEaiWide(wiseaiTierOf(raw.wide));
+        applyWISEcodeAIWide(wiseaiTierOf(raw.wide));
       } catch (_) {}
     });
 
@@ -16225,7 +16226,7 @@
           togglePivot: () => window.toggleMenuPivot?.(),
           toggleTheme: () => toggleChatTheme(),
           setLayout: (m) => { if (typeof setModuleLayout === 'function') setModuleLayout(m); },
-          setDock: (m) => { if (typeof setWISEaiDockPosition === 'function') setWISEaiDockPosition(m); },
+          setDock: (m) => { if (typeof setWISEcodeAIDockPosition === 'function') setWISEcodeAIDockPosition(m); },
         });
       }
 
@@ -16289,7 +16290,7 @@
 
   <!-- Consolidates every module header's flip / width / close icons into a
        single horizontal-dots (more_horiz) dropdown.
-       WISEai is intentionally left untouched. The original control buttons are
+       WISEcodeAI is intentionally left untouched. The original control buttons are
        kept (hidden) in the DOM so the existing per-panel state-sync keeps
        working; the menu rows simply delegate clicks to them. -->
   <script>
@@ -16320,7 +16321,7 @@
 
       function consolidate(controls) {
         if (controls.dataset.menuized) return;
-        if (controls.querySelector('[data-panel="wiseai"]')) return; // never WISEai
+        if (controls.querySelector('[data-panel="wiseai"]')) return; // never WISEcodeAI
 
         const flipBtn  = controls.querySelector('.panel-flip-btn');
         const widthBtn = controls.querySelector('.panel-width-toggle-btn');
@@ -16517,7 +16518,7 @@
             anchor: '#chat-shell',
             history: function () { return window.__wiseChatHistory; },
             width: 280,
-            onVisibility: function () { syncWISEaiModuleSwitches(); }
+            onVisibility: function () { syncWISEcodeAIModuleSwitches(); }
           })
         : null;
 
@@ -16536,24 +16537,24 @@
         if (ctrl.isDocked && ctrl.isDocked()) return !el.classList.contains('wch-docked-hidden');
         return ctrl.isOpen ? ctrl.isOpen() : false;
       }
-      function syncWISEaiModuleSwitches() {
+      function syncWISEcodeAIModuleSwitches() {
         syncSwitch('history', historyVisible());
         syncSwitch('turns', !!(turnsCtrl && turnsCtrl.isVisible()));
       }
-      window.syncWISEaiModuleSwitches = syncWISEaiModuleSwitches;
-      window.toggleWISEaiHistoryModule = function (e) {
+      window.syncWISEcodeAIModuleSwitches = syncWISEcodeAIModuleSwitches;
+      window.toggleWISEcodeAIHistoryModule = function (e) {
         if (e) e.stopPropagation();
         ctrl.toggle();
-        syncWISEaiModuleSwitches();
+        syncWISEcodeAIModuleSwitches();
       };
-      window.toggleWISEaiTurnsModule = function (e) {
+      window.toggleWISEcodeAITurnsModule = function (e) {
         if (e) e.stopPropagation();
         if (turnsCtrl) turnsCtrl.toggle();
-        syncWISEaiModuleSwitches();
+        syncWISEcodeAIModuleSwitches();
       };
       /* Read the switch states back every time the three-dot menu opens. */
       var menuBtn = document.getElementById('wiseai-menu-btn');
-      if (menuBtn) menuBtn.addEventListener('click', function () { syncWISEaiModuleSwitches(); });
+      if (menuBtn) menuBtn.addEventListener('click', function () { syncWISEcodeAIModuleSwitches(); });
     })();
   </script>
 </body>

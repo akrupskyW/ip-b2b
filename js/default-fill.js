@@ -3,7 +3,7 @@
    default, at the fourth width tier: "Fill the Screen" (tier 3).
 
    Why a shared script (and not a per-page edit): the app has many #modules-row
-   pages, each with its own layout + width scheme — the WISEai result panes
+   pages, each with its own layout + width scheme — the WISEcodeAI result panes
    (pane-* classes), the product utility panels (panel-* classes, flipped into
    #panels-row-right), the reformulation studio (rf-* cards), etc. Rather than
    teach every page a new default, this file expresses the rule ONCE against the

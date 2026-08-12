@@ -1,7 +1,7 @@
 # WISE — Food Intelligence Dashboard
 
 A front-end prototype for the WISE brand/food-intelligence platform: an interactive
-dashboard, WISEai AI chat surfaces, analytics views, and report prototypes built as
+dashboard, WISEcodeAI AI chat surfaces, analytics views, and report prototypes built as
 static HTML/CSS/JS.
 
 ## Structure
@@ -15,7 +15,7 @@ static HTML/CSS/JS.
   menu; all share the nav + footer that `js/marketing-shell.js` injects
 - `pages/` — individual screens (dashboard `overview.html`, `analytics-types.html`,
   `ai-chat.html`, accessibility review, report prototypes in `_reports/`, etc.)
-- `js/` — UI modules (dashboard rendering, WISEai chat/dock, topbar, appearance menu,
+- `js/` — UI modules (dashboard rendering, WISEcodeAI chat/dock, topbar, appearance menu,
   navigation, charts/animations)
 - `assets/` — brand art, product imagery, banners
 - `dev_server.py` — optional local dev server with live reload

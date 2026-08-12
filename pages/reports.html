@@ -6,7 +6,7 @@
   presented as a shelf of "posters" you browse and open. Follows the module
   template: `<body data-nav-id="reports">` drives the active nav item, page
   title, and header. The sectioned nav, Appearance controls, profile menu,
-  WISEai dock, alerts, and rail collapse are all wired by js/agent-overview.js.
+  WISEcodeAI dock, alerts, and rail collapse are all wired by js/agent-overview.js.
   Page content lives in #agent-main-scroll.
 -->
 <html lang="en" class="dark">
@@ -206,9 +206,9 @@
 
     /* ===================================================================
        Workspace layout — mirror product-portfolio.html: the persistent
-       WISEai chat sits directly right of the nav, and the Reports module
+       WISEcodeAI chat sits directly right of the nav, and the Reports module
        docks to its right. The shared shell (js/agent-overview.js) drops
-       the WISEai dock into #modules-row automatically; here we just re-order
+       the WISEcodeAI dock into #modules-row automatically; here we just re-order
        the row (page-scoped, so no other page is affected) so the chat is
        the centre column and Reports is the module on the right.
     =================================================================== */
@@ -249,13 +249,14 @@
        60px header bar above it. */
     body[data-nav-id="reports"] #agent-main-header { display: none; }
     body[data-nav-id="reports"] .agent-main-scroll { padding: 0; }
-    /* The inline brand-report surface (opened from the WISEai "Open the …
+    /* The inline brand-report surface (opened from the WISEcodeAI "Open the …
        report" chips) replaces .rp-wrap, whose padding went with it — give the
        report the same module inset so it doesn't sit flush to the card edge. */
     body[data-nav-id="reports"] .agent-main-scroll > .dash-report-view {
       padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px;
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="reports">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
@@ -294,7 +295,7 @@
                     </div>
                     <div class="rp-body">
                       <div class="rp-name">Guiding Stars Action Plan</div>
-                      <p class="rp-desc">Your prioritized path to more stars — quick wins, near-misses, and the competitive gap, with WISEai working alongside.</p>
+                      <p class="rp-desc">Your prioritized path to more stars — quick wins, near-misses, and the competitive gap, with WISEcodeAI working alongside.</p>
                       <div class="rp-foot"><span class="rp-view">View Report<span class="material-symbols-outlined">north_east</span></span></div>
                     </div>
                   </a>

@@ -2,7 +2,7 @@
  * Admin Utilities — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on admin-utils.html, paired with the
- * WISEai dock. A database-info strip over a stacked list of platform
+ * WISEcodeAI dock. A database-info strip over a stacked list of platform
  * maintenance + seeding tools, each with a short description and a single
  * action. Uses the shared token-driven `adm-*` component set from wise.css.
  */
@@ -65,7 +65,7 @@ let hostEl = null;
 
 let chatApi = null;
 export function setAdminUtilsChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEai(html); } }
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

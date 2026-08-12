@@ -331,8 +331,8 @@
     });
   }
 
-  /* ---- WISEai chat dock ----
-     Self-contained marketing chat that mirrors the app's WISEai surface.
+  /* ---- WISEcodeAI chat dock ----
+     Self-contained marketing chat that mirrors the app's WISEcodeAI surface.
      Desktop: sticky left rail (open by default). Mobile: a floating owl icon
      that expands to a full-screen chat. */
   var OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
@@ -359,57 +359,15 @@
     if (/price|cost|free|how much/.test(t))
       return "The WISEcode app is free to download and scan. Verification and enterprise plans are tailored — reach out from the <a href=\"marketing-enterprise.html\">WISEip</a> page.";
     if (/hi|hello|hey|help/.test(t))
-      return "Hi! I'm WISEai. Ask me about any food, the Non-UPF standard, WISEcoach, or getting the app.";
+      return "Hi! I'm WISEcodeAI. Ask me about any food, the Non-UPF standard, WISEcoach, or getting the app.";
     return "Great question. WISE turns the complexity of food into clear answers — I can help with ultra-processed checks, the Non-UPF standard, WISEcoach, or getting the app. Which would you like?";
   }
 
-  /* Reveal a reply's text one word at a time so WISEai reads as if it's typing
-     live rather than popping in whole. Wraps each visible word in a span and
-     fades them in on a quick cadence; markup, icons and media stay intact.
-     Honors prefers-reduced-motion. */
-  var mktPrefersReducedMotion = (function () {
-    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
-    catch (e) { return false; }
-  })();
+  /* Word-by-word reveal DISABLED — chat text appears whole. The typeInEl
+     signature is kept so callers' completion callbacks run unchanged. */
   function typeInEl(el, scroll, done) {
-    if (!el || mktPrefersReducedMotion) { if (done) done(); return; }
-    if (el.querySelector('img, svg, canvas, video, iframe')) { if (done) done(); return; }
-    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
-      acceptNode: function (n) {
-        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        var p = n.parentElement;
-        if (p && p.closest('.material-symbols-outlined, .material-symbols-rounded')) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    });
-    var nodes = [];
-    var tn;
-    while ((tn = walker.nextNode())) nodes.push(tn);
-    var words = [];
-    nodes.forEach(function (node) {
-      var parts = node.nodeValue.split(/(\s+)/);
-      var frag = document.createDocumentFragment();
-      parts.forEach(function (part) {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-        var span = document.createElement('span');
-        span.style.opacity = '0';
-        span.textContent = part;
-        frag.appendChild(span);
-        words.push(span);
-      });
-      node.parentNode.replaceChild(frag, node);
-    });
-    if (!words.length) { if (done) done(); return; }
-    var i = 0;
-    var step = function () {
-      words[i].style.opacity = '1';
-      i++;
-      if (scroll) scroll();
-      if (i < words.length) setTimeout(step, 70);
-      else if (done) done();
-    };
-    step();
+    if (scroll) scroll();
+    if (done) done();
   }
 
   function initChat() {
@@ -423,8 +381,8 @@
     var fab = document.createElement('button');
     fab.type = 'button';
     fab.className = 'mkt-chat-fab';
-    fab.setAttribute('aria-label', 'Chat with WISEai');
-    fab.innerHTML = OWL_BUG + '<span class="mkt-chat-fab-label">Ask WISEai</span>';
+    fab.setAttribute('aria-label', 'Chat with WISEcodeAI');
+    fab.innerHTML = OWL_BUG + '<span class="mkt-chat-fab-label">Ask WISEcodeAI</span>';
 
     var chipsHtml = CHAT_CHIPS.map(function (c) {
       return '<button type="button" class="mkt-chat-chip">' + c + '</button>';
@@ -432,11 +390,11 @@
 
     var panel = document.createElement('section');
     panel.className = 'mkt-chat';
-    panel.setAttribute('aria-label', 'WISEai chat');
+    panel.setAttribute('aria-label', 'WISEcodeAI chat');
     panel.innerHTML =
       '<div class="mkt-chat-head">' +
         '<div class="mkt-chat-bug">' + OWL_BUG + '</div>' +
-        '<div class="mkt-chat-titles"><span class="mkt-chat-title">WISEai\u2122</span><span class="mkt-chat-sub">Find Your Food Truth\u2122</span></div>' +
+        '<div class="mkt-chat-titles"><span class="mkt-chat-title">WISEcodeAI\u2122</span><span class="mkt-chat-sub">Find Your Food Truth\u2122</span></div>' +
         '<button class="mkt-chat-head-btn" data-chat-reset type="button" title="New conversation" aria-label="New conversation"><span class="material-symbols-outlined">add_comment</span></button>' +
         '<button class="mkt-chat-head-btn" data-chat-close type="button" title="Minimize" aria-label="Minimize chat"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
@@ -446,7 +404,7 @@
           '<textarea class="mkt-chat-input" data-chat-input rows="1" placeholder="Ask about your food\u2026" aria-label="Message"></textarea>' +
           '<button class="mkt-chat-send" type="submit" aria-label="Send"><span class="material-symbols-outlined">arrow_upward</span></button>' +
         '</form>' +
-        '<p class="mkt-chat-disclaimer">WISEai can make mistakes. Verify important information.</p>' +
+        '<p class="mkt-chat-disclaimer">WISEcodeAI can make mistakes. Verify important information.</p>' +
       '</div>';
 
     document.body.appendChild(fab);
@@ -461,7 +419,7 @@
     var scrollDown = function () { body.scrollTop = body.scrollHeight; };
     var welcome = function () {
       body.innerHTML =
-        '<div class="mkt-chat-welcome"><h4>What can WISEai\u2122 help with?</h4><p>Ask about any food, the Non-UPF standard, or getting the app.</p></div>' +
+        '<div class="mkt-chat-welcome"><h4>What can WISEcodeAI\u2122 help with?</h4><p>Ask about any food, the Non-UPF standard, or getting the app.</p></div>' +
         '<div class="mkt-chat-chips">' + chipsHtml + '</div>';
     };
     var addMsg = function (html, who) {
@@ -807,7 +765,7 @@
     apply();
   }
 
-  /* NOTE: the WISEai chat is now the EXACT shared product module, mounted from
+  /* NOTE: the WISEcodeAI chat is now the EXACT shared product module, mounted from
      js/marketing-shell.js (js/wiseai-chat.js). The old bespoke initChat()/.mkt-chat
      dock is no longer booted. */
 

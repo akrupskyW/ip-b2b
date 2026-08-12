@@ -47,8 +47,12 @@
 
   var floated = new Set();
 
+  /* `data-popover-static` opts a node out of the layer — used by surfaces that
+     render a popover inline as a specimen (e.g. the All Modules component
+     library), where pinning it to the viewport would tear it out of its card. */
   function isManaged(el) {
-    return el && el.nodeType === 1 && typeof el.matches === 'function' && el.matches(SELECTOR);
+    return el && el.nodeType === 1 && typeof el.matches === 'function' && el.matches(SELECTOR) &&
+      !el.hasAttribute('data-popover-static');
   }
 
   /* Shown = laid out (not display:none). getClientRects() is empty for

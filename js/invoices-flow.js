@@ -8,7 +8,7 @@
  * a live search, and per-row actions (Pay, Retry, Cancel, Mark paid, Download,
  * Invoice).
  *
- * Like the other account modules it pairs with the persistent WISEai chat dock
+ * Like the other account modules it pairs with the persistent WISEcodeAI chat dock
  * to its LEFT (invoices.html pins `data-default-dock="left"`):
  *   • chat → board  Intent chips filter the board, download paid invoices, or
  *                   jump to the oldest outstanding invoice.
@@ -65,7 +65,7 @@ export function setInvoicesChat(api) { chatApi = api; }
 function pushChat(html) {
   if (!chatApi || !html) return;
   chatApi.hideWelcome?.();
-  chatApi.addWISEai(html);
+  chatApi.addWISEcodeAI(html);
 }
 
 /* ---- Toast --------------------------------------------------------- */
@@ -434,7 +434,7 @@ function closeMenus(keep) {
 }
 
 /* ==================================================================== */
-/* WISEai bridge (chat → board)                                         */
+/* WISEcodeAI bridge (chat → board)                                         */
 /* ==================================================================== */
 
 function statusFromText(t) {

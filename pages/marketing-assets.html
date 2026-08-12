@@ -40,7 +40,7 @@
     body[data-nav-id="marketing-assets"] .agent-main-scroll { padding: 0; }
 
     /* Zero the shell's default 8px top margin + bottom padding on #modules-row so
-       the Marketing Assets Module and the WISEai chat dock line up flush with the
+       the Marketing Assets Module and the WISEcodeAI chat dock line up flush with the
        full-height navigation rail (matches verification / gras-verification). */
     body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; }
 
@@ -136,7 +136,7 @@
     }
     html.dark .ma-hl { background: color-mix(in srgb, var(--ter-amber) 34%, transparent); }
 
-    /* Follow-up action chips inside a WISEai reply (download / open the exact
+    /* Follow-up action chips inside a WISEcodeAI reply (download / open the exact
        file just discussed). Reuses the shared .chip pill so it reads as a
        suggested reply; the primary tint marks it as an actionable download. */
     .ma-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -226,7 +226,7 @@
     .ma-row--folder { cursor: pointer; }
     .ma-nest-row > td { padding: 0; border-top: 1px solid var(--border); }
 
-    /* Pulse a folder row when a WISEai chip jumps you to it. */
+    /* Pulse a folder row when a WISEcodeAI chip jumps you to it. */
     .ma-row.ma-flash > td { animation: maFlash 1.4s ease; }
     @keyframes maFlash {
       0%, 100% { background: transparent; }
@@ -371,6 +371,7 @@
       .ma-actions .ma-btn { padding: 0 12px; }
     }
   </style>
+  <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="marketing-assets" data-default-dock="left">
   <div id="agent-shell-wrap" class="menu-brand-integrated">

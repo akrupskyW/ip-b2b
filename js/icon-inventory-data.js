@@ -933,7 +933,7 @@ export const ICON_INVENTORY = {
         {
           "file": "pages/product-comparison.html",
           "line": 7993,
-          "label": "WISEai"
+          "label": "WISEcodeAI"
         },
         {
           "file": "pages/login.html",
@@ -1349,7 +1349,7 @@ export const ICON_INVENTORY = {
         {
           "file": "pages/app-vision-deck.html",
           "line": 1764,
-          "label": "WISEai"
+          "label": "WISEcodeAI"
         },
         {
           "file": "pages/app-vision-deck.html",
@@ -2931,12 +2931,12 @@ export const ICON_INVENTORY = {
         {
           "file": "pages/product-comparison.html",
           "line": 13343,
-          "label": "Ask WISEai about this metric"
+          "label": "Ask WISEcodeAI about this metric"
         },
         {
           "file": "pages/product-comparison.html",
           "line": 13432,
-          "label": "Chat with WISEai about"
+          "label": "Chat with WISEcodeAI about"
         }
       ]
     },
@@ -3282,7 +3282,7 @@ export const ICON_INVENTORY = {
         {
           "file": "pages/product-portfolio.html",
           "line": 8647,
-          "label": "Ask WISEai a Question"
+          "label": "Ask WISEcodeAI a Question"
         }
       ]
     },
@@ -6665,12 +6665,12 @@ export const ICON_INVENTORY = {
         {
           "file": "js/wiseai-chat.js",
           "line": 1213,
-          "label": "WISEai™ cites where its answer comes from"
+          "label": "WISEcodeAI™ cites where its answer comes from"
         },
         {
           "file": "js/wiseai-chat.js",
           "line": 2317,
-          "label": "WISEai™ cites where its answer comes from"
+          "label": "WISEcodeAI™ cites where its answer comes from"
         },
         {
           "file": "js/gras-verification-flow.js",
@@ -6996,12 +6996,12 @@ export const ICON_INVENTORY = {
         "Material Symbols (outlined)"
       ],
       "count": 54,
-      "label": "WISEai™ module width",
+      "label": "WISEcodeAI™ module width",
       "placements": [
         {
           "file": "js/wiseai-chat.js",
           "line": 946,
-          "label": "WISEai™ module width"
+          "label": "WISEcodeAI™ module width"
         },
         {
           "file": "js/wiseai-chat.js",

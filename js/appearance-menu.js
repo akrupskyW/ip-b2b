@@ -4,7 +4,7 @@
 /*
  * One source of truth for the markup inside the "Appearance" (crossword)
  * popover. Every shell — the agent overview pages (js/agent-overview.js), the
- * Portfolio workspace (js/portfolio-module.js), the WISEai chat (pages/ai-chat.html
+ * Portfolio workspace (js/portfolio-module.js), the WISEcodeAI chat (pages/ai-chat.html
  * inline), and the application sidebar (js/app.js) — renders the SAME menu by
  * calling buildAppearanceBody(). This keeps the toggles (Minimal UI, Header,
  * Full bleed, Jam strip, Text size, Theme …) identical everywhere; before this
@@ -13,7 +13,7 @@
  *
  * The row set is FIXED here — it is not configurable per shell. That is
  * deliberate: shells used to pass their own show/hide options (a module-layout
- * list, a "Dock Chat" segmented control, a "WISEai chat" toggle) and the menu
+ * list, a "Dock Chat" segmented control, a "WISEcodeAI chat" toggle) and the menu
  * drifted page to page (overview/portfolio grew rows wiseai.html never had).
  * Now the ONLY things a shell varies are the live state a row reflects — whether
  * the nav is pivoted (showPivot/isPivoted) and whether dark mode is on (isDark).
@@ -44,6 +44,8 @@ import {
   applyChatTint,
   getModuleGap,
   applyModuleGap,
+  isCwrUiOn,
+  applyCwrUi,
 } from './topbar.js';
 import {
   isJamStripOn,
@@ -237,8 +239,8 @@ function allModulesSection() {
  * list that wiseai.html never had). The only things a shell varies are the live
  * state a row reflects: whether the nav is pivoted and whether dark mode is on.
  *
- * Deliberately NOT configurable: module-layout list, the WISEai "Dock Chat"
- * segmented control, and the "WISEai chat" on/off toggle. They were removed so
+ * Deliberately NOT configurable: module-layout list, the WISEcodeAI "Dock Chat"
+ * segmented control, and the "WISEcodeAI chat" on/off toggle. They were removed so
  * every page renders the identical menu that wiseai.html does. Extra options are
  * ignored, so existing call sites that still pass them keep working unchanged.
  *
@@ -267,6 +269,7 @@ export function buildAppearanceBody({
     ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
     ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
     ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
+    ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
     <div class="wise-popover-divider"></div>
     ${colorblindTypeSection()}
@@ -386,6 +389,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-composer2]'))   { ev.stopPropagation(); applyComposerV2(!isComposerV2On());  render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
+    if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
 
     /* In-popover Jam player transport + track picker. Update the player in
