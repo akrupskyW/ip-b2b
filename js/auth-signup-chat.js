@@ -1183,8 +1183,8 @@
         '<div class="sc-input-row">' +
           '<div class="fl-input-wrap">' +
             '<input type="text" class="fl-input" id="ac-input" placeholder="Type your answer" autocomplete="off" />' +
+            '<button type="button" class="sc-send" id="ac-send" title="Send"><span class="material-symbols-outlined">send</span></button>' +
           '</div>' +
-          '<button type="button" class="sc-send" id="ac-send" title="Send"><span class="material-symbols-outlined">send</span></button>' +
         '</div>' +
       '</div>';
   }

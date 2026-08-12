@@ -386,6 +386,56 @@ export function composerDbSelectorHtml() {
           </div>`;
 }
 
+/* ── Auto-growing text field ─────────────────────────────────────────────────
+   The composer's text field is a 1-row <textarea>. In the classic design it
+   behaves exactly like the old single-line <input> (wrap="off" — long text
+   scrolls horizontally, height never changes). With the admin "New chat input"
+   design (html.composer-v2) it soft-wraps and grows upward as you type — the
+   "+" attach, database selector and send button hold the bottom line while the
+   text stacks above them (the rail is bottom-anchored, so the pill grows up).
+   Wired by both the canonical mount and wireChatComposer; idempotent. */
+export function wireComposerGrow(input) {
+  if (!input || input.tagName !== 'TEXTAREA' || input.dataset.growWired === '1') return;
+  input.dataset.growWired = '1';
+  const sync = () => {
+    if (document.documentElement.classList.contains('composer-v2')) {
+      input.wrap = 'soft';
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    } else {
+      input.wrap = 'off';
+      input.style.height = '';
+    }
+  };
+  input.addEventListener('input', sync);
+  /* Programmatic fills (e.g. a re-run dropping a prompt into the composer)
+     don't fire 'input' — catch up as soon as the user lands in the field. */
+  input.addEventListener('focus', sync);
+  /* Sends clear the field programmatically (no 'input' event fires), which
+     would leave the pill stuck at its grown height — re-sync right after the
+     click / Enter handlers have run. */
+  const later = () => setTimeout(sync, 0);
+  input.closest('.fl-input-wrap')?.querySelector('.sc-send')?.addEventListener('click', later);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') later(); });
+  /* Flipping the Appearance toggle re-flows every mounted composer live. */
+  document.addEventListener('wise:composer-v2', sync);
+  /* Re-measure whenever the field's WIDTH changes (module width toggle, panel
+     resize, crossing the narrow-composer container breakpoint): line wrapping
+     and the state's paddings change with width, so a height measured at the
+     old width goes stale and leaves the placeholder sitting off-center. Only
+     react to width — sync() itself changes the height, and re-syncing on that
+     would loop the observer. */
+  if (typeof ResizeObserver !== 'undefined') {
+    let lastW = input.offsetWidth;
+    const ro = new ResizeObserver(() => {
+      const w = input.offsetWidth;
+      if (w !== lastW) { lastW = w; sync(); }
+    });
+    ro.observe(input);
+  }
+  sync();
+}
+
 /* Wire a hand-rolled input rail so its database selector + "+" attach popover
    behave exactly like the canonical composer. Idempotent per rail.
 
@@ -395,7 +445,7 @@ export function composerDbSelectorHtml() {
        .fl-input-col
          .fl-model-row   ← the DB selector is injected here (before any
                            .fl-attachments) if it isn't already present
-         .fl-input-line > input.fl-input
+         .fl-input-line > textarea.fl-input
 
    opts.onDbChange(dbId, dbItem) — notified whenever the active database changes.
    Returns { getDbId } so callers can read the current selection. */
@@ -408,6 +458,9 @@ export function wireChatComposer(railEl, opts = {}) {
   if (modelRow && !modelRow.querySelector('.fl-db-trigger')) {
     modelRow.insertAdjacentHTML('afterbegin', composerDbSelectorHtml());
   }
+
+  /* Auto-grow behaviour for the text field (composer-v2 only; see helper). */
+  wireComposerGrow(railEl.querySelector('textarea.fl-input'));
 
   const trigger = railEl.querySelector('.fl-db-trigger');
   const pop = railEl.querySelector('.fl-db-popover');
@@ -1054,7 +1107,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      tearing down the chat — e.g. a persistent marketing dock that re-skins its
      quick-actions to match whichever page you're on. */
   let intents = (opts.intents || DEFAULT_INTENTS).slice();
-  const placeholder = opts.placeholder || 'Type a message';
+  const placeholder = opts.placeholder || 'Type your message';
   /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK").
      When the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
   const userInitials = opts.userInitials || 'AK';
@@ -1083,6 +1136,24 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      and, on hover, reveals a compact telemetry read-out (tokens, cache, cost,
      turns) for the current turn and the whole conversation. */
   const activityOn = opts.activity === true;
+
+  /* ── "Open module" intent chips ───────────────────────────────────────────
+     Any WISEai reply that narrates opening a companion module ("Opened the
+     full ranking in Results & Details →", "Spider chart → Visuals", …) has
+     that narration turned into a real, clickable chip. Tapping it (re)opens
+     that module beside the chat; when a host provides an `onOpenModule`
+     resolver the chip's module can also open by default the moment the answer
+     lands. `openModules` is the list of module display-names to recognise;
+     pass `openChips:false` on a surface (or `openChips:false` in a message's
+     meta) to opt out. */
+  const openChipsOn = opts.openChips !== false;
+  const openModuleByDefault = opts.openModuleByDefault === true;
+  const openModuleNames = (Array.isArray(opts.openModules) && opts.openModules.length
+    ? opts.openModules
+    : ['Results & Details', 'Visuals', 'References', 'Product Comparison', 'Reformulation'])
+    .slice()
+    /* Longest first so "Visuals pane" wins over "Visuals" when both are given. */
+    .sort((a, b) => b.length - a.length);
 
   /* Optional "at a glance" score-card rail for this surface (opt-in). */
   const scorecards = opts.scorecards && Array.isArray(opts.scorecards.cards) && opts.scorecards.cards.length
@@ -1340,11 +1411,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
               <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
             </div>
             <div class="fl-input-line">
-              <input type="text" class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" autocomplete="off" />
+              <textarea class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" rows="1" autocomplete="off"></textarea>
             </div>
           </div>
+          <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
         </div>
-        <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
       </div>
       ${activityOn ? buildActivityHtml(id, title) : ''}
       ${connectorsHtml}
@@ -1776,6 +1847,94 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     revealStaggered(chips, 60, 55, scrollDown);
   }
 
+  /* ── Open-module chip transform ───────────────────────────────────────────
+     Rewrites "open the module" narration inside a reply into a clickable chip.
+     We work on the reply's HTML string (pre-insert) and only ever touch a line
+     (a run between <br>s) that BOTH points at a known module display-name AND
+     ends with — or contains — the "→" arrow, so ordinary prose is never
+     rewritten. The chip keeps the original wording as its label and remembers
+     which module to open in `data-open-module`. */
+  const OPEN_ARROW = '\u2192';
+  const openModuleRe = openModuleNames.length
+    ? new RegExp(openModuleNames.map((n) => n
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/&/g, '&(?:amp;)?')
+        .replace(/\s+/g, '\\s+')).join('|'), 'i')
+    : null;
+
+  function moduleNameFrom(text) {
+    if (!openModuleRe) return '';
+    const m = String(text).match(openModuleRe);
+    if (!m) return '';
+    /* Canonicalise back to the configured display-name (decoded &, single spaces). */
+    const hit = m[0].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().toLowerCase();
+    return openModuleNames.find((n) => n.toLowerCase() === hit) || m[0].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+  }
+
+  function openChipHtml(labelHtml, moduleName, hadTrailingArrow) {
+    const go = hadTrailingArrow
+      ? '<span class="material-symbols-outlined sc-open-chip-go" aria-hidden="true">arrow_forward</span>'
+      : '';
+    return `<button type="button" class="sc-open-chip" data-open-module="${esc(moduleName)}" aria-label="Open ${esc(moduleName)}">`
+      + '<span class="material-symbols-outlined sc-open-chip-ic" aria-hidden="true">dock_to_right</span>'
+      + `<span class="sc-open-chip-label">${labelHtml}</span>${go}</button>`;
+  }
+
+  /* Turn one text line into zero or more chips. A line that starts with "Opened"
+     becomes a single chip for the whole sentence; otherwise it's split on the
+     "·" separator so patterns like "chart → Visuals · table → Results & Details"
+     yield one chip per directive. Non-directive fragments are left untouched. */
+  function lineToOpenChips(line) {
+    if (line.indexOf(OPEN_ARROW) === -1) return null;
+    if (!moduleNameFrom(line)) return null;
+    const plain = line.replace(/<[^>]*>/g, '');
+    const startsOpened = /^\s*Opened\b/i.test(plain);
+    const makeChip = (frag) => {
+      const mod = moduleNameFrom(frag);
+      if (!mod || frag.indexOf(OPEN_ARROW) === -1) return frag;
+      const hadTrailing = new RegExp(OPEN_ARROW + '\\s*$').test(frag);
+      const label = frag.replace(new RegExp('\\s*' + OPEN_ARROW + '\\s*$'), '').trim();
+      if (!label) return frag;
+      return openChipHtml(label, mod, hadTrailing);
+    };
+    if (startsOpened) {
+      const chip = makeChip(line.trim());
+      return `<span class="sc-open-chips">${chip}</span>`;
+    }
+    const pieces = line.split('\u00b7').map((p) => makeChip(p.trim()));
+    if (!pieces.some((p, i) => p !== line.split('\u00b7')[i].trim())) return null;
+    return `<span class="sc-open-chips">${pieces.join('<span class="sc-open-chip-sep">\u00b7</span>')}</span>`;
+  }
+
+  function transformOpenChips(html, meta) {
+    if (!openChipsOn || (meta && meta.openChips === false)) return html;
+    if (typeof html !== 'string' || html.indexOf(OPEN_ARROW) === -1) return html;
+    /* Never rewrite an inline preview / surface card — it is already the opener. */
+    if (/class="sc-surface-card/.test(html)) return html;
+    const parts = html.split(/(<br\s*\/?>)/i);
+    let changed = false;
+    for (let i = 0; i < parts.length; i += 1) {
+      if (/^<br/i.test(parts[i])) continue;
+      const chips = lineToOpenChips(parts[i]);
+      if (chips != null) { parts[i] = chips; changed = true; }
+    }
+    return changed ? parts.join('') : html;
+  }
+
+  /* Open the module a chip points at. Hosts wire `onOpenModule(name, chip)` to
+     bring their own pane forward; when they don't (or return falsy) we fall back
+     to replaying the most recent inline surface card in this transcript. */
+  function openModuleFor(name, chipEl) {
+    let handled = false;
+    if (typeof opts.onOpenModule === 'function') {
+      try { handled = opts.onOpenModule(name, chipEl) === true; } catch (_) { handled = false; }
+    }
+    if (handled) return;
+    const cards = messages ? messages.querySelectorAll('.sc-surface-card[data-surface]') : null;
+    if (cards && cards.length) { cards[cards.length - 1].click(); return; }
+    document.dispatchEvent(new CustomEvent('wiseai:open-module', { detail: { module: name, root: rootEl, chip: chipEl } }));
+  }
+
   /* @param {string} html  WISEai's reply markup.
      @param {object} [meta] { source, feedback, typewriter } — `source` overrides
      the grounding caption for a single line (pass '' to drop it); `feedback:false`
@@ -1783,6 +1942,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
      `typewriter:false` forces the line to appear whole (no word-by-word reveal). */
   function addWISEai(html, meta = {}) {
     if (!messages) return null;
+    html = transformOpenChips(html, meta);
     const src = meta.source !== undefined ? meta.source : sourceLabel;
     const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml() : '';
     const footer = `<div class="sc-line-meta">${
@@ -1802,8 +1962,15 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const metaEl = body && body.querySelector('.sc-line-meta');
     const trailChips = meta.trailChips !== false;
     /* Fires once the whole line (text + meta + trailing chips) has settled, so a
-       host can trail its OWN chips behind this specific answer (see revealChips). */
-    const done = () => { if (typeof meta.onDone === 'function') meta.onDone(); };
+       host can trail its OWN chips behind this specific answer (see revealChips).
+       If this answer carries an "open module" chip and the surface asked for
+       modules to open by default, fire the first chip's module now. */
+    const autoOpenModule = () => {
+      if (!openModuleByDefault || (meta && meta.openChips === false)) return;
+      const chip = body && body.querySelector('.sc-open-chip[data-open-module]');
+      if (chip) openModuleFor(chip.getAttribute('data-open-module'), chip);
+    };
+    const done = () => { autoOpenModule(); if (typeof meta.onDone === 'function') meta.onDone(); };
     if (prefersReducedMotion) {
       if (trailChips) parkInlineChips();
       scrollDown();
@@ -1948,6 +2115,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
          (doneReply) lands after it, so let the chips trail that, not the card. */
       const line = addWISEai(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false, trailChips: false });
       const card = line ? line.querySelector('.sc-connect-flow') : null;
+      /* A brand-new connection is an "added data source" landmark for the
+         activity strip; a re-sync of an already-connected source is not. */
+      if (card && !connected) card.dataset.activity = 'source';
       animateConnectFlow(card, cid, name, steps, doneHead, doneReply);
     }, 600);
   }
@@ -3081,6 +3251,16 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (!handled) wiseaiRespond(def.label, def.intent);
   });
 
+  /* "Open module" chips — the clickable narration a reply drops when it opens a
+     companion module. Delegated on the transcript so it covers every reply,
+     live or restored from history. */
+  messages?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sc-open-chip[data-open-module]');
+    if (!chip) return;
+    e.preventDefault();
+    openModuleFor(chip.getAttribute('data-open-module'), chip);
+  });
+
   /* Answer-feedback interactions (copy / thumbs up / thumbs down + reasons).
      Delegated on the messages area so it covers live replies AND restored
      history transcripts alike. */
@@ -3096,6 +3276,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (!body) return;
     const clone = body.cloneNode(true);
     clone.querySelectorAll('.sc-line-meta, .sc-fb-wrap, .sc-inline-chips').forEach((n) => n.remove());
+    /* Drop icon glyphs so their ligature text ("arrow_forward") never leaks
+       into the copied answer — e.g. an "open module" chip's icons. */
+    clone.querySelectorAll('.sc-open-chip-ic, .sc-open-chip-go').forEach((n) => n.remove());
     const text = (clone.textContent || '').replace(/\s+\n/g, '\n').replace(/[ \t]+/g, ' ').trim();
     const done = () => {
       const ic = btn.querySelector('.material-symbols-outlined');
@@ -3349,9 +3532,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     refreshPersistChips = updateArrows;
   }
 
-  /* Send */
+  /* Send. Enter submits; Shift+Enter makes a newline (the field is a textarea
+     so the composer-v2 design can grow it — see wireComposerGrow). */
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
-  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
+  wireComposerGrow(input);
 
   /* Keep the caret in the TEXT field whenever the user clicks the input pill.
      The pending attachment chips render before the input, each with a focusable
@@ -3518,12 +3703,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function addDbChangeNote(prev, next) {
     if (!messages || !next) return;
     const body = prev
-      ? `Database switched from <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
-      : `Database set to <strong>${esc(next.name)}</strong>`;
+      ? `<span class="sc-event-label">Database switched from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
+      : `<span class="sc-event-label">Database set to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-event" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
+      `<div class="sc-line sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
       + `<span class="sc-event">`
-      + `<span class="material-symbols-outlined sc-event-ic" aria-hidden="true">swap_horiz</span>`
       + `<span class="sc-event-text">${body}</span>`
       + `<span class="sc-event-time">${esc(nowLabel())}</span>`
       + `</span></div>`);

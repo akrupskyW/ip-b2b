@@ -426,48 +426,52 @@
                    me / Filed / Unfiled). Every count is derived from the cards
                    actually rendered in the grid below. ==== -->
               <div class="lib-stats-wrap">
-                <!-- Type row (6 cards — never wraps to a lone card) -->
+                <!-- Type row (6 cards — never wraps to a lone card). Each card is
+                     a live filter: data-stat/data-val tie it to the same filter
+                     state as the funnel popover + the chat intent chips. -->
                 <div class="lib-stats-row lib-row-type" role="group" aria-label="Filter library by type">
-                  <button type="button" class="lib-stat is-active" aria-pressed="true">
+                  <button type="button" class="lib-stat is-active" data-stat="type" data-val="all" aria-pressed="true">
                     <span class="lib-stat-num">13</span>
                     <span class="lib-stat-label">All</span>
                   </button>
-                  <button type="button" class="lib-stat t-report" aria-pressed="false">
+                  <button type="button" class="lib-stat t-report" data-stat="type" data-val="report" aria-pressed="false">
                     <span class="lib-stat-num">0</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">description</span>Reports</span>
                   </button>
-                  <button type="button" class="lib-stat t-dashboard" aria-pressed="false">
+                  <button type="button" class="lib-stat t-dashboard" data-stat="type" data-val="dashboard" aria-pressed="false">
                     <span class="lib-stat-num">4</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">bar_chart</span>Dashboards</span>
                   </button>
-                  <button type="button" class="lib-stat t-chat" aria-pressed="false">
+                  <button type="button" class="lib-stat t-chat" data-stat="type" data-val="chat" aria-pressed="false">
                     <span class="lib-stat-num">9</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">forum</span>Chats</span>
                   </button>
-                  <button type="button" class="lib-stat t-mcp" aria-pressed="false">
+                  <button type="button" class="lib-stat t-mcp" data-stat="type" data-val="mcp" aria-pressed="false">
                     <span class="lib-stat-num">0</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">extension</span>MCP</span>
                   </button>
-                  <button type="button" class="lib-stat t-ref" aria-pressed="false">
+                  <button type="button" class="lib-stat t-ref" data-stat="type" data-val="ref" aria-pressed="false">
                     <span class="lib-stat-num">0</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">bookmark</span>References</span>
                   </button>
                 </div>
-                <!-- Scope + folder status row (4 cards — never wraps to a lone card) -->
+                <!-- Scope + folder status row (4 cards — never wraps to a lone card).
+                     Sharing and folder are independent toggles: clicking a card
+                     turns that dimension on/off without disturbing the other. -->
                 <div class="lib-stats-row lib-row-scope" role="group" aria-label="Filter library by scope and folder status">
-                  <button type="button" class="lib-stat" aria-pressed="false">
+                  <button type="button" class="lib-stat" data-stat="shared" data-val="with" aria-pressed="false">
                     <span class="lib-stat-num">5</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">group</span>Shared with me</span>
                   </button>
-                  <button type="button" class="lib-stat" aria-pressed="false">
+                  <button type="button" class="lib-stat" data-stat="shared" data-val="by" aria-pressed="false">
                     <span class="lib-stat-num">0</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">send</span>Shared by me</span>
                   </button>
-                  <button type="button" class="lib-stat" aria-pressed="false">
+                  <button type="button" class="lib-stat" data-stat="folder" data-val="filed" aria-pressed="false">
                     <span class="lib-stat-num">0</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">folder</span>Filed</span>
                   </button>
-                  <button type="button" class="lib-stat" aria-pressed="false">
+                  <button type="button" class="lib-stat" data-stat="folder" data-val="unfiled" aria-pressed="false">
                     <span class="lib-stat-num">13</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">folder_open</span>Unfiled</span>
                   </button>
@@ -730,6 +734,7 @@
       const filterBtn = document.getElementById('lib-filter-btn');
       const filterPop = document.getElementById('lib-filter-pop');
       const filterClear = document.getElementById('lib-filter-clear');
+      const statsWrap = document.querySelector('.lib-stats-wrap');
       if (!grid || !searchEl || !filterBtn || !filterPop) return;
 
       const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest' };
@@ -743,6 +748,8 @@
           const badgeTxt = (el.querySelector('.lib-thumb-badge')?.textContent || '').toLowerCase();
           if (badgeTxt.includes('dashboard')) type = 'dashboard';
           else if (badgeTxt.includes('report')) type = 'report';
+          else if (badgeTxt.includes('mcp')) type = 'mcp';
+          else if (badgeTxt.includes('reference')) type = 'ref';
         }
         const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
         const filed = el.dataset.filed === '1' ? 'filed' : 'unfiled';
@@ -753,9 +760,59 @@
         return { el, type, shared, filed, name, sharedTxt, dateTxt, time };
       });
 
+      /* ---- Derived counts — every score-card number comes from the cards
+         actually in the grid, so the tiles can never drift from the data. ---- */
+      const counts = {
+        type: { all: cards.length, report: 0, dashboard: 0, chat: 0, mcp: 0, ref: 0 },
+        shared: { with: 0, by: 0 },
+        folder: { filed: 0, unfiled: 0 },
+      };
+      cards.forEach((c) => {
+        if (counts.type[c.type] != null) counts.type[c.type]++;
+        if (c.shared === 'with') counts.shared.with++;
+        counts.folder[c.filed]++;
+      });
+
+      // Paint the derived counts onto the score cards.
+      if (statsWrap) {
+        statsWrap.querySelectorAll('.lib-stat').forEach((btn) => {
+          const stat = btn.dataset.stat, val = btn.dataset.val;
+          const n = counts[stat] ? counts[stat][val] : undefined;
+          const numEl = btn.querySelector('.lib-stat-num');
+          if (numEl && n != null) numEl.textContent = n;
+        });
+      }
+
       function anyFilterActive() {
         return state.q !== '' || state.type !== 'all' || state.shared !== 'all' ||
                state.folder !== 'all' || state.sort !== 'newest';
+      }
+
+      /* ---- Keep BOTH filter surfaces (the score cards + the funnel popover
+         chips) reflecting the single shared `state`, so a change from any
+         entry point — score card, funnel chip, search, or a chat intent chip —
+         lights up everywhere. ---- */
+      function syncControls() {
+        // Score cards: type row is single-select; scope row is two independent
+        // toggles (sharing + folder), each active only for its own value.
+        if (statsWrap) {
+          statsWrap.querySelectorAll('.lib-stat').forEach((btn) => {
+            const on = state[btn.dataset.stat] === btn.dataset.val;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        }
+        // Funnel popover chips.
+        [['lib-filter-type', 'type'], ['lib-filter-shared', 'shared'],
+         ['lib-filter-folder', 'folder'], ['lib-filter-sort', 'sort']]
+        .forEach(([groupId, key]) => {
+          const group = document.getElementById(groupId);
+          if (!group) return;
+          group.querySelectorAll('.lib-fchip').forEach((chip) => {
+            chip.classList.toggle('is-on', chip.dataset[key] === state[key]);
+          });
+        });
+        filterBtn.classList.toggle('has-filters', anyFilterActive());
       }
 
       function apply() {
@@ -781,7 +838,7 @@
         else if (state.sort === 'az') sorted.sort((a, b) => a.name.localeCompare(b.name));
         sorted.forEach((c) => grid.appendChild(c.el));
 
-        filterBtn.classList.toggle('has-filters', anyFilterActive());
+        syncControls();
       }
 
       searchEl.addEventListener('input', () => { state.q = searchEl.value.trim().toLowerCase(); apply(); });
@@ -795,7 +852,7 @@
       document.addEventListener('click', () => setPop(false));
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setPop(false); });
 
-      // Single-select chip groups.
+      // Single-select funnel chip groups.
       [['lib-filter-type', 'type', 'type'], ['lib-filter-shared', 'shared', 'shared'],
        ['lib-filter-folder', 'folder', 'folder'], ['lib-filter-sort', 'sort', 'sort']]
       .forEach(([groupId, key, dataKey]) => {
@@ -804,21 +861,68 @@
         group.addEventListener('click', (e) => {
           const chip = e.target.closest('.lib-fchip');
           if (!chip) return;
-          group.querySelectorAll('.lib-fchip').forEach((c) => c.classList.remove('is-on'));
-          chip.classList.add('is-on');
           state[key] = chip.dataset[dataKey];
           apply();
         });
       });
 
+      /* ---- Score cards drive the very same state as the funnel chips, so they
+         behave "just like the score cards on every other page": the type row is
+         single-select (clicking an active type toggles back to All); the scope
+         row's sharing + folder cards each toggle their own dimension on/off,
+         independently. ---- */
+      if (statsWrap) {
+        statsWrap.addEventListener('click', (e) => {
+          const btn = e.target.closest('.lib-stat');
+          if (!btn) return;
+          const stat = btn.dataset.stat, val = btn.dataset.val;
+          if (stat === 'type') {
+            state.type = (val !== 'all' && state.type === val) ? 'all' : val;
+          } else {
+            // shared / folder: toggle this dimension between its value and 'all'.
+            state[stat] = (state[stat] === val) ? 'all' : val;
+          }
+          apply();
+        });
+      }
+
       filterClear.addEventListener('click', () => {
         state.type = 'all'; state.shared = 'all'; state.folder = 'all'; state.sort = 'newest';
         state.q = ''; searchEl.value = '';
-        filterPop.querySelectorAll('.lib-filter-chips').forEach((grp) => {
-          grp.querySelectorAll('.lib-fchip').forEach((c, i) => c.classList.toggle('is-on', i === 0));
-        });
         apply();
       });
+
+      /* ---- Chat bridge — the WISEai dock's intent chips fire these hooks
+         (wired in js/agent-overview.js) so a chip in the chat applies the exact
+         same filter as its twin score card, and the reply narrates it with the
+         live count. ---- */
+      const INTENT_TYPE = {
+        lib_reports: 'report', lib_dashboards: 'dashboard', lib_chats: 'chat',
+        lib_mcp: 'mcp', lib_references: 'ref',
+      };
+      window.__wiseLibraryIntent = (intent) => {
+        if (intent === 'lib_shared') {
+          state.shared = 'with';
+        } else if (INTENT_TYPE[intent]) {
+          state.type = INTENT_TYPE[intent];
+        } else {
+          return;
+        }
+        apply();
+      };
+      window.__wiseLibraryReply = (intent) => {
+        const TYPE_LABEL = { report: 'Reports', dashboard: 'Dashboards', chat: 'Chats', mcp: 'MCP results', ref: 'References' };
+        if (intent === 'lib_shared') {
+          const n = counts.shared.with;
+          return 'Showing the <strong>' + n + '</strong> item' + (n === 1 ? '' : 's') + ' <strong>shared with you</strong>.';
+        }
+        const t = INTENT_TYPE[intent];
+        if (!t) return '';
+        const n = counts.type[t] || 0;
+        const label = TYPE_LABEL[t];
+        if (!n) return 'You don\u2019t have any <strong>' + label + '</strong> in your library yet.';
+        return 'Filtered your library to <strong>' + label + '</strong> \u2014 showing <strong>' + n + '</strong>.';
+      };
 
       apply();
     })();

@@ -117,6 +117,41 @@
     #modules-row:has(.wa-pane.is-open) .wa-chat.panel-wide { flex-basis: 620px; width: 620px; }
     #modules-row:has(.wa-pane.is-open) .wa-chat.panel-triple { flex-basis: 840px; width: 840px; }
 
+    /* ── Activity strip ──────────────────────────────────────────────
+       A thin rail pinned to the chat module's far-right edge, running its full
+       height, that marks where each conversation landmark landed (an output was
+       created / a data source was added / the database was switched). Built +
+       toggled by js/chat-activity-strip.js from the Appearance popover; each
+       tick is placed at the landmark's position as a fraction of the whole
+       transcript, so the rail reads as a top→bottom minimap of the thread. */
+    .wa-activity-strip {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 3px;
+      height: 100%;
+      z-index: 6;
+      pointer-events: none;
+      background: color-mix(in srgb, var(--border) 55%, transparent);
+    }
+    .wa-activity-tick {
+      position: absolute;
+      right: 0;
+      width: 3px;
+      height: 10px;
+      transform: translateY(-50%);
+      border-radius: 2px 0 0 2px;
+      pointer-events: auto;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
+      transition: width 0.12s ease;
+    }
+    .wa-activity-tick:hover { width: 8px; }
+    /* Distinct hues per landmark type (retunable per theme/palette). */
+    .wa-activity-tick--output   { background: var(--act-output, #7c5cff); }
+    .wa-activity-tick--source   { background: var(--act-source, #12b76a); }
+    .wa-activity-tick--database { background: var(--act-database, #f79009); }
+    @media (prefers-reduced-motion: reduce) { .wa-activity-tick { transition: none; } }
+
     /* Small in-chat lead + intent-chip helpers reused from studio-ai (kept so the
        shared chat's inline chips read the same as everywhere else in the app). */
     .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 4px 42px; }
@@ -464,11 +499,21 @@
       font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
     }
 
-    /* ── Unified (merged) rail: two STACKED chip carousels ──
-       When Results & Visuals are merged into one module, the rail becomes two
-       stacked rows — one per group — each a horizontally-scrolling strip of small
-       intent-style pill chips (matching the chat transcript's chips), introduced
-       by a compact group label. Clicking a chip reveals that output below. */
+    /* ── Unified (merged) rail: ONE combined chip carousel ──
+       When Results & Visuals are merged into one module, the rail is a single
+       horizontally-scrolling strip of small intent-style chips (matching the
+       chat transcript's chips) — Results and Visuals combined, with no per-group
+       eyebrow or label icon. Clicking a chip reveals that output below AND jumps
+       the transcript to where it was introduced. */
+    .wa-pane-nav-track.is-merged {
+      align-items: center; scroll-snap-type: none;
+      overflow-x: hidden; overflow-y: hidden;
+      padding: 10px 14px 12px;
+      /* Query container so the chips can reflow as the merged pane narrows. */
+      container-type: inline-size; container-name: mergerail;
+    }
+    .wa-pane-nav-track.is-merged .wa-merge-chips { width: 100%; }
+    /* ── Unified (merged) rail: two STACKED chip carousels (legacy) ── */
     .wa-pane-nav-track.is-stacked {
       flex-direction: column; align-items: stretch; gap: 8px;
       overflow-x: hidden; overflow-y: auto; scroll-snap-type: none;
@@ -496,7 +541,7 @@
        .sc-surface-card exactly: a tiny scaled preview of the output on the left,
        its name to the right. NOT a pill. Clicking it reveals that output below. */
     .wa-merge-chip {
-      flex: 0 0 auto; scroll-snap-align: start; max-width: 260px;
+      flex: 0 0 auto; scroll-snap-align: start; max-width: 200px;
       display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
       background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px;
       font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--text);
@@ -516,12 +561,40 @@
       transform: scale(0.111); transform-origin: top left; pointer-events: none;
     }
     .wa-merge-chip-thumb-inner > * { margin: 0 !important; }
-    .wa-merge-chip-label { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+    /* Two-line clamp — lets the name wrap so chips stay short instead of running
+       out into one long ellipsised line. */
+    .wa-merge-chip-label {
+      flex: 1 1 auto; min-width: 0; line-height: 1.25; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    }
     .wa-merge-chip.is-active {
       background: var(--surface); border-color: var(--primary); color: var(--primary);
       box-shadow: inset 0 0 0 1px var(--primary);
     }
     html.dark .wa-merge-chip { background: rgba(255,255,255,0.04); }
+
+    /* ── Merged rail, responsive ──
+       As the merged pane narrows, keep the carousel but stack each chip: the
+       preview square on top with a smaller name below it (instead of a wide
+       thumb + name row). At the tightest widths the name drops away entirely so
+       the rail is just a strip of preview squares. */
+    @container mergerail (max-width: 380px) {
+      .wa-pane-nav-track.is-merged .wa-merge-chip {
+        flex-direction: column; align-items: center; gap: 4px;
+        max-width: 96px; padding: 6px 6px 8px;
+        text-align: center; font-size: 11px;
+      }
+      .wa-pane-nav-track.is-merged .wa-merge-chip-label {
+        flex: 0 0 auto; text-align: center; font-size: 10px; line-height: 1.2;
+        -webkit-line-clamp: 2; line-clamp: 2;
+      }
+    }
+    @container mergerail (max-width: 200px) {
+      .wa-pane-nav-track.is-merged .wa-merge-chip {
+        max-width: 60px; padding: 5px;
+      }
+      .wa-pane-nav-track.is-merged .wa-merge-chip-label { display: none; }
+    }
 
     .wa-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
@@ -660,6 +733,95 @@
     .wa-chiplist { display: flex; flex-wrap: wrap; gap: 6px; }
     .wa-ing-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 26%, transparent); color: var(--sec-red-text); }
 
+    /* ── Footnote citations (in-transcript) ──────────────────────────────────
+       Superscript numbered markers rendered proper-footnote style. A group like
+       [1,3,5] clusters inside one bracketed superscript; each number is its own
+       clickable target that opens the References output and scrolls to the card. */
+    .wa-cite { font-size: .62em; line-height: 0; font-weight: 700; vertical-align: super; white-space: nowrap; margin-left: 1px; color: var(--text-subtle); }
+    .wa-cite::before { content: '['; }
+    .wa-cite::after { content: ']'; }
+    .wa-cite-n { color: var(--primary); text-decoration: none; cursor: pointer; padding: 0 1px; border-radius: 3px; transition: background .12s ease, color .12s ease; }
+    html.dark .wa-cite-n { color: var(--primary-bright, #8B9FAF); }
+    .wa-cite-n + .wa-cite-n { margin-left: 1px; }
+    .wa-cite-n:hover, .wa-cite-n:focus-visible { background: var(--primary-soft); color: var(--primary); outline: none; }
+    .wa-cite-sep { color: var(--text-subtle); }
+
+    /* Compact "footnotes" block that trails the answer — the wordy inline
+       reference dump, distilled to a tight numbered list. The full cards live in
+       the References output pane. */
+    .wa-refs-mini { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--border); }
+    .wa-refs-mini-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 9px; }
+    .wa-refs-mini-head .material-symbols-outlined { font-size: 15px; color: var(--text-subtle); }
+    .wa-refs-mini-list { display: grid; gap: 6px; }
+    .wa-refs-mini-item { display: flex; gap: 8px; align-items: baseline; font-size: 11px; line-height: 1.4; color: var(--text-muted); cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; transition: background .12s ease; }
+    .wa-refs-mini-item:hover { background: var(--surface-2); }
+    html.dark .wa-refs-mini-item:hover { background: rgba(255,255,255,0.04); }
+    .wa-refs-mini-n { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 1px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 800; font-variant-numeric: tabular-nums; background: var(--primary-soft); color: var(--primary); }
+    html.dark .wa-refs-mini-n { color: var(--primary-bright, #8B9FAF); }
+    .wa-refs-mini-t { flex: 1 1 auto; min-width: 0; }
+    .wa-refs-mini-t b { color: var(--text); font-weight: 700; }
+    .wa-refs-mini-src { color: var(--text-subtle); font-style: italic; }
+
+    /* ── Reference output (a new pane OUTPUT type, alongside charts & details) ──
+       Modeled on the WISEai Library module (pages/conversation-library.html):
+       a serif masthead headline (no eyebrows), the canonical app search, a row
+       of at-a-glance / filter scorecards, then a card per reference. */
+    .wa-refset { container-type: inline-size; display: flex; flex-direction: column; }
+    .wa-refset .wa-ref-masthead { margin-bottom: 2px; }
+    .wa-refset .wa-ref-h1 { font-family: 'Noto Serif', Georgia, serif; margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; color: var(--text); }
+    .wa-refset .wa-ref-lede { font-size: .85rem; color: var(--text-muted); margin: 6px 0 0; }
+    /* Search — copied from the Library / Product Portfolio search field. */
+    .wa-refset .wa-ref-toolbar { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+    .wa-refset .wa-ref-search { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 0; }
+    .wa-refset .wa-ref-search > .material-symbols-outlined { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .wa-refset .wa-ref-search-input { width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px 0 40px; font-family: inherit; font-size: .8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 999px; outline: none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+    html.dark .wa-refset .wa-ref-search-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-refset .wa-ref-search-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .wa-refset .wa-ref-search-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    /* Scorecards — the canonical portfolio at-a-glance tiles, doubling as type
+       filters, laid out on a grid that never leaves a lone orphan card. */
+    .wa-refset .wa-ref-stats { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+    @container (min-width: 520px) { .wa-refset .wa-ref-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .wa-refset .wa-ref-stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease; }
+    html.dark .wa-refset .wa-ref-stat { background: rgba(255,255,255,0.04); }
+    .wa-refset .wa-ref-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
+    .wa-refset .wa-ref-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .wa-refset .wa-ref-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    html.dark .wa-refset .wa-ref-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .wa-refset .wa-ref-stat-num { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .wa-refset .wa-ref-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .wa-refset .wa-ref-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; color: var(--text-subtle); }
+    .wa-refset .wa-ref-divider { height: 1px; background: var(--border); margin: 18px 0 16px; }
+    .wa-refset .wa-ref-list { display: flex; flex-direction: column; gap: 12px; }
+    .wa-refset .wa-ref-empty { font-size: 12px; color: var(--text-muted); padding: 10px 2px; }
+    .wa-ref { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); scroll-margin-top: 12px; transition: border-color .18s ease, box-shadow .18s ease; }
+    html.dark .wa-ref { background: rgba(255,255,255,0.02); }
+    .wa-ref.is-flash { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    .wa-ref-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 14.5px; line-height: 1.3; letter-spacing: -.01em; color: var(--text); }
+    .wa-ref-byline { font-size: 11.5px; color: var(--text-subtle); margin-top: 6px; line-height: 1.45; }
+    .wa-ref-byline .wa-ref-year { color: var(--text-muted); font-weight: 600; }
+    .wa-ref-byline .wa-ref-journal { font-style: italic; }
+    .wa-ref-byline .sep { margin: 0 6px; opacity: .55; }
+    .wa-ref-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 11px; }
+    /* Study-type as a rounded tag/badge (not a bare eyebrow). */
+    .wa-ref-tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface-2); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+    html.dark .wa-ref-tag { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .wa-ref-tag.is-exp { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+    html.dark .wa-ref-tag.is-exp { color: var(--primary-bright, #8B9FAF); }
+    .wa-ref-cites { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .wa-ref-cites .material-symbols-outlined { font-size: 14px; transform: scaleX(-1); }
+    .wa-ref-highlight { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 11px 13px; border-radius: 11px; font-size: 12px; line-height: 1.5; background: var(--ter-amber-10); border: 1px solid color-mix(in srgb, var(--ter-amber) 26%, transparent); color: var(--text); }
+    .wa-ref-highlight .material-symbols-outlined { font-size: 16px; flex: 0 0 auto; margin-top: 1px; color: var(--ter-amber-text); }
+    .wa-ref-abstract { margin-top: 12px; }
+    .wa-ref-abstract > summary { display: inline-flex; align-items: center; gap: 5px; list-style: none; cursor: pointer; font-size: 11.5px; font-weight: 700; color: var(--text-muted); user-select: none; }
+    .wa-ref-abstract > summary::-webkit-details-marker { display: none; }
+    .wa-ref-abstract > summary::before { content: 'chevron_right'; font-family: 'Material Symbols Outlined'; font-size: 17px; transition: transform .15s ease; }
+    .wa-ref-abstract[open] > summary::before { transform: rotate(90deg); }
+    .wa-ref-abstract-body { font-size: 12px; line-height: 1.6; color: var(--text-muted); margin: 10px 0 0; }
+    .wa-ref-view { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: border-color .15s ease, color .15s ease; }
+    .wa-ref-view:hover { border-color: var(--border-strong); color: var(--text); }
+    .wa-ref-view .material-symbols-outlined { font-size: 15px; }
+
     /* ── Report layout ── */
     .wa-report-hero { margin-bottom: 20px; }
     .wa-report-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 900; font-size: 1.55rem; line-height: 1.15; letter-spacing: -.015em; color: var(--text); margin: 0 0 10px; }
@@ -792,6 +954,17 @@
     }
     .sc-surface-thumb-inner > * { margin: 0 !important; }
     .sc-surface-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+    /* Brief highlight when a merged-rail chip jumps the transcript here, so the
+       eye lands on the right turn. */
+    .sc-surface-card.is-flash {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+      animation: scSurfaceFlash 1.4s ease;
+    }
+    @keyframes scSurfaceFlash {
+      0% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 40%, transparent); }
+      100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 0%, transparent); }
+    }
 
     /* ═══════════ Conversation manifest (floating Outputs / Sources) ═══════════
        A floating summary card pinned to the chat's top-right, just below the
@@ -2672,6 +2845,7 @@
        opening the Results & Details / Visuals panes as data surfaces. -->
   <script type="module">
     import { mountWISEaiChat } from '../js/wiseai-chat.js';
+    import { mountActivityStrip, restoreActivityStrip } from '../js/chat-activity-strip.js';
 
     /* ═════════ Data (copy + rows lifted verbatim from the WISEai transcript) ═════════ */
     const WORST_FOODS = [
@@ -2974,11 +3148,11 @@
         return;
       }
       body.classList.add('is-carousel');
-      /* Merged rail = two STACKED rows of small intent-style pill chips (one row
-         per group), matching the chat transcript's chips — not the big preview
-         thumbnails the single-pane rails use. */
-      track.classList.add('is-on', 'is-grouped', 'is-stacked');
-      track.classList.remove('is-min');
+      /* Merged rail = ONE row of small intent-style chips (Results + Visuals
+         combined), matching the chat transcript's chips — not the big preview
+         thumbnails the single-pane rails use, and no per-group eyebrow/icon. */
+      track.classList.add('is-on', 'is-merged');
+      track.classList.remove('is-min', 'is-grouped', 'is-stacked');
       blocks.forEach((b, i) => { b.dataset.slideIndex = i; });
 
       let activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
@@ -2988,34 +3162,24 @@
       }
       if (activeIdx < 0) activeIdx = blocks.length - 1;
 
-      /* Group blocks by origin, preserving global slide indices for setPaneSlide. */
-      const groups = new Map();
-      blocks.forEach((b, i) => {
+      /* One combined row: every output (Results + Visuals) as a compact chip,
+         kept in grouped order (results → visuals) but with no eyebrow/icon
+         separating them. Each chip carries its block id so a tap can also jump
+         the transcript to where that output was introduced. */
+      const chips = blocks.map((b, i) => {
         const grp = b.dataset.origin || 'results';
-        if (!groups.has(grp)) groups.set(grp, []);
-        groups.get(grp).push({ b, i });
-      });
-      let html = '';
-      PANE_GROUPS.forEach((grp) => {
-        const items = groups.get(grp);
-        if (!items || !items.length) return;
-        const chips = items.map(({ b, i }) => {
-          const label = paneSlideLabel(b, grp, i);
-          /* A <div role="tab"> (not a <button>) so the preview clone — which for
-             result blocks holds <button>/<input> controls — can nest safely; the
-             clone is `inert` so nothing inside it is focusable. Mirrors the
-             transcript's .sc-surface-card. */
-          return `<div class="wa-merge-chip" data-slide="${i}" role="tab" tabindex="0" aria-selected="false" title="${esc(label)}">
-            <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
-            <span class="wa-merge-chip-label">${esc(label)}</span>
-          </div>`;
-        }).join('');
-        html += `<div class="wa-merge-group">
-          <span class="wa-merge-group-label"><span class="material-symbols-outlined">${esc(PANE_GROUP_ICON[grp] || 'category')}</span>${esc(PANE_GROUP_LABEL[grp] || grp)}</span>
-          <div class="wa-merge-chips">${chips}</div>
+        const label = paneSlideLabel(b, grp, i);
+        const bid = b.dataset.blockId || '';
+        /* A <div role="tab"> (not a <button>) so the preview clone — which for
+           result blocks holds <button>/<input> controls — can nest safely; the
+           clone is `inert` so nothing inside it is focusable. Mirrors the
+           transcript's .sc-surface-card. */
+        return `<div class="wa-merge-chip" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(label)}">
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
+          <span class="wa-merge-chip-label">${esc(label)}</span>
         </div>`;
-      });
-      track.innerHTML = html;
+      }).join('');
+      track.innerHTML = `<div class="wa-merge-chips">${chips}</div>`;
       btns.innerHTML =
         `<button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
          <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>`;
@@ -3118,6 +3282,9 @@
         const it = e.target.closest('[data-slide]');
         if (!it || !el.contains(it)) return;
         setPaneSlide(which, Number(it.dataset.slide), { animate: true, scrollNav: true });
+        /* In the merged rail, tapping a chip also jumps the chat transcript to
+           the turn where that output was introduced. */
+        if (which === 'unified' && it.dataset.blockId) jumpTranscriptToBlock(it.dataset.blockId);
       });
       el.addEventListener('keydown', (e) => {
         const track = paneTrack[which];
@@ -3129,8 +3296,21 @@
         if (!it) return;
         e.preventDefault();
         setPaneSlide(which, Number(it.dataset.slide), { animate: true, scrollNav: true });
+        if (which === 'unified' && it.dataset.blockId) jumpTranscriptToBlock(it.dataset.blockId);
       });
     });
+
+    /* Scroll the chat transcript to the inline surface card for a given output
+       (its .sc-surface-card[data-surface=blockId]) and give it a brief highlight
+       so it's obvious where in the conversation that output came from. */
+    function jumpTranscriptToBlock(blockId) {
+      if (!blockId || !host) return;
+      const card = host.querySelector(`.sc-surface-card[data-surface="${blockId}"]`);
+      if (!card) return;
+      card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      card.classList.remove('is-flash'); void card.offsetWidth; card.classList.add('is-flash');
+      setTimeout(() => card.classList.remove('is-flash'), 1400);
+    }
 
     function closePane(which) {
       const el = paneEl[which];
@@ -4437,6 +4617,165 @@
         </div>`;
     }
 
+    /* ── References output (feline nutrition) ────────────────────────────────
+       A third OUTPUT type combined into this conversation alongside the reports,
+       charts & code-evaluation modules. The same CAT_REFS list feeds three
+       things so they never drift: the superscript footnote markers in the
+       transcript answer (catCite), the compact footnote list that trails it
+       (catRefsMini), and the full peer-reviewed reference cards that open in the
+       Results & Details pane (catRefsView). */
+    const CAT_REFS = [
+      {
+        n: 1, short: 'Nutrition of the domestic cat',
+        title: 'Nutrition of the domestic cat, a mammalian carnivore.',
+        authors: 'M. L. MacDonald, Q. Rogers, J. Morris', year: 1984, journal: 'Annual review of nutrition',
+        tag: 'Literature Review', cites: 291,
+        highlight: 'The domestic cat is adapted to a carnivorous diet, but has less ability to adapt to wide ranges in dietary composition due to metabolic limitations.',
+        abstract: 'The cat is adapted to eating a carnivorous diet and appears to have less capability than omnivores and herbivores to adapt to wide ranges in dietary composition. The lack of ability to synthesize sufficient vitamin A from carotene, ornithine from glutamic acid, arachidonate from linoleate, and taurine from cysteine results from a complete deletion or severe limitation of the enzyme or pathway that makes each nutrient. Other requirements — the absolute need for niacin, the high protein requirement — appear to result from high, non-adaptive enzyme activity, giving the cat more stringent nutritional requirements than omnivores such as the rat, dog and man.',
+      },
+      {
+        n: 2, short: 'One-Carbon Metabolism in the Strict Carnivorous Cat',
+        title: 'Peculiarities of One-Carbon Metabolism in the Strict Carnivorous Cat and the Role in Feline Hepatic Lipidosis',
+        authors: 'A. Verbrugghe, M. Bakovic', year: 2013, journal: 'Nutrients',
+        tag: 'Literature Review', cites: 65,
+        highlight: 'Cats have unique nutritional requirements, including higher protein and essential amino acid intake, which may increase their susceptibility to hepatic lipidosis.',
+        abstract: 'Diets deficient in labile methyl groups (methionine, choline, betaine, folate) produce fatty liver and links to steatosis in various species. Cats, being obligate carnivores, rely on nutrients in animal tissues and have developed several physiological and metabolic adaptations, including peculiarities in protein and fat metabolism. Adult cats require more dietary protein than omnivores, maintain high rates of protein oxidation and gluconeogenesis, and have higher requirements for essential amino and fatty acids. This carnivorous uniqueness makes cats more susceptible to hepatic lipidosis.',
+      },
+      {
+        n: 3, short: 'Idiosyncratic nutrient requirements of cats',
+        title: 'Idiosyncratic nutrient requirements of cats appear to be diet-induced evolutionary adaptations',
+        authors: 'J. Morris', year: 2002, journal: 'Nutrition Research Reviews',
+        tag: 'Literature Review', cites: 160,
+        highlight: "Cats' unique nutrient requirements are a result of evolutionary pressures from a rigorous diet of animal tissue, resulting in energy conservation through deletion of redundant enzymes and modification of enzyme activities.",
+        abstract: 'The idiosyncratic nutrient requirements of the cat appear to be evolutionary adaptations to a rigorous diet of animal tissue. Energy has been conserved by deletion of redundant enzymes and modification of enzyme activities, producing requirements for pre-formed vitamin A, arachidonic acid, taurine, and higher protein and essential amino acid intakes than in omnivores.',
+      },
+      {
+        n: 4, short: 'Nutritional inadequacies in commercial vegan foods',
+        title: 'Nutritional inadequacies in commercial vegan foods for dogs and cats',
+        authors: 'R. Zafalon, L. W. Risolia, T. Vendramini, et al.', year: 2020, journal: 'PLoS ONE',
+        tag: 'Cross-Sectional Study', cites: 58,
+        highlight: 'Vegan foods for dogs and cats have some nutritional deficiencies and excess zinc and copper, making them potentially unsuitable for consumption without reformulation.',
+        abstract: 'A survey of commercial vegan pet foods found several deviations from recommended nutrient profiles, including deficiencies in some essential nutrients and excesses of zinc and copper. The authors caution that inadequately formulated alternative diets may fail to meet the specific requirements of dogs and — especially — obligate-carnivore cats.',
+      },
+      {
+        n: 5, short: 'Differences between cats and dogs: a nutritional view',
+        title: 'Differences between cats and dogs: a nutritional view',
+        authors: 'V\u00e9ronique Legrand-Defretin', year: 1994, journal: 'Proceedings of the Nutrition Society',
+        tag: 'Literature Review', cites: 51,
+        highlight: 'Cats, unlike dogs, are obligate carnivores with unique nutritional requirements, requiring more animal-derived materials in their diet.',
+        abstract: 'A comparative review of cat and dog nutrition. Unlike the more omnivorous dog, the cat is an obligate carnivore whose requirements for protein, certain amino acids, pre-formed vitamin A and specific fatty acids are best met from animal-derived materials rather than plant sources.',
+      },
+      {
+        n: 6, short: 'Fatty acid metabolism in domestic cats & cheetahs',
+        title: 'Fatty acid metabolism in domestic cats (Felis catus) and cheetahs (Acinonyx jubatas)',
+        authors: 'J. Bauer', year: 1997, journal: 'Proceedings of the Nutrition Society',
+        tag: 'Other', cites: 29,
+        highlight: 'Cats have evolved to meet their needs through specialized dietary fats and nutrients, primarily from other mammalian tissues rather than plant precursors.',
+        abstract: 'Felids show limited ability to synthesize long-chain polyunsaturated fatty acids such as arachidonic acid from plant precursors, and instead rely on pre-formed fatty acids supplied by animal tissue — a pattern shared by the domestic cat and the cheetah.',
+      },
+      {
+        n: 7, short: 'Taurine: biochemistry & consequences of deficiency',
+        title: 'Taurine: An essential nutrient for the cat. A brief review of the biochemistry of its requirement and the clinical consequences of deficiency',
+        authors: 'P. Markwell, K. E. Earle', year: 1995, journal: 'Nutrition Research',
+        tag: '', cites: 30,
+        highlight: "Taurine is essential for cats' health; deficiency can cause retinal degeneration, reproductive failure, and dilated cardiomyopathy.",
+        abstract: 'Cats cannot synthesize adequate taurine and lose it continuously through bile-acid conjugation, so it must be supplied by the diet. Deficiency is linked to feline central retinal degeneration, reproductive failure, and dilated cardiomyopathy.',
+      },
+      {
+        n: 8, short: 'Taurine: an essential nutrient for the cat',
+        title: 'Taurine: an essential nutrient for the cat.',
+        authors: 'K. Knopf, K. Knopf, J. Sturman, et al.', year: 1978, journal: 'The Journal of nutrition',
+        tag: 'Non-Randomized Experimental Study', tagExp: true, cites: 239,
+        highlight: 'Taurine is an essential nutrient for cats, as it cannot be synthesized from sulfate or cystine, and its deficiency can lead to retinal degeneration.',
+        abstract: 'Feeding trials showed that cats maintained on taurine-free diets developed low plasma taurine and retinal degeneration, and were unable to synthesize taurine from sulfate or cystine — establishing taurine as a dietary essential for the cat.',
+      },
+    ];
+    const CAT_REF_BY_N = Object.fromEntries(CAT_REFS.map((r) => [r.n, r]));
+
+    /* Superscript footnote marker for a group of reference numbers, e.g.
+       catCite(1, 3, 5) → a bracketed [1,3,5] superscript whose numbers each open
+       the References output and flash the matching card. */
+    function catCite(...nums) {
+      const inner = nums.map((n) =>
+        `<a class="wa-cite-n" role="button" tabindex="0" data-cat-ref="${n}" aria-label="Open reference ${n}">${n}</a>`
+      ).join('<span class="wa-cite-sep">,</span>');
+      return `<sup class="wa-cite">${inner}</sup>`;
+    }
+
+    /* The compact "footnotes" list that trails the answer in the transcript —
+       the distilled stand-in for the wordy inline reference dump. */
+    function catRefsMini() {
+      const items = CAT_REFS.map((r) =>
+        `<div class="wa-refs-mini-item" role="button" tabindex="0" data-cat-ref="${r.n}" aria-label="Open reference ${r.n}: ${esc(r.short)}">
+          <span class="wa-refs-mini-n">${r.n}</span>
+          <span class="wa-refs-mini-t"><b>${esc(r.short)}</b> <span class="wa-refs-mini-src">${esc(r.journal)} (${r.year})</span></span>
+        </div>`).join('');
+      return `<div class="wa-refs-mini">
+          <div class="wa-refs-mini-head"><span class="material-symbols-outlined">menu_book</span>References <span style="opacity:.6">(${CAT_REFS.length})</span></div>
+          <div class="wa-refs-mini-list">${items}</div>
+        </div>`;
+    }
+
+    /* The full reference OUTPUT — a Library-style module (masthead + search +
+       scorecards + a card per paper) for the Results & Details pane, the
+       reference counterpart to the report / chart / detail outputs.
+       catRefCat() groups a reference into one of the scorecard filter buckets. */
+    function catRefCat(r) {
+      if (r.tag === 'Literature Review') return 'review';
+      if (/study/i.test(r.tag || '')) return 'study';
+      return 'other';
+    }
+
+    function catRefsView() {
+      const counts = { all: CAT_REFS.length, review: 0, study: 0, other: 0 };
+      CAT_REFS.forEach((r) => { counts[catRefCat(r)] += 1; });
+      const stats = [
+        { cat: 'all', icon: 'menu_book', label: 'All papers', n: counts.all },
+        { cat: 'review', icon: 'rate_review', label: 'Reviews', n: counts.review },
+        { cat: 'study', icon: 'science', label: 'Studies', n: counts.study },
+        { cat: 'other', icon: 'more_horiz', label: 'Other', n: counts.other },
+      ];
+      const statCards = stats.map((s, i) =>
+        `<button type="button" class="wa-ref-stat${i === 0 ? ' is-active' : ''}" data-refcat="${s.cat}" aria-pressed="${i === 0}">
+          <span class="wa-ref-stat-num">${s.n}</span>
+          <span class="wa-ref-stat-label"><span class="material-symbols-outlined">${s.icon}</span>${esc(s.label)}</span>
+        </button>`).join('');
+      const cards = CAT_REFS.map((r) => {
+        const search = esc(`${r.title} ${r.authors} ${r.journal} ${r.year} ${r.tag || ''}`.toLowerCase());
+        return `
+          <article class="wa-ref" id="cat-ref-${r.n}" data-ref="${r.n}" data-refcat="${catRefCat(r)}" data-search="${search}">
+            <div class="wa-ref-title">${esc(r.title)}</div>
+            <div class="wa-ref-byline">${esc(r.authors)}<span class="sep">\u00b7</span><span class="wa-ref-year">${r.year}</span><span class="sep">\u00b7</span><span class="wa-ref-journal">${esc(r.journal)}</span></div>
+            <div class="wa-ref-tags">
+              ${r.tag ? `<span class="wa-ref-tag${r.tagExp ? ' is-exp' : ''}">${esc(r.tag)}</span>` : ''}
+              <span class="wa-ref-cites"><span class="material-symbols-outlined">format_quote</span>${r.cites}</span>
+            </div>
+            <div class="wa-ref-highlight"><span class="material-symbols-outlined">lightbulb</span><span>${esc(r.highlight)}</span></div>
+            ${r.abstract ? `<details class="wa-ref-abstract"><summary>Abstract</summary><p class="wa-ref-abstract-body">${esc(r.abstract)}</p></details>` : ''}
+            <a class="wa-ref-view" href="#" onclick="return false" aria-label="View paper: ${esc(r.short)}"><span class="material-symbols-outlined">open_in_new</span>View paper</a>
+          </article>`;
+      }).join('');
+      return `
+        <div class="wa-block wa-refset">
+          <div class="wa-ref-masthead">
+            <h1 class="wa-ref-h1">References</h1>
+            <p class="wa-ref-lede">${CAT_REFS.length} peer-reviewed papers grounding this answer.</p>
+          </div>
+          <div class="wa-ref-toolbar">
+            <div class="wa-ref-search">
+              <span class="material-symbols-outlined">search</span>
+              <input type="search" class="wa-ref-search-input" placeholder="Search by title, author, or journal\u2026" aria-label="Search references">
+            </div>
+          </div>
+          <div class="wa-ref-stats" role="group" aria-label="Filter references by type">${statCards}</div>
+          <div class="wa-ref-divider"></div>
+          <div class="wa-ref-list">
+            ${cards}
+            <div class="wa-ref-empty" hidden>No references match your search.</div>
+          </div>
+        </div>`;
+    }
+
     /* ═════════ Scripted transcript (chips → user turn → WISEai reply → panes) ═════════
        The chat transcript stays verbatim to the source conversation; only the
        surfaced RESULTS move into the panes on the right. */
@@ -4449,6 +4788,8 @@
       { intent: 'cookie',  icon: 'cookie',         label: 'Best cookie, least chocolate' },
       { intent: 'compare', icon: 'compare_arrows', label: 'Compare products side by side' },
       { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report' },
+      { intent: 'cat',     icon: 'pets',           label: 'If I identified as a cat\u2026' },
+      { intent: 'catnutrients', icon: 'menu_book', label: 'What nutrients do cats require?' },
     ];
 
     const INTENT_REPLIES = {
@@ -4460,6 +4801,18 @@
       compare: 'I grabbed a few comparable products and put them head-to-head on the same board we use on the <strong>Product Comparison</strong> page.<br><br>Ranked by WISEscore, the <strong>Aloha Organic Protein Bar</strong> leads at <strong>84</strong> \u2014 the cleanest formulation, strongest on ingredient integrity and nutrient density. The <strong>Simple Truth Trail Mix</strong> (71) holds up on whole-food ingredients but loses ground on added sugar, and <strong>SkinnyPop Popcorn</strong> (63) trails mostly on nutrient density and gut-health signals.<br><br>Opened the full comparison in Results &amp; Details \u2014 tap any gauge or metric to replay it, and add more products to the board. \u2192',
       cookie: 'I pulled the highest-WISEscore chocolate chip cookies first, but the result quality is noisy: several top rows have clearly broken or incomplete ingredient lists, so they don\u2019t really answer your \u201cleast amount of chocolate\u201d criterion reliably.<br><br>Among the credible top-scoring matches, the strongest candidates look like the ones where chocolate chips appear later in the ingredient list, which usually means less chocolate by weight. The cleanest examples near the top are <strong>Paleo, Vegan Chocolate Chip Cookie</strong> and <strong>Emmy\u2019s Organics Coconut Cookies</strong>. By contrast, products like the Overjoyed biscotti put chocolate ingredients much earlier and even add a drizzle, so they\u2019re clearly more chocolate-heavy.',
       report: 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.',
+      cat: 'Cat food.',
+      catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
+        + `<ul style="margin:10px 0 4px;padding-left:20px">`
+        + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
+        + `<li><strong>Animal protein &amp; essential amino acids</strong> \u2014 high protein needs and a distinctive amino-acid metabolism versus omnivores${catCite(1, 2, 3)}.</li>`
+        + `<li><strong>Preformed vitamin A</strong> \u2014 cats convert plant carotenoids poorly, so they depend on animal sources${catCite(1, 3)}.</li>`
+        + `<li><strong>Arachidonic acid</strong> \u2014 an essential fatty acid they barely synthesize from plant precursors${catCite(3, 6)}.</li>`
+        + `<li><strong>Niacin</strong> \u2014 a relatively high requirement with little metabolic flexibility${catCite(1, 3)}.</li>`
+        + `</ul>`
+        + `So in practice a cat needs a diet <em>formulated</em> for feline requirements \u2014 taurine, adequate animal protein, preformed vitamin A, arachidonic acid and other micronutrients \u2014 not just generic \u201cmeat\u201d${catCite(1, 3, 7)}. The literature also cautions against poorly formulated alternative diets, where nutrient gaps show up${catCite(4)}.`
+        + catRefsMini()
+        + `<br>Opened the full reference cards in Results &amp; Details \u2192`,
     };
 
     const DEFAULT_REPLY = 'I\u2019m answering from your verified WISE Food data. Try one of the suggested prompts to walk through this conversation \u2014 as results come up, I\u2019ll open them in the Results &amp; Details and Visuals panes on the right.';
@@ -4467,6 +4820,8 @@
     function reply(text, intent) {
       if (intent && INTENT_REPLIES[intent] != null) return INTENT_REPLIES[intent];
       const t = String(text || '').toLowerCase();
+      if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return INTENT_REPLIES.catnutrients;
+      if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return INTENT_REPLIES.cat;
       if (/brisket|recipe/.test(t)) return INTENT_REPLIES.brisket;
       if (/ultra|upf|processed/.test(t)) return INTENT_REPLIES.upf;
       if (/worst|bottom|lowest/.test(t)) return INTENT_REPLIES.worst;
@@ -4498,7 +4853,7 @@
 
     function surfaceCardHtml(blockId, which, icon, title, previewHtml) {
       const paneName = which === 'visuals' ? 'Visuals' : 'Results & Details';
-      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel">
+      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel">
           <div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>
           <div class="sc-surface-title">${esc(title)}</div>
         </div>`;
@@ -4667,7 +5022,10 @@
         /* The compare board is engine-rendered into a fixed #cmp-body; strip
            those ids from the preview clone so we never create a duplicate id
            (which would misdirect the engine's getElementById re-renders). */
-        const previewHtml = html.replace(/ id="cmp-(body|subtitle)"/g, '');
+        /* The References output ids each card (#cat-ref-N) so footnote markers
+           can scroll to a paper; strip those from the preview clone too so the
+           clone never shadows the live pane copy with a duplicate id. */
+        const previewHtml = html.replace(/ id="cmp-(body|subtitle)"/g, '').replace(/ id="cat-ref-\d+"/g, '');
         chat.addWISEai(surfaceCardHtml(blockId, which, icon, title, previewHtml), { source: '', feedback: false, trailChips: false });
       }
     }
@@ -4780,9 +5138,110 @@
             meta: 'Distribution, score curve & trend-style slopes built from the current data',
             html: reportVisualsView(),
           });
+        } else if (intent === 'catnutrients') {
+          /* One live References block — if it's already surfaced, re-open it
+             instead of spawning a duplicate set of #cat-ref-* ids. */
+          const existingBlk = paneRefsetBlock();
+          if (existingBlk) {
+            reopenSurface(existingBlk.getAttribute('data-block-id'));
+            return;
+          }
+          surfaceBlock('results', {
+            icon: 'menu_book',
+            title: 'References · feline nutrition',
+            meta: `${CAT_REFS.length} peer-reviewed sources · WISEai literature consensus`,
+            html: catRefsView(),
+          });
         }
       }, 660);
     }
+
+    /* The live References output as it sits in a pane — the transcript preview
+       clone carries the same `.wa-refset` markup, so we skip anything nested in a
+       `.sc-surface-card` and return the pane copy's tagged block. */
+    function paneRefsetBlock() {
+      const refset = Array.from(document.querySelectorAll('.wa-refset'))
+        .find((el) => !el.closest('.sc-surface-card'));
+      return (refset && refset.closest('[data-block-id]')) || null;
+    }
+
+    /* Open the References output and flash a specific paper — fired from the
+       superscript footnote markers in the answer and the compact footnote list.
+       If the References block is still parked in its pane, re-open it; otherwise
+       surface it fresh. Then scroll to + briefly highlight the matching card. */
+    function openCatRef(n) {
+      const focus = () => {
+        const card = Array.from(document.querySelectorAll(`.wa-ref[data-ref="${n}"]`))
+          .find((el) => !el.closest('.sc-surface-card'));
+        if (!card) return;
+        /* Clear any active search / type filter so the target paper is on screen. */
+        const set = card.closest('.wa-refset');
+        if (set) resetRefset(set);
+        const det = card.querySelector('.wa-ref-abstract');
+        if (det) det.open = true;
+        card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        card.classList.add('is-flash');
+        setTimeout(() => card.classList.remove('is-flash'), 1400);
+      };
+      const existingBlk = paneRefsetBlock();
+      if (existingBlk) {
+        reopenSurface(existingBlk.getAttribute('data-block-id'));
+        setTimeout(focus, 360);
+      } else {
+        surface('catnutrients');
+        setTimeout(focus, 1100);
+      }
+    }
+
+    /* ── References module search + scorecard filtering ──────────────────────
+       The References output is injected as pane HTML (no inline scripts), so its
+       search box + scorecard filters are driven by delegated document handlers.
+       Each `.wa-refset` instance filters itself, so the pane copy and the inline
+       transcript preview clone stay independent. */
+    function filterRefset(set) {
+      if (!set) return;
+      const activeStat = set.querySelector('.wa-ref-stat.is-active');
+      const cat = activeStat ? activeStat.dataset.refcat : 'all';
+      const input = set.querySelector('.wa-ref-search-input');
+      const q = (input ? input.value : '').trim().toLowerCase();
+      let shown = 0;
+      set.querySelectorAll('.wa-ref').forEach((card) => {
+        const okCat = cat === 'all' || card.dataset.refcat === cat;
+        const okQ = !q || (card.dataset.search || '').includes(q);
+        const ok = okCat && okQ;
+        card.style.display = ok ? '' : 'none';
+        if (ok) shown += 1;
+      });
+      const empty = set.querySelector('.wa-ref-empty');
+      if (empty) empty.hidden = shown !== 0;
+    }
+    function resetRefset(set) {
+      if (!set) return;
+      const input = set.querySelector('.wa-ref-search-input');
+      if (input) input.value = '';
+      set.querySelectorAll('.wa-ref-stat').forEach((b) => {
+        const on = b.dataset.refcat === 'all';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      filterRefset(set);
+    }
+    document.addEventListener('input', (e) => {
+      const input = e.target.closest && e.target.closest('.wa-ref-search-input');
+      if (input) filterRefset(input.closest('.wa-refset'));
+    });
+    document.addEventListener('click', (e) => {
+      const stat = e.target.closest && e.target.closest('.wa-ref-stat');
+      if (!stat) return;
+      const set = stat.closest('.wa-refset');
+      if (!set) return;
+      set.querySelectorAll('.wa-ref-stat').forEach((b) => {
+        const on = b === stat;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      filterRefset(set);
+    });
 
     const host = document.getElementById('wa-chat');
     let chat = null;
@@ -4790,7 +5249,7 @@
       chat = mountWISEaiChat(host, {
         title: 'WISEai\u2122',
         heading: 'WISEai\u2122, the intelligence for Food Truth\u2122.',
-        sub: 'Search 943,428 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
+        sub: 'Search 989,342 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
         subCounter: true,
         placeholder: 'Ask WISEai about any food\u2026',
         chipsFlow: 'wrap',
@@ -4824,8 +5283,19 @@
            same verbatim replies the live transcript uses. Bump
            historySeedVersion whenever the seed below changes so every browser
            re-seeds to the latest on next load (clears saved threads there). */
-        historySeedVersion: 2,
+        historySeedVersion: 3,
         historySeed: [
+          {
+            title: 'If I identified as a cat\u2026',
+            msAgo: 12 * 60000,
+            mcp: true,
+            turns: [
+              { role: 'you', text: 'If I told you that I identified as a cat, what type of food would you feed me?' },
+              { role: 'wiseai', html: INTENT_REPLIES.cat },
+              { role: 'you', text: 'What nutrients do cats require?' },
+              { role: 'wiseai', html: INTENT_REPLIES.catnutrients },
+            ],
+          },
           {
             title: 'Build me a gut-healthy brisket recipe',
             msAgo: 40 * 60000,
@@ -4954,6 +5424,7 @@
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
             { variant: 'wiseai', icon: 'hub', title: 'Connect a data source', desc: 'Link Kroger, Instacart, USDA FoodData Central & more so WISEai can pull verified product data.', action: 'Connect', intent: 'connect_source' },
             { variant: 'metric', icon: 'outdoor_grill', pill: { tone: 'up', icon: 'north', text: 'Good' }, metric: '64', title: 'Build a gut-healthy brisket', desc: 'Run a brisket ingredient list through the WISEcode Gut Health code evaluation.', action: 'Build it', intent: 'brisket', ask: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
+            { variant: 'wiseai', icon: 'pets', title: 'If I identified as a cat\u2026', desc: 'A quick, science-backed detour into feline nutrition \u2014 with proper footnotes & a peer-reviewed reference output.', action: 'Ask', intent: 'cat', ask: 'If I told you that I identified as a cat, what type of food would you feed me?' },
             { variant: 'wiseai', icon: 'explore', title: 'Take a tour', desc: 'A quick guided walkthrough of WISEai — the panes, prompts & reports.', locked: true },
           ],
         },
@@ -4961,6 +5432,21 @@
            scripted reply still posts into the transcript. */
         onIntent(intent) {
           surface(intent);
+          return false;
+        },
+        /* An answer's "Opened … in Results & Details / Visuals →" narration
+           renders as a clickable chip; tapping it re-opens that pane's most
+           recent output, and the module also opens by default the moment the
+           answer lands. */
+        openModuleByDefault: true,
+        onOpenModule(name) {
+          const which = /visual/i.test(String(name || '')) ? 'visuals' : 'results';
+          let target = null;
+          for (const id in SURFACED) { if (SURFACED[id].which === which) target = id; }
+          if (target) { reopenSurface(target); return true; }
+          const dest = mergedMode ? 'unified' : which;
+          const pane = paneEl[dest];
+          if (pane && paneBody[dest] && paneBody[dest].children.length) { pane.classList.add('is-open'); return true; }
           return false;
         },
       });
@@ -4981,16 +5467,27 @@
         revealChips: (row) => { if (chat.revealChips) chat.revealChips(row); },
       };
 
+      /* Activity strip — a thin right-edge rail (toggled from Appearance) that
+         marks where each landmark landed in the transcript: an output created,
+         a data source added, or the database switched. It watches the live
+         transcript itself, so it needs no per-event wiring here. */
+      restoreActivityStrip();
+      mountActivityStrip({ chatSelector: '#wa-chat', messagesSelector: '.chat-messages-area' });
+
       /* Tapping an inline surface preview card re-opens its module on the right
          (delegated on the chat root so it covers every card in the transcript,
          including ones parked further up the conversation). */
       host.addEventListener('click', (e) => {
+        const cite = e.target.closest('[data-cat-ref]');
+        if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const card = e.target.closest('.sc-surface-card[data-surface]');
         if (!card) return;
         reopenSurface(card.getAttribute('data-surface'));
       });
       host.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
+        const cite = e.target.closest('[data-cat-ref]');
+        if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const card = e.target.closest('.sc-surface-card[data-surface]');
         if (!card) return;
         e.preventDefault();
@@ -5041,6 +5538,10 @@
           e.stopPropagation();
           applyMergeMode(!mergedMode);
         });
+        /* Default this ON so every chat starts merged — all subsequent
+           results/visuals surface into the single unified panel. Runs once at
+           init (with empty panes it just flips state + syncs the switch). */
+        applyMergeMode(true);
       }
     }
   </script>

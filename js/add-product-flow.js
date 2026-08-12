@@ -1483,7 +1483,7 @@
 
     // Input send
     $('ap-send')?.addEventListener('click', onSubmit);
-    inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); onSubmit(); } });
+    inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit(); } });
     /* Attach lives inside the input on the left and opens a grouped file-type
        popover (photos, docs, spreadsheets, data/specs, link). */
     const attachBtn = $('ap-attach');

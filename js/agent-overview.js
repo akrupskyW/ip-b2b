@@ -217,7 +217,7 @@ function openAgentDetailSheet(agentId) {
     <p class="ag-sheet-lead">${escHtml(a.description)}</p>
     ${kidsHtml}
     <div class="ag-sheet-actions">
-      <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
+      <button class="agent-cta agent-cta--primary" data-sheet-nav="wiseai.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
       <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Close</button>
     </div>`;
 }
@@ -303,7 +303,7 @@ function renderHero(agent) {
         <span class="agent-hero-pill"><span class="material-symbols-outlined">workspaces</span>WISEcode AI orchestrator</span>
       </div>
       <div class="agent-cta-row">
-        <a class="agent-cta agent-cta--primary" href="ai-chat.html">
+        <a class="agent-cta agent-cta--primary" href="wiseai.html">
           <span class="material-symbols-outlined">chat</span>
           Open WISEowl chat
         </a>
@@ -706,6 +706,63 @@ const REPORTS_WISEAI_INTENTS = [
   { intent: 'unlock_studio',     label: 'Unlock the full Studio',   icon: 'lock_open' },
 ];
 
+/* Intent chips for the WISEai Library page dock. Every chip maps 1:1 to a real
+   filter you can apply in the Library module beside it — the same set of item
+   types and the "shared with me" scope surfaced by the score cards and the
+   funnel popover. onIntent drives the on-page filter (via window.__wiseLibraryIntent)
+   and the matching reply below narrates it in the thread. Keep this list in
+   lock-step with the type/scope score cards + funnel chips in
+   conversation-library.html so the chat can never offer an intent the module
+   can't perform. */
+const LIBRARY_WISEAI_INTENTS = [
+  { intent: 'lib_reports',    label: 'Show reports',      icon: 'description' },
+  { intent: 'lib_dashboards', label: 'Show dashboards',   icon: 'bar_chart' },
+  { intent: 'lib_chats',      label: 'Show chats',        icon: 'forum' },
+  { intent: 'lib_mcp',        label: 'Show MCP results',  icon: 'extension' },
+  { intent: 'lib_references', label: 'Show references',   icon: 'bookmark' },
+  { intent: 'lib_shared',     label: 'Shared with me',    icon: 'group' },
+];
+
+/* Static fallback narration for the Library chips — the module supplies a
+   count-aware version via window.__wiseLibraryReply, but if that hook isn't up
+   yet these keep the thread coherent. */
+const LIBRARY_WISEAI_REPLIES = {
+  lib_reports:    'Filtered your library to <strong>Reports</strong>.',
+  lib_dashboards: 'Filtered your library to <strong>Dashboards</strong>.',
+  lib_chats:      'Filtered your library to <strong>Chats</strong>.',
+  lib_mcp:        'Filtered your library to <strong>MCP results</strong>.',
+  lib_references: 'Filtered your library to <strong>References</strong>.',
+  lib_shared:     'Showing everything <strong>shared with you</strong>.',
+};
+
+/* Intent chips for the Ingredient Browser page WISEai dock. Every chip maps 1:1
+   to a real way you can slice the registry in the module beside it — the search,
+   the GRAS-status score cards, and each dropdown/flag group inside the funnel
+   popover. onIntent drives the on-page control (via window.__ibIntent — it
+   focuses the search or opens the funnel pre-focused on the matching filter) and
+   the matching reply below narrates it in the thread. Keep this list in
+   lock-step with the filters + score cards in ingredient-browser.html so the
+   chat can never offer an intent the module can't perform. */
+const INGREDIENTS_WISEAI_INTENTS = [
+  { intent: 'search_ingredient', label: 'Search an ingredient',      icon: 'search' },
+  { intent: 'filter_gras',       label: 'Filter by GRAS status',     icon: 'verified' },
+  { intent: 'browse_category',   label: 'Browse by category',        icon: 'category' },
+  { intent: 'filter_processing', label: 'Filter by processing level', icon: 'blender' },
+  { intent: 'check_allergens',   label: 'Check allergens',           icon: 'allergies' },
+  { intent: 'filter_flags',      label: 'Additives & flags',         icon: 'label' },
+  { intent: 'explain_gras',      label: 'What is GRAS?',             icon: 'help_outline' },
+];
+
+const INGREDIENTS_WISEAI_REPLIES = {
+  search_ingredient: 'Type any ingredient name in the search box and I\u2019ll filter the registry live \u2014 a flavor compound, a whole food, or an additive all work.',
+  filter_gras: 'You can filter by GRAS status: <strong>GRAS</strong>, <strong>In review</strong>, <strong>Historical</strong>, <strong>Unclear</strong> or <strong>Unsafe</strong>. Tap a status card above the table, or tell me which one to show.',
+  browse_category: 'Browse by <strong>category</strong> and <strong>subcategory</strong> \u2014 Additives, Dairy, Fruit, Grain, Protein, Vegetable and more, each with its own subcategories. Which category should I open?',
+  filter_processing: 'Filter by <strong>processing level (PL)</strong> 1\u20134 \u2014 from whole/minimally processed (1) to ultra-processed (4). Which level do you want to see?',
+  check_allergens: 'I can filter by <strong>US</strong> or <strong>EU allergen</strong> \u2014 Milk, Eggs, Fish, Shellfish/Crustaceans, Tree Nuts, Peanuts, Wheat/Gluten, Soy and Sesame. Which allergen matters?',
+  filter_flags: 'Filter by ingredient <strong>flags</strong> \u2014 Sweetener, Emulsifier, Artificial Color, Artificial Preservative, Added Sugar, Whole Grain, Caffeine, Vegan, Gluten Free and more. Which flags should I apply?',
+  explain_gras: 'GRAS means \u201cGenerally Recognized As Safe.\u201d In this registry every ingredient carries a GRAS status: <strong>GRAS</strong> (evidence + expert consensus), <strong>In review</strong> (being assessed), <strong>Historical</strong> (long use but not formally affirmed), <strong>Unclear</strong> (not enough evidence), or <strong>Unsafe</strong>. Want me to filter by one?',
+};
+
 /* Intent chips for the Marketing Assets page WISEai dock. Every chip maps 1:1
    to something you can actually do in the module beside it — open a specific
    toolkit, pull the Non-UPF shield, grab the brand standards, or expand the
@@ -824,6 +881,7 @@ function setupWISEaiDock() {
   const isDashboard = document.body.dataset.productId === 'dashboard';
   const isReports = document.body.dataset.navId === 'reports';
   const isLibrary = document.body.dataset.navId === 'library';
+  const isIngredients = document.body.dataset.navId === 'ingredients';
   const isVerification = document.body.dataset.navId === 'verification';
   const isGras = document.body.dataset.navId === 'gras-verification';
   const isMarketing = document.body.dataset.navId === 'marketing-assets';
@@ -857,7 +915,7 @@ function setupWISEaiDock() {
      ON this page, that must stick: a reload (incl. livereload during editing) or
      a back/forward must NOT re-open it, otherwise "Close conversation" looks like
      it just restarts the chat. So only force-open on a genuine navigation. */
-  if ((isVerification || isGras || isReports || isLibrary || isMarketing || accountWiseai) && arrivedByNavigation()) {
+  if ((isVerification || isGras || isReports || isLibrary || isIngredients || isMarketing || accountWiseai) && arrivedByNavigation()) {
     writeWISEaiDockState({ collapsed: false });
   }
 
@@ -934,7 +992,7 @@ function setupWISEaiDock() {
       intents: REPORTS_WISEAI_INTENTS,
       intentReplies: REPORTS_WISEAI_REPLIES,
       onIntent: (intent) => {
-        const go = { open_upf_report: 'report-ultra-processed-foods.html' }[intent];
+        const go = { open_upf_report: 'reports.html' }[intent];
         if (go) { window.location.href = go; return true; }
         return false;
       },
@@ -943,6 +1001,36 @@ function setupWISEaiDock() {
     cfg = {
       sub: 'Search and open anything from your WISEai library.',
       chipsFlow: 'wrap',
+      intents: LIBRARY_WISEAI_INTENTS,
+      /* Count-aware narration built by the Library module (falls back to the
+         static reply if the module hook isn't up yet). */
+      intentReplies: Object.fromEntries(LIBRARY_WISEAI_INTENTS.map(({ intent }) => [intent, () => {
+        const rich = typeof window.__wiseLibraryReply === 'function' ? window.__wiseLibraryReply(intent) : '';
+        return rich || LIBRARY_WISEAI_REPLIES[intent];
+      }])),
+      /* Each chip applies the real filter on the Library grid (and syncs the
+         score cards + funnel), then returns false so the dock still posts the
+         "you" line + the narration above. */
+      onIntent: (intent) => {
+        if (typeof window.__wiseLibraryIntent === 'function') window.__wiseLibraryIntent(intent);
+        return false;
+      },
+    };
+  } else if (isIngredients) {
+    /* Ingredient Browser — one intent chip for EVERY way you can slice the
+       registry (search, GRAS status, category, processing level, allergens,
+       flags) plus a plain-language "what is GRAS?". Each chip narrates the
+       answer AND drives the browser to its right via the page's __ibIntent
+       bridge, so anything you can do on the page is one tap away from WISEai. */
+    cfg = {
+      sub: 'Search, filter and understand any ingredient in the WISEcode registry.',
+      chipsFlow: 'wrap',
+      intents: INGREDIENTS_WISEAI_INTENTS,
+      intentReplies: INGREDIENTS_WISEAI_REPLIES,
+      onIntent: (intent) => {
+        if (typeof window.__ibIntent === 'function') window.__ibIntent(intent);
+        return false;
+      },
     };
   } else if (isDashboard) {
     cfg = {
@@ -994,9 +1082,9 @@ function setupWISEaiDock() {
       sub: '',
       onIntent: (intent) => {
         const go = {
-          customer_profile: 'ai-chat.html',
-          resume_prompt: 'ai-chat.html',
-          registry_home: 'ai-chat.html',
+          customer_profile: 'wiseai.html',
+          resume_prompt: 'wiseai.html',
+          registry_home: 'wiseai.html',
         }[intent];
         if (go) { window.location.href = go; return true; }
         return false;
@@ -1114,7 +1202,7 @@ function mountAlertsPanel(notifBtn) {
         <p class="ag-sheet-lead">${escHtmlSafe(item.sub)}</p>
         <p class="ag-sheet-lead">Open the WISEowl chat to act on this alert with the relevant agent.</p>
         <div class="ag-sheet-actions">
-          <button class="agent-cta agent-cta--primary" data-sheet-nav="ai-chat.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
+          <button class="agent-cta agent-cta--primary" data-sheet-nav="wiseai.html"><span class="material-symbols-outlined">chat</span>Open in WISEowl chat</button>
           <button class="agent-cta agent-cta--ghost" data-sheet-close="1">Dismiss</button>
         </div>`;
     },

@@ -63,14 +63,6 @@
       font-size: var(--module-title-size, 1.35rem);
       font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em; line-height: 1.15; color: var(--text);
     }
-    .ib-count-chip {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 11px 3px 9px; border-radius: 999px;
-      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.01em;
-      background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary);
-    }
-    html.dark .ib-count-chip { background: rgba(96,165,250,0.16); color: #93C5FD; }
-    .ib-count-chip .material-symbols-outlined { font-size: 15px !important; }
     .ib-sub { font-size: 0.9375rem; color: var(--text-muted); margin: 6px 0 0; max-width: 62ch; }
 
     /* ---- Search — the canonical app search, copied verbatim from the
@@ -215,10 +207,35 @@
     html.dark .ib-stat--verified .ib-stat-num { color: #93C5FD; }
     .ib-stat--verified .ib-stat-label .material-symbols-outlined { color: var(--primary); }
     html.dark .ib-stat--verified .ib-stat-label .material-symbols-outlined { color: #93C5FD; }
+    /* In review — a pending GRAS determination; neutral slate with an hourglass
+       so it reads as "being assessed" rather than a settled verdict. */
+    .ib-stat--review .ib-stat-num { color: var(--text-muted); }
+    .ib-stat--review .ib-stat-label .material-symbols-outlined { color: var(--text-subtle); }
     .ib-stat--warn .ib-stat-num { color: #8a6400; }
     html.dark .ib-stat--warn .ib-stat-num { color: #FFD98A; }
     .ib-stat--muted .ib-stat-num { color: var(--text-muted); }
     .ib-stat--alert .ib-stat-num { color: var(--sec-red); }
+
+    /* Processing-level score cards — a second filter row keyed to PL rather than
+       GRAS, ramped cool→hot with the same brand-safe colours as the PL pills
+       (navy → amber → orange → red) so a level reads at a glance. */
+    .ib-stats--pl { margin-top: 10px; }
+    .ib-stat--pl1 .ib-stat-num,
+    .ib-stat--pl1 .ib-stat-label .material-symbols-outlined { color: var(--primary); }
+    html.dark .ib-stat--pl1 .ib-stat-num,
+    html.dark .ib-stat--pl1 .ib-stat-label .material-symbols-outlined { color: #93C5FD; }
+    .ib-stat--pl2 .ib-stat-num,
+    .ib-stat--pl2 .ib-stat-label .material-symbols-outlined { color: #8a6400; }
+    html.dark .ib-stat--pl2 .ib-stat-num,
+    html.dark .ib-stat--pl2 .ib-stat-label .material-symbols-outlined { color: #FFD98A; }
+    .ib-stat--pl3 .ib-stat-num,
+    .ib-stat--pl3 .ib-stat-label .material-symbols-outlined { color: #b4551f; }
+    html.dark .ib-stat--pl3 .ib-stat-num,
+    html.dark .ib-stat--pl3 .ib-stat-label .material-symbols-outlined { color: #F7A169; }
+    .ib-stat--pl4 .ib-stat-num,
+    .ib-stat--pl4 .ib-stat-label .material-symbols-outlined { color: var(--sec-red); }
+    html.dark .ib-stat--pl4 .ib-stat-num,
+    html.dark .ib-stat--pl4 .ib-stat-label .material-symbols-outlined { color: #FF9E96; }
 
     /* ---- Table — the Product Portfolio grid table (.pf-table): a CSS-grid
        header + rows, hover highlight. Wrapped in a card that scrolls
@@ -275,6 +292,10 @@
        Historical, neutral = Unclear, red = Unsafe). */
     .ib-gras--gras { background: var(--primary-10, rgba(37,80,124,0.12)); color: var(--primary); }
     html.dark .ib-gras--gras { background: rgba(96,165,250,0.16); color: #93C5FD; }
+    /* In review — an outlined neutral pill so a pending determination is clearly
+       distinct from the settled "Unclear" verdict. */
+    .ib-gras--review { background: transparent; color: var(--text-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    html.dark .ib-gras--review { background: transparent; color: var(--text-muted); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16); }
     .ib-gras--historical { background: rgba(185,130,43,0.16); color: #8a6400; }
     html.dark .ib-gras--historical { background: rgba(255,217,138,0.16); color: #FFD98A; }
     .ib-gras--unclear { background: var(--surface-3); color: var(--text-muted); }
@@ -380,7 +401,6 @@
                 <div>
                   <div class="ib-title-row">
                     <h1 class="ib-title-main">Ingredient Browser</h1>
-                    <span class="ib-count-chip"><span class="material-symbols-outlined">nutrition</span><span id="ib-total">8,658</span> ingredients</span>
                   </div>
                 </div>
               </div>
@@ -407,6 +427,7 @@
                         <select class="ib-select" id="ib-f-gras" data-filter="gras">
                           <option value="">Any</option>
                           <option>GRAS</option>
+                          <option>In review</option>
                           <option>Historical</option>
                           <option>Unclear</option>
                           <option>Unsafe</option>
@@ -740,8 +761,12 @@
                   <span class="ib-stat-label">All ingredients</span>
                 </button>
                 <button type="button" class="ib-stat ib-stat--verified" data-gras="GRAS" aria-pressed="false">
-                  <span class="ib-stat-num">8,241</span>
+                  <span class="ib-stat-num">8,194</span>
                   <span class="ib-stat-label"><span class="material-symbols-outlined">verified</span>GRAS</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--review" data-gras="In review" aria-pressed="false">
+                  <span class="ib-stat-num">47</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">hourglass_top</span>In review</span>
                 </button>
                 <button type="button" class="ib-stat ib-stat--warn" data-gras="Historical" aria-pressed="false">
                   <span class="ib-stat-num">210</span>
@@ -754,6 +779,30 @@
                 <button type="button" class="ib-stat ib-stat--alert" data-gras="Unsafe" aria-pressed="false">
                   <span class="ib-stat-num">65</span>
                   <span class="ib-stat-label">Unsafe</span>
+                </button>
+              </div>
+
+              <!-- ============ SCORE CARDS — Processing-level filters ============ -->
+              <div class="ib-stats ib-stats--pl" role="group" aria-label="Filter ingredients by processing level">
+                <button type="button" class="ib-stat is-active" data-pl="" aria-pressed="true">
+                  <span class="ib-stat-num">8,658</span>
+                  <span class="ib-stat-label">All levels</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--pl1" data-pl="1" aria-pressed="false" title="Level 1 — whole or minimally processed">
+                  <span class="ib-stat-num">2,540</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">eco</span>PL 1 · Minimal</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--pl2" data-pl="2" aria-pressed="false" title="Level 2 — processed culinary ingredient">
+                  <span class="ib-stat-num">1,120</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">restaurant</span>PL 2 · Culinary</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--pl3" data-pl="3" aria-pressed="false" title="Level 3 — processed food">
+                  <span class="ib-stat-num">1,890</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">blender</span>PL 3 · Processed</span>
+                </button>
+                <button type="button" class="ib-stat ib-stat--pl4" data-pl="4" aria-pressed="false" title="Level 4 — ultra-processed">
+                  <span class="ib-stat-num">3,108</span>
+                  <span class="ib-stat-label"><span class="material-symbols-outlined">factory</span>PL 4 · Ultra</span>
                 </button>
               </div>
 
@@ -856,7 +905,7 @@
       const filterClear = document.getElementById('ib-filter-clear');
       const filterDot = filterBtn;
 
-      const GRAS_CLASS = { GRAS: 'gras', Historical: 'historical', Unclear: 'unclear', Unsafe: 'unsafe' };
+      const GRAS_CLASS = { GRAS: 'gras', 'In review': 'review', Historical: 'historical', Unclear: 'unclear', Unsafe: 'unsafe' };
       const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const dash = (v) => v ? esc(v) : '<span class="ib-muted">—</span>';
 
@@ -960,6 +1009,7 @@
         sel.addEventListener('change', () => {
           state[sel.dataset.filter] = sel.value;
           if (sel.dataset.filter === 'gras') syncStatCards(sel.value);
+          if (sel.dataset.filter === 'pl') syncPlCards(sel.value);
           apply();
         });
       });
@@ -981,23 +1031,42 @@
         document.querySelectorAll('.ib-select[data-filter]').forEach((s) => { s.value = ''; });
         document.querySelectorAll('.ib-fchip.is-on').forEach((c) => c.classList.remove('is-on'));
         syncStatCards('');
+        syncPlCards('');
         apply();
       });
 
-      /* ---- Score cards (GRAS-status filters) ---- */
+      /* ---- Score cards ---- The GRAS row filters by GRAS status and the PL row
+         filters by processing level; they're independent dimensions that combine,
+         so each keeps its own active state (scoped by data-gras / data-pl). */
       function syncStatCards(gras) {
-        document.querySelectorAll('.ib-stat').forEach((b) => {
+        document.querySelectorAll('.ib-stat[data-gras]').forEach((b) => {
           const on = (b.dataset.gras || '') === (gras || '');
           b.classList.toggle('is-active', on);
           b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
       }
-      document.querySelectorAll('.ib-stat').forEach((btn) => {
+      function syncPlCards(pl) {
+        document.querySelectorAll('.ib-stat[data-pl]').forEach((b) => {
+          const on = (b.dataset.pl || '') === (pl || '');
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+      document.querySelectorAll('.ib-stat[data-gras]').forEach((btn) => {
         btn.addEventListener('click', () => {
           state.gras = btn.dataset.gras || '';
           syncStatCards(state.gras);
           const grasSel = document.getElementById('ib-f-gras');
           if (grasSel) grasSel.value = state.gras;
+          apply();
+        });
+      });
+      document.querySelectorAll('.ib-stat[data-pl]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.pl = btn.dataset.pl || '';
+          syncPlCards(state.pl);
+          const plSel = document.getElementById('ib-f-pl');
+          if (plSel) plSel.value = state.pl;
           apply();
         });
       });
@@ -1013,6 +1082,34 @@
           apply();
         });
       });
+
+      /* ---- WISEai bridge ----
+         Lets the docked chat's intent chips drive the browser: focus the search,
+         or open the filter popover pre-focused on the relevant control. Keyed to
+         the chat intents wired in js/agent-overview.js (INGREDIENTS cfg). The
+         setTimeout defers the open past the chip click's own document-level
+         close handler so the popover actually stays open. */
+      const IB_INTENT_SELECT = {
+        filter_gras: 'ib-f-gras',
+        browse_category: 'ib-f-cat',
+        filter_processing: 'ib-f-pl',
+        check_allergens: 'ib-f-usa',
+      };
+      window.__ibIntent = function (intent) {
+        if (intent === 'search_ingredient') {
+          searchEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          searchEl.focus();
+          return;
+        }
+        if (intent === 'filter_flags' || IB_INTENT_SELECT[intent]) {
+          setTimeout(() => {
+            setPop(true);
+            const id = IB_INTENT_SELECT[intent];
+            const el = id && document.getElementById(id);
+            if (el && el.focus) el.focus();
+          }, 0);
+        }
+      };
 
       apply();
     })();

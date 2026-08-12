@@ -1117,11 +1117,13 @@ function singleDonut(parts, num, numClass, label, sub, ringName) {
     </div>`;
 }
 
-/* Pink switch (default on = health-status ring shown). Toggling it off removes
-   the health-status component of the card. */
-function healthToggle(key) {
+/* Pink switch (default on = health-status ring shown). Rendered as an item
+   inside the card's three-dot menu; toggling it off removes the health-status
+   component of the card. */
+function healthToggleItem(key) {
   return `
-    <button type="button" class="dash-brand-toggle dash-brand-toggle--bare is-on" role="switch" aria-checked="true" data-dash-action="toggle-${key}-health" title="Show or hide the health status ring" aria-label="Show or hide the health status ring">
+    <button type="button" class="dash-kebab-item dash-kebab-toggle is-on" role="menuitemcheckbox" aria-checked="true" data-dash-action="toggle-${key}-health" title="Show or hide the health status ring">
+      <span class="dash-kebab-toggle-label"><span class="material-symbols-outlined">favorite</span>Health status ring</span>
       <span class="dash-brand-toggle-track" aria-hidden="true">
         <span class="dash-brand-toggle-thumb"></span>
       </span>
@@ -1141,13 +1143,14 @@ function legendGroup(title, parts, mod) {
 
 /* Vertical three-dot menu: share / export / insert into chat. The `key`
    namespaces the actions so the click handler can route per-card. */
-function cardMenu(key, label) {
+function cardMenu(key, label, opts = {}) {
   return `
     <div class="dash-kebab-wrap">
       <button class="dash-kebab" type="button" data-dash-menu="${key}" aria-haspopup="true" aria-expanded="false" aria-label="${esc(label)} options" title="More">
         <span class="material-symbols-outlined">more_vert</span>
       </button>
       <div class="dash-kebab-menu" data-dash-menu-for="${key}" role="menu" hidden>
+        ${opts.healthToggle ? `${healthToggleItem(key)}<div class="dash-kebab-sep" role="separator"></div>` : ''}
         <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="${key}-report"><span class="material-symbols-outlined">description</span>View full report</button>
         <div class="dash-kebab-sep" role="separator"></div>
         <button class="dash-kebab-item" type="button" role="menuitem" data-dash-action="share-${key}"><span class="material-symbols-outlined">ios_share</span>Share</button>
@@ -1815,11 +1818,8 @@ function renderGras(d) {
   return `
     <section class="dash-card dash-donut-card">
       <div class="dash-card-topbar">
-        <div class="dash-card-topbar-lead">
-          <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed products</h3>
-          ${healthToggle('gras')}
-        </div>
-        ${cardMenu('gras', 'Brand GRAS report')}
+        <h3 class="dash-card-title"><span class="dash-term" data-tip="Generally Recognized As Safe" tabindex="0" role="term">GRAS</span> status across ${g.total} analyzed products</h3>
+        ${cardMenu('gras', 'Brand GRAS report', { healthToggle: true })}
       </div>
       <div class="dash-donut-row">
         ${doubleDonut(g.split, g.distribution, `${g.pct}%`, 'is-teal', 'GRAS', `${g.grasCount} of ${g.total} products`, ['Health status', 'GRAS level'])}
@@ -2968,9 +2968,11 @@ export function renderDashboardHome(host) {
         closeMenus(null);
         return;
       }
-      closeMenus(null);
 
       const a = action.dataset.dashAction;
+      /* Keep the three-dot menu open when flipping the in-menu health toggle so
+         the switch state change is visible; every other action dismisses it. */
+      if (!/^toggle-(upf|gras)-health$/.test(a)) closeMenus(null);
 
       /* Brand logo badge → open the shared image editor scoped to the logo. */
       if (a === 'edit-logo') {
@@ -3080,7 +3082,7 @@ export function renderDashboardHome(host) {
         return;
       }
       if (a === 'report-export') {
-        window.location.href = 'portfolio.html';
+        window.location.href = 'product-portfolio.html';
         return;
       }
 
@@ -3092,9 +3094,15 @@ export function renderDashboardHome(host) {
         const card = rawCard === 'grasbars' ? 'gras' : rawCard;
         const label = { upf: 'Brand UPF report', gras: 'Brand GRAS report', radar: 'WISEscore pillar metrics' }[card];
         if (op === 'chat') {
+          /* Continue the conversation in the WISEai dock that already lives on
+             this page — no navigation to a separate chat page. For the UPF/GRAS
+             scorecards we mirror in the same narration the report surface uses;
+             the pillar radar has no report, so it gets a short lead-in. */
           const ask = card === 'radar' ? 'walk me through the pillar metrics.' : `walk me through the ${card.toUpperCase()} scorecard.`;
-          try { sessionStorage.setItem('wise-chat-insert', `Let's continue on the ${label} — ${ask}`); } catch (_) {}
-          window.location.href = 'ai-chat.html';
+          const reply = (card === 'upf' || card === 'gras')
+            ? dashReportChatReply(card)
+            : `Let\u2019s dig into the ${esc(label)}. Ask me anything about these metrics and I\u2019ll break them down.`;
+          pushDashChat(`Let's continue on the ${label} — ${ask}`, reply);
         } else if (op === 'share') {
           const url = window.location.href;
           if (navigator.share) {
@@ -3103,7 +3111,7 @@ export function renderDashboardHome(host) {
             navigator.clipboard.writeText(url).catch(() => {});
           }
         } else if (op === 'export') {
-          window.location.href = card === 'upf' ? 'portfolio.html' : 'portfolio.html';
+          window.location.href = 'product-portfolio.html';
         }
         return;
       }
@@ -3118,13 +3126,13 @@ export function renderDashboardHome(host) {
       const route = {
         'review-portfolio': 'product-portfolio.html',
         'add-food': 'product-portfolio.html?add=food',
-        'dispute-upc': 'portfolio.html',
+        'dispute-upc': 'product-portfolio.html',
         'claim-upcs': 'product-portfolio.html',
         'verify-upf': 'verification.html',
         'nonupf-dashboard': 'non-upf-dashboard.html',
         'verify-gras': 'gras-verification.html',
-        'topproduct-report': 'portfolio.html',
-        'ask-ai': 'ai-chat.html',
+        'topproduct-report': 'product-portfolio.html',
+        'ask-ai': 'wiseai.html',
       }[a];
       if (route) window.location.href = route;
     });

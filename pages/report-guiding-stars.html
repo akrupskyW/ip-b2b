@@ -421,13 +421,13 @@
                   <div class="fl-attachments"></div>
                 </div>
                 <div class="fl-input-line">
-                  <input id="chat-input" type="text" placeholder="Ask WISEai about the action plan…" class="fl-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();gsSend();}" />
+                  <textarea id="chat-input" placeholder="Ask WISEai about the action plan…" class="fl-input" rows="1" autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();gsSend();}"></textarea>
                 </div>
               </div>
+              <button type="button" id="gs-send" class="sc-send" onclick="gsSend()" title="Send">
+                <span class="material-symbols-outlined">send</span>
+              </button>
             </div>
-            <button type="button" id="gs-send" class="sc-send" onclick="gsSend()" title="Send">
-              <span class="material-symbols-outlined">send</span>
-            </button>
           </div>
         </div>
       </main>
@@ -1037,8 +1037,10 @@
         box.scrollTop = box.scrollHeight;
         /* Type the prose in word-by-word, then bring in the timestamp, then the
            inline chips (left→right) — text, timestamp, chips, in order. Embedded
-           charts / tables are left intact by the walker. */
-        const canType = body && !GS_REDUCED_MOTION;
+           charts / tables are left intact by the walker. `opts.instant` skips all
+           of that so a whole PRE-LOADED conversation lands at once (no typewriter,
+           no chip/meta fly-in) — animation is only for genuinely new replies. */
+        const canType = body && !GS_REDUCED_MOTION && !(opts && opts.instant);
         if (canType) {
           const timeEl = body.querySelector('.sc-line-time');
           const chipBtns = Array.from(body.querySelectorAll('.gs-chips-inline .gs-chip'));
@@ -1124,8 +1126,11 @@
 
       function openConversation() {
         box.innerHTML = '';
-        addWISEai(EXEC_MSG);
-        addWISEai('That\'s the whole plan in one table below — filter it with the scorecards, or ask me anything. Where should we start?', { chips: true });
+        /* This opener pre-loads the entire conversation at once, so it lands
+           instantly (no typewriter / chip fly-in). Only the replies to
+           subsequent chip clicks animate in. */
+        addWISEai(EXEC_MSG, { instant: true });
+        addWISEai('That\'s the whole plan in one table below — filter it with the scorecards, or ask me anything. Where should we start?', { chips: true, instant: true });
       }
       openConversation();
 

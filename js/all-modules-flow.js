@@ -54,7 +54,6 @@ const MODULE_SECTIONS = [
     tone: 'workspace',
     modules: [
       { label: 'Overview', icon: 'space_dashboard', href: 'overview.html' },
-      { label: 'All Modules', icon: 'apps', href: 'all-modules.html' },
     ],
   },
   {
@@ -1080,6 +1079,12 @@ function setPaneBroken(pane, broken) {
   } else {
     pane.querySelector('.mi-pane-broken')?.remove();
     viewport?.removeEventListener('click', preventBrokenNav);
+    /* A pane that was marked broken had its iframe src stripped — restore it
+       on recovery, or the pane stays blank forever even though the page is
+       back. (previewSrc re-tags the URL so embedded-preview guards hold.) */
+    if (frame && !frame.getAttribute('src')) {
+      frame.src = previewSrc(pane.getAttribute('data-href'));
+    }
   }
 }
 
@@ -1152,8 +1157,29 @@ const RAIL_EMBED_CSS = `
   #alerts-panel#alerts-panel { display: none !important; }
   #ag-toast-wrap { display: none !important; }
   #agent-shell-wrap { display: block !important; }
-  #modules-row { display: block !important; margin: 0 !important; padding: 0 !important; }
+  /* Scoped to the agent shell on purpose: chat-shell pages (ai-chat-page, e.g.
+     Product Portfolio / Comparison) lay out #modules-row as a flex row of
+     docked panels — forcing display:block there collapses the whole page to a
+     blank pane. Those pages keep their native layout; only the menu grid
+     column is reclaimed below. */
+  #agent-shell-wrap #modules-row { display: block !important; margin: 0 !important; padding: 0 !important; }
   #agent-main { width: 100% !important; max-width: none !important; margin: 0 !important; border-radius: 0 !important; }
+  /* Reclaim the hidden menu's grid column. The areas must be redefined along
+     with the columns: the wrap's template is "menu modules", and #modules-row
+     is pinned to the named "modules" area — with only the column changed it
+     would land in an implicit second column and get squeezed. */
+  #chat-shell-wrap {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: "modules" !important;
+  }
+  /* Chat pages that dock a module board (Product Portfolio, Comparison, …)
+     flag it with report-mode. In a preview only the BOARD is the module —
+     hide the chat column and side panels so the board fills the pane. Pages
+     where the chat itself is the module (wiseai.html) never enter
+     report-mode, so their chat keeps rendering. */
+  #modules-row.report-mode > #chat-shell,
+  #modules-row.report-mode > #panels-row,
+  #modules-row.report-mode > #panels-row-right { display: none !important; }
 
   /* Marketing shell (marketing-*.html): the primary nav + persistent WISEai
      chat rail are injected by marketing-shell.js — drop them too so the preview

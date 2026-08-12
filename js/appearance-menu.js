@@ -38,6 +38,12 @@ import {
   applyColorblind,
   getColorblindMode,
   COLORBLIND_MODES,
+  isComposerV2On,
+  applyComposerV2,
+  isChatTintOn,
+  applyChatTint,
+  getModuleGap,
+  applyModuleGap,
 } from './topbar.js';
 import {
   isJamStripOn,
@@ -49,6 +55,7 @@ import {
   currentJamSongLabel,
 } from './jam-strip.js';
 import { getStoredFontSize, setTextSize } from './text-size.js';
+import { isActivityStripOn, applyActivityStrip } from './chat-activity-strip.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -160,6 +167,31 @@ function colorblindTypeSection() {
     <div class="wise-popover-divider"></div>`;
 }
 
+/** "Module spacing" segmented control — an admin-only, pink-outlined toggle that
+    steps the horizontal gap BETWEEN modules in #modules-row through Small (12px)
+    / Medium (24px) / Large (36px). Each button carries a `data-mg` id that
+    wireAppearancePopover() turns into the matching mod-gap-<size> class on <html>.
+    Clicking the active step again clears back to the default row gap. */
+function moduleGapSection() {
+  const active = getModuleGap();
+  const opts = [
+    { id: 'sm', label: 'Small' },
+    { id: 'md', label: 'Medium' },
+    { id: 'lg', label: 'Large' },
+  ];
+  const btns = opts
+    .map(
+      (o) =>
+        `<button type="button" class="mg-seg-btn${o.id === active ? ' is-active' : ''}" data-mg="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
+    )
+    .join('');
+  return `
+    <div class="mg-size">
+      <span class="mg-size-label">Module spacing<span class="wise-popover-badge">Admin</span></span>
+      <div class="mg-seg" role="group" aria-label="Module spacing">${btns}</div>
+    </div>`;
+}
+
 /** Link out to the standalone WCAG audit. The review lives in pages/, so the
     href is resolved against wherever the calling shell is mounted (app pages
     sit in pages/, the root shell one level up) — same rule as auth-guard.js. */
@@ -231,6 +263,9 @@ export function buildAppearanceBody({
     ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
     ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
     ${jamPlayerSection()}
+    ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
+    ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
+    ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
     <div class="wise-popover-divider"></div>
     ${colorblindTypeSection()}
@@ -242,6 +277,8 @@ export function buildAppearanceBody({
           .join('')}
       </div>
     </div>
+    <div class="wise-popover-divider"></div>
+    ${moduleGapSection()}
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
       <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
@@ -345,6 +382,9 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-headerfloat]')) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); applyFullBleed(!isFullBleedOn());   render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
+    if (within('[data-composer2]'))   { ev.stopPropagation(); applyComposerV2(!isComposerV2On());  render(); return; }
+    if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
+    if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
 
     /* In-popover Jam player transport + track picker. Update the player in
@@ -357,6 +397,11 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Text size (connected segmented toggle). */
     const fz = within('[data-fz]');
     if (fz) { ev.stopPropagation(); setTextSize(fz.dataset.fz); render(); return; }
+
+    /* Module spacing (admin, pink-outlined segmented toggle). Re-clicking the
+       active step clears back to the default row gap. */
+    const mg = within('[data-mg]');
+    if (mg) { ev.stopPropagation(); applyModuleGap(getModuleGap() === mg.dataset.mg ? '' : mg.dataset.mg); render(); return; }
 
     /* CVD-type buttons are handled by topbar.js's global capture-phase handler
        (it runs before this bubble handler and stops propagation), so we never
@@ -372,7 +417,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.fz-row, .fz-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.fz-row, .fz-size, .mg-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();

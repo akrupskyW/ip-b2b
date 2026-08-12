@@ -419,6 +419,100 @@ export function restoreFullBleed() {
   applyFullBleed(isFullBleedOn());
 }
 
+/* Composer v2 — the redesigned chat-module input: one pill row with "+" far
+   left, the growing text field beside it, and the database selector docked
+   bottom-right just left of send. The text field grows upward as you type
+   while the controls hold the bottom line. Admin-only toggle in the
+   Appearance popover; driven by a `composer-v2` class on <html> so every
+   chat module on every page picks it up; persisted across navigation. */
+const COMPOSER_V2_KEY = 'wise-composer-v2';
+
+/** True when the redesigned chat input was last left on. */
+export function isComposerV2On() {
+  try { return localStorage.getItem(COMPOSER_V2_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the composer-v2 class on <html> and persist it. Composers listen for
+    the `wise:composer-v2` event to re-sync their grown text field height. */
+export function applyComposerV2(on) {
+  document.documentElement.classList.toggle('composer-v2', !!on);
+  try { localStorage.setItem(COMPOSER_V2_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:composer-v2', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted composer-v2 state onto the document. */
+export function restoreComposerV2() {
+  applyComposerV2(isComposerV2On());
+}
+
+/* Chat tint — washes every chat module's surface (the card, messages area and
+   input rail) with an even lighter step of the brand blue than the composer's
+   input fill, so the chat container stands out from the plain page background.
+   Admin-only toggle in the Appearance popover; driven by a `chat-tint` class
+   on <html>; persisted across navigation. */
+const CHAT_TINT_KEY = 'wise-chat-tint';
+
+/** True when the blue chat-surface tint is on. Defaults ON — the tinted chat
+    container is the standard look; the Appearance toggle opts OUT. */
+export function isChatTintOn() {
+  try { return localStorage.getItem(CHAT_TINT_KEY) !== '0'; } catch { return true; }
+}
+
+/** Toggle the chat-tint class on <html> and persist it. */
+export function applyChatTint(on) {
+  document.documentElement.classList.toggle('chat-tint', !!on);
+  try { localStorage.setItem(CHAT_TINT_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-tint', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted chat-tint state onto the document. */
+export function restoreChatTint() {
+  applyChatTint(isChatTintOn());
+}
+
+/* Module spacing — admin-only control for the horizontal gap BETWEEN the modules
+   in #modules-row. Three steps: Small (12px) / Medium (24px) / Large (36px).
+   Driven by a `mod-gap-<size>` class on <html>; wise.css turns that class into an
+   `!important` gap override so it beats each page's inline #modules-row { gap }
+   declaration. Persisted across navigation; when unset the row keeps its default
+   spacing. Admin-only toggle in the Appearance popover (pink-outlined). */
+const MODULE_GAP_KEY = 'wise-module-gap';
+
+/** The valid steps and the gap each maps to (px), used by the popover control. */
+export const MODULE_GAP_SIZES = ['sm', 'md', 'lg'];
+
+/** Current module-spacing step ('sm' | 'md' | 'lg'), or '' when unset (default). */
+export function getModuleGap() {
+  try {
+    const v = localStorage.getItem(MODULE_GAP_KEY);
+    return MODULE_GAP_SIZES.indexOf(v) !== -1 ? v : '';
+  } catch { return ''; }
+}
+
+/** Apply a module-spacing step onto <html> and persist it. Pass '' (or an
+    unknown value) to clear back to the default row gap. */
+export function applyModuleGap(size) {
+  const valid = MODULE_GAP_SIZES.indexOf(size) !== -1;
+  const root = document.documentElement;
+  MODULE_GAP_SIZES.forEach((s) => root.classList.toggle('mod-gap-' + s, valid && s === size));
+  try {
+    if (valid) localStorage.setItem(MODULE_GAP_KEY, size);
+    else localStorage.removeItem(MODULE_GAP_KEY);
+  } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:module-gap', { detail: { size: valid ? size : '' } }));
+  } catch {}
+}
+
+/** Restore the persisted module-spacing step onto the document (no popover needed). */
+export function restoreModuleGap() {
+  applyModuleGap(getModuleGap());
+}
+
 /* Colorblind-friendly palettes — remap the semantic status colors (success
    green, danger red, warning amber) to a colorblind-safe set so the red↔green
    coding stays distinguishable. Color-vision deficiency comes in different
@@ -678,6 +772,9 @@ if (typeof document !== 'undefined') {
     restoreMinimalUi();
     restoreHeaderFloat();
     restoreFullBleed();
+    restoreComposerV2();
+    restoreChatTint();
+    restoreModuleGap();
     restoreColorblind();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;

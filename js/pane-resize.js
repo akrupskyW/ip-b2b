@@ -56,6 +56,18 @@
     var out = [];
     for (var c = row.firstElementChild; c; c = c.nextElementSibling)
       if (!isOverlay(c) && !isNav(c) && isVisible(c)) out.push(c);
+    // Order panes by their VISUAL position, not DOM order. Some pages reorder
+    // the row with CSS `order` (e.g. the WISEai Library / reports docks the chat
+    // to the LEFT of the module via `order:-1`, even though the dock is appended
+    // LAST in the DOM). Seam handles must sit between visually-adjacent panes:
+    // if we kept DOM order here, a split's "left" pane could be the one that is
+    // visually on the RIGHT, so the seam midpoint would be computed between two
+    // non-adjacent edges and the handle would land in the MIDDLE of the row
+    // (floating over a module's content) instead of on the real seam. Sorting by
+    // the live left edge also keeps outerL/outerR and the drag direction correct.
+    out.sort(function (a, b) {
+      return a.getBoundingClientRect().left - b.getBoundingClientRect().left;
+    });
     return out;
   }
   function positionIndex(row, el) {

@@ -508,11 +508,8 @@ html.dark .topbar-menu-toggle:hover { color: var(--text) !important; background:
 .topbar-menu-wrap { position: relative; }
 
 @keyframes panelBounceRight {
-  0%   { transform: perspective(700px) translateX(72px)  rotateY(20deg)  scale(0.94); opacity: 0; }
-  48%  { opacity: 1; }
-  66%  { transform: perspective(700px) translateX(-9px)  rotateY(-3.5deg) scale(1.007); }
-  83%  { transform: perspective(700px) translateX(4px)   rotateY(1.2deg)  scale(0.999); }
-  100% { transform: perspective(700px) translateX(0)     rotateY(0deg)    scale(1); opacity: 1; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 #alerts-panel {
@@ -966,6 +963,49 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .fz-seg-btn:hover { background: var(--surface-3); color: var(--text); }
 .fz-seg-btn.is-active { background: var(--primary); color: #fff; }
 
+/* Module-spacing block — admin-only segmented control (Small / Medium / Large)
+   that steps the horizontal gap between modules in #modules-row. Mirrors the
+   Text-size layout but wears a pink outline (matching the pink "Admin" badge) so
+   it reads as an admin capability rather than a normal preference. */
+.mg-size {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px 10px;
+}
+.mg-size-label {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mg-seg {
+  display: flex;
+  width: 100%;
+  border: 1.5px solid rgb(219, 39, 119);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.mg-seg-btn {
+  flex: 1 1 0;
+  height: 30px;
+  border: 0;
+  border-left: 1.5px solid color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: var(--fs-ui);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mg-seg-btn:first-child { border-left: 0; }
+.mg-seg-btn:hover { background: color-mix(in srgb, rgb(219, 39, 119) 12%, transparent); color: var(--text); }
+.mg-seg-btn.is-active { background: rgb(219, 39, 119); color: #fff; }
+
 /* Colorblind CVD-type picker (Deut / Prot / Trit) — auto-size the pills so the
    short type labels fit instead of clipping inside the 30px number pills. */
 .cb-type-row .fz-btn {
@@ -1127,6 +1167,11 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   gap: 8px;
   scrollbar-gutter: stable;
 }
+/* Admin "Module spacing" control (Appearance popover) steps the gap BETWEEN
+   modules. !important so it beats each page's own inline #modules-row { gap }. */
+html.mod-gap-sm #modules-row { gap: 12px !important; }
+html.mod-gap-md #modules-row { gap: 24px !important; }
+html.mod-gap-lg #modules-row { gap: 36px !important; }
 .menu-brand-integrated #modules-row {
   grid-area: modules;
   flex: unset;
@@ -1198,11 +1243,8 @@ html.dark .topbar-trailing .lir-btn.lir-active {
 }
 
 @keyframes panelBounceLeft {
-  0%   { transform: perspective(700px) translateX(-72px) rotateY(-20deg) scale(0.94); opacity: 0; }
-  48%  { opacity: 1; }
-  66%  { transform: perspective(700px) translateX(9px) rotateY(3.5deg) scale(1.007); }
-  83%  { transform: perspective(700px) translateX(-4px) rotateY(-1.2deg) scale(0.999); }
-  100% { transform: perspective(700px) translateX(0) rotateY(0deg) scale(1); opacity: 1; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 #menu-panel {
@@ -3906,6 +3948,10 @@ html.dark .sc-welcome { background: transparent; }
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
 .ws-sub { font-size: var(--fs-ui); font-weight: 400; color: var(--text-muted); text-align: center; margin: 0 0 1.5rem; }
+/* The live food-count ticks upward constantly, so render it with tabular
+   (fixed-width) mono figures — every digit occupies the same advance width,
+   keeping the surrounding sentence from shifting as the number changes. */
+.ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: ui-monospace, "SF Mono", "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Intent chips, carousel variant — a single horizontal row with left/right
@@ -3956,6 +4002,32 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
   margin: -0.4rem 0 1.1rem; padding-left: 42px;
 }
 .sc-inline-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
+
+/* ===== "Open module" intent chip =====
+   The clickable narration a reply drops when it opens a companion module
+   ("Opened the full ranking in Results & Details →"). Tapping it (re)opens that
+   module beside the chat. Rendered inline where the narration used to sit. */
+.sc-open-chips { display: block; margin-top: 4px; }
+.sc-open-chip-sep { color: var(--text-subtle); margin: 0 4px; }
+.sc-open-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  max-width: 100%; text-align: left; vertical-align: baseline;
+  margin: 4px 6px 0 0; padding: 6px 12px;
+  font: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.35; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: 9999px; cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .05s ease;
+}
+.sc-open-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+.sc-open-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sc-open-chip:active { transform: translateY(1px); }
+.sc-open-chip-label { min-width: 0; overflow-wrap: anywhere; }
+.sc-open-chip-label strong { font-weight: 800; }
+.sc-open-chip-ic { font-size: 16px !important; flex: 0 0 auto; color: var(--primary); }
+.sc-open-chip-go { font-size: 16px !important; flex: 0 0 auto; color: var(--text-muted); transition: transform .15s ease; }
+.sc-open-chip:hover .sc-open-chip-go { transform: translateX(2px); color: var(--primary); }
+html.dark .sc-open-chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
 
 /* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
    The "Your portfolio at a glance" rail, ported into the shared dock: a
@@ -4062,7 +4134,7 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-.chip .material-symbols-outlined { font-size: 16px !important; }
+.chip .material-symbols-outlined { font-size: 14px !important; }
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
    primary choice among the reply chips. Reuses the app-wide `chip-primary`
@@ -4077,7 +4149,7 @@ html.dark .chip.chip-primary { background: var(--primary); border-color: var(--p
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
 .ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
-.ws-intent-chip .material-symbols-outlined { font-size: 20px !important; }
+.ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
 .ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: faint-white chip fills get our royal-blue border so they don't
    read as white-bordered pills on the navy chrome. */
@@ -4094,14 +4166,21 @@ html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: va
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
 .fl-input-wrap {
-  position: relative; flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong);
+  /* Lightest tint of the brand blue (--primary #25507C) — a near-white wash
+     that separates the composer from the plain page background. */
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 5%, #fff); border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-html.dark .fl-input-wrap { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+/* Dark mode: a brightened brand-blue tint (not the neutral white overlay) so
+   the composer stands out as a blue surface against the navy card. */
+html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; padding: 8px 0; color: var(--text); font-family: inherit; }
+/* The text field is a 1-row <textarea> (so composer-v2 can grow it) but is
+   locked to single-line input behaviour by default: wrap="off" + hidden
+   overflow scroll horizontally exactly like the old <input>. */
+.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; line-height: 18px; padding: 8px 0; color: var(--text); font-family: inherit; resize: none; overflow: hidden; }
 .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
 .fl-icon-btn {
   width: 32px; height: 32px; border-radius: 9999px; color: var(--text-muted); cursor: pointer;
@@ -4237,7 +4316,7 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
    holds the database selector label on top with the text input directly beneath
    it. The database label reads like a quiet dropdown (name + caret), and its
    popover now opens from the LEFT edge since the trigger lives on the left. === */
-.fl-input-wrap--stacked { align-items: center; gap: 6px; padding: 5px 8px 5px 6px; }
+.fl-input-wrap--stacked { align-items: center; gap: 6px; padding: 5px 5px 5px 6px; }
 .fl-input-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .fl-input-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .fl-input-wrap--stacked .fl-input { padding: 3px 0; }
@@ -4248,16 +4327,21 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   display: inline-flex; align-items: center; gap: 3px; max-width: none;
   margin: 0; padding: 1px 5px 1px 0; border: 0; border-radius: 7px;
   background: transparent; cursor: pointer; color: var(--text-subtle);
-  font-family: inherit; font-size: 11.5px; font-weight: 600; line-height: 1.4;
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.4;
   transition: background 0.12s ease, color 0.12s ease;
 }
+/* Hover/open pill stays in the composer's brand-blue family (one step deeper
+   than the input's 5% fill) — never the neutral surface gray. */
 .fl-db-trigger:hover,
-.fl-db-trigger[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+.fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 10%, #fff); color: var(--text); }
 html.dark .fl-db-trigger:hover,
-html.dark .fl-db-trigger[aria-expanded="true"] { background: rgba(255,255,255,0.08); }
-.fl-db-trigger-ic { font-size: 14px !important; opacity: 0.85; flex-shrink: 0; }
+html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 24%, transparent); }
+/* Glyphs carry the trigger class in the selector so page-wide icon-size
+   !important rules (e.g. the portfolio/comparison shells' 24px floor) can't
+   inflate them and make the selector read oversized. */
+.fl-db-trigger .fl-db-trigger-ic { font-size: 13px !important; opacity: 0.85; flex-shrink: 0; }
 .fl-db-trigger-label { white-space: nowrap; overflow: visible; text-overflow: clip; }
-.fl-db-trigger-caret { font-size: 15px !important; opacity: 0.7; flex-shrink: 0; }
+.fl-db-trigger .fl-db-trigger-caret { font-size: 14px !important; opacity: 0.7; flex-shrink: 0; }
 /* Left-opening variant of the database popover (trigger now sits on the left). */
 .fl-db-popover--lead { left: 0; right: auto; }
 
@@ -4282,19 +4366,15 @@ html.dark .fl-db-trigger[aria-expanded="true"] { background: rgba(255,255,255,0.
 .wiseai-dock .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
 
 /* ===== Inline conversation event marker — e.g. a mid-thread database switch.
-   Centered and muted so it reads as a system change (not a message from either
-   party), but tinted with the brand accent so the change still stands out. === */
-.sc-line-event { display: flex; justify-content: center; margin: 6px 0; }
+   Reads as a quiet user action (plain inline text, no container/icon), with the
+   leading phrase carried in the brand accent color. === */
+.sc-line-event { display: flex; justify-content: flex-start; margin: 6px 0; }
 .sc-event {
-  display: inline-flex; align-items: center; gap: 7px; max-width: 92%;
-  padding: 5px 13px; border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 7%, var(--surface-2));
-  border: 1px dashed color-mix(in srgb, var(--primary) 32%, var(--border-strong));
-  color: var(--text-muted); font-size: 12px; line-height: 1.35;
+  display: inline-flex; align-items: baseline; gap: 8px; max-width: 92%;
+  color: var(--text-muted); font-size: 12.5px; line-height: 1.4;
 }
-html.dark .sc-event { background: color-mix(in srgb, var(--primary) 14%, rgba(255,255,255,0.04)); border-color: color-mix(in srgb, var(--primary) 40%, rgba(255,255,255,0.14)); }
-.sc-event-ic { font-size: 16px !important; color: var(--primary); flex-shrink: 0; }
 .sc-event-text { min-width: 0; }
+.sc-event-label { color: var(--primary); font-weight: 600; }
 .sc-event-text strong { color: var(--text); font-weight: 700; }
 .sc-event-time { font-size: 10.5px; color: var(--text-subtle); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
@@ -4404,15 +4484,83 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
 .fl-db-module .fl-db-scroll { flex: 1 1 auto; max-height: none; }
 
 /* Send button — 40px primary circle, aligned to the input */
+/* Send button lives INSIDE the input pill (flush right, even padding). */
 .sc-send {
-  width: 40px; height: 40px; flex-shrink: 0; align-self: center;
+  width: 34px; height: 34px; flex-shrink: 0; align-self: center; margin-left: 2px;
   border-radius: 9999px; border: 0; cursor: pointer;
   background: var(--primary); color: #fff;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s ease;
 }
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
-.sc-send .material-symbols-outlined { font-size: 20px !important; }
+.sc-send .material-symbols-outlined { font-size: 18px !important; }
+
+/* ===== Composer v2 — Appearance ▸ "New chat input" (Admin toggle). One pill
+   row: "+" far left, the text field beside it, then the database selector
+   docked bottom-right just LEFT of the send button. The field soft-wraps and
+   grows (see wireComposerGrow in js/wiseai-chat.js); the rail is bottom-
+   anchored so the pill grows UPWARD while "+", the selector and send hold the
+   bottom line. ===== */
+/* Pill becomes a rounded-corner rectangle matching the module's own corners
+   (.sc-card uses --r-md), so the container reads clean when the field grows. */
+html.composer-v2 .fl-input-wrap--stacked { align-items: flex-end; border-radius: var(--r-md, 16px); }
+html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { margin-bottom: 1px; }
+html.composer-v2 .fl-input-wrap--stacked .fl-input-col { flex-direction: row; align-items: flex-end; gap: 6px; }
+/* DOM order keeps the selector row first (v1 stacks it on top) — flip it
+   visually so the text field leads and the selector trails next to send.
+   The line box stretches the pill's full height and centers the field, so a
+   single-line placeholder sits dead-center against the controls (matching the
+   canonical wiseai.html composer) no matter how each page's font metrics
+   round; once the field grows IT defines the height and nothing shifts. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input-line { order: 1; flex: 1 1 auto; min-width: 0; align-self: stretch; align-items: center; }
+html.composer-v2 .fl-input-wrap--stacked .fl-model-row { order: 2; flex: 0 0 auto; flex-wrap: nowrap; margin-bottom: 8px; }
+html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
+/* Single line sits centered against the 34px send circle; past ~7 lines the
+   field stops growing and scrolls internally. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 7px 0; max-height: 140px; overflow-y: auto; }
+html.composer-v2 .fl-input-wrap--stacked .sc-send { align-self: flex-end; }
+
+/* Narrow composers (side-panel chats, squeezed modules): there isn't room for
+   text + selector + send on one line, so the text field moves to its OWN row
+   ABOVE the controls — "+" bottom-left, DB selector + send bottom-right.
+   Sized by a container query on the input row so each module responds to its
+   own width, not the viewport's. */
+html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wise-composer; }
+@container wise-composer (max-width: 420px) {
+  html.composer-v2 .fl-input-wrap--stacked {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "text text text"
+      "plus db   send";
+    align-items: center;
+    row-gap: 2px;
+  }
+  /* Dissolve the flex column so the selector row and text line become grid
+     items of the wrap itself. */
+  html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
+  html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
+  html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
+  html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; }
+  html.composer-v2 .fl-input-wrap--stacked .sc-send { grid-area: send; }
+  html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; }
+}
+
+/* ===== Chat tint — Appearance ▸ "Blue chat surface" (Admin toggle). Washes
+   the chat module's surfaces (card, messages area, input rail) with an even
+   LIGHTER step of the brand blue (3%) than the composer's 5% input fill, so
+   the chat container stands out from the plain page background while the
+   input still reads a step deeper than its surroundings. Dark mode instead
+   lifts the navy card toward the bright accent. ===== */
+html.chat-tint:not(.dark) .sc-card,
+html.chat-tint:not(.dark) .chat-messages-area,
+html.chat-tint:not(.dark) .chat-input-rail,
+/* The welcome and settings screens are OPAQUE overlays (absolute, inset 0)
+   painted over the card in var(--bg)/var(--surface) — without tinting them
+   too, a fresh chat module never shows the blue base layer beneath. */
+html.chat-tint:not(.dark) .sc-welcome,
+html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 3%, #fff); }
+html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
@@ -6211,6 +6359,18 @@ html.dark .dash-kebab-menu {
 .dash-kebab-item .material-symbols-outlined { font-size: 17px; color: var(--text-subtle); }
 .dash-kebab-item:hover { background: var(--surface-2); }
 html.dark .dash-kebab-item:hover { background: rgba(255, 255, 255, 0.06); }
+
+/* Pink health-status toggle living inside the three-dot menu: label on the
+   left, sliding pink switch (reusing the brand-toggle track/thumb) on the
+   right. Off = track tinted pink with the thumb parked left; on = solid pink
+   track with the thumb slid right. */
+.dash-kebab-toggle { justify-content: space-between; }
+.dash-kebab-toggle-label { display: inline-flex; align-items: center; gap: 10px; }
+.dash-kebab-toggle .dash-brand-toggle-track { flex-shrink: 0; }
+.dash-kebab-toggle.is-on .dash-brand-toggle-track,
+.dash-kebab-toggle[aria-checked="true"] .dash-brand-toggle-track { background: rgb(219, 39, 119); }
+.dash-kebab-toggle.is-on .dash-brand-toggle-thumb,
+.dash-kebab-toggle[aria-checked="true"] .dash-brand-toggle-thumb { transform: translateX(10px); background: #fff; }
 .dash-kebab-sep {
   height: 1px;
   margin: 4px 6px;

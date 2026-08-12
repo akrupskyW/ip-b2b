@@ -733,20 +733,14 @@
     }
 
     @keyframes panelBounceLeft {
-      0%   { transform: perspective(700px) translateX(-72px) rotateY(-20deg) scale(0.94); opacity: 0; }
-      48%  { opacity: 1; }
-      66%  { transform: perspective(700px) translateX(9px) rotateY(3.5deg) scale(1.007); }
-      83%  { transform: perspective(700px) translateX(-4px) rotateY(-1.2deg) scale(0.999); }
-      100% { transform: perspective(700px) translateX(0) rotateY(0deg) scale(1); opacity: 1; }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     /* Mirror of panelBounceLeft used when a panel is docked on the right side. */
     @keyframes panelBounceRight {
-      0%   { transform: perspective(700px) translateX(72px) rotateY(20deg) scale(0.94); opacity: 0; }
-      48%  { opacity: 1; }
-      66%  { transform: perspective(700px) translateX(-9px) rotateY(-3.5deg) scale(1.007); }
-      83%  { transform: perspective(700px) translateX(4px) rotateY(1.2deg) scale(0.999); }
-      100% { transform: perspective(700px) translateX(0) rotateY(0deg) scale(1); opacity: 1; }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     /* Side panels: OUTER = width clip only (no transform / no “card” motion). INNER = card + bounce.
@@ -1754,11 +1748,8 @@
 
     /* ── NFP+ — Nutrition Fact Panel Plus (light-mode card) ─────────────── */
     @keyframes panelBounceRight {
-      0%   { transform: perspective(700px) translateX(72px) rotateY(20deg) scale(0.94); opacity: 0; }
-      48%  { opacity: 1; }
-      66%  { transform: perspective(700px) translateX(-9px) rotateY(-3.5deg) scale(1.007); }
-      83%  { transform: perspective(700px) translateX(4px) rotateY(1.2deg) scale(0.999); }
-      100% { transform: perspective(700px) translateX(0) rotateY(0deg) scale(1); opacity: 1; }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     #nfp-panel {
@@ -5330,7 +5321,8 @@
     .fl-input-wrap {
       position: relative;
       flex: 1;
-      background: var(--surface-3);
+      /* Lightest tint of the brand blue — matches the shared composer. */
+      background: color-mix(in srgb, var(--primary) 5%, #fff);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill);
       /* Padding intentionally omitted — the canonical stacked composer padding
@@ -6352,7 +6344,7 @@
       gap: 8px;
     }
     .fl-input-wrap {
-      background: var(--surface-2);
+      background: color-mix(in srgb, var(--primary) 5%, #fff);
       border-color: var(--border-strong);
     }
     /* Stacked composer (canonical WISEai rail): the "+" sits left, the database
@@ -6365,14 +6357,30 @@
     }
     .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
     .fl-icon-btn { width: 32px; height: 32px; }
-    /* Send button matches the canonical 40px .sc-send circle. */
+    /* Send button matches the canonical in-pill .sc-send circle. */
     #send-btn {
-      width: 40px;
-      height: 40px;
+      width: 34px;
+      height: 34px;
       flex-shrink: 0;
       align-self: center;
     }
-    #send-btn .material-symbols-outlined { font-size: 20px !important; line-height: 1; }
+    #send-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
+    /* Composer v2 (Appearance ▸ "New chat input"): send holds the bottom line
+       while the text field grows — outranks the #send-btn align-self above. */
+    html.composer-v2 #send-btn { align-self: flex-end; }
+    /* The shell-wide pill overrides near the top of this stylesheet
+       (#chat-shell-wrap .fl-input-wrap / textarea → --radius-pill !important)
+       would lock composer v2 into a pill — outrank them so it keeps the
+       module-cornered rectangle from the shared wise.css. */
+    html.composer-v2 #chat-shell-wrap .fl-input-wrap,
+    html.composer-v2 #chat-shell-wrap .fl-input-wrap textarea.fl-input {
+      border-radius: var(--r-md, 16px) !important;
+    }
+    /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
+       background: var(--bg) !important, so the tint needs its own !important. */
+    html.chat-tint:not(.dark) .chat-input-rail {
+      background: color-mix(in srgb, var(--primary) 3%, #fff) !important;
+    }
 
     /* =====================================================================
        FONT WEIGHTS — dial back the chunky display weights.
@@ -8323,13 +8331,13 @@
                 <div class="fl-attachments"></div>
               </div>
               <div class="fl-input-line">
-                <input id="chat-input" type="text" placeholder="Type your message" class="fl-input" autocomplete="off" />
+                <textarea id="chat-input" placeholder="Type your message" class="fl-input" rows="1" autocomplete="off"></textarea>
               </div>
             </div>
+            <button type="button" id="send-btn" class="sc-send">
+              <span class="material-symbols-outlined">send</span>
+            </button>
           </div>
-          <button type="button" id="send-btn" class="sc-send">
-            <span class="material-symbols-outlined">send</span>
-          </button>
         </div>
       </div>
     </div>
@@ -9580,6 +9588,12 @@
       const chat = document.getElementById('chat-messages');
       const ws = document.getElementById('welcome-screen');
       if (!chat) return;
+      /* Each saved view is a whole multi-turn conversation captured at once, so
+         render every turn instantly (no typewriter/chip fly-in) — otherwise the
+         snapshot would capture mid-animation, half-invisible text. The flag is
+         always cleared in `finally` so live turns animate again. */
+      wiseaiInstant = true;
+      try {
       const hideWS = () => { ws?.classList.add('ws-hidden'); if (ws) ws.style.display = 'none'; };
       const resetModules = () => {
         closeReformulationWorkflow();
@@ -9676,6 +9690,9 @@
       ws?.classList.remove('ws-hidden');
       if (ws) ws.style.display = '';
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
+      } finally {
+        wiseaiInstant = false;   /* back to animated replies for live turns */
+      }
       renderViewsTab();
     }
 
@@ -10202,6 +10219,63 @@
       el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
     }
 
+    /* ── Deferred reply chips ──────────────────────────────────────────────
+       Intent / follow-up chips must NEVER appear until the answer they trail
+       has finished typing, and must then fly in one after another — never sit
+       there half-way through a reply. Rather than thread a callback through
+       every place a chip row is built (there are many), we (a) expose a
+       per-reply "done typing" promise that addWISEaiMessage rebinds and
+       resolves once the line has fully typed + its meta has landed, and (b)
+       watch the transcript for any `.sc-reply-chips` row: the instant one is
+       inserted we hide its chips and hold them back until the current reply's
+       promise resolves, then reveal them left→right (the same motion the
+       welcome and the wiseai.html compare engine use). Honors reduced-motion. */
+    let wiseaiReplyDone = Promise.resolve();
+    let wiseaiChipObserverSet = false;
+    /* When a whole PRE-LOADED conversation is dropped in at once (many turns
+       together, e.g. seeding/restoring a saved view), flip this on so every
+       reply lands instantly — no typewriter, no chip/meta fly-in. Only the
+       replies to subsequent chip clicks animate. */
+    let wiseaiInstant = false;
+    function wiseaiRevealChipRow(row) {
+      if (!row) return;
+      const box = document.getElementById('chat-messages');
+      const chips = Array.from(row.querySelectorAll('.chip'));
+      if (!chips.length) { if (box) box.scrollTop = box.scrollHeight; return; }
+      wiseaiRevealStaggered(chips, 110, 55, () => { if (box) box.scrollTop = box.scrollHeight; });
+    }
+    function wiseaiEnsureChipObserver() {
+      if (wiseaiChipObserverSet) return;
+      const box = document.getElementById('chat-messages');
+      if (!box || typeof MutationObserver === 'undefined') return;
+      wiseaiChipObserverSet = true;
+      new MutationObserver((muts) => {
+        muts.forEach((m) => {
+          Array.prototype.forEach.call(m.addedNodes, (node) => {
+            if (!node || node.nodeType !== 1) return;
+            /* A chip row can arrive on its own OR wrapped in a parent (e.g. the
+               scope picker groups three rows under one div), so collect the row
+               itself plus any `.sc-reply-chips` descendants. */
+            const rows = [];
+            if (node.classList && node.classList.contains('sc-reply-chips')) rows.push(node);
+            if (node.querySelectorAll) Array.prototype.push.apply(rows, node.querySelectorAll('.sc-reply-chips'));
+            rows.forEach((row) => {
+              if (row.dataset.wiseaiChipDeferred) return;
+              row.dataset.wiseaiChipDeferred = '1';
+              const chips = Array.from(row.querySelectorAll('.chip'));
+              if (!chips.length || WISEAI_REDUCED_MOTION || wiseaiInstant) return;
+              /* Hide the chips the instant they land — the observer runs as a
+                 microtask before paint, so there's no flash — then release them
+                 only once THIS reply has finished typing in. */
+              chips.forEach(wiseaiPrimeRight);
+              (wiseaiReplyDone || Promise.resolve()).then(() =>
+                requestAnimationFrame(() => wiseaiRevealChipRow(row)));
+            });
+          });
+        });
+      }).observe(box, { childList: true });
+    }
+
     /* Welcome-screen reveal. Type the heading WORD-BY-WORD (exactly like every
        WISEai answer), and only once the copy has landed do the score cards and
        intent chips fly in from the right in a single top-to-bottom cascade —
@@ -10237,6 +10311,7 @@
     function addWISEaiMessage(html, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
+      wiseaiEnsureChipObserver();
       const withSource = opts.source !== false;
       const fb = opts.feedback ? wiseaiFeedbackBar() : '';
       box.insertAdjacentHTML(
@@ -10248,9 +10323,13 @@
       box.scrollTop = box.scrollHeight;
       /* Type the prose in word-by-word, then bring in the timestamp, then the
          action icons (grounding chip + feedback pill) — text, timestamp, icons,
-         in order. Embedded charts / tables are left intact by the walker. */
-      const canType = body && !WISEAI_REDUCED_MOTION && opts.typewriter !== false;
+         in order. Embedded charts / tables are left intact by the walker. Any
+         chip row that trails this answer is held back (see the chip observer)
+         until wiseaiReplyDone resolves at the very end. */
+      const canType = body && !WISEAI_REDUCED_MOTION && opts.typewriter !== false && !wiseaiInstant;
       if (canType) {
+        let resolveDone;
+        wiseaiReplyDone = new Promise((r) => { resolveDone = r; });
         const timeEl = body.querySelector('.sc-line-time');
         const icons = [];
         const srcEl = body.querySelector('.sc-trust-chip');
@@ -10262,9 +10341,13 @@
         box.scrollTop = box.scrollHeight;
         wiseaiTypeInLine(body, () => {
           wiseaiRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
-            wiseaiRevealStaggered(icons, 130, 60, () => { box.scrollTop = box.scrollHeight; });
+            wiseaiRevealStaggered(icons, 130, 60, () => { box.scrollTop = box.scrollHeight; resolveDone(); });
           });
         });
+      } else {
+        /* Non-typed line (reduced motion / { typewriter:false }): there's nothing
+           to wait for, so any trailing chips may reveal immediately. */
+        wiseaiReplyDone = Promise.resolve();
       }
       return line;
     }
@@ -15483,7 +15566,7 @@
       });
     });
     document.getElementById('chat-input')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('send-btn')?.click();
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('send-btn')?.click(); }
     });
 
     /* ── NFP+ toggle & variant selector ──────────────────────────────────── */
