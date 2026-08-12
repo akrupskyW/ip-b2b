@@ -1461,11 +1461,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <div class="fl-input-col">
             <div class="fl-model-row">
               ${buildModelSelectorHtml(id)}
-              <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
             </div>
             <div class="fl-input-line">
               <textarea class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" rows="1" autocomplete="off"></textarea>
             </div>
+            <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
           </div>
           <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
         </div>
@@ -2943,19 +2943,19 @@ export function mountWISEaiChat(rootEl, opts = {}) {
 
   /* ── Pending attachments ─────────────────────────────────────────────────
      Files picked via "+" don't post straight to the thread anymore — they first
-     appear as small removable previews (a thumbnail + label) inline to the
-     right of the database selector on the same row — never inline with the
-     placeholder text below. They only travel into the thread when the message
-     is sent, and the user can keep typing the whole time with the placeholder
-     still visible. */
+     appear as small removable previews (a thumbnail + label) in a wrapping row
+     INSIDE the message area, directly beneath the text field. Each new chip
+     wraps as needed and the composer grows upward (the rail is bottom-anchored)
+     rather than pushing anything off-screen. They only travel into the thread
+     when the message is sent, and the user can keep typing the whole time with
+     the placeholder still visible. */
   const attachEl = rootEl.querySelector(`#${id}-fl-attach`);
   let attachments = [];
   let attachSeq = 0;
   const IMAGE_ICON =
     '<span class="material-symbols-outlined">image</span>';
-  /* Reflect the pending count onto the wrap so the input can drop its
-     placeholder (it would otherwise collide with the chips) while still
-     accepting text — the caret sits right after the last chip. */
+  /* Reflect the pending count onto the wrap so the CSS can space the chip row
+     that sits beneath the text field (see .fl-input-wrap.has-attachments). */
   function syncAttachState() {
     const wrap = attachEl?.closest('.fl-input-wrap');
     const has = attachments.length > 0;

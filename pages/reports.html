@@ -249,6 +249,12 @@
        60px header bar above it. */
     body[data-nav-id="reports"] #agent-main-header { display: none; }
     body[data-nav-id="reports"] .agent-main-scroll { padding: 0; }
+    /* The inline brand-report surface (opened from the WISEai "Open the …
+       report" chips) replaces .rp-wrap, whose padding went with it — give the
+       report the same module inset so it doesn't sit flush to the card edge. */
+    body[data-nav-id="reports"] .agent-main-scroll > .dash-report-view {
+      padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px;
+    }
   </style>
 </head>
 <body data-nav-id="reports">

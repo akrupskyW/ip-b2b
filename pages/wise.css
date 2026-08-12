@@ -4049,11 +4049,12 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
   max-width: 100%; text-align: left; vertical-align: baseline;
   margin: 4px 6px 0 0; padding: 6px 12px;
   font: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.35; color: var(--text);
-  background: var(--surface-2); border: 1px solid var(--border-strong);
+  /* Same blue tint as the composer (.fl-input-wrap) so chips and input read as one family. */
+  background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
   border-radius: 9999px; cursor: pointer;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .05s ease;
 }
-.sc-open-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+.sc-open-chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
 .sc-open-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .sc-open-chip:active { transform: translateY(1px); }
 .sc-open-chip-label { min-width: 0; overflow-wrap: anywhere; }
@@ -4061,7 +4062,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .sc-open-chip-ic { font-size: 16px !important; flex: 0 0 auto; color: var(--primary); }
 .sc-open-chip-go { font-size: 16px !important; flex: 0 0 auto; color: var(--text-muted); transition: transform .15s ease; }
 .sc-open-chip:hover .sc-open-chip-go { transform: translateX(2px); color: var(--primary); }
-html.dark .sc-open-chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+html.dark .sc-open-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
 
 /* ===== Welcome score cards (opt-in via mountWISEaiChat({ scorecards })) =====
@@ -4164,11 +4165,13 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-  background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
+     chips and the input field share one surface color, light and dark. */
+  background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
   font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+.chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 .chip .material-symbols-outlined { font-size: 14px !important; }
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
@@ -4183,13 +4186,14 @@ html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
    navigation icons (#left-icon-rail .lir-btn = 20px). */
-.ws-intent-chip { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
+.ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
 .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
-.ws-intent-chip:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-/* Dark mode: faint-white chip fills get our royal-blue border so they don't
-   read as white-bordered pills on the navy chrome. */
-html.dark .chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
-html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: var(--primary); }
+.ws-intent-chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+/* Dark mode: chips take the composer's brightened brand-blue tint (matching
+   html.dark .fl-input-wrap) with our royal-blue border so they don't read as
+   white-bordered pills on the navy chrome. */
+html.dark .chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 
 /* ===== Input rail — compact single-line bar (verbatim from ai-chat.html's
    refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
@@ -4246,12 +4250,14 @@ html.dark .fl-more-popover { background: linear-gradient(155deg, #1A2339 0%, #1A
 .fl-more-divider { height: 1px; background: var(--border); margin: 4px 6px; }
 html.dark .fl-more-divider { background: rgba(255,255,255,0.08); }
 
-/* ===== Pending attachment previews — live INSIDE the input, inline directly
-   before the placeholder/caret. Each is a circle thumbnail + a label to its
-   right, with a hover remove button. They wrap onto a second row if several are
-   added and push the caret/placeholder along so you can keep typing. ===== */
+/* ===== Pending attachment previews — live INSIDE the message area, in their
+   own wrapping row directly beneath the text field. Each is a circle thumbnail
+   + a label with a hover remove button. Chips wrap onto as many rows as they
+   need and the composer simply grows taller — the input rail is anchored to
+   the bottom of the chat card, so the extra height extends UPWARD and the
+   placeholder/caret stay usable the whole time. ===== */
 .fl-model-row { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
-.fl-attachments { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+.fl-attachments { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; padding: 2px 0 4px; }
 .fl-attachments:empty { display: none; }
 .fl-attach-chip {
   display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; max-width: 160px;
@@ -4282,7 +4288,8 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
 }
 .fl-attach-x:hover { background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent); color: var(--sec-red, #DC3038); }
 .fl-attach-x .material-symbols-outlined { font-size: 11px !important; }
-.fl-input-wrap.has-attachments .fl-input { flex: 1 1 80px; min-width: 80px; }
+/* `has-attachments` is toggled on the wrap by js/wiseai-chat.js whenever chips
+   are pending — the narrow composer-v2 grid uses it to open a chip row. */
 
 /* ===== Sent attachments — the same previews carried into a user's transcript
    line, above the message text. ===== */
@@ -4381,22 +4388,21 @@ html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, 
 /* Left-opening variant of the database popover (trigger now sits on the left). */
 .fl-db-popover--lead { left: 0; right: auto; }
 
-/* ===== Narrow / mobile composer — keep the database selector and the pending
-   attachment thumbnails on ONE horizontal line (a scrollable rail) instead of
-   letting the long snapshot label wrap the images onto a second row. The label
-   is clamped to ~15 characters then ellipsised so it never shoves the images
-   off-row. Applies on small viewports and inside the always-narrow chat dock. */
+/* ===== Narrow / mobile composer — keep the database selector on ONE
+   horizontal line (a scrollable rail) with its label clamped to ~15 characters
+   then ellipsised. Pending attachment chips live in their own wrapping row
+   beneath the text field, so they are free to wrap and grow the composer
+   upward even in these narrow contexts. Applies on small viewports and inside
+   the always-narrow chat dock. */
 @media (max-width: 767px) {
   .fl-model-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .fl-model-row::-webkit-scrollbar { display: none; }
-  .fl-attachments { flex-wrap: nowrap; }
   .fl-model-wrap--lead { align-self: center; }
   .fl-db-trigger { flex-shrink: 0; }
   .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
 }
 .wiseai-dock .fl-model-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .wiseai-dock .fl-model-row::-webkit-scrollbar { display: none; }
-.wiseai-dock .fl-attachments { flex-wrap: nowrap; }
 .wiseai-dock .fl-model-wrap--lead { align-self: center; }
 .wiseai-dock .fl-db-trigger { flex-shrink: 0; }
 .wiseai-dock .fl-db-trigger-label { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
@@ -4541,7 +4547,7 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
    (.sc-card uses --r-md), so the container reads clean when the field grows. */
 html.composer-v2 .fl-input-wrap--stacked { align-items: flex-end; border-radius: var(--r-md, 16px); }
 html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { margin-bottom: 1px; }
-html.composer-v2 .fl-input-wrap--stacked .fl-input-col { flex-direction: row; align-items: flex-end; gap: 6px; }
+html.composer-v2 .fl-input-wrap--stacked .fl-input-col { flex-direction: row; align-items: flex-end; gap: 6px; flex-wrap: wrap; }
 /* DOM order keeps the selector row first (v1 stacks it on top) — flip it
    visually so the text field leads and the selector trails next to send.
    The line box stretches the pill's full height and centers the field, so a
@@ -4555,6 +4561,10 @@ html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
    field stops growing and scrolls internally. */
 html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 7px 0; max-height: 140px; overflow-y: auto; }
 html.composer-v2 .fl-input-wrap--stacked .sc-send { align-self: flex-end; }
+/* Pending chips claim their own full-width row beneath the text field: the
+   wrap opens a new flex line, so every extra chip row grows the pill upward
+   while "+", the selector and send keep holding the bottom line. */
+html.composer-v2 .fl-input-wrap--stacked .fl-attachments { order: 3; flex: 1 1 100%; padding: 0 0 6px; }
 
 /* Narrow composers (side-panel chats, squeezed modules): there isn't room for
    text + selector + send on one line, so the text field moves to its OWN row
@@ -4572,9 +4582,19 @@ html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wi
     align-items: center;
     row-gap: 2px;
   }
-  /* Dissolve the flex column so the selector row and text line become grid
-     items of the wrap itself. */
+  /* With chips pending, open a dedicated full-width row for them between the
+     text line and the bottom controls (the row costs nothing when absent —
+     `has-attachments` comes off the wrap as soon as the chips clear). */
+  html.composer-v2 .fl-input-wrap--stacked.has-attachments {
+    grid-template-areas:
+      "text text text"
+      "att  att  att"
+      "plus db   send";
+  }
+  /* Dissolve the flex column so the selector row, text line and chip row
+     become grid items of the wrap itself. */
   html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
+  html.composer-v2 .fl-input-wrap--stacked .fl-attachments { grid-area: att; padding: 0 4px 2px 8px; }
   html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
   html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
   html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; }
@@ -8327,8 +8347,9 @@ html.dark .dash-report-pending { background: rgba(255, 255, 255, 0.03); }
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 760px;
-  margin: 0 auto;
+  /* Full-bleed: the report owns the whole module surface (no centered
+     reading column with dead white space either side). */
+  width: 100%;
 }
 .dash-report-view-head {
   display: flex;
@@ -8337,7 +8358,21 @@ html.dark .dash-report-pending { background: rgba(255, 255, 255, 0.03); }
   flex-wrap: wrap;
 }
 .dash-report-view-titles { flex: 1 1 200px; min-width: 0; }
-.dash-report-view-titles .dash-modal-title { font-size: 1.35rem; }
+/* The report title is a page-level header, so it carries the same serif
+   display face as every other module masthead (not just where a page-scoped
+   override happens to apply). */
+.dash-report-view-titles .dash-modal-title {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+/* Same serif treatment for the summary line + big stat numerals, so the
+   report reads identically wherever it opens (overview.html gets this via its
+   page-scoped typography block; other hosts need it here). */
+.dash-report-view .dash-report-summary,
+.dash-report-view .dash-report-stat-val {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+}
 .dash-report-back .material-symbols-outlined { font-size: 18px; }
 .dash-report-view-export .material-symbols-outlined { font-size: 18px; }
 .dash-report-view-body {

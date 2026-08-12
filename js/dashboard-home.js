@@ -1429,7 +1429,7 @@ export function dashReportChatReply(card) {
   return reportChatReply(cfg, getActiveData());
 }
 
-function reportSurfaceHTML(cfg, d) {
+function reportSurfaceHTML(cfg, d, backLabel = 'Back to dashboard') {
   const stats = cfg.stats(d)
     .map((s) => `
       <div class="dash-report-stat">
@@ -1446,7 +1446,7 @@ function reportSurfaceHTML(cfg, d) {
     <section class="dash-report-view" aria-label="${esc(cfg.title)}">
       <header class="dash-report-view-head">
         <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-dash-action="report-back">
-          <span class="material-symbols-outlined">arrow_back</span>Back to dashboard
+          <span class="material-symbols-outlined">arrow_back</span>${esc(backLabel)}
         </button>
         <div class="dash-report-view-titles">
           <span class="dash-modal-eyebrow">${esc(cfg.eyebrow)}</span>
@@ -1474,14 +1474,39 @@ function reportSurfaceHTML(cfg, d) {
 /* Open a report INLINE in the main panel (the interface on the right of the
    WISEai chat), replacing the dashboard — never a modal overlay. `mirror` posts
    the you + WISEai turn into the chat; pass { mirror: false } on the intent-chip
-   path where the dock already added the "you" line + reply. */
-export function openDashReport(card, { mirror = true } = {}) {
+   path where the dock already added the "you" line + reply.
+
+   On pages that don't render the dashboard (e.g. the Reports library), pass
+   `host` — the module's scroll surface — and the report replaces THAT surface
+   instead. The original markup is stashed so "Back" restores the page, and the
+   back/export buttons are wired here (the dashboard's own delegated handler
+   only exists where renderDashboardHome ran). */
+export function openDashReport(card, { mirror = true, host = null, backLabel } = {}) {
   const cfg = REPORTS[card];
-  const host = _dashboardHost;
-  if (!cfg || !host) return;
+  const target = _dashboardHost || host;
+  if (!cfg || !target) return;
   const d = getActiveData();
-  host.innerHTML = reportSurfaceHTML(cfg, d);
-  host.scrollTop = 0;
+  const standalone = !_dashboardHost;
+  if (standalone && target._dashReportRestore == null) {
+    target._dashReportRestore = target.innerHTML;
+  }
+  target.innerHTML = reportSurfaceHTML(cfg, d, backLabel || (standalone ? 'Back' : 'Back to dashboard'));
+  target.scrollTop = 0;
+  if (standalone && !target._dashReportEventsAttached) {
+    target._dashReportEventsAttached = true;
+    target.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-dash-action]');
+      if (!btn) return;
+      const a = btn.dataset.dashAction;
+      if (a === 'report-back' && target._dashReportRestore != null) {
+        target.innerHTML = target._dashReportRestore;
+        target._dashReportRestore = null;
+        target.scrollTop = 0;
+      } else if (a === 'report-export') {
+        window.location.href = 'product-portfolio.html';
+      }
+    });
+  }
   if (mirror) pushDashChat(`Open the ${cfg.title}`, reportChatReply(cfg, d));
 }
 

@@ -4964,7 +4964,9 @@
       align-items: center;
       gap: 6px;
       padding: 7px 14px;
-      background: var(--surface-2);
+      /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
+         chips and the input field share one surface color. */
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill);
       font-size: var(--fs-ui);
@@ -4974,7 +4976,7 @@
       transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
     .chip:hover {
-      background: var(--surface-3);
+      background: color-mix(in srgb, var(--primary) 16%, #fff);
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
       color: var(--text);
     }
@@ -4992,7 +4994,7 @@
        `.chip` look even if `chip-primary` (or similar) is added downstream. */
     .ws-intent-chip,
     .ws-intent-chip.chip-primary {
-      background: var(--surface-2);
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border-color: var(--border-strong);
       color: var(--text-muted);
       font-weight: 500;
@@ -5000,14 +5002,26 @@
       padding-top: 4px;
       padding-bottom: 4px;
     }
+    /* Dark mode: the composer's brightened brand-blue tint (matches
+       html.dark .fl-input-wrap) — needed here because the two-class
+       selectors above outrank the shared html.dark .ws-intent-chip rule. */
+    html.dark .ws-intent-chip,
+    html.dark .ws-intent-chip.chip-primary {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+      border-color: var(--primary);
+    }
     /* Match the top-bar navigation glyphs (#left-icon-rail .lir-btn = 20px). */
     .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
     .ws-intent-chip:hover,
     .ws-intent-chip.chip-primary:hover {
-      background: var(--surface-3);
+      background: color-mix(in srgb, var(--primary) 16%, #fff);
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
       color: var(--text);
       filter: none;
+    }
+    html.dark .ws-intent-chip:hover,
+    html.dark .ws-intent-chip.chip-primary:hover {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
     }
 
     /* ── Locked intent chips & score cards ────────────────────────────────
@@ -5036,10 +5050,13 @@
       border-color: var(--border-strong);
     }
     .ws-intent-chip.is-locked:hover {
-      background: var(--surface-2);
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border-color: var(--border-strong);
       color: var(--text-muted);
       filter: none;
+    }
+    html.dark .ws-intent-chip.is-locked:hover {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
     }
     /* Lock badge — crisp above the scrim, the only interactive part. */
     .ws-lock {

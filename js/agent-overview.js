@@ -665,9 +665,9 @@ const DASHBOARD_WISEAI_INTENTS = [
   { intent: 'add_food',             label: 'Add a food',                  icon: 'add' },
   { intent: 'verify_upf',           label: 'Verify your Non-UPF products', icon: 'verified' },
   { intent: 'verify_gras',          label: 'Verify your GRAS products',   icon: 'shield' },
-  { intent: 'open_upf_report',      label: 'Open the UPF report',         icon: 'description' },
-  { intent: 'open_gras_report',     label: 'Open the GRAS report',        icon: 'description' },
-  { intent: 'open_insights_report', label: 'Open the insights report',    icon: 'insights' },
+  /* The "Open the … report" chips live on the Reports page dock (see
+     REPORTS_WISEAI_INTENTS) — the report intents themselves stay wired here
+     because the welcome cards and on-page controls still open them inline. */
   { intent: 'update_logo',          label: 'Update your brand logo',      icon: 'image' },
 ];
 
@@ -695,10 +695,13 @@ const DASHBOARD_WISEAI_REPORTS = {
 };
 
 /* Intent chips for the Reports page WISEai dock — every chip is something you
-   can actually DO with the reports next to it. "Open …" chips jump straight to
-   the live report; the rest continue the conversation with an on-topic answer. */
+   can actually DO with the reports next to it. The "Open …" report chips open
+   the brand report INLINE on the module surface to the right (same surface the
+   Dashboard uses); the rest continue the conversation with an on-topic answer. */
 const REPORTS_WISEAI_INTENTS = [
-  { intent: 'open_upf_report',   label: 'Open the UPF report',      icon: 'description' },
+  { intent: 'open_upf_report',      label: 'Open the UPF report',      icon: 'description' },
+  { intent: 'open_gras_report',     label: 'Open the GRAS report',     icon: 'description' },
+  { intent: 'open_insights_report', label: 'Open the insights report', icon: 'insights' },
   { intent: 'explain_score',     label: 'Explain my UPF score',     icon: 'help_outline' },
   { intent: 'improve_score',     label: 'How do I improve it?',     icon: 'trending_up' },
   { intent: 'ingredient_quality',label: 'Ingredient quality',       icon: 'science' },
@@ -1005,10 +1008,28 @@ function setupWISEaiDock() {
         ],
       },
       intents: REPORTS_WISEAI_INTENTS,
-      intentReplies: REPORTS_WISEAI_REPLIES,
+      /* Report chips get the same state-aware narration the Dashboard dock
+         uses, while the report itself opens on the surface to the right. */
+      intentReplies: {
+        ...REPORTS_WISEAI_REPLIES,
+        open_upf_report:      () => dashReportChatReply('upf'),
+        open_gras_report:     () => dashReportChatReply('gras'),
+        open_insights_report: () => dashReportChatReply('insights'),
+      },
+      /* Report chips open the report INLINE on the Reports module surface
+         (right of the chat) — openDashReport stashes the library markup and
+         its "Back to reports" restores it. Return false so the dock adds the
+         "you" line + the narration above. */
       onIntent: (intent) => {
-        const go = { open_upf_report: 'reports.html' }[intent];
-        if (go) { window.location.href = go; return true; }
+        const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
+        if (reportCard) {
+          openDashReport(reportCard, {
+            mirror: false,
+            host: document.getElementById('agent-main-scroll'),
+            backLabel: 'Back to reports',
+          });
+          return false;
+        }
         return false;
       },
     };
