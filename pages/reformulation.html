@@ -39,7 +39,7 @@
       display: flex;
       flex-direction: column;
       padding: var(--modules-bottom-pad, 12px);
-      font-family: 'DM Sans', system-ui, sans-serif;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
@@ -94,7 +94,7 @@
     .rf-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
     .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
     .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
-    .rf-lead { display: block; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
+    .rf-lead { display: block; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
     .rf-lead--lg { font-size: 1.5rem; line-height: 1.18; margin-bottom: 10px; }
     .rf-lead .rf-accent { color: var(--primary); }
 
@@ -105,7 +105,7 @@
     .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .rf-chip {
       display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
-      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.25;
+      font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.25;
       padding: 6px 11px; border-radius: 9999px; cursor: pointer; text-align: left;
       border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);
       transition: background .16s, border-color .16s, transform .1s;
@@ -152,7 +152,7 @@
        as the body below it — no boxed icon, no shaded topbar strip. */
     .rf-head { position: relative; isolation: isolate; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
     .rf-head-titles { min-width: 0; }
-    .rf-head-title { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
+    .rf-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
     .rf-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
 
     /* ── Dashboard brand chrome ──
@@ -286,7 +286,7 @@
     /* ── Section scaffolding ── */
     .rf-sec { margin: 0 0 26px; }
     .rf-sec:last-child { margin-bottom: 0; }
-    .rf-sec-title { font-family: 'Noto Serif', Georgia, serif; font-size: 17px; font-weight: 700; letter-spacing: 0; color: var(--text); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .rf-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 17px; font-weight: 700; letter-spacing: 0; color: var(--text); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
 
     /* ── Disqualification banners ── */
     .rf-dq-banner { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.4; }
@@ -328,7 +328,7 @@
     .rf-effort--high::before { background: var(--sec-red); }
     .rf-apply {
       flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px;
-      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
+      font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
       padding: 4px 10px; border-radius: 9999px; cursor: pointer;
       border: 1px solid var(--primary); background: var(--primary); color: #fff;
       transition: background .16s, color .16s, border-color .16s;
@@ -343,11 +343,11 @@
     .rf-tradeoff { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0 20px; align-items: start; }
     .rf-tradeoff-sep { width: 1px; background: var(--border-strong); align-self: stretch; margin: 2px 0; }
     .rf-tradeoff-col-label { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
-    .rf-tradeoff-col-label .rf-col-sum { font-family: 'Noto Serif', Georgia, serif; font-size: 14px; }
+    .rf-tradeoff-col-label .rf-col-sum { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 14px; }
     .rf-tradeoff-col--debit .rf-tradeoff-col-label { color: var(--sec-red-text); }
     .rf-tradeoff-col--credit .rf-tradeoff-col-label { color: var(--sec-green-text); }
     .rf-metric { display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; align-items: center; padding: 9px 11px; border-radius: 10px; margin-bottom: 7px; background: var(--surface-2); border: 1px solid transparent; }
-    .rf-metric-pts { grid-row: 1 / span 2; align-self: center; font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 20px; text-align: center; color: var(--text-subtle); }
+    .rf-metric-pts { grid-row: 1 / span 2; align-self: center; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 20px; text-align: center; color: var(--text-subtle); }
     .rf-metric-name { font-size: 12px; font-weight: 700; color: var(--text); }
     .rf-metric-detail { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
     .rf-metric.sev-0 { background: var(--surface-2); }
@@ -368,7 +368,7 @@
     html.dark .rf-algo:hover { border-color: var(--primary-bright, #8B9FAF); }
     .rf-algo-label { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); }
     .rf-algo select {
-      flex: 1 1 auto; min-width: 0; height: 100%; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+      flex: 1 1 auto; min-width: 0; height: 100%; font-family: 'WISE Digits', 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
       color: var(--text); background: transparent; border: 0; border-radius: 0;
       padding: 0 4px 0 0; cursor: pointer; text-align-last: right;
     }
@@ -377,7 +377,7 @@
        track is a pill, and the active segment is a pill that slides between
        Per Serving / Per 100 kcal / Per 100 g. */
     .rf-basis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9999px; margin-bottom: 18px; }
-    .rf-basis-btn { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 9999px; padding: 8px 6px; cursor: pointer; transition: background .16s, color .16s; }
+    .rf-basis-btn { font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 9999px; padding: 8px 6px; cursor: pointer; transition: background .16s, color .16s; }
     .rf-basis-btn:hover:not(.is-active) { color: var(--text); }
     .rf-basis-btn.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
     html.dark .rf-basis-btn.is-active { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
@@ -387,7 +387,7 @@
     .rf-ctl { margin-bottom: 15px; }
     .rf-ctl-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px; }
     .rf-ctl-name { font-size: 12px; font-weight: 700; color: var(--text); }
-    .rf-ctl-val { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 13.5px; color: var(--primary); }
+    .rf-ctl-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 13.5px; color: var(--primary); }
     html.dark .rf-ctl-val { color: var(--primary-bright, #8B9FAF); }
     .rf-ctl-row { display: flex; align-items: center; gap: 9px; }
     .rf-step-btn { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .16s; }
@@ -408,7 +408,7 @@
     html.dark .rf-switch.is-on { background: var(--primary-bright, #8B9FAF); }
     .rf-switch.is-on::after { transform: translateX(18px); }
     .rf-stepper { display: inline-flex; align-items: center; gap: 8px; }
-    .rf-stepper-val { font-family: 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 14px; min-width: 16px; text-align: center; color: var(--text); }
+    .rf-stepper-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 14px; min-width: 16px; text-align: center; color: var(--text); }
 
     /* ── Studio: live score readout ── */
     .rf-score { margin: 0 0 16px; padding: 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); text-align: center; }
@@ -416,11 +416,11 @@
     .rf-stars { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; }
     .rf-stars .material-symbols-outlined { font-size: 34px; color: var(--surface-3); transition: color .2s, transform .2s; }
     .rf-stars .material-symbols-outlined.is-on { color: var(--ter-amber); transform: scale(1.04); }
-    .rf-score-net { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); }
+    .rf-score-net { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 15px; color: var(--text); }
     .rf-score-net.is-dq { color: var(--sec-red-text); }
     .rf-score-path { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
     .rf-score-path b { color: var(--text); font-weight: 800; }
-    .rf-reset { margin-top: 14px; width: 100%; height: 40px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; padding: 0 18px; border-radius: 9999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .16s, color .16s, border-color .16s; }
+    .rf-reset { margin-top: 14px; width: 100%; height: 40px; font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; padding: 0 18px; border-radius: 9999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .16s, color .16s, border-color .16s; }
     .rf-reset:hover { background: var(--surface-2); color: var(--text); border-color: var(--text-muted); }
     .rf-reset .material-symbols-outlined { font-size: 15px; }
 
@@ -501,7 +501,7 @@
     html.dark .rf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
     .rf-stat:disabled { cursor: default; }
     .rf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
-    .rf-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .rf-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
     .rf-stat-num .material-symbols-outlined { font-size: 19px; }
     .rf-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
     .rf-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
@@ -1993,6 +1993,20 @@
           turnsSearch: true,
           turnsShare: true,
           turnsNotes: true,
+          /* Three-dot parity with pages/wiseai.html: History & Turns live as
+             docked sticky drawers flanking the chat (never in-chat overlays).
+             Both start tucked in behind the chat; the menu toggles reveal them.
+             Sticky is permanently on, so its menu switch is dropped. */
+          turnsBreakout: true,
+          turnsDockedControls: true,
+          turnsBreakoutDefault: false,
+          historyBreakout: true,
+          historyBreakoutDefault: true,
+          historyDockedControls: true,
+          historyBreakoutHidden: true,
+          stickyModules: true,
+          stickyModulesDefault: true,
+          stickyModulesMenu: false,
           intents: productIntents(),
           reply: (text) => rfReply(text),
           onIntent: (intent) => {

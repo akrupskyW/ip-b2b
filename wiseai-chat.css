@@ -1,3 +1,33 @@
+/* ── App-wide mono numerals ──────────────────────────────────────────────
+   'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)
+   that resolves to the app's mono stack (SF Mono / Menlo / Roboto Mono /
+   Consolas). It is prepended to every font stack in the app so that every
+   numeral renders in mono while letters fall through to the normal face. */
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 100 450;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Medium'), local('SF Mono Medium'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono Medium'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 451 570;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Semibold'), local('SF Mono Semibold'), local('Menlo-Bold'), local('Roboto Mono SemiBold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 571 650;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Bold'), local('SF Mono Bold'), local('Menlo-Bold'), local('Roboto Mono Bold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 651 900;
+}
+
 /* ===================================================================
    WISEai chat module — the EXACT shared chat surface used in the WISE
    product. Extracted verbatim from Section 2 of pages/wise.css ("was
@@ -426,6 +456,9 @@ html.dark .chat-messages-area { background: transparent; }
   background: #141414; color: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
+/* Dark mode: invert the owl chip — a light bug on a white chip reads clearly on
+   the navy card instead of the near-black chip sinking into the dark surface. */
+html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 /* Mirror of .topbar-profile: transparent fill, strong ring, muted initials. */
 .sc-avatar-you {
   background: transparent; color: var(--text-muted);
@@ -517,7 +550,7 @@ html.dark .sc-welcome { background: transparent; }
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
 }
-.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
+.ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
@@ -742,9 +775,10 @@ html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: va
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
 .fl-input-wrap {
-  /* Lightest tint of the brand blue (--primary #25507C) — a near-white wash
-     that separates the composer from the plain page background. */
-  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 5%, #fff); border: 1px solid var(--border-strong);
+  /* Light tint of the brand blue (--primary #25507C) — a step deeper than the
+     chat-tint container wash (5%) so the composer reads as its own blue
+     surface inside the tinted card. */
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -894,21 +928,21 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   display: inline-flex; align-items: center; gap: 3px; max-width: none;
   margin: 0; padding: 1px 5px 1px 0; border: 0; border-radius: 7px;
   background: transparent; cursor: pointer; color: var(--text-subtle);
-  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.4;
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1;
   transition: background 0.12s ease, color 0.12s ease;
 }
 /* Hover/open pill stays in the composer's brand-blue family (one step deeper
-   than the input's 5% fill) — never the neutral surface gray. */
+   than the input's 10% fill) — never the neutral surface gray. */
 .fl-db-trigger:hover,
-.fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 10%, #fff); color: var(--text); }
+.fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 16%, #fff); color: var(--text); }
 html.dark .fl-db-trigger:hover,
 html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 24%, transparent); }
 /* Glyphs carry the trigger class in the selector so page-wide icon-size
    !important rules (e.g. the portfolio/comparison shells' 24px floor) can't
    inflate them and make the selector read oversized. */
-.fl-db-trigger .fl-db-trigger-ic { font-size: 13px !important; opacity: 0.85; flex-shrink: 0; }
-.fl-db-trigger-label { white-space: nowrap; overflow: visible; text-overflow: clip; }
-.fl-db-trigger .fl-db-trigger-caret { font-size: 14px !important; opacity: 0.7; flex-shrink: 0; }
+.fl-db-trigger .fl-db-trigger-ic { font-size: 13px !important; line-height: 1 !important; opacity: 0.85; flex-shrink: 0; }
+.fl-db-trigger-label { font-size: 11px; line-height: 1; white-space: nowrap; overflow: visible; text-overflow: clip; }
+.fl-db-trigger .fl-db-trigger-caret { font-size: 14px !important; line-height: 1 !important; opacity: 0.7; flex-shrink: 0; }
 .fl-db-popover--lead { left: 0; right: auto; }
 
 /* ===== Narrow / mobile composer — keep the database selector and the pending
@@ -1113,11 +1147,12 @@ html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wi
 }
 
 /* ===== Chat tint — Appearance ▸ "Blue chat surface" (Admin toggle). Washes
-   the chat module's surfaces (card, messages area, input rail) with an even
-   LIGHTER step of the brand blue (3%) than the composer's 5% input fill, so
-   the chat container stands out from the plain page background while the
-   input still reads a step deeper than its surroundings. Dark mode instead
-   lifts the navy card toward the bright accent. ===== */
+   the chat module's surfaces (card, messages area, input rail) with the
+   LIGHTEST step of the brand blue (5%) — a full step lighter than the
+   composer's 10% input fill — so the chat container stands out from the plain
+   page background while the input still reads a step deeper than its
+   surroundings. Dark mode instead lifts the navy card toward the bright
+   accent. ===== */
 html.chat-tint:not(.dark) .sc-card,
 html.chat-tint:not(.dark) .chat-messages-area,
 html.chat-tint:not(.dark) .chat-input-rail,
@@ -1125,7 +1160,7 @@ html.chat-tint:not(.dark) .chat-input-rail,
    painted over the card in var(--bg)/var(--surface) — without tinting them
    too, a fresh chat module never shows the blue base layer beneath. */
 html.chat-tint:not(.dark) .sc-welcome,
-html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 3%, #fff); }
+html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
 html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills

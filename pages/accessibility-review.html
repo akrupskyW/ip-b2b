@@ -16,6 +16,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
 <style>
+/* ── App-wide mono numerals ──────────────────────────────────────────────
+   'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)
+   that resolves to the app's mono stack (SF Mono / Menlo / Roboto Mono /
+   Consolas). It is prepended to every font stack in the app so that every
+   numeral renders in mono while letters fall through to the normal face. */
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 100 450;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Medium'), local('SF Mono Medium'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono Medium'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 451 570;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Semibold'), local('SF Mono Semibold'), local('Menlo-Bold'), local('Roboto Mono SemiBold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 571 650;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Bold'), local('SF Mono Bold'), local('Menlo-Bold'), local('Roboto Mono Bold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 651 900;
+}
+
+
 /* =============================================================
    Accessibility Review — standalone audit of the WISE design
    system tokens defined in pages/agent-page.css. Self-contained:
@@ -100,7 +131,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;

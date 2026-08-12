@@ -475,15 +475,16 @@ export function restoreChatTint() {
 }
 
 /* Module spacing — admin-only control for the horizontal gap BETWEEN the modules
-   in #modules-row. Three steps: Small (12px) / Medium (24px) / Large (36px).
-   Driven by a `mod-gap-<size>` class on <html>; wise.css turns that class into an
-   `!important` gap override so it beats each page's inline #modules-row { gap }
-   declaration. Persisted across navigation; when unset the row keeps its default
-   spacing. Admin-only toggle in the Appearance popover (pink-outlined). */
+   in #modules-row. Four steps (mirroring Text size): Small (12px) / Medium (24px)
+   / Large (36px) / XL (48px). Driven by a `mod-gap-<size>` class on <html>;
+   wise.css turns that class into an `!important` gap override so it beats each
+   page's inline #modules-row { gap } declaration. Persisted across navigation;
+   when unset the row keeps its default spacing. Admin-only toggle in the
+   Appearance popover (pink-outlined). */
 const MODULE_GAP_KEY = 'wise-module-gap';
 
 /** The valid steps and the gap each maps to (px), used by the popover control. */
-export const MODULE_GAP_SIZES = ['sm', 'md', 'lg'];
+export const MODULE_GAP_SIZES = ['sm', 'md', 'lg', 'xl'];
 
 /** Current module-spacing step ('sm' | 'md' | 'lg'), or '' when unset (default). */
 export function getModuleGap() {

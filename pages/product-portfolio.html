@@ -138,7 +138,7 @@
       flex-direction: column;
       background-color: var(--bg) !important;
       color: var(--text);
-      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
       letter-spacing: 0;
       transition: background-color 0.35s ease, color 0.25s ease;
     }
@@ -2402,7 +2402,7 @@
       margin-bottom: 4px;
       border-bottom: 1px solid var(--border);
     }
-    .cmp-board-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; }
+    .cmp-board-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; }
     .cmp-board-meta { font-size: var(--fs-label); color: var(--text-muted); margin-top: 1px; }
 
     /* Chart-type toggle — segmented pill sitting left of the Add button.
@@ -2426,7 +2426,7 @@
       border: 1px solid var(--border); background: var(--surface-2);
     }
     .cmp-radar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-    .cmp-radar-title { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .cmp-radar-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.05rem; font-weight: 800; color: var(--text); }
     .cmp-radar-sub { font-size: var(--fs-label); color: var(--text-muted); }
     .cmp-radar-canvas { display: flex; justify-content: center; }
     /* Square stage that shrinks to the SVG so the % positioned vertex-bug
@@ -2747,7 +2747,7 @@
     .cmp-takeaways-sec { display: flex; flex-direction: column; gap: 7px; margin-top: 18px; }
     /* Indent the eyebrow so it lines up with the card labels (which sit inside
        the card's 15px left padding) below it. */
-    .cmp-takeaways-sec .cmp-section-label { padding-left: 15px; font-family: var(--font-serif); font-size: 14px; text-transform: none; letter-spacing: 0.01em; }
+    .cmp-takeaways-sec .cmp-section-label { padding-left: 15px; font-family: 'WISE Digits', var(--font-serif); font-size: 14px; text-transform: none; letter-spacing: 0.01em; }
     .cmp-takeaways { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: stretch; }
     /* Stat-block card: eyebrow + stamp icon on top, then a big serif score, the
        winning product, its metric label, a divider, and an AI "why" insight. */
@@ -2817,6 +2817,22 @@
     .cmp-takeaway-ic .material-symbols-outlined {
       font-size: 17px !important; line-height: 1; color: inherit !important;
       font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20;
+    }
+    /* Dark mode: re-cut the debossed disc for the navy surface — the light-mode
+       deboss (faint dark top-shadow + bright white bottom highlight) breaks on
+       dark, so mirror the dashboard stamp marks (wise.css .dash-stamp-icon) with
+       a real dark top-inset + soft bottom lip so the icon reads as engraved
+       instead of a faint, muddy outline. */
+    html.dark .cmp-takeaway-ic {
+      border-color: color-mix(in srgb, #fff 9%, transparent);
+      color: color-mix(in srgb, var(--primary-bright) 58%, var(--surface-3));
+      box-shadow:
+        inset 0 2px 3px rgba(0, 0, 0, 0.5),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.09),
+        0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    html.dark .cmp-takeaway-ic .material-symbols-outlined {
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
     .cmp-takeaway-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
     /* Big serif score — the "47"-style stat numeral. */
@@ -3496,7 +3512,7 @@
     .vf-nutri-k { font-size: 8.5px; font-weight: 600; color: var(--text-subtle); margin-top: 1px; }
     .vf-sign { margin-top: 10px; padding: 10px; border-radius: 9px; background: var(--primary-soft); border: 1px dashed var(--primary-20); font-size: var(--fs-label); color: var(--text-muted); }
     .vf-sign strong { color: var(--text); }
-    .vf-sign-name { font-family: "DM Sans"; font-size: 1.1rem; font-weight: 700; font-style: italic; color: var(--primary); margin-top: 4px; }
+    .vf-sign-name { font-family: "WISE Digits", "DM Sans"; font-size: 1.1rem; font-weight: 700; font-style: italic; color: var(--primary); margin-top: 4px; }
 
     /* Payment table */
     .vf-table { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
@@ -3771,7 +3787,7 @@
     }
 
     /* Product Data (Nutrition Facts) panel — match reference nf-panel */
-    .nfp-nf-panel { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; color: #000; border-bottom: 1px solid #e5e7eb; }
+    .nfp-nf-panel { background: #fff; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; color: #000; border-bottom: 1px solid #e5e7eb; }
     .nfp-nf-title { font-size: 1.45rem; font-weight: 900; line-height: 1.05; padding: 5px 10px 3px; border-bottom: 1px solid #000; display: flex; align-items: center; justify-content: space-between; }
     .nfp-nf-serving { padding: 2px 10px 3px; border-bottom: 8px solid #000; }
     .nfp-nf-spc-row { font-size: 0.7rem; color: #000; padding: 2px 0 1px; border-bottom: 1px solid #000; }
@@ -3791,7 +3807,7 @@
     .nfp-nf-no-b { border-bottom: none !important; }
     .nfp-nf-footer { border-top: 8px solid #000; padding: 3px 10px 5px; font-size: 0.56rem; color: #000; line-height: 1.45; }
     /* Ingredient / allergen section */
-    .nfp-ingred-wrap { background: #fff; font-family: 'DM Sans', system-ui, sans-serif; }
+    .nfp-ingred-wrap { background: #fff; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; }
     .nfp-ingred-body { padding: 8px 12px 9px; border-bottom: 1px solid #e5e7eb; }
     .nfp-ingred-text { font-size: 0.68rem; line-height: 1.55; color: #111827; }
     .nfp-ingred-label { font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
@@ -4713,7 +4729,7 @@
        message text only — the timestamp/meta row underneath stays small). */
     .sc-line-you--first .sc-you-text {
       display: block;
-      font-family: var(--font-serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 1.5rem; font-weight: 700; line-height: 1.28;
       color: var(--text);
     }
@@ -4724,6 +4740,8 @@
     }
     .sc-avatar svg { width: 18px; height: auto; }
     .sc-avatar-wiseai { background: #141414; color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28); }
+    /* Dark mode: invert the owl chip — light bug on a white chip reads on the navy card. */
+    html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
     /* "You" avatar reads as a recessed/inset chip; the initials or image come from profile settings. */
     .sc-avatar-you {
       background: var(--surface-2); color: var(--text-muted);
@@ -4861,8 +4879,8 @@
       padding-top: 4px;
       padding-bottom: 4px;
     }
-    /* Match the top-bar navigation glyphs (#left-icon-rail .lir-btn = 20px). */
-    .ws-intent-chip .material-symbols-outlined { font-size: 20px !important; }
+    /* Match the shared canonical intent-chip glyph size (wiseai-chat.css). */
+    .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
     /* Guiding Stars intent chips only appear while the portfolio module's
        Guiding Stars switch (three-dot menu) is on; pfSyncIntentChips() toggles
        the [hidden] attribute. This rule makes [hidden] win over the chip's own
@@ -5210,8 +5228,9 @@
          the send button past the rail's right padding, making the composer's
          left/right insets asymmetric. */
       min-width: 0;
-      /* Lightest tint of the brand blue — matches the shared composer. */
-      background: color-mix(in srgb, var(--primary) 5%, #fff);
+      /* Light tint of the brand blue — matches the shared composer's 10% fill,
+         a step deeper than the chat-tint container wash (5%). */
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill);
       /* Padding intentionally omitted — the canonical stacked composer padding
@@ -6237,7 +6256,7 @@
       gap: 8px;
     }
     .fl-input-wrap {
-      background: color-mix(in srgb, var(--primary) 5%, #fff);
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
       border-color: var(--border-strong);
     }
     /* Stacked composer (canonical WISEai rail): the "+" sits left, the database
@@ -6272,7 +6291,7 @@
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */
     html.chat-tint:not(.dark) .chat-input-rail {
-      background: color-mix(in srgb, var(--primary) 3%, #fff) !important;
+      background: color-mix(in srgb, var(--primary) 5%, #fff) !important;
     }
 
     /* =====================================================================
@@ -6296,13 +6315,13 @@
        agent-page.css isn't touched on other pages.
        ===================================================================== */
     body.ai-chat-page {
-      --font-serif: 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+      --font-serif: 'WISE Digits', 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
     }
     /* H1 / H2-level headings */
     body.ai-chat-page .ws-heading,
     body.ai-chat-page .cmp-summary-title,
     body.ai-chat-page .cmp-rail-h {
-      font-family: var(--font-serif);
+      font-family: 'WISE Digits', var(--font-serif);
       letter-spacing: -0.01em;
     }
     /* Big stat numerals (portfolio scorecards, WISEscore, takeaway score) */
@@ -6311,12 +6330,12 @@
     body.ai-chat-page .cmp-gauge-num,
     body.ai-chat-page .cmp-metric-val,
     body.ai-chat-page .cmp-takeaway-score {
-      font-family: var(--font-serif);
+      font-family: 'WISE Digits', var(--font-serif);
     }
     /* Primary CTAs / action buttons */
     body.ai-chat-page .btn-primary,
     body.ai-chat-page .um-btn.um-btn-primary {
-      font-family: var(--font-serif);
+      font-family: 'WISE Digits', var(--font-serif);
       letter-spacing: 0;
     }
 
@@ -7193,7 +7212,7 @@
     /* Title and the Guiding Stars toggle share one row so the toggle sits in
        line with the headline, just to its right — not floated to the far edge. */
     .pf-head-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .pf-head-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
+    .pf-head-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
     .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 8px 0 0; }
 
     /* ── Brand intent chip + dropdown ────────────────────────────────────
@@ -7359,7 +7378,7 @@
     .pf-col-reformulate { justify-content: center; }
     .pf-gs-reformulate-btn {
       display: inline-flex; align-items: center; gap: 5px;
-      font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
+      font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 700; font-size: 10.5px;
       padding: 5px 11px; border-radius: 9999px; cursor: pointer; white-space: nowrap;
       background: var(--primary); color: #fff; border: 1px solid var(--primary);
       transition: filter .15s ease, transform .1s ease;
@@ -7548,7 +7567,7 @@
       box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
     }
     html.dark .pf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
-    .pf-stat-num { font-family: 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .pf-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
     .pf-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
     .pf-stat-label .material-symbols-outlined {
       font-size: 13px !important; line-height: 1 !important;
@@ -7603,7 +7622,7 @@
       background: transparent; border: none; border-radius: 0; box-shadow: none;
     }
     .pf-board-views { margin-top: 14px; }
-    .pf-card-title { font-family: 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+    .pf-card-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
     .pf-card-sub { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.5; }
 
     /* Claimed summary card */
@@ -7620,7 +7639,7 @@
     }
     .pf-state-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
     .pf-state-card--alert { border-top: 3px solid var(--sec-red); }
-    .pf-state-num { font-family: 'Noto Serif', serif; font-size: 24px; font-weight: 800; color: var(--sec-red); line-height: 1; }
+    .pf-state-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 24px; font-weight: 800; color: var(--sec-red); line-height: 1; }
     .pf-state-label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--sec-red); }
     .pf-state-label .material-symbols-outlined { font-size: 15px; }
     .pf-shield-row {
@@ -8403,9 +8422,14 @@
             <span class="material-symbols-outlined">more_vert</span>
           </button>
           <div id="wiseai-menu" class="topbar-popover hidden" role="menu">
-            <button type="button" class="topbar-menu-item" onclick="(window.__wiseChatHistory ? window.__wiseChatHistory.toggle() : toggleHistoryPanel({ fromMenu: true })); closeAllMoreMenus()">
+            <!-- History & Projects — an on/off switch that reveals/tucks the
+                 docked sticky History module (never an in-chat overlay),
+                 matching the three-dot menu on pages/wiseai.html. Keeps the
+                 menu open so the switch state reads back. -->
+            <button type="button" class="topbar-menu-item sc-mcp-item" data-sc="history" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEaiHistoryModule(event)">
               <span class="material-symbols-outlined topbar-menu-icon">history</span>
-              <span>History</span>
+              <span>History &amp; Projects</span>
+              <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="restartConversation(); closeAllMoreMenus()">
@@ -8419,6 +8443,15 @@
             <button type="button" class="topbar-menu-item" onclick="shareConversation(); closeAllMoreMenus()">
               <span class="material-symbols-outlined topbar-menu-icon">share</span>
               <span>Share</span>
+            </button>
+            <div class="topbar-menu-divider"></div>
+            <!-- Turns — Admin switch for the docked sticky Turns module (fork /
+                 share / jump any turn), same as pages/wiseai.html. -->
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEaiTurnsModule(event)">
+              <span class="material-symbols-outlined topbar-menu-icon">alt_route</span>
+              <span>Turns</span>
+              <span class="topbar-menu-badge">Admin</span>
+              <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item" onclick="toggleOverviewCards(); closeAllMoreMenus()">
@@ -18439,8 +18472,9 @@
     })();
   </script>
 
-  <!-- Shared in-module chat history sidebar. -->
+  <!-- Shared in-module chat history sidebar + standalone Turns module. -->
   <script src="../js/chat-history.js"></script>
+  <script src="../js/chat-turns.js"></script>
   <script>
     (function () {
       if (!window.WiseChatHistory) return;
@@ -18454,7 +18488,20 @@
         welcomeEl: '#welcome-screen',
         paneHost: msgs.parentElement,
         stripSelectors: ['.sc-line-typing'],
-        onNew: function () { if (_restart) _restart(); }
+        onNew: function () { if (_restart) _restart(); },
+        /* Three-dot parity with pages/wiseai.html: History lives as its own
+           docked STICKY module on the chat's left (a real flex sibling in
+           #modules-row, dressed like a result pane) — never the in-chat
+           overlay. It starts tucked in behind the chat; the menu switch
+           reveals it. */
+        breakout: true,
+        breakoutWidth: 300,
+        stickyWidth: 280,
+        breakoutDefault: true,
+        dockedControls: true,
+        breakoutStartHidden: true,
+        breakoutContainer: '#modules-row',
+        breakoutAnchor: '#chat-shell'
       });
       window.__wiseChatHistory = ctrl;
       window.restartConversation = function () {
@@ -18463,6 +18510,61 @@
         ctrl.markNew();
         return r;
       };
+
+      /* Sticky is the only module style here (same as wiseai.html): the docked
+         History (left) / Turns (right) drawers always tuck in behind the chat. */
+      var row = document.getElementById('modules-row');
+      if (row) row.classList.add('modules-sticky');
+      shell.classList.add('wch-chat-anchor');
+      try { ctrl.setSticky(true); } catch (e) {}
+
+      /* Standalone Turns module (fork / share / jump any turn), docked to the
+         chat's right as its own sticky drawer — the three-dot "Turns" Admin
+         switch reveals it. */
+      var turnsCtrl = window.WiseChatTurns
+        ? window.WiseChatTurns.mount({
+            messagesEl: '#chat-messages',
+            container: '#modules-row',
+            anchor: '#chat-shell',
+            history: function () { return window.__wiseChatHistory; },
+            width: 280,
+            onVisibility: function () { syncWISEaiModuleSwitches(); }
+          })
+        : null;
+
+      /* Menu switch rows: flip the module, keep the popover open so the switch
+         state reads back immediately (matching the shared chat's menu). */
+      function syncSwitch(sel, on) {
+        var item = document.querySelector('#wiseai-menu [data-sc="' + sel + '"]');
+        if (!item) return;
+        item.classList.toggle('is-on', !!on);
+        item.setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+      function historyVisible() {
+        var el = ctrl && ctrl.root;
+        if (!el) return false;
+        if (el.classList.contains('wch-dock-conceal')) return false;
+        if (ctrl.isDocked && ctrl.isDocked()) return !el.classList.contains('wch-docked-hidden');
+        return ctrl.isOpen ? ctrl.isOpen() : false;
+      }
+      function syncWISEaiModuleSwitches() {
+        syncSwitch('history', historyVisible());
+        syncSwitch('turns', !!(turnsCtrl && turnsCtrl.isVisible()));
+      }
+      window.syncWISEaiModuleSwitches = syncWISEaiModuleSwitches;
+      window.toggleWISEaiHistoryModule = function (e) {
+        if (e) e.stopPropagation();
+        ctrl.toggle();
+        syncWISEaiModuleSwitches();
+      };
+      window.toggleWISEaiTurnsModule = function (e) {
+        if (e) e.stopPropagation();
+        if (turnsCtrl) turnsCtrl.toggle();
+        syncWISEaiModuleSwitches();
+      };
+      /* Read the switch states back every time the three-dot menu opens. */
+      var menuBtn = document.getElementById('wiseai-menu-btn');
+      if (menuBtn) menuBtn.addEventListener('click', function () { syncWISEaiModuleSwitches(); });
     })();
   </script>
   <script>

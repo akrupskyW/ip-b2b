@@ -188,7 +188,7 @@ function paint() {
       <a class="adm-back" href="organizations.html"><span class="material-symbols-outlined">arrow_back</span>Back to Organizations</a>
 
       <div class="adm-card adm-card--pad" style="max-width:520px;margin-bottom:26px">
-        <div class="adm-util-title" style="font-family:'Noto Serif',Georgia,serif;font-size:1.15rem"><span class="material-symbols-outlined" style="color:var(--primary)">bolt</span>Quick Invite</div>
+        <div class="adm-util-title" style="font-family:'WISE Digits', 'Noto Serif',Georgia,serif;font-size:1.15rem"><span class="material-symbols-outlined" style="color:var(--primary)">bolt</span>Quick Invite</div>
         <p class="adm-lede" style="margin:2px 0 16px">Find or create an org, activate it, and send the invite in one step.</p>
         <div class="adm-field" style="min-width:0">
           <label class="adm-field-label" for="qi-org">Organization</label>

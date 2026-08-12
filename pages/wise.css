@@ -1,3 +1,33 @@
+/* ── App-wide mono numerals ──────────────────────────────────────────────
+   'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)
+   that resolves to the app's mono stack (SF Mono / Menlo / Roboto Mono /
+   Consolas). It is prepended to every font stack in the app so that every
+   numeral renders in mono while letters fall through to the normal face. */
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 100 450;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Medium'), local('SF Mono Medium'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono Medium'), local('Consolas'), local('Courier New');
+  unicode-range: U+0030-0039;
+  font-weight: 451 570;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Semibold'), local('SF Mono Semibold'), local('Menlo-Bold'), local('Roboto Mono SemiBold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 571 650;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  src: local('SFMono-Bold'), local('SF Mono Bold'), local('Menlo-Bold'), local('Roboto Mono Bold'), local('Consolas Bold'), local('Courier New Bold');
+  unicode-range: U+0030-0039;
+  font-weight: 651 900;
+}
+
 /* ===================================================================
    WISE — consolidated stylesheet for all app pages.
    (Auth screens — login / forgot-password — use the separate auth.css.)
@@ -116,7 +146,7 @@
   /* Canonical right-module headline — the display title of whatever module sits
      to the right of the chat. Identical size/weight/face + top-left inset on
      every page. */
-  --module-title-family: 'Noto Serif', Georgia, serif;
+  --module-title-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   --module-title-size: 1.2rem;
   --module-title-weight: 800;
   --module-head-pad-t: 26px;
@@ -167,7 +197,7 @@ body {
   flex-direction: column;
   background-color: var(--bg) !important;
   color: var(--text);
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
   font-size: var(--fs-ui);
   letter-spacing: 0;
   padding: 0.375rem 0 var(--modules-bottom-pad);
@@ -1172,6 +1202,7 @@ html.dark .topbar-trailing .lir-btn.lir-active {
 html.mod-gap-sm #modules-row { gap: 12px !important; }
 html.mod-gap-md #modules-row { gap: 24px !important; }
 html.mod-gap-lg #modules-row { gap: 36px !important; }
+html.mod-gap-xl #modules-row { gap: 48px !important; }
 .menu-brand-integrated #modules-row {
   grid-area: modules;
   flex: unset;
@@ -2233,8 +2264,8 @@ html.dark .menu-nav-upgrade-icon {
     0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .menu-nav-upgrade-stars {
-  width: 22px;
-  height: 22px;
+  width: 21px;
+  height: 21px;
   display: block;
   overflow: visible;
   /* Nudge the cluster a touch lower so it sits balanced in the ring. */
@@ -2244,19 +2275,20 @@ html.dark .menu-nav-upgrade-icon {
   /* WISE gold with a hairline darker-gold outline, no glow. */
   fill: var(--ter-amber);
   stroke: color-mix(in srgb, var(--ter-amber) 55%, #000);
-  stroke-width: 0.5;
+  stroke-width: 0.25;
   transform-box: fill-box;
   transform-origin: center;
-  animation: wiseTwinkle 10s ease-in-out infinite;
+  animation: wiseTwinkle 7.5s ease-in-out infinite;
 }
 /* Desynced durations + delays so the twinkle reads as random, not in-step.
-   One star swells large enough to spill past the ring now and then — fine. */
-.menu-nav-upgrade-star--1 { animation-duration: 11s; animation-delay: 0s; }
-.menu-nav-upgrade-star--2 { animation-duration: 9s;  animation-delay: 3.1s; }
-.menu-nav-upgrade-star--3 { animation-duration: 10.5s; animation-delay: 5.6s; }
+   ~25% quicker than before, and each star swells big enough to spill well past
+   the ring, so the cluster overflows the circle at its peak. */
+.menu-nav-upgrade-star--1 { animation-duration: 8.25s; animation-delay: 0s; }
+.menu-nav-upgrade-star--2 { animation-duration: 6.75s;  animation-delay: 3.1s; }
+.menu-nav-upgrade-star--3 { animation-duration: 7.875s; animation-delay: 5.6s; }
 @keyframes wiseTwinkle {
-  0%, 100% { opacity: 0.4;  transform: scale(0.8); }
-  50%      { opacity: 1;    transform: scale(1.35); }
+  0%, 100% { opacity: 0.4;  transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(2); }
 }
 @media (prefers-reduced-motion: reduce) {
   .menu-nav-upgrade-star { animation: none; opacity: 1; transform: none; }
@@ -3866,6 +3898,9 @@ html.dark .chat-messages-area { background: transparent; }
   background: #141414; color: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
+/* Dark mode: invert the owl chip — a light bug on a white chip reads clearly on
+   the navy card instead of the near-black chip sinking into the dark surface. */
+html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 /* Mirror of .topbar-profile: transparent fill, strong ring, muted initials. */
 .sc-avatar-you {
   background: transparent; color: var(--text-muted);
@@ -3943,7 +3978,7 @@ html.dark .sc-welcome { background: transparent; }
   .ws-pulse-ring { animation: none; opacity: 0; transform: scale(1.35); }
   .ws-logo { animation: none; transform: none; }
 }
-.ws-heading { font-family: var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
+.ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
@@ -4166,9 +4201,10 @@ html.dark .ws-intent-chip { background: rgba(255,255,255,0.04); border-color: va
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
 .fl-input-wrap {
-  /* Lightest tint of the brand blue (--primary #25507C) — a near-white wash
-     that separates the composer from the plain page background. */
-  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 5%, #fff); border: 1px solid var(--border-strong);
+  /* Light tint of the brand blue (--primary #25507C) — a step deeper than the
+     chat-tint container wash (5%) so the composer reads as its own blue
+     surface inside the tinted card. */
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -4327,21 +4363,21 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   display: inline-flex; align-items: center; gap: 3px; max-width: none;
   margin: 0; padding: 1px 5px 1px 0; border: 0; border-radius: 7px;
   background: transparent; cursor: pointer; color: var(--text-subtle);
-  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.4;
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1;
   transition: background 0.12s ease, color 0.12s ease;
 }
 /* Hover/open pill stays in the composer's brand-blue family (one step deeper
-   than the input's 5% fill) — never the neutral surface gray. */
+   than the input's 10% fill) — never the neutral surface gray. */
 .fl-db-trigger:hover,
-.fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 10%, #fff); color: var(--text); }
+.fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 16%, #fff); color: var(--text); }
 html.dark .fl-db-trigger:hover,
 html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 24%, transparent); }
 /* Glyphs carry the trigger class in the selector so page-wide icon-size
    !important rules (e.g. the portfolio/comparison shells' 24px floor) can't
    inflate them and make the selector read oversized. */
-.fl-db-trigger .fl-db-trigger-ic { font-size: 13px !important; opacity: 0.85; flex-shrink: 0; }
-.fl-db-trigger-label { white-space: nowrap; overflow: visible; text-overflow: clip; }
-.fl-db-trigger .fl-db-trigger-caret { font-size: 14px !important; opacity: 0.7; flex-shrink: 0; }
+.fl-db-trigger .fl-db-trigger-ic { font-size: 13px !important; line-height: 1 !important; opacity: 0.85; flex-shrink: 0; }
+.fl-db-trigger-label { font-size: 11px; line-height: 1; white-space: nowrap; overflow: visible; text-overflow: clip; }
+.fl-db-trigger .fl-db-trigger-caret { font-size: 14px !important; line-height: 1 !important; opacity: 0.7; flex-shrink: 0; }
 /* Left-opening variant of the database popover (trigger now sits on the left). */
 .fl-db-popover--lead { left: 0; right: auto; }
 
@@ -4547,11 +4583,12 @@ html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wi
 }
 
 /* ===== Chat tint — Appearance ▸ "Blue chat surface" (Admin toggle). Washes
-   the chat module's surfaces (card, messages area, input rail) with an even
-   LIGHTER step of the brand blue (3%) than the composer's 5% input fill, so
-   the chat container stands out from the plain page background while the
-   input still reads a step deeper than its surroundings. Dark mode instead
-   lifts the navy card toward the bright accent. ===== */
+   the chat module's surfaces (card, messages area, input rail) with the
+   LIGHTEST step of the brand blue (5%) — a full step lighter than the
+   composer's 10% input fill — so the chat container stands out from the plain
+   page background while the input still reads a step deeper than its
+   surroundings. Dark mode instead lifts the navy card toward the bright
+   accent. ===== */
 html.chat-tint:not(.dark) .sc-card,
 html.chat-tint:not(.dark) .chat-messages-area,
 html.chat-tint:not(.dark) .chat-input-rail,
@@ -4559,7 +4596,7 @@ html.chat-tint:not(.dark) .chat-input-rail,
    painted over the card in var(--bg)/var(--surface) — without tinting them
    too, a fresh chat module never shows the blue base layer beneath. */
 html.chat-tint:not(.dark) .sc-welcome,
-html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 3%, #fff); }
+html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
 html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
@@ -7207,7 +7244,7 @@ html.dark .dash-scatter-zone {
   fill: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
-  font-family: var(--font-serif, Georgia, 'Times New Roman', serif);
+  font-family: 'WISE Digits', var(--font-serif, Georgia, 'Times New Roman', serif);
 }
 .dash-scatter-zone-label {
   fill: var(--text-subtle);
@@ -8360,7 +8397,7 @@ body[data-nav-id="verification"] #modules-row {
 }
 
 .vf-root {
-  font-family: var(--font-sans, 'DM Sans', system-ui, sans-serif);
+  font-family: 'WISE Digits', var(--font-sans, 'DM Sans', system-ui, sans-serif);
   color: var(--text);
 }
 
@@ -8391,7 +8428,7 @@ body[data-nav-id="verification"] #modules-row {
 html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
 .vf-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .vf-head-title {
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   font-size: 1.2rem;
   font-weight: 800;
   color: var(--text);
@@ -8450,7 +8487,7 @@ html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(25
   text-align: center;
 }
 .vf-stat--active { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 7%, var(--surface-2)); }
-.vf-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .vf-stat--active .vf-stat-num { color: var(--primary); }
 html.dark .vf-stat--active .vf-stat-num { color: var(--vf-ink); }
 /* Scorecard number colors — each matches its Non-UPF Shield chip below. */
@@ -8597,7 +8634,7 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
   font-size: 0.76rem; color: var(--text-muted); padding: 3px 0;
 }
 .vfp-foot-total { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border); font-weight: 700; color: var(--text); }
-.vfp-foot-amt { font-family: 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--vf-ink); }
+.vfp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--vf-ink); }
 
 @media (max-width: 560px) {
   .vf-progress-pane { flex: 1 1 auto; width: 100% !important; max-width: 100% !important; }
@@ -8833,7 +8870,7 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 .vf-pay-form { width: 100%; }
 
 .vf-pay-title {
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0 0 8px;
@@ -9003,7 +9040,7 @@ html.dark .vf-select-el {
   border-radius: 999px;
   background: var(--primary);
   color: #fff;
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -9088,7 +9125,7 @@ html.dark .vf-select-el {
 }
 .vf-modal-x:hover { background: var(--surface-2); }
 .vf-modal-title {
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   font-size: 1.4rem;
   font-weight: 700;
   margin: 0 0 14px;
@@ -9194,7 +9231,7 @@ body[data-nav-id="gras-verification"] .agent-main-scroll { padding: 0; }
 body[data-nav-id="gras-verification"] #modules-row { margin-top: 0; }
 
 .gv-root {
-  font-family: var(--font-sans, 'DM Sans', system-ui, sans-serif);
+  font-family: 'WISE Digits', var(--font-sans, 'DM Sans', system-ui, sans-serif);
   color: var(--text);
 }
 
@@ -9217,7 +9254,7 @@ body[data-nav-id="gras-verification"] #modules-row { margin-top: 0; }
 html.dark .gv-back:hover { background: rgba(255, 255, 255, 0.06); }
 .gv-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .gv-head-title {
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   font-size: 1.2rem; font-weight: 800; color: var(--text);
   line-height: 1.15; margin: 0;
 }
@@ -9282,7 +9319,7 @@ html.dark .gv-search { background: rgba(255,255,255,0.05); border-color: rgba(25
   padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--r-sm); box-shadow: var(--shadow-1); text-align: center;
 }
-.gv-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.gv-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-stat--verified .gv-stat-num { color: var(--gv-ink); }
 .gv-stat--verified .gv-stat-label .material-symbols-outlined { color: var(--gv-ink); }
 .gv-stat--warn .gv-stat-num { color: var(--gv-warn); }
@@ -9326,7 +9363,7 @@ html.dark .gv-glyph { background: rgba(96, 165, 250, 0.14); color: #9DC0E6; bord
 .gv-glyph .material-symbols-outlined { font-size: 19px; }
 
 .gv-impact-cell { display: flex; flex-direction: column; gap: 1px; }
-.gv-impact-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1; }
+.gv-impact-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-impact-cap { font-size: 0.68rem; color: var(--text-subtle); }
 
 .gv-empty { text-align: center; color: var(--text-subtle); padding: 26px 12px !important; font-size: 0.85rem; }
@@ -9373,7 +9410,7 @@ html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 
 .gv-step-anim { animation: gvPop 0.24s ease both; }
 @keyframes gvPop { from { opacity: 0; transform: translateY(6px) scale(0.995); } to { opacity: 1; transform: none; } }
-.gv-step-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+.gv-step-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; color: var(--text); }
 .gv-step-desc { margin: 0 0 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; }
 
 /* ---------- Step 1 — Impact ---------- */
@@ -9385,7 +9422,7 @@ html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 .gv-impact-tile--primary { background: color-mix(in srgb, var(--primary) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
 .gv-impact-tile-cap { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
 .gv-impact-tile--primary .gv-impact-tile-cap { color: var(--gv-ink); }
-.gv-impact-tile-num { font-family: 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.9rem; color: var(--text); margin-top: 4px; line-height: 1; }
+.gv-impact-tile-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.9rem; color: var(--text); margin-top: 4px; line-height: 1; }
 .gv-impact-tile--primary .gv-impact-tile-num { color: var(--gv-ink); }
 .gv-impact-tile-num--warn { font-size: 1.3rem; color: var(--gv-warn); }
 .gv-impact-tile-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
@@ -9534,7 +9571,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gv-outcome-icon .material-symbols-outlined { font-size: 34px; }
 .gv-outcome-icon--info { background: rgba(14, 116, 144, 0.12); color: var(--gv-info); box-shadow: 0 0 0 8px rgba(14, 116, 144, 0.06); }
 .gv-outcome-icon--ok { background: rgba(50, 169, 102, 0.14); color: var(--gv-ok); box-shadow: 0 0 0 8px rgba(50, 169, 102, 0.07); }
-.gv-outcome-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 700; margin: 0 auto 14px; color: var(--text); }
+.gv-outcome-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 700; margin: 0 auto 14px; color: var(--text); }
 .gv-outcome-text { margin: 0 auto 20px; font-size: 0.94rem; color: var(--text-muted); line-height: 1.6; }
 .gv-outcome-text strong { color: var(--text); }
 .gv-outcome-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -9543,8 +9580,8 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
   padding: 12px 20px; margin-bottom: 22px; border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--primary) 7%, var(--surface-2));
 }
-.gv-jump-from { font-family: 'Noto Serif', Georgia, serif; font-size: 1.2rem; font-weight: 700; color: var(--text-subtle); }
-.gv-jump-to { font-family: 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 800; color: var(--gv-ok); }
+.gv-jump-from { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.2rem; font-weight: 700; color: var(--text-subtle); }
+.gv-jump-to { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 800; color: var(--gv-ok); }
 .gv-outcome-jump .material-symbols-outlined { color: var(--text-subtle); }
 .gv-jump-cap { font-size: 0.72rem; color: var(--text-muted); width: 100%; }
 .gv-outcome .gv-subhead, .gv-outcome .gv-prod-list { text-align: left; }
@@ -9612,7 +9649,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gvp-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: var(--text-muted); padding: 3px 0; }
 .gvp-foot-row span:last-child { font-weight: 600; color: var(--text); max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gvp-foot-total { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border); font-weight: 700; color: var(--text); }
-.gvp-foot-amt { font-family: 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--gv-ink) !important; }
+.gvp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--gv-ink) !important; }
 
 
 @media (max-width: 560px) {
@@ -9693,7 +9730,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
    optional actions cluster sits to the right of the title. */
 .adm-head { padding: 2px 2px 0; margin-bottom: 18px; }
 .adm-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.adm-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.12; }
+.adm-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.12; }
 .adm-lede { font-size: 0.9rem; color: var(--text-muted); margin: 6px 0 0; max-width: 68ch; }
 .adm-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
@@ -9806,7 +9843,7 @@ html.dark .adm-icon-btn { background: rgba(255,255,255,0.04); }
 .adm-metric:hover .adm-metric-grip { opacity: 0.7; }
 .adm-metric-top { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
 .adm-metric-top .material-symbols-outlined { font-size: 15px; color: var(--text-subtle); }
-.adm-metric-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; line-height: 1.05; color: var(--text); }
+.adm-metric-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; line-height: 1.05; color: var(--text); }
 .adm-metric-sub { font-size: 0.7rem; color: var(--text-subtle); }
 .adm-metric--accent .adm-metric-num { color: var(--sec-green); }
 html.dark .adm-metric--accent .adm-metric-num { color: #6FE0A0; }
@@ -9818,7 +9855,7 @@ html.dark .adm-metric--accent .adm-metric-num { color: #6FE0A0; }
 .adm-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
 .adm-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
 html.dark .adm-stat.is-active { background: color-mix(in srgb, var(--primary) 22%, transparent); }
-.adm-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.65rem; font-weight: 800; line-height: 1.02; color: var(--text); }
+.adm-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.65rem; font-weight: 800; line-height: 1.02; color: var(--text); }
 .adm-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 700; color: var(--text); }
 .adm-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-stat-sub { font-size: 0.68rem; color: var(--text-subtle); }
@@ -9944,7 +9981,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 /* Each card is its own size container so its chart adapts to the card's own
    width — the charts stay legible whether three, two, or one sit per row. */
 .adm-chart-card { flex: 1 1 280px; min-width: 0; container-type: inline-size; container-name: adm-chart; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-1); padding: 18px 20px; display: flex; flex-direction: column; }
-.adm-chart-title { font-family: 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.adm-chart-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 4px; }
 .adm-chart-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
 
 /* Donut — thick segmented ring of rounded annular-sector <path>s, mirroring the
@@ -9969,7 +10006,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 .adm-donut-center::before { content: ""; position: absolute; inset: 0; margin: auto; width: 76%; height: 76%; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(8, 15, 26, 0.20), 0 3px 8px rgba(8, 15, 26, 0.14); z-index: 0; }
 html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4); }
 .adm-donut-center > * { position: relative; z-index: 1; max-width: 120px; }
-.adm-donut-num { font-family: 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--sec-green); }
+.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--sec-green); }
 .adm-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .adm-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
@@ -9988,7 +10025,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; height: 100%; min-width: 0; }
 .adm-bar-track { position: relative; width: 100%; max-width: 60px; flex: 1 1 auto; display: flex; align-items: end; }
 .adm-bar-fill { width: 100%; border-radius: 8px 8px 4px 4px; min-height: 6px; transition: height 0.9s cubic-bezier(0.22,1,0.36,1); position: relative; }
-.adm-bar-val { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-family: 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 800; color: var(--text); }
+.adm-bar-val { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 800; color: var(--text); }
 /* Fixed-height label band (fits up to three wrapped lines, e.g. "Super
    Ultra-Processed") with the text top-aligned. This keeps every bar's track
    ending on the same line, so all the bar baselines — and the label tops —
@@ -10033,7 +10070,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
 .adm-vf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
 html.dark .adm-vf-stat.is-active { background: color-mix(in srgb, var(--primary) 20%, transparent); }
-.adm-vf-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--text); }
+.adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--text); }
 .adm-vf-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: var(--text); }
 .adm-vf-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-vf-stat .adm-chip { max-width: 100%; white-space: normal; text-align: center; justify-content: center; line-height: 1.25; }
@@ -10048,7 +10085,7 @@ html.dark .adm-vf-stat.is-active { background: color-mix(in srgb, var(--primary)
 .adm-vrow-bar { height: 4px; border-radius: 999px; background: var(--surface-3, var(--surface-2)); overflow: hidden; }
 html.dark .adm-vrow-bar { background: rgba(255,255,255,0.08); }
 .adm-vrow-bar span { display: block; height: 100%; border-radius: 999px; transition: width 0.9s cubic-bezier(0.22,1,0.36,1); }
-.adm-vrow-val { font-family: 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.adm-vrow-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 
 /* ---- Admin Utils — database strip + stacked utility cards ----------- */
 .adm-db { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-1); }
@@ -10089,7 +10126,7 @@ html.dark .adm-modal-x:hover { background: rgba(255,255,255,0.06); }
 .adm-modal-head { padding: 22px 24px 6px; }
 .adm-modal-eyebrow { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
 html.dark .adm-modal-eyebrow { color: var(--primary-bright, #7FB0E0); }
-.adm-modal-title { margin: 6px 0 0; font-family: 'Noto Serif', Georgia, serif; font-size: 1.28rem; font-weight: 800; color: var(--text); }
+.adm-modal-title { margin: 6px 0 0; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.28rem; font-weight: 800; color: var(--text); }
 .adm-modal-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
 .adm-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
 
@@ -10118,7 +10155,7 @@ html.dark .adm-qi-suggest-row:hover { background: rgba(255,255,255,0.06); }
 
 .adm-qi-summary { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
 .adm-qi-stat { display: flex; flex-direction: column; gap: 1px; }
-.adm-qi-stat-num { font-family: 'Noto Serif', Georgia, serif; font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text); }
+.adm-qi-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text); }
 .adm-qi-stat-label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
 
 .adm-invite-chips { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -10261,7 +10298,7 @@ html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-colo
 }
 .dash-star-mover-cta .material-symbols-outlined { font-size: 14px; }
 .dash-star-mover-num {
-  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif;
   font-size: 2.4rem;
   font-weight: 800;
   line-height: 1.05;
@@ -10298,7 +10335,7 @@ html.dark .dash-star-tile { background: rgba(255, 255, 255, 0.025); border-color
 button.dash-star-tile { cursor: pointer; font: inherit; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
 button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
 .dash-star-tile-num {
-  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif;
   font-size: 1.9rem;
   font-weight: 800;
   line-height: 1;

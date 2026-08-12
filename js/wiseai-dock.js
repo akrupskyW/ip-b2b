@@ -80,6 +80,13 @@ export function writeWISEaiDockState(patch) {
   return next;
 }
 
+/* The chat's own flanking drawers (the docked History / Turns modules the
+   shared chat breaks out as .wch-sidebar flex siblings) belong TO the chat —
+   they are not reorderable panes and don't count toward the solo test. */
+function isChatDrawer(el) {
+  return el.classList && el.classList.contains('wch-sidebar');
+}
+
 /* Is the WISEai dock the only visible module left in its row? The menu rail
    (nav chrome) doesn't count, and neither does any display:none module such as
    a closed Alerts panel — only real, on-screen sibling modules do. */
@@ -87,15 +94,16 @@ function isWISEaiSolo(dock) {
   const row = dock.closest('#modules-row');
   if (!row) return false;
   return !Array.from(row.children).some(
-    (el) => el !== dock && el.id !== 'menu-panel' && el.offsetWidth > 0,
+    (el) => el !== dock && el.id !== 'menu-panel' && !isChatDrawer(el) && el.offsetWidth > 0,
   );
 }
 
 /* The real, on-screen sibling modules of the dock, left→right in DOM order.
-   The menu rail (nav chrome) and any hidden module are not panes. */
+   The menu rail (nav chrome), the chat's own docked History / Turns drawers,
+   and any hidden module are not panes. */
 function paneSiblings(dock, row) {
   return Array.from(row.children).filter(
-    (el) => el !== dock && el.id !== 'menu-panel' && el.offsetWidth > 0,
+    (el) => el !== dock && el.id !== 'menu-panel' && !isChatDrawer(el) && el.offsetWidth > 0,
   );
 }
 
@@ -120,6 +128,10 @@ function placeRightPanes(dock, right) {
   const firstRight = sibs.length - n;
   sibs.forEach((el, i) => setOrder(el, i >= firstRight ? '2' : '0'));
   setOrder(dock, '1');
+  /* The chat's flanking History / Turns drawers share the chat's order so they
+     always hug it: History (DOM-before the dock) lands on its left edge, Turns
+     (DOM-after) on its right — regardless of how the panes are distributed. */
+  Array.from(row.children).forEach((el) => { if (isChatDrawer(el)) setOrder(el, '1'); });
 }
 
 /* Drop every inline `order` we set (dock + siblings) so the modules row reflows
@@ -129,6 +141,7 @@ function clearPaneOrder(dock) {
   if (!row) return;
   setOrder(dock, '');
   paneSiblings(dock, row).forEach((el) => setOrder(el, ''));
+  Array.from(row.children).forEach((el) => { if (isChatDrawer(el)) setOrder(el, ''); });
 }
 
 /* Reflect the current (or supplied) state onto a dock element: its width

@@ -827,11 +827,16 @@ function arrivedByNavigation() {
                           and cost (the "little three dots that show the tokens
                           and cost").
      • turns (+ search  → the Turns module (three-dot "Turns" Admin switch): every
-       /share/notes)      turn listed with Fork / Jump / Share / Note. Kept as the
-                          in-chat overlay (not a broken-out flex sibling) because
-                          the docked/sticky-drawer LAYOUT is bespoke to wiseai.html;
-                          the overlay reuses the shared .wch-sidebar shell that
-                          every page already styles.
+       /share/notes)      turn listed with Fork / Jump / Share / Note. Docked as
+                          its own sticky drawer to the RIGHT of the chat (the
+                          sticky-drawer CSS is now shared via chat-history.js),
+                          exactly like pages/wiseai.html.
+     • history breakout → the three-dot "History & Projects" toggle reveals the
+                          History module as a docked sticky drawer on the chat's
+                          LEFT (never the in-chat overlay), matching wiseai.html.
+                          It starts tucked in behind the chat (hidden).
+     • sticky modules   → permanently ON (the menu switch is dropped): both
+                          flanking drawers tuck in behind the chat card.
 
    Page cfg is spread AFTER these, so any page can still override a default. The
    "Show/Hide overview cards" and "Hide/Show intent chips" Admin switches appear
@@ -843,6 +848,16 @@ const WISEAI_DOCK_PARITY = {
   turnsSearch: true,
   turnsShare: true,
   turnsNotes: true,
+  turnsBreakout: true,
+  turnsDockedControls: true,
+  turnsBreakoutDefault: false,
+  historyBreakout: true,
+  historyBreakoutDefault: true,
+  historyDockedControls: true,
+  historyBreakoutHidden: true,
+  stickyModules: true,
+  stickyModulesDefault: true,
+  stickyModulesMenu: false,
 };
 
 /* Add the "History & Projects" entry to the chat's three-dot menu (the shared

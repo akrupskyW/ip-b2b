@@ -169,15 +169,16 @@ function colorblindTypeSection() {
 
 /** "Module spacing" segmented control — an admin-only, pink-outlined toggle that
     steps the horizontal gap BETWEEN modules in #modules-row through Small (12px)
-    / Medium (24px) / Large (36px). Each button carries a `data-mg` id that
-    wireAppearancePopover() turns into the matching mod-gap-<size> class on <html>.
-    Clicking the active step again clears back to the default row gap. */
+    / Medium (24px) / Large (36px) / XL (48px). Each button carries a `data-mg` id
+    that wireAppearancePopover() turns into the matching mod-gap-<size> class on
+    <html>. Clicking the active step again clears back to the default row gap. */
 function moduleGapSection() {
   const active = getModuleGap();
   const opts = [
-    { id: 'sm', label: 'Small' },
-    { id: 'md', label: 'Medium' },
-    { id: 'lg', label: 'Large' },
+    { id: 'sm', label: 'S' },
+    { id: 'md', label: 'M' },
+    { id: 'lg', label: 'L' },
+    { id: 'xl', label: 'XL' },
   ];
   const btns = opts
     .map(

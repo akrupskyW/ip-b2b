@@ -507,7 +507,7 @@ function moduleStyles() {
     }
     .mi-hero-text { min-width: 0; flex: 1 1 360px; }
     .mi-hero-title {
-      font-family: 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
     }
     .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 8px 0 0; max-width: 74ch; }
@@ -621,7 +621,7 @@ function moduleStyles() {
     }
     html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
     .mi-module-title {
-      font-family: 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       margin: 4px 0 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
     }
     .mi-module-lede { font-size: 0.875rem; color: var(--text-muted); margin: 6px 0 0; max-width: 76ch; }
@@ -774,7 +774,7 @@ function moduleStyles() {
     .mi-stat:disabled { cursor: default; }
     .mi-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
     .mi-stat-num {
-      font-family: 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800;
       line-height: 1.05; color: var(--text);
     }
     /* Label text sits above its icon (icon below the label) on every scorecard. */

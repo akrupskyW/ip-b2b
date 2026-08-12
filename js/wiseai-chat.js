@@ -469,6 +469,48 @@ export function wireChatComposer(railEl, opts = {}) {
   let accessFilter = 'all';
   let currentDbId = defaultDbItem() ? defaultDbItem().id : null;
 
+  /* Locate this page's transcript so a database switch can be recorded there as
+     a real user action — same behaviour as the canonical mount. The page owns
+     the transcript (its own #chat-messages / .chat-messages-area), so resolve it
+     from opts, then from the nearest chat-panel ancestor, then document-wide. */
+  function resolveMessagesEl() {
+    if (opts.messagesEl) {
+      return typeof opts.messagesEl === 'string'
+        ? document.querySelector(opts.messagesEl)
+        : opts.messagesEl;
+    }
+    let node = railEl.parentElement;
+    while (node) {
+      const found = node.querySelector('.chat-messages-area');
+      if (found) return found;
+      node = node.parentElement;
+    }
+    return document.querySelector('.chat-messages-area');
+  }
+
+  /* Has the conversation actually started? The first database pick (before
+     anyone has spoken) shouldn't leave a marker — only mid-thread switches do. */
+  function conversationStarted(messages) {
+    return !!(messages && messages.querySelector('.sc-line-you, .sc-line-wiseai'));
+  }
+
+  /* Drop a muted, highlighted marker into the transcript so a mid-conversation
+     database switch is visible as an explicit user action and the thread keeps
+     flowing after it. Mirrors addDbChangeNote() in the canonical mount. */
+  function addDbChangeNote(messages, prev, next) {
+    if (!messages || !next) return;
+    const body = prev
+      ? `<span class="sc-event-label">Database switched from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
+      : `<span class="sc-event-label">Database set to</span> <strong>${esc(next.name)}</strong>`;
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Database switched to ${next.name}` : `Database set to ${next.name}`)}">`
+      + `<span class="sc-event">`
+      + `<span class="sc-event-text">${body}</span>`
+      + `<span class="sc-event-time">${esc(nowLabel())}</span>`
+      + `</span></div>`);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
   function applyFilter() {
     if (!pop) return;
     const q = (search?.value || '').trim().toLowerCase();
@@ -503,7 +545,12 @@ export function wireChatComposer(railEl, opts = {}) {
     const next = dbItemById(dbId);
     if (labelEl && next) labelEl.textContent = next.name;
     const changed = dbId !== currentDbId;
+    const prev = dbItemById(currentDbId);
     currentDbId = dbId;
+    if (changed) {
+      const messages = resolveMessagesEl();
+      if (conversationStarted(messages)) addDbChangeNote(messages, prev, next);
+    }
     if (changed && typeof opts.onDbChange === 'function') opts.onDbChange(dbId, next);
   }
 
@@ -1061,7 +1108,9 @@ let _seq = 0;
  *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
  *   heading      {string}  welcome heading (default 'What can WISEai help with?')
  *   sub          {string}  welcome subheading
- *   intents      {Array}   welcome intent chips [{intent,label,icon}]
+ *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?}] — `ask`
+ *                          (optional) is the full question posted as the user's
+ *                          line; the chip face still shows the shorter label
  *   intentReplies{object}  intent-id → reply (string|fn) so a clicked chip
  *                          always continues with an on-feature answer
  *   placeholder  {string}  input placeholder
@@ -1079,6 +1128,10 @@ let _seq = 0;
 export function mountWISEaiChat(rootEl, opts = {}) {
   if (!rootEl) return null;
   injectChatExtras();
+  /* Tag the chat root so the shared docked/sticky-module CSS (injected by
+     chat-history.js) can layer the chat ABOVE its flanking History / Turns
+     drawers when they tuck in behind it. */
+  rootEl.classList.add('wch-chat-anchor');
   const id = `sc${++_seq}`;
   const title = opts.title || 'WISEai™';
   /* Agent roster powering the in-chat settings panel + the "N agents running"
@@ -1357,7 +1410,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${opts.stickyModules === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${(opts.stickyModules === true && opts.stickyModulesMenu !== false) ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
@@ -2879,6 +2932,13 @@ export function mountWISEaiChat(rootEl, opts = {}) {
   function applyStickyLayout() {
     if (turnsPanel && turnsDocked) applyTurnsWidth();
     try { chatHistory && chatHistory.setSticky && chatHistory.setSticky(stickyOn); } catch (_) {}
+    /* Default layout hook: when the host supplies no onStickyModules, flip the
+       shared `modules-sticky` class on the chat's modules row so the injected
+       sticky-drawer CSS (chat-history.js) applies without page-specific CSS. */
+    if (typeof opts.onStickyModules !== 'function') {
+      const row = rootEl.closest('#modules-row');
+      if (row) row.classList.toggle('modules-sticky', stickyOn);
+    }
   }
 
   /* ── Pending attachments ─────────────────────────────────────────────────
@@ -3105,7 +3165,7 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (!intent) return;
     if (intent === 'choose_agents') { openAgents(); return; }
     const found = intents.find((c) => c && c.intent === intent);
-    const text = (label != null ? label : (found ? found.label : '')) || String(intent);
+    const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
     closeAgents();
     hideWelcome();
@@ -3184,6 +3244,9 @@ export function mountWISEaiChat(rootEl, opts = {}) {
          MCP-usage filter toggle beside the search. */
       breakoutDefault: opts.historyBreakoutDefault === true,
       dockedControls: opts.historyDockedControls === true,
+      /* Start the docked module tucked in behind the chat (hidden) — the
+         three-dot "History" toggle reveals it, exactly like Turns. */
+      breakoutStartHidden: opts.historyBreakoutHidden === true,
       mcpFilter: opts.historyMcpFilter === true,
       onNew: () => reset(),
       /* Keep a broken-out Turns module in sync when a saved thread is restored. */
@@ -3225,15 +3288,18 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     if (!chip) return;
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
-    const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    /* A chip can carry an `ask` — the full question posted as the user's line —
+       while its face keeps the shorter label (same contract as scorecards). */
+    const text = def.ask || def.label;
+    const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     /* "Choose Agents" opens the in-chat settings panel rather than starting a
        chat turn — it's a control, not a question. */
     if (def.intent === 'choose_agents') { openAgents(); return; }
     hideWelcome();
-    addUser(def.label);
+    addUser(text);
     /* Route the reply by the chip's intent id (not just its label) so the
        conversation always continues on the feature the chip represents. */
-    if (!handled) wiseaiRespond(def.label, def.intent);
+    if (!handled) wiseaiRespond(text, def.intent);
   });
 
   /* Inline intent chips — same routing as the welcome chips, but the block
@@ -3245,10 +3311,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
-    const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    const text = def.ask || def.label;
+    const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     hideWelcome();
-    addUser(def.label);
-    if (!handled) wiseaiRespond(def.label, def.intent);
+    addUser(text);
+    if (!handled) wiseaiRespond(text, def.intent);
   });
 
   /* "Open module" chips — the clickable narration a reply drops when it opens a
@@ -3465,10 +3532,11 @@ export function mountWISEaiChat(rootEl, opts = {}) {
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
-    const handled = opts.onIntent ? opts.onIntent(def.intent, def.label) : false;
+    const text = def.ask || def.label;
+    const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     hideWelcome();
-    addUser(def.label);
-    if (!handled) wiseaiRespond(def.label, def.intent);
+    addUser(text);
+    if (!handled) wiseaiRespond(text, def.intent);
   });
 
   /* Score-card rail — horizontal scroll with floating controls + edge fades. */

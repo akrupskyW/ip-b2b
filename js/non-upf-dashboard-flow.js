@@ -258,7 +258,7 @@ function barsCard() {
   }).join('');
   return `
     <div class="adm-chart-card">
-      <h3 class="adm-chart-title">WISEcode UPFs <span style="font-family:'Noto Serif',Georgia,serif;color:var(--text-subtle);font-weight:700">${total}</span></h3>
+      <h3 class="adm-chart-title">WISEcode UPFs <span style="font-family:'WISE Digits', 'Noto Serif',Georgia,serif;color:var(--text-subtle);font-weight:700">${total}</span></h3>
       <div class="adm-chart-body"><div class="adm-bars">${bars}</div></div>
     </div>`;
 }

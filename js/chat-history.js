@@ -259,7 +259,52 @@
         'box-shadow:var(--shadow-card,0 8px 22px rgba(20,30,60,0.14));font-size:11px;font-weight:600;letter-spacing:0.01em;padding:5px 10px;border-radius:8px;',
         'transform:translate(-4px,-50%) scale(0.96);transform-origin:left center;}',
       '.wch-tip.wch-tip--nav.is-vis{transform:translate(0,-50%) scale(1);}',
-      '.wch-tip.wch-tip--nav::after{display:none;}'
+      '.wch-tip.wch-tip--nav::after{display:none;}',
+      /* ── Shared docked-module dressing + "sticky drawer" treatment ──────────
+         Generic versions of the flagship pages/wiseai.html rules so ANY page
+         whose chat lives in #modules-row gets the same broken-out History /
+         Turns look: first-class pane dressing (surface, border, radius, serif
+         masthead), the chat riding ABOVE the docked drawers, and — with the
+         `modules-sticky` class on the row — the tucked-behind-the-chat sticky
+         treatment. Scoped to #modules-row so other surfaces are untouched;
+         pages that carry their own copies (wiseai.html) simply agree with
+         these. The chat root is tagged `.wch-chat-anchor` by its host. */
+      '#modules-row .wch-sidebar.wch-docked{background:var(--surface,#fff);color:var(--text,inherit);border:1px solid var(--border,rgba(0,0,0,0.08));',
+        'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
+        'align-self:center;height:calc(100% - 30px);}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;align-items:center;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',
+      /* The chat rides above the docked drawers so they read as tucking behind
+         it. The persistent WISEai dock manages its own (higher) z-index. */
+      '#modules-row > .wch-chat-anchor:not(.wiseai-dock){position:relative;z-index:3;}',
+      '#modules-row.modules-sticky{position:relative;}',
+      '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:2;}',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked{z-index:1;background:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
+      /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right){margin-right:-22px;padding-right:14px;',
+        'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
+      /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right{margin-left:-22px;padding-left:14px;',
+        'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:wchStickySlideR .42s cubic-bezier(.34,1.45,.64,1) both;}',
+      '@keyframes wchStickySlideL{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
+      '@keyframes wchStickySlideR{from{transform:translateX(-26px);opacity:.35}to{transform:none;opacity:1}}',
+      /* Docked-module popovers portal to <body>, so the module never needs
+         lifting above the chat while its menu is open (this overrides the
+         generic pane-resize "menu open" z-bump). */
+      '#modules-row .wch-sidebar.wch-docked:has(.panel-more-btn.is-open),',
+      '#modules-row .wch-sidebar.wch-docked:has(.topbar-popover:not(.hidden)){z-index:1 !important;}',
+      /* Reveal / conceal: slide out from behind the chat / tuck back in. */
+      '#modules-row .wch-sidebar.wch-docked.wch-dock-reveal{animation:wchDockRevealL .44s cubic-bezier(.34,1.4,.64,1) both !important;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-right.wch-dock-reveal{animation:wchDockRevealR .44s cubic-bezier(.34,1.4,.64,1) both !important;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-dock-conceal{animation:wchDockConcealL .3s cubic-bezier(.4,0,.75,.25) both !important;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-right.wch-dock-conceal{animation:wchDockConcealR .3s cubic-bezier(.4,0,.75,.25) both !important;}',
+      '@keyframes wchDockRevealL{from{opacity:0;transform:translateX(46px) scale(.97)}to{opacity:1;transform:none}}',
+      '@keyframes wchDockRevealR{from{opacity:0;transform:translateX(-46px) scale(.97)}to{opacity:1;transform:none}}',
+      '@keyframes wchDockConcealL{from{opacity:1;transform:none}to{opacity:0;transform:translateX(46px) scale(.97)}}',
+      '@keyframes wchDockConcealR{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-46px) scale(.97)}}',
+      '@media (prefers-reduced-motion:reduce){#modules-row .wch-sidebar.wch-docked{animation:none !important;}}'
     ].join('\n');
     var style = document.createElement('style');
     style.id = STYLE_ID;
@@ -450,8 +495,13 @@
     var seedOutdated = seedVersion > 0 && storedSeedVersion !== seedVersion;
     /* Default to broken-out on first load when the host opts in (no stored
        preference yet), so History opens as its own module rather than an
-       in-chat overlay. */
-    var docked = breakout && (stored.docked != null ? !!stored.docked : opts.breakoutDefault === true);
+       in-chat overlay. With pane-style docked chrome there is no control to
+       merge back into the overlay, so a dockedControls host is ALWAYS docked —
+       this also heals stale `docked:false` prefs written before the surface
+       opted into the breakout. */
+    var docked = breakout && ((dockedControls && opts.breakoutDefault === true)
+      ? true
+      : (stored.docked != null ? !!stored.docked : opts.breakoutDefault === true));
     var activeId = null;
     var query = '';
     var mcpOnly = false;
@@ -1532,6 +1582,10 @@
     /* Restore a previously broken-out module on load (the overlay is the default). */
     if (breakout && docked) { docked = false; setDocked(true); }
     else updateDockButton();
+
+    /* Hosts that keep History as an on-demand drawer start it docked but tucked
+       in behind the chat (hidden); the three-dot "History" toggle reveals it. */
+    if (docked && opts.breakoutStartHidden === true) sidebar.classList.add('wch-docked-hidden');
 
     /* Restore the icon-rail (minimized) state, but only where it applies — the
        docked module that carries pane-style chrome. */
