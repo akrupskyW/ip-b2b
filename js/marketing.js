@@ -416,7 +416,25 @@
     var closeBtn = panel.querySelector('[data-chat-close]');
     var resetBtn = panel.querySelector('[data-chat-reset]');
 
-    var scrollDown = function () { body.scrollTop = body.scrollHeight; };
+    /* Follow the conversation without losing the reader's place: advance the
+       scroll toward the bottom, but never push the visitor's latest message
+       above the top of the viewport — a long reply stops there so they keep
+       reading from where they asked. Never scrolls back up; pass `force`
+       (a fresh user action) to re-engage a reader who scrolled away. */
+    var scrollDown = function (force) {
+      var bottom = Math.max(0, body.scrollHeight - body.clientHeight);
+      var yours = body.querySelectorAll('.mkt-msg--user');
+      var anchor = yours.length ? yours[yours.length - 1] : null;
+      var target = bottom;
+      if (anchor) {
+        var cap = anchor.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 10;
+        target = Math.min(bottom, Math.max(0, cap));
+      }
+      var last = body.__followPos;
+      if (!force && typeof last === 'number' && body.scrollTop < last - 48) return;
+      if (force || target > body.scrollTop) body.scrollTop = target;
+      body.__followPos = body.scrollTop;
+    };
     var welcome = function () {
       body.innerHTML =
         '<div class="mkt-chat-welcome"><h4>What can WISEcodeAI\u2122 help with?</h4><p>Ask about any food, the Non-UPF standard, or getting the app.</p></div>' +
@@ -428,7 +446,7 @@
       var el = document.createElement('div');
       el.className = 'mkt-msg mkt-msg--' + who;
       el.innerHTML = html;
-      body.appendChild(el); scrollDown();
+      body.appendChild(el); scrollDown(who === 'user');
       return el;
     };
     var send = function (text) {

@@ -485,6 +485,7 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'product-portfolio', label: 'Product Portfolio', icon: 'handyman', slug: 'product-portfolio.html' },
   { type: 'item', id: 'comparison', label: 'Comparison', icon: 'compare', slug: 'product-comparison.html' },
   { type: 'item', id: 'non-upf-dashboard', label: 'NON-UPF Dashboard', icon: 'dashboard', slug: 'non-upf-dashboard.html' },
+  { type: 'item', id: 'ai-dashboard', label: 'AI Dashboard', icon: 'hub', slug: 'ai-dashboard.html' },
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },

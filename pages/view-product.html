@@ -106,7 +106,7 @@
     .ap-attach-preview img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); }
     /* Non-image attachment chip (PDF, spreadsheet, spec sheet…) shown in the transcript. */
     .ap-file-chip { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); font-size: 0.72rem; color: var(--text-muted); }
-    .ap-file-chip .material-symbols-outlined { font-size: 16px !important; color: var(--primary); }
+    .ap-file-chip .material-symbols-outlined { font-size: 16px !important; color: var(--primary-ink, var(--primary)); }
 
     /* Attach popover sits inside the input on the LEFT. Pad the input so text
        clears the button, and anchor the grouped popover to the left edge. */
@@ -266,7 +266,7 @@
     .nfp-cat-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .nfp-cat-chip {
       display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px;
-      font-size: 0.72rem; font-weight: 600; background: var(--primary-soft); color: var(--primary);
+      font-size: 0.72rem; font-weight: 600; background: var(--primary-soft); color: var(--primary-ink, var(--primary));
       border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
     }
     .nfp-cat-chip .material-symbols-outlined { font-size: 13px !important; }
@@ -288,7 +288,7 @@
     .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
     .nfp-fi-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 7px; }
     .nfp-fi-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
-    .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
+    .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary-ink, var(--primary)); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
     .nfp-fi-thumbs { display: flex; justify-content: center; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
     .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
     .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
@@ -299,7 +299,7 @@
       width: 40px; height: 40px; border-radius: 50%; border: 2px dashed var(--border-strong);
       background: var(--surface-2); color: var(--text-subtle); display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
-    .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary); }
+    .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .nfp-fi-add .material-symbols-outlined { font-size: 18px !important; }
 
     /* ── NFP width toggle + double-pane (wide) layout ─────────────────────

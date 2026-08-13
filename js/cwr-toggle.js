@@ -96,7 +96,7 @@
     '  color: var(--text-muted, #444B55);',
     '  transition: background 0.15s ease, color 0.15s ease;',
     '}',
-    '#cwr-toggle .cwr-btn:hover { background: var(--primary-soft, rgba(37, 80, 124, 0.08)); color: var(--primary, #25507C); }',
+    '#cwr-toggle .cwr-btn:hover { background: var(--primary-soft, rgba(37, 80, 124, 0.08)); color: var(--primary-ink, var(--primary, #25507C)); }',
     '#cwr-toggle .cwr-btn[aria-checked="true"] { background: var(--primary, #25507C); color: #fff; }',
     '#cwr-toggle .cwr-btn .material-symbols-outlined { font-size: 18px; line-height: 1; }',
     '#cwr-toggle .cwr-btn .cwr-btn-label {',

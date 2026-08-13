@@ -20,6 +20,10 @@
    import so it auto-mounts on every page that loads the shared top bar. */
 import './jam-strip.js';
 
+/* Shared user-avatar store — lets the nav chips render the member's uploaded
+   profile picture (set on the Organization Profile page) instead of initials. */
+import { userAvatarImg } from './user-avatar.js';
+
 /* WISE wordmark (full) + bug (mobile). Shared by every page so the SVG
    lives in exactly one place. */
 export const TOPBAR_LOGO_HTML = `
@@ -109,12 +113,16 @@ export function mountTopbar({
     .replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const title = String(profileEmail && profileName ? `${profileName} · ${profileEmail}` : profileTitle)
     .replace(/"/g, '&quot;');
+  /* A set avatar picture replaces the initials; `data-initials` keeps the text
+     fallback so clearing the picture restores it in place. */
+  const avatarImg = userAvatarImg(profileName || 'You');
+  const profileClass = avatarImg ? 'topbar-profile has-dot has-avatar-img' : 'topbar-profile has-dot';
 
   row.innerHTML = `
     ${MENU_TOGGLE_HTML}
     <div class="topbar-logo" aria-hidden="true">${logo}</div>
     ${center}
-    <div class="topbar-profile has-dot" title="${title}">${avatar}</div>`;
+    <div class="${profileClass}" title="${title}" data-initials="${avatar}">${avatarImg || avatar}</div>`;
 
   mountMenuBrand({ logoHref, profileTitle, profileName, profileEmail, avatarText });
 
@@ -194,6 +202,12 @@ export function mountMenuFooter({
   const name = profileName || String(profileTitle).split(' · ')[0].trim() || 'Account';
   const initials = avatarText || deriveInitials(name);
   const safeTitle = escQ(profileEmail ? `${name} · ${profileEmail}` : profileTitle);
+  /* Prefer the member's uploaded avatar picture; fall back to initials. The
+     initials ride along in `data-initials` so removing the picture restores
+     them without a re-render. */
+  const avatarImg = userAvatarImg(name);
+  const avatarInner = avatarImg || esc(initials);
+  const avatarClass = avatarImg ? 'menu-nav-icon menu-footer-avatar has-avatar-img' : 'menu-nav-icon menu-footer-avatar';
 
   let footer = inner.querySelector('.menu-footer');
   if (!footer) {
@@ -207,7 +221,7 @@ export function mountMenuFooter({
   const profileHtml = profileEmail
     ? `
       <button type="button" class="menu-nav-item menu-footer-profile menu-footer-profile--rich" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
-        <span class="menu-nav-icon menu-footer-avatar">${esc(initials)}</span>
+        <span class="${avatarClass}" data-initials="${escQ(esc(initials))}">${avatarInner}</span>
         <span class="menu-footer-identity">
           <span class="menu-footer-name">${esc(name)}</span>
           <span class="menu-footer-email">${esc(profileEmail)}</span>
@@ -215,7 +229,7 @@ export function mountMenuFooter({
       </button>`
     : `
       <button type="button" class="menu-nav-item menu-footer-profile has-dot" id="menu-footer-profile" title="${safeTitle}" aria-label="User menu">
-        <span class="menu-nav-icon menu-footer-avatar">${esc(initials)}</span>
+        <span class="${avatarClass}" data-initials="${escQ(esc(initials))}">${avatarInner}</span>
         <span class="menu-nav-label">${esc(name)}</span>
       </button>`;
 

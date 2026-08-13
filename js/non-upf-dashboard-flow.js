@@ -269,7 +269,7 @@ function statusListCard() {
     const w = Math.round((s.num / max) * 100);
     return `
       <div class="adm-vrow">
-        <span class="material-symbols-outlined adm-vrow-ic" style="color:${s.color()}">${esc(s.icon)}</span>
+        <span class="material-symbols-outlined adm-vrow-ic" style="color:${s.key === 'pending_att' || s.key === 'att_complete' ? 'var(--primary-ink, var(--primary))' : s.color()}">${esc(s.icon)}</span>
         <div class="adm-vrow-main">
           <div class="adm-vrow-label">${esc(s.label)}</div>
           <div class="adm-vrow-bar"><span style="width:0;background:${s.color()}" data-w="${w}"></span></div>
@@ -297,7 +297,7 @@ function statCardsHtml() {
     const chipCls = STAT_CHIP[c.key == null ? '' : c.key] || 'adm-chip--muted';
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
-      <span class="adm-vf-stat-num" data-count-to="${c.num}" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary)' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">0</span>
+      <span class="adm-vf-stat-num" data-count-to="${c.num}" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary-ink, var(--primary))' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">0</span>
       <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
       ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}

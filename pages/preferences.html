@@ -38,7 +38,7 @@
 
     .prefs-group { margin-bottom: 30px; }
     .prefs-group-title { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px; }
-    .prefs-group-title .material-symbols-outlined { font-size: 19px; color: var(--primary); }
+    .prefs-group-title .material-symbols-outlined { font-size: 19px; color: var(--primary-ink, var(--primary)); }
 
     .prefs-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); overflow: hidden; }
     .prefs-row { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-top: 1px solid var(--border); }
@@ -64,7 +64,7 @@
     .prefs-stepper { display: inline-flex; gap: 6px; flex-shrink: 0; }
     .prefs-step { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
     html.dark .prefs-step { background: rgba(255,255,255,0.05); }
-    .prefs-step:hover { border-color: var(--primary); color: var(--primary); }
+    .prefs-step:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .prefs-step .material-symbols-outlined { font-size: 18px; }
 
     /* Select */

@@ -32,15 +32,15 @@
     .dc-wrap { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 0; min-height: 100%; }
     .dc-sidebar { border-right: 1px solid var(--border); padding: 24px 16px 40px; }
     .dc-side-title { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 18px; }
-    .dc-side-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+    .dc-side-title .material-symbols-outlined { font-size: 18px; color: var(--primary-ink, var(--primary)); }
     .dc-side-group { margin-bottom: 18px; }
     .dc-side-group-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); margin: 0 8px 6px; }
     .dc-side-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.84rem; font-weight: 500; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
     .dc-side-item:hover { background: var(--surface-2); color: var(--text); }
     html.dark .dc-side-item:hover { background: rgba(255,255,255,0.05); }
-    .dc-side-item.is-active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); font-weight: 700; }
+    .dc-side-item.is-active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary-ink, var(--primary)); font-weight: 700; }
     .dc-side-read { font-size: 0.68rem; color: var(--text-subtle); font-weight: 500; }
-    .dc-side-item.is-active .dc-side-read { color: var(--primary); }
+    .dc-side-item.is-active .dc-side-read { color: var(--primary-ink, var(--primary)); }
 
     .dc-article { padding: 30px 44px 60px; max-width: 760px; }
     .dc-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; }
@@ -58,7 +58,7 @@
     html.dark .dc-pre { background: rgba(0,0,0,0.28); }
     .dc-pre code { background: none; border: 0; padding: 0; font-size: 0.82rem; line-height: 1.6; color: var(--text); white-space: pre; }
     .dc-callout { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 12px; background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border)); font-size: 0.85rem; color: var(--text); margin: 0 0 18px; }
-    .dc-callout .material-symbols-outlined { color: var(--primary); font-size: 20px; }
+    .dc-callout .material-symbols-outlined { color: var(--primary-ink, var(--primary)); font-size: 20px; }
     .dc-log { display: flex; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
     .dc-log:first-child { border-top: 0; }
     .dc-log-date { flex-shrink: 0; width: 74px; font-weight: 700; color: var(--text-subtle); font-size: 0.78rem; padding-top: 1px; }

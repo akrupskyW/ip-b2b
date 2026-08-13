@@ -138,7 +138,26 @@
   let progressMin = true;
 
   /* ─────────────────────────── chat primitives ─────────────────────────── */
-  function scrollDown() { if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight; }
+  /* Follow the conversation without losing the reader's place: advance the
+     scroll toward the bottom, but never push the reader's latest message above
+     the top of the viewport — a long reply stops there so they keep reading
+     from where they typed. Never scrolls back up; pass `force` (a fresh user
+     action) to re-engage a reader who scrolled away. */
+  function scrollDown(force) {
+    if (!messagesEl) return;
+    const bottom = Math.max(0, messagesEl.scrollHeight - messagesEl.clientHeight);
+    const yours = messagesEl.querySelectorAll('.sc-line-you');
+    const anchor = yours.length ? yours[yours.length - 1] : null;
+    let target = bottom;
+    if (anchor) {
+      const cap = anchor.getBoundingClientRect().top - messagesEl.getBoundingClientRect().top + messagesEl.scrollTop - 10;
+      target = Math.min(bottom, Math.max(0, cap));
+    }
+    const last = messagesEl.__followPos;
+    if (!force && typeof last === 'number' && messagesEl.scrollTop < last - 48) return;
+    if (force || target > messagesEl.scrollTop) messagesEl.scrollTop = target;
+    messagesEl.__followPos = messagesEl.scrollTop;
+  }
   function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('sc-hidden'); }
 
   /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
@@ -156,13 +175,13 @@
     hideWelcome();
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
-    scrollDown();
+    scrollDown(true); /* fresh user action — always bring their message into view */
   }
   function addUserImage(src, name) {
     hideWelcome();
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">${esc(name || 'Photo')}<div class="ap-attach-preview"><img src="${esc(src)}" alt="" onerror="this.style.display='none'"></div><div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
-    scrollDown();
+    scrollDown(true); /* fresh user action — always bring their message into view */
   }
   function chipsRow(chips) {
     if (!chips || !chips.length) return '';

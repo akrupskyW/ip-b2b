@@ -276,11 +276,11 @@
     }
     .topbar-menu-toggle:hover {
       background: transparent !important;
-      color: var(--primary) !important;
+      color: var(--primary-ink, var(--primary)) !important;
     }
     .topbar-menu-toggle.lir-active {
       background: transparent !important;
-      color: var(--primary) !important;
+      color: var(--primary-ink, var(--primary)) !important;
       box-shadow: none !important;
     }
     .topbar-menu-toggle .material-symbols-outlined,
@@ -324,7 +324,7 @@
     .topbar-profile.is-open,
     .topbar-profile.is-open:hover {
       border-color: var(--primary);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     /* Avatar inherits the unread notification dot now that the bell + agents
        buttons live inside the avatar menu. */
@@ -369,7 +369,7 @@
     .topbar-appearance-btn.is-open,
     .topbar-appearance-btn.is-open:hover {
       border-color: var(--primary);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     .topbar-appearance-btn .material-symbols-outlined {
       font-size: 20px !important;
@@ -986,7 +986,7 @@
     .um-row-ic {
       width: 30px; height: 30px; border-radius: 9px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      background: var(--primary-soft); color: var(--primary);
+      background: var(--primary-soft); color: var(--primary-ink, var(--primary));
     }
     .um-row-ic .material-symbols-outlined { font-size: 17px; }
     .um-row-main { flex: 1; min-width: 0; }
@@ -1009,7 +1009,7 @@
       display: inline-flex; align-items: center; gap: 4px;
       padding: 2px 9px; border-radius: var(--radius-pill);
       font-size: var(--fs-ui); font-weight: 600;
-      background: var(--primary-soft); color: var(--primary);
+      background: var(--primary-soft); color: var(--primary-ink, var(--primary));
     }
     .um-chip.um-chip-muted { background: rgba(255,255,255,0.06); color: var(--text-muted); }
     html:not(.dark) .um-chip.um-chip-muted { background: var(--surface-3); }
@@ -1038,7 +1038,7 @@
     }
     .um-link:hover { background: rgba(255,255,255,0.05); }
     html:not(.dark) .um-link:hover { background: var(--surface-3); }
-    .um-link .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+    .um-link .material-symbols-outlined { font-size: 18px; color: var(--primary-ink, var(--primary)); }
     .um-link-arrow { margin-left: auto; color: var(--text-subtle); font-size: 18px !important; }
 
     /* Mobile / tablet — single full-width stacked card. */
@@ -1089,7 +1089,7 @@
       border-radius: 0 !important;
     }
     .history-tab-btn.active {
-      color: var(--primary) !important;
+      color: var(--primary-ink, var(--primary)) !important;
       border-bottom-color: var(--primary) !important;
       font-weight: 600;
     }
@@ -1112,7 +1112,7 @@
       flex-shrink: 0;
     }
     .hb-progress { background: #4D1007; color: #FFC434; }
-    .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
+    .hb-awaiting { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); }
     .hb-complete { background: #1B2D22; color: #6D947C; }
     .hb-flagged { background: #4D1007; color: #DC3038; }
     .hb-view { background: #1A2339; color: #C5CFD7; }
@@ -1246,7 +1246,7 @@
     .notif-item-icon .material-symbols-outlined { font-size: 16px !important; }
     .notif-item-icon.notif-ic-red    { color: var(--sec-red, #DC3038); }
     .notif-item-icon.notif-ic-amber  { color: var(--ter-amber, #FFC434); }
-    .notif-item-icon.notif-ic-blue   { color: var(--primary); }
+    .notif-item-icon.notif-ic-blue   { color: var(--primary-ink, var(--primary)); }
     .notif-item-body { flex: 1; min-width: 0; }
     .notif-item-title { font-size: var(--fs-ui); font-weight: 600; color: #C5CFD7; line-height: 1.35; }
     .notif-item-sub { font-size: var(--fs-ui); color: #C5CFD7; margin-top: 2px; }
@@ -1298,7 +1298,7 @@
 
     /* "More" button active state — flips colour when its popover is open. */
     #topbar-menu-btn.lir-active {
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: transparent;
     }
 
@@ -1831,7 +1831,7 @@
       font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.02em;
       color: var(--text-muted); margin-bottom: 6px;
     }
-    .wf-progress-pct { color: var(--primary); }
+    .wf-progress-pct { color: var(--primary-ink, var(--primary)); }
     .wf-progress-track {
       height: 6px; border-radius: 999px; overflow: hidden;
       background: var(--surface-3);
@@ -1847,7 +1847,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center; height: 100%; gap: 6px; padding: 24px 14px; color: var(--text-subtle);
     }
-    .wf-empty .material-symbols-outlined { font-size: 30px; color: var(--primary); opacity: 0.7; }
+    .wf-empty .material-symbols-outlined { font-size: 30px; color: var(--primary-ink, var(--primary)); opacity: 0.7; }
     .wf-empty-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text-muted); }
     .wf-empty-sub { font-size: var(--fs-label); line-height: 1.5; max-width: 220px; }
 
@@ -1898,7 +1898,7 @@
     .wf-swap { padding: 7px 0; border-top: 1px solid var(--border); font-size: var(--fs-label); }
     .wf-swap:first-of-type { border-top: 0; }
     .wf-swap-from { color: var(--text-subtle); text-decoration: line-through; }
-    .wf-swap-arrow { color: var(--primary); font-size: 14px !important; vertical-align: middle; margin: 0 4px; }
+    .wf-swap-arrow { color: var(--primary-ink, var(--primary)); font-size: 14px !important; vertical-align: middle; margin: 0 4px; }
     .wf-swap-to { color: var(--text); font-weight: 600; }
     /* Score bar */
     .wf-score-row { display: flex; align-items: baseline; justify-content: space-between; margin: 2px 0 5px; }
@@ -1939,7 +1939,7 @@
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
       background: color-mix(in srgb, var(--primary) 10%, transparent);
     }
-    .sc-reply-chips .chip--match .material-symbols-outlined { color: var(--primary) !important; }
+    .sc-reply-chips .chip--match .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
     /* ── Inline data & charts (Explore Data intent) ─────────────────────
@@ -2108,7 +2108,7 @@
     .vf-step-dot .material-symbols-outlined { font-size: 15px !important; }
     .vf-step-label { font-size: 9px; font-weight: 600; text-align: center; color: var(--text-subtle); line-height: 1.2; }
     .vf-step.is-active .vf-step-dot { border-color: var(--primary); color: #fff; background: var(--primary); box-shadow: 0 0 0 4px var(--primary-10); }
-    .vf-step.is-active .vf-step-label { color: var(--primary); font-weight: 700; }
+    .vf-step.is-active .vf-step-label { color: var(--primary-ink, var(--primary)); font-weight: 700; }
     .vf-step.is-done .vf-step-dot { border-color: var(--sec-green); color: #fff; background: var(--sec-green); }
     .vf-step.is-done .vf-step-label { color: var(--text-muted); }
     .vf-step-line { height: 2px; flex: 1; min-width: 8px; align-self: flex-start; margin-top: 12px; background: var(--border-strong); border-radius: 2px; transition: background 0.3s ease; }
@@ -2181,7 +2181,7 @@
     .cmp-scope-btn .material-symbols-outlined { font-size: 16px !important; }
     .cmp-scope-btn:hover:not(.is-active) { color: var(--text); background: color-mix(in srgb, var(--text-subtle) 9%, transparent); }
     .cmp-scope-btn.is-active {
-      color: var(--primary); font-weight: 700;
+      color: var(--primary-ink, var(--primary)); font-weight: 700;
       border-bottom-color: var(--primary);
       background: color-mix(in srgb, var(--primary) 7%, transparent);
     }
@@ -2195,12 +2195,12 @@
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center; gap: 6px; padding: 32px 18px; color: var(--text-subtle);
     }
-    .cmp-empty .material-symbols-outlined { font-size: 40px; color: var(--primary); opacity: 0.7; }
+    .cmp-empty .material-symbols-outlined { font-size: 40px; color: var(--primary-ink, var(--primary)); opacity: 0.7; }
     .cmp-empty-title { font-size: var(--fs-h6, 0.95rem); font-weight: 700; color: var(--text); }
     .cmp-empty-sub { font-size: var(--fs-ui); color: var(--text-muted); max-width: 300px; line-height: 1.5; }
 
     /* Owl loader — the WISE-owl mark breathing while the comparison assembles. */
-    .cmp-owl-loader { color: var(--primary); }
+    .cmp-owl-loader { color: var(--primary-ink, var(--primary)); }
     .cmp-owl-loader svg {
       width: 52px; height: auto; display: block;
       animation: cmp-owl-breathe 1.4s ease-in-out infinite;
@@ -2227,7 +2227,7 @@
       transition: all 0.15s ease;
     }
     .cmp-tool-btn .material-symbols-outlined { font-size: 15px !important; }
-    .cmp-tool-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .cmp-tool-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .cmp-tool-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     /* Solid primary CTA — matches .dash-btn--primary in analytics-types.html
        (navy fill, white text). */
@@ -2306,8 +2306,8 @@
       transition: background 0.12s ease, color 0.12s ease;
     }
     .cmp-add-menu-item .material-symbols-outlined { font-size: 17px !important; color: var(--text-subtle); }
-    .cmp-add-menu-item:hover { background: var(--surface-2); color: var(--primary); }
-    .cmp-add-menu-item:hover .material-symbols-outlined { color: var(--primary); }
+    .cmp-add-menu-item:hover { background: var(--surface-2); color: var(--primary-ink, var(--primary)); }
+    .cmp-add-menu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
 
     /* Trailing "add a competitor" column — shown only in the default state when
        just YOUR own food is on the board. It's painted as ONE tall cell that
@@ -2338,9 +2338,9 @@
     .cmp-addcol-plus {
       width: 40px; height: 40px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary-ink, var(--primary));
     }
-    .cmp-addcol-plus .material-symbols-outlined { font-size: 24px !important; color: var(--primary); }
+    .cmp-addcol-plus .material-symbols-outlined { font-size: 24px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-addcol-title { font-size: calc(var(--fs-ui) + 3px); font-weight: 800; color: var(--text); line-height: 1.2; }
     .cmp-addcol-sub { font-size: calc(var(--fs-label) + 1px); color: var(--text-muted); line-height: 1.45; max-width: 210px; }
     .cmp-addcol-inner .cmp-add-wrap { margin-top: 8px; }
@@ -2359,8 +2359,8 @@
        the average toggle above the category list. */
     .cmp-cat-wrap { display: inline-flex; }
     .cmp-cat-btn { gap: 7px; }
-    .cmp-cat-btn.has-avg { border-color: var(--primary); color: var(--primary); }
-    .cmp-cat-btn.has-avg > .material-symbols-outlined { color: var(--primary) !important; }
+    .cmp-cat-btn.has-avg { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+    .cmp-cat-btn.has-avg > .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
     .cmp-cat-btn-label { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cmp-cat-avg-badge {
       font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
@@ -2381,7 +2381,7 @@
     .cmp-cat-avg-row:hover { background: var(--surface-2); }
     .cmp-cat-avg-txt { display: inline-flex; align-items: center; gap: 8px; }
     .cmp-cat-avg-txt .material-symbols-outlined { font-size: 17px !important; color: var(--text-subtle); }
-    .cmp-cat-avg-row.is-on .cmp-cat-avg-txt .material-symbols-outlined { color: var(--primary); }
+    .cmp-cat-avg-row.is-on .cmp-cat-avg-txt .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .cmp-cat-avg-row .cmp-switch-track { flex: 0 0 auto; }
     .cmp-cat-avg-row.is-on .cmp-switch-track { background: var(--primary); }
     .cmp-cat-avg-row.is-on .cmp-switch-track::after { transform: translateX(16px); }
@@ -2393,8 +2393,8 @@
       color: var(--text); font-size: var(--fs-label); font-weight: 600;
     }
     .cmp-cat-item:hover { background: var(--surface-2); }
-    .cmp-cat-item.is-active { color: var(--primary); }
-    .cmp-cat-check { font-size: 17px !important; color: var(--primary); }
+    .cmp-cat-item.is-active { color: var(--primary-ink, var(--primary)); }
+    .cmp-cat-check { font-size: 17px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-hcell--tools .cmp-tool-spacer { display: none; }
     /* If the wrapped controls run taller than the default tile height, let the
        neighbouring image tiles grow with the row so the header stays flush. */
@@ -2665,7 +2665,7 @@
     .cmp-summary { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
     .cmp-summary-title { font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.15; }
     .cmp-summary-meta { font-size: var(--fs-label); color: var(--text-muted); }
-    .cmp-summary-gen { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-label); color: var(--primary); font-weight: 600; }
+    .cmp-summary-gen { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-label); color: var(--primary-ink, var(--primary)); font-weight: 600; }
     .cmp-summary-gen .material-symbols-outlined { font-size: 13px !important; }
 
     /* The comparison grid — metric rail + entity columns, aligned by CSS grid.
@@ -2706,7 +2706,7 @@
     /* Metric rows */
     .cmp-rail-metric { display: flex; flex-direction: column; gap: 1px; }
     .cmp-rail-metric-name { display: flex; align-items: center; gap: 6px; font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
-    .cmp-rail-metric-name .material-symbols-outlined { font-size: 15px !important; color: var(--primary); }
+    .cmp-rail-metric-name .material-symbols-outlined { font-size: 15px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-rail-metric-avg {
       font-size: 10px; font-weight: 700; color: var(--text-muted);
       background: var(--surface); border: 1px solid var(--border);
@@ -2736,22 +2736,22 @@
     /* Category-average column styling */
     .cmp-cell--avg { background: color-mix(in srgb, var(--primary) 7%, transparent); }
     .cmp-cell--avg.cmp-cell--rail { background: var(--surface-2); }
-    .cmp-avg-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--primary); }
+    .cmp-avg-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--primary-ink, var(--primary)); }
     .cmp-avg-badge .material-symbols-outlined { font-size: 12px !important; }
 
     /* Insight row */
     .cmp-insight { display: flex; flex-direction: column; gap: 4px; }
-    .cmp-insight-head { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--primary); }
+    .cmp-insight-head { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--primary-ink, var(--primary)); }
     .cmp-insight-head .material-symbols-outlined { font-size: 13px !important; }
     .cmp-insight-body { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.45; }
     /* Inline chat affordance on each generated insight — continue the
        conversation about that specific product's insight. Brand blue. */
     .cmp-insight-chat {
       display: inline-flex; align-items: center; vertical-align: middle;
-      margin-left: 3px; color: var(--primary); cursor: pointer;
+      margin-left: 3px; color: var(--primary-ink, var(--primary)); cursor: pointer;
       transition: opacity 0.15s ease, transform 0.12s ease;
     }
-    .cmp-insight-chat .material-symbols-outlined { font-size: 14px !important; color: var(--primary); }
+    .cmp-insight-chat .material-symbols-outlined { font-size: 14px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-insight-chat:hover { opacity: 0.75; transform: scale(1.08); }
     .cmp-insight-chat:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
@@ -2790,8 +2790,8 @@
       font-size: 15px !important; line-height: 1;
       font-variation-settings: 'FILL' 0, 'wght' 500, 'opsz' 20;
     }
-    .cmp-takeaway-swap:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); transform: scale(1.06); }
-    .cmp-takeaway-swap[aria-expanded="true"] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .cmp-takeaway-swap:hover { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 10%, transparent); transform: scale(1.06); }
+    .cmp-takeaway-swap[aria-expanded="true"] { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 12%, transparent); }
     .cmp-takeaway-swap:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
     /* Swap menu — compact popover of the takeaways not already on the board.
        Rendered as a viewport-fixed popover (appended to <body>) and placed by
@@ -2818,9 +2818,9 @@
     }
     .cmp-takeaway-menu-item:hover { background: var(--surface-2); }
     .cmp-takeaway-menu-item.is-active { background: color-mix(in srgb, var(--primary) 9%, transparent); }
-    .cmp-takeaway-menu-ic { font-size: 16px !important; color: var(--primary); font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20; }
+    .cmp-takeaway-menu-ic { font-size: 16px !important; color: var(--primary-ink, var(--primary)); font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20; }
     .cmp-takeaway-menu-lbl { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
-    .cmp-takeaway-menu-check { font-size: 15px !important; color: var(--primary); }
+    .cmp-takeaway-menu-check { font-size: 15px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-takeaway-ic {
       width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -2867,10 +2867,10 @@
        (like .cmp-insight-chat), not floated to the top-right of the block. */
     .cmp-takeaway-chat {
       display: inline-flex; align-items: center; vertical-align: middle;
-      margin-left: 3px; color: var(--primary); cursor: pointer;
+      margin-left: 3px; color: var(--primary-ink, var(--primary)); cursor: pointer;
       transition: opacity 0.15s ease, transform 0.12s ease;
     }
-    .cmp-takeaway-chat .material-symbols-outlined { font-size: 15px !important; color: var(--primary); }
+    .cmp-takeaway-chat .material-symbols-outlined { font-size: 15px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-takeaway-chat:hover { opacity: 0.75; transform: scale(1.08); }
     .cmp-takeaway-chat:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
@@ -2977,7 +2977,7 @@
     }
     .cmp-pending-badge {
       display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
-      font-size: 10px; font-weight: 800; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary);
+      font-size: 10px; font-weight: 800; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary-ink, var(--primary));
     }
     .cmp-pending-badge .material-symbols-outlined { font-size: 12px !important; }
     .cmp-hcell .cmp-rank.cmp-rank--pending { background: var(--primary); color: #fff; }
@@ -3185,7 +3185,7 @@
     }
     .cmp-kind-menu-item:hover { background: var(--surface-2); }
     .cmp-kind-menu-item .material-symbols-outlined { font-size: 15px !important; color: var(--text-subtle); }
-    .cmp-kind-menu-item.is-match .material-symbols-outlined { color: var(--primary); }
+    .cmp-kind-menu-item.is-match .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .cmp-kind-menu-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cmp-kind-menu-empty { padding: 10px 8px; font-size: var(--fs-ui); color: var(--text-subtle); }
 
@@ -3235,7 +3235,7 @@
     .cmp-rail-metric-ic--btn:active { transform: scale(0.95); }
     .cmp-rail-metric-ic--btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .cmp-rail-metric-name { gap: 8px; font-weight: 700; }
-    .cmp-rail-metric-name .material-symbols-outlined { color: var(--primary); }
+    .cmp-rail-metric-name .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .cmp-rail-metric-hint { padding-left: 35px; font-size: 9px; }
     .cmp-rail-metric-hint { margin-top: 3px; color: var(--text-subtle); }
     /* Wordier synopsis under each metric, with an inline chat icon that opens
@@ -3246,10 +3246,10 @@
     }
     .cmp-rail-learn {
       display: inline-flex; align-items: center; vertical-align: middle;
-      margin-left: 2px; color: var(--primary); cursor: pointer;
+      margin-left: 2px; color: var(--primary-ink, var(--primary)); cursor: pointer;
       transition: opacity 0.15s ease;
     }
-    .cmp-rail-learn .material-symbols-outlined { font-size: 14px !important; color: var(--primary); }
+    .cmp-rail-learn .material-symbols-outlined { font-size: 14px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-rail-learn:hover { opacity: 0.65; }
 
     /* Grade chips + bars — vivid and distinct. The score sits ABOVE the bar so
@@ -3499,11 +3499,11 @@
       position: absolute; top: 4px; right: 4px; z-index: 2;
       display: inline-flex; align-items: center; justify-content: center;
       width: 20px; height: 20px; border-radius: 6px;
-      color: var(--primary); cursor: pointer; opacity: 0;
+      color: var(--primary-ink, var(--primary)); cursor: pointer; opacity: 0;
       background: color-mix(in srgb, var(--surface) 80%, transparent);
       transition: opacity 0.14s ease, transform 0.12s ease, background-color 0.14s ease;
     }
-    .cmp-gs-cellchat .material-symbols-outlined { font-size: 14px !important; color: var(--primary); }
+    .cmp-gs-cellchat .material-symbols-outlined { font-size: 14px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-gs-cell:hover .cmp-gs-cellchat,
     .cmp-gs-cell:focus-within .cmp-gs-cellchat { opacity: 0.9; }
     .cmp-gs-cellchat:hover { opacity: 1 !important; transform: scale(1.08); }
@@ -3570,7 +3570,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center; height: 100%; gap: 6px; padding: 24px 14px; color: var(--text-subtle);
     }
-    .vf-empty .material-symbols-outlined { font-size: 30px; color: var(--primary); opacity: 0.75; }
+    .vf-empty .material-symbols-outlined { font-size: 30px; color: var(--primary-ink, var(--primary)); opacity: 0.75; }
     .vf-empty-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text-muted); }
     .vf-empty-sub { font-size: var(--fs-label); line-height: 1.5; max-width: 240px; }
 
@@ -3587,7 +3587,7 @@
     .vf-sec-icon {
       width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      background: var(--primary-10); color: var(--primary);
+      background: var(--primary-10); color: var(--primary-ink, var(--primary));
     }
     .vf-sec-icon .material-symbols-outlined { font-size: 14px !important; }
     .vf-sec-title { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
@@ -3599,7 +3599,7 @@
     .vf-kv-k { color: var(--text-subtle); width: 96px; flex-shrink: 0; }
     .vf-kv-v { color: var(--text); font-weight: 600; }
     .vf-chips-mini { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-    .vf-chip-mini { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--primary-10); color: var(--primary); }
+    .vf-chip-mini { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--primary-10); color: var(--primary-ink, var(--primary)); }
     .vf-chip-mini .material-symbols-outlined { font-size: 12px !important; }
 
     /* Stat tiles */
@@ -3608,7 +3608,7 @@
     .vf-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .vf-stat-label { font-size: 9px; font-weight: 600; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
     .vf-stat--green .vf-stat-num { color: var(--sec-green-text); } html.dark .vf-stat--green .vf-stat-num { color: #B6C9BE; }
-    .vf-stat--blue .vf-stat-num { color: var(--primary); }
+    .vf-stat--blue .vf-stat-num { color: var(--primary-ink, var(--primary)); }
     .vf-stat--red .vf-stat-num { color: var(--sec-red-text); } html.dark .vf-stat--red .vf-stat-num { color: #FFE1DC; }
 
     /* Distribution bars */
@@ -3626,7 +3626,7 @@
     .vf-prod-meta { font-size: 10px; color: var(--text-subtle); }
     .vf-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
     .vf-pill--green { background: var(--sec-green-10); color: var(--sec-green-text); } html.dark .vf-pill--green { color: #B6C9BE; }
-    .vf-pill--blue { background: var(--primary-10); color: var(--primary); }
+    .vf-pill--blue { background: var(--primary-10); color: var(--primary-ink, var(--primary)); }
     .vf-pill--red { background: var(--sec-red-10); color: var(--sec-red-text); } html.dark .vf-pill--red { color: #FFE1DC; }
     .vf-pill--amber { background: var(--ter-amber-10); color: var(--ter-amber-text); } html.dark .vf-pill--amber { color: #FFC434; }
 
@@ -3641,7 +3641,7 @@
     .vf-nutri-k { font-size: 8.5px; font-weight: 600; color: var(--text-subtle); margin-top: 1px; }
     .vf-sign { margin-top: 10px; padding: 10px; border-radius: 9px; background: var(--primary-soft); border: 1px dashed var(--primary-20); font-size: var(--fs-label); color: var(--text-muted); }
     .vf-sign strong { color: var(--text); }
-    .vf-sign-name { font-family: "WISE Digits", "DM Sans"; font-size: 1.1rem; font-weight: 700; font-style: italic; color: var(--primary); margin-top: 4px; }
+    .vf-sign-name { font-family: "WISE Digits", "DM Sans"; font-size: 1.1rem; font-weight: 700; font-style: italic; color: var(--primary-ink, var(--primary)); margin-top: 4px; }
 
     /* Payment table */
     .vf-table { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
@@ -3650,9 +3650,9 @@
     .vf-table td.vf-amt { text-align: right; font-weight: 600; color: var(--text); white-space: nowrap; }
     .vf-total-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--border-strong); }
     .vf-total-label { font-size: var(--fs-ui); font-weight: 700; color: var(--text); }
-    .vf-total-amt { font-size: 1.25rem; font-weight: 800; color: var(--primary); }
+    .vf-total-amt { font-size: 1.25rem; font-weight: 800; color: var(--primary-ink, var(--primary)); }
     .vf-pay-method { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 9px 10px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); font-size: var(--fs-label); color: var(--text-muted); }
-    .vf-pay-method .material-symbols-outlined { color: var(--primary); font-size: 18px !important; }
+    .vf-pay-method .material-symbols-outlined { color: var(--primary-ink, var(--primary)); font-size: 18px !important; }
 
     /* Verified success */
     .vf-success { text-align: center; padding: 6px 4px 4px; }
@@ -3865,7 +3865,7 @@
     .nfp-fi-badge {
       font-size: 0.58rem;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: var(--primary-soft);
       border-radius: 4px;
       padding: 1px 5px;
@@ -3905,7 +3905,7 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .nfp-fi-thumb.active .nfp-fi-thumb-label { color: #25507C; }
+    .nfp-fi-thumb.active .nfp-fi-thumb-label { color: var(--primary-ink, var(--primary)); }
 
     /* Scrollable body — white background */
     .nfp-scroll-body {
@@ -4222,7 +4222,7 @@
       height: 32px;
       border-radius: var(--r-sm);
       background: var(--primary-soft);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4581,9 +4581,9 @@
     }
     .ws-sc-filter-btn:hover {
       background: transparent !important;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
-    .ws-sc-filter-btn:hover .material-symbols-outlined { color: var(--primary); }
+    .ws-sc-filter-btn:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .ws-sc-filter-btn .material-symbols-outlined { font-size: 16px !important; color: var(--text-muted); }
     .ws-sc-filter-btn .ws-sc-filter-caret { margin-left: -2px; }
     .ws-sc-filter-pop { left: auto; right: 0; min-width: 200px; }
@@ -4594,15 +4594,15 @@
       padding-bottom: 6px;
     }
     .ws-sc-filter-pop .topbar-menu-item:hover {
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       text-decoration: underline;
     }
-    .ws-sc-filter-pop .topbar-menu-item:hover .topbar-menu-icon { color: var(--primary); }
+    .ws-sc-filter-pop .topbar-menu-item:hover .topbar-menu-icon { color: var(--primary-ink, var(--primary)); }
     .ws-sc-filter-pop .topbar-menu-item.is-active {
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       font-weight: 600;
     }
-    .ws-sc-filter-pop .topbar-menu-item.is-active .topbar-menu-icon { color: var(--primary); }
+    .ws-sc-filter-pop .topbar-menu-item.is-active .topbar-menu-icon { color: var(--primary-ink, var(--primary)); }
 
     /* Scroller — horizontal rail of cards with snap + hidden scrollbar. */
     .ws-scorecards-wrap { position: relative; }
@@ -4787,7 +4787,7 @@
       margin-top: 6px;
       font-size: 0.75rem;
       font-weight: 700;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     .ws-sc-action .material-symbols-outlined {
       font-size: 15px;
@@ -4813,7 +4813,7 @@
     .ws-sc-icon--intro,
     .ws-sc-icon--wiseai { color: var(--primary); }
     .ws-sc-pill--intro,
-    .ws-sc-pill--wiseai { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+    .ws-sc-pill--wiseai { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary-ink, var(--primary)); }
     html.dark .ws-sc-icon--intro,
     html.dark .ws-sc-icon--wiseai { color: var(--primary-bright, #8B9FAF); }
     /* Intro cards lead with a headline instead of a metric — give it presence
@@ -4827,7 +4827,7 @@
       margin-top: 6px;
     }
     .ws-scorecard--intro .ws-sc-intro-title,
-    .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary); }
+    .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary-ink, var(--primary)); }
 
     /* Narrow panels / phones: cards shrink a touch but keep scrolling sideways
        (still ~1.5 visible, so the scroll-right affordance still reads). */
@@ -4883,7 +4883,7 @@
       box-shadow: inset 0 1px 3px rgba(17, 24, 39, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
     }
     .sc-avatar-you img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .sc-line-wiseai strong { color: var(--primary); font-weight: 700; }
+    .sc-line-wiseai strong { color: var(--primary-ink, var(--primary)); font-weight: 700; }
 
     .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 1px; }
     .sc-line-time { font-size: 0.625rem; font-weight: 500; color: color-mix(in srgb, var(--text-subtle) 55%, transparent); letter-spacing: 0.02em; }
@@ -4921,7 +4921,7 @@
     .sc-fb-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
     .sc-fb-thanks {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: var(--fs-label); font-weight: 500; color: var(--primary);
+      font-size: var(--fs-label); font-weight: 500; color: var(--primary-ink, var(--primary));
     }
     .sc-fb-thanks .material-symbols-outlined { font-size: 14px !important; }
     /* Popover: opens ABOVE the bar, anchored to its right edge by default
@@ -5326,7 +5326,7 @@
     }
     #verification-sidebar .vs-step-sub {
       font-size: var(--fs-ui);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       font-weight: 500;
       margin-top: 2px;
     }
@@ -5421,7 +5421,7 @@
     }
     .fl-icon-btn:hover {
       background: var(--surface-2);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     .fl-divider {
       width: 1px;
@@ -5734,7 +5734,7 @@
       font-size: var(--fs-ui);
     }
     .page-chat-footer a {
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       font-weight: 600;
       text-decoration: none;
     }
@@ -5935,7 +5935,7 @@
       border-radius: var(--radius-pill);
       border: 1px solid var(--border);
       background: transparent;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       font-size: var(--fs-ui);
       font-weight: 600;
       cursor: pointer;
@@ -5947,7 +5947,7 @@
     .amm-add-btn:hover {
       background: var(--primary-soft);
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     .amm-add-btn.amm-added {
       background: #1B2D22;
@@ -5972,7 +5972,7 @@
       border-radius: var(--radius-pill);
       border: 1px solid var(--border);
       background: transparent;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       font-size: var(--fs-ui);
       font-weight: 600;
       cursor: pointer;
@@ -6287,7 +6287,7 @@
     .history-tabs-row { border-bottom-color: var(--border); }
     .history-tab-btn { color: var(--text-muted); }
     .history-tab-btn.active {
-      color: var(--primary) !important;
+      color: var(--primary-ink, var(--primary)) !important;
       border-bottom-color: var(--primary) !important;
     }
     .history-item:hover { background: var(--surface-2); }
@@ -6295,7 +6295,7 @@
     .history-item-meta { color: var(--text-muted); }
     /* History badges — keep semantic colors but quieter. */
     .hb-progress { background: var(--ter-amber-10); color: var(--ter-amber-text); }
-    .hb-awaiting { background: var(--primary-soft); color: var(--primary); }
+    .hb-awaiting { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); }
     .hb-complete { background: var(--sec-green-10); color: var(--sec-green-text); }
     .hb-flagged  { background: var(--sec-red-10);   color: var(--sec-red-text);   }
 
@@ -6361,12 +6361,12 @@
       background: var(--surface-3) !important;
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
     }
-    html.dark #ssr-wise   .w-10 .material-symbols-outlined { color: var(--primary) !important; }
+    html.dark #ssr-wise   .w-10 .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
     html.dark #ssr-nova   .w-10 .material-symbols-outlined { color: var(--sec-green) !important; }
     html.dark #ssr-wiseai  .w-10 .material-symbols-outlined { color: var(--ter-amber) !important; }
-    html.dark #ssr-shield .w-10 .material-symbols-outlined { color: var(--primary) !important; }
+    html.dark #ssr-shield .w-10 .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
     html.dark #ssr-lens   .w-10 .material-symbols-outlined { color: var(--ter-cyan) !important; }
-    html.dark #ssr-pulse  .w-10 .material-symbols-outlined { color: #25507C !important; }
+    html.dark #ssr-pulse  .w-10 .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
     html.dark #ssr-vault  .w-10 .material-symbols-outlined { color: #75360A !important; }
 
     /* Primary action buttons (new conversation, send). */
@@ -6607,7 +6607,7 @@
     }
     .panel-flip-btn:hover {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
     .panel-width-toggle-btn {
@@ -6633,7 +6633,7 @@
     .panel-width-toggle-btn:hover,
     .panel-width-toggle-btn.is-on {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
     .panel-close-btn {
@@ -6688,7 +6688,7 @@
     .pf-module-menu-btn:hover,
     .pf-module-menu.is-open .pf-module-menu-btn {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
     .pf-module-menu-pop {
@@ -6736,13 +6736,13 @@
     }
     .pf-module-menu-item:hover {
       background: color-mix(in srgb, var(--primary) 12%, transparent);
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
     }
     .pf-module-menu-item:hover .material-symbols-outlined,
-    .pf-module-menu-item:hover .material-symbols-outlined { color: var(--primary); }
-    .pf-module-menu-item.is-on { color: var(--primary); }
+    .pf-module-menu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
+    .pf-module-menu-item.is-on { color: var(--primary-ink, var(--primary)); }
     .pf-module-menu-item.is-on .material-symbols-outlined,
-    .pf-module-menu-item.is-on .material-symbols-outlined { color: var(--primary); }
+    .pf-module-menu-item.is-on .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
     .pf-module-menu-item--off:hover {
       background: color-mix(in srgb, #DC3038 14%, transparent);
@@ -6827,12 +6827,12 @@
     .panel-controls--stacked .panel-width-toggle-btn:hover,
     .panel-controls--stacked .panel-close-btn:hover {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: var(--primary-soft);
     }
     .panel-controls--stacked .panel-width-toggle-btn.is-on {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: var(--primary-soft);
     }
     .panel-flip[data-side="right"] .panel-ctrl-icon .material-symbols-outlined,
@@ -7049,7 +7049,7 @@
     }
     .panel-more-btn.is-open {
       opacity: 1;
-      color: var(--primary);
+      color: var(--primary-ink, var(--primary));
       background: color-mix(in srgb, var(--primary) 14%, transparent);
     }
 
@@ -7683,7 +7683,7 @@
         <div class="side-panel-header shield-panel-header">
           <div class="flex items-center gap-2 flex-1 min-w-0">
             <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-[15px]" style="color:var(--primary)">shield</span>
+              <span class="material-symbols-outlined text-[15px]" style="color:var(--primary-ink, var(--primary))">shield</span>
             </div>
             <div>
               <div class="text-xs font-bold text-oyster-100">SHIELD <span class="font-bold text-oyster-500 ml-1">v1.5</span></div>
@@ -7701,7 +7701,7 @@
           <div class="rounded-lg p-3" style="background:rgba(104, 120, 150,0.06);border:1px solid rgba(104, 120, 150,0.18);">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-oyster-200">WISE Verified — Sample Co.</span>
-              <span class="font-semibold" style="color:var(--primary)">In Review</span>
+              <span class="font-semibold" style="color:var(--primary-ink, var(--primary))">In Review</span>
             </div>
             <p class="mt-1 text-oyster-600">Badge issuance pending 3 compliance checks.</p>
           </div>
@@ -8126,7 +8126,7 @@
                 <!-- WISE (settings) -->
                 <div class="ss-agent-row ssr-on" id="ssr-wise">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary)">verified</span>
+                        <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary-ink, var(--primary))">verified</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name" id="ssn-wise">
@@ -8207,7 +8207,7 @@
                 <!-- SHIELD (settings) -->
                 <div class="ss-agent-row" id="ssr-shield">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary)">shield</span>
+                        <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary-ink, var(--primary))">shield</span>
                     </div>
                     <div class="ss-agent-body">
                         <div class="ss-agent-name ssa-off" id="ssn-shield">
@@ -8458,7 +8458,7 @@
           </div>
           <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
             <div class="um-card flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style="background:var(--primary-soft);color:var(--primary)">AK</div>
+              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style="background:var(--primary-soft);color:var(--primary-ink, var(--primary))">AK</div>
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-bold text-oyster-100">Arthur Krupsky</div>
                 <div class="text-xs text-oyster-600">Product Intelligence Lead</div>
@@ -8566,7 +8566,7 @@
               <div class="text-xs text-oyster-600">Created Jan 18, 2026 · Last used 5d ago</div>
             </div>
             <div class="um-card text-xs text-oyster-500">
-              <div class="flex items-center gap-2 text-oyster-200 font-semibold"><span class="material-symbols-outlined" style="font-size:15px;color:var(--primary)">info</span>Usage this month</div>
+              <div class="flex items-center gap-2 text-oyster-200 font-semibold"><span class="material-symbols-outlined" style="font-size:15px;color:var(--primary-ink, var(--primary))">info</span>Usage this month</div>
               <p class="mt-1">48,210 / 100,000 requests</p>
             </div>
           </div>
@@ -8666,7 +8666,7 @@
           <div class="panel-inner lr-inner">
             <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
               <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[15px]" style="color:var(--primary)">campaign</span>
+                <span class="material-symbols-outlined text-[15px]" style="color:var(--primary-ink, var(--primary))">campaign</span>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="text-xs font-bold text-oyster-100">Claims Review</div>
@@ -8741,7 +8741,7 @@
             <span class="material-symbols-outlined" style="font-size:16px;">receipt_long</span>
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:var(--fs-ui);font-weight:700;color:var(--text);">NFP<span style="color:var(--primary)">+</span></div>
+            <div style="font-size:var(--fs-ui);font-weight:700;color:var(--text);">NFP<span style="color:var(--primary-ink, var(--primary))">+</span></div>
             <p style="font-size:var(--fs-ui);color:var(--text-muted);margin-top:1px;">Nutrition Fact Panel</p>
           </div>
           <div class="panel-controls">
@@ -8989,7 +8989,7 @@
       <div class="panel-inner wf-inner">
         <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
           <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary)">science</span>
+            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary-ink, var(--primary))">science</span>
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Reformulation Plan</div>
@@ -9032,7 +9032,7 @@
       <div class="panel-inner vf-inner">
         <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
           <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary)">gpp_good</span>
+            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary-ink, var(--primary))">gpp_good</span>
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100 flex items-center gap-2">WISE Verification <span class="vf-live"><span class="vf-live-dot"></span>LIVE</span></div>
@@ -9078,7 +9078,7 @@
       <div class="panel-inner cmp-inner">
         <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
           <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary)">insights</span>
+            <span class="material-symbols-outlined text-[15px]" style="color:var(--primary-ink, var(--primary))">insights</span>
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Compare Foods</div>
@@ -9114,7 +9114,7 @@
           <!-- Header -->
           <div class="amm-header">
               <div class="amm-header-icon">
-                  <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary)">group_add</span>
+                  <span class="material-symbols-outlined" style="font-size:20px;color:var(--primary-ink, var(--primary))">group_add</span>
               </div>
               <div class="amm-header-text">
                   <div class="amm-title" id="amm-title-id">Add to conversation</div>
@@ -9153,7 +9153,7 @@
       <div class="so-dialog" tabindex="-1">
           <div class="so-header">
               <div class="so-header-icon">
-                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary)">logout</span>
+                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary-ink, var(--primary))">logout</span>
               </div>
               <div class="so-header-text">
                   <div class="so-title" id="so-title-id">Sign out of WISE?</div>
@@ -9909,7 +9909,7 @@
         'beforeend',
         `<div class="chat-announce-banner" style="color:${color}"><span class="material-symbols-outlined" style="color:${color}">${icon}</span> ${name} ${action}</div>`
       );
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     /* Drop a small "agent · message" line into the chat so the user sees the
@@ -9927,7 +9927,7 @@
            <div class="sc-line-body">${html}</div>
          </div>`
       );
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function toggleAgent(id, isOn) {
@@ -10209,6 +10209,27 @@
       return `<div class="sc-line-meta">${src}<span class="sc-line-time">${wiseaiNowLabel()}</span></div>`;
     }
 
+    /* Follow the conversation without losing the reader's place: advance the
+       scroll toward the bottom, but never push the reader's latest message
+       above the top of the viewport — a long reply stops there so the reader
+       keeps reading from where they typed. Never scrolls back up; pass
+       `force` (a fresh user action) to re-engage a reader who scrolled away. */
+    function wiseaiFollowChat(box, force) {
+      if (!box) return;
+      const bottom = Math.max(0, box.scrollHeight - box.clientHeight);
+      const yours = box.querySelectorAll('.sc-line-you');
+      const anchor = yours.length ? yours[yours.length - 1] : null;
+      let target = bottom;
+      if (anchor) {
+        const cap = anchor.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 10;
+        target = Math.min(bottom, Math.max(0, cap));
+      }
+      const last = box.__followPos;
+      if (!force && typeof last === 'number' && box.scrollTop < last - 48) return;
+      if (force || target > box.scrollTop) box.scrollTop = target;
+      box.__followPos = box.scrollTop;
+    }
+
     function addUserMessage(text, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
@@ -10218,7 +10239,7 @@
         'beforeend',
         `<div class="mb-3 sc-line sc-line-you${leadCls}"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${WISEAI_USER_AVATAR}</span><div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
       );
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box, true); /* fresh user action — always bring their message into view */
     }
 
     /* Word-by-word reveal DISABLED — chat text appears whole. The
@@ -10230,7 +10251,7 @@
     })();
     function wiseaiTypeInLine(bodyEl, done) {
       const box = document.getElementById('chat-messages');
-      if (box) box.scrollTop = box.scrollHeight;
+      if (box) wiseaiFollowChat(box);
       if (done) done();
     }
 
@@ -10252,7 +10273,7 @@
         list[idx].style.opacity = '1';
         list[idx].style.transform = 'none';
         idx += 1;
-        if (box) box.scrollTop = box.scrollHeight;
+        if (box) wiseaiFollowChat(box);
         if (idx < list.length) setTimeout(showNext, gap);
         else if (done) setTimeout(done, gap);
       };
@@ -10292,8 +10313,8 @@
       if (!row) return;
       const box = document.getElementById('chat-messages');
       const chips = Array.from(row.querySelectorAll('.chip'));
-      if (!chips.length) { if (box) box.scrollTop = box.scrollHeight; return; }
-      wiseaiRevealStaggered(chips, 110, 55, () => { if (box) box.scrollTop = box.scrollHeight; });
+      if (!chips.length) { if (box) wiseaiFollowChat(box); return; }
+      wiseaiRevealStaggered(chips, 110, 55, () => { if (box) wiseaiFollowChat(box); });
     }
     function wiseaiEnsureChipObserver() {
       if (wiseaiChipObserverSet) return;
@@ -10371,7 +10392,7 @@
       );
       const line = box.lastElementChild;
       const body = line && line.querySelector('.sc-line-body');
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
       /* Type the prose in word-by-word, then bring in the timestamp, then the
          action icons (grounding chip + feedback pill) — text, timestamp, icons,
          in order. Embedded charts / tables are left intact by the walker. Any
@@ -10389,10 +10410,10 @@
         if (fbEl) icons.push(fbEl);
         if (timeEl) wiseaiPrimeLeft(timeEl);
         icons.forEach(wiseaiPrimeLeft);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
         wiseaiTypeInLine(body, () => {
           wiseaiRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
-            wiseaiRevealStaggered(icons, 130, 60, () => { box.scrollTop = box.scrollHeight; resolveDone(); });
+            wiseaiRevealStaggered(icons, 130, 60, () => { wiseaiFollowChat(box); resolveDone(); });
           });
         });
       } else {
@@ -10482,7 +10503,7 @@
       el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
       el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${label}…</span></span></div>`;
       box.appendChild(el);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
       return el;
     }
 
@@ -10978,7 +10999,7 @@
       row.className = 'sc-reply-chips';
       row.innerHTML = list.map(dataChipHtml).join('');
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     /* "Build on this" follow-up chips after an answer. */
@@ -10991,7 +11012,7 @@
       row.className = 'sc-reply-chips';
       row.innerHTML = list.map(dataChipHtml).join('');
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function dataChipHtml(id) {
@@ -11008,7 +11029,7 @@
       row.innerHTML = '<button type="button" class="chip" onclick="dataReexplore(this)">' +
         '<span class="material-symbols-outlined">refresh</span>Explore something else</button>';
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function dataReexplore(btn) {
@@ -11113,7 +11134,7 @@
         `<button type="button" class="chip" onclick="wfRunStep(${index})">` +
         `<span class="material-symbols-outlined">${step.chip.icon}</span>${step.chip.label}</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     /* Execute step `index`: remove its chip, post the user's line, reply, and
@@ -11150,7 +11171,7 @@
         `<button type="button" class="chip" onclick="wfFinalAction('export', this)"><span class="material-symbols-outlined">download</span>Export plan</button>` +
         `<button type="button" class="chip" onclick="wfFinalAction('verify', this)"><span class="material-symbols-outlined">verified</span>Start verification</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function wfFinalAction(kind, btn) {
@@ -12229,7 +12250,7 @@
         row.id = 'cmp-add-chips';
         row.innerHTML = chips;
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 480);
     }
 
@@ -12310,7 +12331,7 @@
         row.id = 'cmp-swap-chips';
         row.innerHTML = cmpKindChips('cmpPromptSwapPick', curKind, "'" + id + "',");
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 360);
     }
 
@@ -12343,7 +12364,7 @@
         row.id = 'cmp-swap-pick-chips';
         row.innerHTML = chips;
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 460);
     }
 
@@ -13896,7 +13917,7 @@
         '<div class="sc-reply-chips">' + chipHtml('Portfolio') + '</div>' +
         '<div class="sc-reply-chips">' + chipHtml('Category') + '</div>';
       box.appendChild(wrap);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function cmpChatScenario(id, btn) {
@@ -13955,7 +13976,7 @@
         row.id = 'cmp-kind-scope-chips';
         row.innerHTML = chips;
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 420);
     }
 
@@ -14038,7 +14059,7 @@
       row.id = 'cmp-follow-chips';
       row.innerHTML = chips.join('');
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function cmpFollow(action, btn) {
@@ -14155,7 +14176,7 @@
         row.id = 'cmp-remove-chips';
         row.innerHTML = chips;
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 500);
     }
     function cmpConfirmRemoveEntity(id, btn) {
@@ -14191,7 +14212,7 @@
         row.id = 'cmp-metric-chips';
         box.appendChild(row);
         cmpRenderMetricChips();
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 500);
     }
     function cmpRenderMetricChips() {
@@ -14238,7 +14259,7 @@
         row.id = 'cmp-cat-chips';
         row.innerHTML = chips;
         box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+        wiseaiFollowChat(box);
       }, 500);
     }
     function cmpChooseCategory(cat, btn) {
@@ -14691,7 +14712,7 @@
         `<button type="button" class="chip" onclick="vfRunStage(${index})">` +
         `<span class="material-symbols-outlined">${stage.chip.icon}</span>${stage.chip.label}</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function vfRunStage(index) {
@@ -14731,7 +14752,7 @@
         `<button type="button" class="chip" onclick="vfFinalAction('toolkit', this)"><span class="material-symbols-outlined">download</span>Download toolkit</button>` +
         `<button type="button" class="chip" onclick="vfFinalAction('certificate', this)"><span class="material-symbols-outlined">workspace_premium</span>View certificate</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function vfFinalAction(kind, btn) {
@@ -15084,7 +15105,7 @@
         `<button type="button" class="chip" onclick="lrRunStep(${index})">` +
         `<span class="material-symbols-outlined">${step.chip.icon}</span>${step.chip.label}</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function lrRunStep(index) {
@@ -15125,7 +15146,7 @@
         `<button type="button" class="chip" onclick="lrFinalAction('view', this)"><span class="material-symbols-outlined">bookmark</span>Open saved view</button>` +
         `<button type="button" class="chip" onclick="lrFinalAction('verify', this)"><span class="material-symbols-outlined">verified</span>Start verification</button>`;
       box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
+      wiseaiFollowChat(box);
     }
 
     function lrFinalAction(kind, btn) {

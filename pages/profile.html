@@ -34,7 +34,31 @@
        drives a field here, and every on-form edit narrates back into the chat.
        Everything is token-driven so it tracks light/dark exactly.
     ===================================================================== */
-    body[data-nav-id="profile"] #agent-main-header { display: none; }
+    /* The Profile module carries no title strip, but it still gets the standard
+       pane chrome — the ⋯ options menu + width toggle that every other module
+       has. Rather than hide the whole header (which would drop those controls
+       too), collapse it to zero height, hide only its title/icon, and pin the
+       control cluster to the module's top-right corner — the same treatment
+       headerless modules get under Appearance → header-float. */
+    body[data-nav-id="profile"] #agent-main-header {
+      height: 0;
+      min-height: 0;
+      padding: 0;
+      border-bottom: 0;
+      background: transparent;
+      overflow: visible;
+    }
+    body[data-nav-id="profile"] #agent-main-header > *:not(.panel-controls) { display: none; }
+    body[data-nav-id="profile"] #agent-main-header .panel-controls {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      margin: 0;
+      z-index: 6;
+    }
+    /* Reserve room at the top-right so the pinned controls never collide with
+       the header's Save CTA. */
+    body[data-nav-id="profile"] .pf-head-actions { margin-right: 54px; }
     body[data-nav-id="profile"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="profile"] #modules-row { margin-top: 0; }
 
@@ -52,7 +76,7 @@
     .pf-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); padding: 26px 26px 22px; }
     .pf-section + .pf-section { margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--border); }
     .pf-section-title { display: flex; align-items: center; gap: 9px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 16px; }
-    .pf-section-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+    .pf-section-title .material-symbols-outlined { font-size: 18px; color: var(--primary-ink, var(--primary)); }
 
     /* ---------- Field grid (6-col) ---------- */
     .pf-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 22px; }
@@ -83,7 +107,7 @@
     .pf-brandchips { display: flex; flex-wrap: wrap; gap: 8px; }
     .pf-brandchip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); }
     html.dark .pf-brandchip { background: rgba(255,255,255,0.05); }
-    .pf-brandchip .material-symbols-outlined { font-size: 15px; color: var(--primary); }
+    .pf-brandchip .material-symbols-outlined { font-size: 15px; color: var(--primary-ink, var(--primary)); }
 
     /* ---------- Uploader (logo / banner) ---------- */
     .pf-upload { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px 16px; background: var(--surface-2); }
@@ -96,11 +120,11 @@
     .pf-uptab { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: pointer; padding: 8px 2px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; transition: color 0.15s ease, border-color 0.15s ease; }
     .pf-uptab .material-symbols-outlined { font-size: 16px; }
     .pf-uptab:hover { color: var(--text); }
-    .pf-uptab.is-active { color: var(--primary); border-bottom-color: var(--primary); }
+    .pf-uptab.is-active { color: var(--primary-ink, var(--primary)); border-bottom-color: var(--primary); }
     .pf-uprow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .pf-file-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; }
     html.dark .pf-file-btn { background: rgba(255,255,255,0.05); }
-    .pf-file-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .pf-file-btn:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .pf-file-btn .material-symbols-outlined { font-size: 17px; }
     .pf-file-name { font-size: 0.82rem; color: var(--text-muted); }
     .pf-file-name.is-set { color: var(--text); font-weight: 600; }
@@ -108,6 +132,35 @@
     html.dark .pf-url-input { background: rgba(255,255,255,0.05); }
     .pf-url-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent); }
     .pf-hint { font-size: 0.74rem; color: var(--text-subtle); margin-top: 10px; }
+
+    /* ---------- Avatar uploader ---------- */
+    .pf-avatar-row { display: flex; align-items: flex-start; gap: 18px; }
+    .pf-avatar-preview {
+      flex-shrink: 0; width: 76px; height: 76px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      background: var(--surface); border: 1.5px dashed var(--border-strong); color: var(--text-subtle);
+    }
+    html.dark .pf-avatar-preview { background: rgba(255,255,255,0.05); }
+    .pf-avatar-preview.is-set { border-style: solid; border-color: var(--border); }
+    .pf-avatar-preview .material-symbols-outlined { font-size: 38px; }
+    .pf-avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pf-avatar-controls { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .pf-avatar-controls .pf-uptabs { margin-bottom: 12px; }
+    .pf-avatar-remove { align-self: flex-start; margin-top: 12px; }
+    .pf-avatar-remove:hover { border-color: var(--sec-red, #DC3038); color: var(--sec-red, #DC3038); }
+    /* One-tap pattern presets */
+    .pf-avatar-presets { margin-top: 16px; }
+    .pf-avatar-presets-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 9px; }
+    .pf-avatar-presets-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .pf-avatar-preset {
+      width: 46px; height: 46px; padding: 0; border-radius: 50%; overflow: hidden; cursor: pointer;
+      background: var(--surface); border: 2px solid var(--border-strong);
+      transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .pf-avatar-preset img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pf-avatar-preset:hover { transform: translateY(-1px) scale(1.05); border-color: var(--text-subtle); }
+    .pf-avatar-preset.is-active { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    @media (max-width: 860px) { .pf-avatar-row { flex-direction: column; align-items: flex-start; } }
 
     /* ---------- Buttons / footer ---------- */
     .pf-footer { display: flex; justify-content: flex-end; margin-top: 24px; }
@@ -136,6 +189,10 @@
       .pf-head { flex-direction: column; gap: 16px; }
       .pf-head-actions { padding-top: 0; }
       .pf-head-actions .pf-btn { width: 100%; }
+      /* Stacked layout: drop the desktop right-reserve and instead keep the
+         copy clear of the pinned corner controls. */
+      body[data-nav-id="profile"] .pf-head-actions { margin-right: 0; }
+      body[data-nav-id="profile"] .pf-head-copy { padding-right: 44px; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

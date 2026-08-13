@@ -56,7 +56,7 @@
       '.wch-head{display:flex;align-items:center;gap:8px;padding:14px 12px 12px 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08);}',
       'html:not(.dark) .wch-head{border-bottom-color:rgba(0,0,0,0.07);}',
       '.wch-head-title{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;flex:1;}',
-      '.wch-head-title .material-symbols-outlined{font-size:19px;color:var(--primary,#2F6DF6);}',
+      '.wch-head-title .material-symbols-outlined{font-size:19px;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-close,.wch-dock{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.75;}',
       '.wch-close:hover,.wch-dock:hover{background:rgba(255,255,255,0.08);opacity:1;}',
       'html:not(.dark) .wch-close:hover,html:not(.dark) .wch-dock:hover{background:rgba(0,0,0,0.05);}',
@@ -70,7 +70,7 @@
       'html:not(.dark) .wch-item:hover{background:rgba(20,40,80,0.05);}',
       '.wch-item.wch-active{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);outline:1px solid color-mix(in srgb,var(--primary,#2F6DF6) 40%,transparent);}',
       '.wch-item-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.wch-fork-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);color:var(--primary,#2F6DF6);}',
+      '.wch-fork-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-fork-badge .material-symbols-outlined{font-size:12px;}',
       '.wch-item-meta{font-size:11px;opacity:.62;margin-top:2px;}',
       '.wch-del{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
@@ -99,7 +99,7 @@
       '.wch-search-filter:hover,.wch-search-filter[aria-expanded="true"]{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-search-filter:hover,html:not(.dark) .wch-search-filter[aria-expanded="true"]{background:rgba(0,0,0,0.08);}',
       '.wch-search-filter .material-symbols-outlined{font-size:18px;}',
-      '.wch-search-filter.is-on{color:var(--primary,#2F6DF6);opacity:1;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);}',
+      '.wch-search-filter.is-on{color:var(--primary-ink,var(--primary,#2F6DF6));opacity:1;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);}',
       '.wch-search:has(.wch-search-filter) .wch-search-input{padding-right:62px;}',
       '.wch-search:has(.wch-search-filter) .wch-search-clear{right:34px;}',
       /* Search row can host a trailing filter toggle (e.g. MCP-usage). */
@@ -110,11 +110,11 @@
       'html:not(.dark) .wch-mcp{background:rgba(20,40,80,0.04);border-color:rgba(0,0,0,0.10);}',
       '.wch-mcp .material-symbols-outlined{font-size:17px;}',
       '.wch-mcp:hover{border-color:var(--primary,#2F6DF6);}',
-      '.wch-mcp.is-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);border-color:color-mix(in srgb,var(--primary,#2F6DF6) 48%,transparent);color:var(--primary,#2F6DF6);}',
+      '.wch-mcp.is-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);border-color:color-mix(in srgb,var(--primary,#2F6DF6) 48%,transparent);color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-mcp-label{letter-spacing:.02em;}',
       /* Small "used MCP" chip on a conversation row. */
       '.wch-mcp-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:50%;',
-        'background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);color:var(--primary,#2F6DF6);}',
+        'background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-mcp-badge .material-symbols-outlined{font-size:12px;}',
       /* MCP-usage filter as a switch row inside the three-dot menu (docked). */
       '.wch-mcp-item{justify-content:flex-start;}',
@@ -174,7 +174,7 @@
       '.wch-sidebar.wch-rail .wch-item{padding:0;margin:4px auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
       '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
       '.wch-sidebar.wch-rail .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;}',
-      '.wch-sidebar.wch-rail .wch-item.wch-active::before{opacity:1;color:var(--primary,#2F6DF6);}',
+      '.wch-sidebar.wch-rail .wch-item.wch-active::before{opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       /* Minimized rail: never reveal the maximized-panel hover controls (per-chat
          move/delete actions, the project three-dot menu). A rail click maximizes
          the panel instead, where those controls live. !important beats the base
@@ -194,7 +194,7 @@
       '.wch-projects-head{display:flex;align-items:center;gap:6px;padding:12px 8px 4px 12px;}',
       '.wch-projects-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.5;flex:1;}',
       '.wch-proj-add{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
-      '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary,#2F6DF6);}',
+      '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
       '.wch-proj-add .material-symbols-outlined{font-size:18px;}',
       /* A single project block. */
@@ -235,7 +235,7 @@
       'html:not(.dark) .wch-pop-item:hover{background:rgba(20,40,80,0.06);}',
       '.wch-pop-item .material-symbols-outlined{font-size:17px;opacity:.8;}',
       '.wch-pop-item .wch-proj-dot{width:9px;height:9px;}',
-      '.wch-pop-item.is-current{color:var(--primary,#2F6DF6);font-weight:600;}',
+      '.wch-pop-item.is-current{color:var(--primary-ink,var(--primary,#2F6DF6));font-weight:600;}',
       '.wch-pop-item--danger{color:#E5484D;}',
       '.wch-pop-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-pop-div{height:1px;margin:5px 6px;background:rgba(255,255,255,0.10);}',
@@ -1273,19 +1273,36 @@
     function revealDocked() {
       clearTimeout(concealTimer);
       clearTimeout(revealTimer);
-      sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
-      void sidebar.offsetWidth;               /* restart the animation */
+      sidebar.classList.remove('wch-dock-conceal', 'wch-dock-reveal');
+      /* Collapse the module's width to 0 while it's still hidden (no flash), then
+         expand it back to its docked width using the shared `wch-anim` flex-basis /
+         width transition. As it widens, the flex row reflows and the chat contracts
+         smoothly in step — instead of the chat snapping narrow the instant the
+         module reappears. The keyframe (opacity / tuck) rides on top. */
+      sidebar.classList.add('wch-anim');
+      sidebar.style.setProperty('flex', '0 0 0px', 'important');
+      sidebar.style.setProperty('width', '0px', 'important');
+      sidebar.classList.remove('wch-docked-hidden');
+      void sidebar.offsetWidth;               /* register the collapsed start frame */
       sidebar.classList.add('wch-dock-reveal');
+      applyDockWidth();                        /* animate 0 → docked width */
       revealTimer = setTimeout(function () { sidebar.classList.remove('wch-dock-reveal'); }, 480);
     }
     function concealDocked() {
       clearTimeout(concealTimer);
       sidebar.classList.remove('wch-dock-reveal');
+      sidebar.classList.add('wch-anim');
       void sidebar.offsetWidth;
       sidebar.classList.add('wch-dock-conceal');
+      /* Shrink the width to 0 in sync with the fade/tuck so the chat grows to fill
+         the freed space over the same 0.3s, rather than staying put and then
+         snapping wide the moment the module is display:none'd. */
+      sidebar.style.setProperty('flex', '0 0 0px', 'important');
+      sidebar.style.setProperty('width', '0px', 'important');
       concealTimer = setTimeout(function () {
         sidebar.classList.add('wch-docked-hidden');
         sidebar.classList.remove('wch-dock-conceal');
+        applyDockWidth();                      /* restore docked width while hidden */
       }, 300);
     }
     function isDockedHidden() {

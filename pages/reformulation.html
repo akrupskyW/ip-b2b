@@ -96,7 +96,7 @@
     .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
     .rf-lead { display: block; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
     .rf-lead--lg { font-size: 1.5rem; line-height: 1.18; margin-bottom: 10px; }
-    .rf-lead .rf-accent { color: var(--primary); }
+    .rf-lead .rf-accent { color: var(--primary-ink, var(--primary)); }
 
     /* Intent chips live INLINE in the conversation — they trail the latest
        WISEcodeAI turn (in line with the text), scroll with the transcript, and
@@ -194,7 +194,7 @@
     }
     .rf-head--badged .rf-head-titles { padding-right: 70px; }
     .rf-head-badge img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .rf-head-badge .material-symbols-outlined { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary); }
+    .rf-head-badge .material-symbols-outlined { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary-ink, var(--primary)); }
 
     /* ── Module header controls ──
        The studio and dashboard now carry the same chrome the chat does: a width

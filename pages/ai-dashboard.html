@@ -16,6 +16,7 @@
       } catch (e) { document.documentElement.classList.add('dark'); }
     })();
   </script>
+  <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,29 +31,111 @@
        Reuses the shared WISE palette + fonts from wise.css; everything
        bespoke here is prefixed `aid-`. No external chart library. */
 
+    /* Brand palette — mirrors analytics-types.html: everything is derived from the
+       WISE token palette (navy --primary + the green/amber/red status inks). The
+       multi-series charts read as one family — a navy→azure blue ramp for the
+       "neutral" series, then the semantic green / amber / warm-orange / red. */
     :root {
-      --aid-cyan: #22b8cf;
-      --aid-violet: #7c6cf0;
-      --aid-pink: #e069a8;
-      --aid-teal: #2bb59a;
-      --aid-gold: var(--ter-amber);
-      --aid-blue: var(--primary);
-      --aid-green: var(--sec-green);
-      --aid-red: var(--sec-red);
+      --aid-blue:   var(--primary);       /* #25507C navy */
+      --aid-cyan:   #3E7CB1;              /* mid azure (brand blue family) */
+      --aid-violet: #6B93C4;              /* light azure (brand blue family) */
+      --aid-teal:   #2E9E5B;              /* green (Minimally-Processed tier) */
+      --aid-green:  var(--sec-green);     /* #32A966 */
+      --aid-gold:   var(--ter-amber);     /* #FFC434 */
+      --aid-pink:   #D27326;              /* warm orange (Fair tier) */
+      --aid-red:    var(--sec-red);       /* #DC3038 */
       --aid-gap: 16px;
+    }
+    /* Dark mode lifts the navy blue family so lines/bars keep contrast on navy,
+       exactly how analytics-types swaps --primary → --primary-bright in dark. */
+    html.dark {
+      --aid-blue:   var(--primary-bright, #8B9FAF);
+      --aid-cyan:   #6FA0D0;
+      --aid-violet: #A6C2E2;
+      --aid-teal:   #4FBE84;
+      --aid-green:  #4FBE84;
+      --aid-pink:   #E8965A;
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; }
+    html, body { height: 100%; margin: 0; }
     body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
       font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
     }
 
-    .aid-shell { max-width: 1320px; margin: 0 auto; padding: 26px 28px 72px; }
+    /* ── Shared app shell (mirrors reformulation.html / product-portfolio.html):
+       a full-height left nav column + a "modules" row that holds the WISEcodeAI
+       chat card and the AI dashboard card side-by-side. ── */
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: 1fr;
+      grid-template-areas: "menu modules";
+      column-gap: 8px;
+      align-items: stretch;
+    }
+    .menu-brand-integrated > #menu-panel {
+      grid-area: menu;
+      position: relative;
+      align-self: stretch;
+      min-height: 0;
+      z-index: 5;
+    }
+    .menu-brand-integrated > #menu-panel:not(.mp-pivot) .menu-inner { height: 100%; min-height: 100%; }
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: visible;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Carded module frame (matches .rf-card) ── */
+    .aid-module {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card, var(--shadow-2));
+      overflow: hidden;
+    }
+
+    /* Left chat column (fixed width, carded — with the same 3-step widen the
+       shared WISEcodeAI module exposes from its width toggle). */
+    .aid-chat { flex: 0 0 var(--chat-pane-w, 340px); width: var(--chat-pane-w, 340px); background: var(--bg); }
+    .aid-chat.panel-wide { flex-basis: 520px; width: 520px; }
+    .aid-chat.panel-triple { flex-basis: 700px; width: 700px; }
+
+    /* The dashboard is the flexible filler and scrolls internally. It's also its
+       own container so the grids below reflow by the card width, not the page.
+       Its surface is the page --bg (not --surface) so the score/resource cards
+       inside — which ARE --surface — read as raised cards, exactly like the
+       analytics-types dashboard sits its cards on the app background. */
+    .aid-dash-card { flex: 1 1 auto; min-width: 320px; overflow-y: auto; background: var(--bg); container: aidpane / inline-size; }
+
+    /* Module entrance — same staggered bounce every other WISE module uses. */
+    .aid-chat { transform-origin: left center; animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
+    .aid-dash-card { transform-origin: right center; animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both; }
+    @media (prefers-reduced-motion: reduce) {
+      .aid-chat, .aid-dash-card { animation: none !important; }
+    }
+
+    .aid-shell { max-width: 1320px; margin: 0 auto; padding: 22px 26px 40px; }
 
     /* ── Top bar ── */
     .aid-top {
@@ -60,13 +143,13 @@
       margin-bottom: 22px; flex-wrap: wrap;
     }
     .aid-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    /* Bare icon — no tinted tile, just the glyph in brand navy. */
     .aid-brand-badge {
-      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; color: #fff;
-      background: linear-gradient(140deg, var(--aid-violet), var(--aid-cyan));
-      box-shadow: var(--shadow-1);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      color: var(--primary);
     }
-    .aid-brand-badge .material-symbols-outlined { font-size: 24px; }
+    html.dark .aid-brand-badge { color: var(--primary-bright, var(--primary)); }
+    .aid-brand-badge .material-symbols-outlined { font-size: 30px; }
     .aid-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); }
     .aid-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 2px 0 0; }
     .aid-top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -99,8 +182,9 @@
     .aid-kpis { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: var(--aid-gap); margin-bottom: var(--aid-gap); }
     .aid-kpi { position: relative; overflow: hidden; }
     .aid-kpi-top { display: flex; align-items: center; gap: 8px; }
-    .aid-kpi-ic { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-    .aid-kpi-ic .material-symbols-outlined { font-size: 18px; }
+    /* Bare icon — the tone class only tints the glyph, no rounded tile behind it. */
+    .aid-kpi-ic { display: inline-flex; align-items: center; justify-content: center; background: none !important; }
+    .aid-kpi-ic .material-symbols-outlined { font-size: 20px; }
     .aid-kpi-label { font-size: 0.74rem; font-weight: 600; color: var(--text-muted); }
     .aid-kpi-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; margin: 10px 0 4px; line-height: 1; }
     .aid-kpi-val small { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; }
@@ -121,26 +205,24 @@
       transition: border-color .15s, transform .15s;
     }
     .aid-res:hover { border-color: var(--border-strong); transform: translateY(-1px); }
-    .aid-res-ic { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
-    .aid-res-ic .material-symbols-outlined { font-size: 21px; }
+    .aid-res-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: none !important; }
+    .aid-res-ic .material-symbols-outlined { font-size: 26px; }
     .aid-res-body { min-width: 0; }
     .aid-res-count { font-size: 1.28rem; font-weight: 800; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; line-height: 1; }
     .aid-res-name { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
     .aid-res-meta { font-size: 0.68rem; margin-top: 2px; display: inline-flex; align-items: center; gap: 4px; }
     .aid-res-meta .aid-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-    /* Tone helpers */
-    .tone-blue   { background: color-mix(in srgb, var(--aid-blue) 14%, transparent);   color: var(--aid-blue); }
-    .tone-violet { background: color-mix(in srgb, var(--aid-violet) 16%, transparent); color: var(--aid-violet); }
-    .tone-cyan   { background: color-mix(in srgb, var(--aid-cyan) 16%, transparent);   color: var(--aid-cyan); }
-    .tone-teal   { background: color-mix(in srgb, var(--aid-teal) 16%, transparent);   color: var(--aid-teal); }
-    .tone-green  { background: color-mix(in srgb, var(--aid-green) 16%, transparent);  color: var(--sec-green-text); }
-    .tone-gold   { background: color-mix(in srgb, var(--aid-gold) 22%, transparent);   color: var(--ter-amber-text); }
-    .tone-pink   { background: color-mix(in srgb, var(--aid-pink) 16%, transparent);   color: var(--aid-pink); }
-    .tone-red    { background: color-mix(in srgb, var(--aid-red) 14%, transparent);    color: var(--sec-red-text); }
-    html.dark .tone-green { color: #6fd39b; }
+    /* Tone helpers — tint the icon glyph only (no filled tile behind it). */
+    .tone-blue   { color: var(--aid-blue); }
+    .tone-violet { color: var(--aid-violet); }
+    .tone-cyan   { color: var(--aid-cyan); }
+    .tone-teal   { color: var(--aid-teal); }
+    .tone-green  { color: var(--aid-green); }
+    .tone-gold   { color: var(--ter-amber-text); }
+    .tone-pink   { color: var(--aid-pink); }
+    .tone-red    { color: var(--aid-red); }
     html.dark .tone-gold  { color: #e6c67d; }
-    html.dark .tone-red   { color: #ff9c96; }
 
     /* ── Chart grid ── */
     .aid-grid { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: var(--aid-gap); align-items: stretch; }
@@ -174,19 +256,35 @@
     .aid-hbar-val { font-size: 0.76rem; font-weight: 700; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
     /* ── Table ── */
-    .aid-table-wrap { overflow-x: auto; }
-    table.aid-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    .aid-table th { text-align: left; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); padding: 0 14px 10px; border-bottom: 1px solid var(--border); }
-    .aid-table th.num, .aid-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    .aid-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
-    .aid-table tr:last-child td { border-bottom: 0; }
-    .aid-table tr:hover td { background: var(--surface-2); }
-    html.dark .aid-table tr:hover td { background: rgba(255,255,255,0.03); }
+    /* Table — mirrors the shared WISE report table (.upf-table in
+       analytics-types): uppercase 800-weight header on a strong rule, quiet row
+       rules, tabular figures, and a soft primary tint on row hover. */
+    .aid-table-wrap { overflow-x: auto; padding-bottom: 2px; }
+    table.aid-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .aid-table thead th {
+      text-align: left; vertical-align: bottom;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted); padding: 0 18px 11px 0; border-bottom: 1px solid var(--border-strong);
+    }
+    .aid-table th.num, .aid-table td.num { text-align: right; }
+    .aid-table tbody td { padding: 14px 18px 14px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); vertical-align: middle; }
+    .aid-table tbody tr:last-child td { border-bottom: 0; }
+    .aid-table tbody tr { transition: background .12s ease; }
+    .aid-table tbody tr:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
     .aid-user { display: flex; align-items: center; gap: 10px; }
     .aid-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; flex-shrink: 0; }
-    .aid-user-name { font-weight: 600; }
-    .aid-user-role { font-size: 0.7rem; color: var(--text-muted); }
-    .aid-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+    .aid-user-name { font-weight: 700; color: var(--text); white-space: nowrap; }
+    .aid-user-role { font-size: 11.5px; color: var(--text-subtle); }
+
+    /* Skill pill — the shared .upf-pill treatment (primary-soft tint + brand
+       ink), so every chip reads consistently like the rest of the app. */
+    .aid-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: var(--radius-pill, 999px);
+      font-size: 12px; font-weight: 800; line-height: 1.2; white-space: nowrap;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    html.dark .aid-pill { color: var(--primary-bright, var(--primary)); }
     .aid-pill .material-symbols-outlined { font-size: 13px; }
 
     /* Utilization bar in-cell */
@@ -199,8 +297,8 @@
     .aid-gaps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
     .aid-gap-card { padding: 14px; border: 1px dashed var(--border-strong); border-radius: 13px; background: color-mix(in srgb, var(--primary) 4%, var(--surface)); }
     .aid-gap-top { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
-    .aid-gap-ic { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .aid-gap-ic .material-symbols-outlined { font-size: 17px; }
+    .aid-gap-ic { display: inline-flex; align-items: center; justify-content: center; background: none !important; }
+    .aid-gap-ic .material-symbols-outlined { font-size: 20px; }
     .aid-gap-name { font-size: 0.82rem; font-weight: 700; }
     .aid-gap-desc { font-size: 0.74rem; line-height: 1.45; color: var(--text-muted); }
 
@@ -212,34 +310,68 @@
 
     .aid-foot { margin-top: 34px; text-align: center; font-size: 0.74rem; color: var(--text-subtle); }
 
-    /* ── Responsive ── */
-    @media (max-width: 1180px) {
+    /* ── Responsive ──
+       The dashboard now lives in a resizable card beside the chat, so it reflows
+       by its OWN width (container query) instead of the viewport — a narrow card
+       becomes a real stacked layout rather than a crushed six-column grid. */
+    @container aidpane (max-width: 1180px) {
       .aid-kpis { grid-template-columns: repeat(3, 1fr); }
       .aid-res-grid { grid-template-columns: repeat(4, 1fr); }
       .col-8, .col-7 { grid-column: span 12; }
       .col-6, .col-5, .col-4 { grid-column: span 6; }
       .aid-gaps { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 720px) {
-      .aid-shell { padding: 18px 16px 56px; }
+    @container aidpane (max-width: 720px) {
+      .aid-shell { padding: 18px 16px 40px; }
       .aid-kpis { grid-template-columns: repeat(2, 1fr); }
       .aid-res-grid { grid-template-columns: repeat(2, 1fr); }
       .col-6, .col-5, .col-4 { grid-column: span 12; }
       .aid-gaps { grid-template-columns: 1fr; }
+      .aid-top { flex-wrap: wrap; }
+    }
+    /* Fallback for the rare browser without container queries. */
+    @supports not (container-type: inline-size) {
+      @media (max-width: 1180px) {
+        .aid-kpis { grid-template-columns: repeat(3, 1fr); }
+        .col-8, .col-7 { grid-column: span 12; }
+        .col-6, .col-5, .col-4 { grid-column: span 6; }
+      }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
 <body>
-  <div class="aid-shell">
+  <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module (shared WISE app nav) -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat + AI dashboard share the shell's "modules" grid area. -->
+    <div id="modules-row">
+
+      <!-- ═══════════ 1 · WISEcodeAI chat — the ONE shared WISEcodeAI chat module
+           (js/wiseai-chat.js), identical to reformulation.html / wiseai.html. -->
+      <main class="aid-module aid-chat" id="aid-chat"></main>
+
+      <!-- ═══════════ 2 · AI Operations Dashboard ═══════════ -->
+      <section class="aid-module aid-dash-card" id="aid-dash-card">
+      <div class="aid-shell">
     <!-- ══ Top bar ══ -->
     <header class="aid-top">
       <div class="aid-brand">
-        <span class="aid-brand-badge"><span class="material-symbols-outlined">hub</span></span>
-        <div>
-          <div class="aid-eyebrow">WISEcodeAI · Platform</div>
-          <h1 class="aid-title">AI Operations Dashboard</h1>
-        </div>
+        <h1 class="aid-title">AI Operations Dashboard</h1>
       </div>
       <div class="aid-top-actions">
         <div class="aid-seg" id="aid-range" role="tablist" aria-label="Time range">
@@ -377,7 +509,189 @@
     <div class="aid-foot">
       Demo data · WISEcodeAI AI Operations Dashboard · figures are illustrative and refresh with the selected range.
     </div>
-  </div>
+      </div><!-- /.aid-shell -->
+      </section><!-- /#aid-dash-card -->
+
+    </div><!-- /#modules-row -->
+  </div><!-- /#chat-shell-wrap -->
+
+  <!-- Shared WISE navigation + brand strip (same pattern as reformulation.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'ai-dashboard' });
+    }
+
+    applyStoredTextSize();
+  </script>
+
+  <!-- Appearance + profile popovers for the nav footer (mirrors reformulation.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+        if (typeof window.aidRenderAll === 'function') window.aidRenderAll();
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'dark';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark'); } catch (_) {}
+        applyChatTheme(theme === 'light' ? 'light' : 'dark');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEcodeAIDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => window.toggleChatTheme?.(),
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const invoices = ev.target.closest('[data-pop-action="invoices"]');
+          if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <!-- The ONE shared WISEcodeAI chat module, seeded with AI-ops intents. -->
+  <script type="module">
+    import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    (function () {
+      const host = document.getElementById('aid-chat');
+      if (!host) return;
+      mountWISEcodeAIChat(host, {
+        title: 'WISEcodeAI\u2122',
+        heading: 'Ask about your AI platform',
+        sub: 'Tokens, spend, models, skills, rules and sources — ask and I\u2019ll pull the numbers from the dashboard beside us.',
+        placeholder: 'Ask WISEcodeAI about usage, cost or guardrails\u2026',
+        userInitials: 'AK',
+        statusLabel: 'WISEcodeAI is analyzing',
+        chipsFlow: 'wrap',
+        inlineChips: true,
+        historyKey: 'wise-chat-history:ai-dashboard',
+        activity: true,
+        turns: true,
+        turnsSearch: true,
+        turnsShare: true,
+        turnsNotes: true,
+        turnsBreakout: true,
+        turnsDockedControls: true,
+        turnsBreakoutDefault: false,
+        historyBreakout: true,
+        historyBreakoutDefault: true,
+        historyDockedControls: true,
+        historyBreakoutHidden: true,
+        stickyModules: true,
+        stickyModulesDefault: true,
+        stickyModulesMenu: false,
+        intents: [
+          { label: 'Why did spend rise this period?', icon: 'payments' },
+          { label: 'Which model drives the most tokens?', icon: 'network_intelligence' },
+          { label: 'Show guardrail activity', icon: 'gavel' },
+          { label: 'Top users by consumption', icon: 'group' },
+          { label: 'Any stale data sources?', icon: 'cloud_sync' },
+        ],
+        reply: (text) =>
+          'Here\u2019s what the dashboard is showing for **' + (text || 'your platform') + '**: ' +
+          'token consumption is trending up ~12% over the selected range, with chat/assistant workloads the largest share. ' +
+          'Watch the two data sources flagged stale and the two API keys near their limit. ' +
+          '(This is illustrative demo data — the panel on the right has the full breakdown.)',
+      });
+    })();
+  </script>
 
   <script>
   (function () {
@@ -390,14 +704,14 @@
     var C = {};
     function refreshColors() {
       C = {
-        violet: cssvar('--aid-violet') || '#7c6cf0',
-        cyan: cssvar('--aid-cyan') || '#22b8cf',
-        pink: cssvar('--aid-pink') || '#e069a8',
-        teal: cssvar('--aid-teal') || '#2bb59a',
-        gold: cssvar('--ter-amber') || '#FFC434',
-        blue: cssvar('--primary') || '#25507C',
-        green: cssvar('--sec-green') || '#32A966',
-        red: cssvar('--sec-red') || '#DC3038',
+        violet: cssvar('--aid-violet') || '#6B93C4',
+        cyan: cssvar('--aid-cyan') || '#3E7CB1',
+        pink: cssvar('--aid-pink') || '#D27326',
+        teal: cssvar('--aid-teal') || '#2E9E5B',
+        gold: cssvar('--aid-gold') || cssvar('--ter-amber') || '#FFC434',
+        blue: cssvar('--aid-blue') || cssvar('--primary') || '#25507C',
+        green: cssvar('--aid-green') || cssvar('--sec-green') || '#32A966',
+        red: cssvar('--aid-red') || cssvar('--sec-red') || '#DC3038',
         grid: cssvar('--border') || 'rgba(0,0,0,.08)',
         text: cssvar('--text-subtle') || '#888',
       };
@@ -652,23 +966,56 @@
       return el('path', { d: d, fill: 'none', stroke: color, 'stroke-width': '2', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
     }
 
-    /* Donut chart */
+    /* Column with only its TOP corners rounded — the crisp WISE bar look
+       (analytics-types) instead of an all-corners rounded rectangle. */
+    function topRoundedRect(x, y, w, h, r) {
+      r = Math.max(0, Math.min(r, w / 2, h));
+      return 'M' + x.toFixed(2) + ' ' + (y + h).toFixed(2) +
+        ' L' + x.toFixed(2) + ' ' + (y + r).toFixed(2) +
+        ' Q' + x.toFixed(2) + ' ' + y.toFixed(2) + ' ' + (x + r).toFixed(2) + ' ' + y.toFixed(2) +
+        ' L' + (x + w - r).toFixed(2) + ' ' + y.toFixed(2) +
+        ' Q' + (x + w).toFixed(2) + ' ' + y.toFixed(2) + ' ' + (x + w).toFixed(2) + ' ' + (y + r).toFixed(2) +
+        ' L' + (x + w).toFixed(2) + ' ' + (y + h).toFixed(2) + ' Z';
+    }
+
+    /* Donut chart — matches the shared WISE / analytics-types donut: each slice
+       is a FILLED annular-sector path with gently rounded corners and a small gap
+       between segments (not a hard butt-capped stroke ring). */
+    function polar(cx, cy, r, deg) {
+      var a = (deg - 90) * Math.PI / 180;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    }
+    function annularSector(cx, cy, rO, rI, a0, a1) {
+      var large = (a1 - a0) > 180 ? 1 : 0;
+      var o0 = polar(cx, cy, rO, a0), o1 = polar(cx, cy, rO, a1);
+      var i1 = polar(cx, cy, rI, a1), i0 = polar(cx, cy, rI, a0);
+      return 'M' + o0[0].toFixed(2) + ' ' + o0[1].toFixed(2) +
+        ' A' + rO + ' ' + rO + ' 0 ' + large + ' 1 ' + o1[0].toFixed(2) + ' ' + o1[1].toFixed(2) +
+        ' L' + i1[0].toFixed(2) + ' ' + i1[1].toFixed(2) +
+        ' A' + rI + ' ' + rI + ' 0 ' + large + ' 0 ' + i0[0].toFixed(2) + ' ' + i0[1].toFixed(2) +
+        ' Z';
+    }
     function donut(segments, size, thickness, centerTop, centerBottom) {
       size = size || 150; thickness = thickness || 26;
-      var r = (size - thickness) / 2, cx = size / 2, cy = size / 2, circ = 2 * Math.PI * r;
-      var total = segments.reduce(function (a, s) { return a + s.val; }, 0);
-      var svg = el('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size, style: 'transform:rotate(-90deg)' });
-      svg.appendChild(el('circle', { cx: cx, cy: cy, r: r, fill: 'none', stroke: C.grid, 'stroke-width': thickness, opacity: '0.4' }));
-      var offset = 0;
+      var cx = size / 2, cy = size / 2;
+      var rO = size / 2 - 2, rI = rO - thickness, rMid = (rO + rI) / 2;
+      var total = segments.reduce(function (a, s) { return a + s.val; }, 0) || 1;
+      var svg = el('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size });
+      /* Subtle track behind the ring. */
+      svg.appendChild(el('circle', { cx: cx, cy: cy, r: rMid, fill: 'none', stroke: C.grid, 'stroke-width': thickness, opacity: '0.35' }));
+      var GAP = 3; /* degrees of breathing room between slices */
+      var angle = 0;
       segments.forEach(function (s) {
-        var frac = s.val / total;
-        var len = frac * circ;
-        svg.appendChild(el('circle', {
-          cx: cx, cy: cy, r: r, fill: 'none', stroke: C[s.color] || C.violet,
-          'stroke-width': thickness, 'stroke-dasharray': len + ' ' + (circ - len),
-          'stroke-dashoffset': -offset, 'stroke-linecap': 'butt',
+        var sweep = (s.val / total) * 360;
+        var a0 = angle + GAP / 2, a1 = angle + sweep - GAP / 2;
+        angle += sweep;
+        if (a1 <= a0) return;
+        var col = C[s.color] || C.violet;
+        svg.appendChild(el('path', {
+          d: annularSector(cx, cy, rO, rI, a0, a1),
+          fill: col, stroke: col, 'stroke-width': '2',
+          'stroke-linejoin': 'round', 'fill-opacity': '0.94',
         }));
-        offset += len;
       });
       var wrap = document.createElement('div');
       wrap.style.position = 'relative';
@@ -761,7 +1108,7 @@
         lg.appendChild(el('stop', { offset: '100%', 'stop-color': C[d.color] || C.violet, 'stop-opacity': '0.55' }));
         defs.appendChild(lg);
         svg.appendChild(defs);
-        svg.appendChild(el('rect', { x: bx, y: by, width: bwidth, height: bh, rx: 6, fill: 'url(#' + defsId + ')' }));
+        svg.appendChild(el('path', { d: topRoundedRect(bx, by, bwidth, bh, 5), fill: 'url(#' + defsId + ')' }));
         var vlbl = el('text', { x: bx + bwidth / 2, y: by - 6, 'text-anchor': 'middle', class: 'aid-axis-lbl' });
         vlbl.textContent = fmt.compact(d.val);
         svg.appendChild(vlbl);
@@ -787,7 +1134,7 @@
           '<div><div class="aid-user-name">' + u.name + '</div><div class="aid-user-role">' + u.role + '</div></div></div></td>' +
           '<td class="num">' + fmt.compact(Math.round(u.req * s)) + '</td>' +
           '<td class="num">' + fmt.compact(Math.round(u.tokens * s)) + '</td>' +
-          '<td><span class="aid-pill" style="background:color-mix(in srgb,' + avColor(u.color) + ' 16%,transparent);color:' + avColor(u.color) + '">' + u.skill + '</span></td>' +
+          '<td><span class="aid-pill">' + u.skill + '</span></td>' +
           '<td><div class="aid-util"><span class="aid-util-track"><span class="aid-util-fill" style="width:' + u.budget + '%;background:' + budgetColor + '"></span></span><span style="font-size:.72rem;color:var(--text-muted);font-weight:600">' + u.budget + '%</span></div></td>' +
           '<td class="num">' + fmt.money(Math.round(u.spend * s)) + '</td>' +
           '<td style="color:var(--text-muted)">' + u.last + '</td>';
@@ -841,6 +1188,10 @@
       try { localStorage.setItem('wise-theme', dark ? 'dark' : 'light'); } catch (e) {}
       renderAll();
     });
+
+    /* Expose so the shared appearance/theme popover in the nav can re-tint the
+       SVG charts when it flips light/dark. */
+    window.aidRenderAll = renderAll;
 
     renderAll();
     window.addEventListener('resize', function () { /* SVGs are responsive via viewBox; no-op */ });

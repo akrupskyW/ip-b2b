@@ -79,6 +79,9 @@
   --border-strong: rgba(37, 80, 124, 0.28);
 
   --primary: #25507C;
+  /* Foreground-only alias (mirror of wise.css): brand blue in light mode,
+     white in dark mode where #25507C text/icons vanish on navy. */
+  --primary-ink: var(--primary);
   --primary-10: rgba(37, 80, 124, 0.10);
   --primary-20: rgba(37, 80, 124, 0.20);
   --primary-soft: rgba(37, 80, 124, 0.08);
@@ -120,6 +123,9 @@ html.dark {
   --border-strong: rgba(139, 159, 175, 0.30);
   --primary-soft: rgba(37, 80, 124, 0.18);
   --primary-bright: #8B9FAF;
+  --primary-ink: var(--text);
+  --ter-violet: var(--primary-bright);
+  --ter-cyan: var(--primary-bright);
 
   --sec-green-text: #B6C9BE;
   --ter-amber-text: #D7BE91;

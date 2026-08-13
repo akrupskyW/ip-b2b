@@ -151,7 +151,7 @@ function rowHtml(a, i) {
   const icon = meta.icon ? `<span class="material-symbols-outlined">${esc(meta.icon)}</span>` : '';
   return `
     <div class="adm-trow adm-trow--audit" data-adm-row="${i}">
-      <span class="adm-td"><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(a.brand)}</span><span class="adm-idcell-sub" style="color:var(--primary)">${esc(a.food)}</span></span></span>
+      <span class="adm-td"><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(a.brand)}</span><span class="adm-idcell-sub" style="color:var(--primary-ink, var(--primary))">${esc(a.food)}</span></span></span>
       <span class="adm-td" style="font-weight:600;font-size:0.82rem">${esc(a.raw)}</span>
       <span class="adm-td" style="font-style:italic;color:var(--text-subtle);font-size:0.8rem">${esc(a.mapping)}</span>
       <span class="adm-td"><span class="adm-chip ${meta.cls}">${icon}${esc(a.action)}</span></span>

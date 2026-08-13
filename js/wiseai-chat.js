@@ -18,6 +18,11 @@
    "start new conversation" behaviour. */
 import './chat-history.js';
 
+/* Shared user-avatar store — the "you" bubbles render the member's uploaded
+   profile picture (set on the Organization Profile page) when present, and fall
+   back to their initials otherwise. */
+import { userAvatarImg } from './user-avatar.js';
+
 /* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
    WISEcodeAI dock can reuse the exact same mark for its collapsed floating circle. */
 export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>`;
@@ -58,7 +63,7 @@ const DEFAULT_INTENT_REPLIES = {
 const DEFAULT_AGENTS = [
   {
     id: 'wise', name: 'WISEcodeAI™', version: 'v3.2', group: 'core',
-    icon: 'verified', color: 'var(--primary)', bg: '',
+    icon: 'verified', color: 'var(--primary-ink, var(--primary))', bg: '',
     tagline: 'Verification Orchestrator',
     desc: 'The core WISEcodeAI™ agent that orchestrates your entire verification workflow — from customer profiling through UPC analysis, attestation, and badge issuance. Cannot be disabled.',
     tags: ['Verification', 'Routing', 'Payments', 'Onboarding'],
@@ -82,7 +87,7 @@ const DEFAULT_AGENTS = [
   },
   {
     id: 'shield', name: 'SHIELD', version: 'v1.5', group: 'specialist',
-    icon: 'shield', color: 'var(--primary)', bg: '',
+    icon: 'shield', color: 'var(--primary-ink, var(--primary))', bg: '',
     tagline: 'Badge & Compliance Agent',
     desc: 'Manages WISE Verified Shield Badge issuance, validates compliance criteria against certification standards, handles audit workflows, and tracks re-certification timelines.',
     tags: ['Badge Issuance', 'Compliance', 'Audits', 'Certification'],
@@ -501,13 +506,15 @@ export function wireChatComposer(railEl, opts = {}) {
      in the canonical mount. */
   function addDbChangeNote(messages, prev, next) {
     if (!messages || !next) return;
-    const userAvatar = opts.userAvatar || esc(opts.userInitials || 'AK');
+    const initials = opts.userInitials || 'AK';
+    const custom = typeof opts.userAvatar === 'function' ? opts.userAvatar() : opts.userAvatar;
+    const userAvatar = custom || userAvatarImg('You') || esc(initials);
     const body = prev
       ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
-      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span>`
+      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(initials)}">${userAvatar}</span>`
       + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
       + `</div>`);
     messages.scrollTop = messages.scrollHeight;
@@ -711,7 +718,7 @@ function injectChatExtras() {
     .wch-conn-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
     .wch-conn-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wch-conn-status { font-size: 11px; opacity: .6; }
-    .wch-conn-cta { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 11.5px; font-weight: 700; color: var(--primary, #2F6DF6); }
+    .wch-conn-cta { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 11.5px; font-weight: 700; color: var(--primary-ink, var(--primary, #2F6DF6)); }
     .wch-conn-cta .material-symbols-outlined { font-size: 15px; }
     .wch-conn-row.is-connected .wch-conn-cta { color: var(--sec-green-text, #2E7D32); }
 
@@ -730,7 +737,7 @@ function injectChatExtras() {
     .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
     html.dark .sc-fb-btn:hover { background: rgba(255,255,255,0.07); }
     .sc-fb-btn .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 1; }
-    .sc-fb-btn.is-on { color: var(--primary); }
+    .sc-fb-btn.is-on { color: var(--primary-ink, var(--primary)); }
     .sc-fb-btn.is-on[data-fb="down"] { color: var(--sec-red-text); }
     .sc-fb-btn.is-on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
     .sc-fb-btn.is-done { color: var(--sec-green-text); }
@@ -765,7 +772,7 @@ function injectChatExtras() {
     .sc-fb-reasons-label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
     .sc-fb-reason-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .sc-fb-reason { font-size: 11.5px !important; padding: 5px 11px !important; font-weight: 500; }
-    .sc-fb-reason.is-on { border-color: var(--primary); color: var(--primary);
+    .sc-fb-reason.is-on { border-color: var(--primary); color: var(--primary-ink, var(--primary));
       background: color-mix(in srgb, var(--primary) 12%, transparent); }
     /* Free-form note beneath the chips — lets a user qualify the verdict in
        their own words. Present in both the up and down pop-overs. */
@@ -807,7 +814,7 @@ function injectChatExtras() {
       font-size: 12.5px; line-height: 1.4; color: var(--text);
       background: color-mix(in srgb, var(--primary, #2F6DF6) 10%, transparent);
       border: 1px solid color-mix(in srgb, var(--primary, #2F6DF6) 26%, transparent); }
-    .sc-fork-banner-ic { font-size: 18px; color: var(--primary, #2F6DF6); flex: 0 0 auto; }
+    .sc-fork-banner-ic { font-size: 18px; color: var(--primary-ink, var(--primary, #2F6DF6)); flex: 0 0 auto; }
     .sc-fork-banner-txt strong { font-weight: 700; }
 
     /* Momentary highlight when "Jump to turn" scrolls a turn into view. */
@@ -826,7 +833,7 @@ function injectChatExtras() {
     .wt-turn-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
     .wt-turn-num { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px;
       border-radius: 999px; font-size: 11px; font-weight: 700; flex: 0 0 auto;
-      background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); color: var(--primary, #2F6DF6); }
+      background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); color: var(--primary-ink, var(--primary, #2F6DF6)); }
     .wt-turn-q { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.35;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .wt-turn-a { font-size: 12px; line-height: 1.45; opacity: .72; margin: 2px 0 9px;
@@ -838,15 +845,15 @@ function injectChatExtras() {
     .wt-chip .material-symbols-outlined { font-size: 13px; }
     .wt-actions { display: flex; align-items: center; gap: 6px; }
     .wt-fork { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
-      background: transparent; color: var(--primary, #2F6DF6); cursor: pointer; opacity: .9; transition: background .14s ease, color .14s ease, opacity .14s ease; }
+      background: transparent; color: var(--primary-ink, var(--primary, #2F6DF6)); cursor: pointer; opacity: .9; transition: background .14s ease, color .14s ease, opacity .14s ease; }
     .wt-fork:hover { opacity: 1; background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); }
     .wt-fork .material-symbols-outlined { font-size: 17px; }
     /* The forked turn's handle (#id), sat right beside its fork icon. */
-    .wt-fork-id { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--primary, #2F6DF6);
+    .wt-fork-id { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--primary-ink, var(--primary, #2F6DF6));
       font-variant-numeric: tabular-nums; margin: 0 2px 0 -1px; }
     .wt-jump { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; border: 0; background: transparent; cursor: pointer;
       font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted, inherit); opacity: .8; padding: 6px 4px; }
-    .wt-jump:hover { opacity: 1; color: var(--primary, #2F6DF6); }
+    .wt-jump:hover { opacity: 1; color: var(--primary-ink, var(--primary, #2F6DF6)); }
     .wt-jump .material-symbols-outlined { font-size: 15px; }
 
     /* Search box pinned above the turn list (mirrors the History search). */
@@ -866,9 +873,9 @@ function injectChatExtras() {
     /* Per-turn Share + Note controls, tucked beside Fork/Jump. */
     .wt-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
       background: transparent; color: var(--text-muted, inherit); cursor: pointer; opacity: .82; transition: background .14s ease, color .14s ease, opacity .14s ease; }
-    .wt-iconbtn:hover { opacity: 1; color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 12%, transparent); }
+    .wt-iconbtn:hover { opacity: 1; color: var(--primary-ink, var(--primary, #2F6DF6)); background: color-mix(in srgb, var(--primary, #2F6DF6) 12%, transparent); }
     .wt-iconbtn .material-symbols-outlined { font-size: 17px; }
-    .wt-iconbtn.is-on { color: var(--primary, #2F6DF6); background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); opacity: 1; }
+    .wt-iconbtn.is-on { color: var(--primary-ink, var(--primary, #2F6DF6)); background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); opacity: 1; }
     .wt-note { margin: 9px 0 0; }
     .wt-note[hidden] { display: none; }
     .wt-note-input { width: 100%; box-sizing: border-box; min-height: 54px; resize: vertical; font: inherit; font-size: 12px; line-height: 1.45; color: inherit;
@@ -1004,7 +1011,7 @@ function buildAgentsPanelHtml(agents, id) {
   const row = (a) => `
     <div class="ss-agent-row${a.on ? ' ssr-on' : ''}${a.required ? ' ssr-required' : ''}" id="${id}-ssr-${esc(a.id)}">
       <div class="ss-agent-icon" style="${a.bg ? `background:${esc(a.bg)};` : ''}">
-        <span class="material-symbols-outlined" style="color:${esc(a.color || 'var(--primary)')}">${esc(a.icon || 'smart_toy')}</span>
+        <span class="material-symbols-outlined" style="color:${esc(a.color || 'var(--primary-ink, var(--primary))')}">${esc(a.icon || 'smart_toy')}</span>
       </div>
       <div class="ss-agent-body">
         <div class="ss-agent-name${a.on ? '' : ' ssa-off'}" id="${id}-ssn-${esc(a.id)}">
@@ -1167,7 +1174,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK").
      When the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
   const userInitials = opts.userInitials || 'AK';
-  const userAvatar = opts.userAvatar || esc(userInitials);
+  /* Resolve the "you" avatar at render time (not once at mount) so it tracks a
+     picture set / cleared later on the Organization Profile page: an explicit
+     opts.userAvatar (string or getter) wins, else the shared avatar store, else
+     the member's initials. */
+  const resolveUserAvatar = () => {
+    const custom = typeof opts.userAvatar === 'function' ? opts.userAvatar() : opts.userAvatar;
+    return custom || userAvatarImg('You') || esc(userInitials);
+  };
   /* Optional per-intent reply map for this surface; an intent-id hit here means
      a clicked chip always continues with an on-feature answer. Mutable so
      setIntents() can extend it alongside a new chip set. */
@@ -1193,15 +1207,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      turns) for the current turn and the whole conversation. */
   const activityOn = opts.activity === true;
 
-  /* ── "Open module" intent chips ───────────────────────────────────────────
+  /* ── "Open module" narration ──────────────────────────────────────────────
      Any WISEcodeAI reply that narrates opening a companion module ("Opened the
      full ranking in Results & Details →", "Spider chart → Visuals", …) has
-     that narration turned into a real, clickable chip. Tapping it (re)opens
-     that module beside the chat; when a host provides an `onOpenModule`
-     resolver the chip's module can also open by default the moment the answer
-     lands. `openModules` is the list of module display-names to recognise;
+     that narration stripped from the transcript — the artifacts it points at
+     are already previewed above as clickable surface cards, so repeating them
+     as trailing chips is redundant. Each directive still leaves an invisible
+     marker carrying the module name, so hosts that auto-open a module the
+     moment the answer lands (`openModuleByDefault` + `onOpenModule`) keep
+     working. `openModules` is the list of module display-names to recognise;
      pass `openChips:false` on a surface (or `openChips:false` in a message's
-     meta) to opt out. */
+     meta) to opt out of the transform entirely. */
   const openChipsOn = opts.openChips !== false;
   const openModuleByDefault = opts.openModuleByDefault === true;
   const openModuleNames = (Array.isArray(opts.openModules) && opts.openModules.length
@@ -1485,7 +1501,34 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const countPill = rootEl.querySelector(`#${id}-count`);
   const activeLabel = rootEl.querySelector(`#${id}-ss-active`);
 
-  const scrollDown = () => { if (messages) messages.scrollTop = messages.scrollHeight; };
+  /* Follow the conversation without losing the reader's place. Advances the
+     scroll toward the bottom, but never pushes the reader's latest message
+     above the top of the viewport — a long answer stops there, so the reader
+     keeps reading from where they typed instead of being thrown to the very
+     end. Never scrolls back up, and once the reader has scrolled away from
+     the live edge we leave them alone (pass `force` — a fresh user action —
+     to re-engage). scrollToEnd() keeps the old jump-to-bottom for
+     whole-thread loads (history restore, forks). */
+  const scrollDown = (force) => {
+    if (!messages) return;
+    const bottom = Math.max(0, messages.scrollHeight - messages.clientHeight);
+    const yours = messages.querySelectorAll('.sc-line-you');
+    const anchor = yours.length ? yours[yours.length - 1] : null;
+    let target = bottom;
+    if (anchor) {
+      const cap = anchor.getBoundingClientRect().top - messages.getBoundingClientRect().top + messages.scrollTop - 10;
+      target = Math.min(bottom, Math.max(0, cap));
+    }
+    const last = messages.__followPos;
+    if (!force && typeof last === 'number' && messages.scrollTop < last - 48) return;
+    if (force || target > messages.scrollTop) messages.scrollTop = target;
+    messages.__followPos = messages.scrollTop;
+  };
+  const scrollToEnd = () => {
+    if (!messages) return;
+    messages.scrollTop = messages.scrollHeight;
+    messages.__followPos = messages.scrollTop;
+  };
 
   /* Reflect the message scroll position onto the card. The floated header
      controls (⋯ + width) only paint their opaque backing circle once content
@@ -1662,8 +1705,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const bodyText = text ? esc(text) : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span><div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
-    scrollDown();
+      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
+    scrollDown(true); /* fresh user action — always bring their message into view */
     refreshDockedTurns();
   }
   /* Actions row appended beneath a WISEcodeAI answer. Left cluster: copy + thumbs
@@ -1861,13 +1904,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     revealStaggered(chips, 60, 55, scrollDown);
   }
 
-  /* ── Open-module chip transform ───────────────────────────────────────────
-     Rewrites "open the module" narration inside a reply into a clickable chip.
-     We work on the reply's HTML string (pre-insert) and only ever touch a line
-     (a run between <br>s) that BOTH points at a known module display-name AND
-     ends with — or contains — the "→" arrow, so ordinary prose is never
-     rewritten. The chip keeps the original wording as its label and remembers
-     which module to open in `data-open-module`. */
+  /* ── Open-module narration transform ──────────────────────────────────────
+     Strips "open the module" narration out of a reply. We work on the reply's
+     HTML string (pre-insert) and only ever touch a line (a run between <br>s)
+     that BOTH points at a known module display-name AND contains the "→"
+     arrow, so ordinary prose is never rewritten. Each stripped directive
+     leaves a hidden marker remembering which module to open in
+     `data-open-module`, which the auto-open hook reads. */
   const OPEN_ARROW = '\u2192';
   const openModuleRe = openModuleNames.length
     ? new RegExp(openModuleNames.map((n) => n
@@ -1885,39 +1928,32 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return openModuleNames.find((n) => n.toLowerCase() === hit) || m[0].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
   }
 
-  function openChipHtml(labelHtml, moduleName, hadTrailingArrow) {
-    const go = hadTrailingArrow
-      ? '<span class="material-symbols-outlined sc-open-chip-go" aria-hidden="true">arrow_forward</span>'
-      : '';
-    return `<button type="button" class="sc-open-chip" data-open-module="${esc(moduleName)}" aria-label="Open ${esc(moduleName)}">`
-      + '<span class="material-symbols-outlined sc-open-chip-ic" aria-hidden="true">dock_to_right</span>'
-      + `<span class="sc-open-chip-label">${labelHtml}</span>${go}</button>`;
+  function openMarkerHtml(moduleName) {
+    return `<span class="sc-open-marker" data-open-module="${esc(moduleName)}" hidden></span>`;
   }
 
-  /* Turn one text line into zero or more chips. A line that starts with "Opened"
-     becomes a single chip for the whole sentence; otherwise it's split on the
-     "·" separator so patterns like "chart → Visuals · table → Results & Details"
-     yield one chip per directive. Non-directive fragments are left untouched. */
-  function lineToOpenChips(line) {
+  /* Reduce one text line to its hidden markers. A line that starts with
+     "Opened" is one directive for the whole sentence; otherwise it's split on
+     the "·" separator so patterns like "chart → Visuals · table → Results &
+     Details" yield one marker per directive. Non-directive fragments keep
+     their text. Returns null when the line holds no directive. */
+  function lineToOpenMarkers(line) {
     if (line.indexOf(OPEN_ARROW) === -1) return null;
     if (!moduleNameFrom(line)) return null;
+    const isDirective = (frag) => !!moduleNameFrom(frag) && frag.indexOf(OPEN_ARROW) !== -1;
     const plain = line.replace(/<[^>]*>/g, '');
-    const startsOpened = /^\s*Opened\b/i.test(plain);
-    const makeChip = (frag) => {
-      const mod = moduleNameFrom(frag);
-      if (!mod || frag.indexOf(OPEN_ARROW) === -1) return frag;
-      const hadTrailing = new RegExp(OPEN_ARROW + '\\s*$').test(frag);
-      const label = frag.replace(new RegExp('\\s*' + OPEN_ARROW + '\\s*$'), '').trim();
-      if (!label) return frag;
-      return openChipHtml(label, mod, hadTrailing);
-    };
-    if (startsOpened) {
-      const chip = makeChip(line.trim());
-      return `<span class="sc-open-chips">${chip}</span>`;
+    if (/^\s*Opened\b/i.test(plain)) {
+      return { html: openMarkerHtml(moduleNameFrom(line)), markersOnly: true };
     }
-    const pieces = line.split('\u00b7').map((p) => makeChip(p.trim()));
-    if (!pieces.some((p, i) => p !== line.split('\u00b7')[i].trim())) return null;
-    return `<span class="sc-open-chips">${pieces.join('<span class="sc-open-chip-sep">\u00b7</span>')}</span>`;
+    const frags = line.split('\u00b7').map((p) => p.trim());
+    if (!frags.some(isDirective)) return null;
+    const kept = [];
+    const markers = [];
+    frags.forEach((frag) => {
+      if (isDirective(frag)) markers.push(openMarkerHtml(moduleNameFrom(frag)));
+      else if (frag) kept.push(frag);
+    });
+    return { html: kept.join(' \u00b7 ') + markers.join(''), markersOnly: kept.length === 0 };
   }
 
   function transformOpenChips(html, meta) {
@@ -1929,8 +1965,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     let changed = false;
     for (let i = 0; i < parts.length; i += 1) {
       if (/^<br/i.test(parts[i])) continue;
-      const chips = lineToOpenChips(parts[i]);
-      if (chips != null) { parts[i] = chips; changed = true; }
+      const out = lineToOpenMarkers(parts[i]);
+      if (out == null) continue;
+      parts[i] = out.html;
+      changed = true;
+      /* A line that was ONLY directives leaves no visible text — swallow the
+         <br>s that led into it so the reply doesn't end on a blank gap. */
+      if (out.markersOnly) {
+        for (let j = i - 1; j >= 0 && (parts[j] === '' || /^<br/i.test(parts[j])); j -= 1) parts[j] = '';
+      }
     }
     return changed ? parts.join('') : html;
   }
@@ -1977,12 +2020,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const trailChips = meta.trailChips !== false;
     /* Fires once the whole line (text + meta + trailing chips) has settled, so a
        host can trail its OWN chips behind this specific answer (see revealChips).
-       If this answer carries an "open module" chip and the surface asked for
-       modules to open by default, fire the first chip's module now. */
+       If this answer carries an "open module" marker and the surface asked for
+       modules to open by default, fire the first marker's module now. */
     const autoOpenModule = () => {
       if (!openModuleByDefault || (meta && meta.openChips === false)) return;
-      const chip = body && body.querySelector('.sc-open-chip[data-open-module]');
-      if (chip) openModuleFor(chip.getAttribute('data-open-module'), chip);
+      const marker = body && body.querySelector('[data-open-module]');
+      if (marker) openModuleFor(marker.getAttribute('data-open-module'), marker);
     };
     const done = () => { autoOpenModule(); if (typeof meta.onDone === 'function') meta.onDone(); };
     if (prefersReducedMotion) {
@@ -2416,7 +2459,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     } else if (messages) {
       messages.innerHTML = forkHtml;
       hideWelcome();
-      scrollDown();
+      scrollToEnd();
     }
     /* Keep a broken-out Turns module in sync with the freshly-loaded fork. */
     if (turnsDocked && !turnsPanel.classList.contains('wch-docked-hidden')) renderTurns();
@@ -3146,7 +3189,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return (turns || []).map((t, i) => {
       const clock = seedClock(baseTs + i * 60000);
       if (t.role === 'you') {
-        return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta"><span class="sc-line-time">${esc(clock)}</span></div></div></div>`;
+        return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta"><span class="sc-line-time">${esc(clock)}</span></div></div></div>`;
       }
       const body = t.html != null ? t.html : esc(t.text || '');
       const src = t.source !== undefined ? t.source : sourceLabel;
@@ -3219,7 +3262,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         if (welcome) welcome.style.display = '';
         closeAgents();
         if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
-        scrollDown();
+        scrollToEnd();
         refreshDockedTurns();
       },
     });
@@ -3279,9 +3322,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!handled) wiseaiRespond(text, def.intent);
   });
 
-  /* "Open module" chips — the clickable narration a reply drops when it opens a
-     companion module. Delegated on the transcript so it covers every reply,
-     live or restored from history. */
+  /* Legacy "open module" chips — new replies no longer render these (the
+     surface cards above the answer are the openers), but transcripts restored
+     from history may still carry them, so keep them clickable. */
   messages?.addEventListener('click', (e) => {
     const chip = e.target.closest('.sc-open-chip[data-open-module]');
     if (!chip) return;
@@ -3738,10 +3781,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
-      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You">${userAvatar}</span>`
+      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span>`
       + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
       + `</div>`);
-    scrollDown();
+    scrollDown(true); /* fresh user action — always bring the marker into view */
     refreshDockedTurns();
   }
 

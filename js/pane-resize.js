@@ -85,13 +85,25 @@
     return el.tagName.toLowerCase() + '.' + cls + '@' + positionIndex(row, el);
   }
   // Preset-width classes toggled by a pane's own "width" button (single → wide →
-  // triple). When one is present the page controls that pane's width, so we must
-  // stand down and let the preset win rather than force our pinned width.
-  function hasPreset(el) {
-    return !!(el.classList && (el.classList.contains('panel-wide') || el.classList.contains('panel-triple') ||
-              el.classList.contains('panel-fill') || el.classList.contains('pane-wide') ||
-              el.classList.contains('pane-triple') || el.classList.contains('pane-fill')));
+  // triple → fill). When one is present the page controls that pane's width, so
+  // we must stand down and let the preset win rather than force our pinned width.
+  var PRESET_CLASSES = ['panel-wide', 'panel-triple', 'panel-fill',
+                        'pane-wide', 'pane-triple', 'pane-fill'];
+  // Exact signature of the preset classes on a pane. The class observer compares
+  // SIGNATURES, not just presence: the tiers are cumulative (triple keeps wide,
+  // fill keeps both), so after a drag pinned a pane that already sat at a preset
+  // tier, clicking its width button (wide → triple → fill) changes the classes
+  // without ever changing mere presence — and the pinned width would stay glued
+  // over the preset, making the button look dead until the cycle wrapped back to
+  // single. Any signature change must release our pin so the preset wins.
+  function presetSig(el) {
+    if (!el.classList) return '';
+    var s = '';
+    for (var i = 0; i < PRESET_CLASSES.length; i++)
+      if (el.classList.contains(PRESET_CLASSES[i])) s += PRESET_CLASSES[i] + ' ';
+    return s;
   }
+  function hasPreset(el) { return presetSig(el) !== ''; }
   // A "fill" pane (marked data-pr-fill) is the flexible middle module that
   // absorbs the row's remaining space (e.g. the WISEcodeAI chat between the
   // broken-out History / Turns modules) — we never pin it or restore a saved
@@ -423,11 +435,11 @@
       p.__prWatched = true;
       entry.ro.observe(p);
       // Watch the pane's own class list so a width-button preset toggle releases
-      // our pin (and any saved width) — letting single/wide/triple size it.
-      p.__prPreset = hasPreset(p);
+      // our pin (and any saved width) — letting single/wide/triple/fill size it.
+      p.__prPreset = presetSig(p);
       var cmo = new MutationObserver(function () {
-        var now = hasPreset(p);
-        if (now === p.__prPreset) return;   // only react to preset changes
+        var now = presetSig(p);
+        if (now === p.__prPreset) return;   // only react to preset-tier changes
         p.__prPreset = now;
         if (entry.active) return;           // never fight an in-progress drag
         clearWidth(keyOf(entry.row, p));

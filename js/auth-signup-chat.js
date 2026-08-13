@@ -307,7 +307,25 @@
     /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
     var progressMin = true;
 
-    var scrollDown = function () { messages.scrollTop = messages.scrollHeight; };
+    /* Follow the conversation without losing the reader's place: advance the
+       scroll toward the bottom, but never push the reader's latest message
+       above the top of the viewport — a long reply stops there so they keep
+       reading from where they answered. Never scrolls back up; pass `force`
+       (a fresh user action) to re-engage a reader who scrolled away. */
+    var scrollDown = function (force) {
+      var bottom = Math.max(0, messages.scrollHeight - messages.clientHeight);
+      var yours = messages.querySelectorAll('.sc-line-you');
+      var anchor = yours.length ? yours[yours.length - 1] : null;
+      var target = bottom;
+      if (anchor) {
+        var cap = anchor.getBoundingClientRect().top - messages.getBoundingClientRect().top + messages.scrollTop - 10;
+        target = Math.min(bottom, Math.max(0, cap));
+      }
+      var last = messages.__followPos;
+      if (!force && typeof last === 'number' && messages.scrollTop < last - 48) return;
+      if (force || target > messages.scrollTop) messages.scrollTop = target;
+      messages.__followPos = messages.scrollTop;
+    };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
 
     /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
@@ -331,7 +349,7 @@
       var body = masked ? '<span class="sc-mask">' + esc(text) + '</span>' : esc(text);
       messages.insertAdjacentHTML('beforeend',
         '<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">' + esc(currentUserInitials()) + '</span><div class="sc-line-body">' + body + '<div class="sc-line-meta"><span class="sc-line-time">' + esc(nowLabel()) + '</span></div></div></div>');
-      scrollDown();
+      scrollDown(true); /* fresh user action — always bring their message into view */
     }
     function chipsHtml(options) {
       if (!options || !options.length) return '';

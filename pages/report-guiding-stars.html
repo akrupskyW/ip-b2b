@@ -941,6 +941,25 @@
         return `<div class="sc-line-meta"><span class="sc-line-time">${t}</span></div>`;
       }
       function stripChips() { box.querySelectorAll('.gs-chips-inline').forEach((n) => n.remove()); }
+      /* Follow the conversation without losing the reader's place: advance the
+         scroll toward the bottom, but never push the reader's latest message
+         above the top of the viewport — a long reply stops there so the reader
+         keeps reading from where they typed. Never scrolls back up; pass
+         `force` (a fresh user action) to re-engage a reader who scrolled away. */
+      function gsFollowChat(force) {
+        const bottom = Math.max(0, box.scrollHeight - box.clientHeight);
+        const yours = box.querySelectorAll('.sc-line-you');
+        const anchor = yours.length ? yours[yours.length - 1] : null;
+        let target = bottom;
+        if (anchor) {
+          const cap = anchor.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 10;
+          target = Math.min(bottom, Math.max(0, cap));
+        }
+        const last = box.__followPos;
+        if (!force && typeof last === 'number' && box.scrollTop < last - 48) return;
+        if (force || target > box.scrollTop) box.scrollTop = target;
+        box.__followPos = box.scrollTop;
+      }
 
       /* Intent chips — each drives the report (scroll/filter) and continues the chat. */
       const CHIPS = [
@@ -965,7 +984,7 @@
       function addUser(text) {
         stripChips();
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">AK</span><div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
-        box.scrollTop = box.scrollHeight;
+        gsFollowChat(true); /* fresh user action — always bring their message into view */
       }
       /* Word-by-word reveal DISABLED — chat text appears whole. The
          gsTypeInLine signature is kept so the timestamp / chip reveal chain
@@ -975,7 +994,7 @@
         catch (_) { return false; }
       })();
       function gsTypeInLine(bodyEl, done) {
-        box.scrollTop = box.scrollHeight;
+        gsFollowChat();
         if (done) done();
       }
       /* Prime an element to slide in from the left, then reveal a set of them one
@@ -995,7 +1014,7 @@
           list[idx].style.opacity = '1';
           list[idx].style.transform = 'none';
           idx += 1;
-          box.scrollTop = box.scrollHeight;
+          gsFollowChat();
           if (idx < list.length) setTimeout(showNext, gap);
           else if (done) setTimeout(done, gap);
         };
@@ -1007,7 +1026,7 @@
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">' + OWL + '</span><div class="sc-line-body">' + html + chips + metaRow() + '</div></div>');
         const line = box.lastElementChild;
         const body = line && line.querySelector('.sc-line-body');
-        box.scrollTop = box.scrollHeight;
+        gsFollowChat();
         /* Type the prose in word-by-word, then bring in the timestamp, then the
            inline chips (left→right) — text, timestamp, chips, in order. Embedded
            charts / tables are left intact by the walker. `opts.instant` skips all
@@ -1019,10 +1038,10 @@
           const chipBtns = Array.from(body.querySelectorAll('.gs-chips-inline .gs-chip'));
           if (timeEl) gsPrimeLeft(timeEl);
           chipBtns.forEach(gsPrimeLeft);
-          box.scrollTop = box.scrollHeight;
+          gsFollowChat();
           gsTypeInLine(body, () => {
             gsRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
-              gsRevealStaggered(chipBtns, 120, 55, () => { box.scrollTop = box.scrollHeight; });
+              gsRevealStaggered(chipBtns, 120, 55, () => { gsFollowChat(); });
             });
           });
         }
@@ -1031,7 +1050,7 @@
         const el = document.createElement('div');
         el.className = 'mb-3 sc-line sc-line-wiseai sc-line-typing';
         el.innerHTML = '<span class="sc-avatar sc-avatar-wiseai">' + OWL + '</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEcodeAI is reading the plan…</span></span></div>';
-        box.appendChild(el); box.scrollTop = box.scrollHeight;
+        box.appendChild(el); gsFollowChat();
         return el;
       }
       function respond(html) {

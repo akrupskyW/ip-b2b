@@ -21,6 +21,10 @@
  * so the module tracks light/dark exactly like the rest of the app.
  */
 
+/* Shared user-avatar store — the avatar picture set here is what the primary
+   navigation chips and the chat "you" bubbles read app-wide. */
+import { getUserAvatar, setUserAvatar, clearUserAvatar } from './user-avatar.js';
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -58,6 +62,11 @@ const state = {
   brand: 'Flax4Life',
   logo: null,   // { kind: 'file' | 'url', value }
   banner: null, // { kind: 'file' | 'url', value }
+  /* The member's personal avatar picture. Persisted in the shared user-avatar
+     store (localStorage) so it shows in the nav + chat everywhere; null falls
+     back to initials. Seeded from the store so a reload keeps what you set. */
+  avatar: getUserAvatar(),      // image src (data URL or remote URL) | null
+  avatarName: '',               // display name for a device upload
 };
 
 /* Per-field metadata: label, input attrs, and the chat synonyms used to parse
@@ -94,6 +103,7 @@ let pendingKey = null;   // a field armed by chat, awaiting the user's next mess
 let pendingUpload = null; // 'logo' | 'banner' armed by chat, awaiting a URL
 const dirty = new Set(); // field keys changed since the last Save
 const uploadTab = { logo: 'file', banner: 'file' }; // which tab each uploader shows
+let avatarTab = 'file'; // which tab the avatar uploader shows ('file' | 'url')
 
 /* ---- Live chat bridge ---------------------------------------------- */
 let chatApi = null;
@@ -181,6 +191,92 @@ function uploadHtml(kind) {
     </div>`;
 }
 
+/* Five self-contained SVG art presets so a member can pre-fill a fun, unique
+   avatar in one tap — no upload needed. Each is a 96×96 vector; picking one
+   flows through the exact same setAvatar() path (stored as a data URL) so it
+   shows in the nav + chat like any other picture. */
+const AVATAR_PRESETS = [
+  {
+    id: 'aurora', label: 'Aurora',
+    svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><radialGradient id='a' cx='28%' cy='30%' r='75%'><stop offset='0' stop-color='#5eead4'/><stop offset='1' stop-color='#5eead4' stop-opacity='0'/></radialGradient><radialGradient id='b' cx='78%' cy='38%' r='75%'><stop offset='0' stop-color='#a78bfa'/><stop offset='1' stop-color='#a78bfa' stop-opacity='0'/></radialGradient><radialGradient id='c' cx='52%' cy='82%' r='80%'><stop offset='0' stop-color='#f472b6'/><stop offset='1' stop-color='#f472b6' stop-opacity='0'/></radialGradient></defs><rect width='96' height='96' fill='#0b1220'/><rect width='96' height='96' fill='url(#a)'/><rect width='96' height='96' fill='url(#b)'/><rect width='96' height='96' fill='url(#c)'/></svg>`,
+  },
+  {
+    id: 'prism', label: 'Prism',
+    svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#f59e0b'/><stop offset='1' stop-color='#ef4444'/></linearGradient></defs><rect width='96' height='96' fill='url(#g)'/><path d='M0 0 L48 0 L0 48 Z' fill='#fff' fill-opacity='0.20'/><path d='M96 0 L96 48 L48 0 Z' fill='#000' fill-opacity='0.12'/><path d='M0 96 L48 96 L0 48 Z' fill='#000' fill-opacity='0.16'/><path d='M96 96 L96 48 L48 96 Z' fill='#fff' fill-opacity='0.16'/><path d='M48 0 L96 48 L48 96 L0 48 Z' fill='#fff' fill-opacity='0.07'/></svg>`,
+  },
+  {
+    id: 'orbit', label: 'Orbit',
+    svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#6366f1'/><stop offset='1' stop-color='#0ea5e9'/></linearGradient></defs><rect width='96' height='96' fill='url(#g)'/><g fill='none' stroke='#fff'><circle cx='48' cy='48' r='10' stroke-width='3' stroke-opacity='0.55'/><circle cx='48' cy='48' r='20' stroke-width='2.5' stroke-opacity='0.38'/><circle cx='48' cy='48' r='30' stroke-width='2' stroke-opacity='0.26'/><circle cx='48' cy='48' r='40' stroke-width='1.5' stroke-opacity='0.18'/></g><circle cx='48' cy='48' r='4' fill='#fff'/></svg>`,
+  },
+  {
+    id: 'tide', label: 'Tide',
+    svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#22d3ee'/><stop offset='1' stop-color='#3b82f6'/></linearGradient></defs><rect width='96' height='96' fill='url(#g)'/><path d='M0 40 Q24 24 48 40 T96 40 V96 H0 Z' fill='#fff' fill-opacity='0.16'/><path d='M0 56 Q24 40 48 56 T96 56 V96 H0 Z' fill='#fff' fill-opacity='0.16'/><path d='M0 72 Q24 56 48 72 T96 72 V96 H0 Z' fill='#0b1220' fill-opacity='0.18'/></svg>`,
+  },
+  {
+    id: 'bloom', label: 'Bloom',
+    svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><radialGradient id='g' cx='50%' cy='28%' r='85%'><stop offset='0' stop-color='#34d399'/><stop offset='1' stop-color='#059669'/></radialGradient></defs><rect width='96' height='96' fill='url(#g)'/><g fill='#fff'><circle cx='26' cy='30' r='7' fill-opacity='0.9'/><circle cx='62' cy='22' r='5' fill-opacity='0.7'/><circle cx='72' cy='52' r='9' fill-opacity='0.85'/><circle cx='40' cy='58' r='6' fill-opacity='0.75'/><circle cx='22' cy='70' r='5' fill-opacity='0.65'/><circle cx='58' cy='74' r='7' fill-opacity='0.9'/></g></svg>`,
+  },
+];
+
+/* Encode a preset's SVG as a data URL (used as the avatar src + swatch img). */
+function presetDataUrl(svg) {
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+/* The member's avatar uploader — a live circular preview beside the same
+   file / URL tab control the brand assets use, a one-tap pattern picker, plus
+   a Remove action once a picture is set. Writing here updates the nav + chat
+   avatars immediately. */
+function avatarUploadHtml() {
+  const src = state.avatar;
+  const preview = src
+    ? `<img src="${esc(src)}" alt="Your avatar" />`
+    : `<span class="material-symbols-outlined">person</span>`;
+  const body = avatarTab === 'url'
+    ? `<div class="pf-uprow">
+         <input class="pf-url-input" type="url" data-pf-avatar-url value="${src && /^https?:/i.test(src) ? esc(src) : ''}" placeholder="https://example.com/me.jpg" />
+         <button type="button" class="pf-file-btn" data-pf-avatar-import><span class="material-symbols-outlined">download</span>Import</button>
+       </div>`
+    : `<div class="pf-uprow">
+         <label class="pf-file-btn"><span class="material-symbols-outlined">upload_file</span>Choose File
+           <input type="file" accept="image/*" data-pf-avatar-file hidden />
+         </label>
+         <span class="pf-file-name${state.avatarName ? ' is-set' : ''}" data-pf-avatar-filename>${state.avatarName ? esc(state.avatarName) : 'No file chosen'}</span>
+       </div>`;
+  const remove = src
+    ? `<button type="button" class="pf-file-btn pf-avatar-remove" data-pf-avatar-remove><span class="material-symbols-outlined">delete</span>Remove picture</button>`
+    : '';
+  return `
+    <div class="pf-upload pf-avatar-upload" data-pf-avatar>
+      <div class="pf-upload-head">
+        <div class="pf-upload-title">Avatar picture</div>
+        <div class="pf-upload-sub">Your personal photo. Once set it appears in the primary navigation and on your messages in the chat. Until you add one, your initials are used.</div>
+      </div>
+      <div class="pf-avatar-row">
+        <div class="pf-avatar-preview${src ? ' is-set' : ''}" data-pf-avatar-preview>${preview}</div>
+        <div class="pf-avatar-controls">
+          <div class="pf-uptabs" role="tablist">
+            <button type="button" class="pf-uptab${avatarTab === 'file' ? ' is-active' : ''}" data-pf-avatar-uptab="file" role="tab"><span class="material-symbols-outlined">description</span>Browse File</button>
+            <button type="button" class="pf-uptab${avatarTab === 'url' ? ' is-active' : ''}" data-pf-avatar-uptab="url" role="tab"><span class="material-symbols-outlined">link</span>Import from URL</button>
+          </div>
+          ${body}
+          ${remove}
+        </div>
+      </div>
+      <div class="pf-avatar-presets">
+        <span class="pf-avatar-presets-label">Or start from a pattern</span>
+        <div class="pf-avatar-presets-row" role="group" aria-label="Avatar patterns">
+          ${AVATAR_PRESETS.map((p) => {
+            const url = presetDataUrl(p.svg);
+            const active = src === url ? ' is-active' : '';
+            return `<button type="button" class="pf-avatar-preset${active}" data-pf-avatar-preset="${p.id}" title="${esc(p.label)}" aria-label="${esc(p.label)} pattern" aria-pressed="${src === url ? 'true' : 'false'}"><img src="${url}" alt="" /></button>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="pf-hint">JPEG, PNG, WebP, HEIC and more. Square images look best.</div>
+    </div>`;
+}
+
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
@@ -197,23 +293,28 @@ function paint() {
 
       <form class="pf-card" data-pf-form novalidate>
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-symbols-outlined">apartment</span>Organization &amp; contact</h2>
+          <h2 class="pf-section-title">Organization &amp; contact</h2>
           <div class="pf-grid">
             ${LAYOUT.map(([key, span]) => fieldHtml(key, span)).join('')}
           </div>
         </div>
 
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-symbols-outlined">sell</span>Associated brand</h2>
+          <h2 class="pf-section-title">Associated brand</h2>
           <div class="pf-brandchips">
             <span class="pf-brandchip"><span class="material-symbols-outlined">verified</span>${esc(state.brand)}</span>
           </div>
         </div>
 
         <div class="pf-section">
-          <h2 class="pf-section-title"><span class="material-symbols-outlined">image</span>Brand assets</h2>
+          <h2 class="pf-section-title">Brand assets</h2>
           ${uploadHtml('logo')}
           ${uploadHtml('banner')}
+        </div>
+
+        <div class="pf-section">
+          <h2 class="pf-section-title">Avatar picture</h2>
+          ${avatarUploadHtml()}
         </div>
 
         <div class="pf-footer">
@@ -227,6 +328,12 @@ function paint() {
 function repaintUpload(kind) {
   const el = hostEl?.querySelector(`[data-pf-upload="${kind}"]`);
   if (el) el.outerHTML = uploadHtml(kind);
+}
+
+/* Repaint just the avatar uploader block in place. */
+function repaintAvatar() {
+  const el = hostEl?.querySelector('[data-pf-avatar]');
+  if (el) el.outerHTML = avatarUploadHtml();
 }
 
 /* ---- Highlight helpers --------------------------------------------- */
@@ -248,6 +355,12 @@ function focusField(key) {
 
 function focusUpload(kind) {
   const el = hostEl?.querySelector(`[data-pf-upload="${kind}"]`);
+  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(el);
+}
+
+function focusAvatar() {
+  const el = hostEl?.querySelector('[data-pf-avatar]');
   el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   flash(el);
 }
@@ -308,6 +421,48 @@ function setUpload(kind, entry, source) {
   return html;
 }
 
+/* Set the member's avatar picture from a URL or a device upload (data URL).
+   Persists to the shared store, which live-updates the nav + chat avatars. */
+function setAvatar(src, name, source) {
+  state.avatar = src;
+  state.avatarName = name || '';
+  pendingUpload = null;
+  setUserAvatar(src);
+  repaintAvatar();
+  const via = name ? 'from your device' : 'from the URL';
+  toast('Avatar picture set', 'account_circle');
+  const html = `Set your <strong>avatar picture</strong> ${via}. It now shows in the primary navigation and on your chat messages.`;
+  if (source === 'form') pushChat(html); else return html;
+  return html;
+}
+
+/* Pre-fill the avatar from one of the built-in art presets. */
+function setAvatarPreset(preset, source) {
+  if (!preset) return '';
+  state.avatar = presetDataUrl(preset.svg);
+  state.avatarName = '';
+  pendingUpload = null;
+  setUserAvatar(state.avatar);
+  repaintAvatar();
+  toast('Avatar pattern set', 'account_circle');
+  const html = `Set your <strong>avatar picture</strong> to the <strong>${esc(preset.label)}</strong> pattern. It now shows in the primary navigation and on your chat messages.`;
+  if (source === 'form') pushChat(html); else return html;
+  return html;
+}
+
+/* Remove the avatar picture — the nav + chat fall back to initials again. */
+function removeAvatar(source) {
+  state.avatar = null;
+  state.avatarName = '';
+  pendingUpload = null;
+  clearUserAvatar();
+  repaintAvatar();
+  toast('Avatar picture removed', 'account_circle');
+  const html = 'Removed your <strong>avatar picture</strong>. Your initials are back in the primary navigation and on your chat messages.';
+  if (source === 'form') pushChat(html); else return html;
+  return html;
+}
+
 function doSave(source) {
   const changed = [...dirty].map((k) => FIELD[k]?.label || (k === 'logo' ? 'Brand logo' : k === 'banner' ? 'Brand banner' : k));
   dirty.clear();
@@ -330,6 +485,11 @@ export function renderProfile(mainEl) {
   dirty.clear();
   uploadTab.logo = 'file';
   uploadTab.banner = 'file';
+  avatarTab = 'file';
+  /* Re-seed from the shared store so the uploader reflects a picture set on an
+     earlier visit (or cleared elsewhere). */
+  state.avatar = getUserAvatar();
+  if (!state.avatar) state.avatarName = '';
   paint();
 
   /* Field commits — a real change narrates into the chat. */
@@ -346,6 +506,17 @@ export function renderProfile(mainEl) {
     const file = e.target.closest('[data-pf-file]');
     if (file && file.files && file.files[0]) {
       setUpload(file.dataset.pfFile, { kind: 'file', value: file.files[0].name }, 'form');
+      return;
+    }
+    /* Avatar device upload — read the image as a data URL so it persists and can
+       be shown directly in the nav + chat. */
+    const avFile = e.target.closest('[data-pf-avatar-file]');
+    if (avFile && avFile.files && avFile.files[0]) {
+      const f = avFile.files[0];
+      const reader = new FileReader();
+      reader.onload = () => setAvatar(String(reader.result || ''), f.name, 'form');
+      reader.onerror = () => toast('Couldn\u2019t read that image', 'error');
+      reader.readAsDataURL(f);
     }
   });
 
@@ -373,6 +544,34 @@ export function renderProfile(mainEl) {
       const url = (inp?.value || '').trim();
       if (!url) { toast('Enter an image URL first', 'link'); return; }
       setUpload(kind, { kind: 'url', value: url }, 'form');
+      return;
+    }
+    /* avatar uploader tab switch */
+    const avTab = e.target.closest('[data-pf-avatar-uptab]');
+    if (avTab) {
+      avatarTab = avTab.dataset.pfAvatarUptab;
+      repaintAvatar();
+      return;
+    }
+    /* avatar import-from-URL */
+    const avImp = e.target.closest('[data-pf-avatar-import]');
+    if (avImp) {
+      const inp = mainEl.querySelector('[data-pf-avatar-url]');
+      const url = (inp?.value || '').trim();
+      if (!url) { toast('Enter an image URL first', 'link'); return; }
+      setAvatar(url, '', 'form');
+      return;
+    }
+    /* avatar preset pattern */
+    const avPreset = e.target.closest('[data-pf-avatar-preset]');
+    if (avPreset) {
+      const preset = AVATAR_PRESETS.find((p) => p.id === avPreset.dataset.pfAvatarPreset);
+      if (preset) setAvatarPreset(preset, 'form');
+      return;
+    }
+    /* avatar remove */
+    if (e.target.closest('[data-pf-avatar-remove]')) {
+      removeAvatar('form');
       return;
     }
   });
@@ -403,6 +602,7 @@ function runIntent(intent) {
     case 'ein':            pendingKey = 'ein'; focusField('ein'); break;
     case 'logo':           pendingUpload = 'logo'; focusUpload('logo'); break;
     case 'banner':         pendingUpload = 'banner'; focusUpload('banner'); break;
+    case 'avatar':         pendingUpload = 'avatar'; focusAvatar(); break;
     default: break;
   }
 }
@@ -426,11 +626,19 @@ function matchFieldPhrase(phrase) {
 /* Typed-message handler wired as `reply` on the dock config. */
 function reply(text) {
   const t = String(text || '').trim();
-  if (!t) return 'Tell me what to update \u2014 name, email, address, website, EIN, or your brand logo &amp; banner.';
+  if (!t) return 'Tell me what to update \u2014 name, email, address, website, EIN, your brand logo &amp; banner, or your avatar picture.';
+
+  /* Remove-avatar requests, in plain language. */
+  if (/\b(remove|delete|clear)\b.*\b(avatar|profile\s*(?:picture|photo|pic)|my\s*(?:picture|photo))\b/i.test(t)) {
+    return removeAvatar('chat');
+  }
 
   /* 1) explicit "set X to Y" command wins, even over an armed field. */
   const m = t.match(VERB_RE);
   if (m) {
+    if (/avatar|profile\s*(?:picture|photo|pic)|my\s*(?:picture|photo)/i.test(m[1]) && URL_RE.test(m[2])) {
+      return setAvatar(m[2].match(URL_RE)[0], '', 'chat');
+    }
     const key = matchFieldPhrase(m[1]);
     if (key) return applyField(key, m[2], 'chat');
     if (/logo|banner/i.test(m[1]) && URL_RE.test(m[2])) {
@@ -441,6 +649,7 @@ function reply(text) {
   /* 2) an armed upload waiting for a URL. */
   if (pendingUpload && URL_RE.test(t)) {
     const kind = pendingUpload;
+    if (kind === 'avatar') return setAvatar(t.match(URL_RE)[0], '', 'chat');
     return setUpload(kind, { kind: 'url', value: t.match(URL_RE)[0] }, 'chat');
   }
 
@@ -460,7 +669,7 @@ function reply(text) {
 }
 
 export const PROFILE_WISEAI = {
-  sub: 'Edit your organization profile \u2014 names, contact, address, brand logo &amp; banner. Tap a chip or just tell me.',
+  sub: 'Edit your organization profile \u2014 names, contact, address, brand logo &amp; banner, avatar picture. Tap a chip or just tell me.',
   chipsFlow: 'wrap',
   sourceLabel: '',
   reply,
@@ -470,6 +679,7 @@ export const PROFILE_WISEAI = {
     label: 'Your profile at a glance',
     cards: [
       { intent: 'logo', icon: 'image', iconTone: 'brand', pill: { tone: 'up', icon: 'auto_awesome', text: 'Do next' }, title: 'Upload your brand logo', desc: 'Add or replace your logo — paste an image URL here and I\u2019ll import it.', action: 'Upload brand logo', ask: 'Upload brand logo' },
+      { intent: 'avatar', icon: 'account_circle', iconTone: 'brand', pill: { tone: 'up', icon: 'person', text: 'You' }, title: 'Set your avatar picture', desc: 'Add a personal photo — it shows in the navigation and on your chat messages.', action: 'Set avatar picture', ask: 'Set avatar picture' },
       { intent: 'address', icon: 'home', iconTone: 'brand', pill: { tone: 'up', icon: 'edit', text: 'Edit' }, title: 'Edit mailing address', desc: 'Update street, city, state and zip — just tell me the new details.', action: 'Edit address', ask: 'Edit mailing address' },
       { intent: 'rename_org', icon: 'badge', iconTone: 'brand', pill: { tone: 'up', icon: 'edit', text: 'Edit' }, title: 'Rename organization', desc: 'Update your org\u2019s display name — just tell me the new one.', action: 'Rename organization', ask: 'Rename organization' },
       { intent: 'banner', icon: 'panorama', iconTone: 'brand', pill: { tone: 'up', icon: 'panorama', text: 'Brand' }, title: 'Set brand banner', desc: 'Add or replace your profile banner image.', action: 'Set brand banner', ask: 'Set brand banner' },
@@ -487,6 +697,7 @@ export const PROFILE_WISEAI = {
     { intent: 'ein', label: 'Add EIN', icon: 'tag' },
     { intent: 'logo', label: 'Upload brand logo', icon: 'image' },
     { intent: 'banner', label: 'Set brand banner', icon: 'panorama' },
+    { intent: 'avatar', label: 'Set avatar picture', icon: 'account_circle' },
     { intent: 'save', label: 'Save changes', icon: 'save' },
   ],
   intentReplies: {
@@ -500,6 +711,9 @@ export const PROFILE_WISEAI = {
     ein: () => 'Send me the EIN (format XX\u2013XXXXXXX) and I\u2019ll add it to the profile.',
     logo: () => 'Opened the <strong>Brand Logo</strong> uploader. Choose a file on the form, or paste an image URL right here and I\u2019ll import it.',
     banner: () => 'Opened the <strong>Brand Banner</strong> uploader. Pick a file, or drop an image URL in chat and I\u2019ll import it.',
+    avatar: () => state.avatar
+      ? 'Opened the <strong>Avatar picture</strong> control. Pick a new file or paste an image URL to replace it \u2014 or say \u201cremove my avatar\u201d to go back to your initials.'
+      : 'Opened the <strong>Avatar picture</strong> control. Choose a file on the form, or paste an image URL right here and I\u2019ll set it \u2014 it\u2019ll show in the primary navigation and on your chat messages.',
     save: () => doSave('chat'),
   },
   onIntent: (intent) => {

@@ -179,7 +179,7 @@ function rowHtml(u) {
         <span class="adm-idcell" style="align-items:flex-start">
           <span class="adm-avatar adm-avatar--round" style="margin-top:2px">${esc(initials(u.name))}</span>
           <span class="adm-idcell-body">
-            <span class="adm-idcell-name">${esc(handle(u.email))}${mark ? `<span style="color:var(--primary)">${mark}</span>` : ''}</span>
+            <span class="adm-idcell-name">${esc(handle(u.email))}${mark ? `<span style="color:var(--primary-ink, var(--primary))">${mark}</span>` : ''}</span>
             <span class="adm-idcell-sub">${esc(u.email)}</span>
             <span class="adm-idcell-sub">ID: ${esc(u.id)}</span>
             <span class="adm-idcell-sub">${esc(u.name)}</span>
@@ -256,7 +256,7 @@ function paint() {
           ${filterPopHtml()}
         </div>
       </div>
-      <p class="adm-lede" style="margin:-8px 2px 14px;font-size:0.76rem"><span style="color:var(--primary)">*</span> Waiting for beta access &nbsp;&nbsp; <span style="color:var(--primary)">**</span> Beta access granted</p>
+      <p class="adm-lede" style="margin:-8px 2px 14px;font-size:0.76rem"><span style="color:var(--primary-ink, var(--primary))">*</span> Waiting for beta access &nbsp;&nbsp; <span style="color:var(--primary-ink, var(--primary))">**</span> Beta access granted</p>
 
       <div class="adm-card">
         <div class="adm-table-card">
