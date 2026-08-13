@@ -380,7 +380,6 @@
           <button class="aid-seg-btn is-active" data-range="30d">30d</button>
           <button class="aid-seg-btn" data-range="90d">90d</button>
         </div>
-        <button class="aid-btn" id="aid-theme"><span class="material-symbols-outlined">dark_mode</span><span>Theme</span></button>
         <button class="aid-btn"><span class="material-symbols-outlined">download</span><span>Export</span></button>
       </div>
     </header>
@@ -1178,14 +1177,6 @@
       $('#aid-range').querySelectorAll('.aid-seg-btn').forEach(function (b) { b.classList.remove('is-active'); });
       btn.classList.add('is-active');
       RANGE = btn.dataset.range;
-      renderAll();
-    });
-
-    /* ── Theme toggle (persists like the rest of WISE) ── */
-    $('#aid-theme').addEventListener('click', function () {
-      var dark = !document.documentElement.classList.contains('dark');
-      document.documentElement.classList.toggle('dark', dark);
-      try { localStorage.setItem('wise-theme', dark ? 'dark' : 'light'); } catch (e) {}
       renderAll();
     });
 

@@ -3,8 +3,9 @@
 /* ------------------------------------------------------------------ */
 /*
  * A thin (3px) vertical rail pinned to the far-right edge INSIDE the chat
- * module (#wa-chat), running the full height of the module. Along its path it
- * drops a colored tick everywhere the conversation produced a landmark:
+ * module (#wa-chat), spanning exactly the transcript (messages) area so tick
+ * positions read as fractions of the conversation. Along its path it drops a
+ * colored tick everywhere the conversation produced a landmark:
  *
  *   • output   — an output (result / visual / report) was created
  *   • source   — a data source was connected (added)
@@ -155,6 +156,13 @@ function refresh(state) {
 
   const total = messages.scrollHeight || 1;
   const cRect = messages.getBoundingClientRect();
+  /* Pin the rail to the TRANSCRIPT area only (not the whole module): the tick
+     fractions are computed against the transcript's scroll content, so the
+     rail must span exactly that region — otherwise ticks land over the header
+     or composer and stop correlating with the conversation. */
+  const chatRect = state.chat.getBoundingClientRect();
+  strip.style.top = `${Math.max(0, cRect.top - chatRect.top)}px`;
+  strip.style.height = `${cRect.height}px`;
   const els = messages.querySelectorAll('[data-activity]');
   const frag = document.createDocumentFragment();
 

@@ -326,6 +326,13 @@
     #modules-row #wiseai-dock-panel.wiseai-dock-open,
     #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
 
+    /* Match the standard 12px shell inset every other module page uses (e.g.
+       ai-dashboard.html: `body { padding: var(--modules-bottom-pad, 12px) }`).
+       Without it the base wise.css body rule leaves 0 horizontal padding, so the
+       nav rail (and the whole shell) sat flush to the window's left edge instead
+       of in the standard gutter, making this page's nav look mis-positioned. */
+    body[data-nav-id="library"] { padding: var(--modules-bottom-pad, 12px); }
+
     /* The Library module owns its own scroll; drop the separate 60px header
        bar so the serif masthead leads the scroll body, matching reports.html. */
     body[data-nav-id="library"] #agent-main-header { display: none; }
@@ -457,8 +464,9 @@
                   </button>
                 </div>
                 <!-- Scope + folder status row (4 cards — never wraps to a lone card).
-                     Sharing and folder are independent toggles: clicking a card
-                     turns that dimension on/off without disturbing the other. -->
+                     Like the type row, these are single-active: clicking a card
+                     makes it the sole filter (and clears any active type card),
+                     so the grid always matches the count on the card clicked. -->
                 <div class="lib-stats-row lib-row-scope" role="group" aria-label="Filter library by scope and folder status">
                   <button type="button" class="lib-stat" data-stat="shared" data-val="with" aria-pressed="false">
                     <span class="lib-stat-num">5</span>
@@ -867,22 +875,24 @@
         });
       });
 
-      /* ---- Score cards drive the very same state as the funnel chips, so they
-         behave "just like the score cards on every other page": the type row is
-         single-select (clicking an active type toggles back to All); the scope
-         row's sharing + folder cards each toggle their own dimension on/off,
-         independently. ---- */
+      /* ---- Score cards behave "just like the score cards on every other page"
+         (e.g. the Product Portfolio): they are SINGLE-ACTIVE — clicking any card
+         makes it the sole active filter and clears the other two dimensions, so
+         the grid always matches the number printed on the card you clicked (a
+         previously-selected scope card can never silently narrow a later type
+         click). Clicking the lone active card again resets back to All. The
+         funnel popover is still where you AND-combine dimensions. ---- */
       if (statsWrap) {
+        const STAT_DIMS = ['type', 'shared', 'folder'];
         statsWrap.addEventListener('click', (e) => {
           const btn = e.target.closest('.lib-stat');
           if (!btn) return;
           const stat = btn.dataset.stat, val = btn.dataset.val;
-          if (stat === 'type') {
-            state.type = (val !== 'all' && state.type === val) ? 'all' : val;
-          } else {
-            // shared / folder: toggle this dimension between its value and 'all'.
-            state[stat] = (state[stat] === val) ? 'all' : val;
-          }
+          // Is this card currently the only thing narrowing the grid?
+          const wasSole = state[stat] === val &&
+            STAT_DIMS.every((d) => d === stat || state[d] === 'all');
+          STAT_DIMS.forEach((d) => { state[d] = 'all'; });
+          if (!wasSole && !(stat === 'type' && val === 'all')) state[stat] = val;
           apply();
         });
       }

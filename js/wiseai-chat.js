@@ -1267,6 +1267,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      the chat) — History + Turns adopt the same base so they read as an equal
      pair; drag-resize still overrides it per side. */
   const STICKY_MODULE_W = opts.stickyModulesWidth || 280;
+  /* History's sticky drawer runs a touch thinner than Turns by default. */
+  const HISTORY_STICKY_W = opts.historyStickyWidth || (STICKY_MODULE_W - 20);
   /* WISEcodeAI opts: open Turns docked from the start (its own module, never an
      in-chat popover), dress its header like the result panes (three-dot menu +
      width changer), pin a search box above the list, and give each turn Share +
@@ -3241,8 +3243,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          module is inserted as a flex sibling before the chat's mount element. */
       breakout: opts.historyBreakout === true,
       breakoutWidth: opts.historyBreakoutWidth || 300,
-      /* Narrower shared width used while sticky (equal to Turns). */
-      stickyWidth: STICKY_MODULE_W,
+      /* Narrower width used while sticky (20px thinner than Turns). */
+      stickyWidth: HISTORY_STICKY_W,
       /* WISEcodeAI opts: start docked as a first-class module, dress the docked
          header like a result pane (three-dot menu + width changer), and add an
          MCP-usage filter toggle beside the search. */

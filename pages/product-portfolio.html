@@ -14228,15 +14228,24 @@
     }
 
     /* Welcome score cards + quick actions → concrete portfolio tasks. */
+    /* Verify Ingredients → opens the live WISE Verification module on the right
+       (Profile → Audit → Select → Analyze → Attest → Pay → Verified), not the
+       generic portfolio board. */
     function startVerifyIngredients() {
-      openPortfolioModule('claimed', 'Verify ingredients on my claimed products',
-        'All <strong>10 claimed products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened your <strong>Claimed</strong> list on the right; tap <strong>Verify Ingredients</strong> on any row and I’ll walk the label through, or I can batch all ten in one pass.',
-        ['shields', 'claimed', 'discovered']);
+      startVerificationWorkflow();
     }
+    /* Activate Non-UPF Shields → opens the SHIELD (Non-UPF) agent panel and
+       frames the attestation in chat. */
     function startActivateShields() {
-      openPortfolioModule('claimed', 'Activate the Non-UPF Shields I’m eligible for',
-        '<strong>9 of your 10</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and are pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. Attest and pay and the shields switch on across all nine. Want me to start the attestation, or review the ineligible one first?',
-        ['verify', 'ineligible', 'claimed']);
+      hideWelcomeScreen(() => {
+        revealPanel('shield');
+        addUserMessage('Activate the Non-UPF Shields I’m eligible for');
+        const typing = showWISEcodeAITyping('Opening the Non-UPF Shield workspace…');
+        setTimeout(() => {
+          typing?.remove();
+          addWISEcodeAIMessage('<strong>9 of your 10</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and are pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. I’ve opened the <strong>SHIELD</strong> panel on the right — attest and pay and the shields switch on across all nine.', { source: false });
+        }, 620);
+      });
     }
     function startReviewDiscovered() {
       openPortfolioModule('discovered', 'Review the products you discovered for me',
@@ -14258,10 +14267,10 @@
         'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>Needs Info</strong> until you complete it.',
         ['discovered', 'needsinfo', 'verify']);
     }
+    /* Resolve Ineligible → the blocker is an unverified/failing ingredient, so
+       this drops straight into the live Verification module to pinpoint it. */
     function startResolveIneligible() {
-      openPortfolioModule('claimed', 'Why is a product ineligible for a shield?',
-        '<strong>Vegan Blueberry Mini Muffins</strong> is currently <strong>Ineligible</strong> for a Non-UPF Shield — its formulation includes an ingredient that doesn’t meet the Not-Ultra-Processed criteria yet. Verify its ingredients so I can pinpoint the blocker, then we can plan a swap or an exception.',
-        ['verify', 'shields', 'claimed']);
+      startVerificationWorkflow();
     }
     function startAddProduct() {
       /* Add Product opens its own dedicated builder page: a WISEcodeAI chat that
@@ -14297,27 +14306,13 @@
         ['nearmiss', 'easywins', 'filter'],
         () => { if (window.pfEnsureStarsOn) pfEnsureStarsOn(); });
     }
+    /* Near-miss and Easy Wins are both reformulation opportunities, so they open
+       the Reformulation Plan module on the right rather than filtering the board. */
     function startNearMiss() {
-      openPortfolioModule('claimed', 'Find my near-miss Guiding Stars opportunities',
-        'These are your <strong>near-miss</strong> products — sitting at <strong>★★</strong> and just one point from <strong>★★★</strong>. They’re the highest-leverage reformulations you have. I’ve turned Guiding Stars on and filtered to the near-miss set; open any row to see exactly how many points it needs.',
-        ['easywins', 'guidingstars', 'claimed'],
-        () => {
-          if (window.pfEnsureStarsOn) pfEnsureStarsOn();
-          pfFilters.stars = null; pfFilters.ease = null; pfFilters.nearMiss = true; pfFilters.categories.clear();
-          if (window.pfSyncFilterChips) pfSyncFilterChips();
-          pfAfterFilterChange();
-        });
+      startReformulationWorkflow();
     }
     function startEasyWins() {
-      openPortfolioModule('claimed', 'Show me easy Guiding Stars wins',
-        'Here are your <strong>easy fixes</strong> — products where a minor reformulation (a small sugar or sodium cut) is enough to earn the next star. I’ve enabled Guiding Stars and filtered to the high-ease opportunities so you can start with the quickest wins.',
-        ['nearmiss', 'guidingstars', 'claimed'],
-        () => {
-          if (window.pfEnsureStarsOn) pfEnsureStarsOn();
-          pfFilters.stars = null; pfFilters.ease = 'High'; pfFilters.nearMiss = false; pfFilters.categories.clear();
-          if (window.pfSyncFilterChips) pfSyncFilterChips();
-          pfAfterFilterChange();
-        });
+      startReformulationWorkflow();
     }
     window.startGuidingStars = startGuidingStars;
     window.startNearMiss = startNearMiss;

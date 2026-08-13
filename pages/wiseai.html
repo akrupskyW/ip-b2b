@@ -143,13 +143,15 @@
       pointer-events: none;
       background: color-mix(in srgb, var(--border) 55%, transparent);
     }
+    /* Ticks are small rectangles that jut out LEFT past the 3px rail, so each
+       landmark reads as a tab poking out of the strip. */
     .wa-activity-tick {
       position: absolute;
       right: 0;
-      width: 3px;
-      height: 10px;
+      width: 9px;
+      height: 11px;
       transform: translateY(-50%);
-      border-radius: 2px 0 0 2px;
+      border-radius: 3px 0 0 3px;
       pointer-events: auto;
       cursor: pointer;
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
@@ -166,7 +168,7 @@
       left: -8px;
       right: 0;
     }
-    .wa-activity-tick:hover { width: 8px; }
+    .wa-activity-tick:hover { width: 14px; }
     /* Distinct hues per landmark type (retunable per theme/palette). */
     .wa-activity-tick--output   { background: var(--act-output, var(--ter-amber, #FFC434)); }
     .wa-activity-tick--source   { background: var(--act-source, #12b76a); }
@@ -652,6 +654,48 @@
       }
       .wa-pane-nav-track.is-merged .wa-merge-chip-label { display: none; }
     }
+
+    /* ── Admin: "Outputs dropdown" header mode (merged pane only) ──
+       Toggled from the merged pane's three-dot menu (pink Admin switch). Hides
+       the chip carousel and the header prev/next arrows entirely; the
+       "Output N / M" masthead itself becomes a dropdown that lists every
+       output as a small preview + label row (click one to reveal it). */
+    #wa-unified.is-titledrop .wa-pane-nav-track { display: none !important; }
+    #wa-unified.is-titledrop .wa-pane-nav-btns { display: none !important; }
+    #wa-unified.is-titledrop .wa-pane-nav-count { display: none !important; }
+    #wa-unified .wa-pane-mast { position: relative; }
+    #wa-unified.is-titledrop .wa-pane-title { cursor: pointer; user-select: none; }
+    #wa-unified.is-titledrop .wa-pane-title:hover { color: var(--primary-ink, var(--primary)); }
+    #wa-unified.is-titledrop .wa-pane-title::after {
+      content: 'keyboard_arrow_down';
+      font-family: 'Material Symbols Outlined';
+      font-weight: 400; font-size: 20px; line-height: 1;
+      display: inline-block; vertical-align: -4px; margin-left: 4px;
+      color: var(--text-muted);
+      transition: transform .15s ease;
+    }
+    #wa-unified.is-titledrop .wa-pane-title.is-open::after { transform: rotate(180deg); }
+    .wa-titledrop-pop {
+      position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+      min-width: 250px; max-width: 330px; max-height: 340px; overflow-y: auto;
+      padding: 6px; background: var(--surface);
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    }
+    html.dark .wa-titledrop-pop { background: #1A2339; }
+    .wa-titledrop-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 6px 8px; border-radius: 10px; cursor: pointer;
+    }
+    .wa-titledrop-item:hover { background: var(--surface-2); }
+    .wa-titledrop-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .wa-titledrop-item.is-active { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .wa-titledrop-label {
+      flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 600;
+      color: var(--text); line-height: 1.3; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .wa-titledrop-item.is-active .wa-titledrop-label { color: var(--primary-ink, var(--primary)); font-weight: 700; }
 
     .wa-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
@@ -2762,6 +2806,8 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                  <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="split" hidden><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
                   <div class="topbar-menu-divider" data-pane-split-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
@@ -3212,6 +3258,8 @@
       const btns = paneNavBtns[which];
       const count = paneCount[which];
       if (!body || !track || !btns) return;
+      /* Outputs changed — drop any open header dropdown so it can't go stale. */
+      closeTitledropPop();
       /* Keep blocks ordered by group (results → visuals) so grouping stays clean
          even as new outputs append at the end of the body. Stable within group. */
       const blocks = Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
@@ -3326,6 +3374,7 @@
             (paneBody[grp] || paneBody.results).appendChild(b);
           });
         paneBody.unified.classList.remove('is-carousel');
+        closeTitledropPop();
         if (paneTrack.unified) { paneTrack.unified.innerHTML = ''; paneTrack.unified.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
         if (paneNavBtns.unified) paneNavBtns.unified.innerHTML = '';
         if (paneCount.unified) paneCount.unified.innerHTML = '';
@@ -3402,6 +3451,7 @@
     function closePane(which) {
       const el = paneEl[which];
       if (el) el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill');
+      if (which === 'unified') closeTitledropPop();
       if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
       if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
       if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
@@ -3510,6 +3560,94 @@
         if (ic) ic.textContent = on ? 'star' : 'star_outline';
       }
     }
+    /* ── Admin: merged pane "Outputs dropdown" header ──
+       Toggled from the merged pane's ⋯ menu (pink Admin switch). While ON the
+       chip carousel + header prev/next arrows are hidden entirely and the
+       "Output N / M" masthead becomes a dropdown: clicking it opens a list of
+       every output as a small preview + label; picking one reveals it below
+       (and jumps the transcript, same as the chips did). */
+    let unifiedTitleDrop = false;
+    let titledropPop = null;
+    function syncTitledropItem() {
+      const item = paneEl.unified?.querySelector('[data-pane-act="titledrop"]');
+      if (!item) return;
+      item.classList.toggle('is-on', unifiedTitleDrop);
+      item.setAttribute('aria-checked', unifiedTitleDrop ? 'true' : 'false');
+    }
+    function closeTitledropPop() {
+      if (titledropPop) { titledropPop.remove(); titledropPop = null; }
+      paneTitle.unified?.classList.remove('is-open');
+      if (paneTitle.unified?.hasAttribute('aria-haspopup')) paneTitle.unified.setAttribute('aria-expanded', 'false');
+    }
+    function openTitledropPop() {
+      closeTitledropPop();
+      const mast = paneEl.unified?.querySelector('.wa-pane-mast');
+      const blocks = paneBlocks('unified');
+      if (!mast || !blocks.length) return;
+      const activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
+      titledropPop = document.createElement('div');
+      titledropPop.className = 'wa-titledrop-pop';
+      titledropPop.setAttribute('role', 'listbox');
+      titledropPop.innerHTML = blocks.map((b, i) => {
+        const label = paneSlideLabel(b, b.dataset.origin || 'results', i);
+        const bid = b.dataset.blockId || '';
+        /* <div role="option"> (not <button>) so the inert preview clone — which
+           may hold <button>/<input> controls — can nest safely. */
+        return `<div class="wa-titledrop-item${i === activeIdx ? ' is-active' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="option" tabindex="0" aria-selected="${i === activeIdx ? 'true' : 'false'}" title="${esc(label)}">
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
+          <span class="wa-titledrop-label">${esc(label)}</span>
+        </div>`;
+      }).join('');
+      const pickItem = (it) => {
+        setPaneSlide('unified', Number(it.dataset.slide), { animate: true });
+        if (it.dataset.blockId) jumpTranscriptToBlock(it.dataset.blockId);
+        closeTitledropPop();
+      };
+      titledropPop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const it = e.target.closest('[data-slide]');
+        if (it) pickItem(it);
+      });
+      titledropPop.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const it = e.target.closest('[data-slide]');
+        if (!it) return;
+        e.preventDefault();
+        pickItem(it);
+      });
+      mast.appendChild(titledropPop);
+      paneTitle.unified?.classList.add('is-open');
+      paneTitle.unified?.setAttribute('aria-expanded', 'true');
+    }
+    function setUnifiedTitleDrop(on) {
+      unifiedTitleDrop = !!on;
+      paneEl.unified?.classList.toggle('is-titledrop', unifiedTitleDrop);
+      const t = paneTitle.unified;
+      if (t) {
+        if (unifiedTitleDrop) {
+          t.setAttribute('role', 'button');
+          t.setAttribute('tabindex', '0');
+          t.setAttribute('aria-haspopup', 'listbox');
+          t.setAttribute('aria-expanded', 'false');
+          t.title = 'Choose an output';
+        } else {
+          ['role', 'tabindex', 'aria-haspopup', 'aria-expanded', 'title'].forEach((a) => t.removeAttribute(a));
+          closeTitledropPop();
+        }
+      }
+      syncTitledropItem();
+    }
+    paneTitle.unified?.addEventListener('click', (e) => {
+      if (!unifiedTitleDrop) return;
+      e.stopPropagation();
+      if (titledropPop) closeTitledropPop(); else openTitledropPop();
+    });
+    paneTitle.unified?.addEventListener('keydown', (e) => {
+      if (!unifiedTitleDrop || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      if (titledropPop) closeTitledropPop(); else openTitledropPop();
+    });
+
     document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
       const btn = wrap.querySelector('.panel-more-btn');
       const pop = wrap.querySelector('.topbar-popover');
@@ -3521,7 +3659,10 @@
         pop.classList.toggle('hidden', !open);
         btn.classList.toggle('is-open', open);
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if (open) syncPaneGsItem(wrap.dataset.paneMore);
+        if (open) {
+          syncPaneGsItem(wrap.dataset.paneMore);
+          if (wrap.dataset.paneMore === 'unified') syncTitledropItem();
+        }
       });
       pop.addEventListener('click', (e) => {
         const item = e.target.closest('[data-pane-act]');
@@ -3534,6 +3675,12 @@
           e.stopPropagation();
           if (typeof cmpToggleGuidingStars === 'function') cmpToggleGuidingStars();
           syncPaneGsItem(which);
+          return;
+        }
+        /* "Outputs dropdown" is a settings switch too — flip + keep menu open. */
+        if (act === 'titledrop') {
+          e.stopPropagation();
+          setUnifiedTitleDrop(!unifiedTitleDrop);
           return;
         }
         pop.classList.add('hidden'); btn.classList.remove('is-open');
@@ -3558,6 +3705,7 @@
     document.addEventListener('click', () => {
       document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
       document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+      closeTitledropPop();
     });
 
     /* ══════════ Share side panel ══════════
@@ -5346,9 +5494,6 @@
 
     const host = document.getElementById('wa-chat');
     let chat = null;
-    /* Once the user cycles the chat's width themselves, stop applying the
-       "double by default when a pane opens" behavior — their choice wins. */
-    let chatWidthTouched = false;
     if (host) {
       chat = mountWISEcodeAIChat(host, {
         title: 'WISEcodeAI\u2122',
@@ -5503,7 +5648,6 @@
         onToggleOutputs: (hidden) => setManifestOff(hidden),
         /* Chat three-dot "Share" opens WISEcodeAI's in-app share panel. */
         onShare: () => openShareModal(),
-        onToggleWidth: () => { chatWidthTouched = true; },
         connectors: [
           { id: 'kroger',   name: 'Kroger',              color: '#0f4b8f', mono: 'K', logo: 'https://www.google.com/s2/favicons?domain=kroger.com&sz=128', connected: true },
           { id: 'instacart', name: 'Instacart',          color: '#0AAD0A', icon: 'shopping_cart', logo: 'https://www.google.com/s2/favicons?domain=instacart.com&sz=128' },
@@ -5556,20 +5700,10 @@
         },
       });
 
-      /* When a module opens to the chat's right (any result pane docking the
-         chat into its fixed side column), default the chat to the DOUBLE width
-         instead of the narrow single column. Purely a default: it never fires
-         once the user has cycled the width themselves (chatWidthTouched), and
-         it never narrows a chat that's already wide. Watching the panes' class
-         attribute catches every open path (openPane, reopenSurface, merge
-         toggle, "Opened in …" chips) with one hook. */
-      const defaultChatDouble = () => {
-        if (chatWidthTouched || !chat || typeof chat.setWidth !== 'function') return;
-        if (host.classList.contains('panel-wide')) return;
-        chat.setWidth(1);
-      };
+      /* The chat keeps its SINGLE width by default when a pane opens — only the
+         user's own width toggle widens it. The observer still tracks pane
+         open/close so the lone-pane width tier reflects onto the row. */
       const paneOpenWatch = new MutationObserver(() => {
-        if (document.querySelector('#modules-row .wa-pane.is-open')) defaultChatDouble();
         recomputeSoloPaneWidth();
       });
       Object.values(paneEl).forEach((p) => { if (p) paneOpenWatch.observe(p, { attributes: true, attributeFilter: ['class'] }); });
