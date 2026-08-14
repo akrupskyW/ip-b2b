@@ -708,6 +708,9 @@ function injectChatExtras() {
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.28); transition: transform .18s ease; }
     .sc-mcp-item.is-on .sc-switch { background: var(--primary); border-color: var(--primary); }
     .sc-mcp-item.is-on .sc-switch::after { transform: translateX(15px); }
+    /* Pink variant — the admin "Compact spacing" toggle flips pink (matching the
+       row's pink text + Admin badge) instead of the default brand-blue. */
+    .sc-mcp-item.is-on .sc-switch--pink { background: rgb(219, 39, 119); border-color: rgb(219, 39, 119); }
 
     .wch-conn-intro { margin: 2px 16px 8px; font-size: 12px; line-height: 1.45; opacity: .7; }
     .wch-conn-list { flex: 1; overflow-y: auto; padding: 2px 8px 12px; }
@@ -1480,6 +1483,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      Note (annotate) controls. */
   const turnsBreakoutDefault = opts.turnsBreakoutDefault === true;
   const turnsDockedControls = opts.turnsDockedControls === true;
+  /* Adds a pink "Sticky module" admin toggle to the docked Turns module's
+     three-dot menu. ON by default (the module stays tucked behind the chat);
+     flipping it off adds `.wch-unsticky` so the host's CSS floats it back out as
+     a free-standing card. Only meaningful alongside turnsDockedControls. */
+  const turnsStickyToggle = opts.turnsStickyToggle === true;
+  const turnsStickyDefault = opts.turnsStickyToggleDefault !== false;
   const turnsSearchOn = opts.turnsSearch === true;
   const turnsShareOn = opts.turnsShare === true;
   const turnsNotesOn = opts.turnsNotes === true;
@@ -1487,6 +1496,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      survive re-renders and conversation growth. */
   const turnNotes = Object.create(null);
   let turnsQuery = '';
+  /* Whether the docked Turns module is tucked "sticky" behind the chat (default)
+     vs. floated out as a free-standing card. Toggled from its ⋯ menu when
+     `turnsStickyToggle` is on; the host CSS reacts to the `.wch-unsticky` class. */
+  let turnsSticky = turnsStickyDefault;
   /* Whether the docked History / Turns modules are tucked in "sticky" behind the
      chat (toggled from the three-dot menu; host applies the actual layout). */
   let stickyOn = opts.stickyModulesDefault === true;
@@ -1590,6 +1603,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (stored === '1') chipsHidden = true;
     else if (stored === '0') chipsHidden = false;
   } catch (_) {}
+  /* "Compact spacing" (three-dot ▸ Admin, pink) trims the chat container's chrome
+     padding APP-WIDE so the transcript, the avatars and the input rail all get
+     more room. It flips a single global `chat-compact` class on <html>, so every
+     mounted chat module responds at once; the preference is shared (one key) and
+     persisted, and applied here on mount so a reload keeps the chosen density. */
+  const COMPACT_PREF_KEY = 'wise:chat-compact';
+  /* ON by default — the tighter spacing is the standard density. A stored '0'
+     (the user explicitly turned it OFF) always wins so their choice sticks. */
+  let compactDefaultOn = true;
+  try {
+    if (localStorage.getItem(COMPACT_PREF_KEY) === '0') compactDefaultOn = false;
+  } catch (_) {}
+  document.documentElement.classList.toggle('chat-compact', compactDefaultOn);
   const persistChipsHtml = persistChips
     ? `<div class="ws-chips-bar ws-chips-wrap" id="${id}-pchips-wrap" aria-label="Quick actions">
         <div class="ws-chips" id="${id}-pchips" role="list">${chipsHtml}</div>
@@ -1641,9 +1667,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${(scorecardsHtml || intents.length) ? `<div class="topbar-menu-divider"></div>` : ''}
+          <div class="topbar-menu-divider"></div>
           ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
@@ -2291,17 +2318,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      instant you ask, the transcript first "thinks out loud":
 
        • A live m:ss stopwatch ticks in the header the whole time.
-       • Exactly ONE milestone is on screen at a moment — its 1–3 word key with a
-         spinner, and beneath it a big GLOB of subdued story text that streams in
-         line by line, building into a paragraph you can actually read.
-       • When it advances, that whole glob is WIPED and replaced by the next
-         milestone's — the previous status does not linger.
+       • Each milestone is a 1–3 word key with a big GLOB of subdued story text
+         that streams in line by line beneath it. The globs BUILD ON EACH OTHER —
+         a new milestone is appended below the last, growing one continuous
+         narrative you can read top-to-bottom, never stopping to wipe & reset.
        • Delays are deliberately variable so no two turns feel identical.
 
      When the last milestone lands, the globs are gone and the live block is
      replaced by the quiet SUMMARY: each milestone's key + the m:ss elapsed when
      it landed, the header reading "Worked for m:ss". Collapsible via the header. */
-  function runReasoningTrace(milestones, done, tail) {
+  function runReasoningTrace(milestones, done, tail, sourceLine) {
     if (!messages) { if (done) done(); return; }
     detachInlineChips();
     const steps = (Array.isArray(milestones) && milestones.length)
@@ -2316,9 +2342,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`
       + `<div class="sc-line-body"><div class="sc-trace" data-open="1">`
       + `<button type="button" class="sc-trace-head" aria-expanded="true">`
+      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
       + `<span class="sc-trace-title">Thinking</span>`
       + `<span class="sc-trace-timer" aria-hidden="true">0:00</span>`
-      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
       + `</button><div class="sc-trace-body"></div></div></div>`;
     messages.appendChild(el);
     scrollDown();
@@ -2353,9 +2379,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (prefersReducedMotion) {
       let acc = 0;
       steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtTraceClock(acc) }); });
-      bodyEl.innerHTML = summaryHtml();
-      titleEl.textContent = `Worked for ${fmtTraceClock(acc)}`;
-      timerEl.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
+      const srcHtml = sourceLine
+        ? `<div class="sc-trace-story"><span class="sc-trace-story-line sc-trace-story-source is-in">${sourceLine}</span></div>` : '';
+      bodyEl.innerHTML = srcHtml + summaryHtml();
+      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(acc)}`;
+      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
       scrollDown();
@@ -2369,8 +2397,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const finish = () => {
       clearInterval(timer);
       bodyEl.innerHTML = summaryHtml();
-      titleEl.textContent = `Worked for ${fmtTraceClock(now())}`;
-      timerEl.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
+      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(now())}`;
+      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
       scrollDown();
@@ -2380,44 +2408,89 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const runMilestone = () => {
       if (mi >= steps.length) { finish(); return; }
       const m = steps[mi];
-      /* Wipe the previous status entirely — one milestone visible at a time. No
-         inline spinner here: the owl avatar to the left already carries the
-         "working" ring, so the status is just its key + the streaming glob. */
-      bodyEl.innerHTML = `<div class="sc-trace-live">`
-        + `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(m.key)}</span></div>`
-        + `<div class="sc-trace-story"></div></div>`;
+      /* Append a NEW milestone block BELOW the previous ones — the globs build
+         on each other into one continuous, growing narrative rather than each
+         status wiping the last. No inline spinner: the owl avatar to the left
+         already carries the "working" ring, so a status is just its key + glob.
+         Completed blocks get `is-done` so the live one can be told apart. */
+      const block = document.createElement('div');
+      block.className = 'sc-trace-live';
+      block.innerHTML = `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(m.key)}</span></div>`
+        + `<div class="sc-trace-story"></div>`;
+      bodyEl.appendChild(block);
       scrollDown();
-      const storyEl = bodyEl.querySelector('.sc-trace-story');
+      const storyEl = block.querySelector('.sc-trace-story');
       const lines = (m.story || []).slice();
+      /* The very last glob line of the whole trace names the data source the
+         answer is grounded in (rendered as HTML so the source reads in bold). */
+      if (mi === steps.length - 1 && sourceLine) lines.push({ html: sourceLine });
       let si = 0;
       const streamLine = () => {
         if (si >= lines.length) {
+          block.classList.add('is-done');
           landmarks.push({ key: m.key, time: fmtTraceClock(now()) });
           mi += 1;
-          setTimeout(runMilestone, rnd(320, 780));
+          /* Keep the flow continuous — a short beat, not a full stop, so the
+             next glob starts building right where the last one left off. */
+          setTimeout(runMilestone, rnd(140, 320));
           return;
         }
+        const line = lines[si];
         const sp = document.createElement('span');
         sp.className = 'sc-trace-story-line';
-        sp.textContent = lines[si];
+        if (line && typeof line === 'object' && line.html) {
+          sp.innerHTML = line.html;
+          sp.classList.add('sc-trace-story-source');
+        } else {
+          sp.textContent = line;
+        }
         storyEl.appendChild(sp);
         requestAnimationFrame(() => sp.classList.add('is-in'));
         scrollDown();
         si += 1;
         setTimeout(streamLine, rnd(300, 720));
       };
-      setTimeout(streamLine, rnd(160, 440));
+      setTimeout(streamLine, rnd(120, 300));
     };
 
     setTimeout(runMilestone, rnd(220, 520));
   }
 
+  /* The trace's closing line names which connected data source the answer is
+     grounded in. It's drawn from the SAME pool of sources shown in the input —
+     but not deterministically: asking about the same thing can resolve to a
+     different source (you might have asked a different kind of question), so we
+     lean toward the connected sources yet keep it variable. Returns '' when no
+     sources are configured. */
+  function pickSourceLine() {
+    if (!connectors.length) return '';
+    const connected = connectors.filter((c) => c && c.connected);
+    const pool = connected.length ? connected : connectors;
+    const c = pool[Math.floor(Math.random() * pool.length)];
+    const name = esc(c && c.name ? c.name : 'the WISE Foods registry');
+    const templates = [
+      `Grounding this answer in <strong>${name}</strong> \u2014 the source that best fit what you actually asked.`,
+      `Sourced from <strong>${name}</strong> for this one; a different question might have pulled from somewhere else.`,
+      `Pulling the numbers behind this from <strong>${name}</strong>.`,
+      `This answer is drawn from <strong>${name}</strong>.`,
+    ];
+    return templates[Math.floor(Math.random() * templates.length)];
+  }
+
   function wiseaiRespond(text, intent) {
     /* Resolve the answer up front so the trace can narrate assembling the exact
        pieces it will contain — and so nothing (chart/table/report cards, source
-       chips, suggested actions) renders until the whole trace has finished. */
+       chips, suggested actions, or host-surfaced output panes) renders until the
+       whole trace has finished. */
     const html = reply(text, intent);
-    runReasoningTrace(reasoningTraceFor(text, intent), () => addWISEcodeAI(html), assemblyMilestoneFor(html));
+    const done = () => {
+      /* Host side-effects that render output (e.g. opening the result/visual
+         panes) are deferred to here so they land WITH the answer, never during
+         the thinking globs. */
+      if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
+      addWISEcodeAI(html);
+    };
+    runReasoningTrace(reasoningTraceFor(text, intent), done, assemblyMilestoneFor(html), pickSourceLine());
   }
   /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
      resolver) — used by controls like the brand connectors where the answer is
@@ -3000,6 +3073,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           '<div class="panel-more-wrap wt-more-wrap">' +
             '<button type="button" class="panel-more-btn wt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
             '<div class="topbar-popover hidden wt-more-pop" role="menu">' +
+              (turnsStickyToggle
+                ? '<button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle' + (turnsStickyDefault ? ' is-on' : '') + '" data-turns-act="sticky" role="menuitemcheckbox" aria-checked="' + (turnsStickyDefault ? 'true' : 'false') + '"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>' +
+                  '<div class="topbar-menu-divider"></div>'
+                : '') +
               '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-turns-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close panel</span></button>' +
             '</div>' +
           '</div>' +
@@ -3063,11 +3140,21 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       tMorePop.addEventListener('click', (e) => {
         const it = e.target.closest('[data-turns-act]');
         if (!it) return;
+        const act = it.getAttribute('data-turns-act');
+        /* "Sticky module" is a settings switch — flip it and keep the menu open
+           so its state reads back (mirrors the result panes' sticky toggle). */
+        if (act === 'sticky') {
+          e.stopPropagation();
+          setTurnsSticky(!turnsSticky);
+          return;
+        }
         closeTMore();
-        if (it.getAttribute('data-turns-act') === 'close') closeTurns();
+        if (act === 'close') closeTurns();
       });
       document.addEventListener('click', (e) => { if (!tMorePop.classList.contains('hidden') && !tMoreWrap.contains(e.target) && !tMorePop.contains(e.target)) closeTMore(); });
     }
+    /* Apply the sticky module default (ON tucks it behind the chat). */
+    if (turnsStickyToggle) setTurnsSticky(turnsSticky);
 
     /* Row actions: fork / jump / share / note. */
     turnsPanel.addEventListener('click', (e) => {
@@ -3084,6 +3171,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const ta = e.target.closest('[data-note-input]');
       if (ta) commitTurnNote(Number(ta.getAttribute('data-note-input')));
     });
+  }
+
+  /* Sticky toggle for the docked Turns module: ON tucks it behind the chat,
+     OFF floats it out as a free-standing card (host reacts to `.wch-unsticky`).
+     Keeps the ⋯ menu item's switch state in sync. */
+  function setTurnsSticky(on) {
+    turnsSticky = !!on;
+    if (turnsPanel) turnsPanel.classList.toggle('wch-unsticky', !turnsSticky);
+    const item = turnsPanel && turnsPanel.querySelector('[data-turns-act="sticky"]');
+    if (item) {
+      item.classList.toggle('is-on', turnsSticky);
+      item.setAttribute('aria-checked', turnsSticky ? 'true' : 'false');
+    }
   }
 
   /* Reflect the break-out button's state: an outward "split" glyph while docked
@@ -3273,6 +3373,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.classList.toggle('is-on', on);
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
+  /* Sync the "Compact spacing" switch to the shared <html>.chat-compact state.
+     Called on mount and whenever any module flips it (via the wise:chat-compact
+     event), so every open chat's switch reflects the one shared setting. */
+  function syncCompactMenu() {
+    const item = rootEl.querySelector('[data-sc="compact"]');
+    if (!item) return;
+    const on = document.documentElement.classList.contains('chat-compact');
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  document.addEventListener('wise:chat-compact', syncCompactMenu);
   /* Re-flow both flanking modules to the sticky (equal, narrower) or normal base
      width. Drag-resize still overrides per side afterwards. */
   function applyStickyLayout() {
@@ -4360,6 +4471,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       item.setAttribute('aria-checked', outputsHidden ? 'true' : 'false');
       try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
     }
+    else if (action === 'compact') {
+      /* App-wide compact spacing: flip the shared <html>.chat-compact class so
+         every mounted chat module trims its chrome padding at once. Keep the menu
+         open so the switch state reads back; persist the choice + broadcast it to
+         any sibling chat modules so their switches follow. */
+      const on = !document.documentElement.classList.contains('chat-compact');
+      document.documentElement.classList.toggle('chat-compact', on);
+      try { localStorage.setItem(COMPACT_PREF_KEY, on ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-compact', { detail: { on } })); } catch (_) {}
+      syncCompactMenu();
+    }
     else if (action === 'toggle-cards') {
       closeMore();
       cardsHidden = !cardsHidden;
@@ -4487,6 +4609,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     renderTurns();
   }
   syncTurnsMenu();
+  syncCompactMenu();
 
   /* Sticky-modules toggle: reflect the initial state onto the switch and let the
      host apply the layout so a persisted preference survives reloads. */

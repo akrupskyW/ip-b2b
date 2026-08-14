@@ -506,9 +506,9 @@
     html.full-bleed body { padding-top: 0; padding-bottom: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
-    /* Chat width toggle (matches the shared module's 3-step widen). */
-    .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
-    .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
+    /* Chat width toggle — canonical tiers (single 380 / double 580 / triple 760). */
+    .ap-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    .ap-chat.panel-triple { flex-basis: 760px; width: 760px; }
 
     @media (max-width: 1200px) {
       #ap-progress { flex-basis: 250px; width: 250px; }
@@ -801,5 +801,7 @@
   <script src="../js/chat-history.js"></script>
   <script>window.WISE_HERO_BRAND = true;</script>
   <script src="../js/add-product-flow.js"></script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

@@ -46,6 +46,8 @@ import {
   applyModuleGap,
   isCwrUiOn,
   applyCwrUi,
+  isSharpEdgesOn,
+  applySharpEdges,
 } from './topbar.js';
 import {
   isJamStripOn,
@@ -271,6 +273,7 @@ export function buildAppearanceBody({
     ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
     ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
+    ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
     <div class="wise-popover-divider"></div>
     ${colorblindTypeSection()}
     <div class="fz-size">
@@ -391,6 +394,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
+    if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
 
     /* In-popover Jam player transport + track picker. Update the player in
        place (not a full re-render) so the song list keeps its scroll position

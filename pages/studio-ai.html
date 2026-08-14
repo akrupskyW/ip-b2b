@@ -65,9 +65,9 @@
       box-shadow: var(--shadow-card);
       overflow: hidden;
     }
-    /* Chat width toggle (matches the shared module's 3-step widen). */
-    .sa-chat.panel-wide { flex-basis: 560px; width: 560px; }
-    .sa-chat.panel-triple { flex-basis: 720px; width: 720px; }
+    /* Chat width toggle — canonical tiers (single 380 / double 580 / triple 760). */
+    .sa-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    .sa-chat.panel-triple { flex-basis: 760px; width: 760px; }
     .sa-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
 
     .sa-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
@@ -556,5 +556,7 @@
       }
     }
   </script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

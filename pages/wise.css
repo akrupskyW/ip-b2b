@@ -1250,6 +1250,44 @@ html.mod-gap-xl #modules-row { gap: 48px !important; }
   align-self: stretch;
 }
 
+/* ── Generic "Sticky module" mode (app-wide) ──────────────────────────────
+   Ported from the bespoke wiseai.html `.wa-pane.is-sticky` effect into a
+   page-agnostic marker class so ANY module to the RIGHT of the chat can tuck
+   in behind its left neighbour. Toggled from the module's three-dot menu (pink
+   Admin switch) and wired by js/sticky-modules.js. The marker classes
+   (`.sticky-chat`, `.sticky-mod`, `.is-sticky`) are added by that script.
+
+   These generic rules deliberately do NOT match wiseai's own `.wa-pane`
+   (which keeps its inline styling) — sticky-modules.js skips modules that
+   already own a native sticky toggle, so this never double-applies there. */
+#modules-row { position: relative; }
+#modules-row .sticky-chat { position: relative; z-index: 3; }
+#modules-row .sticky-mod.is-sticky {
+  position: relative;
+  z-index: 1;
+  background: var(--surface-2);
+  box-shadow: none;
+  margin-left: -22px;                 /* cancels the row gap + ~14px tuck */
+  padding-left: 14px;                 /* keep content clear of the tucked edge */
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 0;
+  animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+}
+/* When a module's menu popover is open, keep it tucked BELOW the chat so the
+   drawer never pops on top of the chat card while its menu is showing. */
+#modules-row .sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row .sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+  z-index: 1;
+}
+@keyframes stickySlideRight {
+  from { transform: translateX(-26px); opacity: .35; }
+  to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #modules-row .sticky-mod.is-sticky { animation: none !important; }
+}
+
 /* The canonical fixed chat width (var(--chat-pane-w)) is meant for the DEFAULT
    horizontal modules row. The phone breakpoint overrides the chat's `flex` but
    not its `width`/`min-width`, so release the rigid width there and let the chat
@@ -3636,36 +3674,31 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
    identical. Pinning `flex: 0 0 380px` keeps single a true single (matches the
    portfolio #pf-chat-panel dock). */
 .wiseai-dock.wiseai-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
-@media (max-width: 1100px) { .wiseai-dock.wiseai-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
-/* WISEcodeAI width cycles through three tiers: single (380/330px), double
-   (680/560px), and triple (980/800px). The header width icon reflects the tier;
-   the base max-width above is overridden per-tier so triple can grow past
-   double, while min-width keeps it from shrinking below single. */
+/* WISEcodeAI width cycles through the canonical app-wide tiers: single (380px),
+   double (580px), and triple (760px); the fourth tier (fill) grows to absorb the
+   rest of the row via the shared .panel-fill rule (js/pane-width.js). The header
+   width icon reflects the tier; the base max-width above is overridden per-tier
+   so triple can grow past double, while min-width keeps it from shrinking below
+   single. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). The width
    is a DEFINITE length (so the sticky-clamp still works) but viewport-capped —
    exactly like ai-chat.html's #chat-shell — so widening WISEcodeAI never overflows
    the modules row on a narrow screen. */
 .wiseai-dock.wiseai-dock-open.panel-wide {
-  --wiseai-w: min(680px, 90vw);
+  --wiseai-w: min(580px, 90vw);
   flex: 0 0 var(--wiseai-w);
   width: var(--wiseai-w);
   min-width: var(--wiseai-w);
   max-width: var(--wiseai-w);
-}
-@media (max-width: 1100px) {
-  .wiseai-dock.wiseai-dock-open.panel-wide { --wiseai-w: min(560px, 90vw); }
 }
 /* Triple-width (third tier) — lifts the double cap so WISEcodeAI can grow further. */
 .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple {
-  --wiseai-w: min(980px, 96vw);
+  --wiseai-w: min(760px, 96vw);
   flex: 0 0 var(--wiseai-w);
   width: var(--wiseai-w);
   min-width: var(--wiseai-w);
   max-width: var(--wiseai-w);
-}
-@media (max-width: 1100px) {
-  .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple { --wiseai-w: min(800px, 96vw); }
 }
 /* Solo state — when WISEcodeAI is the ONLY module left in the row it must not
    stretch to fill the empty space. It stays capped at (at most) double width
@@ -3676,7 +3709,7 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
   /* Alone in the row, WISEcodeAI may grow to fill the empty space, but stays capped
      at (at most) double width. Overrides the fixed single-tier flex above. */
   flex: 1 1 auto;
-  max-width: 680px;
+  max-width: 580px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -3882,7 +3915,7 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
    dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
 .sc-card.panel-wide {
   flex-grow: 2;
-  min-width: min(760px, 92vw);
+  min-width: min(580px, 92vw);
 }
 
 /* ===== Body (messages + welcome overlay) ===== */
@@ -4691,6 +4724,24 @@ html.dark.chat-tint .sc-card .ws-chips-wrap::before { background: linear-gradien
 html.dark.chat-tint .sc-card .ws-scorecards-wrap::after,
 html.dark.chat-tint .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
 
+/* ===== Compact spacing — three-dot menu ▸ "Compact spacing" (Admin, pink).
+   Trims the chat container's chrome padding APP-WIDE: less inset on the topbar,
+   the message transcript and the input rail — so the conversation, the avatars
+   and the composer all get more room. A single global class (html.chat-compact)
+   so every mounted chat module tightens up at once. The transcript's horizontal
+   inset and the topbar padding are kept equal (20px) so the transcript avatars
+   stay lined up under the header owl, exactly as they do at the default 48px.
+   KEEP IN SYNC with wiseai-chat.css. */
+html.chat-compact .chat-topbar { padding-left: 20px; padding-right: 20px; }
+html.chat-compact .chat-messages-area {
+  padding: 0.85rem max(20px, calc((100% - var(--sc-transcript-max, 860px)) / 2));
+}
+html.chat-compact .sc-line { margin-bottom: 0.7rem; }
+html.chat-compact .chat-input-rail { padding: 8px 14px; }
+html.chat-compact .sc-welcome { padding: 1.25rem; }
+html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
+html.chat-compact .sc-settings .ss-body { padding: 12px; }
+
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
    USDA…). The label sits centered above the chips, which wrap onto as many
@@ -4865,10 +4916,10 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
   background: none; border: 0; padding: 2px 0; margin: 0; cursor: pointer;
   color: var(--text-subtle); font: inherit; text-align: left; -webkit-tap-highlight-color: transparent;
 }
-/* Chevron floats to the right edge of the header: points RIGHT when collapsed,
-   rotates DOWN when open. */
+/* Chevron sits at the LEFT of the header, right beside the title and step
+   count: points RIGHT when collapsed, rotates DOWN when open. */
 .sc-trace-caret {
-  margin-left: auto; font-size: 18px; line-height: 1; flex-shrink: 0;
+  font-size: 18px; line-height: 1; flex-shrink: 0;
   transition: transform .2s ease; color: color-mix(in srgb, var(--text-subtle) 75%, transparent);
 }
 .sc-trace[data-open="1"] .sc-trace-caret { transform: rotate(90deg); }
@@ -4877,34 +4928,40 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 @keyframes scTracePulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .sc-trace:not(.is-complete) .sc-trace-title { animation: none; } }
 .sc-trace-timer {
-  font-size: 0.6875rem; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0;
-  padding: 1px 8px; border-radius: 999px; white-space: nowrap;
-  color: color-mix(in srgb, var(--primary-ink, var(--primary)) 78%, var(--text-subtle));
-  background: color-mix(in srgb, var(--primary, #2F6DF6) 11%, transparent);
-}
-.sc-trace.is-complete .sc-trace-timer {
-  color: var(--text-subtle);
-  background: color-mix(in srgb, var(--text-subtle) 12%, transparent);
+  font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0;
+  white-space: nowrap; letter-spacing: .01em; color: var(--text-subtle);
 }
 .sc-trace[data-open="0"] .sc-trace-body { display: none; }
 .sc-trace-body { margin-top: 5px; }
 
-/* Live view — a single status with its big streaming glob of narration. No
-   inline spinner: the owl avatar's ring already signals "working". */
+/* Live view — a status with its big streaming glob of narration. The globs
+   build on each other: each milestone block is appended below the last, so give
+   every subsequent block breathing room from the one above it. No inline
+   spinner: the owl avatar's ring already signals "working". */
+.sc-trace-live + .sc-trace-live { margin-top: 12px; }
+.sc-trace-live.is-done .sc-trace-now-key { opacity: .92; }
 .sc-trace-now { display: block; margin-bottom: 5px; }
 .sc-trace-now-key {
   font-size: 0.8125rem; font-weight: 700; letter-spacing: .01em;
-  color: color-mix(in srgb, var(--primary-ink, var(--primary)) 58%, var(--text));
+  /* Light blue — the milestone key + its glob read as their own soft-blue
+     "thinking" voice rather than full-strength transcript text. */
+  color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff);
 }
 .sc-trace-story { display: block; max-width: 54ch; }
 .sc-trace-story-line {
   display: block; margin-bottom: 2px;
   font-size: 0.75rem; line-height: 1.55; font-style: italic;
-  color: color-mix(in srgb, var(--text-subtle) 88%, transparent);
+  color: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff);
   opacity: 0; transform: translateY(3px);
   transition: opacity .32s ease, transform .32s ease;
 }
+html.dark .sc-trace-now-key { color: #AEC8ED; }
+html.dark .sc-trace-story-line { color: #93B2DC; }
 .sc-trace-story-line.is-in { opacity: 1; transform: none; }
+/* The closing line names the data source the answer is grounded in — same glob
+   styling, just set off a touch with the source name in bold. */
+.sc-trace-story-source { margin-top: 7px; }
+.sc-trace-story-source strong { font-weight: 700; color: var(--primary-ink, var(--primary)); font-style: normal; }
 @media (prefers-reduced-motion: reduce) {
   .sc-trace-story-line { transition: none; opacity: 1; transform: none; }
 }
@@ -4912,16 +4969,19 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 /* Summary — the milestones + the clock reading when each one landed. */
 .sc-trace-step-ic { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
 .sc-trace-step-ic .material-symbols-outlined {
-  font-size: 15px; color: color-mix(in srgb, var(--primary-ink, var(--primary)) 62%, var(--text-subtle));
+  font-size: 15px; color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff);
 }
+html.dark .sc-trace-step-ic .material-symbols-outlined { color: #AEC8ED; }
 .sc-trace-steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .sc-trace-step {
-  display: grid; grid-template-columns: 16px auto auto; align-items: center;
+  display: grid; grid-template-columns: 16px 1fr max-content; align-items: center;
   column-gap: 8px; padding: 1px 0;
 }
-.sc-trace-step-key { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); }
+.sc-trace-step-key { font-size: 0.75rem; font-weight: 600; color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff); }
+html.dark .sc-trace-step-key { color: #AEC8ED; }
 .sc-trace-step-time {
   font-size: 0.625rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  justify-self: end; text-align: right; white-space: nowrap;
   color: color-mix(in srgb, var(--text-subtle) 70%, transparent);
 }
 

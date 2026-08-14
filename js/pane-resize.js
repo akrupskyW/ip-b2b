@@ -396,11 +396,14 @@
   }
 
   /* The chat's activity strip (js/chat-activity-strip.js) lives on the same
-     module edge as a seam handle, and this fixed overlay hit-tests above it —
-     so a plain click meant for a minimap tick would otherwise die on the
-     handle. When a mousedown ends without any drag, peek beneath the handle
-     and, if an activity tick is there, pass the click on to it. Scoped to
-     ticks only so the seam never "clicks" arbitrary pane content. */
+     module edge as a seam handle. The strip is normally layered ABOVE this
+     overlay so its ticks intercept clicks directly — but a transient stacking
+     context on the chat (e.g. its entry-animation transform) can briefly drop
+     the strip beneath this fixed overlay, and then a click meant for a minimap
+     tick would die on the handle. As a fallback, when a mousedown ends without
+     any drag, peek beneath the handle and, if an activity tick is there, pass
+     the click on to it. Scoped to ticks only so the seam never "clicks"
+     arbitrary pane content. */
   function forwardClickToTick(handle, x, y) {
     var prev = handle.style.pointerEvents;
     handle.style.pointerEvents = 'none';

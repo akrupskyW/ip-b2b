@@ -109,13 +109,14 @@
     }
     /* When any result pane is open, dock the chat to a fixed-width column. */
     #modules-row:has(.wa-pane.is-open) .wa-chat {
-      flex: 0 0 var(--chat-pane-w, 420px);
-      width: var(--chat-pane-w, 420px);
+      flex: 0 0 var(--chat-pane-w, 380px);
+      width: var(--chat-pane-w, 380px);
     }
-    /* Chat width toggle (matches the shared module's 3-step widen) — only
-       meaningful while a pane is open and the chat is docked. */
-    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-wide { flex-basis: 620px; width: 620px; }
-    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-triple { flex-basis: 840px; width: 840px; }
+    /* Chat width toggle — the canonical app-wide tiers (single 380 / double 580 /
+       triple 760; the fourth "fill" tier grows via the shared .panel-fill rule).
+       Only meaningful while a pane is open and the chat is docked. */
+    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    #modules-row:has(.wa-pane.is-open) .wa-chat.panel-triple { flex-basis: 760px; width: 760px; }
     /* Output-pane width control. When a SINGLE output pane is open it is the only
        flexible element in the row, so cycling its flex-grow tier alone can't make
        it visibly wider — it already fills the leftover space. Widening the lone
@@ -139,7 +140,15 @@
       right: 0;
       width: 3px;
       height: 100%;
-      z-index: 6;
+      /* Sit ABOVE the pane-resize drag overlay (.pr-overlay is a body-level
+         fixed layer at z-index:60 in js/pane-resize.js). The strip forms its own
+         stacking context, so at z-index:6 its ticks were trapped beneath the drag
+         handle and could only be reached via a click-forwarding hack. Lifting the
+         whole strip over the overlay lets the gold ear-mark ticks be a genuinely
+         higher layer than the drag functionality. Crucially the rail stays
+         pointer-events:none, so ONLY the ticks (pointer-events:auto) intercept —
+         the empty vertical space still falls through to the drag handle below. */
+      z-index: 70;
       pointer-events: none;
       background: color-mix(in srgb, var(--border) 55%, transparent);
     }
@@ -365,7 +374,12 @@
        rule otherwise lifts the chat to z-index 500 because the input's always-present
        role="menu" popovers trip its "menu open" test, which would bury the handles.) */
     #modules-row.modules-sticky #wa-chat { position: relative; z-index: 2 !important; }
-    #modules-row.modules-sticky .wch-sidebar.wch-docked {
+    /* `.wch-unsticky` (set from the module's ⋯ "Sticky module" switch) opts a
+       single docked module OUT of the tuck: it keeps the base free-standing card
+       look (surface, border, radius, shadow — see the .wch-docked rules above)
+       and the normal 8px row gap, so every :not(.wch-unsticky) below is what
+       actually performs the tuck. */
+    #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky) {
       z-index: 1;
       background: var(--surface-2);
       box-shadow: none;
@@ -373,7 +387,7 @@
       height: calc(100% - 30px);
     }
     /* History (left of chat): flush + tucked under the chat's LEFT edge. */
-    #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right) {
+    #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky) {
       margin-right: -22px;                 /* cancels the 8px row gap + ~14px tuck */
       padding-right: 14px;                 /* keep content clear of the tucked edge */
       border-top-right-radius: 0;
@@ -382,7 +396,7 @@
       animation: stickySlideLeft .42s cubic-bezier(.34, 1.45, .64, 1) both;
     }
     /* Turns (right of chat): flush + tucked under the chat's RIGHT edge. */
-    #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right {
+    #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
       margin-left: -22px;
       padding-left: 14px;
       border-top-left-radius: 0;
@@ -469,6 +483,37 @@
     .wa-pane-nav-count { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: .01em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; margin-right: 6px; }
     .wa-pane-nav-count:empty { display: none; }
     .wa-pane-nav-count b { color: var(--text); font-weight: 800; }
+
+    /* ── Header tally bounce ──
+       When a NEW output lands in a pane, its header tally ticks up — "Result
+       2 / 3" becomes "/ 4" (or the merged masthead's "Output N / M"). Replay a
+       springy bounce + a brief color flash on it so the count going up reads
+       like a score being scored. openPane() applies .is-bump on growth and
+       clears it once the run finishes. */
+    @keyframes wa-tally-bounce {
+      0%   { transform: translateY(0)    scale(1); }
+      28%  { transform: translateY(-6px) scale(1.18); }
+      52%  { transform: translateY(2px)  scale(.96); }
+      74%  { transform: translateY(-3px) scale(1.07); }
+      100% { transform: translateY(0)    scale(1); }
+    }
+    @keyframes wa-tally-flash {
+      0%, 60% { color: var(--primary-ink, var(--primary)); }
+      100%    { color: inherit; }
+    }
+    .wa-pane-nav-count.is-bump,
+    .wa-pane-title.is-bump {
+      animation: wa-tally-bounce .85s cubic-bezier(.3, 1.5, .4, 1) both,
+                 wa-tally-flash  .85s ease-out both;
+      transform-origin: left center;
+    }
+    .wa-pane-nav-count.is-bump { transform-origin: center; }
+    .wa-pane-nav-count.is-bump b { animation: wa-tally-flash .85s ease-out both; }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-pane-nav-count.is-bump,
+      .wa-pane-title.is-bump,
+      .wa-pane-nav-count.is-bump b { animation: wa-tally-flash .85s ease-out both; }
+    }
     /* prev/next button group — sits in the top-bar right cluster, just LEFT of
        the three-dot + width controls. Empty (and collapsed) unless the pane is
        in carousel mode. (Minimize now lives inside the three-dot menu.) */
@@ -696,6 +741,32 @@
       display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
     }
     .wa-titledrop-item.is-active .wa-titledrop-label { color: var(--primary-ink, var(--primary)); font-weight: 700; }
+
+    /* ── Admin: "Sticky module" mode (every result pane) ──
+       Toggled from a pane's three-dot menu (pink Admin switch), ON by default on
+       all panes. Turns the pane into a "drawer" that tucks in behind the chat
+       (and any pane to its left) off its RIGHT edge — exactly like the docked
+       Turns module in sticky mode: flush against the neighbour to its left (no
+       gap), no corners/border on the edge that faces it, slid a few px UNDER it
+       (the neighbour overlays the inner edge), a calmer non-white surface, and no
+       card shadow. */
+    #modules-row .wa-pane.is-open.is-sticky {
+      position: relative;
+      z-index: 1;
+      background: var(--surface-2);
+      box-shadow: none;
+      margin-left: -22px;                 /* cancels the row gap + ~14px tuck */
+      padding-left: 14px;                 /* keep content clear of the tucked edge */
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-left: 0;
+      animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+    }
+    /* Blend the header into the calmer drawer surface (its default is --surface). */
+    #modules-row .wa-pane.is-sticky .wa-pane-top { background: var(--surface-2); }
+    @media (prefers-reduced-motion: reduce) {
+      #modules-row .wa-pane.is-open.is-sticky { animation: none !important; }
+    }
 
     .wa-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
     .wa-sec-title .material-symbols-outlined { font-size: 18px; color: var(--primary); }
@@ -1040,13 +1111,19 @@
        full module. It's a <div role="button"> (not a <button>) so it can safely
        wrap the inner content of the surfaced view. */
     .sc-surface-card {
-      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: min(340px, 100%);
+      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: min(360px, 100%);
       text-align: left; margin: 4px 0 0; padding: 6px 12px 6px 6px;
-      background: var(--surface-2); border: 1px solid var(--border-strong);
+      /* Thin, light gold-yellow stroke so the output chips echo the amber
+         activity-strip ticks on the chat's right edge — but the fill matches the
+         chat container's own background so only the outline reads as gold. */
+      background: var(--surface); border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
       border-radius: 12px; cursor: pointer; font-family: inherit;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
     }
-    .sc-surface-card:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+    /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
+    html.dark .sc-surface-card { background: #1A2339; }
+    html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+    .sc-surface-card:hover { border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent); box-shadow: 0 4px 12px rgba(255,196,52,0.12); }
     .sc-surface-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-surface-card:active { transform: translateY(1px); }
     /* Small clipped snapshot of the surfaced content, scaled way down. */
@@ -1059,7 +1136,57 @@
       transform: scale(0.122); transform-origin: top left; pointer-events: none;
     }
     .sc-surface-thumb-inner > * { margin: 0 !important; }
-    .sc-surface-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+    /* Body column — the title now stacks above a small meta row (timestamp +
+       version), so every output chip is time-stamped and versioned. */
+    .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .sc-surface-title { min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+    .sc-surface-stamp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+    .sc-surface-time {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 500; letter-spacing: .02em; color: var(--text-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .sc-surface-time .material-symbols-outlined { font-size: 12px !important; opacity: .8; }
+    /* Version pill — the current version tag; when there's more than one it also
+       carries the total count ("v3 · 3 versions"). */
+    .sc-surface-ver {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; border-radius: 9999px;
+      font-size: 10px; font-weight: 700; letter-spacing: .01em; white-space: nowrap;
+      color: var(--primary-ink, var(--primary));
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    html.dark .sc-surface-ver { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 16%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 32%, transparent); }
+    .sc-surface-ver-count { font-weight: 600; opacity: .85; }
+
+    /* ═══════════ Versioned output — stacked thumbnails ═══════════
+       When an output has been redone, its chip shows every version as a
+       horizontal cascade: the previous version(s) first, the newest last and
+       fully raised. Each mini-thumb wears a small vN tag. */
+    .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
+    .sc-surface-stack .sc-surface-thumb {
+      width: 40px; height: 40px; margin-left: -18px;
+      box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
+      transition: transform .15s ease, margin .15s ease;
+    }
+    html.dark .sc-surface-stack .sc-surface-thumb { box-shadow: -3px 2px 10px rgba(0,0,0,0.45); }
+    .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    /* Newest version is emphasized: full opacity + brand ring, the rest recede. */
+    .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
+    .sc-surface-stack .sc-surface-thumb.is-latest { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
+    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb { margin-left: -10px; }
+    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    /* vN tag riding the bottom-right of each stacked thumb. */
+    .sc-surface-vtag {
+      position: absolute; right: 1px; bottom: 1px; z-index: 2;
+      padding: 0 3px; border-radius: 5px; min-width: 12px; text-align: center;
+      font-size: 8px; font-weight: 800; line-height: 13px; letter-spacing: 0;
+      color: var(--text-muted); background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    .sc-surface-thumb.is-latest .sc-surface-vtag { color: #fff; background: var(--primary); border-color: var(--primary); }
     /* Brief highlight when a merged-rail chip jumps the transcript here, so the
        eye lands on the right turn. */
     .sc-surface-card.is-flash {
@@ -2739,6 +2866,8 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                  <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
                   <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
@@ -2771,6 +2900,8 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                  <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
                   <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
@@ -2807,6 +2938,7 @@
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="split" hidden><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
                   <div class="topbar-menu-divider" data-pane-split-div hidden></div>
@@ -3033,6 +3165,20 @@
     const paneTrack = { results: document.getElementById('wa-results-track'), visuals: document.getElementById('wa-visuals-track'), unified: document.getElementById('wa-unified-track') };
     const paneMin = { results: false, visuals: false, unified: false };  /* rail minimized to intent chips */
 
+    /* Bounce the header tally when a NEW output lands. The separate panes carry
+       it in the top-right counter ("Result N / M"); the merged pane's tally IS
+       its title masthead ("Output N / M"), which doubles as the counter in
+       titledrop mode too. Replays cleanly on back-to-back additions. */
+    const paneBumpTimers = {};
+    function bumpPaneTally(which) {
+      const el = which === 'unified' ? paneTitle.unified : paneCount[which];
+      if (!el) return;
+      el.classList.remove('is-bump'); void el.offsetWidth; /* restart animation */
+      el.classList.add('is-bump');
+      clearTimeout(paneBumpTimers[which]);
+      paneBumpTimers[which] = setTimeout(() => el.classList.remove('is-bump'), 950);
+    }
+
     /* ── Merged mode ──────────────────────────────────────────────────────────
        Toggled from the chat's three-dot "Merge outputs into one panel" switch.
        When ON, every result/visual block is pulled into the single #wa-unified
@@ -3058,6 +3204,7 @@
       if (!el) return;
       if (title != null && paneTitle[dest]) paneTitle[dest].textContent = title;
       if (meta != null && paneMeta[dest]) paneMeta[dest].textContent = meta;
+      const tallyBefore = paneBlocks(dest).length;
       let firstAdded = null;
       if (html != null) {
         const tmp = document.createElement('div');
@@ -3082,6 +3229,10 @@
          once the pane holds 2+ outputs. */
       if (dest === 'unified') refreshUnifiedCarousel({ activate: firstAdded });
       else refreshPaneCarousel(which, { activate: firstAdded });
+      /* The tally just ticked up — bounce the header count so the new output
+         registers like a score going up. (After the refresh above, so the
+         counter already reads the new total when it pops.) */
+      if (paneBlocks(dest).length > tallyBefore) bumpPaneTally(dest);
       /* In carousel mode only one block shows, so reset the scroll to its top;
          otherwise scroll the newest result into view so growth stays visible. */
       if (firstAdded) {
@@ -3651,6 +3802,25 @@
        title affordances & menu-item state to match the initial flag. */
     setUnifiedTitleDrop(unifiedTitleDrop);
 
+    /* ── Admin: per-pane "Sticky module" mode ──
+       Toggled from a pane's ⋯ menu (pink Admin switch), ON by default on EVERY
+       pane. While ON the pane tucks in behind the chat (and any pane to its
+       left) off its right edge, exactly like the docked Turns module (see the
+       .is-sticky CSS). */
+    const paneSticky = { results: true, visuals: true, unified: true };
+    function syncStickyItem(which) {
+      const item = paneEl[which]?.querySelector('[data-pane-act="sticky"]');
+      if (!item) return;
+      item.classList.toggle('is-on', paneSticky[which]);
+      item.setAttribute('aria-checked', paneSticky[which] ? 'true' : 'false');
+    }
+    function setPaneSticky(which, on) {
+      paneSticky[which] = !!on;
+      paneEl[which]?.classList.toggle('is-sticky', paneSticky[which]);
+      syncStickyItem(which);
+    }
+    ['results', 'visuals', 'unified'].forEach((w) => setPaneSticky(w, paneSticky[w]));
+
     document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
       const btn = wrap.querySelector('.panel-more-btn');
       const pop = wrap.querySelector('.topbar-popover');
@@ -3664,7 +3834,8 @@
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
           syncPaneGsItem(wrap.dataset.paneMore);
-          if (wrap.dataset.paneMore === 'unified') syncTitledropItem();
+          syncStickyItem(wrap.dataset.paneMore);
+          if (wrap.dataset.paneMore === 'unified') { syncTitledropItem(); }
         }
       });
       pop.addEventListener('click', (e) => {
@@ -3684,6 +3855,12 @@
         if (act === 'titledrop') {
           e.stopPropagation();
           setUnifiedTitleDrop(!unifiedTitleDrop);
+          return;
+        }
+        /* "Sticky module" is a settings switch too — flip + keep menu open. */
+        if (act === 'sticky') {
+          e.stopPropagation();
+          setPaneSticky(which, !paneSticky[which]);
           return;
         }
         pop.classList.add('hidden'); btn.classList.remove('is-open');
@@ -4802,36 +4979,69 @@
         </div>`;
     }
 
-    function brisketChartView() {
-      const drivers = [
-        ['Polyphenol-rich plants', 21], ['Fiber vegetables', 15], ['Healthy oil (EVOO)', 12],
-        ['Cocoa & coffee polyphenols', 9], ['Acids & aromatics', 5], ['Fermented bonus (sauerkraut)', 2],
-      ];
-      const mx = Math.max(...drivers.map((d) => d[1]));
-      const bars = drivers.map(([lbl, v], i) => {
+    /* The score-driver chart, parameterized by version so "redo the chart" can
+       show a genuine iteration: v1 is the original run (sauerkraut last), v2
+       promotes sauerkraut so the fermented bonus fires, v3 further tightens the
+       polyphenol groups for the fully-optimized build. */
+    function brisketChartView(version) {
+      const v = Number(version) || 1;
+      const VARIANTS = {
+        1: {
+          score: 64, band: 'Good',
+          drivers: [
+            ['Polyphenol-rich plants', 21], ['Fiber vegetables', 15], ['Healthy oil (EVOO)', 12],
+            ['Cocoa & coffee polyphenols', 9], ['Acids & aromatics', 5], ['Fermented bonus (sauerkraut)', 2],
+          ],
+          cmp: [['This build', 64, 'var(--sec-green)'], ['Sauerkraut moved into top 4', 78, 'var(--primary)']],
+          caption: 'Modeled contribution of each ingredient group to the returned Gut Health score of 64. The fermented bonus reads small because sauerkraut fell outside the first four top-level ingredients.',
+          headroom: 'Promoting sauerkraut into the first four ingredients is projected to fully trigger the fermented bonus, lifting the score from Good toward the low end of Excellent.',
+        },
+        2: {
+          score: 78, band: 'Very good',
+          drivers: [
+            ['Polyphenol-rich plants', 21], ['Fermented bonus (sauerkraut)', 16], ['Fiber vegetables', 15],
+            ['Healthy oil (EVOO)', 12], ['Cocoa & coffee polyphenols', 9], ['Acids & aromatics', 5],
+          ],
+          cmp: [['Original build', 64, 'var(--sec-green)'], ['Sauerkraut promoted (this build)', 78, 'var(--primary)']],
+          caption: 'Redone with sauerkraut promoted into the first four ingredients — the fermented bonus now fully triggers, lifting the returned Gut Health score to 78 (Very good).',
+          headroom: 'With the fermented bonus firing, the remaining headroom is in the polyphenol groups: concentrating cocoa, coffee & aromatics could push the build into Excellent.',
+        },
+        3: {
+          score: 84, band: 'Excellent',
+          drivers: [
+            ['Polyphenol-rich plants', 24], ['Fermented bonus (sauerkraut)', 16], ['Fiber vegetables', 15],
+            ['Cocoa & coffee polyphenols', 14], ['Healthy oil (EVOO)', 12], ['Acids & aromatics', 3],
+          ],
+          cmp: [['Original build', 64, 'var(--sec-green)'], ['Sauerkraut promoted', 78, 'var(--primary)'], ['Polyphenols concentrated (this build)', 84, 'var(--primary)']],
+          caption: 'Redone again — sauerkraut kept high and the polyphenol groups (cocoa, coffee & plants) concentrated. The build now returns a Gut Health score of 84 (Excellent).',
+          headroom: 'This build clears the Excellent threshold. Further gains are marginal without changing the protein base, so this is treated as the optimized recipe.',
+        },
+      };
+      const spec = VARIANTS[v] || VARIANTS[1];
+      const mx = Math.max(...spec.drivers.map((d) => d[1]));
+      const bars = spec.drivers.map(([lbl, val], i) => {
         const isFerment = /Fermented/.test(lbl);
-        const col = isFerment ? 'var(--ter-amber)' : (i < 4 ? 'var(--sec-green)' : 'var(--primary)');
+        const col = isFerment ? (v >= 2 ? 'var(--sec-green)' : 'var(--ter-amber)') : (i < 4 ? 'var(--sec-green)' : 'var(--primary)');
         return `<div class="wa-bar-row">
             <div class="wa-bar-label">${esc(lbl)}</div>
-            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%;background:${col}"></div></div>
-            <div class="wa-bar-val">+${v}</div>
+            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((val / mx) * 100).toFixed(0)}%;background:${col}"></div></div>
+            <div class="wa-bar-val">+${val}</div>
           </div>`;
       }).join('');
-      const cmp = [['This build', 64, 'var(--sec-green)'], ['Sauerkraut moved into top 4', 78, 'var(--primary)']];
-      const cmpBars = cmp.map(([lbl, v, col]) => `<div class="wa-scorebar">
+      const cmpBars = spec.cmp.map(([lbl, val, col]) => `<div class="wa-scorebar">
           <div class="wa-scorebar-name">${esc(lbl)}</div>
-          <div class="wa-scorebar-line"><div class="wa-bar-track"><div class="wa-bar-fill" style="width:${v}%;background:${col}"></div></div><div class="wa-bar-val">${v}</div></div>
+          <div class="wa-scorebar-line"><div class="wa-bar-track"><div class="wa-bar-fill" style="width:${val}%;background:${col}"></div></div><div class="wa-bar-val">${val}</div></div>
         </div>`).join('');
       return `
         <div class="wa-block">
           <h3 class="wa-report-title wa-chart-title">Where the Gut Health score comes from</h3>
           <div class="wa-chart-card"><div class="wa-bars">${bars}</div></div>
-          <p class="wa-caption" style="margin:10px 0 0">Modeled contribution of each ingredient group to the returned Gut Health score of 64. The fermented bonus reads small because sauerkraut fell outside the first four top-level ingredients.</p>
+          <p class="wa-caption" style="margin:10px 0 0">${spec.caption}</p>
         </div>
         <div class="wa-block">
           <h3 class="wa-report-title wa-chart-title">Headroom · move sauerkraut higher</h3>
           <div class="wa-chart-card"><div class="wa-scorebars">${cmpBars}</div></div>
-          <p class="wa-caption" style="margin:10px 0 0">Promoting sauerkraut into the first four ingredients is projected to fully trigger the fermented bonus, lifting the score from Good toward the low end of Excellent.</p>
+          <p class="wa-caption" style="margin:10px 0 0">${spec.headroom}</p>
         </div>`;
     }
 
@@ -5034,6 +5244,7 @@
        surfaced RESULTS move into the panes on the right. */
     const INTENTS = [
       { intent: 'brisket', icon: 'outdoor_grill',   label: 'Gut-healthy brisket recipe' },
+      { intent: 'redochart', icon: 'refresh',       label: 'Redo the gut-health chart', ask: 'Redo the chart — promote sauerkraut and push the score higher' },
       { intent: 'upf',     icon: 'science',        label: 'Is this list ultra-processed?' },
       { intent: 'worst',   icon: 'trending_down',  label: 'Worst food in our database?' },
       { intent: 'spider',  icon: 'radar',          label: 'Spider-chart the 10 worst foods' },
@@ -5047,6 +5258,7 @@
 
     const INTENT_REPLIES = {
       brisket: 'For a gut-health-maximized brisket, I\u2019d build it around these ingredients:<div class="wa-chiplist" style="margin:10px 0 12px">' + ['Beef brisket', 'Extra virgin olive oil', 'Onion', 'Garlic', 'Sauerkraut', 'Mushrooms', 'Carrots', 'Celery', 'Parsley', 'Thyme', 'Rosemary', 'Apple cider vinegar', 'Lemon juice', 'Tomato paste', 'Cocoa powder', 'Coffee', 'Black pepper', 'Sea salt'].map((n) => '<span class="wa-ce-ing">' + n + '</span>').join('') + '</div>I ran a brisket-style ingredient list through the <strong>Gut Health code evaluation</strong>, and this combination came out with a Gut Health score of <strong>64</strong>, which lands in <strong>Good</strong>.<br><br><strong>Why this works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li><strong>Sauerkraut</strong> adds a fermented-food signal.</li><li>Onion, garlic, mushrooms, carrots, celery, parsley, thyme, rosemary &amp; tomato paste support the code\u2019s plant / polyphenol logic.</li><li>Extra virgin olive oil hits the healthy-oil bonus.</li><li>Cocoa powder &amp; coffee are both favored polyphenol-style ingredients in the code.</li><li>Avoiding nitrates / nitrites and highly processed add-ins helps protect the score.</li></ul><br>One nuance: in the run I tested, the <strong>fermented bonus didn\u2019t fully trigger</strong> because sauerkraut wasn\u2019t among the first few ingredients. To push the score even higher, make sauerkraut a more prominent ingredient in the dish.<br><br>Opened the <strong>code evaluation</strong> &amp; recipe report in Results &amp; Details, and the score-driver charts in Visuals \u2192',
+      redochart: 'Redone \u2014 I rebuilt the <strong>Gut Health score-driver chart</strong> twice from the original run.<br><br><strong>v1</strong> was the first pass (score <strong>64</strong>, Good) with sauerkraut sitting last. <strong>v2</strong> promoted sauerkraut into the first four ingredients so the fermented bonus fully triggered (score <strong>78</strong>). This latest <strong>v3</strong> also concentrates the polyphenol groups \u2014 cocoa, coffee &amp; plants \u2014 landing the build at <strong>84</strong> (Excellent).<br><br>The output chip below keeps all three versions stacked \u2014 tap it to open the newest in Visuals, or hover to fan the earlier versions out. \u2192',
       upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
       worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br>Opened the full ranking in Results &amp; Details \u2192',
       spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details',
@@ -5074,6 +5286,7 @@
       const t = String(text || '').toLowerCase();
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return INTENT_REPLIES.catnutrients;
       if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return INTENT_REPLIES.cat;
+      if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return INTENT_REPLIES.redochart;
       if (/brisket|recipe/.test(t)) return INTENT_REPLIES.brisket;
       if (/ultra|upf|processed/.test(t)) return INTENT_REPLIES.upf;
       if (/worst|bottom|lowest/.test(t)) return INTENT_REPLIES.worst;
@@ -5092,6 +5305,10 @@
        answer — it lives on inline and re-opens on tap. */
     let surfaceSeq = 0;
     const SURFACED = {}; /* blockId → { which, title, meta, html } */
+    /* Version history per output, keyed by a stable versionKey (defaults to the
+       output's title). Each entry is { previewHtml, version, time } so re-doing
+       an output (same key) grows a stack the chip can show. */
+    const SURFACE_VERSIONS = {}; /* versionKey → [{ previewHtml, version, time }] */
 
     /* Tag the first .wa-block in a view's html so we can later tell whether that
        exact block is still present in its pane (i.e. not closed/cleared). */
@@ -5103,11 +5320,49 @@
       return html.replace('<div class="wa-block', `<div ${attrs} class="wa-block`);
     }
 
-    function surfaceCardHtml(blockId, which, icon, title, previewHtml) {
+    /* A short wall-clock stamp ("6:54 PM") for the moment an output is produced. */
+    function nowClock() {
+      try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+      catch (e) { return ''; }
+    }
+
+    /* Every surfaced output is time-stamped and versioned. `opts` carries:
+         time     — wall-clock stamp for this version
+         version  — the current version number (1-based)
+         versions — optional history [{ previewHtml, version, time }]; when it
+                    has more than one entry the chip renders a horizontal stack
+                    of thumbnails (previous versions first, newest last). */
+    function surfaceCardHtml(blockId, which, icon, title, previewHtml, opts) {
       const paneName = which === 'visuals' ? 'Visuals' : 'Results & Details';
-      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel">
-          <div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>
-          <div class="sc-surface-title">${esc(title)}</div>
+      const o = opts || {};
+      const time = o.time || nowClock();
+      const versions = Array.isArray(o.versions) ? o.versions : null;
+      const count = versions ? versions.length : 1;
+      const version = o.version || count;
+
+      let thumb;
+      if (versions && versions.length > 1) {
+        /* Stacked cascade — oldest → newest, newest raised + tagged. */
+        thumb = `<div class="sc-surface-stack">` + versions.map((entry, i) => {
+          const isLatest = i === versions.length - 1;
+          return `<div class="sc-surface-thumb ${isLatest ? 'is-latest' : 'is-old'}">
+              <div class="sc-surface-thumb-inner">${entry.previewHtml}</div>
+              <span class="sc-surface-vtag">v${entry.version || (i + 1)}</span>
+            </div>`;
+        }).join('') + `</div>`;
+      } else {
+        thumb = `<div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>`;
+      }
+
+      const verPill = `<span class="sc-surface-ver">v${version}${count > 1 ? `<span class="sc-surface-ver-count">· ${count} versions</span>` : ''}</span>`;
+      const timeChip = `<span class="sc-surface-time"><span class="material-symbols-outlined">schedule</span>${esc(time)}</span>`;
+
+      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
+          ${thumb}
+          <div class="sc-surface-body">
+            <div class="sc-surface-title">${esc(title)}</div>
+            <div class="sc-surface-stamp">${timeChip}${verPill}</div>
+          </div>
         </div>`;
     }
 
@@ -5261,7 +5516,7 @@
     }
 
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
-    function surfaceBlock(which, { icon, title, meta, html }) {
+    function surfaceBlock(which, { icon, title, meta, html, versionKey, versionReset }) {
       const blockId = 'blk' + (++surfaceSeq);
       const tagged = tagBlock(html, blockId, title, meta, icon);
       openPane(which, { title, meta, html: tagged });
@@ -5278,7 +5533,22 @@
            can scroll to a paper; strip those from the preview clone too so the
            clone never shadows the live pane copy with a duplicate id. */
         const previewHtml = html.replace(/ id="cmp-(body|subtitle)"/g, '').replace(/ id="cat-ref-\d+"/g, '');
-        chat.addWISEcodeAI(surfaceCardHtml(blockId, which, icon, title, previewHtml), { source: '', feedback: false, trailChips: false });
+        /* Record this as a version of the output. The key defaults to the title,
+           so re-surfacing the same output (e.g. "redo the chart") stacks onto
+           the same history and bumps the version count. */
+        const key = versionKey || title;
+        const time = nowClock();
+        if (versionReset) SURFACE_VERSIONS[key] = [];
+        const list = SURFACE_VERSIONS[key] || (SURFACE_VERSIONS[key] = []);
+        list.push({ previewHtml, version: list.length + 1, time });
+        chat.addWISEcodeAI(
+          surfaceCardHtml(blockId, which, icon, title, previewHtml, {
+            time,
+            version: list.length,
+            versions: list.slice(),
+          }),
+          { source: '', feedback: false, trailChips: false }
+        );
       }
     }
 
@@ -5319,13 +5589,32 @@
             icon: 'stacked_bar_chart',
             title: 'Gut Health score drivers · brisket',
             meta: 'Modeled contribution of each ingredient group + headroom if sauerkraut moves higher',
-            html: brisketChartView(),
+            html: brisketChartView(1),
+            versionKey: 'gut-drivers',
+            versionReset: true,
           });
           surfaceBlock('results', {
             icon: 'summarize',
             title: 'The gut-health-optimized brisket',
             meta: 'WISEcodeAI report · ingredient roles, score bands & optimization',
             html: brisketReportView(),
+          });
+        } else if (intent === 'redochart') {
+          /* "Redo the chart" — the score-driver chart is rebuilt. We seed the two
+             prior versions (original run + sauerkraut-promoted) so the redo's
+             output chip shows the full history stacked horizontally: previous
+             versions first, the freshly-redone v3 last and raised. */
+          const title = 'Gut Health score drivers · brisket';
+          SURFACE_VERSIONS['gut-drivers'] = [
+            { previewHtml: brisketChartView(1), version: 1, time: '6:41 PM' },
+            { previewHtml: brisketChartView(2), version: 2, time: '6:48 PM' },
+          ];
+          surfaceBlock('visuals', {
+            icon: 'stacked_bar_chart',
+            title,
+            meta: 'Rebuilt — sauerkraut promoted & polyphenol groups concentrated · score 84 (Excellent)',
+            html: brisketChartView(3),
+            versionKey: 'gut-drivers',
           });
         } else if (intent === 'worst') {
           surfaceBlock('results', {
@@ -5622,6 +5911,10 @@
         /* Dress the broken-out Turns header like the result panes (serif
            masthead + three-dot menu + width changer). */
         turnsDockedControls: true,
+        /* Pink "Sticky module" admin toggle in the docked Turns module's ⋯ menu,
+           ON by default (tucked behind the chat) — matches every result pane's
+           own sticky switch so all right-of-chat modules carry it. */
+        turnsStickyToggle: true,
         /* Search box pinned above the turn list to filter turns by question,
            answer text or artifact. */
         turnsSearch: true,
@@ -5680,11 +5973,19 @@
             { variant: 'wiseai', icon: 'explore', title: 'Take a tour', desc: 'A quick guided walkthrough of WISEcodeAI — the panes, prompts & reports.', locked: true },
           ],
         },
-        /* Open the right panes when a turn surfaces data; return false so the
-           scripted reply still posts into the transcript. */
-        onIntent(intent) {
-          surface(intent);
+        /* Do NOT surface anything on click — return false so the scripted reply
+           still posts, but defer opening panes / dropping output cards to
+           onReply, which the chat fires only AFTER the reasoning trace's glob
+           has finished thinking. Surfacing here would flash the output chips in
+           before the story runs. */
+        onIntent() {
           return false;
+        },
+        /* Fired once the reasoning trace completes, right as the answer lands.
+           This is where the large output surfaces (result/visual panes + their
+           inline transcript cards) so nothing renders until the glob is done. */
+        onReply(intent) {
+          surface(intent);
         },
         /* An answer's "Opened … in Results & Details / Visuals →" narration
            renders as a clickable chip; tapping it re-opens that pane's most
@@ -9205,5 +9506,7 @@
       }, 640);
     }
   </script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

@@ -732,6 +732,61 @@ export function restoreColorblind() {
   applyColorblind(isColorblindOn());
 }
 
+/* Sharper edges — an accessibility mode that turns every element's boundary
+   into a crisp, high-contrast stroke. The base theme draws borders as faint
+   translucent brand-blue hairlines (color-mix of --primary/--primary-bright at
+   16–30%), which read below the WCAG 1.4.11 non-text-contrast threshold (3:1)
+   against their surfaces — so cards, inputs, dividers and controls can blur
+   together for low-vision users. This overrides the shared --border /
+   --border-strong tokens with OPAQUE slate strokes tuned to clear 3:1 against
+   every surface they sit on, in both modes (light: dark-slate edges on the pale
+   surfaces; dark: light-slate edges on the navy surfaces). Because it only
+   sharpens the boundary tokens, fills and text are untouched — no other
+   contrast pairing changes. Driven by a `sharp-edges` class on <html> (paired
+   with `dark` for the dark variant); persisted across navigation. */
+const EDGES_KEY = 'wise-sharp-edges';
+const EDGES_STYLE_ID = 'wise-sharp-edges-style';
+
+const EDGES_CSS = `
+html.sharp-edges {
+  --border: #5C6E86;
+  --border-strong: #3A4A5E;
+}
+html.sharp-edges.dark {
+  --border: #9DB0C0;
+  --border-strong: #C4D2DE;
+}`;
+
+/** Inject the sharp-edges stylesheet once (idempotent). */
+function ensureSharpEdgesStyle() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(EDGES_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = EDGES_STYLE_ID;
+  style.textContent = EDGES_CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+/** True when the sharp-edges mode was last left on. Defaults OFF. */
+export function isSharpEdgesOn() {
+  try { return localStorage.getItem(EDGES_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the sharp-edges class on <html> and persist it. */
+export function applySharpEdges(on) {
+  ensureSharpEdgesStyle();
+  document.documentElement.classList.toggle('sharp-edges', !!on);
+  try { localStorage.setItem(EDGES_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:sharp-edges', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted sharp-edges state onto the document. */
+export function restoreSharpEdges() {
+  applySharpEdges(isSharpEdgesOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -813,6 +868,7 @@ if (typeof document !== 'undefined') {
     restoreChatTint();
     restoreModuleGap();
     restoreColorblind();
+    restoreSharpEdges();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

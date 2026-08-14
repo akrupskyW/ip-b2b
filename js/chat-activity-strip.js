@@ -23,9 +23,12 @@
  * the shared Appearance popover ("Activity strip").
  *
  * Ticks are clickable: a click scrolls the transcript to the landmark and
- * flashes it. The pane-resize drag handle shares this edge and its fixed
- * overlay sits above the strip, so pane-resize.js forwards any plain click
- * (mousedown+up with no drag) through to the tick beneath it.
+ * flashes it. The pane-resize drag handle shares this edge, but the strip is
+ * layered ABOVE the drag overlay (see .wa-activity-strip z-index in wiseai.html)
+ * with the rail itself pointer-events:none, so only the ticks intercept while the
+ * empty vertical space still falls through to the drag handle. pane-resize.js
+ * keeps a click-forwarding fallback for edge cases where a transient stacking
+ * context (e.g. the chat's entry-animation transform) drops the strip beneath it.
  */
 
 const LS_KEY = 'wise-activity-strip';

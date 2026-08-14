@@ -79,9 +79,10 @@
     }
 
     /* Left chat column (fixed width, carded) */
-    .gs-chat { flex: 0 0 var(--chat-pane-w, 360px); width: var(--chat-pane-w, 360px); background: var(--bg); }
-    .gs-chat.panel-wide { flex-basis: 520px; width: 520px; }
-    .gs-chat.panel-triple { flex-basis: 700px; width: 700px; }
+    .gs-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); background: var(--bg); }
+    /* Chat width toggle — canonical tiers (single 380 / double 580 / triple 760). */
+    .gs-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    .gs-chat.panel-triple { flex-basis: 760px; width: 760px; }
     .gs-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
     .gs-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
     .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
@@ -1245,5 +1246,7 @@
   <script src="../js/sortable-tables.js"></script>
   <script src="../js/table-pagination.js"></script>
   <script src="/livereload.js?snipver=1"></script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

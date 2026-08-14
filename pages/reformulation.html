@@ -78,10 +78,10 @@
     }
 
     /* Left chat column (fixed width, carded) */
-    .rf-chat { flex: 0 0 var(--chat-pane-w, 340px); width: var(--chat-pane-w, 340px); background: var(--bg); }
-    /* Chat width toggle (matches the shared module's 3-step widen). */
-    .rf-chat.panel-wide { flex-basis: 520px; width: 520px; }
-    .rf-chat.panel-triple { flex-basis: 700px; width: 700px; }
+    .rf-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); background: var(--bg); }
+    /* Chat width toggle — canonical tiers (single 380 / double 580 / triple 760). */
+    .rf-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    .rf-chat.panel-triple { flex-basis: 760px; width: 760px; }
     /* Studio + dashboard each get the same 3-step widen from their own header
        control. The studio is fixed-width so it visibly grows (shrinking the
        dashboard beside it); the dashboard is the flexible filler, so its tiers
@@ -2060,5 +2060,7 @@
     })();
   </script>
   <script src="../js/table-pagination.js" defer></script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

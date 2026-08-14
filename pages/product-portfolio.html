@@ -540,12 +540,12 @@
        when side modules are open beside the chat. */
     #chat-shell.panel-wide {
       flex-grow: 2;
-      min-width: min(760px, 92vw);
+      min-width: min(580px, 92vw);
     }
     /* Triple width — third tier of the single → double → triple cycle. */
     #chat-shell.panel-wide.panel-triple {
       flex-grow: 3;
-      min-width: min(1080px, 96vw);
+      min-width: min(760px, 96vw);
     }
 
     /* ── Report mode ────────────────────────────────────────────────────
@@ -18618,5 +18618,7 @@
       }
     })();
   </script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

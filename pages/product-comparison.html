@@ -551,7 +551,7 @@
        length so single → double is a clear step up. Most visible when side
        modules are open beside the chat. */
     #chat-shell.panel-wide {
-      --chat-w: min(760px, 92vw);
+      --chat-w: min(580px, 92vw);
       flex: 0 0 var(--chat-w);
       width: var(--chat-w);
       min-width: var(--chat-w);
@@ -559,7 +559,7 @@
     }
     /* Triple width — third tier of the single → double → triple cycle. */
     #chat-shell.panel-wide.panel-triple {
-      --chat-w: min(1080px, 96vw);
+      --chat-w: min(760px, 96vw);
     }
 
     /* ── Report mode ────────────────────────────────────────────────────
@@ -592,14 +592,14 @@
        true single pane, double/triple step up to definite viewport-capped
        widths — without ever forcing the modules row to scroll horizontally. */
     #modules-row.report-mode > #chat-shell.panel-wide {
-      --chat-w: min(760px, 92vw);
+      --chat-w: min(580px, 92vw);
       flex: 0 0 var(--chat-w) !important;
       width: var(--chat-w) !important;
       min-width: var(--chat-w) !important;
       max-width: var(--chat-w) !important;
     }
     #modules-row.report-mode > #chat-shell.panel-wide.panel-triple {
-      --chat-w: min(1080px, 96vw);
+      --chat-w: min(760px, 96vw);
     }
     /* The open report board fills the space to the right of the chat.
        Its fixed pixel widths are overridden so it can shrink to fit any
@@ -16578,5 +16578,7 @@
       if (menuBtn) menuBtn.addEventListener('click', function () { syncWISEcodeAIModuleSwitches(); });
     })();
   </script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

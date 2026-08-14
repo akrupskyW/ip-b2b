@@ -80,36 +80,31 @@
    identical. Pinning `flex: 0 0 380px` keeps single a true single (matches the
    portfolio #pf-chat-panel dock). */
 .wiseai-dock.wiseai-dock-open { display: flex; flex: 0 0 380px; width: 380px; min-width: 380px; max-width: 380px; position: sticky; right: 0; left: auto; z-index: 40; }
-@media (max-width: 1100px) { .wiseai-dock.wiseai-dock-open { flex-basis: 330px; width: 330px; min-width: 330px; max-width: 330px; } }
-/* WISEcodeAI width cycles through three tiers: single (380/330px), double
-   (680/560px), and triple (980/800px). The header width icon reflects the tier;
-   the base max-width above is overridden per-tier so triple can grow past
-   double, while min-width keeps it from shrinking below single. */
+/* WISEcodeAI width cycles through the canonical app-wide tiers: single (380px),
+   double (580px), and triple (760px); the fourth tier (fill) grows to absorb the
+   rest of the row via the shared .panel-fill rule (js/pane-width.js). The header
+   width icon reflects the tier; the base max-width above is overridden per-tier
+   so triple can grow past double, while min-width keeps it from shrinking below
+   single. */
 /* Double-width — the dock element is itself the .sc-card, so panel-wide must
    beat the fixed 380px width above (same pattern as portfolio.css). The width
    is a DEFINITE length (so the sticky-clamp still works) but viewport-capped —
    exactly like ai-chat.html's #chat-shell — so widening WISEcodeAI never overflows
    the modules row on a narrow screen. */
 .wiseai-dock.wiseai-dock-open.panel-wide {
-  --wiseai-w: min(680px, 90vw);
+  --wiseai-w: min(580px, 90vw);
   flex: 0 0 var(--wiseai-w);
   width: var(--wiseai-w);
   min-width: var(--wiseai-w);
   max-width: var(--wiseai-w);
-}
-@media (max-width: 1100px) {
-  .wiseai-dock.wiseai-dock-open.panel-wide { --wiseai-w: min(560px, 90vw); }
 }
 /* Triple-width (third tier) — lifts the double cap so WISEcodeAI can grow further. */
 .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple {
-  --wiseai-w: min(980px, 96vw);
+  --wiseai-w: min(760px, 96vw);
   flex: 0 0 var(--wiseai-w);
   width: var(--wiseai-w);
   min-width: var(--wiseai-w);
   max-width: var(--wiseai-w);
-}
-@media (max-width: 1100px) {
-  .wiseai-dock.wiseai-dock-open.panel-wide.panel-triple { --wiseai-w: min(800px, 96vw); }
 }
 /* Solo state — when WISEcodeAI is the ONLY module left in the row it must not
    stretch to fill the empty space. It stays capped at (at most) double width
@@ -120,7 +115,7 @@
   /* Alone in the row, WISEcodeAI may grow to fill the empty space, but stays capped
      at (at most) double width. Overrides the fixed single-tier flex above. */
   flex: 1 1 auto;
-  max-width: 680px;
+  max-width: 580px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -401,7 +396,7 @@ html.dark.chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-
    dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
 .sc-card.panel-wide {
   flex-grow: 2;
-  min-width: min(760px, 92vw);
+  min-width: min(580px, 92vw);
 }
 
 /* ===== Body (messages + welcome overlay) ===== */
@@ -1221,6 +1216,23 @@ html.dark.chat-tint .sc-card .ws-scorecards-wrap::before,
 html.dark.chat-tint .sc-card .ws-chips-wrap::before { background: linear-gradient(to right, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
 html.dark.chat-tint .sc-card .ws-scorecards-wrap::after,
 html.dark.chat-tint .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339) 0%, transparent 100%); }
+
+/* ===== Compact spacing — three-dot menu ▸ "Compact spacing" (Admin, pink).
+   Trims the chat container's chrome padding APP-WIDE: less inset on the topbar,
+   the message transcript and the input rail — so the conversation, the avatars
+   and the composer all get more room. A single global class (html.chat-compact)
+   so every mounted chat module tightens up at once. The transcript's horizontal
+   inset and the topbar padding are kept equal (20px) so the transcript avatars
+   stay lined up under the header owl, exactly as they do at the default 48px. */
+html.chat-compact .chat-topbar { padding-left: 20px; padding-right: 20px; }
+html.chat-compact .chat-messages-area {
+  padding: 0.85rem max(20px, calc((100% - var(--sc-transcript-max, 860px)) / 2));
+}
+html.chat-compact .sc-line { margin-bottom: 0.7rem; }
+html.chat-compact .chat-input-rail { padding: 8px 14px; }
+html.chat-compact .sc-welcome { padding: 1.25rem; }
+html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
+html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
