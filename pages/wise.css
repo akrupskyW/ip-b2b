@@ -795,6 +795,12 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
   transition: transform .2s ease, opacity .18s ease;
 }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+/* Appearance popover runs a long row set, so trim the vertical padding (top and
+   bottom) to keep the menu compact. Scoped to the appearance popover only —
+   wireAppearancePopover() tags it — so the shorter avatar menu keeps its
+   roomier padding. */
+.wise-popover--appearance { padding: 2px 0; }
+.wise-popover--appearance .wise-popover-header { padding-top: 6px; }
 html.dark .wise-popover {
   background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
   border-color: rgba(37, 80, 124, 0.22);
@@ -871,6 +877,14 @@ a.wise-popover-item { text-decoration: none; }
   text-transform: uppercase;
 }
 .wise-popover-item .wise-popover-badge + .wise-popover-ext { margin-left: 6px; }
+/* Verdict-tinted Admin badge (Appearance → Accessibility review). Instead of the
+   default pink, the badge signals how well the app scores in the current theme:
+   green = passes AAA, amber = meets AA but misses AAA, red = below AA. The base
+   --sec-green/--ter-amber/--sec-red tokens are shared across light and dark, and
+   each keeps a legible text color, so both themes read correctly. */
+.wise-popover-badge.is-pass { background: var(--sec-green); color: #fff; }
+.wise-popover-badge.is-warn { background: var(--ter-amber); color: #5A2D0A; }
+.wise-popover-badge.is-fail { background: var(--sec-red); color: #fff; }
 .wise-popover-item .material-symbols-outlined { font-size: 17px; color: var(--text-subtle); }
 .wise-popover-item:hover .material-symbols-outlined,
 .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
@@ -1049,19 +1063,19 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .mg-seg {
   display: flex;
   width: 100%;
-  border: 1.5px solid rgb(219, 39, 119);
+  border: 1px solid rgb(219, 39, 119);
   border-radius: 9999px;
   overflow: hidden;
 }
 .mg-seg-btn {
   flex: 1 1 0;
-  height: 30px;
+  height: 20px;
   border: 0;
-  border-left: 1.5px solid color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
+  border-left: 1px solid color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
   background: transparent;
   color: var(--text-muted);
   font-weight: 700;
-  font-size: var(--fs-ui);
+  font-size: 10px;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
@@ -1232,11 +1246,19 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   scrollbar-gutter: stable;
 }
 /* Admin "Module spacing" control (Appearance popover) steps the gap BETWEEN
-   modules. !important so it beats each page's own inline #modules-row { gap }. */
-html.mod-gap-sm #modules-row { gap: 12px !important; }
-html.mod-gap-md #modules-row { gap: 24px !important; }
-html.mod-gap-lg #modules-row { gap: 36px !important; }
-html.mod-gap-xl #modules-row { gap: 48px !important; }
+   modules. !important so it beats each page's own inline #modules-row { gap }.
+   The size is published as --modules-gap so the sticky-drawer tucks (which must
+   pull a module back across the row gap to reach its neighbour) always cancel
+   the REAL gap instead of assuming the default 8px — otherwise a wider spacing
+   leaves the "tucked" module visibly detached. */
+html.mod-gap-sm { --modules-gap: 12px; }
+html.mod-gap-md { --modules-gap: 24px; }
+html.mod-gap-lg { --modules-gap: 36px; }
+html.mod-gap-xl { --modules-gap: 48px; }
+html.mod-gap-sm #modules-row,
+html.mod-gap-md #modules-row,
+html.mod-gap-lg #modules-row,
+html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
 .menu-brand-integrated #modules-row {
   grid-area: modules;
   flex: unset;
@@ -1267,18 +1289,51 @@ html.mod-gap-xl #modules-row { gap: 48px !important; }
   z-index: 1;
   background: var(--surface-2);
   box-shadow: none;
-  margin-left: -22px;                 /* cancels the row gap + ~14px tuck */
+  /* Shorter + vertically centred so the module reads as a DRAWER emerging from
+     behind the chat — exactly like the docked Turns module (chat-history.js
+     `.wch-docked` rules), not a full-height flat panel flush against it. */
+  align-self: center;
+  height: calc(100% - 30px);
+  margin-left: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
   padding-left: 14px;                 /* keep content clear of the tucked edge */
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left: 0;
   animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
 }
+/* Wrapper-based boards (product-portfolio / product-comparison: the
+   #portfolio-panel / #compare-panel / #workflow-panel / launch-report asides)
+   are bare flex wrappers — their card frame (radius, border, shadow) lives on
+   an INNER .panel-inner / .*-inner element. The drawer rules above square the
+   WRAPPER's left corners, which is a no-op there, so the inner card kept its
+   rounded left corners, left border and drop shadow and read as a floating
+   card peeking out from behind the chat instead of a flush tucked drawer —
+   inconsistent with the direct-card modules (reformulation, wiseai panes).
+   Square the inner card's chat-facing edge too. (!important because some
+   pages restate the inner frame with !important id-level rules.) */
+#modules-row .sticky-mod.is-sticky > .panel-inner,
+#modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: 0 !important;
+  box-shadow: none !important;
+}
 /* When a module's menu popover is open, keep it tucked BELOW the chat so the
    drawer never pops on top of the chat card while its menu is showing. */
 #modules-row .sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row .sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
   z-index: 1;
+}
+/* Some pages pin #agent-main to the row's FULL height with id-level !important
+   rules (reports.html, conversation-library.html, ingredient-browser.html do
+   `#modules-row #agent-main { height:100% !important; align-self:stretch
+   !important }` to match the nav rail). Those out-rank the generic drawer rule
+   above and made Sticky mode read as a flush full-height panel there — restate
+   the drawer inset at higher (id+classes) specificity so it wins everywhere. */
+#modules-row #agent-main.sticky-mod.is-sticky {
+  height: calc(100% - 30px) !important;
+  max-height: calc(100% - 30px) !important;
+  align-self: center !important;
 }
 @keyframes stickySlideRight {
   from { transform: translateX(-26px); opacity: .35; }
@@ -4742,6 +4797,18 @@ html.chat-compact .sc-welcome { padding: 1.25rem; }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
+/* ===== Brand AI text — three-dot menu ▸ "Brand AI text" (Admin, pink).
+   Recolours every WISEcodeAI transcript line to the brand blue APP-WIDE, while
+   the member's own lines keep the default (near-black) ink so the two speakers
+   read as distinct. A single global class (html.chat-brandtext) so every chat
+   module — and every transcript that uses the shared .sc-line-* classes —
+   recolours at once. Dark mode uses the brighter brand tone (--primary-bright)
+   so the AI copy stays legible on the navy card. KEEP IN SYNC with
+   wiseai-chat.css. */
+html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary); }
+html.dark.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+html.chat-brandtext .sc-line-you .sc-line-body { color: var(--text); }
+
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
    USDA…). The label sits centered above the chips, which wrap onto as many
@@ -4881,10 +4948,12 @@ html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, 
 .sc-trust-badge .material-symbols-outlined { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
 html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
-/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEcodeAI). */
+/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEcodeAI).
+   Extra top/bottom breathing room so the timestamp + feedback + turn row reads as
+   its own band, separated from the bubble above and the next turn below. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 4px;
+  margin-top: 12px; margin-bottom: 8px;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
@@ -4895,6 +4964,21 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
 }
 .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+
+/* "Source of this output" caption — pinned to the very end of a chart / table /
+   report so the artifact always closes by naming the data source it was built
+   from. Set off from the output above with a hairline rule. */
+.sc-out-source {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, rgba(37, 80, 124, 0.14));
+  font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+.sc-out-source-ic { font-size: 14px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-muted)); }
+.sc-out-source-txt strong { font-weight: 700; color: var(--primary-ink, var(--primary)); }
+html.dark .sc-out-source-ic { color: var(--primary-bright, #8B9FAF); }
+html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 
 /* Typing indicator now carries a status label ("WISEcodeAI is checking…"). */
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
@@ -4916,8 +5000,8 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
   background: none; border: 0; padding: 2px 0; margin: 0; cursor: pointer;
   color: var(--text-subtle); font: inherit; text-align: left; -webkit-tap-highlight-color: transparent;
 }
-/* Chevron sits at the LEFT of the header, right beside the title and step
-   count: points RIGHT when collapsed, rotates DOWN when open. */
+/* Chevron sits inline right after the timer: points RIGHT when collapsed,
+   rotates DOWN when open. */
 .sc-trace-caret {
   font-size: 18px; line-height: 1; flex-shrink: 0;
   transition: transform .2s ease; color: color-mix(in srgb, var(--text-subtle) 75%, transparent);
@@ -4950,7 +5034,7 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 .sc-trace-story { display: block; max-width: 54ch; }
 .sc-trace-story-line {
   display: block; margin-bottom: 2px;
-  font-size: 0.75rem; line-height: 1.55; font-style: italic;
+  font-size: 0.75rem; line-height: 1.55;
   color: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff);
   opacity: 0; transform: translateY(3px);
   transition: opacity .32s ease, transform .32s ease;

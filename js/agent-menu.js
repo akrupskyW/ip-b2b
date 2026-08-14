@@ -502,7 +502,7 @@ export const WISE_APP_NAV = [
     ],
   },
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
-  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html' },
+  { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html', locked: true },
 
   { type: 'section', label: 'Admin' },
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },

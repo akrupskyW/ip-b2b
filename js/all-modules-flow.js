@@ -290,6 +290,20 @@ function moduleMoreItems(moduleId) {
       { action: 'code-all', icon: 'timeline', label: 'Trend · all time' },
     ];
   }
+  if (moduleId === 'mi-intents') {
+    return [
+      { action: 'int-all', icon: 'apps', label: 'Show all chips' },
+      { action: 'int-talk', icon: 'bolt', label: 'Show chips needing logic' },
+      { action: 'int-act', icon: 'chat_bubble', label: 'Show chips needing transcript' },
+    ];
+  }
+  if (moduleId === 'mi-projects') {
+    return [
+      { action: 'proj-first', icon: 'category', label: 'Open first project' },
+      { action: 'proj-close', icon: 'close', label: 'Close breakdown panel' },
+      { action: 'proj-components', icon: 'widgets', label: 'Jump to Component Library' },
+    ];
+  }
   return [
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -1744,6 +1758,850 @@ function componentCategoryScorecards() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Project Breakdown                                                   */
+/*                                                                    */
+/* The other modules on this page enumerate the app as a flat list of  */
+/* screens, tokens and components. This one answers a different        */
+/* question: "if I were to BUILD this, how would I slice it?" It groups */
+/* the whole app into a handful of coherent PROJECTS, and breaks each   */
+/* project into small, component-oriented CHUNKS — the smallest unit    */
+/* of work that still ships something usable. Each chunk names the      */
+/* exact components + screens it touches, so the breakdown always ties  */
+/* back to the Component Library and Module Directory above.           */
+/*                                                                    */
+/* Opened as a slide-in panel: the section shows one card per project,  */
+/* and tapping a project reveals its chunks in a right-hand drawer.    */
+/* ------------------------------------------------------------------ */
+
+/* Relative sizing — a lightweight t-shirt scale. `pts` roll up into a
+   project total so the cards can show a rough "size". */
+const EFFORT = { S: { pts: 1, label: 'S' }, M: { pts: 2, label: 'M' }, L: { pts: 3, label: 'L' }, XL: { pts: 5, label: 'XL' } };
+
+/* Every chunk lists the components it leans on by their exact name in
+   COMPONENTS (so a chip can jump straight to that card in the Component
+   Library) and the screens it lands on by label + href (so a chip opens
+   the real page). Kept curated by hand — this is a build map, not a
+   mechanical flatten of the nav. */
+const PROJECT_BREAKDOWN = [
+  {
+    id: 'proj-foundation',
+    title: 'Design System Foundation',
+    icon: 'palette',
+    tone: 'ai',
+    summary: 'The tokens and base components everything else is built on — colors, type, and the primitive controls. Build this first; every other project consumes it.',
+    chunks: [
+      { title: 'Color & theme tokens', effort: 'M', why: 'The light/dark token set every surface reads from — do this before any component so theming is free later.', components: ['Status pills', 'Badges'], modules: [{ label: 'Design System', href: 'all-modules.html#mi-design' }] },
+      { title: 'Typography & type scale', effort: 'S', why: 'Font families + the shared size ramp. Small, self-contained, unblocks every text surface.', components: [], modules: [{ label: 'Design System', href: 'all-modules.html#mi-design' }] },
+      { title: 'Buttons & links', effort: 'S', why: 'Primary / ghost / text-link — the most-reused control in the app. Tiny but touches every screen.', components: ['Buttons', 'Admin buttons'], modules: [] },
+      { title: 'Chips & badges', effort: 'S', why: 'Intent chips, status pills, badges — one chip family in two sizes. Ships independently.', components: ['Intent chips', 'Status pills', 'Badges', 'Status chips (domain)'], modules: [] },
+      { title: 'Inputs, search & forms', effort: 'M', why: 'Text fields, the search pill, and form field groups — the input primitives every flow reuses.', components: ['Form fields', 'Search pill', 'Chat composer'], modules: [] },
+      { title: 'Overlays kit', effort: 'M', why: 'Popover, modal, bottom sheet, tooltip, toast — the shared overlay shells. One pass, reused everywhere.', components: ['Popover menu', 'Menu popover', 'Modal dialog', 'Bottom sheet', 'Tooltip', 'Toast'], modules: [] },
+    ],
+  },
+  {
+    id: 'proj-shell',
+    title: 'App Shell & Navigation',
+    icon: 'space_dashboard',
+    tone: 'workspace',
+    summary: 'The persistent frame — left nav, top bar, avatar/appearance menus, per-module controls, and the alerts panel. Wraps every logged-in page.',
+    chunks: [
+      { title: 'Left-nav rail + items', effort: 'M', why: 'Sectioned nav with collapse-to-rail. The spine of navigation — build once, wire per page.', components: ['Left-nav item'], modules: [{ label: 'Overview', href: 'overview.html' }] },
+      { title: 'Top bar + icon buttons', effort: 'S', why: 'Logo, menu toggle, alerts + more actions. Small surface, high visibility.', components: ['Top-bar icon button'], modules: [] },
+      { title: 'Avatar & appearance menus', effort: 'M', why: 'User popover (profile, sign out) + appearance popover (theme, text size, dock). Two popovers on the shared shell.', components: ['Avatar button', 'Avatars', 'Popover menu'], modules: [{ label: 'My profile', href: 'profile.html' }, { label: 'Preferences', href: 'preferences.html' }] },
+      { title: 'Module control cluster', effort: 'S', why: 'The ⋯ menu + width toggle every pane carries. Self-contained, drops onto any module.', components: ['Module control cluster', 'View toggle'], modules: [] },
+      { title: 'Alerts & notifications panel', effort: 'M', why: 'The side panel + notification rows + toasts. A vertical slice you can ship on its own.', components: ['Notification rows', 'Toast'], modules: [{ label: 'Alerts', href: 'alerts.html' }] },
+    ],
+  },
+  {
+    id: 'proj-wiseai',
+    title: 'WISEcodeAI Chat Dock',
+    icon: 'auto_awesome',
+    tone: 'ai',
+    summary: 'The shared chat that docks on every page — composer, intent chips, and the Turns / History drawers. Build the dock once; each page just feeds it content.',
+    chunks: [
+      { title: 'Chat composer', effort: 'M', why: 'Input + attach/dictate/send. The heart of the dock — nothing else works without it.', components: ['Chat composer'], modules: [{ label: 'Chat', href: 'wiseai.html' }] },
+      { title: 'Welcome cards & intent chips', effort: 'M', why: 'Scorecards + chips that map 1:1 to page actions. Reused across every page dock.', components: ['Intent chips', 'Scorecard stat tile'], modules: [{ label: 'Chat', href: 'wiseai.html' }] },
+      { title: 'Turns drawer', effort: 'L', why: 'Per-turn list with fork / jump / share / note. A meaty, standalone module docked beside the chat.', components: ['Module control cluster'], modules: [{ label: 'Turns', href: 'wiseai.html#turns' }] },
+      { title: 'History & Projects drawer', effort: 'M', why: 'The left-side history breakout. Ships after the dock frame lands.', components: [], modules: [{ label: 'History', href: 'wiseai.html#history' }, { label: 'Library', href: 'conversation-library.html' }] },
+      { title: 'Activity read-out', effort: 'S', why: 'The tokens/cost hover indicator. Small, bolt-on, no dependencies once the dock exists.', components: [], modules: [{ label: 'Data Sources', href: 'wiseai.html#data-sources' }] },
+    ],
+  },
+  {
+    id: 'proj-portfolio',
+    title: 'Portfolio & Products',
+    icon: 'inventory_2',
+    tone: 'portfolio',
+    summary: 'The product line-up — the portfolio table, comparison, add/view flows, and the Non-UPF dashboard. Depends on the data table + filter primitives.',
+    chunks: [
+      { title: 'Product portfolio table', effort: 'L', why: 'Sortable, paginated table with row menus — the core surface. Build the table primitive here.', components: ['Data table', 'Pagination footer', 'Row action menu'], modules: [{ label: 'Product Portfolio', href: 'product-portfolio.html' }] },
+      { title: 'Filter toolbar + stat board', effort: 'M', why: 'Click-to-filter scorecards + the filter toolbar. Sits on top of the table, ships next.', components: ['Filter toolbar', 'Stat filter board', 'Scorecard stat tile'], modules: [{ label: 'Product Portfolio', href: 'product-portfolio.html' }] },
+      { title: 'Product comparison', effort: 'M', why: 'Side-by-side compare of two SKUs. Reuses the table + chips; a discrete deliverable.', components: ['Status chips (domain)'], modules: [{ label: 'Comparison', href: 'product-comparison.html' }] },
+      { title: 'Add / View product', effort: 'M', why: 'The create + detail forms. Leans entirely on the form primitives from Foundation.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Add Product', href: 'add-product.html' }, { label: 'View Product', href: 'view-product.html' }] },
+      { title: 'Non-UPF dashboard', effort: 'M', why: 'Charts + distribution bars over the portfolio. A visual slice you can demo alone.', components: ['Charts & graphs', 'Distribution bar', 'Dashboard card'], modules: [{ label: 'NON-UPF Dashboard', href: 'non-upf-dashboard.html' }] },
+    ],
+  },
+  {
+    id: 'proj-verify',
+    title: 'Verification Flows',
+    icon: 'verified',
+    tone: 'verify',
+    summary: 'The step-by-step verification wizards (Non-UPF and GRAS) plus the progress + attestation surfaces. A chat-and-surface pairing.',
+    chunks: [
+      { title: 'Non-UPF wizard steps', effort: 'L', why: 'Select → attest → payment. The wizard scaffold both flows share — build it here.', components: ['Tabs & segmented', 'Form fields', 'Buttons'], modules: [{ label: 'Non-UPF Verification', href: 'verification.html' }] },
+      { title: 'GRAS documentation wizard', effort: 'L', why: 'The 5-step ingredient documentation flow. Reuses the wizard scaffold above.', components: ['Form fields', 'Status chips (domain)'], modules: [{ label: 'GRAS Verification', href: 'gras-verification.html' }] },
+      { title: 'Progress + result sheet', effort: 'S', why: 'The bottom-sheet progress flow + done state. Small, shared by both wizards.', components: ['Bottom sheet', 'Toast'], modules: [] },
+    ],
+  },
+  {
+    id: 'proj-reports',
+    title: 'Reports & Analytics',
+    icon: 'insights',
+    tone: 'report',
+    summary: 'The report library, the inline report surface, and every chart primitive. Depends on the charts + card components.',
+    chunks: [
+      { title: 'Report library cards', effort: 'M', why: 'The catalog of available reports. Entry point — ships first.', components: ['Dashboard card', 'Badges'], modules: [{ label: 'Reports', href: 'reports.html' }] },
+      { title: 'Inline report surface', effort: 'L', why: 'Opening a report next to the chat (no modal). The mirrored chat-and-surface pattern.', components: ['Charts & graphs', 'Distribution bar'], modules: [{ label: 'Reports', href: 'reports.html' }, { label: 'Analytics Types', href: 'analytics-types.html' }] },
+      { title: 'Guiding Stars report', effort: 'M', why: 'A specific report end-to-end. Good vertical slice once the surface exists.', components: ['Charts & graphs', 'Status pills'], modules: [{ label: 'Guiding Stars Report', href: 'report-guiding-stars.html' }] },
+    ],
+  },
+  {
+    id: 'proj-reform',
+    title: 'Reformulation Studio',
+    icon: 'auto_fix_high',
+    tone: 'reform',
+    summary: 'The reformulation workspace and its dashboard — an AI-assisted studio pane with a simulation progress surface.',
+    chunks: [
+      { title: 'Reformulation studio pane', effort: 'L', why: 'The main editing workspace. The centerpiece — build the pane and its state first.', components: ['Chat composer', 'Intent chips', 'Buttons'], modules: [{ label: 'Reformulation Studio', href: 'reformulation.html' }] },
+      { title: 'Reformulation dashboard', effort: 'M', why: 'The metrics view over reformulation runs. Charts on top of the studio data.', components: ['Charts & graphs', 'Dashboard card'], modules: [{ label: 'Reformulation Dashboard', href: 'reformulation.html#dashboard' }] },
+    ],
+  },
+  {
+    id: 'proj-admin',
+    title: 'Admin & Org Management',
+    icon: 'shield',
+    tone: 'admin',
+    summary: 'The WISEcode admin surfaces — orgs, users, invites, audit queue, and utilities. Heavy on the data table + row-action primitives.',
+    chunks: [
+      { title: 'Organizations directory', effort: 'M', why: 'The customer org table + counts. Reuses the portfolio table primitive.', components: ['Data table', 'Pagination footer'], modules: [{ label: 'Organizations', href: 'organizations.html' }] },
+      { title: 'User & role management', effort: 'M', why: 'Users table with role editing + row menus. Discrete admin deliverable.', components: ['Data table', 'Row action menu', 'Status pills'], modules: [{ label: 'User Management', href: 'user-management.html' }] },
+      { title: 'Quick invite', effort: 'S', why: 'One-step org invite + history. Small form flow, ships alone.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Quick Invite', href: 'quick-invite.html' }] },
+      { title: 'Audit queue', effort: 'M', why: 'Ingredient audit review queue. Table + status chips + row actions.', components: ['Data table', 'Status chips (domain)', 'Row action menu'], modules: [{ label: 'Audit Queue', href: 'audit-queue.html' }] },
+      { title: 'Admin utilities', effort: 'S', why: 'Maintenance + seeding tools. Independent, low-risk grab bag.', components: ['Admin buttons', 'Empty state'], modules: [{ label: 'Admin Utils', href: 'admin-utils.html' }, { label: 'Accessibility Review', href: 'accessibility-review.html' }] },
+    ],
+  },
+  {
+    id: 'proj-account',
+    title: 'Account & Support',
+    icon: 'account_circle',
+    tone: 'account',
+    summary: 'Everything behind the avatar menu — profile, preferences, API keys, invoices, help and docs. Mostly form + table surfaces.',
+    chunks: [
+      { title: 'My profile', effort: 'M', why: 'Editable identity card + activity/security tabs. Form-heavy, self-contained.', components: ['Form fields', 'Tabs & segmented', 'Avatars'], modules: [{ label: 'My profile', href: 'profile.html' }] },
+      { title: 'Preferences', effort: 'S', why: 'Appearance, notifications, workspace, accessibility toggles. Small settings surface.', components: ['Brand toggle', 'Form fields'], modules: [{ label: 'Preferences', href: 'preferences.html' }] },
+      { title: 'API keys', effort: 'S', why: 'Create / reveal / revoke keys + usage. Discrete, security-scoped.', components: ['Data table', 'Buttons'], modules: [{ label: 'API keys', href: 'api-keys.html' }] },
+      { title: 'Invoices & downloads', effort: 'M', why: 'Filterable billing board + downloads. Table + filter reuse.', components: ['Data table', 'Filter toolbar', 'Status pills'], modules: [{ label: 'Invoices & Downloads', href: 'invoices.html' }] },
+      { title: 'Help & docs', effort: 'M', why: 'Search + browse help and the docs reading pane. A content project, ships last.', components: ['Search pill', 'Empty state'], modules: [{ label: 'Help', href: 'help.html' }, { label: 'Docs', href: 'docs.html' }] },
+    ],
+  },
+  {
+    id: 'proj-auth',
+    title: 'Auth & Onboarding',
+    icon: 'lock',
+    tone: 'auth',
+    summary: 'The entry gate — login, create account, and forgot password. Small, form-only, buildable up front in parallel with Foundation.',
+    chunks: [
+      { title: 'Log in', effort: 'S', why: 'Email/password + session. The gate everything else sits behind.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Log in', href: 'login.html' }] },
+      { title: 'Create account', effort: 'S', why: 'Signup form + validation. Reuses the login form primitives.', components: ['Form fields', 'Intent chips'], modules: [{ label: 'Create Account', href: 'create-account.html' }] },
+      { title: 'Forgot password', effort: 'S', why: 'Reset request flow. Tiny, independent, closes out the auth set.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Forgot Password', href: 'forgot-password.html' }] },
+    ],
+  },
+  {
+    id: 'proj-marketing',
+    title: 'Marketing Site',
+    icon: 'campaign',
+    tone: 'marketing',
+    summary: 'The public-facing site — landing, product/solution pages, pricing, and feature deep-dives. Its own shell, separate from the app.',
+    chunks: [
+      { title: 'Home & shell', effort: 'M', why: 'Landing page + marketing nav/footer. The shared frame every other page reuses.', components: ['Buttons', 'Intent chips'], modules: [{ label: 'Home', href: '../index.html' }] },
+      { title: 'Product & solution pages', effort: 'M', why: 'The evergreen content pages. Ship on the shell once it lands.', components: ['Dashboard card'], modules: [{ label: 'Products', href: '../marketing-products.html' }, { label: 'Solutions', href: '../marketing-solutions.html' }] },
+      { title: 'Pricing', effort: 'S', why: 'Plan comparison + CTAs. Self-contained, conversion-critical.', components: ['Buttons', 'Badges'], modules: [{ label: 'Pricing', href: '../marketing-pricing.html' }] },
+      { title: 'Feature deep-dives', effort: 'M', why: 'WISEcodeAI / GRAS / Non-UPF / Alliance / Enterprise pages. A content batch, parallelizable.', components: [], modules: [{ label: 'WISEcodeAI', href: '../marketing-wiseai.html' }, { label: 'GRAS', href: '../marketing-gras.html' }, { label: 'Non-UPF', href: '../marketing-nonupf.html' }] },
+    ],
+  },
+];
+
+/* Roll a project up into { chunks, pts, comps } for the card face + the drawer
+   header. `comps` counts the unique components the whole project touches, which
+   is the "component-wise" size the breakdown is organised around. */
+function projectStats(p) {
+  const comps = new Set();
+  let pts = 0;
+  p.chunks.forEach((c) => {
+    pts += (EFFORT[c.effort] || EFFORT.M).pts;
+    (c.components || []).forEach((n) => comps.add(n));
+  });
+  return { chunks: p.chunks.length, pts, comps: comps.size };
+}
+
+/* Turn a rough pts total into a plain-language size, so a card can say
+   "Small / Medium / Large / Epic" instead of a bare number. */
+function projectSize(pts) {
+  if (pts <= 4) return 'Small';
+  if (pts <= 8) return 'Medium';
+  if (pts <= 12) return 'Large';
+  return 'Epic';
+}
+
+function projectCard(p) {
+  const s = projectStats(p);
+  return `
+    <button type="button" class="mi-proj-card" data-proj="${esc(p.id)}" data-tone="${esc(p.tone)}" aria-haspopup="dialog">
+      <span class="mi-proj-ic"><span class="material-symbols-outlined">${esc(p.icon)}</span></span>
+      <span class="mi-proj-body">
+        <span class="mi-proj-title">${esc(p.title)}</span>
+        <span class="mi-proj-summary">${esc(p.summary)}</span>
+        <span class="mi-proj-meta">
+          <span class="mi-proj-tag"><span class="material-symbols-outlined">check_box</span>${s.chunks} chunks</span>
+          <span class="mi-proj-tag"><span class="material-symbols-outlined">widgets</span>${s.comps} components</span>
+          <span class="mi-proj-tag mi-proj-tag--size">${esc(projectSize(s.pts))}</span>
+        </span>
+      </span>
+      <span class="mi-proj-go material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    </button>`;
+}
+
+/* One chunk row inside the drawer. Component chips jump to (and filter) the
+   Component Library; module chips open the real screen. */
+function chunkComponentChip(name) {
+  return `<button type="button" class="mi-chunk-chip mi-chunk-chip--comp" data-chunk-comp="${esc(name)}"><span class="material-symbols-outlined">widgets</span>${esc(name)}</button>`;
+}
+
+function chunkModuleChip(m) {
+  return `<a class="mi-chunk-chip mi-chunk-chip--mod" href="${esc(m.href)}"><span class="material-symbols-outlined">arrow_outward</span>${esc(m.label)}</a>`;
+}
+
+function chunkRow(c, i) {
+  const eff = EFFORT[c.effort] || EFFORT.M;
+  const comps = (c.components || []).map(chunkComponentChip).join('');
+  const mods = (c.modules || []).map(chunkModuleChip).join('');
+  return `
+    <li class="mi-chunk">
+      <div class="mi-chunk-head">
+        <span class="mi-chunk-num">${i + 1}</span>
+        <span class="mi-chunk-title">${esc(c.title)}</span>
+        <span class="mi-chunk-eff" data-eff="${esc(c.effort)}" title="Relative effort">${esc(eff.label)}</span>
+      </div>
+      <p class="mi-chunk-why">${esc(c.why)}</p>
+      ${(comps || mods) ? `<div class="mi-chunk-chips">${comps}${mods}</div>` : ''}
+    </li>`;
+}
+
+function renderProjects() {
+  const totalChunks = PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0);
+  return `
+    <section class="mi-module" id="mi-projects">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Project Breakdown</h2>
+          <p class="mi-module-lede">The same app, sliced for building. Every module and component above rolls up
+            into ${PROJECT_BREAKDOWN.length} coherent <strong>projects</strong>, and each project breaks down into small,
+            component-oriented <strong>chunks</strong> — the smallest slice that still ships something. Open a project
+            to see its chunks; each chunk names the exact components and screens it touches.</p>
+        </div>
+        ${moduleControlsHTML('mi-projects')}
+      </header>
+
+      <div class="mi-projects-summary">
+        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">category</span>${PROJECT_BREAKDOWN.length} projects</span>
+        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">check_box</span>${totalChunks} bite-sized chunks</span>
+        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">touch_app</span>Tap a project to open its breakdown</span>
+      </div>
+
+      <div class="mi-proj-grid">
+        ${PROJECT_BREAKDOWN.map(projectCard).join('')}
+      </div>
+
+      <!-- Slide-in breakdown panel (one drawer, re-filled per project) -->
+      <div class="mi-drawer-scrim" id="mi-proj-scrim" hidden></div>
+      <aside class="mi-drawer" id="mi-proj-drawer" role="dialog" aria-modal="true" aria-labelledby="mi-drawer-title" aria-hidden="true" hidden>
+        <header class="mi-drawer-head">
+          <span class="mi-drawer-ic" id="mi-drawer-ic"><span class="material-symbols-outlined">category</span></span>
+          <div class="mi-drawer-titles">
+            <div class="mi-drawer-eyebrow" id="mi-drawer-eyebrow">Project</div>
+            <div class="mi-drawer-title" id="mi-drawer-title">Project</div>
+          </div>
+          <button type="button" class="mi-drawer-close" id="mi-drawer-close" aria-label="Close breakdown"><span class="material-symbols-outlined">close</span></button>
+        </header>
+        <div class="mi-drawer-body" id="mi-drawer-body"></div>
+      </aside>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Project drawer open / close + wiring                                */
+/* ------------------------------------------------------------------ */
+
+let projDrawerReturnFocus = null;
+
+function fillProjectDrawer(root, p) {
+  const s = projectStats(p);
+  const ic = root.querySelector('#mi-drawer-ic .material-symbols-outlined');
+  if (ic) ic.textContent = p.icon;
+  const eyebrow = root.querySelector('#mi-drawer-eyebrow');
+  if (eyebrow) eyebrow.textContent = `Project · ${projectSize(s.pts)}`;
+  const title = root.querySelector('#mi-drawer-title');
+  if (title) title.textContent = p.title;
+  const body = root.querySelector('#mi-drawer-body');
+  if (!body) return;
+  body.innerHTML = `
+    <p class="mi-drawer-lede">${esc(p.summary)}</p>
+    <div class="mi-drawer-stats">
+      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.chunks}</span><span class="mi-drawer-stat-label">chunks</span></span>
+      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.comps}</span><span class="mi-drawer-stat-label">components</span></span>
+      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.pts}</span><span class="mi-drawer-stat-label">effort pts</span></span>
+    </div>
+    <ol class="mi-chunk-list">
+      ${p.chunks.map(chunkRow).join('')}
+    </ol>`;
+  body.scrollTop = 0;
+}
+
+function openProjectDrawer(root, id, opener) {
+  const p = PROJECT_BREAKDOWN.find((x) => x.id === id);
+  if (!p) return;
+  const scrim = root.querySelector('#mi-proj-scrim');
+  const drawer = root.querySelector('#mi-proj-drawer');
+  if (!scrim || !drawer) return;
+  fillProjectDrawer(root, p);
+  scrim.hidden = false;
+  drawer.hidden = false;
+  drawer.setAttribute('aria-hidden', 'false');
+  projDrawerReturnFocus = opener || null;
+  requestAnimationFrame(() => {
+    scrim.classList.add('is-open');
+    drawer.classList.add('is-open');
+  });
+  root.querySelector('#mi-drawer-close')?.focus();
+}
+
+function closeProjectDrawer(root) {
+  const scrim = root.querySelector('#mi-proj-scrim');
+  const drawer = root.querySelector('#mi-proj-drawer');
+  if (!drawer || drawer.hidden) return;
+  scrim?.classList.remove('is-open');
+  drawer.classList.remove('is-open');
+  drawer.setAttribute('aria-hidden', 'true');
+  const done = () => { drawer.hidden = true; if (scrim) scrim.hidden = true; };
+  setTimeout(done, 240);
+  if (projDrawerReturnFocus && document.contains(projDrawerReturnFocus)) projDrawerReturnFocus.focus();
+  projDrawerReturnFocus = null;
+}
+
+function wireProjects(root) {
+  const section = root.querySelector('#mi-projects');
+  if (!section) return;
+
+  section.querySelector('.mi-proj-grid')?.addEventListener('click', (e) => {
+    const card = e.target.closest('[data-proj]');
+    if (!card) return;
+    openProjectDrawer(root, card.dataset.proj, card);
+  });
+
+  root.querySelector('#mi-proj-scrim')?.addEventListener('click', () => closeProjectDrawer(root));
+  root.querySelector('#mi-drawer-close')?.addEventListener('click', () => closeProjectDrawer(root));
+
+  /* A component chip jumps to the Component Library and filters it to that one
+     component (via its search box), tying the plan back to the live catalog.
+     A module chip is a plain link and navigates on its own. */
+  root.querySelector('#mi-drawer-body')?.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-chunk-comp]');
+    if (!chip) return;
+    const name = chip.getAttribute('data-chunk-comp');
+    closeProjectDrawer(root);
+    const search = root.querySelector('#dsc-search');
+    if (search) {
+      search.value = name;
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    root.querySelector('#mi-components')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProjectDrawer(root);
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Intent Chip Audit module                                            */
+/*                                                                     */
+/* Every WISEcodeAI dock across the app ships "intent chips" — the      */
+/* one-tap suggestions on the welcome screen. For a chip to be fully    */
+/* wired it needs BOTH halves:                                          */
+/*   • a transcript — its own scripted reply (an `intentReplies[intent]`*/
+/*     entry, or a page-supplied reply hook), so a click narrates       */
+/*     something specific instead of falling through to the generic     */
+/*     keyword fallback; and                                            */
+/*   • logic — an `onIntent` side-effect that drives the real page      */
+/*     (filter a table, open a report, run a job, navigate…).           */
+/*                                                                      */
+/* This map is hand-verified against each surface's WISEcodeAI config    */
+/* (the `*_WISEAI` exports in js/*-flow.js and the inline dock configs   */
+/* in js/agent-overview.js, cross-checked against each page's on-page    */
+/* intent bridge — window.__ibIntent / __wiseLibraryIntent /            */
+/* __wiseMarketingIntent). Keep it in lock-step with those when chips   */
+/* are added or rewired. Per chip: t = has its own transcript, l = has  */
+/* its own page logic. A chip missing either half is called out below.  */
+/* ------------------------------------------------------------------ */
+const INTENT_AUDIT = [
+  {
+    label: 'Dashboard', icon: 'space_dashboard', href: 'overview.html', src: 'agent-overview.js',
+    note: 'Every chip fires its matching on-page control and suppresses the chip reply — the narration comes from the mirrored page control (setDashChat), so none carry their own chip transcript.',
+    chips: [
+      { i: 'claim_products',   label: 'Claim your products',          t: false, l: true },
+      { i: 'review_portfolio', label: 'Review your food portfolio',   t: false, l: true },
+      { i: 'add_food',         label: 'Add a food',                   t: false, l: true },
+      { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: false, l: true },
+      { i: 'verify_gras',      label: 'Verify your GRAS products',    t: false, l: true },
+      { i: 'update_logo',      label: 'Update your brand logo',       t: false, l: true },
+    ],
+  },
+  {
+    label: 'Reports', icon: 'insights', href: 'reports.html', src: 'agent-overview.js',
+    chips: [
+      { i: 'open_upf_report',      label: 'Open the UPF report',      t: true,  l: true },
+      { i: 'open_gras_report',     label: 'Open the GRAS report',     t: true,  l: true },
+      { i: 'open_insights_report', label: 'Open the insights report', t: true,  l: true },
+      { i: 'explain_score',        label: 'Explain my UPF score',     t: true,  l: false },
+      { i: 'improve_score',        label: 'How do I improve it?',     t: true,  l: false },
+      { i: 'ingredient_quality',   label: 'Ingredient quality',       t: true,  l: false },
+      { i: 'compare_products',     label: 'Compare two products',     t: true,  l: false },
+      { i: 'unlock_studio',        label: 'Unlock the full Studio',   t: true,  l: false },
+    ],
+  },
+  {
+    label: 'Library', icon: 'auto_stories', href: 'conversation-library.html', src: 'agent-overview.js',
+    chips: [
+      { i: 'lib_reports',    label: 'Show reports',     t: true, l: true },
+      { i: 'lib_dashboards', label: 'Show dashboards',  t: true, l: true },
+      { i: 'lib_chats',      label: 'Show chats',       t: true, l: true },
+      { i: 'lib_mcp',        label: 'Show MCP results', t: true, l: true },
+      { i: 'lib_references', label: 'Show references',  t: true, l: true },
+      { i: 'lib_shared',     label: 'Shared with me',   t: true, l: true },
+    ],
+  },
+  {
+    label: 'Ingredient Browser', icon: 'science', href: 'ingredient-browser.html', src: 'agent-overview.js',
+    chips: [
+      { i: 'search_ingredient', label: 'Search an ingredient',       t: true, l: true },
+      { i: 'filter_gras',       label: 'Filter by GRAS status',      t: true, l: true },
+      { i: 'browse_category',   label: 'Browse by category',         t: true, l: true },
+      { i: 'filter_processing', label: 'Filter by processing level', t: true, l: true },
+      { i: 'check_allergens',   label: 'Check allergens',            t: true, l: true },
+      { i: 'filter_flags',      label: 'Additives & flags',          t: true, l: true },
+      { i: 'explain_gras',      label: 'What is GRAS?',              t: true, l: false },
+    ],
+  },
+  {
+    label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html', src: 'agent-overview.js',
+    chips: [
+      { i: 'onesheet',        label: 'Open the co-branded one-sheets',   t: true, l: true },
+      { i: 'shield',          label: 'Get the Non-UPF Verified™ shield', t: true, l: true },
+      { i: 'brand_standards', label: 'Download the brand standards guide', t: true, l: true },
+      { i: 'social',          label: 'Grab the social media toolkit',    t: true, l: true },
+      { i: 'email_sms',       label: 'Get email & SMS assets',           t: true, l: true },
+      { i: 'packaging',       label: 'Packaging resources',              t: true, l: true },
+      { i: 'expand_all',      label: 'Expand all folders',               t: true, l: true },
+    ],
+  },
+  {
+    label: 'Non-UPF Verification', icon: 'verified', href: 'verification.html', src: 'verification-flow.js',
+    chips: [
+      { i: 'select_all',    label: 'Select all foods',          t: true, l: true },
+      { i: 'go_attest',     label: 'Continue to attestation',   t: true, l: true },
+      { i: 'do_attest',     label: 'Sign the attestation',      t: true, l: true },
+      { i: 'go_payment',    label: 'Go to payment',             t: true, l: true },
+      { i: 'pay_now',       label: 'Pay & mint my shields',     t: true, l: true },
+      { i: 'explain_flow',  label: 'How does verification work?', t: true, l: false },
+      { i: 'pricing',       label: 'How is pricing calculated?', t: true, l: false },
+      { i: 'what_you_get',  label: 'What do I get after?',      t: true, l: false },
+      { i: 'other_types',   label: 'Other verification types',  t: true, l: false },
+    ],
+  },
+  {
+    label: 'GRAS Verification', icon: 'shield', href: 'gras-verification.html', src: 'gras-verification-flow.js',
+    chips: [
+      { i: 'verify_top',       label: 'Verify my top ingredient',   t: true, l: true },
+      { i: 'use_recommended',  label: 'Use the recommended pathway', t: true, l: true },
+      { i: 'autofill_docs',    label: 'Attach & fill the documents', t: true, l: true },
+      { i: 'next_step',        label: 'Continue to the next step',  t: true, l: true },
+      { i: 'sign_attestation', label: 'Sign the attestation',       t: true, l: true },
+      { i: 'submit_gras',      label: 'Submit for review',          t: true, l: true },
+      { i: 'run_review',       label: 'Run the WISEcode review',    t: true, l: true },
+      { i: 'view_submissions', label: 'Open the review queue',      t: true, l: true },
+      { i: 'verify_another',   label: 'Verify another ingredient',  t: true, l: true },
+      { i: 'explain_gras',     label: 'What is GRAS verification?', t: true, l: false },
+      { i: 'doc_pathways',     label: 'Which pathway do I need?',   t: true, l: false },
+      { i: 'what_clears',      label: 'What will this clear?',      t: true, l: false },
+    ],
+  },
+  {
+    label: 'Organization Profile', icon: 'account_circle', href: 'profile.html', src: 'profile-flow.js',
+    chips: [
+      { i: 'rename_org',     label: 'Rename organization',      t: true, l: true },
+      { i: 'org_type',       label: 'Change organization type', t: true, l: true },
+      { i: 'contact_person', label: 'Update contact person',    t: true, l: true },
+      { i: 'email',          label: 'Change contact email',     t: true, l: true },
+      { i: 'phone',          label: 'Update phone number',      t: true, l: true },
+      { i: 'address',        label: 'Edit mailing address',     t: true, l: true },
+      { i: 'website',        label: 'Set website URL',          t: true, l: true },
+      { i: 'ein',            label: 'Add EIN',                  t: true, l: true },
+      { i: 'logo',           label: 'Upload brand logo',        t: true, l: true },
+      { i: 'banner',         label: 'Set brand banner',         t: true, l: true },
+      { i: 'avatar',         label: 'Set avatar picture',       t: true, l: true },
+      { i: 'save',           label: 'Save changes',             t: true, l: true },
+    ],
+  },
+  {
+    label: 'Preferences', icon: 'tune', href: 'preferences.html', src: 'preferences-flow.js',
+    chips: [
+      { i: 'toggle_theme',  label: 'Switch light / dark',        t: true, l: true },
+      { i: 'bigger_text',   label: 'Make text bigger',           t: true, l: true },
+      { i: 'mute_email',    label: 'Mute email notifications',   t: true, l: true },
+      { i: 'dock_right',    label: 'Move chat to the right',     t: true, l: true },
+      { i: 'reduce_motion', label: 'Reduce motion',              t: true, l: true },
+    ],
+  },
+  {
+    label: 'API Keys', icon: 'key', href: 'api-keys.html', src: 'api-keys-flow.js',
+    chips: [
+      { i: 'create_key',  label: 'Create a new API key',     t: true, l: true },
+      { i: 'reveal_keys', label: 'Reveal my keys',           t: true, l: true },
+      { i: 'usage',       label: 'Show my usage',            t: true, l: true },
+      { i: 'rotate',      label: 'Which key should I rotate?', t: true, l: true },
+      { i: 'docs',        label: 'Open the API reference',   t: true, l: true },
+    ],
+  },
+  {
+    label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html', src: 'invoices-flow.js',
+    chips: [
+      { i: 'outstanding',    label: 'What’s outstanding?',    t: true, l: true },
+      { i: 'show_paid',      label: 'Show paid invoices',     t: true, l: true },
+      { i: 'show_failed',    label: 'Show failed payments',   t: true, l: true },
+      { i: 'show_cancelled', label: 'Show cancelled',         t: true, l: true },
+      { i: 'show_all',       label: 'Show all invoices',      t: true, l: true },
+      { i: 'download_all',   label: 'Download all',           t: true, l: true },
+    ],
+  },
+  {
+    label: 'Help', icon: 'help', href: 'help.html', src: 'help-flow.js',
+    chips: [
+      { i: 'getting_started',   label: 'How do I get started?', t: true, l: true },
+      { i: 'verification_help', label: 'Explain verification',  t: true, l: true },
+      { i: 'billing_help',      label: 'Billing & invoices',    t: true, l: true },
+      { i: 'contact',           label: 'Contact support',       t: true, l: true },
+    ],
+  },
+  {
+    label: 'Docs', icon: 'menu_book', href: 'docs.html', src: 'docs-flow.js',
+    chips: [
+      { i: 'quickstart', label: 'Show me the quickstart',  t: true, l: true },
+      { i: 'api',        label: 'Open the API reference',  t: true, l: true },
+      { i: 'sdk',        label: 'How do I use the SDK?',   t: true, l: true },
+      { i: 'webhooks',   label: 'Set up webhooks',         t: true, l: true },
+      { i: 'changelog',  label: 'What’s new?',             t: true, l: true },
+    ],
+  },
+  {
+    label: 'Agents', icon: 'smart_toy', href: 'agents.html', src: 'agents-flow.js',
+    chips: [
+      { i: 'enable_all', label: 'Enable all agents',        t: true, l: true },
+      { i: 'pause_all',  label: 'Pause all agents',         t: true, l: true },
+      { i: 'portfolio',  label: 'Open the Portfolio Agent', t: true, l: true },
+      { i: 'autonomy',   label: 'What does autonomy mean?', t: true, l: false },
+    ],
+  },
+  {
+    label: 'Alerts', icon: 'notifications', href: 'alerts.html', src: 'alerts-flow.js',
+    chips: [
+      { i: 'show_unread',  label: 'Show only unread',      t: true, l: true },
+      { i: 'mark_all',     label: 'Mark everything read',  t: true, l: true },
+      { i: 'flags',        label: 'What needs my review?', t: true, l: true },
+      { i: 'verification', label: 'Verification alerts',   t: true, l: true },
+    ],
+  },
+  {
+    label: 'Organizations', icon: 'apartment', href: 'organizations.html', src: 'organizations-flow.js',
+    chips: [
+      { i: 'show_active',   label: 'Show active orgs',    t: true, l: true },
+      { i: 'show_invited',  label: 'Show invited orgs',   t: true, l: true },
+      { i: 'show_inactive', label: 'Show inactive orgs',  t: true, l: true },
+      { i: 'show_all',      label: 'Show all',            t: true, l: true },
+      { i: 'add_org',       label: 'Add an organization', t: true, l: true },
+      { i: 'quick_invite',  label: 'Quick invite',        t: true, l: true },
+      { i: 'export',        label: 'Export CSV',          t: true, l: true },
+    ],
+  },
+  {
+    label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html', src: 'quick-invite-flow.js',
+    chips: [
+      { i: 'need_attention', label: 'What needs attention?', t: true, l: true },
+      { i: 'show_pending',   label: 'Show pending invites',  t: true, l: true },
+      { i: 'show_accepted',  label: 'Show accepted',         t: true, l: true },
+      { i: 'show_cancelled', label: 'Show cancelled',        t: true, l: true },
+      { i: 'show_all',       label: 'Show all invites',      t: true, l: true },
+      { i: 'export',         label: 'Export CSV',            t: true, l: true },
+    ],
+  },
+  {
+    label: 'User Management', icon: 'group', href: 'user-management.html', src: 'user-management-flow.js',
+    chips: [
+      { i: 'show_admins',   label: 'Show admins',      t: true, l: true },
+      { i: 'show_pending',  label: 'Pending email',    t: true, l: true },
+      { i: 'show_locked',   label: 'Locked out',       t: true, l: true },
+      { i: 'show_waitlist', label: 'Waiting for beta', t: true, l: true },
+      { i: 'show_all',      label: 'Show all users',   t: true, l: true },
+      { i: 'new_user',      label: 'Add a user',       t: true, l: true },
+    ],
+  },
+  {
+    label: 'Non-UPF Dashboard', icon: 'dashboard', href: 'non-upf-dashboard.html', src: 'non-upf-dashboard-flow.js',
+    chips: [
+      { i: 'portfolio_split', label: 'What’s my UPF split?',        t: true, l: false },
+      { i: 'action_required', label: 'What needs attention?',       t: true, l: true },
+      { i: 'ready_to_attest', label: 'What’s ready to attest?',     t: true, l: true },
+      { i: 'verified',        label: 'Show verified products',      t: true, l: true },
+      { i: 'ineligible',      label: 'Why are products ineligible?', t: true, l: true },
+      { i: 'export',          label: 'Export the dashboard',        t: true, l: true },
+    ],
+  },
+  {
+    label: 'Audit Queue', icon: 'rule', href: 'audit-queue.html', src: 'audit-queue-flow.js',
+    chips: [
+      { i: 'show_open',     label: 'Show open audits',      t: true, l: true },
+      { i: 'show_accepted', label: 'Show accepted',         t: true, l: true },
+      { i: 'new_canon',     label: 'New canon suggestions', t: true, l: true },
+      { i: 'show_canceled', label: 'Show canceled',         t: true, l: true },
+      { i: 'show_all',      label: 'Show all audits',       t: true, l: true },
+      { i: 'refresh',       label: 'Refresh the queue',     t: true, l: true },
+    ],
+  },
+  {
+    label: 'Admin Utilities', icon: 'build', href: 'admin-utils.html', src: 'admin-utils-flow.js',
+    chips: [
+      { i: 'seed',          label: 'Seed the platform',          t: true, l: true },
+      { i: 'refresh_verif', label: 'Refresh verifications',      t: true, l: true },
+      { i: 'refresh_attr',  label: 'Refresh attribute insights', t: true, l: true },
+      { i: 'fix_account',   label: 'Fix an account status',      t: true, l: true },
+      { i: 'backplane',     label: 'Backplane diagnostics',      t: true, l: true },
+      { i: 'db_info',       label: 'What DB am I on?',           t: true, l: false },
+    ],
+  },
+  {
+    label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
+    note: 'This very page. The four “Jump to…” chips scroll to a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found.',
+    chips: [
+      { i: 'projects',   label: 'Show me the project breakdown', t: true, l: true },
+      { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true },
+      { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true },
+      { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true },
+      { i: 'design',     label: 'Jump to the Design System',     t: true, l: true },
+      { i: 'components',  label: 'Jump to the Component Library', t: true, l: true },
+      { i: 'counts',     label: 'How many icons are there?',     t: true, l: false },
+    ],
+  },
+];
+
+/* One chip's status from its two halves. */
+function intentChipStatus(c) {
+  if (c.t && c.l) return 'wired';
+  if (c.t && !c.l) return 'talk';
+  if (!c.t && c.l) return 'act';
+  return 'none';
+}
+
+const INTENT_STATUS_META = {
+  wired: { label: 'Wired',             icon: 'check_circle',     gap: false },
+  talk:  { label: 'Needs logic',       icon: 'chat_bubble',      gap: true },
+  act:   { label: 'Needs transcript',  icon: 'bolt',             gap: true },
+  none:  { label: 'Unwired',           icon: 'error',            gap: true },
+};
+
+function intentAuditStats() {
+  const s = { surfaces: INTENT_AUDIT.length, chips: 0, wired: 0, talk: 0, act: 0, none: 0 };
+  INTENT_AUDIT.forEach((surf) => surf.chips.forEach((c) => {
+    s.chips++;
+    s[intentChipStatus(c)]++;
+  }));
+  s.gaps = s.talk + s.act + s.none;
+  return s;
+}
+
+function intentChipRow(c) {
+  const status = intentChipStatus(c);
+  const meta = INTENT_STATUS_META[status];
+  return `
+    <li class="mi-int-chip" data-int-row data-status="${esc(status)}">
+      <span class="mi-int-chip-name">
+        <span class="mi-int-chip-dot mi-int-dot--${esc(status)}" title="${esc(meta.label)}"><span class="material-symbols-outlined">${esc(meta.icon)}</span></span>
+        <span class="mi-int-chip-label">${esc(c.label)}</span>
+        <code class="mi-int-chip-id">${esc(c.i)}</code>
+      </span>
+      <span class="mi-int-badges">
+        <span class="mi-int-badge ${c.t ? 'is-ok' : 'is-no'}"><span class="material-symbols-outlined">${c.t ? 'check' : 'close'}</span>Transcript</span>
+        <span class="mi-int-badge ${c.l ? 'is-ok' : 'is-no'}"><span class="material-symbols-outlined">${c.l ? 'check' : 'close'}</span>Logic</span>
+      </span>
+    </li>`;
+}
+
+function intentSurfaceBlock(surf) {
+  const wired = surf.chips.filter((c) => intentChipStatus(c) === 'wired').length;
+  const gaps = surf.chips.length - wired;
+  return `
+    <article class="mi-int-surface" data-int-surface data-has-gap="${gaps > 0 ? '1' : '0'}">
+      <header class="mi-int-shead">
+        <span class="mi-int-sic"><span class="material-symbols-outlined">${esc(surf.icon)}</span></span>
+        <div class="mi-int-stitles">
+          <a class="mi-int-sname" href="${esc(surf.href)}">${esc(surf.label)}<span class="material-symbols-outlined">north_east</span></a>
+          <span class="mi-int-ssrc"><code>${esc(surf.src)}</code></span>
+        </div>
+        <span class="mi-int-scount ${gaps ? 'has-gap' : 'all-wired'}">${wired}/${surf.chips.length} wired</span>
+      </header>
+      ${surf.note ? `<p class="mi-int-snote"><span class="material-symbols-outlined">info</span>${esc(surf.note)}</p>` : ''}
+      <ul class="mi-int-chiplist">${surf.chips.map(intentChipRow).join('')}</ul>
+    </article>`;
+}
+
+/* The "call it out" panel — every chip that is missing a half, grouped by
+   which half it's missing, so the gaps are impossible to miss. */
+function intentGapCallout(stats) {
+  if (!stats.gaps) {
+    return `
+      <div class="mi-int-callout is-clear">
+        <span class="mi-int-callout-ic"><span class="material-symbols-outlined">verified</span></span>
+        <div><strong>All ${stats.chips} intent chips are fully wired.</strong> Every chip across all ${stats.surfaces} surfaces carries both its own transcript and its own page logic.</div>
+      </div>`;
+  }
+  const collect = (pred) => {
+    const rows = [];
+    INTENT_AUDIT.forEach((surf) => surf.chips.forEach((c) => {
+      if (pred(c)) rows.push(`<li><span class="mi-int-gap-surf">${esc(surf.label)}</span><span class="mi-int-gap-chip">${esc(c.label)}</span></li>`);
+    }));
+    return rows.join('');
+  };
+  const talk = collect((c) => intentChipStatus(c) === 'talk');
+  const act = collect((c) => intentChipStatus(c) === 'act');
+  const none = collect((c) => intentChipStatus(c) === 'none');
+  return `
+    <div class="mi-int-callout">
+      <div class="mi-int-callout-head">
+        <span class="mi-int-callout-ic"><span class="material-symbols-outlined">report</span></span>
+        <div><strong>${stats.gaps} chip${stats.gaps === 1 ? '' : 's'} ${stats.gaps === 1 ? 'is' : 'are'} missing a half.</strong> Each is reachable, but doesn’t satisfy the “transcript <em>and</em> logic” rule yet — fix the missing half or retire the chip.</div>
+      </div>
+      <div class="mi-int-gap-cols">
+        <div class="mi-int-gap-col">
+          <div class="mi-int-gap-title"><span class="material-symbols-outlined">bolt</span>Needs logic <span class="mi-int-gap-n">${stats.talk}</span></div>
+          <p class="mi-int-gap-sub">Answers in the thread, but does nothing on the page.</p>
+          <ul class="mi-int-gap-list">${talk || '<li class="is-empty">None</li>'}</ul>
+        </div>
+        <div class="mi-int-gap-col">
+          <div class="mi-int-gap-title"><span class="material-symbols-outlined">chat_bubble</span>Needs its own transcript <span class="mi-int-gap-n">${stats.act}</span></div>
+          <p class="mi-int-gap-sub">Drives the page, but has no chip-level reply (relies on a mirrored control).</p>
+          <ul class="mi-int-gap-list">${act || '<li class="is-empty">None</li>'}</ul>
+        </div>
+        ${none ? `<div class="mi-int-gap-col">
+          <div class="mi-int-gap-title mi-int-gap-title--bad"><span class="material-symbols-outlined">error</span>Fully unwired <span class="mi-int-gap-n">${stats.none}</span></div>
+          <p class="mi-int-gap-sub">Falls through to the generic keyword fallback.</p>
+          <ul class="mi-int-gap-list">${none}</ul>
+        </div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderIntentAudit() {
+  const stats = intentAuditStats();
+  return `
+    <section class="mi-module" id="mi-intents">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Intent Chips</h2>
+          <p class="mi-module-lede">Every WISEcodeAI dock ships one-tap <strong>intent chips</strong> on its welcome screen. A chip
+            is only fully wired when it carries both halves — its own <strong>transcript</strong> (a scripted reply) and its own
+            <strong>logic</strong> (an <code>onIntent</code> page action). This audit checks all <strong>${stats.chips} chips</strong>
+            across <strong>${stats.surfaces} surfaces</strong>, hand-verified against each dock config, and calls out any chip
+            missing a half.</p>
+        </div>
+        ${moduleControlsHTML('mi-intents')}
+      </header>
+
+      <div class="mi-int-stats">
+        <button type="button" class="mi-int-stat is-active" data-int-filter="all" aria-pressed="true">
+          <span class="mi-int-stat-num">${stats.chips}</span>
+          <span class="mi-int-stat-label"><span class="mi-int-stat-text">All chips</span><span class="material-symbols-outlined">apps</span></span>
+        </button>
+        <button type="button" class="mi-int-stat mi-int-stat--ok" data-int-filter="wired" aria-pressed="false">
+          <span class="mi-int-stat-num">${stats.wired}</span>
+          <span class="mi-int-stat-label"><span class="mi-int-stat-text">Fully wired</span><span class="material-symbols-outlined">check_circle</span></span>
+        </button>
+        <button type="button" class="mi-int-stat mi-int-stat--warn" data-int-filter="talk" aria-pressed="false">
+          <span class="mi-int-stat-num">${stats.talk}</span>
+          <span class="mi-int-stat-label"><span class="mi-int-stat-text">Needs logic</span><span class="material-symbols-outlined">bolt</span></span>
+        </button>
+        <button type="button" class="mi-int-stat mi-int-stat--warn" data-int-filter="act" aria-pressed="false">
+          <span class="mi-int-stat-num">${stats.act}</span>
+          <span class="mi-int-stat-label"><span class="mi-int-stat-text">Needs transcript</span><span class="material-symbols-outlined">chat_bubble</span></span>
+        </button>
+        <button type="button" class="mi-int-stat mi-int-stat--bad" data-int-filter="none" aria-pressed="false">
+          <span class="mi-int-stat-num">${stats.none}</span>
+          <span class="mi-int-stat-label"><span class="mi-int-stat-text">Unwired</span><span class="material-symbols-outlined">error</span></span>
+        </button>
+      </div>
+
+      ${intentGapCallout(stats)}
+
+      <div class="mi-int-surfaces">
+        ${INTENT_AUDIT.map(intentSurfaceBlock).join('')}
+        <div class="mi-int-empty" id="mi-int-empty" hidden>No chips match this filter.</div>
+      </div>
+    </section>`;
+}
+
+function wireIntentAudit(root) {
+  const mod = root.querySelector('#mi-intents');
+  if (!mod) return;
+  const stats = mod.querySelector('.mi-int-stats');
+  const empty = mod.querySelector('#mi-int-empty');
+
+  const apply = (filter) => {
+    let shown = 0;
+    mod.querySelectorAll('[data-int-surface]').forEach((surf) => {
+      let surfShown = 0;
+      surf.querySelectorAll('[data-int-row]').forEach((row) => {
+        const vis = filter === 'all' || row.getAttribute('data-status') === filter;
+        row.hidden = !vis;
+        if (vis) surfShown++;
+      });
+      surf.hidden = surfShown === 0;
+      shown += surfShown;
+    });
+    if (empty) empty.hidden = shown !== 0;
+    mod.querySelectorAll('[data-int-filter]').forEach((b) => {
+      const on = b.getAttribute('data-int-filter') === filter;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+
+  if (stats) {
+    stats.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-int-filter]');
+      if (!btn) return;
+      apply(btn.getAttribute('data-int-filter'));
+    });
+  }
+  apply('all');
+}
+
+/* ------------------------------------------------------------------ */
 /* Styles — scoped, self-contained so the module drops onto any shell  */
 /* ------------------------------------------------------------------ */
 
@@ -2450,6 +3308,257 @@ function moduleStyles() {
     .mi-code-spark-cap { display: flex; justify-content: space-between; gap: 10px; font-size: 0.68rem; color: var(--text-subtle); }
     .mi-code-updated { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-subtle); }
     .mi-code-updated .material-symbols-outlined { font-size: 15px !important; }
+
+    /* ---- Project Breakdown ---- */
+    .mi-projects-summary {
+      display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 20px;
+    }
+    .mi-projects-summary-item {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
+    }
+    .mi-projects-summary-item .material-symbols-outlined { font-size: 17px !important; color: var(--text-subtle); }
+    .mi-proj-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+    .mi-proj-card {
+      display: flex; align-items: flex-start; gap: 14px; text-align: left;
+      padding: 16px 16px 15px; border-radius: 16px; cursor: pointer; font: inherit;
+      border: 1px solid var(--border); background: var(--surface); color: inherit;
+      box-shadow: var(--shadow-1);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .mi-proj-card:hover {
+      transform: translateY(-3px); box-shadow: var(--shadow-2);
+      border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    }
+    .mi-proj-card:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-proj-ic {
+      flex: 0 0 42px; width: 42px; height: 42px; border-radius: 12px;
+      display: grid; place-items: center; color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    html.dark .mi-proj-ic { color: var(--primary-bright, #93C5FD); }
+    .mi-proj-ic .material-symbols-outlined { font-size: 23px !important; }
+    .mi-proj-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+    .mi-proj-title { font-size: 0.98rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+    .mi-proj-summary { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+    .mi-proj-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .mi-proj-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.6875rem; font-weight: 700; color: var(--text-muted);
+      padding: 3px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .mi-proj-tag { background: rgba(255,255,255,0.05); }
+    .mi-proj-tag .material-symbols-outlined { font-size: 13px !important; }
+    .mi-proj-tag--size { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    html.dark .mi-proj-tag--size { color: var(--primary-bright, #93C5FD); }
+    .mi-proj-go { align-self: center; flex: 0 0 auto; color: var(--text-subtle); font-size: 22px !important; transition: transform 0.16s ease, color 0.16s ease; }
+    .mi-proj-card:hover .mi-proj-go { transform: translateX(3px); color: var(--primary); }
+    html.dark .mi-proj-card:hover .mi-proj-go { color: var(--primary-bright, #93C5FD); }
+
+    /* ---- Slide-in breakdown drawer ---- */
+    .mi-drawer-scrim {
+      position: fixed; inset: 0; z-index: 1200;
+      background: color-mix(in srgb, #0b1220 42%, transparent);
+      opacity: 0; transition: opacity 0.24s ease;
+    }
+    .mi-drawer-scrim.is-open { opacity: 1; }
+    .mi-drawer-scrim[hidden] { display: none; }
+    .mi-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 1201;
+      width: min(460px, 92vw); display: flex; flex-direction: column;
+      background: var(--surface); border-left: 1px solid var(--border);
+      box-shadow: -18px 0 48px rgba(0,0,0,0.22);
+      transform: translateX(100%); transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .mi-drawer.is-open { transform: translateX(0); }
+    .mi-drawer[hidden] { display: none; }
+    .mi-drawer-head {
+      display: flex; align-items: center; gap: 12px; padding: 18px 18px 16px;
+      border-bottom: 1px solid var(--border); flex: 0 0 auto;
+    }
+    .mi-drawer-ic {
+      flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px;
+      display: grid; place-items: center; color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    html.dark .mi-drawer-ic { color: var(--primary-bright, #93C5FD); }
+    .mi-drawer-ic .material-symbols-outlined { font-size: 21px !important; }
+    .mi-drawer-titles { min-width: 0; flex: 1; }
+    .mi-drawer-eyebrow {
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--primary);
+    }
+    html.dark .mi-drawer-eyebrow { color: var(--primary-bright, #93C5FD); }
+    .mi-drawer-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.12rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; margin-top: 2px;
+    }
+    .mi-drawer-close {
+      flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+      display: grid; place-items: center;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .mi-drawer-close:hover { border-color: var(--primary); color: var(--primary); }
+    .mi-drawer-close .material-symbols-outlined { font-size: 19px !important; }
+    .mi-drawer-body { flex: 1; overflow-y: auto; padding: 18px; scrollbar-width: thin; }
+    .mi-drawer-lede { font-size: 0.875rem; color: var(--text-muted); margin: 0 0 14px; line-height: 1.5; }
+    .mi-drawer-stats { display: flex; gap: 8px; margin-bottom: 18px; }
+    .mi-drawer-stat {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 10px 8px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .mi-drawer-stat { background: rgba(255,255,255,0.04); }
+    .mi-drawer-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1; }
+    .mi-drawer-stat-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+
+    .mi-chunk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .mi-chunk {
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+      padding: 13px 14px; box-shadow: var(--shadow-1);
+    }
+    .mi-chunk-head { display: flex; align-items: center; gap: 10px; }
+    .mi-chunk-num {
+      flex: 0 0 22px; width: 22px; height: 22px; border-radius: 999px;
+      display: grid; place-items: center; font-size: 0.7rem; font-weight: 800;
+      background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary);
+    }
+    html.dark .mi-chunk-num { color: var(--primary-bright, #93C5FD); }
+    .mi-chunk-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .mi-chunk-eff {
+      flex: 0 0 auto; min-width: 26px; text-align: center;
+      font-size: 0.6875rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;
+      background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
+    }
+    .mi-chunk-eff[data-eff="S"] { color: #15803D; background: rgba(34,197,94,0.12); border-color: transparent; }
+    .mi-chunk-eff[data-eff="M"] { color: #b45309; background: rgba(245,158,11,0.14); border-color: transparent; }
+    .mi-chunk-eff[data-eff="L"] { color: #B91C1C; background: rgba(239,68,68,0.12); border-color: transparent; }
+    .mi-chunk-eff[data-eff="XL"] { color: #7c3aed; background: rgba(139,92,246,0.14); border-color: transparent; }
+    html.dark .mi-chunk-eff[data-eff="S"] { color: #4ADE80; }
+    html.dark .mi-chunk-eff[data-eff="M"] { color: #FBBF24; }
+    html.dark .mi-chunk-eff[data-eff="L"] { color: #F87171; }
+    html.dark .mi-chunk-eff[data-eff="XL"] { color: #C4B5FD; }
+    .mi-chunk-why { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin: 8px 0 0; }
+    .mi-chunk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .mi-chunk-chip {
+      display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; font: inherit;
+      font-size: 0.6875rem; font-weight: 700; padding: 4px 9px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted);
+      transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+    }
+    html.dark .mi-chunk-chip { background: rgba(255,255,255,0.05); }
+    .mi-chunk-chip .material-symbols-outlined { font-size: 13px !important; }
+    .mi-chunk-chip--comp:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    html.dark .mi-chunk-chip--comp:hover { color: var(--primary-bright, #93C5FD); }
+    .mi-chunk-chip--mod { color: var(--text); }
+    .mi-chunk-chip--mod:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--primary); }
+    html.dark .mi-chunk-chip--mod:hover { color: var(--primary-bright, #93C5FD); }
+
+    /* ---- Intent Chip Audit ---- */
+    .mi-int-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      gap: 10px; margin: 4px 0 18px;
+    }
+    .mi-int-stat {
+      display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer;
+      padding: 12px 14px; border-radius: 14px; font: inherit;
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+      transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+    }
+    .mi-int-stat:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+    .mi-int-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+    .mi-int-stat-num { font-size: 1.5rem; font-weight: 800; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+    .mi-int-stat-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .mi-int-stat-label .material-symbols-outlined { font-size: 18px !important; color: var(--text-subtle); }
+    .mi-int-stat--ok .mi-int-stat-num { color: #15803D; } html.dark .mi-int-stat--ok .mi-int-stat-num { color: #4ADE80; }
+    .mi-int-stat--ok.is-active { border-color: #22C55E; background: rgba(34,197,94,0.10); }
+    .mi-int-stat--warn .mi-int-stat-num { color: #B45309; } html.dark .mi-int-stat--warn .mi-int-stat-num { color: #FBBF24; }
+    .mi-int-stat--warn.is-active { border-color: #F59E0B; background: rgba(245,158,11,0.12); }
+    .mi-int-stat--bad .mi-int-stat-num { color: #B91C1C; } html.dark .mi-int-stat--bad .mi-int-stat-num { color: #F87171; }
+    .mi-int-stat--bad.is-active { border-color: #EF4444; background: rgba(239,68,68,0.10); }
+
+    /* Call-out panel */
+    .mi-int-callout {
+      border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
+      padding: 16px 18px; margin-bottom: 20px; box-shadow: var(--shadow-1);
+      border-left: 4px solid #F59E0B;
+    }
+    .mi-int-callout.is-clear { border-left-color: #22C55E; display: flex; align-items: center; gap: 12px; }
+    .mi-int-callout-head { display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+    .mi-int-callout-head strong { color: var(--text); }
+    .mi-int-callout-ic { flex: 0 0 auto; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; background: rgba(245,158,11,0.14); color: #B45309; }
+    html.dark .mi-int-callout-ic { color: #FBBF24; }
+    .mi-int-callout.is-clear .mi-int-callout-ic { background: rgba(34,197,94,0.14); color: #15803D; }
+    html.dark .mi-int-callout.is-clear .mi-int-callout-ic { color: #4ADE80; }
+    .mi-int-callout.is-clear .mi-int-callout-ic { width: 34px; height: 34px; }
+    .mi-int-gap-cols {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; margin-top: 14px;
+    }
+    .mi-int-gap-col { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px; }
+    .mi-int-gap-title { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 800; color: var(--text); }
+    .mi-int-gap-title .material-symbols-outlined { font-size: 17px !important; color: #B45309; }
+    html.dark .mi-int-gap-title .material-symbols-outlined { color: #FBBF24; }
+    .mi-int-gap-title--bad .material-symbols-outlined { color: #B91C1C; } html.dark .mi-int-gap-title--bad .material-symbols-outlined { color: #F87171; }
+    .mi-int-gap-n {
+      margin-left: auto; font-size: 0.7rem; font-weight: 800; padding: 1px 8px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-variant-numeric: tabular-nums;
+    }
+    .mi-int-gap-sub { font-size: 0.72rem; color: var(--text-subtle); margin: 5px 0 9px; line-height: 1.4; }
+    .mi-int-gap-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+    .mi-int-gap-list li { display: flex; align-items: baseline; gap: 8px; font-size: 0.78rem; }
+    .mi-int-gap-list li.is-empty { color: var(--text-subtle); font-style: italic; }
+    .mi-int-gap-surf { flex: 0 0 auto; font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em; }
+    .mi-int-gap-chip { color: var(--text); font-weight: 600; }
+
+    /* Per-surface list */
+    .mi-int-surfaces { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+    .mi-int-surface { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-1); overflow: hidden; }
+    .mi-int-surface[data-has-gap="1"] { border-color: color-mix(in srgb, #F59E0B 40%, var(--border)); }
+    .mi-int-shead { display: flex; align-items: center; gap: 11px; padding: 13px 15px; border-bottom: 1px solid var(--border); }
+    .mi-int-sic { flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+    html.dark .mi-int-sic { color: var(--primary-bright, #93C5FD); }
+    .mi-int-stitles { min-width: 0; flex: 1; }
+    .mi-int-sname { display: inline-flex; align-items: center; gap: 5px; font-size: 0.92rem; font-weight: 700; color: var(--text); text-decoration: none; }
+    .mi-int-sname:hover { color: var(--primary); } html.dark .mi-int-sname:hover { color: var(--primary-bright, #93C5FD); }
+    .mi-int-sname .material-symbols-outlined { font-size: 14px !important; color: var(--text-subtle); }
+    .mi-int-ssrc { display: block; margin-top: 1px; }
+    .mi-int-ssrc code { font-size: 0.68rem; color: var(--text-subtle); }
+    .mi-int-scount {
+      flex: 0 0 auto; font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-variant-numeric: tabular-nums;
+    }
+    .mi-int-scount.all-wired { color: #15803D; background: rgba(34,197,94,0.12); border-color: transparent; }
+    html.dark .mi-int-scount.all-wired { color: #4ADE80; }
+    .mi-int-scount.has-gap { color: #B45309; background: rgba(245,158,11,0.14); border-color: transparent; }
+    html.dark .mi-int-scount.has-gap { color: #FBBF24; }
+    .mi-int-snote { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 10px 15px 0; font-size: 0.74rem; color: var(--text-subtle); line-height: 1.45; }
+    .mi-int-snote .material-symbols-outlined { font-size: 15px !important; margin-top: 1px; }
+    .mi-int-chiplist { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .mi-int-chip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; }
+    .mi-int-chip:hover { background: var(--surface-2); }
+    .mi-int-chip-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .mi-int-chip-dot { flex: 0 0 auto; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; }
+    .mi-int-chip-dot .material-symbols-outlined { font-size: 16px !important; }
+    .mi-int-dot--wired { color: #16A34A; } html.dark .mi-int-dot--wired { color: #4ADE80; }
+    .mi-int-dot--talk, .mi-int-dot--act { color: #D97706; } html.dark .mi-int-dot--talk, html.dark .mi-int-dot--act { color: #FBBF24; }
+    .mi-int-dot--none { color: #DC2626; } html.dark .mi-int-dot--none { color: #F87171; }
+    .mi-int-chip-label { font-size: 0.82rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mi-int-chip-id { flex: 0 0 auto; font-size: 0.66rem; color: var(--text-subtle); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; }
+    .mi-int-badges { flex: 0 0 auto; display: flex; gap: 5px; }
+    .mi-int-badge {
+      display: inline-flex; align-items: center; gap: 3px; font-size: 0.64rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap;
+    }
+    .mi-int-badge .material-symbols-outlined { font-size: 13px !important; }
+    .mi-int-badge.is-ok { color: #15803D; background: rgba(34,197,94,0.12); border-color: transparent; }
+    html.dark .mi-int-badge.is-ok { color: #4ADE80; }
+    .mi-int-badge.is-no { color: #B91C1C; background: rgba(239,68,68,0.10); border-color: transparent; }
+    html.dark .mi-int-badge.is-no { color: #F87171; }
+    .mi-int-empty { grid-column: 1 / -1; padding: 26px; text-align: center; color: var(--text-subtle); font-size: 0.85rem; }
   </style>`;
 }
 
@@ -2467,7 +3576,8 @@ export function renderAllModules(mainEl) {
       <header class="mi-hero">
         <div class="mi-hero-text">
           <h1 class="mi-hero-title">All Modules</h1>
-          <p class="mi-hero-lede">An admin index of every module in the WISE app, plus the Codebase score
+          <p class="mi-hero-lede">An admin index of every module in the WISE app, plus the Project Breakdown
+            (the whole app sliced into projects and bite-sized, component-oriented chunks), the Codebase score
             cards (lines of code, trend, and page count), the Icon Inventory, the Design System (fonts, type
             scale, and every color token), and the Component Library — every reusable component rendered live
             in its default state, with where it's used. Use it as a design-system map and a jumping-off point
@@ -2479,8 +3589,10 @@ export function renderAllModules(mainEl) {
         </div>
       </header>
       ${renderSectionNav()}
+      ${renderProjects()}
       ${renderCodebase()}
       ${renderDirectory()}
+      ${renderIntentAudit()}
       ${renderIconInventory()}
       ${renderDesignSystem()}
       ${renderComponentLibrary()}
@@ -2488,9 +3600,11 @@ export function renderAllModules(mainEl) {
 
   wireView(mainEl);
   wireSectionNav(mainEl);
+  wireProjects(mainEl);
   wireCodebase(mainEl);
   wireDirectory(mainEl);
   wireRailFrames(mainEl);
+  wireIntentAudit(mainEl);
   wireIconInventory(mainEl);
   wireDesignSystem(mainEl);
   wireComponentLibrary(mainEl);
@@ -2514,9 +3628,12 @@ function moduleTotal() {
 
 function renderSectionNav() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
+  const projectChunks = PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0);
   const tiles = [
+    { id: 'mi-projects', icon: 'category', num: PROJECT_BREAKDOWN.length, label: 'Projects', sub: `${projectChunks} bite-sized chunks` },
     { id: 'mi-code', icon: 'code', num: fmtNum(CODE_STATS?.now?.total), label: 'Lines of code', sub: `${fmtNum(CODE_STATS?.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
+    { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chips', sub: 'Transcript + logic audit' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || 0, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
     { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
@@ -2573,6 +3690,12 @@ function runModuleAction(root, action) {
     case 'code-7': click('[data-code-win="7"]'); break;
     case 'code-30': click('[data-code-win="30"]'); break;
     case 'code-all': click('[data-code-win="all"]'); break;
+    case 'int-all': click('#mi-intents [data-int-filter="all"]'); break;
+    case 'int-talk': click('#mi-intents [data-int-filter="talk"]'); break;
+    case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
+    case 'proj-first': click('.mi-proj-grid [data-proj]'); break;
+    case 'proj-close': closeProjectDrawer(root); break;
+    case 'proj-components': root.querySelector('#mi-components')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
   }
 }
 
@@ -3143,16 +4266,25 @@ export const ALL_MODULES_WISEAI = {
   sub: 'Your app’s codebase stats, module map, icon inventory, design system and component library.',
   chipsFlow: 'wrap',
   intents: [
+    { intent: 'projects', label: 'Show me the project breakdown', icon: 'category' },
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
+    { intent: 'intents', label: 'Which intent chips work?', icon: 'bolt' },
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
     { intent: 'components', label: 'Jump to the Component Library', icon: 'widgets' },
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
+    projects: `The <strong>Project Breakdown</strong> slices the whole app into <strong>${PROJECT_BREAKDOWN.length} projects</strong> and <strong>${PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0)} bite-sized chunks</strong> — each chunk names the exact components and screens it touches. Tap any project card to open its breakdown panel.`,
     codebase: `The app is <strong>${fmtNum(CODE_STATS?.now?.total)} lines of code</strong> across <strong>${fmtNum(CODE_STATS?.now?.files)} files</strong> — ${fmtNum(CODE_STATS?.now?.html)} HTML, ${fmtNum(CODE_STATS?.now?.js)} JavaScript, ${fmtNum(CODE_STATS?.now?.css)} CSS and ${fmtNum(CODE_STATS?.now?.py)} Python — shipping <strong>${fmtNum(CODE_STATS?.now?.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`,
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
+    intents: () => {
+      const s = intentAuditStats();
+      return s.gaps
+        ? `I audited all <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong>: <strong>${s.wired} are fully wired</strong> (transcript + logic), while <strong>${s.gaps} are missing a half</strong> — ${s.talk} need logic, ${s.act} need their own transcript${s.none ? `, ${s.none} are fully unwired` : ''}. The <strong>Intent Chips</strong> module calls each one out.`
+        : `All <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong> are fully wired — every one carries both its own transcript and its own logic. See the <strong>Intent Chips</strong> module.`;
+    },
     icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used anywhere, with its variant, usage count, label, and exact placements.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
@@ -3163,6 +4295,16 @@ export const ALL_MODULES_WISEAI = {
        score cards into view AND let the sizing answer post in the thread. */
     if (intent === 'codebase') {
       document.getElementById('mi-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    if (intent === 'projects') {
+      document.getElementById('mi-projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    /* "Which intent chips work?" is a question — scroll to the audit module AND
+       let the state-aware answer post in the thread. */
+    if (intent === 'intents') {
+      document.getElementById('mi-intents')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return false;
     }
     const id = intent === 'icons' ? 'mi-icons'

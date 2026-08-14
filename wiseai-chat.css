@@ -800,6 +800,26 @@ html.dark .chip.chip-primary { background: var(--primary); border-color: var(--p
    white-bordered pills on the navy chrome. */
 html.dark .chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+/* Spent intent chip — once a chip has advanced the conversation you can't
+   scroll a turn back to re-run it, so it reads dimmed/opaque and is inert:
+   no pointer events, no hover lift, resting colours held. */
+.ws-intent-chip.is-used,
+.ws-intent-chip.is-used:hover {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--primary) 10%, #fff);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+}
+html.dark .ws-intent-chip.is-used,
+html.dark .ws-intent-chip.is-used:hover {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+  border-color: var(--primary);
+  color: var(--text-muted);
+}
 
 /* ===== Input rail — compact single-line bar (verbatim from ai-chat.html's
    refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
@@ -1234,6 +1254,17 @@ html.chat-compact .sc-welcome { padding: 1.25rem; }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
+/* ===== Brand AI text — three-dot menu ▸ "Brand AI text" (Admin, pink).
+   Recolours every WISEcodeAI transcript line to the brand blue APP-WIDE, while
+   the member's own lines keep the default (near-black) ink so the two speakers
+   read as distinct. A single global class (html.chat-brandtext) so every chat
+   module — and every transcript that uses the shared .sc-line-* classes —
+   recolours at once. Dark mode uses the brighter brand tone (--primary-bright)
+   so the AI copy stays legible on the navy card. KEEP IN SYNC with wise.css. */
+html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary); }
+html.dark.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+html.chat-brandtext .sc-line-you .sc-line-body { color: var(--text); }
+
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
    USDA…). The label sits centered above the chips, which wrap onto as many
@@ -1373,10 +1404,12 @@ html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, 
 .sc-trust-badge .material-symbols-outlined { font-size: 13px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-subtle)); }
 html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
-/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEcodeAI). */
+/* Per-line meta row — timestamp (both speakers) + grounding caption (WISEcodeAI).
+   Extra top/bottom breathing room so the timestamp + feedback + turn row reads as
+   its own band, separated from the bubble above and the next turn below. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 4px;
+  margin-top: 12px; margin-bottom: 8px;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
@@ -1387,6 +1420,21 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
 }
 .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+
+/* "Source of this output" caption — pinned to the very end of a chart / table /
+   report so the artifact always closes by naming the data source it was built
+   from. Set off from the output above with a hairline rule. */
+.sc-out-source {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, rgba(37, 80, 124, 0.14));
+  font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+.sc-out-source-ic { font-size: 14px !important; color: color-mix(in srgb, var(--primary) 70%, var(--text-muted)); }
+.sc-out-source-txt strong { font-weight: 700; color: var(--primary-ink, var(--primary)); }
+html.dark .sc-out-source-ic { color: var(--primary-bright, #8B9FAF); }
+html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 
 /* Typing indicator now carries a status label ("WISEcodeAI is checking…"). */
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }

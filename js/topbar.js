@@ -740,10 +740,13 @@ export function restoreColorblind() {
    together for low-vision users. This overrides the shared --border /
    --border-strong tokens with OPAQUE slate strokes tuned to clear 3:1 against
    every surface they sit on, in both modes (light: dark-slate edges on the pale
-   surfaces; dark: light-slate edges on the navy surfaces). Because it only
-   sharpens the boundary tokens, fills and text are untouched — no other
-   contrast pairing changes. Driven by a `sharp-edges` class on <html> (paired
-   with `dark` for the dark variant); persisted across navigation. */
+   surfaces; dark: light-slate edges on the navy surfaces). Because it mostly
+   sharpens the boundary tokens, fills and text are largely untouched. The one
+   fill retouch is the primary navigation container (#menu-panel .menu-inner),
+   which additionally gets tighter corners, a thinner hairline border and a
+   ~30% lighter surface so the rail reads crisp and light in this mode. Driven
+   by a `sharp-edges` class on <html> (paired with `dark` for the dark variant);
+   persisted across navigation. */
 const EDGES_KEY = 'wise-sharp-edges';
 const EDGES_STYLE_ID = 'wise-sharp-edges-style';
 
@@ -755,6 +758,26 @@ html.sharp-edges {
 html.sharp-edges.dark {
   --border: #9DB0C0;
   --border-strong: #C4D2DE;
+}
+
+/* Primary navigation crisping. In Sharper edges the nav rail's main container
+   (#menu-panel .menu-inner) should read crisper than the soft default: tighter
+   corners (near-square instead of the 16px pill), a thinner hairline stroke
+   instead of the full 1px edge, and a ~30% lighter surface so the container
+   sits lighter against the page. Only the primary-nav container is retouched —
+   its inner rows, headers and the rest of the app are untouched. */
+html.sharp-edges #menu-panel .menu-inner {
+  border-radius: 4px;
+  border-width: 0.5px;
+  background: linear-gradient(165deg,
+    color-mix(in srgb, var(--surface) 70%, #fff) 0%,
+    color-mix(in srgb, var(--surface-2) 70%, #fff) 100%);
+}
+html.sharp-edges.dark #menu-panel .menu-inner {
+  border-width: 0.5px;
+  background: linear-gradient(155deg,
+    color-mix(in srgb, #1A2339 70%, #fff) 0%,
+    color-mix(in srgb, #1A2339 70%, #fff) 100%);
 }`;
 
 /** Inject the sharp-edges stylesheet once (idempotent). */

@@ -59,7 +59,12 @@ import {
   currentJamSongLabel,
 } from './jam-strip.js';
 import { getStoredFontSize, setTextSize } from './text-size.js';
-import { isActivityStripOn, applyActivityStrip } from './chat-activity-strip.js';
+import {
+  isActivityStripOn,
+  applyActivityStrip,
+  getActivityStripSide,
+  setActivityStripSide,
+} from './chat-activity-strip.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -146,6 +151,32 @@ function syncJamPop(root) {
   return true;
 }
 
+/** "Activity strip side" segmented control — only revealed once the Activity
+    strip is switched on, so the picker never clutters the menu when unused. Each
+    button carries a `data-actside` id that wireAppearancePopover() turns into the
+    matching edge (left = default, right = opt-in) via setActivityStripSide().
+    Wears the same admin-only pink outline + "Admin" badge as Module spacing, so
+    it reads as an admin capability: a two-position toggle (Left on / Right off). */
+function activityStripSideSection() {
+  if (!isActivityStripOn()) return '';
+  const active = getActivityStripSide();
+  const opts = [
+    { id: 'left', label: 'Left' },
+    { id: 'right', label: 'Right' },
+  ];
+  const btns = opts
+    .map(
+      (o) =>
+        `<button type="button" class="mg-seg-btn${o.id === active ? ' is-active' : ''}" data-actside="${o.id}" aria-label="Activity strip on ${o.label.toLowerCase()}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
+    )
+    .join('');
+  return `
+    <div class="mg-size act-side-row">
+      <span class="mg-size-label">Activity strip side<span class="wise-popover-badge">Admin</span></span>
+      <div class="mg-seg" role="group" aria-label="Activity strip side">${btns}</div>
+    </div>`;
+}
+
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
   if (!showPivot) return '';
@@ -197,9 +228,30 @@ function moduleGapSection() {
     </div>`;
 }
 
+/** Read the last accessibility-audit verdict for the theme we're rendering in
+    (the review page publishes 'pass' / 'warn' / 'fail' per theme to localStorage).
+    Returns '' when nothing has been recorded yet OR when the review found no
+    problems — in both cases the badge stays green ("pass"), since the shipping
+    palette clears AAA in both themes. */
+function a11yVerdictClass() {
+  try {
+    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const store = JSON.parse(localStorage.getItem('wise-a11y-verdict')) || {};
+    const v = store[theme];
+    if (v === 'warn') return ' is-warn';
+    if (v === 'fail') return ' is-fail';
+    return ' is-pass';
+  } catch (e) {
+    return ' is-pass';
+  }
+}
+
 /** Link out to the standalone WCAG audit. The review lives in pages/, so the
     href is resolved against wherever the calling shell is mounted (app pages
-    sit in pages/, the root shell one level up) — same rule as auth-guard.js. */
+    sit in pages/, the root shell one level up) — same rule as auth-guard.js.
+    The trailing "Admin" badge is tinted by the live audit verdict (green pass /
+    amber warn / red fail) so it signals how well the app scores, not just that
+    it's an admin surface. */
 function accessibilityReviewSection() {
   let href = 'pages/accessibility-review.html';
   try {
@@ -208,7 +260,7 @@ function accessibilityReviewSection() {
   return `
     <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review">
       <span class="material-symbols-outlined">accessibility_new</span>Accessibility review
-      <span class="wise-popover-badge">Admin</span>
+      <span class="wise-popover-badge${a11yVerdictClass()}">Admin</span>
       <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
     </a>`;
 }
@@ -271,6 +323,7 @@ export function buildAppearanceBody({
     ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
     ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
     ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
+    ${activityStripSideSection()}
     ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
     ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
     ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
@@ -284,8 +337,6 @@ export function buildAppearanceBody({
           .join('')}
       </div>
     </div>
-    <div class="wise-popover-divider"></div>
-    ${moduleGapSection()}
     <div class="wise-popover-divider"></div>
     <div class="wise-popover-item" data-pop-action="theme">
       <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
@@ -372,6 +423,7 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
 export function wireAppearancePopover(pop, ctx = {}) {
   if (!pop || pop.dataset.appearanceWired === '1') return;
   pop.dataset.appearanceWired = '1';
+  pop.classList.add('wise-popover--appearance');
   const render = () => { try { ctx.render?.(); } catch (_) {} };
 
   pop.addEventListener('click', (ev) => {
@@ -392,6 +444,8 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-composer2]'))   { ev.stopPropagation(); applyComposerV2(!isComposerV2On());  render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
+    const actSide = within('[data-actside]');
+    if (actSide) { ev.stopPropagation(); setActivityStripSide(actSide.dataset.actside); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }

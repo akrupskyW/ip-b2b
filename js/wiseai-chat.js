@@ -23,6 +23,16 @@ import './chat-history.js';
    back to their initials otherwise. */
 import { userAvatarImg } from './user-avatar.js';
 
+/* Activity strip — the thin landmark rail pinned to the chat's edge. Mounted
+   from here so EVERY page that uses this shared chat gets it (styles are
+   injected by the strip module itself); toggled from the three-dot menu. */
+import {
+  isActivityStripOn,
+  applyActivityStrip,
+  restoreActivityStrip,
+  mountActivityStrip,
+} from './chat-activity-strip.js';
+
 /* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
    WISEcodeAI dock can reuse the exact same mark for its collapsed floating circle. */
 export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>`;
@@ -142,6 +152,15 @@ function esc(s) {
     .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/* Split a label into per-letter spans so CSS can run a staggered, text-clipped
+   gold shimmer across it (used by the "What can I ask?" link). Spaces stay as
+   plain text; each glyph carries its index for the animation-delay stagger. */
+function shimmerLetters(label) {
+  return String(label).split('').map((ch, i) =>
+    ch === ' ' ? ' ' : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
+  ).join('');
 }
 
 /* Animate a "live" food-count read-out: ease up from zero to the seeded total,
@@ -712,6 +731,29 @@ function injectChatExtras() {
        row's pink text + Admin badge) instead of the default brand-blue. */
     .sc-mcp-item.is-on .sc-switch--pink { background: rgb(219, 39, 119); border-color: rgb(219, 39, 119); }
 
+    /* "Response streaming" — one regular (brand-blue) on/off switch row, with a
+       detail picker beneath it choosing how much of the thinking streams
+       (Full · Steps · Final). The picker uses the app's canonical segmented
+       control (matching Appearance's Text size / Module spacing): a small
+       section label above one connected, pill-shaped track with a brand-fill
+       active segment. The whole block dims and stops accepting clicks while the
+       master switch is off. */
+    .sc-stream-detail { display: flex; flex-direction: column; gap: 7px;
+      margin: 4px 12px 8px 42px; transition: opacity .15s ease; }
+    .sc-stream-detail-label { font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-muted); }
+    .sc-stream-seg { display: flex; width: 100%; border: 1px solid var(--border-strong);
+      border-radius: 9999px; overflow: hidden; }
+    .sc-stream-seg-btn { flex: 1 1 0; min-width: 0; height: 28px; border: 0;
+      border-left: 1px solid var(--border-strong); background: transparent;
+      font: inherit; font-size: 11.5px; font-weight: 700; line-height: 1;
+      color: var(--text-muted); cursor: pointer; white-space: nowrap;
+      transition: background .14s ease, color .14s ease; }
+    .sc-stream-seg-btn:first-child { border-left: 0; }
+    .sc-stream-seg-btn:hover { background: var(--surface-3); color: var(--text); }
+    .sc-stream-seg-btn.is-on { background: var(--primary); color: #fff; }
+    .sc-stream-detail.is-disabled { opacity: .45; pointer-events: none; }
+
     .wch-conn-intro { margin: 2px 16px 8px; font-size: 12px; line-height: 1.45; opacity: .7; }
     .wch-conn-list { flex: 1; overflow-y: auto; padding: 2px 8px 12px; }
     .wch-conn-row { display: flex; align-items: center; gap: 11px; width: 100%; margin: 2px 0; padding: 9px 10px;
@@ -939,6 +981,191 @@ function injectChatExtras() {
     .sc-activity-val b { color: #6bd68a; font-weight: 700; }
     .sc-activity-val em { color: #7fb0ff; font-style: normal; }
     .sc-activity-val .sc-activity-muted { color: #7c8798; }
+
+    /* Below-input meta row — hosts the optional "What can I ask?" link on the
+       left while keeping the activity dots centered (3-col grid). */
+    .sc-belowinput { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+    .sc-belowinput .sc-activity { grid-column: 2; }
+    .sc-belowinput--ask .sc-ask-help { grid-column: 1; justify-self: start; }
+    /* "What can I ask?" — a quiet gold text link (no icon) that opens the
+       right-docked help panel. Its text is left-aligned with the composer's
+       placeholder text above. Because that inset shifts with the composer
+       layout (wide vs. narrow grid vs. v1) and the module's width, the exact
+       left margin is measured and set at runtime by alignAskHelp(); the 39px
+       here is only a pre-measurement default to avoid a first-paint jump. */
+    .sc-ask-help { display: inline-flex; align-items: center; margin: 7px 0 1px 39px;
+      padding: 3px 6px; border: 0; background: transparent; border-radius: 8px; cursor: pointer;
+      font: inherit; font-size: 12.5px; font-weight: 400; line-height: 1.2; letter-spacing: .01em;
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 78%, #000); transition: background .15s ease, color .15s ease; }
+    .sc-ask-help:hover { background: var(--surface-3, rgba(20,40,80,0.06)); }
+    /* Dark mode keeps the full-brightness gold — the darkened mix goes muddy
+       against the navy surface. */
+    html.dark .sc-ask-help { color: var(--ter-amber, #FFC434); }
+    html.dark .sc-ask-help:hover { background: rgba(255,255,255,0.07); }
+    /* Gold shimmer, clipped through the glyphs: each letter carries a wide
+       gradient (flat gold with a narrow bright band in the middle) painted only
+       inside the text via background-clip. Once per ~7.5s cycle the band sweeps
+       slowly across each letter while it bubbles up ~1.5px; per-letter
+       animation-delay staggers the phase so the shine travels left-to-right
+       across the whole label. At both keyframe extremes only flat gold is in
+       view, so the infinite-loop seam is invisible. */
+    .sc-ask-help .sc-ask-ch { display: inline-block;
+      /* Darker gold FILL (deep amber) with the shimmer band riding a touch
+         brighter than the base — so the glyph interior stays the darker tone
+         while a lighter gold sweeps through. */
+      background: linear-gradient(105deg,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
+        var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
+      background-size: 250% 100%; background-position: 100% 0;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      /* Lighter-gold hairline OUTLINE hugging each glyph edge — the darker
+         fill above still reads through since the stroke only traces the edges. */
+      -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
+      animation: sc-ask-shimmer 7.5s ease-in-out infinite;
+      animation-delay: calc(var(--ch-i, 0) * 90ms); }
+    @keyframes sc-ask-shimmer {
+      0%, 8%    { background-position: 100% 0; transform: translateY(0); }
+      20%       { transform: translateY(-1.5px); }
+      34%, 100% { background-position: 0% 0; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sc-ask-help .sc-ask-ch { animation: none; }
+    }
+
+    /* "What can I ask?" INTENT CHIP — the gold-bordered twin of the link above.
+       It rides at the end of every welcome chip set whenever the link is shown;
+       clicking it starts a page-specific "here's what you can ask" chat turn.
+       Doubled .chip selector so these outrank the base .ws-intent-chip rules in
+       wiseai-chat.css / wise.css. */
+    .chip.ws-intent-chip--askhelp {
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 75%, var(--border-strong));
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 9%, #fff);
+    }
+    .chip.ws-intent-chip--askhelp .material-symbols-outlined { color: inherit; }
+    .chip.ws-intent-chip--askhelp:hover {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, #fff);
+      border-color: var(--ter-amber, #FFC434);
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 50%, #000);
+    }
+    /* Dark mode: gold-tinted glass over the navy chrome, full-brightness gold
+       text (the darkened mix goes muddy on navy — same call as the link). */
+    html.dark .chip.ws-intent-chip--askhelp {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 12%, transparent);
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 70%, transparent);
+      color: var(--ter-amber, #FFC434);
+    }
+    html.dark .chip.ws-intent-chip--askhelp:hover {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 20%, transparent);
+      border-color: var(--ter-amber, #FFC434);
+    }
+    /* The bulleted ask-list inside the chip's "what can I ask" reply. */
+    .sc-line-body .sc-askhelp-list { margin: 8px 0; padding-left: 18px; }
+    .sc-line-body .sc-askhelp-list li { margin: 4px 0; }
+
+    /* "What can I ask?" side panel (same .wch-sidebar shell as Connect a data
+       source). Presents the surface's OWN suggestions — the welcome scorecards
+       and intent chips — as insertable prompt cards, grouped into sections.
+       Each card can be dropped straight into the composer (icon) or sent as its
+       own turn ("off you go"). A search field filters the prompts, and the
+       header's breakout icon detaches the panel OUT of the chat into a large
+       fixed board (portaled to <body>) so long prompt sets read as a gallery. */
+    .wch-ask-empty { padding: 18px 16px; color: var(--text-subtle); font-size: 13px; }
+    .wch-ask-intro { margin: 2px 16px 6px; font-size: 12px; line-height: 1.45; opacity: .7; }
+    .wch-ask-list { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
+    .wch-ask-group { margin: 8px 0 4px; }
+    .wch-ask-group + .wch-ask-group { margin-top: 14px; }
+    .wch-ask-group-title { display: flex; align-items: center; gap: 7px; padding: 2px 6px 8px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .55; }
+    .wch-ask-group-title .material-symbols-outlined { font-size: 15px; opacity: .8; }
+    .wch-ask-cards { display: flex; flex-direction: column; gap: 6px; }
+
+    .wch-ask-card { position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%;
+      padding: 11px 12px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.02);
+      border-radius: 12px; cursor: pointer; text-align: left; color: inherit; font-family: inherit;
+      transition: background .14s ease, border-color .14s ease, transform .12s ease, box-shadow .14s ease; }
+    .wch-ask-card:hover { background: rgba(255,255,255,0.055); border-color: rgba(255,255,255,0.16);
+      transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.22); }
+    html:not(.dark) .wch-ask-card { border-color: rgba(20,40,80,0.10); background: rgba(20,40,80,0.015); }
+    html:not(.dark) .wch-ask-card:hover { background: rgba(20,40,80,0.045); border-color: rgba(20,40,80,0.18);
+      box-shadow: 0 8px 20px rgba(20,30,60,0.10); }
+    .wch-ask-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 9px; margin-top: 1px;
+      background: color-mix(in srgb, var(--primary, #2F6DF6) 16%, transparent);
+      color: var(--primary-ink, var(--primary, #2F6DF6)); }
+    .wch-ask-ico .material-symbols-outlined { font-size: 19px; }
+    .wch-ask-card--gold .wch-ask-ico { background: color-mix(in srgb, var(--ter-amber, #FFC434) 22%, transparent);
+      color: var(--ter-amber-text, #B5851B); }
+    html.dark .wch-ask-card--gold .wch-ask-ico { color: var(--ter-amber, #FFC434); }
+    .wch-ask-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+      padding-right: 26px; }
+    .wch-ask-card-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
+    .wch-ask-card-desc { font-size: 11.5px; line-height: 1.4; opacity: .62; }
+    .wch-ask-card-q { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.4; opacity: .82;
+      font-style: italic; color: var(--primary-ink, var(--primary, #2F6DF6)); }
+
+    /* Insert-into-composer control — the "some sort of an icon" that drops the
+       prompt into the input without sending, so it can be tweaked first. The
+       whole card SENDS the prompt straight away ("off you go"). */
+    .wch-ask-insert { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center;
+      justify-content: center; width: 26px; height: 26px; border: 0; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,0.06); color: var(--text-muted); opacity: 0;
+      transition: background .14s ease, color .14s ease, opacity .14s ease; }
+    html:not(.dark) .wch-ask-insert { background: rgba(20,40,80,0.06); }
+    .wch-ask-card:hover .wch-ask-insert, .wch-ask-card:focus-within .wch-ask-insert { opacity: 1; }
+    .wch-ask-insert:hover { background: var(--primary, #2F6DF6); color: #fff; }
+    .wch-ask-insert .material-symbols-outlined { font-size: 16px; }
+    @media (hover: none) { .wch-ask-insert { opacity: 1; } }
+
+    /* Header controls row — a breakout (expand) toggle sits left of the close
+       button, matching the shared .wch-head layout. */
+    .wch-head-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+      border: 0; border-radius: 8px; background: none; cursor: pointer; color: var(--text-muted);
+      transition: background .14s ease, color .14s ease; }
+    .wch-head-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    html:not(.dark) .wch-head-btn:hover { background: rgba(20,40,80,0.06); }
+    .wch-head-btn .material-symbols-outlined { font-size: 19px; }
+
+    /* Search row — pinned above the prompt list so long libraries can be
+       filtered by keyword (mirrors the Turns module's search field). */
+    .wch-ask-search { display: flex; align-items: center; gap: 7px; margin: 0 12px 8px; padding: 0 10px;
+      height: 36px; border: 1px solid rgba(255,255,255,0.10); border-radius: 10px; background: rgba(255,255,255,0.03);
+      transition: border-color .14s ease, background .14s ease; }
+    .wch-ask-search:focus-within { border-color: color-mix(in srgb, var(--primary, #2F6DF6) 55%, transparent);
+      background: rgba(255,255,255,0.05); }
+    html:not(.dark) .wch-ask-search { border-color: rgba(20,40,80,0.12); background: rgba(20,40,80,0.02); }
+    .wch-ask-search > .material-symbols-outlined { font-size: 18px; opacity: .6; }
+    .wch-ask-search-input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; color: inherit;
+      font-family: inherit; font-size: 13px; }
+    .wch-ask-search-input::placeholder { color: var(--text-subtle); opacity: .8; }
+    .wch-ask-search-clear { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+      border: 0; border-radius: 6px; background: rgba(255,255,255,0.06); color: var(--text-muted); cursor: pointer; }
+    .wch-ask-search-clear:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+    html:not(.dark) .wch-ask-search-clear { background: rgba(20,40,80,0.06); }
+    .wch-ask-search-clear .material-symbols-outlined { font-size: 15px; }
+
+    /* Break-out board — the panel detaches from the chat and portals to <body>
+       as a large, fixed drawer that escapes the narrow chat column, laying the
+       prompts out as a multi-column gallery. Reuses the shared .wch-right enter/
+       exit animation, just at board scale. */
+    .wch-scrim.wch-ask-board-scrim { position: fixed; inset: 0; z-index: 4000;
+      background: rgba(4,8,18,0.58); backdrop-filter: blur(2px); }
+    .wch-sidebar.wch-ask-panel.wch-ask-board { position: fixed; top: 0; bottom: 0; right: 0; left: auto;
+      width: min(940px, 96vw); max-width: 96vw; z-index: 4001; border-radius: 18px 0 0 18px;
+      box-shadow: -18px 0 60px rgba(0,0,0,0.46); }
+    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-intro { font-size: 13px; }
+    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-cards { display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-list { padding: 6px 18px 20px; }
+    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-search { margin: 0 18px 10px; }
+    @media (max-width: 620px) {
+      .wch-sidebar.wch-ask-panel.wch-ask-board { width: 100vw; max-width: 100vw; border-radius: 0; }
+      .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-cards { grid-template-columns: 1fr; }
+    }
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
@@ -1378,6 +1605,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      tearing down the chat — e.g. a persistent marketing dock that re-skins its
      quick-actions to match whichever page you're on. */
   let intents = (opts.intents || DEFAULT_INTENTS).slice();
+  /* Intent chips are one-shot: a clicked chip advances the conversation, and
+     you can't scroll a turn back to re-run it, so a chip that has already
+     driven a turn is "spent" — rendered dimmed/opaque and non-interactive.
+     Tracked by intent id for THIS surface; a fresh contextual chip set
+     (setIntents) or a full reset() clears it. Control chips that open a panel
+     rather than advancing the thread (choose_agents, connect_source) are never
+     marked spent. */
+  const usedIntents = new Set();
   const placeholder = opts.placeholder || 'Type your message';
   /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK").
      When the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
@@ -1400,8 +1635,49 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const r = intentReplies[intent];
       return typeof r === 'function' ? r(text, intent) : r;
     }
+    /* The gold "What can I ask?" chip gets a built-in page-aware answer unless
+       the host supplied its own via intentReplies.ask_help above. */
+    if (intent === 'ask_help') return askHelpReplyHtml();
     return baseReply(text, intent);
   };
+
+  /* The transcript the gold "What can I ask?" chip produces — page-specific by
+     construction: it names the page (derived from the document title) and
+     enumerates the surface's OWN quick-action chips, each with its full example
+     question where one exists. Because every surface mounts the chat with its
+     own chip set (and swaps them via setIntents), the same chip yields a
+     different, accurate answer on every page. */
+  function askHelpReplyHtml() {
+    /* Page identity from the document title — handles both house patterns:
+       "WISE · Product Portfolio" and "WISEcodeAI — Reformulation Studio · …". */
+    let page = '';
+    try {
+      const t = String(document.title || '');
+      let m = t.match(/^WISE\s*·\s*(.+)$/i);
+      if (m) page = m[1];
+      else {
+        m = t.match(/^WISEcodeAI(?:\u2122)?\s*[—–-]\s*(.+)$/i);
+        page = (m ? m[1] : t).split('·')[0];
+      }
+      page = page.trim();
+    } catch (_) { /* non-browser host */ }
+    /* Control chips open panels rather than answering questions, so they don't
+       belong in a "what can I ask" listing. */
+    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+    const rows = intents.filter((c) => c && c.label && !CONTROL.has(c.intent));
+    const items = rows.map((c) => {
+      const q = c.ask && c.ask !== c.label ? ` — <em>\u201C${esc(c.ask)}\u201D</em>` : '';
+      return `<li><strong>${esc(c.label)}</strong>${q}</li>`;
+    }).join('');
+    const intro = page
+      ? `Here\u2019s what you can ask me on <strong>${esc(page)}</strong> — everything below is grounded in what this page can actually do:`
+      : 'Here\u2019s what you can ask me on this page:';
+    const list = items ? `<ul class="sc-askhelp-list">${items}</ul>` : '';
+    const outro = items
+      ? 'You can also just type a question in your own words — I\u2019ll route it to the right agents.'
+      : 'Just type a question in your own words — I\u2019ll route it to the right agents.';
+    return `${intro}${list}${outro}`;
+  }
   /* Microcopy (use `!== undefined` so a caller can pass '' to hide). The
      data-handling reassurances now live in the input placeholder, so the
      welcome no longer renders a separate trust-badge row. */
@@ -1414,6 +1690,29 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      and, on hover, reveals a compact telemetry read-out (tokens, cache, cost,
      turns) for the current turn and the whole conversation. */
   const activityOn = opts.activity === true;
+
+  /* "What can I ask?" affordance — a small gold text link docked below and to
+     the LEFT of the input (sharing the row with the activity dots) that opens
+     a right-docked side panel (same shell as "Connect a data source"). ON by
+     default for every chat mount so it appears in the same place everywhere;
+     pass askHelp:false to suppress it on a specific surface. */
+  const askHelpOn = opts.askHelp !== false;
+  const askHelpLabel = opts.askHelpLabel || 'What can I ask?';
+
+  /* Whenever the "What can I ask?" link is shown, a gold-bordered intent chip
+     with the same label ALWAYS rides along in the welcome chip set. Unlike the
+     link (which opens the side panel), clicking the chip starts a real chat
+     turn: a page-specific transcript of everything you can ask on THIS surface,
+     built from the surface's own quick-action chips (see askHelpReplyHtml).
+     Appended to every chip set — including runtime swaps via setIntents — and
+     never marked "spent", so it's a standing affordance like the link itself. */
+  const ASK_HELP_INTENT = 'ask_help';
+  const withAskHelpChip = (list) => {
+    if (!askHelpOn) return list;
+    if (list.some((c) => c && c.intent === ASK_HELP_INTENT)) return list;
+    return list.concat({ intent: ASK_HELP_INTENT, label: askHelpLabel, icon: 'help', ask: askHelpLabel });
+  };
+  intents = withAskHelpChip(intents);
 
   /* ── "Open module" narration ──────────────────────────────────────────────
      Any WISEcodeAI reply that narrates opening a companion module ("Opened the
@@ -1559,9 +1858,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      edge fades) has been retired everywhere, so `opts.chipsFlow` is ignored on
      purpose and no caller can bring the carousel back. */
 
-  const buildChipsHtml = () => intents.map((c, i) =>
-    `<button type="button" class="chip ws-intent-chip" data-intent="${i}"><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`
-  ).join('');
+  const buildChipsHtml = () => intents.map((c, i) => {
+    const spent = !!(c && c.intent && usedIntents.has(c.intent));
+    /* The "What can I ask?" chip wears the gold border that pairs it with the
+       below-input gold link of the same name. */
+    const gold = c && c.intent === ASK_HELP_INTENT ? ' ws-intent-chip--askhelp' : '';
+    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`;
+  }).join('');
   let chipsHtml = buildChipsHtml();
 
   const chipsContainerHtml = `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`;
@@ -1616,6 +1919,49 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (localStorage.getItem(COMPACT_PREF_KEY) === '0') compactDefaultOn = false;
   } catch (_) {}
   document.documentElement.classList.toggle('chat-compact', compactDefaultOn);
+  /* "Brand AI text" (three-dot ▸ Admin, pink) recolours the transcript APP-WIDE:
+     every WISEcodeAI line's copy takes the brand blue, while the member's own
+     lines keep the default (near-black) ink. Like Compact spacing it flips one
+     global class on <html> (chat-brandtext) so every mounted chat module — and
+     every transcript across the app — responds at once; the shared preference is
+     persisted and re-applied on mount so a reload keeps the chosen scheme. */
+  const BRANDTEXT_PREF_KEY = 'wise:chat-brandtext';
+  /* OFF by default — the standard scheme keeps both speakers in the same ink.
+     A stored '1' (the user turned it ON) always wins so their choice sticks. */
+  let brandtextDefaultOn = false;
+  try {
+    if (localStorage.getItem(BRANDTEXT_PREF_KEY) === '1') brandtextDefaultOn = true;
+  } catch (_) {}
+  document.documentElement.classList.toggle('chat-brandtext', brandtextDefaultOn);
+  /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
+     shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
+     broadcast on the wise:chat-stream-level event) so every mounted chat module
+     stays in lockstep, and persisted so the choice sticks across reloads:
+       • 'full'  — the full reasoning trace: every milestone step PLUS the
+                   subdued "glob" story text that streams in beneath each
+                   (the default, unchanged behaviour).
+       • 'steps' — the milestone STEPS only, appearing one after another, with
+                   NONE of the glob story text in between them.
+       • 'final' — no trace at all: just a brief thinking beat, then the answer.
+     The host can seed the initial mode with `streamLevelDefault`; a stored
+     preference always wins so the user's own choice is honoured. */
+  const STREAM_PREF_KEY = 'wise:chat-stream-level';
+  const STREAM_LEVELS = ['full', 'steps', 'final'];
+  let streamLevel = STREAM_LEVELS.includes(opts.streamLevelDefault) ? opts.streamLevelDefault : 'full';
+  try {
+    const v = localStorage.getItem(STREAM_PREF_KEY);
+    if (STREAM_LEVELS.includes(v)) streamLevel = v;
+  } catch (_) {}
+  /* Master "Response streaming" on/off switch (regular brand-blue, not Admin).
+     ON (the default) streams the thinking at the chosen level above; OFF skips
+     the trace entirely — the answer just lands after the briefest beat. Shared
+     APP-WIDE like the level (own key, broadcast on wise:chat-stream-on) and
+     persisted; only an explicit stored '0' keeps it off. */
+  const STREAM_ON_PREF_KEY = 'wise:chat-stream-on';
+  let streamOn = true;
+  try {
+    if (localStorage.getItem(STREAM_ON_PREF_KEY) === '0') streamOn = false;
+  } catch (_) {}
   const persistChipsHtml = persistChips
     ? `<div class="ws-chips-bar ws-chips-wrap" id="${id}-pchips-wrap" aria-label="Quick actions">
         <div class="ws-chips" id="${id}-pchips" role="list">${chipsHtml}</div>
@@ -1671,6 +2017,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          <div class="topbar-menu-divider"></div>
+          <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
+          <div class="sc-stream-detail">
+            <span class="sc-stream-detail-label">Streaming detail</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
+              <button type="button" class="sc-stream-seg-btn is-on" data-sc="stream-level" data-stream="full" role="radio" aria-checked="true" title="Full thinking" aria-label="Full thinking">Full</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="steps" role="radio" aria-checked="false" title="Steps only" aria-label="Steps only">Steps</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="final" role="radio" aria-checked="false" title="Final only" aria-label="Final only">Final</button>
+            </div>
+          </div>
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
@@ -1723,7 +2081,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
         </div>
       </div>
-      ${activityOn ? buildActivityHtml(id, title) : ''}
+      ${(askHelpOn || activityOn) ? `<div class="sc-belowinput${askHelpOn ? ' sc-belowinput--ask' : ''}">
+        ${askHelpOn ? `<button type="button" class="sc-ask-help" id="${id}-ask-help" data-sc="ask-help" aria-label="${esc(askHelpLabel)}"><span aria-hidden="true">${shimmerLetters(askHelpLabel)}</span></button>` : ''}
+        ${activityOn ? buildActivityHtml(id, title) : ''}
+      </div>` : ''}
       ${connectorsHtml}
       ${disclaimer ? `<p class="sc-disclaimer"><span class="material-symbols-outlined">shield</span>${esc(disclaimer)}</p>` : ''}
     </div>`;
@@ -2330,6 +2691,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function runReasoningTrace(milestones, done, tail, sourceLine) {
     if (!messages) { if (done) done(); return; }
     detachInlineChips();
+    /* Streaming switched OFF — no trace, no thinking beat: the answer lands
+       right away (one frame's delay keeps the transcript's ordering intact). */
+    if (!streamOn) {
+      setTimeout(() => { if (done) done(); }, prefersReducedMotion ? 0 : 120);
+      return;
+    }
+    /* "Final message only" — skip the reasoning trace entirely. A brief thinking
+       beat (the standard typing line) stands in for the work, then the answer
+       lands. No milestone steps, no glob story text. */
+    if (streamLevel === 'final') {
+      const typing = showTyping();
+      const wait = prefersReducedMotion ? 240 : 460 + Math.random() * 520;
+      setTimeout(() => { if (typing) typing.remove(); if (done) done(); }, wait);
+      return;
+    }
+    /* "Steps only" — show the milestone STEPS as they land, but suppress the
+       subdued glob story text that normally streams in beneath each one. */
+    const showGlobs = streamLevel !== 'steps';
     const steps = (Array.isArray(milestones) && milestones.length)
       ? milestones.slice() : [{ key: 'Thinking', story: ['Gathering the details.'] }];
     /* A trailing "assembling" milestone (built from what the answer will contain)
@@ -2342,9 +2721,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`
       + `<div class="sc-line-body"><div class="sc-trace" data-open="1">`
       + `<button type="button" class="sc-trace-head" aria-expanded="true">`
-      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
       + `<span class="sc-trace-title">Thinking</span>`
       + `<span class="sc-trace-timer" aria-hidden="true">0:00</span>`
+      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
       + `</button><div class="sc-trace-body"></div></div></div>`;
     messages.appendChild(el);
     scrollDown();
@@ -2420,10 +2799,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       bodyEl.appendChild(block);
       scrollDown();
       const storyEl = block.querySelector('.sc-trace-story');
-      const lines = (m.story || []).slice();
+      /* Steps-only mode drops the glob story text (and the trailing grounding
+         line) so the trace reads as a clean list of steps landing one by one. */
+      const lines = showGlobs ? (m.story || []).slice() : [];
       /* The very last glob line of the whole trace names the data source the
          answer is grounded in (rendered as HTML so the source reads in bold). */
-      if (mi === steps.length - 1 && sourceLine) lines.push({ html: sourceLine });
+      if (showGlobs && mi === steps.length - 1 && sourceLine) lines.push({ html: sourceLine });
       let si = 0;
       const streamLine = () => {
         if (si >= lines.length) {
@@ -2431,8 +2812,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           landmarks.push({ key: m.key, time: fmtTraceClock(now()) });
           mi += 1;
           /* Keep the flow continuous — a short beat, not a full stop, so the
-             next glob starts building right where the last one left off. */
-          setTimeout(runMilestone, rnd(140, 320));
+             next glob starts building right where the last one left off. In
+             steps-only mode there's no glob to read, so hold each step a touch
+             longer instead, keeping the sequence legible. */
+          setTimeout(runMilestone, showGlobs ? rnd(140, 320) : rnd(360, 640));
           return;
         }
         const line = lines[si];
@@ -2456,18 +2839,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     setTimeout(runMilestone, rnd(220, 520));
   }
 
-  /* The trace's closing line names which connected data source the answer is
-     grounded in. It's drawn from the SAME pool of sources shown in the input —
-     but not deterministically: asking about the same thing can resolve to a
-     different source (you might have asked a different kind of question), so we
-     lean toward the connected sources yet keep it variable. Returns '' when no
-     sources are configured. */
-  function pickSourceLine() {
+  /* Pick ONE connected data source to ground this turn in. It's drawn from the
+     SAME pool of sources shown in the input — but not deterministically: asking
+     about the same thing can resolve to a different source (you might have asked
+     a different kind of question), so we lean toward the connected sources yet
+     keep it variable. Returns the escaped source name, or '' when no sources are
+     configured. */
+  function pickSourceName() {
     if (!connectors.length) return '';
     const connected = connectors.filter((c) => c && c.connected);
     const pool = connected.length ? connected : connectors;
     const c = pool[Math.floor(Math.random() * pool.length)];
-    const name = esc(c && c.name ? c.name : 'the WISE Foods registry');
+    return esc(c && c.name ? c.name : 'the WISE Foods registry');
+  }
+
+  /* The trace's closing glob line naming which data source the answer is grounded
+     in (rendered as HTML so the source reads in bold). '' when no source. */
+  function sourceLineFor(name) {
+    if (!name) return '';
     const templates = [
       `Grounding this answer in <strong>${name}</strong> \u2014 the source that best fit what you actually asked.`,
       `Sourced from <strong>${name}</strong> for this one; a different question might have pulled from somewhere else.`,
@@ -2477,12 +2866,37 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
+  /* Whether a reply's markup carries a rendered OUTPUT — a chart, table, or
+     report card — the kind of artifact that warrants a "source of this output"
+     caption pinned to its end. */
+  function replyHasOutput(html) {
+    const h = String(html || '').toLowerCase();
+    return /<canvas|<svg|chart|graph|insights|spark|<table|wa-tbl|surface-card|report|summarize/.test(h);
+  }
+
+  /* The caption pinned to the very END of an output (chart / table / report)
+     naming the data source it was built from. Same variable source pick as the
+     answer's grounding, surfaced visibly beneath the artifact. '' when no source. */
+  function outputSourceHtml(name) {
+    if (!name) return '';
+    return `<div class="sc-out-source" role="note">`
+      + `<span class="sc-out-source-ic material-symbols-outlined" aria-hidden="true">database</span>`
+      + `<span class="sc-out-source-txt">Source: <strong>${name}</strong></span></div>`;
+  }
+
   function wiseaiRespond(text, intent) {
     /* Resolve the answer up front so the trace can narrate assembling the exact
        pieces it will contain — and so nothing (chart/table/report cards, source
        chips, suggested actions, or host-surfaced output panes) renders until the
        whole trace has finished. */
-    const html = reply(text, intent);
+    const baseHtml = reply(text, intent);
+    /* One data source for this turn — the answer, and any output it produced,
+       are grounded in it. Drawn from the connected input sources, picked variably
+       (it needn't match any particular input from one turn to the next). */
+    const sourceName = pickSourceName();
+    /* If the turn produced an OUTPUT (chart / table / report), name its data
+       source as the very last thing at the end of that output. */
+    const html = replyHasOutput(baseHtml) ? baseHtml + outputSourceHtml(sourceName) : baseHtml;
     const done = () => {
       /* Host side-effects that render output (e.g. opening the result/visual
          panes) are deferred to here so they land WITH the answer, never during
@@ -2490,7 +2904,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
       addWISEcodeAI(html);
     };
-    runReasoningTrace(reasoningTraceFor(text, intent), done, assemblyMilestoneFor(html), pickSourceLine());
+    runReasoningTrace(reasoningTraceFor(text, intent), done, assemblyMilestoneFor(baseHtml), sourceLineFor(sourceName));
   }
   /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
      resolver) — used by controls like the brand connectors where the answer is
@@ -2655,6 +3069,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* Never let both overlays sit open at once. */
     chatHistory?.close?.();
     dismissTurnsOverlay();
+    closeAskHelp();
     clearTimeout(connCloseTimer);
     connPanel.classList.remove('wch-closing');
     connScrim.classList.remove('wch-closing');
@@ -2675,6 +3090,264 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     connCloseTimer = setTimeout(() => {
       connPanel.classList.remove('wch-closing');
       connScrim.classList.remove('wch-closing');
+    }, 300);
+  }
+
+  /* ── "What can I ask?" side panel ─────────────────────────────────────────
+     A right-docked overlay inside the chat body — same shell + open/close
+     animation as "Connect a data source". It presents THIS surface's own
+     suggestions (the welcome scorecards + intent chips) as insertable prompt
+     cards, grouped into sections. A card sends its prompt straight away ("off
+     you go"); its insert icon drops the prompt into the composer instead so it
+     can be tweaked first. A search field filters the prompts, and the header's
+     breakout icon detaches the panel OUT of the chat into a large fixed board
+     (portaled to <body>) so long prompt sets read as a gallery. Built lazily on
+     first open. */
+  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askBroken = false, askQuery = '';
+  const askHost = () => rootEl.querySelector('.sc-body') || rootEl;
+
+  /* Compose the surface's suggestions from the two sources that already drive
+     the welcome screen: the rich "at a glance" scorecards and the intent chips.
+     De-duped by intent id so a chip that mirrors a scorecard isn't listed
+     twice. Control cards (open a panel, not a chat turn) and locked "coming
+     soon" cards are dropped. Returns an ordered list of { title, groups:[{...}] }. */
+  function askSuggestions() {
+    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+    const seen = new Set();
+    const groups = [];
+
+    const scCards = (scorecards && Array.isArray(scorecards.cards) ? scorecards.cards : [])
+      .filter((c) => c && !c.locked && c.intent !== 'connect_source' && (c.ask || c.title))
+      .map((c) => {
+        if (c.intent) seen.add(c.intent);
+        return { icon: c.icon || 'auto_awesome', title: c.title || c.ask, desc: c.desc || '',
+          ask: c.ask || c.title, intent: c.intent };
+      });
+    if (scCards.length) {
+      groups.push({ title: (scorecards && scorecards.label) || 'Start a conversation',
+        icon: 'bolt', cards: scCards });
+    }
+
+    const chipCards = intents
+      .filter((c) => c && c.label && !CONTROL.has(c.intent) && !(c.intent && seen.has(c.intent)))
+      .map((c) => ({ icon: c.icon || 'chat_bubble', title: c.label,
+        desc: '', ask: c.ask || c.label, intent: c.intent }));
+    if (chipCards.length) {
+      groups.push({ title: scCards.length ? 'More prompts' : 'What you can ask',
+        icon: 'lightbulb', cards: chipCards });
+    }
+    return groups;
+  }
+  function askCardHtml(c) {
+    const gold = c.intent === ASK_HELP_INTENT ? ' wch-ask-card--gold' : '';
+    const q = c.ask && c.desc && c.ask !== c.title
+      ? `<span class="wch-ask-card-q">\u201C${esc(c.ask)}\u201D</span>` : '';
+    const desc = c.desc ? `<span class="wch-ask-card-desc">${esc(c.desc)}</span>` : '';
+    return `<button type="button" class="wch-ask-card${gold}" data-ask="${esc(c.ask)}"${c.intent ? ` data-intent="${esc(c.intent)}"` : ''} title="Ask: ${esc(c.ask)}">
+        <span class="wch-ask-ico"><span class="material-symbols-outlined">${esc(c.icon)}</span></span>
+        <span class="wch-ask-card-body"><span class="wch-ask-card-title">${esc(c.title)}</span>${desc}${q}</span>
+        <span class="wch-ask-insert" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">input</span></span>
+      </button>`;
+  }
+  function renderAskList() {
+    if (!askList) return;
+    let groups = askSuggestions();
+    const q = (askQuery || '').trim().toLowerCase();
+    if (q) {
+      groups = groups
+        .map((g) => ({
+          ...g,
+          cards: (g.cards || []).filter((c) => {
+            const hay = [c.title, c.desc, c.ask, c.intent].filter(Boolean).join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+          }),
+        }))
+        .filter((g) => g.cards.length);
+    }
+    if (!askSuggestions().length) {
+      askList.innerHTML = '<div class="wch-ask-empty">No suggestions on this page yet — just type a question in your own words and I\u2019ll route it to the right agents.</div>';
+      return;
+    }
+    if (!groups.length) {
+      askList.innerHTML = '<div class="wch-ask-empty">No prompts match \u201C' + esc((askQuery || '').trim()) + '\u201D. Try another word, or just type your question in your own words.</div>';
+      return;
+    }
+    askList.innerHTML = groups.map((g) =>
+      `<div class="wch-ask-group">
+        <div class="wch-ask-group-title"><span class="material-symbols-outlined">${esc(g.icon || 'bolt')}</span>${esc(g.title)}</div>
+        <div class="wch-ask-cards">${g.cards.map(askCardHtml).join('')}</div>
+      </div>`).join('');
+  }
+  function applyAskQuery(v) {
+    askQuery = v || '';
+    if (askPanel) {
+      const clr = askPanel.querySelector('.wch-ask-search-clear');
+      if (clr) clr.hidden = !askQuery;
+    }
+    renderAskList();
+  }
+  function clearAskQuery() {
+    const inp = askPanel && askPanel.querySelector('.wch-ask-search-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+    applyAskQuery('');
+  }
+  /* Update the header break-out button to reflect the panel's current state:
+     an outward "expand" glyph while docked inside the chat, an inward
+     "collapse" glyph once broken out into the standalone board. */
+  function updateAskBreakBtn() {
+    if (!askPanel) return;
+    const btn = askPanel.querySelector('.wch-ask-breakout');
+    if (!btn) return;
+    btn.title = askBroken ? 'Collapse back into the chat' : 'Break out — expand to a full board';
+    btn.setAttribute('aria-label', btn.title);
+    btn.setAttribute('aria-pressed', askBroken ? 'true' : 'false');
+    const g = btn.querySelector('.material-symbols-outlined');
+    if (g) g.textContent = askBroken ? 'close_fullscreen' : 'open_in_full';
+  }
+  /* Break the panel OUT of the chat: portal it (and its scrim) to <body> as a
+     large fixed board that escapes the narrow chat column, or merge it back in
+     as the in-chat overlay. Works on every surface that mounts the chat,
+     regardless of the page's own module layout. */
+  function setAskBroken(next) {
+    askBroken = !!next;
+    if (!askPanel || !askScrim) return;
+    clearTimeout(askCloseTimer);
+    if (askBroken) {
+      if (askScrim.parentElement !== document.body) document.body.appendChild(askScrim);
+      if (askPanel.parentElement !== document.body) document.body.appendChild(askPanel);
+      askScrim.classList.add('wch-ask-board-scrim');
+      askPanel.classList.add('wch-ask-board');
+    } else {
+      askPanel.classList.remove('wch-ask-board');
+      askScrim.classList.remove('wch-ask-board-scrim');
+      const host = askHost();
+      host.classList.add('wch-host');
+      host.appendChild(askScrim);
+      host.appendChild(askPanel);
+    }
+    /* Re-run the enter animation so the move reads as a deliberate transition. */
+    askPanel.classList.remove('wch-open');
+    askScrim.classList.remove('wch-open');
+    void askPanel.offsetWidth;
+    askPanel.classList.add('wch-open');
+    askScrim.classList.add('wch-open');
+    updateAskBreakBtn();
+    renderAskList();
+  }
+  function ensureAskPanel() {
+    if (askPanel) return;
+    const paneHost = rootEl.querySelector('.sc-body') || rootEl;
+    paneHost.classList.add('wch-host');
+    askScrim = document.createElement('div');
+    askScrim.className = 'wch-scrim';
+    askPanel = document.createElement('aside');
+    askPanel.className = 'wch-sidebar wch-right wch-ask-panel';
+    askPanel.setAttribute('aria-label', askHelpLabel || 'What can I ask?');
+    askPanel.innerHTML =
+      '<div class="wch-head">' +
+        `<span class="wch-head-title"><span class="material-symbols-outlined">help</span>${esc(askHelpLabel || 'What can I ask?')}</span>` +
+        '<button type="button" class="wch-head-btn wch-ask-breakout" title="Break out — expand to a full board" aria-label="Break out — expand to a full board" aria-pressed="false"><span class="material-symbols-outlined">open_in_full</span></button>' +
+        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
+      '</div>' +
+      '<p class="wch-ask-intro">Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.</p>' +
+      '<div class="wch-ask-search">' +
+        '<span class="material-symbols-outlined">search</span>' +
+        '<input type="text" class="wch-ask-search-input" placeholder="Search prompts\u2026" aria-label="Search prompts" autocomplete="off">' +
+        '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>' +
+      '</div>' +
+      '<div class="wch-list wch-ask-list" role="list"></div>';
+    paneHost.appendChild(askScrim);
+    paneHost.appendChild(askPanel);
+    askList = askPanel.querySelector('.wch-ask-list');
+    renderAskList();
+    askScrim.addEventListener('click', closeAskHelp);
+    askPanel.querySelector('.wch-close').addEventListener('click', closeAskHelp);
+    askPanel.querySelector('.wch-ask-breakout').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setAskBroken(!askBroken);
+    });
+    const askSearchInput = askPanel.querySelector('.wch-ask-search-input');
+    const askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
+    if (askSearchInput) askSearchInput.addEventListener('input', () => applyAskQuery(askSearchInput.value));
+    if (askSearchClear) askSearchClear.addEventListener('click', clearAskQuery);
+    askPanel.addEventListener('click', (e) => {
+      const card = e.target.closest('.wch-ask-card[data-ask]');
+      if (!card) return;
+      const text = card.getAttribute('data-ask') || '';
+      if (!text) return;
+      /* Insert icon → drop the prompt into the composer (editable, not sent).
+         Anywhere else on the card → send it straight away. */
+      if (e.target.closest('[data-ask-insert]')) {
+        insertAskIntoComposer(text);
+      } else {
+        sendAsk(text, card.getAttribute('data-intent') || undefined);
+      }
+    });
+  }
+  /* Drop a prompt into the composer, focused and grown, without sending. */
+  function insertAskIntoComposer(text) {
+    closeAskHelp();
+    if (!input) return;
+    input.value = text;
+    input.focus();
+    try { input.setSelectionRange(text.length, text.length); } catch (_) {}
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  /* Post a prompt as its own turn — same routing a chip/scorecard click uses so
+     the host's onIntent still drives navigation. */
+  function sendAsk(text, intent) {
+    closeAskHelp();
+    const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
+    if (intent) markIntentUsed(intent);
+    hideWelcome();
+    addUser(text);
+    if (!handled) wiseaiRespond(text, intent);
+  }
+  function onAskKey(e) {
+    if (e.key !== 'Escape') return;
+    if (askQuery && askQuery.trim()) { clearAskQuery(); return; }
+    if (askBroken) { setAskBroken(false); return; }
+    closeAskHelp();
+  }
+  function openAskHelp() {
+    ensureAskPanel();
+    if (!askPanel) return;
+    /* Never let more than one overlay sit open at once. */
+    chatHistory?.close?.();
+    dismissTurnsOverlay();
+    closeConnectors();
+    clearTimeout(askCloseTimer);
+    askPanel.classList.remove('wch-closing');
+    askScrim.classList.remove('wch-closing');
+    renderAskList();
+    askPanel.classList.add('wch-open');
+    askScrim.classList.add('wch-open');
+    document.addEventListener('keydown', onAskKey);
+  }
+  function closeAskHelp() {
+    if (!askPanel) return;
+    if (!askPanel.classList.contains('wch-open') && !askPanel.classList.contains('wch-closing')) return;
+    askPanel.classList.remove('wch-open');
+    askScrim.classList.remove('wch-open');
+    askPanel.classList.add('wch-closing');
+    askScrim.classList.add('wch-closing');
+    document.removeEventListener('keydown', onAskKey);
+    clearTimeout(askCloseTimer);
+    askCloseTimer = setTimeout(() => {
+      askPanel.classList.remove('wch-closing');
+      askScrim.classList.remove('wch-closing');
+      /* Merge a broken-out board back into the chat once it's off-screen so the
+         next open always starts as the in-chat overlay. */
+      if (askBroken) {
+        askBroken = false;
+        askPanel.classList.remove('wch-ask-board');
+        askScrim.classList.remove('wch-ask-board-scrim');
+        const host = askHost();
+        host.classList.add('wch-host');
+        host.appendChild(askScrim);
+        host.appendChild(askPanel);
+        updateAskBreakBtn();
+      }
     }, 300);
   }
 
@@ -3301,6 +3974,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* Never let two overlays sit open at once. */
     chatHistory?.close?.();
     closeConnectors();
+    closeAskHelp();
     clearTimeout(turnsCloseTimer);
     turnsPanel.classList.remove('wch-closing');
     turnsScrim.classList.remove('wch-closing');
@@ -3384,6 +4058,56 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-compact', syncCompactMenu);
+  /* Sync the "Brand AI text" switch to the shared <html>.chat-brandtext state.
+     Called on mount and whenever any module flips it (via the wise:chat-brandtext
+     event), so every open chat's switch reflects the one shared setting. */
+  function syncBrandtextMenu() {
+    const item = rootEl.querySelector('[data-sc="brandtext"]');
+    if (!item) return;
+    const on = document.documentElement.classList.contains('chat-brandtext');
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  document.addEventListener('wise:chat-brandtext', syncBrandtextMenu);
+  /* Sync the "Response streaming" controls — the master switch plus the
+     three-level segment — to the shared streamOn/streamLevel. Called on mount
+     and whenever any module changes either (via wise:chat-stream-on /
+     wise:chat-stream-level), so every open chat's menu reflects the one shared
+     setting. The segment dims while the master switch is off. */
+  function syncStreamMenu() {
+    const tog = rootEl.querySelector('[data-sc="stream-toggle"]');
+    if (tog) {
+      tog.classList.toggle('is-on', streamOn);
+      tog.setAttribute('aria-checked', streamOn ? 'true' : 'false');
+    }
+    const seg = rootEl.querySelector('.sc-stream-detail');
+    if (seg) seg.classList.toggle('is-disabled', !streamOn);
+    rootEl.querySelectorAll('.sc-stream-seg-btn').forEach((el) => {
+      const on = el.dataset.stream === streamLevel;
+      el.classList.toggle('is-on', on);
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('wise:chat-stream-level', (e) => {
+    const lvl = e && e.detail && e.detail.level;
+    if (STREAM_LEVELS.includes(lvl)) streamLevel = lvl;
+    syncStreamMenu();
+  });
+  document.addEventListener('wise:chat-stream-on', (e) => {
+    streamOn = !(e && e.detail && e.detail.on === false);
+    syncStreamMenu();
+  });
+  /* Sync the "Activity strip" switch to the shared on/off state. Called on
+     mount and whenever anything flips it (this menu, another chat's menu, or
+     the Appearance popover — all via the wise:activity-strip event). */
+  function syncActivityStripMenu() {
+    const item = rootEl.querySelector('[data-sc="activity-strip"]');
+    if (!item) return;
+    const on = isActivityStripOn();
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  document.addEventListener('wise:activity-strip', syncActivityStripMenu);
   /* Re-flow both flanking modules to the sticky (equal, narrower) or normal base
      width. Drag-resize still overrides per side afterwards. */
   function applyStickyLayout() {
@@ -3573,6 +4297,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (messages) messages.innerHTML = '';
     clearAttachments();
     closeAgents();
+    /* A brand-new conversation gets a clean chip set — nothing is spent yet. */
+    if (usedIntents.size) { usedIntents.clear(); renderChips(); }
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
@@ -3624,6 +4350,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const found = intents.find((c) => c && c.intent === intent);
     const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
+    markIntentUsed(intent);
     closeAgents();
     hideWelcome();
     if (text) addUser(text);
@@ -3743,6 +4470,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   welcome?.addEventListener('click', (e) => {
     const chip = e.target.closest('.ws-intent-chip[data-intent]');
     if (!chip) return;
+    /* A spent chip is inert — it already drove its turn and can't be re-run. */
+    if (chip.classList.contains('is-used')) return;
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     /* A chip can carry an `ask` — the full question posted as the user's line —
@@ -3752,6 +4481,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* "Choose Agents" opens the in-chat settings panel rather than starting a
        chat turn — it's a control, not a question. */
     if (def.intent === 'choose_agents') { openAgents(); return; }
+    markIntentUsed(def.intent);
     hideWelcome();
     addUser(text);
     /* Route the reply by the chip's intent id (not just its label) so the
@@ -3765,11 +4495,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   messages?.addEventListener('click', (e) => {
     const chip = e.target.closest('.sc-inline-chips .ws-intent-chip[data-intent]');
     if (!chip) return;
+    /* A spent chip is inert — it already drove its turn and can't be re-run. */
+    if (chip.classList.contains('is-used')) return;
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
     const text = def.ask || def.label;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
+    markIntentUsed(def.intent);
     hideWelcome();
     addUser(text);
     if (!handled) wiseaiRespond(text, def.intent);
@@ -3986,11 +4719,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (e.target.closest('.ws-sc-scroll')) return;
     const chip = e.target.closest('.ws-intent-chip[data-intent]');
     if (!chip) return;
+    /* A spent chip is inert — it already drove its turn and can't be re-run. */
+    if (chip.classList.contains('is-used')) return;
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
     const text = def.ask || def.label;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
+    markIntentUsed(def.intent);
     hideWelcome();
     addUser(text);
     if (!handled) wiseaiRespond(text, def.intent);
@@ -4148,6 +4884,42 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     syncWidthUI(next);
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });
+
+  /* "What can I ask?" link (below-input, left) — opens the empty help panel. */
+  const askHelpBtn = rootEl.querySelector(`#${id}-ask-help`);
+  askHelpBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAskHelp();
+  });
+
+  /* Keep "What can I ask?" text perfectly left-aligned with the composer's
+     placeholder, whatever the composer layout or module width. The placeholder
+     inset is composed of runtime-variable pieces ("+" button width, wrap
+     padding, and — in the narrow @container grid — the textarea's own left
+     padding), so instead of hard-coding it we measure the textarea's real text
+     edge and set the link's left margin to match (minus the link's own left
+     padding). Re-run on any composer size change. */
+  const askHelpRow = askHelpBtn?.closest('.sc-belowinput');
+  if (askHelpBtn && input && askHelpRow) {
+    const alignAskHelp = () => {
+      const inRect = input.getBoundingClientRect();
+      const rowRect = askHelpRow.getBoundingClientRect();
+      if (!inRect.width || !rowRect.width) return; /* hidden/unlaid-out */
+      const inPadL = parseFloat(getComputedStyle(input).paddingLeft) || 0;
+      const btnPadL = parseFloat(getComputedStyle(askHelpBtn).paddingLeft) || 0;
+      const margin = (inRect.left + inPadL) - rowRect.left - btnPadL;
+      askHelpBtn.style.marginLeft = `${Math.max(0, Math.round(margin))}px`;
+    };
+    alignAskHelp();
+    /* Fonts can reflow the composer after first paint. */
+    if (document.fonts?.ready) document.fonts.ready.then(alignAskHelp).catch(() => {});
+    const inputWrap2 = input.closest('.fl-input-wrap');
+    if (typeof ResizeObserver === 'function' && inputWrap2) {
+      const ro = new ResizeObserver(() => alignAskHelp());
+      ro.observe(inputWrap2);
+    }
+    window.addEventListener('resize', alignAskHelp);
+  }
 
   /* Input attach ("+") popover — floated to the far left of the input. */
   const flMoreBtn = rootEl.querySelector(`#${id}-fl-more`);
@@ -4431,6 +5203,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const asToggle = item.classList.contains('sc-mcp-item');
       if (!asToggle) closeMore();
       closeConnectors(); /* keep only one overlay open at a time */
+      closeAskHelp();
       dismissTurnsOverlay();
       if (chatHistory) chatHistory.toggle();
       else if (typeof opts.onHistory === 'function') opts.onHistory();
@@ -4481,6 +5254,47 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { localStorage.setItem(COMPACT_PREF_KEY, on ? '1' : '0'); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-compact', { detail: { on } })); } catch (_) {}
       syncCompactMenu();
+    }
+    else if (action === 'brandtext') {
+      /* App-wide brand AI text: flip the shared <html>.chat-brandtext class so
+         every mounted chat module recolours its WISEcodeAI lines to the brand
+         blue at once (member lines stay in the default black ink). Keep the menu
+         open so the switch state reads back; persist + broadcast so any sibling
+         chat modules' switches follow. */
+      const on = !document.documentElement.classList.contains('chat-brandtext');
+      document.documentElement.classList.toggle('chat-brandtext', on);
+      try { localStorage.setItem(BRANDTEXT_PREF_KEY, on ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-brandtext', { detail: { on } })); } catch (_) {}
+      syncBrandtextMenu();
+    }
+    else if (action === 'stream-toggle') {
+      /* Master streaming switch: ON streams the thinking at the chosen level,
+         OFF skips the trace so answers just land. Keep the menu open so the
+         switch state reads back; persist + broadcast so sibling chats follow. */
+      streamOn = !item.classList.contains('is-on');
+      try { localStorage.setItem(STREAM_ON_PREF_KEY, streamOn ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-stream-on', { detail: { on: streamOn } })); } catch (_) {}
+      syncStreamMenu();
+    }
+    else if (action === 'stream-level') {
+      /* Pick how much of WISEcodeAI's thinking streams before an answer lands
+         (full globs · steps only · final message only). Keep the menu open so
+         the segment selection reads back immediately; persist the choice + tell
+         any sibling chat modules so their menus follow the one shared setting. */
+      const lvl = item.dataset.stream;
+      if (STREAM_LEVELS.includes(lvl) && lvl !== streamLevel) {
+        streamLevel = lvl;
+        try { localStorage.setItem(STREAM_PREF_KEY, lvl); } catch (_) {}
+        try { document.dispatchEvent(new CustomEvent('wise:chat-stream-level', { detail: { level: lvl } })); } catch (_) {}
+      }
+      syncStreamMenu();
+    }
+    else if (action === 'activity-strip') {
+      /* On/off switch for the landmark rail on the chat's edge. Keep the menu
+         open so the switch state reads back; applyActivityStrip persists the
+         choice and broadcasts wise:activity-strip so every menu follows. */
+      applyActivityStrip(!isActivityStripOn());
+      syncActivityStripMenu();
     }
     else if (action === 'toggle-cards') {
       closeMore();
@@ -4564,17 +5378,38 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      without remounting — used by a persistent host to re-skin its quick actions
      for the current context. Re-renders every chip surface in place (the welcome
      grid, the persistent rail, and the inline suggested-actions block). */
-  function setIntents(newIntents, newReplies) {
-    if (Array.isArray(newIntents)) intents = newIntents.slice();
-    if (newReplies && typeof newReplies === 'object') {
-      intentReplies = Object.assign({}, intentReplies || {}, newReplies);
-    }
+  /* Rebuild every live chip surface (welcome grid, persistent rail, inline
+     transcript block) from the current intents + spent state. Shared by
+     setIntents() and markIntentUsed() so a chip's spent look shows up wherever
+     it's rendered. */
+  function renderChips() {
     chipsHtml = buildChipsHtml();
     const wc = rootEl.querySelector(`#${id}-chips`);
     if (wc) wc.innerHTML = chipsHtml;
     const pc = rootEl.querySelector(`#${id}-pchips`);
     if (pc) pc.innerHTML = chipsHtml;
     if (ichipsEl) ichipsEl.innerHTML = chipsHtml;
+  }
+  /* Flag a chip's intent as spent and re-render so it dims out and stops
+     taking clicks. No-op for control intents (never passed here) or ids
+     already marked. */
+  function markIntentUsed(intentId) {
+    /* "What can I ask?" is a standing affordance (it must always accompany the
+       gold link), so it never dims out as spent. */
+    if (!intentId || intentId === ASK_HELP_INTENT || usedIntents.has(intentId)) return;
+    usedIntents.add(intentId);
+    renderChips();
+  }
+  function setIntents(newIntents, newReplies) {
+    /* Re-append the "What can I ask?" chip so it survives contextual swaps. */
+    if (Array.isArray(newIntents)) intents = withAskHelpChip(newIntents.slice());
+    if (newReplies && typeof newReplies === 'object') {
+      intentReplies = Object.assign({}, intentReplies || {}, newReplies);
+    }
+    /* A fresh contextual chip set is a clean slate — spent state doesn't carry
+       across a swap (e.g. a marketing dock re-skinning per page). */
+    usedIntents.clear();
+    renderChips();
   }
 
   /* Announce a context switch WITHOUT resetting the conversation: swap in the
@@ -4610,6 +5445,21 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   syncTurnsMenu();
   syncCompactMenu();
+  syncBrandtextMenu();
+  syncStreamMenu();
+  syncActivityStripMenu();
+
+  /* Activity strip — restore the saved on/off + side preferences onto <html>,
+     then pin the rail to THIS chat's transcript. Mounted from the shared module
+     so every page that uses this chat gets the strip without page wiring (the
+     strip module injects its own styles and tears down any previous mount).
+     Hosts pass `activityStrip: false` to opt out — the WISEcodeAI dock does, so
+     its floating mini-chat never steals the single rail from a page's main
+     chat module. */
+  restoreActivityStrip();
+  if (messages && opts.activityStrip !== false) {
+    mountActivityStrip({ chatEl: rootEl, messagesEl: messages });
+  }
 
   /* Sticky-modules toggle: reflect the initial state onto the switch and let the
      host apply the layout so a persisted preference survives reloads. */
@@ -4634,5 +5484,5 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
-  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
 }

@@ -1032,6 +1032,11 @@ function renderScorecard() {
   const aaaPct = Math.round((aaaNormalPass/total)*100);
   const aaClass = aaPct >= 100 ? 'is-pass' : (aaPct >= 90 ? 'is-warn' : 'is-fail');
   const aaaClass = aaaPct >= 100 ? 'is-pass' : (aaaPct >= 85 ? 'is-warn' : 'is-fail');
+  /* Publish an overall verdict for the CURRENT theme so the shared Appearance
+     popover can tint its "Accessibility review" Admin badge by how well the app
+     actually scores (pass / warn / fail) instead of always pink. AA sets the
+     compliance floor; clearing every AAA pair earns the green "pass". */
+  publishA11yVerdict(aaPct >= 100 ? (aaaPct >= 100 ? 'pass' : 'warn') : 'fail');
   let pagesCard = '';
   if (pageStats) {
     const a = pageStats.avg;
@@ -1405,6 +1410,22 @@ function fieldHasLabel(el, doc) {
   const id = el.getAttribute('id');
   if (id && doc.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]')) return true;
   return false;
+}
+
+/* Persist the live audit verdict per theme (light/dark) so other shells can
+   read it without re-running the audit. The Appearance popover's "Accessibility
+   review" badge reads this to color itself green/amber/red for the theme it is
+   shown in. Wrapped in try/catch since private-mode Safari can throw on write. */
+const A11Y_VERDICT_KEY = 'wise-a11y-verdict';
+function publishA11yVerdict(verdict) {
+  try {
+    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    let store = {};
+    try { store = JSON.parse(localStorage.getItem(A11Y_VERDICT_KEY)) || {}; } catch (_) {}
+    if (store[theme] === verdict) return;
+    store[theme] = verdict;
+    localStorage.setItem(A11Y_VERDICT_KEY, JSON.stringify(store));
+  } catch (_) { /* storage unavailable — badge falls back to its default */ }
 }
 
 // Score → letter grade.

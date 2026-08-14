@@ -672,8 +672,10 @@ const DASHBOARD_WISEAI_INTENTS = [
 ];
 
 /* Chip intent → the `data-dash-action` of the matching control rendered by
-   dashboard-home.js. onIntent (below) clicks that element so the chip performs
-   the real page action. Keep this in lock-step with the actions in
+   dashboard-home.js. The chip fires that exact on-page button so it does
+   precisely what the button does — but only AFTER its narration has posted in
+   the thread (see onReply below), so no chip ever navigates away before leaving
+   a transcript behind. Keep this in lock-step with the actions in
    dashboard-home.js: every actionable control on overview.html must appear here
    so no page action is left without a chip. */
 const DASHBOARD_WISEAI_ACTIONS = {
@@ -683,6 +685,21 @@ const DASHBOARD_WISEAI_ACTIONS = {
   verify_upf:           'verify-upf',
   verify_gras:          'verify-gras',
   update_logo:          'edit-logo',
+};
+
+/* Narration for every dashboard chip — the "proper transcript" each chip leaves
+   in the thread before it acts. Report chips get their narration from
+   dashReportChatReply (state-aware); the rest describe the on-page control the
+   chip is about to fire (navigate to the portfolio, start a verification flow,
+   or open the logo editor) so the chat reads the same whether you tapped the
+   chip or the matching button on the brand overview to the right. */
+const DASHBOARD_WISEAI_REPLIES = {
+  claim_products:   'Let\u2019s claim your products. I\u2019m opening your <strong>Product Portfolio</strong>, where you can take ownership of every discovered UPC \u2014 claiming is what unlocks Non-UPF / GRAS verification and your brand reports. Taking you there now\u2026',
+  review_portfolio: 'Opening your <strong>Product Portfolio</strong> \u2014 every SKU\u2019s claim status, compliance and ingredient health in one view, so you can see exactly where each product stands. Taking you there now\u2026',
+  add_food:         'Let\u2019s add a food. I\u2019m opening your <strong>Product Portfolio</strong> with the add-a-product flow ready, so you can bring a new SKU in to classify and verify. Taking you there now\u2026',
+  verify_upf:       'Starting <strong>Non-UPF verification</strong>. I\u2019m opening the verification flow so you can run the checks across your qualifying SKUs and earn the Non-UPF Verified\u2122 shield. Taking you there now\u2026',
+  verify_gras:      'Starting <strong>GRAS verification</strong>. I\u2019m opening the GRAS documentation flow so you can verify your qualifying ingredients and SKUs. Taking you there now\u2026',
+  update_logo:      'Let\u2019s update your <strong>brand logo</strong>. I\u2019m opening the logo editor on your dashboard \u2014 drop in a PNG or SVG (square, transparent edges look best) and save. It\u2019s coming up now\u2026',
 };
 
 /* Report chips are handled separately from the on-page controls: they open the
@@ -1090,27 +1107,40 @@ function setupWISEcodeAIDock() {
         ],
       },
       intents: DASHBOARD_WISEAI_INTENTS,
-      /* Report chips get a state-aware narration in the thread while the report
-         opens on the surface to the right (see onIntent) — no modal. */
+      /* Every chip (and every welcome scorecard) carries its own narration so it
+         always leaves a transcript in the thread. Report chips get a state-aware
+         narration while the report opens on the surface to the right; the rest
+         describe the on-page control they're about to fire. */
       intentReplies: {
+        ...DASHBOARD_WISEAI_REPLIES,
         open_upf_report:      () => dashReportChatReply('upf'),
         open_gras_report:     () => dashReportChatReply('gras'),
         open_insights_report: () => dashReportChatReply('insights'),
       },
-      /* Report chips open the report INLINE on the dashboard surface (right of
-         the chat) and return false so the dock adds the "you" line + the reply
-         above — matching the verification flows' chat ↔ surface pairing. Every
-         other chip fires the matching on-page control (a `[data-dash-action]`
-         button in #agent-main-scroll) — navigate, toggle brand, or edit logo —
-         and returns true to suppress the generic reply. Nothing opens a modal. */
+      /* onIntent runs the moment the chip is tapped; onReply runs once the
+         narration has landed in the thread. Report chips open INLINE on the
+         dashboard surface (right of the chat) right away — the report is a
+         companion to the answer, so it should be there as the reply arrives.
+         Every OTHER chip returns false here so the dock posts the "you" line +
+         the narration, then defers its real on-page control (navigate to the
+         portfolio, start a verification flow, or open the logo editor) to
+         onReply — so the transcript is always written before the chip acts. */
       onIntent: (intent) => {
         const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
         if (reportCard) { openDashReport(reportCard, { mirror: false }); return false; }
-        const action = DASHBOARD_WISEAI_ACTIONS[intent];
-        if (!action) return false;
-        const el = document.querySelector(`#agent-main-scroll [data-dash-action="${action}"]`);
-        if (el) { el.click(); return true; }
         return false;
+      },
+      /* Fires exactly when a chip's narration is added to the thread. For the
+         navigating / logo chips we then click the matching on-page control (the
+         same `[data-dash-action]` button the brand overview renders), so the
+         chip does precisely what the button does — just after the user has seen
+         the transcript. Typed messages have no intent, so nothing fires for them;
+         report chips aren't in the actions map, so they stay on this page. */
+      onReply: (intent) => {
+        const action = DASHBOARD_WISEAI_ACTIONS[intent];
+        if (!action) return;
+        const el = document.querySelector(`#agent-main-scroll [data-dash-action="${action}"]`);
+        if (el) setTimeout(() => el.click(), 1400);
       },
     };
   } else {

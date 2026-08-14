@@ -7300,11 +7300,31 @@
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
       import { wireChatComposer } from '../js/wiseai-chat.js';
+      import { restoreActivityStrip, mountActivityStrip, applyActivityStrip, isActivityStripOn } from '../js/chat-activity-strip.js';
 
       /* Upgrade the inline comparison chat input to the canonical WISEcodeAI composer:
          swap the old model-tune selector for the shared database selector. The
          page keeps its own "+" attach popover, so skip the shared attach wiring. */
       document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
+
+      /* Activity strip — mount the landmark rail on this page's inline chat and
+         wire the three-dot "Activity strip" switch to the shared app-wide
+         preference (the strip module injects its own styles). */
+      restoreActivityStrip();
+      mountActivityStrip({ chatEl: document.getElementById('wiseai-panel'), messagesEl: document.getElementById('chat-messages') });
+      const syncActivityStripItem = () => {
+        const item = document.getElementById('wiseai-actstrip-item');
+        if (!item) return;
+        const on = isActivityStripOn();
+        item.classList.toggle('is-on', on);
+        item.setAttribute('aria-checked', on ? 'true' : 'false');
+      };
+      window.toggleActivityStripModule = (e) => {
+        if (e) e.stopPropagation();
+        applyActivityStrip(!isActivityStripOn());
+      };
+      document.addEventListener('wise:activity-strip', syncActivityStripItem);
+      syncActivityStripItem();
 
       Object.assign(window, {
         isMenuFooterAnchor,
@@ -7864,6 +7884,14 @@
               <span class="material-symbols-outlined topbar-menu-icon">alt_route</span>
               <span>Turns</span>
               <span class="topbar-menu-badge">Admin</span>
+              <span class="sc-switch" aria-hidden="true"></span>
+            </button>
+            <!-- Activity strip — the landmark rail on the chat's edge (shared
+                 app-wide preference; mirrors the switch on pages/wiseai.html).
+                 Keeps the menu open so the switch state reads back. -->
+            <button type="button" class="topbar-menu-item sc-mcp-item" id="wiseai-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
+              <span class="material-symbols-outlined topbar-menu-icon">timeline</span>
+              <span>Activity strip</span>
               <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>

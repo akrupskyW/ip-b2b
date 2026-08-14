@@ -39,8 +39,10 @@
   /* Chrome that lives in the row but is not a module. */
   var EXCLUDE_RE = /scrim|resize|handle|backdrop|drag|grip|overlay/i;
 
-  /* Wrappers whose CHILDREN are the real modules (not the wrapper). */
-  var GROUP_SEL = '#panels-row-right';
+  /* Wrappers whose CHILDREN are the real modules (not the wrapper). Groups may
+     nest (product-comparison's #intent-stack-column lives INSIDE
+     #panels-row-right and stacks two .launch-panel modules). */
+  var GROUP_SEL = '#panels-row-right,#intent-stack-column';
 
   /* Modules that build their OWN three-dot menu asynchronously (e.g. the agent
      overview main panel via agent-overview.js setupMainPanelControls). We must
@@ -94,7 +96,9 @@
     var tag = el.tagName;
     if (tag === 'SECTION' || tag === 'ASIDE' || tag === 'MAIN') return true;
     var token = (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
-    return /panel|card|module|pane|main|sidebar|dash/i.test(token);
+    /* `screen` covers side-panel modules named that way (e.g. the
+       product-portfolio/comparison #settings-screen panel). */
+    return /panel|card|module|pane|main|sidebar|dash|screen/i.test(token);
   }
 
   function isChat(el) { return el.matches && el.matches(CHAT_SEL); }
@@ -133,16 +137,15 @@
     if (!chat) return null;
     chat.classList.add('sticky-chat');
     var mods = [];
-    Array.prototype.forEach.call(row.children, function (child) {
-      if (isChat(child) || isExcluded(child)) return;
-      if (child.matches && child.matches(GROUP_SEL)) {
-        Array.prototype.forEach.call(child.children, function (g) {
-          if (isModuleLike(g)) mods.push(g);
-        });
+    function collect(el) {
+      if (isChat(el) || isExcluded(el)) return;
+      if (el.matches && el.matches(GROUP_SEL)) {
+        Array.prototype.forEach.call(el.children, collect);
         return;
       }
-      if (isModuleLike(child)) mods.push(child);
-    });
+      if (isModuleLike(el)) mods.push(el);
+    }
+    Array.prototype.forEach.call(row.children, collect);
     return { chat: chat, mods: mods };
   }
 
@@ -236,12 +239,32 @@
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
 
-  /* GENERIC content module: drive `.sticky-mod` + `.is-sticky`. */
-  function setGenericSticky(mod, on) {
+  /* GENERIC content module: drive `.sticky-mod` + `.is-sticky`. The user's
+     choice is kept in data-sticky-pref (survives innerHTML re-renders AND lets
+     the tuck be suppressed while the module sits LEFT of the chat — e.g. after
+     the WISEcodeAI dock's Appearance side-mode moves panes across — without
+     forgetting the preference). The menu switch always reflects the pref. */
+  function setGenericSticky(mod, on, chat) {
+    mod.dataset.stickyPref = on ? 'on' : 'off';
     mod.classList.add('sticky-mod');
-    mod.classList.toggle('is-sticky', on);
+    if (chat === undefined) {
+      var row = getRow();
+      chat = row ? row.querySelector(CHAT_SEL) : null;
+    }
+    mod.classList.toggle('is-sticky', on && isRightOfChat(mod, chat));
     var item = mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
     if (item) syncToggleItem(item, on);
+  }
+
+  /* Re-apply the pref against the module's CURRENT side of the chat. Called on
+     every scan so side flips (inline `order` / class changes, which never fire
+     childList mutations) tuck/untuck the module correctly. */
+  function syncSide(mod, chat) {
+    if (isWchSidebar(mod)) return;
+    if (!mod.dataset.stickyPref) return;
+    if (mod.querySelector(NATIVE_STICKY_SEL)) return;
+    var want = mod.dataset.stickyPref === 'on' && isRightOfChat(mod, chat);
+    if (mod.classList.contains('is-sticky') !== want) mod.classList.toggle('is-sticky', want);
   }
 
   /* DOCKED Turns sidebar: drive `.wch-unsticky` (ON = not unsticky) and make
@@ -260,8 +283,9 @@
   function ensureToggle(mod, chat) {
     if (isWchSidebar(mod) && !isWchRight(mod)) return; /* History (left) */
     if (mod.querySelector(NATIVE_STICKY_SEL)) return;  /* native toggle → leave */
-    if (mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']')) return; /* already done */
-    if (!isRightOfChat(mod, chat)) return; /* left of the chat → out of scope */
+    if (mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']')) { syncSide(mod, chat); return; }
+    if (!isRightOfChat(mod, chat)) return; /* left of the chat (for now) → skip;
+      the attribute-aware observer re-scans if it ever moves right of it. */
 
     var wch = isWchRight(mod);
     var pop = ensureMenu(mod);
@@ -269,11 +293,13 @@
 
     /* Default ON (matches wiseai.html), but preserve any prior state — some
        modules (e.g. progress panes) re-render their innerHTML, which wipes the
-       toggle button while the module's own `.is-sticky`/`.wch-unsticky` class
-       survives; re-derive from that so a user's choice isn't reset. */
+       toggle button while the module's own data-sticky-pref attribute /
+       `.wch-unsticky` class survives; re-derive so a user's choice isn't reset. */
     var on = wch
       ? !mod.classList.contains('wch-unsticky')
-      : (mod.classList.contains('sticky-mod') ? mod.classList.contains('is-sticky') : true);
+      : (mod.dataset.stickyPref
+          ? mod.dataset.stickyPref === 'on'
+          : (mod.classList.contains('sticky-mod') ? mod.classList.contains('is-sticky') : true));
     pop.insertAdjacentHTML('afterbegin', stickyItemHTML(on) + '<div class="topbar-menu-divider"></div>');
     var item = pop.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
 
@@ -284,7 +310,7 @@
     });
 
     /* Apply the default. */
-    if (wch) setWchSticky(mod, on); else setGenericSticky(mod, on);
+    if (wch) setWchSticky(mod, on); else setGenericSticky(mod, on, chat);
   }
 
   function scan() {
@@ -302,7 +328,17 @@
       if (observe._raf) return;
       observe._raf = requestAnimationFrame(function () { observe._raf = 0; scan(); });
     });
-    observer.observe(row, { childList: true, subtree: true });
+    /* Also observe class/style attribute flips: panels open/close and the
+       WISEcodeAI dock's side modes move panes with class toggles and inline
+       `order` styles only — no childList mutation — so without this a module
+       that BECOMES right-of-chat would never get wired (or untucked when it
+       moves back left). Scans stay cheap: wired modules early-return. */
+    observer.observe(row, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
   }
 
   function init() {

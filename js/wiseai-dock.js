@@ -281,6 +281,10 @@ export function mountWISEcodeAIDock(dock, opts = {}) {
 
   const wiseai = mountWISEcodeAIChat(dock, {
     ...opts,
+    /* No activity strip on the dock: it's a floating mini-chat, and mounting
+       the (single, body-level) rail here would steal it from a page's main
+       chat module on pages that have both. */
+    activityStrip: false,
     /* The width toggle lives inside the chat; persist + re-broadcast it so
        the doubled-width state survives the next navigation. */
     onToggleWidth: (wide) => {

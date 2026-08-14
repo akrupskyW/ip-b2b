@@ -128,75 +128,11 @@
     #modules-row[data-out-w="3"]:has(.wa-pane.is-open) .wa-chat { flex-basis: 340px !important; width: 340px !important; }
 
     /* ── Activity strip ──────────────────────────────────────────────
-       A thin rail pinned to the chat module's far-right edge, running its full
-       height, that marks where each conversation landmark landed (an output was
-       created / a data source was added / the database was switched). Built +
-       toggled by js/chat-activity-strip.js from the Appearance popover; each
-       tick is placed at the landmark's position as a fraction of the whole
-       transcript, so the rail reads as a top→bottom minimap of the thread. */
-    .wa-activity-strip {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 3px;
-      height: 100%;
-      /* Sit ABOVE the pane-resize drag overlay (.pr-overlay is a body-level
-         fixed layer at z-index:60 in js/pane-resize.js). The strip forms its own
-         stacking context, so at z-index:6 its ticks were trapped beneath the drag
-         handle and could only be reached via a click-forwarding hack. Lifting the
-         whole strip over the overlay lets the gold ear-mark ticks be a genuinely
-         higher layer than the drag functionality. Crucially the rail stays
-         pointer-events:none, so ONLY the ticks (pointer-events:auto) intercept —
-         the empty vertical space still falls through to the drag handle below. */
-      z-index: 70;
-      pointer-events: none;
-      background: color-mix(in srgb, var(--border) 55%, transparent);
-    }
-    /* Ticks are small rectangles that jut out LEFT past the 3px rail, so each
-       landmark reads as a tab poking out of the strip. */
-    .wa-activity-tick {
-      position: absolute;
-      right: 0;
-      width: 9px;
-      height: 11px;
-      transform: translateY(-50%);
-      border-radius: 3px 0 0 3px;
-      pointer-events: auto;
-      cursor: pointer;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
-      transition: width 0.12s ease;
-    }
-    /* Invisible enlarged hit zone — a 3px sliver is too fine a click target,
-       and clicks that land here also get forwarded through the pane-resize
-       handle (see pane-resize.js), so the zones must agree. */
-    .wa-activity-tick::after {
-      content: "";
-      position: absolute;
-      top: -4px;
-      bottom: -4px;
-      left: -8px;
-      right: 0;
-    }
-    .wa-activity-tick:hover { width: 14px; }
-    /* Distinct hues per landmark type (retunable per theme/palette). */
-    .wa-activity-tick--output   { background: var(--act-output, var(--ter-amber, #FFC434)); }
-    .wa-activity-tick--source   { background: var(--act-source, #12b76a); }
-    .wa-activity-tick--database { background: var(--act-database, #f79009); }
-    /* Landing flash on the landmark row a tick scrolls you to. */
-    .wa-activity-flash {
-      outline: 2px solid transparent;
-      outline-offset: 3px;
-      border-radius: 8px;
-      animation: waActivityFlash 1.4s ease;
-    }
-    @keyframes waActivityFlash {
-      0%, 35% { outline-color: var(--ter-amber, #FFC434); }
-      100%    { outline-color: transparent; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .wa-activity-tick { transition: none; }
-      .wa-activity-flash { animation: none; }
-    }
+       The thin landmark rail on the chat's edge is fully self-contained in
+       js/chat-activity-strip.js now — it injects its own styles and is mounted
+       by the shared chat module (js/wiseai-chat.js), so no per-page CSS or
+       wiring lives here anymore. Toggled from the chat's three-dot menu
+       ("Activity strip") and the Appearance popover, which also picks the edge. */
 
     /* Small in-chat lead + intent-chip helpers reused from studio-ai (kept so the
        shared chat's inline chips read the same as everywhere else in the app). */
@@ -388,7 +324,7 @@
     }
     /* History (left of chat): flush + tucked under the chat's LEFT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky) {
-      margin-right: -22px;                 /* cancels the 8px row gap + ~14px tuck */
+      margin-right: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
       padding-right: 14px;                 /* keep content clear of the tucked edge */
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
@@ -397,7 +333,7 @@
     }
     /* Turns (right of chat): flush + tucked under the chat's RIGHT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
-      margin-left: -22px;
+      margin-left: calc(-14px - var(--modules-gap, 8px));
       padding-left: 14px;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
@@ -702,11 +638,11 @@
 
     /* ── Admin: "Outputs dropdown" header mode (merged pane only) ──
        Toggled from the merged pane's three-dot menu (pink Admin switch). Hides
-       the chip carousel and the header prev/next arrows entirely; the
-       "Output N / M" masthead itself becomes a dropdown that lists every
-       output as a small preview + label row (click one to reveal it). */
+       the chip carousel; the "Output N / M" masthead itself becomes a dropdown
+       that lists every output as a small preview + label row (click one to
+       reveal it). The header prev/next left/right arrows stay visible so both
+       nav affordances coexist. */
     #wa-unified.is-titledrop .wa-pane-nav-track { display: none !important; }
-    #wa-unified.is-titledrop .wa-pane-nav-btns { display: none !important; }
     #wa-unified.is-titledrop .wa-pane-nav-count { display: none !important; }
     #wa-unified .wa-pane-mast { position: relative; }
     #wa-unified.is-titledrop .wa-pane-title { cursor: pointer; user-select: none; }
@@ -755,7 +691,7 @@
       z-index: 1;
       background: var(--surface-2);
       box-shadow: none;
-      margin-left: -22px;                 /* cancels the row gap + ~14px tuck */
+      margin-left: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
       padding-left: 14px;                 /* keep content clear of the tucked edge */
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
@@ -766,6 +702,19 @@
     #modules-row .wa-pane.is-sticky .wa-pane-top { background: var(--surface-2); }
     @media (prefers-reduced-motion: reduce) {
       #modules-row .wa-pane.is-open.is-sticky { animation: none !important; }
+    }
+    /* Keep a sticky pane tucked BEHIND the chat even while its ⋯ menu / dropdown
+       is open. The shared pane-resize rule lifts any #modules-row child with an
+       open popover to z-index 500 (so its inline menu clears its neighbours) —
+       but that also floats the whole pane over the chat, breaking the tuck. Pin
+       it just above its sibling panes (z-index 1) yet below the chat (z-index 3);
+       its menu opens at the top-RIGHT, well clear of the chat on the left, so it
+       still reads fine. Higher specificity + !important beats the generic rule. */
+    #modules-row .wa-pane.is-sticky:has(.panel-more-btn.is-open),
+    #modules-row .wa-pane.is-sticky:has(.topbar-popover:not(.hidden)),
+    #modules-row .wa-pane.is-sticky:has(.wa-titledrop-pop),
+    #modules-row .wa-pane.is-sticky:has([role="menu"]:not(.hidden):not([hidden])) {
+      z-index: 2 !important;
     }
 
     .wa-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
@@ -1014,6 +963,8 @@
     html.dark .wa-cand { background: rgba(255,255,255,0.03); }
     .wa-cand-rank { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 13px; background: var(--primary); color: #fff; }
     html.dark .wa-cand-rank { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .wa-report--brisket .wa-cand-rank { width: auto; height: auto; border-radius: 0; background: transparent; color: var(--primary); font-size: 15px; }
+    html.dark .wa-report--brisket .wa-cand-rank { background: transparent; color: var(--primary-bright, #8B9FAF); }
     .wa-cand-body { flex: 1 1 auto; min-width: 0; }
     .wa-cand-name { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; }
     .wa-cand-note { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -1159,6 +1110,47 @@
     }
     html.dark .sc-surface-ver { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 16%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 32%, transparent); }
     .sc-surface-ver-count { font-weight: 600; opacity: .85; }
+
+    /* ── Surface chip meta row (timestamp + version + inline-expand) ──
+       The timestamp and version no longer sit inside the chip; they float to the
+       LEFT of the turn's meta row underneath it, directly left-aligned, next to a
+       simple (background-less) control that expands the full output inline in the
+       transcript. */
+    .sc-surface-slot { display: block; }
+    .sc-surface-metabar { display: inline-flex; align-items: center; gap: 8px; }
+    .sc-surface-ver-num {
+      font-size: 10px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
+      color: var(--text-subtle); font-variant-numeric: tabular-nums;
+    }
+    .sc-surface-expand-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; padding: 0; border-radius: 6px;
+      border: 0; background: transparent; color: var(--text-subtle);
+      cursor: pointer; transition: color .15s ease, background .15s ease;
+    }
+    .sc-surface-expand-btn:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .sc-surface-expand-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .sc-surface-expand-btn .material-symbols-outlined { font-size: 15px !important; }
+    html.dark .sc-surface-expand-btn:hover { color: var(--primary-bright, #8B9FAF); }
+
+    /* Collapsible inline output — a smooth height reveal using the grid 0fr→1fr
+       trick (animatable, unlike auto height). */
+    .sc-surface-expand { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
+    .sc-surface-expand.is-open { grid-template-rows: 1fr; }
+    .sc-surface-expand-inner {
+      overflow: hidden; min-height: 0; opacity: 0; transform: translateY(-4px);
+      transition: opacity .3s ease .05s, transform .3s ease .05s;
+    }
+    .sc-surface-expand.is-open .sc-surface-expand-inner { opacity: 1; transform: none; }
+    .sc-surface-expand-pad {
+      margin-top: 10px; max-width: min(560px, 100%); overflow: hidden;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px;
+    }
+    html.dark .sc-surface-expand-pad { background: #1A2339; }
+    .sc-surface-expand-pad > * { margin: 0 !important; }
+    @media (prefers-reduced-motion: reduce) {
+      .sc-surface-expand, .sc-surface-expand-inner { transition: none; }
+    }
 
     /* ═══════════ Versioned output — stacked thumbnails ═══════════
        When an output has been redone, its chip shows every version as a
@@ -3098,7 +3090,6 @@
        opening the Results & Details / Visuals panes as data surfaces. -->
   <script type="module">
     import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
-    import { mountActivityStrip, restoreActivityStrip } from '../js/chat-activity-strip.js';
 
     /* ═════════ Data (copy + rows lifted verbatim from the WISEcodeAI transcript) ═════════ */
     const WORST_FOODS = [
@@ -3798,8 +3789,10 @@
       e.preventDefault();
       if (titledropPop) closeTitledropPop(); else openTitledropPop();
     });
-    /* Default the "Outputs dropdown" admin toggle ON — apply the pane class,
-       title affordances & menu-item state to match the initial flag. */
+    /* Default the "Outputs dropdown" admin toggle ON: the "Output N / M"
+       masthead becomes a dropdown. The prev/next left/right arrows stay visible
+       alongside it (see the .is-titledrop CSS), so both nav affordances coexist.
+       Sync the pane class, title affordances & menu-item state to the flag. */
     setUnifiedTitleDrop(unifiedTitleDrop);
 
     /* ── Admin: per-pane "Sticky module" mode ──
@@ -5060,7 +5053,7 @@
             <span class="wa-ce-role-tag">${esc(b[0])}</span>
           </div>`).join('');
       return `
-        <div class="wa-block wa-report">
+        <div class="wa-block wa-report wa-report--brisket">
           <div class="wa-report-hero">
             <h1 class="wa-report-title">The gut-health-optimized brisket</h1>
             <p class="wa-report-lede">An 18-ingredient brisket built to score as high as possible on the WISEcode Gut Health evaluation. Every ingredient classified PL1 (minimally processed); the score lands at 64 — Good — with clear headroom if sauerkraut is promoted higher in the list.</p>
@@ -5071,9 +5064,8 @@
             <div class="wa-stat"><div class="wa-stat-num">18</div><div class="wa-stat-label">PL1 ingredients</div></div>
             <div class="wa-stat"><div class="wa-stat-num">0</div><div class="wa-stat-label">Nitrates / nitrites</div></div>
           </div>
-          <p class="wa-sec-title"><span class="material-symbols-outlined">bolt</span>How the build earns its score</p>
+          <p class="wa-sec-title">How the build earns its score</p>
           <div class="wa-shortlist">${rows}</div>
-          <div class="wa-table-foot" style="margin-top:18px"><span class="material-symbols-outlined">insights</span>Score-driver &amp; headroom charts are in the Visuals pane →</div>
         </div>`;
     }
 
@@ -5354,16 +5346,58 @@
         thumb = `<div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>`;
       }
 
-      const verPill = `<span class="sc-surface-ver">v${version}${count > 1 ? `<span class="sc-surface-ver-count">· ${count} versions</span>` : ''}</span>`;
-      const timeChip = `<span class="sc-surface-time"><span class="material-symbols-outlined">schedule</span>${esc(time)}</span>`;
+      /* The timestamp + version no longer live inside the chip — they render in
+         the turn's meta row below it (see decorateSurfaceMeta). The chip keeps
+         only the thumbnail + title, and carries a collapsible inline copy of the
+         full output that the meta row's expand control reveals in place. */
+      const expandInner = String(previewHtml == null ? '' : previewHtml).replace(/\sid="[^"]*"/g, '');
 
-      return `<div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
-          ${thumb}
-          <div class="sc-surface-body">
-            <div class="sc-surface-title">${esc(title)}</div>
-            <div class="sc-surface-stamp">${timeChip}${verPill}</div>
+      return `<div class="sc-surface-slot">
+          <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
+            ${thumb}
+            <div class="sc-surface-body">
+              <div class="sc-surface-title">${esc(title)}</div>
+            </div>
+          </div>
+          <div class="sc-surface-expand" id="expand-${blockId}" role="region" aria-label="${esc(title)} — expanded inline">
+            <div class="sc-surface-expand-inner"><div class="sc-surface-expand-pad">${expandInner}</div></div>
           </div>
         </div>`;
+    }
+
+    /* Render the surface output's version as a proper, patch-style version
+       string ("v1.0.0", "v1.0.1", …) instead of a bare "v1" chip. */
+    function verLabel(n) { return `v1.0.${Math.max(0, (n | 0) - 1)}`; }
+
+    /* Move the timestamp + version out of the chip and into the turn's meta row,
+       directly left-aligned (floated left, below the chip), alongside a simple
+       expand control that reveals the full output inline in the transcript
+       (smoothly, via the toggle handler). The metabar is prepended so the
+       time/version/expand cluster leads the row; any feedback icons follow. */
+    function decorateSurfaceMeta(line, o) {
+      if (!line) return;
+      const metaEl = line.querySelector('.sc-line-meta');
+      if (!metaEl) return;
+      metaEl.classList.add('sc-line-meta--output');
+      const bar = document.createElement('div');
+      bar.className = 'sc-surface-metabar';
+      const timeEl = metaEl.querySelector('.sc-line-time');
+      if (timeEl) bar.appendChild(timeEl);
+      const ver = document.createElement('span');
+      ver.className = 'sc-surface-ver-num';
+      ver.textContent = verLabel(o.version) + (o.count > 1 ? ` · ${o.count} versions` : '');
+      bar.appendChild(ver);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sc-surface-expand-btn';
+      btn.setAttribute('data-expand-toggle', o.blockId);
+      btn.setAttribute('aria-controls', 'expand-' + o.blockId);
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Expand chart inline');
+      btn.setAttribute('data-tip', 'Expand inline');
+      btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
+      bar.appendChild(btn);
+      metaEl.insertBefore(bar, metaEl.firstChild);
     }
 
     /* ── Conversation manifest (floating Outputs / Sources box) ───────────────
@@ -5541,14 +5575,15 @@
         if (versionReset) SURFACE_VERSIONS[key] = [];
         const list = SURFACE_VERSIONS[key] || (SURFACE_VERSIONS[key] = []);
         list.push({ previewHtml, version: list.length + 1, time });
-        chat.addWISEcodeAI(
+        const surfLine = chat.addWISEcodeAI(
           surfaceCardHtml(blockId, which, icon, title, previewHtml, {
             time,
             version: list.length,
             versions: list.slice(),
           }),
-          { source: '', feedback: false, trailChips: false }
+          { source: '', feedback: true, trailChips: false }
         );
+        decorateSurfaceMeta(surfLine, { time, version: list.length, count: list.length, blockId });
       }
     }
 
@@ -5803,6 +5838,9 @@
            WISEcodeAI is working, with a hover read-out of live token/cache/cost
            telemetry for the current turn and the whole conversation. */
         activity: true,
+        /* The "What can I ask?" gold link below-left of the input is now ON by
+           default for every chat mount (see js/wiseai-chat.js), so no askHelp
+           flag is needed here. */
         userInitials: 'AK',
         historyKey: 'wise-chat-history:wiseai',
         /* History is a first-class, broken-out module on WISEcodeAI (docked to the
@@ -6028,12 +6066,9 @@
         revealChips: (row) => { if (chat.revealChips) chat.revealChips(row); },
       };
 
-      /* Activity strip — a thin right-edge rail (toggled from Appearance) that
-         marks where each landmark landed in the transcript: an output created,
-         a data source added, or the database switched. It watches the live
-         transcript itself, so it needs no per-event wiring here. */
-      restoreActivityStrip();
-      mountActivityStrip({ chatSelector: '#wa-chat', messagesSelector: '.chat-messages-area' });
+      /* Activity strip — the thin landmark rail on the chat's edge is mounted
+         by the shared chat module itself (js/wiseai-chat.js), so it needs no
+         per-page wiring here. Toggled from the chat's three-dot menu. */
 
       /* Tapping an inline surface preview card re-opens its module on the right
          (delegated on the chat root so it covers every card in the transcript,
@@ -6041,6 +6076,22 @@
       host.addEventListener('click', (e) => {
         const cite = e.target.closest('[data-cat-ref]');
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
+        /* The meta-row expand control reveals/hides the full output inline in
+           the transcript (a smooth grid-row height animation). The transcript is
+           NOT scrolled — you clicked the control at its position, so you stay put
+           and the output grows in beneath it; scroll on from there yourself. */
+        const expToggle = e.target.closest('[data-expand-toggle]');
+        if (expToggle) {
+          e.preventDefault();
+          const panel = document.getElementById('expand-' + expToggle.getAttribute('data-expand-toggle'));
+          if (panel) {
+            const open = panel.classList.toggle('is-open');
+            expToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            const ic = expToggle.querySelector('.material-symbols-outlined');
+            if (ic) ic.textContent = open ? 'close_fullscreen' : 'open_in_full';
+          }
+          return;
+        }
         const card = e.target.closest('.sc-surface-card[data-surface]');
         if (!card) return;
         reopenSurface(card.getAttribute('data-surface'));

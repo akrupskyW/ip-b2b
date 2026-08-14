@@ -181,14 +181,26 @@
          `:hover`/`:focus-within` reveal rules, which share this specificity. */
       '.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del,.wch-sidebar.wch-rail .wch-proj-menu{display:none !important;}',
       /* ── Projects (chat grouping) ── */
-      '.wch-item-actions{position:absolute;top:50%;right:6px;transform:translateY(-50%);display:none;align-items:center;gap:2px;}',
+      /* Hover actions float over the (now longer) title as a rounded cluster
+         whose fill matches the panel surface, so the icons read as tidy circles
+         sitting on the background rather than clashing with the text beneath. */
+      '.wch-item-actions{position:absolute;top:50%;right:5px;transform:translateY(-50%);display:none;align-items:center;gap:3px;padding:3px;border-radius:999px;',
+        'background:var(--card,var(--surface,#0F1830));box-shadow:0 2px 10px rgba(0,0,0,0.34);}',
+      'html:not(.dark) .wch-item-actions{background:#fff;box-shadow:0 2px 10px rgba(20,30,60,0.16);}',
       '.wch-item:hover .wch-item-actions,.wch-item:focus-within .wch-item-actions{display:flex;}',
-      '.wch-iact{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;}',
-      '.wch-iact:hover{background:rgba(255,255,255,0.12);opacity:1;}',
-      'html:not(.dark) .wch-iact:hover{background:rgba(0,0,0,0.08);}',
+      '.wch-iact{width:26px;height:26px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;transition:background .15s ease,opacity .15s ease;}',
+      '.wch-iact:hover{background:rgba(255,255,255,0.14);opacity:1;}',
+      'html:not(.dark) .wch-iact:hover{background:rgba(20,40,80,0.10);opacity:1;}',
       '.wch-iact .material-symbols-outlined{font-size:16px;}',
-      /* Item needs room for the two hover actions. */
-      '.wch-item{padding-right:60px;}',
+      /* Dedicated drag handle: signals the row can be grabbed and dropped into a
+         project. The whole row is already draggable, so this is the visible
+         affordance — grabbing anywhere works, but this icon makes it discoverable.
+         Hovering it highlights the entire row so it reads as "grab this". */
+      '.wch-drag-handle{cursor:grab;}',
+      '.wch-drag-handle:active{cursor:grabbing;}',
+      '.wch-item:has(.wch-drag-handle:hover){background:color-mix(in srgb,var(--primary,#2F6DF6) 12%,transparent);outline:1px solid color-mix(in srgb,var(--primary,#2F6DF6) 40%,transparent);}',
+      /* Let the title stretch nearly edge-to-edge; the hover actions overlay it. */
+      '.wch-item{padding-right:14px;}',
       /* Projects section header + add button. */
       '.wch-projects{margin:2px 0 4px;}',
       '.wch-projects-head{display:flex;align-items:center;gap:6px;padding:12px 8px 4px 12px;}',
@@ -218,9 +230,15 @@
       '.wch-project.wch-collapsed .wch-project-body{display:none;}',
       '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
       /* Inline name editor (create + rename). */
-      '.wch-proj-edit{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 8px;}',
+      '.wch-proj-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px 6px 8px;}',
       '.wch-proj-edit-input{flex:1;min-width:0;height:30px;box-sizing:border-box;padding:0 10px;border-radius:8px;font:inherit;font-size:13px;color:inherit;outline:none;background:rgba(255,255,255,0.06);border:1px solid var(--primary,#2F6DF6);}',
       'html:not(.dark) .wch-proj-edit-input{background:rgba(20,40,80,0.05);}',
+      /* Dot-color palette shown while editing — picking a swatch is part of the
+         rename/create flow and only sticks when the edit is saved. */
+      '.wch-proj-swatches{flex-basis:100%;display:flex;align-items:center;gap:8px;padding:4px 2px 2px 17px;}',
+      '.wch-proj-swatch{flex:0 0 auto;width:14px;height:14px;padding:0;border:0;border-radius:50%;background:currentColor;cursor:pointer;transition:transform .12s ease;}',
+      '.wch-proj-swatch:hover{transform:scale(1.25);}',
+      '.wch-proj-swatch.is-sel{outline:2px solid currentColor;outline-offset:2px;}',
       '.wch-item.wch-dragging{opacity:.45;}',
       '.wch-ungrouped{border-radius:10px;min-height:20px;}',
       '.wch-ungrouped.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 12%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 50%,transparent);}',
@@ -283,10 +301,10 @@
       '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:2;}',
       '#modules-row.modules-sticky .wch-sidebar.wch-docked{z-index:1;background:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right){margin-right:-22px;padding-right:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
       /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right{margin-left:-22px;padding-left:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right{margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
         'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:wchStickySlideR .42s cubic-bezier(.34,1.45,.64,1) both;}',
       '@keyframes wchStickySlideL{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
       '@keyframes wchStickySlideR{from{transform:translateX(-26px);opacity:.35}to{transform:none;opacity:1}}',
@@ -513,6 +531,7 @@
     /* Transient project-editing UI state (never persisted). */
     var editingProjectId = null;   /* project row shown as an inline name input */
     var creatingProject = false;   /* the "new project" inline input is shown */
+    var editingColor = null;       /* pending dot color picked while editing (applied on save) */
     var pendingMoveItemId = null;  /* chat awaiting a project pick from the popover */
     /* When a new conversation is started from a project's menu, remember that
        project so the thread is auto-filed into it the moment it's first saved
@@ -631,7 +650,7 @@
         text = cleanText(any);
       }
       if (!text) return 'Conversation';
-      if (text.length > 48) text = text.slice(0, 47).trim() + '…';
+      if (text.length > 90) text = text.slice(0, 89).trim() + '…';
       return text;
     }
 
@@ -686,11 +705,12 @@
       return proj;
     }
     /* UPDATE — rename (and optionally recolor). No-op if the project is gone. */
-    function renameProject(id, name) {
+    function renameProject(id, name, color) {
       var proj = findProject(id);
       if (!proj) return;
       var next = (name || '').trim();
       if (next) proj.name = next;
+      if (color) proj.color = color;
       writeStore();
     }
     /* DELETE — remove the project; its chats fall back to ungrouped (never
@@ -721,9 +741,16 @@
       render();
     }
 
-    function metaFor(item) {
+    /* Row subtitle. When the row already sits under a day-group header the day
+       label is redundant, so `omitDay` drops it (leaving time + message count). */
+    function metaFor(item, omitDay) {
       var msgs = item.count === 1 ? '1 message' : item.count + ' messages';
-      return (item.fork ? 'Forked · ' : '') + dayLabel(item.ts) + ' · ' + timeLabel(item.ts) + ' · ' + msgs;
+      var parts = [];
+      if (item.fork) parts.push('Forked');
+      if (!omitDay) parts.push(dayLabel(item.ts));
+      parts.push(timeLabel(item.ts));
+      parts.push(msgs);
+      return parts.join(' · ');
     }
 
     /* ── Public actions ── */
@@ -862,7 +889,7 @@
     /* ── Render ── */
     /* One conversation row — draggable (drop it onto a project), with hover
        actions for "move to project" and delete. */
-    function itemHtml(it) {
+    function itemHtml(it, omitDay) {
       var forkBadge = it.fork
         ? '<span class="wch-fork-badge" title="Forked from ' + esc(it.fork.from || 'a conversation') + '"><span class="material-symbols-outlined">alt_route</span></span>'
         : '';
@@ -871,19 +898,28 @@
         : '';
       return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '"' + (railMode ? ' data-tip="' + esc(it.title) + '"' : '') + '>' +
         '<div class="wch-item-title">' + forkBadge + mcpBadge + esc(it.title) + '</div>' +
-        '<div class="wch-item-meta">' + esc(metaFor(it)) + '</div>' +
+        '<div class="wch-item-meta">' + esc(metaFor(it, omitDay)) + '</div>' +
         '<div class="wch-item-actions">' +
+          '<button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project" data-wch-drag="' + esc(it.id) + '"><span class="material-symbols-outlined">drag_indicator</span></button>' +
           '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-symbols-outlined">drive_file_move</span></button>' +
           '<button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-symbols-outlined">delete_outline</span></button>' +
         '</div>' +
       '</div>';
     }
 
-    /* Inline name editor used for both creating and renaming a project. */
+    /* Inline name editor used for both creating and renaming a project. Renaming
+       also covers the dot color: a palette row lets the user recolor as part of
+       the same edit, committed together with the name. */
     function projEditRowHtml(name, id) {
+      var cur = editingColor || (findProject(id) || {}).color || PROJ_COLORS[projects.length % PROJ_COLORS.length];
+      var swatches = '';
+      PROJ_COLORS.forEach(function (c) {
+        swatches += '<button type="button" class="wch-proj-swatch' + (c === cur ? ' is-sel' : '') + '" data-proj-swatch="' + esc(c) + '" style="color:' + esc(c) + '" title="Project color" aria-label="Set project color"></button>';
+      });
       return '<div class="wch-proj-edit" data-proj-edit="' + esc(id || 'new') + '">' +
-        '<span class="wch-proj-dot" style="color:' + esc((findProject(id) || {}).color || PROJ_COLORS[projects.length % PROJ_COLORS.length]) + '"></span>' +
+        '<span class="wch-proj-dot" style="color:' + esc(cur) + '"></span>' +
         '<input type="text" class="wch-proj-edit-input" maxlength="60" placeholder="Project name…" value="' + esc(name || '') + '">' +
+        '<div class="wch-proj-swatches">' + swatches + '</div>' +
       '</div>';
     }
 
@@ -943,7 +979,7 @@
       ungrouped.forEach(function (it) {
         var g = dayLabel(it.ts);
         if (g !== lastGroup) { ungroupedHtml += '<div class="wch-group">' + esc(g) + '</div>'; lastGroup = g; }
-        ungroupedHtml += itemHtml(it);
+        ungroupedHtml += itemHtml(it, true);
       });
 
       if (!items.length) {
@@ -972,7 +1008,11 @@
 
       /* Focus any open inline name editor (create / rename). */
       var editInput = listEl.querySelector('.wch-proj-edit-input');
-      if (editInput) { wireEditInput(editInput); try { editInput.focus(); editInput.select(); } catch (_) {} }
+      if (editInput) {
+        wireEditInput(editInput);
+        wireEditSwatches(editInput.closest('.wch-proj-edit'));
+        try { editInput.focus(); editInput.select(); } catch (_) {}
+      }
     }
 
     /* ── Inline project name editor (create + rename) ── */
@@ -984,11 +1024,12 @@
       var val = input.value;
       if (target === 'new') {
         creatingProject = false;
-        if (save && val.trim()) createProject(val);
+        if (save && val.trim()) createProject(val, editingColor);
       } else {
         editingProjectId = null;
-        if (save) renameProject(target, val);
+        if (save) renameProject(target, val, editingColor);
       }
+      editingColor = null;
       render();
     }
     function wireEditInput(input) {
@@ -998,10 +1039,32 @@
       });
       input.addEventListener('blur', function () { commitEdit(input, true); });
     }
+    /* Color swatches inside the inline editor: picking one previews the dot and
+       is committed together with the name. mousedown is suppressed so the pick
+       doesn't blur the input (blur would save-and-close the editor). */
+    function wireEditSwatches(row) {
+      if (!row) return;
+      var sws = row.querySelectorAll('.wch-proj-swatch');
+      for (var i = 0; i < sws.length; i++) {
+        sws[i].addEventListener('mousedown', function (e) { e.preventDefault(); });
+        sws[i].addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          var c = this.getAttribute('data-proj-swatch');
+          editingColor = c;
+          var dot = row.querySelector('.wch-proj-dot');
+          if (dot) dot.style.color = c;
+          var all = row.querySelectorAll('.wch-proj-swatch');
+          for (var j = 0; j < all.length; j++) all[j].classList.toggle('is-sel', all[j] === this);
+          var inp = row.querySelector('.wch-proj-edit-input');
+          if (inp) try { inp.focus(); } catch (_) {}
+        });
+      }
+    }
     function startCreateProject() {
       closePopover();
       editingProjectId = null;
       creatingProject = true;
+      editingColor = null;
       /* Projects live at the top of the list — make sure they're in view. */
       listEl.scrollTop = 0;
       render();
@@ -1010,6 +1073,7 @@
       closePopover();
       creatingProject = false;
       editingProjectId = id;
+      editingColor = (findProject(id) || {}).color || null;
       render();
     }
 
@@ -1575,6 +1639,9 @@
       if (pHead) { toggleProjectCollapse(pHead.getAttribute('data-proj-head')); return; }
       /* Ignore clicks inside the inline name editor. */
       if (e.target.closest('.wch-proj-edit')) return;
+      /* The drag handle is a drag affordance only — a plain click on it should
+         not open/restore the conversation. */
+      if (e.target.closest('[data-wch-drag]')) { e.stopPropagation(); return; }
       /* Move a chat to a project */
       var mv = e.target.closest('[data-wch-move]');
       if (mv) { e.stopPropagation(); openMovePopover(mv.getAttribute('data-wch-move'), mv); return; }
@@ -1627,7 +1694,7 @@
       setSticky: setSticky,
       /* Projects (chat grouping) CRUD, exposed for host integrations. */
       createProject: function (name, color) { var p = createProject(name, color); render(); return p; },
-      renameProject: function (id, name) { renameProject(id, name); render(); },
+      renameProject: function (id, name, color) { renameProject(id, name, color); render(); },
       deleteProject: deleteProject,
       moveToProject: moveToProject,
       listProjects: function () { return projects.map(function (p) { return { id: p.id, name: p.name, color: p.color, count: projectItems(p.id).length }; }); }

@@ -8,8 +8,18 @@
      panes (or the outer edge of an end pane), a small drag handle fades in and
      the cursor becomes a col-resize. Drag it to any width; the neighbouring pane
      grows/shrinks to match the direction you drag.
-   • Widths are remembered per-page in localStorage. Double-click a handle to
-     reset the two panes it sits between.
+   • THE FOUR-TIER RULE: any module that carries the canonical width changer
+     (.panel-width-toggle-btn — everything except Navigation and the minimized
+     History rail) may only REST at one of the four preset widths: single,
+     double, triple, or fill. A drag on such a module is a live preview; on
+     release it SNAPS to whichever tier is closest to the dragged width, by
+     driving the module's own width button (so the page's exact tier classes,
+     icon state and persistence all apply). Dragged pixel widths are never
+     saved or restored for these modules — dragging can never overrule the
+     preset system.
+   • Only modules WITHOUT a width changer keep free-form widths, remembered
+     per-page in localStorage. Double-click a handle to reset the two panes it
+     sits between.
 
    Implementation: handles are drawn in a fixed, body-level overlay so they are
    never clipped by a pane's overflow, never cover a pane's buttons/content, and
@@ -119,6 +129,32 @@
   function isFill(el) {
     return !!(el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-pr-fill')) && growOf(el) > 0;
   }
+  // Row containers whose direct children are first-class modules (mirrors
+  // js/default-fill.js): panels flipped right live in #panels-row-right, the
+  // left rail is #panels-row, panes sit straight in the row.
+  function isRowContainer(node, row) {
+    return node === row || node.id === 'panels-row' || node.id === 'panels-row-right';
+  }
+  // Walk up from a width button to the module element that actually gets sized
+  // — the child sitting directly inside a row container.
+  function moduleRootOfBtn(btn, row) {
+    var n = btn;
+    while (n && n.parentElement && !isRowContainer(n.parentElement, row)) n = n.parentElement;
+    return (n && n.parentElement && isRowContainer(n.parentElement, row)) ? n : null;
+  }
+  // The pane's OWN four-tier width changer, if it has one. Modules with this
+  // button follow the four-tier rule (see header): drags snap to the nearest
+  // preset and pixel widths are never persisted for them. A button belonging
+  // to a NESTED module (e.g. a panel inside the #panels-row rail) resolves to
+  // that inner module, not to `el`, and is rejected — so we never drive some
+  // other module's width control by mistake.
+  function widthBtnOf(el, row) {
+    if (!el || el.nodeType !== 1 || !el.querySelectorAll) return null;
+    var btns = el.querySelectorAll('.panel-width-toggle-btn');
+    for (var i = 0; i < btns.length; i++)
+      if (moduleRootOfBtn(btns[i], row) === el) return btns[i];
+    return null;
+  }
   // A "locked" pane (marked data-pr-lock) opts out of resizing entirely — no
   // drag handle is offered on either of its seams and its width is never pinned
   // or restored. Used e.g. by the History module while it is minimized to its
@@ -170,7 +206,13 @@
     if (ps.length < 2) return;
     var stored = readPage();
     ps.forEach(function (el) {
-      if (hasPreset(el)) return;            // preset width button owns this pane
+      // Four-tier rule: a module with its own width changer is sized ONLY by
+      // its preset tier (single/double/triple/fill). Never restore a saved
+      // pixel width onto it — any stored value is legacy from before drags
+      // snapped to tiers, and re-pinning it would let a drag overrule the
+      // preset system across reloads.
+      if (widthBtnOf(el, row)) return;
+      if (hasPreset(el)) return;            // preset width classes own this pane
       if (isLocked(el)) return;             // minimized/locked pane owns its own fixed width
       if (isFill(el)) { clearInline(el); return; }  // flexible filler: stays fluid
       var w = stored[keyOf(row, el)];
@@ -272,6 +314,73 @@
     }
   }
   function hide(h) { h.style.display = 'none'; h._spec = null; }
+
+  /* ── four-tier snapping ───────────────────────────────────────────────── */
+  // The width button's title names its tier unambiguously on every page —
+  // pane-width.js renders the same "Width (single|double|triple|fill) — …"
+  // text app-wide. Reading the BUTTON (with the pane's classes as fallback)
+  // also covers pages that put the tier classes on an inner card rather than
+  // on the row child itself (mirrors js/default-fill.js's tierOfBtn).
+  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3 };
+  function tierOf(el, btn) {
+    var m = /\((single|double|triple|fill)\)/.exec(btn.getAttribute('title') || '');
+    if (m) return TITLE_TIER[m[1]];
+    return window.WPaneWidth.clamp(window.WPaneWidth.tierOfEl(el));
+  }
+
+  /* Snap a just-dragged pane onto the canonical four-tier width scale
+     (single / double / triple / fill). We drive the pane's OWN width button —
+     cycling it through every tier while measuring the pane's real width at
+     each — then keep clicking until the pane rests at whichever tier came
+     closest to the dragged width. Going through the page's native control
+     (the same trick js/default-fill.js uses) inherits the page's exact tier
+     classes, icon/pressed state AND its persistence, so we never guess at
+     class names and the snapped tier survives a reload. All the clicks run
+     synchronously inside this one task, so the user only ever sees the final
+     tier painted. Never saves a pixel width: for these modules the four
+     presets are the only widths that exist. */
+  function snapToTier(row, el, btn) {
+    var W = window.WPaneWidth;
+    if (!W) { var w0 = rectW(el); pin(el, w0); saveWidth(keyOf(row, el), w0); return; }
+
+    var target = rectW(el);              // the width the user dragged to
+    clearWidth(keyOf(row, el));          // dragged pixel widths are never kept
+    clearInline(el);                     // release the pin → preset classes size it
+    el.style.setProperty('transition', 'none', 'important');
+
+    // Measure the pane's real width at every tier by cycling its own button.
+    // Bail the moment a click stops advancing the reported tier, so a control
+    // we can't read never gets clicked forever.
+    var widths = [];
+    var tier = tierOf(el, btn);
+    widths[tier] = rectW(el);
+    for (var i = 1; i < W.TIERS; i++) {
+      btn.click();
+      var t = tierOf(el, btn);
+      if (t === tier) break;             // no forward progress — stop
+      tier = t;
+      widths[tier] = rectW(el);
+    }
+
+    // Pick the tier whose width is closest to the dragged width.
+    var best = tier, bd = Infinity;
+    for (var k = 0; k < W.TIERS; k++) {
+      if (widths[k] == null) continue;
+      var d = Math.abs(widths[k] - target);
+      if (d < bd) { bd = d; best = k; }
+    }
+
+    // Click on around the cycle until the pane rests at the best tier (guarded
+    // the same way: a click that doesn't move the tier ends the loop).
+    for (var g = 0; g < W.TIERS && tier !== best; g++) {
+      btn.click();
+      var now = tierOf(el, btn);
+      if (now === tier) break;
+      tier = now;
+    }
+
+    el.style.removeProperty('transition');
+  }
 
   /* ── drag ─────────────────────────────────────────────────────────────── */
   function startDrag(entry, handle, ev) {
@@ -382,7 +491,16 @@
       } else {
         keep = isFill(target) ? [] : [target];
       }
-      keep.forEach(function (el) { var w = rectW(el); pin(el, w); saveWidth(keyOf(row, el), w); });
+      keep.forEach(function (el) {
+        var btn = widthBtnOf(el, row);
+        // Four-tier rule: a module with its own width changer snaps to the
+        // nearest preset (single/double/triple/fill) instead of keeping the
+        // free dragged width — dragging must never overrule the presets.
+        if (btn) { snapToTier(row, el, btn); return; }
+        var w = rectW(el);
+        pin(el, w);
+        saveWidth(keyOf(row, el), w);
+      });
 
       layout(entry);
     }
