@@ -1004,6 +1004,211 @@ function statusStepsFor(text, intent) {
   return ['Gathering the details'];
 }
 
+/* The behind-the-scenes reasoning trace for a turn. Where statusStepsFor picks a
+   one-liner, this returns the fuller "thinking out loud" narration the transcript
+   streams while the answer is being built: an ordered set of MILESTONES, each a
+   1–3 word landmark (`key`) plus a big GLOB of smaller, subdued `story` lines.
+   Only ONE milestone is on screen at a time — its glob streams in line by line as
+   a flowing paragraph, then the whole thing is wiped and replaced by the next
+   milestone's (see runReasoningTrace). When the last one lands, the globs are
+   gone and only the milestone summary remains: each key + the m:ss elapsed when it
+   landed. The story copy is deliberately verbose, WISE-voiced narration — the
+   point is to SEE the machine think, so make it read. Routed exactly like
+   statusStepsFor so a clicked chip / typed ask narrates on-topic. */
+function reasoningTraceFor(text, intent) {
+  /* Named milestone sets. Each `story` is a paragraph's worth of lines so the
+     live view always has a substantial glob of text to read while it works. */
+  const S = {
+    generic: [
+      { key: 'Reading', story: [
+        'Reading your ask twice \u2014 once for the words, once for the want underneath them.',
+        'Tracing the thread back through the conversation so nothing lands out of place.',
+        'Naming the three things everything hangs on: the brand, the product, the claim.',
+        'Setting what looks certain apart from what still deserves a second look.',
+        'Sketching the questions I\u2019ll have to answer before I can answer yours.',
+        'Deciding where to start so the first step doesn\u2019t undo the last.',
+      ] },
+      { key: 'Gathering', story: [
+        'Walking the WISE Foods registry row by patient row for anything that matches.',
+        'Reaching past it into the connected catalogs \u2014 retailer feeds, USDA, whatever\u2019s synced and fresh.',
+        'Reconciling the barcodes that agree, and quietly flagging the few that don\u2019t.',
+        'Weighing each source by how recently it was touched, because stale data lies without meaning to.',
+        'Keeping only the records that earn their place in the answer, letting the rest fall away.',
+      ] },
+      { key: 'Composing', story: [
+        'Folding the pile of facts into something you can actually read.',
+        'Leading with the number that matters and tucking the caveats where they belong.',
+        'Cutting every sentence that was only there to sound thorough.',
+        'Reading it back once in your voice, to be sure it\u2019s useful and not just correct.',
+      ] },
+    ],
+    analytics: [
+      { key: 'Reading data', story: [
+        'Opening the tables behind this view and letting the columns introduce themselves.',
+        'Pulling the rows from the WISE Foods registry that actually back the question.',
+        'Cross-referencing the connected sources for anything newer than what I already hold.',
+        'Marking the gaps \u2014 the products with no score yet, the fields left politely blank.',
+        'Squinting at the outliers to tell the real finding from the fat-fingered typo.',
+      ] },
+      { key: 'Crunching', story: [
+        'Running WISEscore across every matched item, one ingredient list at a time.',
+        'Rolling the numbers into the cuts you asked for, and a couple you didn\u2019t, just in case.',
+        'Holding each average up to the light to see which ones are hiding a story.',
+        'Checking the math twice, because a confident wrong number is worse than no number.',
+      ] },
+      { key: 'Building view', story: [
+        'Laying it out the way an eye reads it: headline metric first, breakdowns beneath.',
+        'Choosing the chart that tells the truth fastest and cutting the ones that only decorate.',
+        'Labeling everything twice so nothing needs a caption to be understood.',
+      ] },
+    ],
+    compare: [
+      { key: 'Gathering', story: [
+        'Pulling each item you want to line up and standing them shoulder to shoulder.',
+        'Aligning them on the same fields so it\u2019s apples to apples, never apples to marketing.',
+        'Filling the blanks from the registry where one side knows what the other forgot.',
+        'Making sure I\u2019m comparing the versions that are actually on shelf today.',
+      ] },
+      { key: 'Scoring', story: [
+        'Re-running WISEscore on each so the comparison is today\u2019s, not last quarter\u2019s.',
+        'Separating the differences that matter to a shopper from the ones that only matter to a lab.',
+        'Noting where two products look identical until you read the eighth ingredient.',
+      ] },
+      { key: 'Framing it', story: [
+        'Setting the side-by-side so the real gaps step forward and the noise steps back.',
+        'Deciding what earns bold and what\u2019s content to live in the footnotes.',
+      ] },
+    ],
+    reformulation: [
+      { key: 'Reading recipe', story: [
+        'Taking the formula apart ingredient by ingredient, the way you\u2019d unpick a seam.',
+        'Noting where each one earns its place \u2014 texture, shelf life, cost, or plain old habit.',
+        'Marking the two or three that keep this from clearing the Non-UPF bar.',
+        'Listening for the ingredient that\u2019s only there because it always has been.',
+      ] },
+      { key: 'Modeling swaps', story: [
+        'Trying substitutions one at a time and watching what moves when they land.',
+        'Keeping an eye on cost and the WISEscore together, since fixing one often bruises the other.',
+        'Letting the swaps that help stay, and letting go of the clever ones that don\u2019t.',
+        'Re-checking the mouthfeel math so \u201ccleaner\u201d never quietly means \u201cworse.\u201d',
+      ] },
+      { key: 'Composing', story: [
+        'Writing up only the changes worth making, in the order I\u2019d make them.',
+        'Saying plainly what each swap buys you and what it asks in return.',
+      ] },
+    ],
+    verify: [
+      { key: 'Checking rules', story: [
+        'Reading the current criteria for this claim, word for careful word.',
+        'Reminding myself what the badge promises so I don\u2019t promise more than it does.',
+        'Marking the lines that are pass/fail and the ones that ask for judgment.',
+      ] },
+      { key: 'Screening', story: [
+        'Running each eligible UPC through the ingredient screen, line by line.',
+        'Flagging the additives that draw a second glance and the ones that draw a stop.',
+        'Sorting the clean from the maybe from the not-today.',
+        'Double-checking the borderline cases against the source, not the summary.',
+      ] },
+      { key: 'Composing', story: [
+        'Laying out Confirm \u2192 Attest \u2192 Activate as three small steps, not one large one.',
+        'Writing the next move so it\u2019s obvious, not merely available.',
+      ] },
+    ],
+    search: [
+      { key: 'Searching', story: [
+        'Querying the WISE Foods registry for anything that answers to this name.',
+        'Widening the net to the connected retailer catalogs when the first pass comes up thin.',
+        'Reading past the brand copy to the label underneath it.',
+        'Setting aside the near-misses that share a name but nothing else.',
+      ] },
+      { key: 'Matching UPCs', story: [
+        'Reconciling barcodes across sources and trusting the ones that agree.',
+        'Pulling the nutrition metadata and checking it\u2019s the version that\u2019s actually on shelf.',
+        'Untangling the private-label twins that hide behind the same numbers.',
+      ] },
+      { key: 'Composing', story: [
+        'Bringing the best matches together and putting the closest one on top.',
+        'Noting for each why it made the cut, so you don\u2019t have to guess.',
+      ] },
+    ],
+    portfolio: [
+      { key: 'Opening', story: [
+        'Loading your portfolio and asking it when it last spoke to its sources.',
+        'Waiting for the sync state to settle before I trust a single number.',
+      ] },
+      { key: 'Reading', story: [
+        'Reading each product\u2019s score, status, and who can currently see it.',
+        'Noticing the ones that slipped \u2014 expired, unscored, or quietly hidden.',
+        'Grouping them so the ones that need you cluster near the top.',
+      ] },
+      { key: 'Composing', story: [
+        'Summarizing what stands out and what would thank you for attention first.',
+      ] },
+    ],
+    connect: [
+      { key: 'Reaching out', story: [
+        'Opening the connection and offering the credentials politely.',
+        'Waiting to be recognized before I ask the catalog for anything.',
+      ] },
+      { key: 'Syncing', story: [
+        'Pulling the catalog down and reconciling it against what we already hold.',
+        'Letting the fresh records overwrite the stale ones without losing the history.',
+        'Counting what changed so I can tell you plainly, not vaguely.',
+      ] },
+      { key: 'Composing', story: [
+        'Confirming what\u2019s newly available and what you can ask of it now.',
+      ] },
+    ],
+    ingest: [
+      { key: 'Prepping parser', story: [
+        'Warming up the label parser and reminding it what a serving size can disguise.',
+        'Deciding which fields to lift first: ingredients, NFP, claims, then the fine print.',
+        'Clearing a place to put whatever you hand me next.',
+      ] },
+      { key: 'Composing', story: [
+        'Writing the intake prompt so you can hand me a label, a spec sheet, or a link.',
+      ] },
+    ],
+  };
+
+  const byIntent = {
+    customer_profile: 'verify',
+    resume_prompt: 'generic',
+    faq_intro: 'generic',
+    registry_home: 'search',
+    add_food_intro: 'ingest',
+    edit_food_select: 'portfolio',
+  };
+  if (intent && byIntent[intent]) return S[byIntent[intent]];
+
+  const q = String(text || '').toLowerCase();
+  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return S.analytics;
+  if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return S.compare;
+  if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return S.reformulation;
+  if (/(verif|shield|attest|non-upf|clean label|badge)/.test(q)) return S.verify;
+  if (/(food|registry|upc|product|search|look ?up|find)/.test(q)) return S.search;
+  if (/(portfolio|catalog|inventory)/.test(q)) return S.portfolio;
+  if (/(connect|sync|integration|kroger|walmart|instacart|usda)/.test(q)) return S.connect;
+  return S.generic;
+}
+
+/* The trailing "assembling" milestone, built from the answer HTML the turn is
+   about to post. It runs AFTER the thinking milestones so the globs keep talking
+   while the visible pieces are laid out — the charts, tables, reports, sources,
+   and suggested next steps — and so none of them render until the trace is done.
+   Returns null when the answer is plain prose with nothing to assemble. */
+function assemblyMilestoneFor(html) {
+  const h = String(html || '').toLowerCase();
+  const lines = [];
+  if (/canvas|<svg|chart|graph|insights|spark/.test(h)) lines.push('Rendering the chart so the shape of the data reads at a glance.');
+  if (/<table|wa-tbl/.test(h)) lines.push('Laying the table out row by row, headers pinned to the top.');
+  if (/surface-card|report|summarize/.test(h)) lines.push('Stitching the report together section by section.');
+  if (/href=|<a\b/.test(h)) lines.push('Attaching the sources so every number stays traceable to where it came from.');
+  if (!lines.length) return null;
+  lines.push('Bringing the suggested next steps in last, once everything else has settled.');
+  return { key: 'Assembling', story: lines };
+}
+
 /* Build the in-chat "Agent Settings" overlay from an agent roster. Mirrors the
    #settings-screen markup in pages/ai-chat.html, scoped to the WISEcodeAI card so
    the same panel is available wherever the shared chat is mounted. */
@@ -2075,10 +2280,144 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     };
     setTimeout(next, STEP);
   }
+  /* Format a millisecond span as a live m:ss stopwatch (0:04, 1:12). */
+  function fmtTraceClock(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  /* Stream the behind-the-scenes reasoning trace for a turn, then hand off to
+     `done()` (which posts the real answer). Instead of the answer landing the
+     instant you ask, the transcript first "thinks out loud":
+
+       • A live m:ss stopwatch ticks in the header the whole time.
+       • Exactly ONE milestone is on screen at a moment — its 1–3 word key with a
+         spinner, and beneath it a big GLOB of subdued story text that streams in
+         line by line, building into a paragraph you can actually read.
+       • When it advances, that whole glob is WIPED and replaced by the next
+         milestone's — the previous status does not linger.
+       • Delays are deliberately variable so no two turns feel identical.
+
+     When the last milestone lands, the globs are gone and the live block is
+     replaced by the quiet SUMMARY: each milestone's key + the m:ss elapsed when
+     it landed, the header reading "Worked for m:ss". Collapsible via the header. */
+  function runReasoningTrace(milestones, done, tail) {
+    if (!messages) { if (done) done(); return; }
+    detachInlineChips();
+    const steps = (Array.isArray(milestones) && milestones.length)
+      ? milestones.slice() : [{ key: 'Thinking', story: ['Gathering the details.'] }];
+    /* A trailing "assembling" milestone (built from what the answer will contain)
+       so the globs keep narrating the pieces being laid out — and nothing loads
+       until they're done. */
+    if (tail && tail.key) steps.push(tail);
+
+    const el = document.createElement('div');
+    el.className = 'sc-line sc-line-wiseai sc-line-typing sc-line-trace';
+    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`
+      + `<div class="sc-line-body"><div class="sc-trace" data-open="1">`
+      + `<button type="button" class="sc-trace-head" aria-expanded="true">`
+      + `<span class="sc-trace-title">Thinking</span>`
+      + `<span class="sc-trace-timer" aria-hidden="true">0:00</span>`
+      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
+      + `</button><div class="sc-trace-body"></div></div></div>`;
+    messages.appendChild(el);
+    scrollDown();
+
+    const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const now = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - start;
+    const trace = el.querySelector('.sc-trace');
+    const head = el.querySelector('.sc-trace-head');
+    const titleEl = el.querySelector('.sc-trace-title');
+    const timerEl = el.querySelector('.sc-trace-timer');
+    const bodyEl = el.querySelector('.sc-trace-body');
+
+    /* The header collapses the whole trace (live glob or final summary) and back. */
+    head.addEventListener('click', () => {
+      const open = trace.getAttribute('data-open') === '1';
+      trace.setAttribute('data-open', open ? '0' : '1');
+      head.setAttribute('aria-expanded', open ? 'false' : 'true');
+      scrollDown();
+    });
+
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    /* The landmarks we've passed — key + the clock reading when each landed.
+       Only surfaced at the very end, as the summary. */
+    const landmarks = [];
+    const summaryHtml = () => `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step is-done"><span class="sc-trace-step-ic"><span class="material-symbols-outlined" aria-hidden="true">check</span></span>`
+      + `<span class="sc-trace-step-key">${esc(l.key)}</span>`
+      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
+
+    /* Reduced motion: skip the live streaming, show the finished summary at once
+       with plausible stamps, then answer after a short beat. */
+    if (prefersReducedMotion) {
+      let acc = 0;
+      steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtTraceClock(acc) }); });
+      bodyEl.innerHTML = summaryHtml();
+      titleEl.textContent = `Worked for ${fmtTraceClock(acc)}`;
+      timerEl.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
+      trace.classList.add('is-complete');
+      el.classList.remove('sc-line-typing');
+      scrollDown();
+      setTimeout(() => { if (done) done(); }, 480);
+      return;
+    }
+
+    const timer = setInterval(() => { timerEl.textContent = fmtTraceClock(now()); }, 200);
+    let mi = 0;
+
+    const finish = () => {
+      clearInterval(timer);
+      bodyEl.innerHTML = summaryHtml();
+      titleEl.textContent = `Worked for ${fmtTraceClock(now())}`;
+      timerEl.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
+      trace.classList.add('is-complete');
+      el.classList.remove('sc-line-typing');
+      scrollDown();
+      if (done) done();
+    };
+
+    const runMilestone = () => {
+      if (mi >= steps.length) { finish(); return; }
+      const m = steps[mi];
+      /* Wipe the previous status entirely — one milestone visible at a time. No
+         inline spinner here: the owl avatar to the left already carries the
+         "working" ring, so the status is just its key + the streaming glob. */
+      bodyEl.innerHTML = `<div class="sc-trace-live">`
+        + `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(m.key)}</span></div>`
+        + `<div class="sc-trace-story"></div></div>`;
+      scrollDown();
+      const storyEl = bodyEl.querySelector('.sc-trace-story');
+      const lines = (m.story || []).slice();
+      let si = 0;
+      const streamLine = () => {
+        if (si >= lines.length) {
+          landmarks.push({ key: m.key, time: fmtTraceClock(now()) });
+          mi += 1;
+          setTimeout(runMilestone, rnd(320, 780));
+          return;
+        }
+        const sp = document.createElement('span');
+        sp.className = 'sc-trace-story-line';
+        sp.textContent = lines[si];
+        storyEl.appendChild(sp);
+        requestAnimationFrame(() => sp.classList.add('is-in'));
+        scrollDown();
+        si += 1;
+        setTimeout(streamLine, rnd(300, 720));
+      };
+      setTimeout(streamLine, rnd(160, 440));
+    };
+
+    setTimeout(runMilestone, rnd(220, 520));
+  }
+
   function wiseaiRespond(text, intent) {
-    const steps = statusStepsFor(text, intent);
-    const typing = showTyping(steps[0]);
-    cycleStatus(typing, steps, () => { typing?.remove(); addWISEcodeAI(reply(text, intent)); });
+    /* Resolve the answer up front so the trace can narrate assembling the exact
+       pieces it will contain — and so nothing (chart/table/report cards, source
+       chips, suggested actions) renders until the whole trace has finished. */
+    const html = reply(text, intent);
+    runReasoningTrace(reasoningTraceFor(text, intent), () => addWISEcodeAI(html), assemblyMilestoneFor(html));
   }
   /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
      resolver) — used by controls like the brand connectors where the answer is
@@ -2298,6 +2637,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     Array.from(messages.children).forEach((node) => {
       if (!node.classList || !node.classList.contains('sc-line')) return;
       if (node.classList.contains('sc-line-typing')) return;
+      if (node.classList.contains('sc-line-trace')) return; /* reasoning trace isn't a turn */
       if (node.classList.contains('sc-line-event')) return; /* system markers aren't turns */
       if (node.classList.contains('sc-line-you')) {
         cur = { you: node, replies: [] };
@@ -2442,7 +2782,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const container = document.createElement('div');
     for (let k = 0; k <= endIdx; k++) {
       const n = allNodes[k];
-      if (n.classList && (n.classList.contains('sc-line-typing') || n.classList.contains('sc-inline-chips') || n.classList.contains('sc-fork-banner'))) continue;
+      if (n.classList && (n.classList.contains('sc-line-typing') || n.classList.contains('sc-line-trace') || n.classList.contains('sc-inline-chips') || n.classList.contains('sc-fork-banner'))) continue;
       container.appendChild(n.cloneNode(true));
     }
 
@@ -3257,7 +3597,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       onNew: () => reset(),
       /* Keep a broken-out Turns module in sync when a saved thread is restored. */
       onRestore: () => refreshDockedTurns(),
-      stripSelectors: ['.sc-inline-chips', '.sc-line-typing'],
+      stripSelectors: ['.sc-inline-chips', '.sc-line-typing', '.sc-line-trace'],
       setHTML: (html) => {
         messages.innerHTML = html || '';
         welcome?.classList.add('sc-hidden');

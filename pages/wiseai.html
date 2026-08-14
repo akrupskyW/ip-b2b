@@ -2806,7 +2806,7 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
-                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="split" hidden><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
                   <div class="topbar-menu-divider" data-pane-split-div hidden></div>
@@ -3566,7 +3566,7 @@
        "Output N / M" masthead becomes a dropdown: clicking it opens a list of
        every output as a small preview + label; picking one reveals it below
        (and jumps the transcript, same as the chips did). */
-    let unifiedTitleDrop = false;
+    let unifiedTitleDrop = true;
     let titledropPop = null;
     function syncTitledropItem() {
       const item = paneEl.unified?.querySelector('[data-pane-act="titledrop"]');
@@ -3647,6 +3647,9 @@
       e.preventDefault();
       if (titledropPop) closeTitledropPop(); else openTitledropPop();
     });
+    /* Default the "Outputs dropdown" admin toggle ON — apply the pane class,
+       title affordances & menu-item state to match the initial flag. */
+    setUnifiedTitleDrop(unifiedTitleDrop);
 
     document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
       const btn = wrap.querySelector('.panel-more-btn');

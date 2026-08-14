@@ -4849,6 +4849,82 @@ html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
 .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
 
+/* ===== Reasoning trace — WISEcodeAI "thinking out loud" =====================
+   The behind-the-scenes narration a turn streams BEFORE its answer lands. A
+   collapsible block hung off the owl avatar with a live m:ss stopwatch. Only ONE
+   milestone shows at a time: its 1–3 word key + a big GLOB of subdued, italic
+   "story" lines that stream in as a paragraph. Each advance WIPES that glob and
+   swaps in the next. When it finishes, the live block is replaced by the quiet
+   SUMMARY — every milestone's key + the m:ss elapsed when it landed. */
+.sc-trace {
+  margin-top: 4px; padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--primary, #2F6DF6) 22%, transparent);
+}
+.sc-trace-head {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  background: none; border: 0; padding: 2px 0; margin: 0; cursor: pointer;
+  color: var(--text-subtle); font: inherit; text-align: left; -webkit-tap-highlight-color: transparent;
+}
+/* Chevron floats to the right edge of the header: points RIGHT when collapsed,
+   rotates DOWN when open. */
+.sc-trace-caret {
+  margin-left: auto; font-size: 18px; line-height: 1; flex-shrink: 0;
+  transition: transform .2s ease; color: color-mix(in srgb, var(--text-subtle) 75%, transparent);
+}
+.sc-trace[data-open="1"] .sc-trace-caret { transform: rotate(90deg); }
+.sc-trace-title { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); letter-spacing: .01em; }
+.sc-trace:not(.is-complete) .sc-trace-title { animation: scTracePulse 1.5s ease-in-out infinite; }
+@keyframes scTracePulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sc-trace:not(.is-complete) .sc-trace-title { animation: none; } }
+.sc-trace-timer {
+  font-size: 0.6875rem; font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0;
+  padding: 1px 8px; border-radius: 999px; white-space: nowrap;
+  color: color-mix(in srgb, var(--primary-ink, var(--primary)) 78%, var(--text-subtle));
+  background: color-mix(in srgb, var(--primary, #2F6DF6) 11%, transparent);
+}
+.sc-trace.is-complete .sc-trace-timer {
+  color: var(--text-subtle);
+  background: color-mix(in srgb, var(--text-subtle) 12%, transparent);
+}
+.sc-trace[data-open="0"] .sc-trace-body { display: none; }
+.sc-trace-body { margin-top: 5px; }
+
+/* Live view — a single status with its big streaming glob of narration. No
+   inline spinner: the owl avatar's ring already signals "working". */
+.sc-trace-now { display: block; margin-bottom: 5px; }
+.sc-trace-now-key {
+  font-size: 0.8125rem; font-weight: 700; letter-spacing: .01em;
+  color: color-mix(in srgb, var(--primary-ink, var(--primary)) 58%, var(--text));
+}
+.sc-trace-story { display: block; max-width: 54ch; }
+.sc-trace-story-line {
+  display: block; margin-bottom: 2px;
+  font-size: 0.75rem; line-height: 1.55; font-style: italic;
+  color: color-mix(in srgb, var(--text-subtle) 88%, transparent);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .32s ease, transform .32s ease;
+}
+.sc-trace-story-line.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-trace-story-line { transition: none; opacity: 1; transform: none; }
+}
+
+/* Summary — the milestones + the clock reading when each one landed. */
+.sc-trace-step-ic { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+.sc-trace-step-ic .material-symbols-outlined {
+  font-size: 15px; color: color-mix(in srgb, var(--primary-ink, var(--primary)) 62%, var(--text-subtle));
+}
+.sc-trace-steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.sc-trace-step {
+  display: grid; grid-template-columns: 16px auto auto; align-items: center;
+  column-gap: 8px; padding: 1px 0;
+}
+.sc-trace-step-key { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); }
+.sc-trace-step-time {
+  font-size: 0.625rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--text-subtle) 70%, transparent);
+}
+
 /* Standing AI-limitations disclaimer, centered under the input row. */
 .sc-disclaimer {
   display: flex; align-items: center; justify-content: center; gap: 5px;
