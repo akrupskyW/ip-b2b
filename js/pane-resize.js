@@ -641,13 +641,17 @@
          that traps header popovers (three-dots menus, filter/info pops) beneath
          the neighbouring module and beneath this resize overlay. While a popover
          is open, lift the whole module above its siblings (and the overlay) so
-         the menu is always on top. Reverts the instant the popover closes. */
-      '#modules-row>*:has(.topbar-popover:not(.hidden)),' +
-      '.modules-row>*:has(.topbar-popover:not(.hidden)),' +
+         the menu is always on top. Reverts the instant the popover closes.
+         Static, always-visible demo popovers (the Component Library renders
+         them with data-popover-static) must NOT count as "open" — they would
+         pin the module at z 500 permanently and break the sticky-drawer
+         layering (the tucked module would paint over the chat). */
+      '#modules-row>*:has(.topbar-popover:not(.hidden):not([data-popover-static])),' +
+      '.modules-row>*:has(.topbar-popover:not(.hidden):not([data-popover-static])),' +
       '#modules-row>*:has(.panel-more-btn.is-open),' +
       '.modules-row>*:has(.panel-more-btn.is-open),' +
-      '#modules-row>*:has([role="menu"]:not(.hidden):not([hidden])),' +
-      '.modules-row>*:has([role="menu"]:not(.hidden):not([hidden])),' +
+      '#modules-row>*:has([role="menu"]:not(.hidden):not([hidden]):not([data-popover-static])),' +
+      '.modules-row>*:has([role="menu"]:not(.hidden):not([hidden]):not([data-popover-static])),' +
       '#modules-row>*:has(.pf-rowmenu-pop:not([hidden])),' +
       '.modules-row>*:has(.pf-rowmenu-pop:not([hidden])),' +
       '#modules-row>*:has(.pf-filter-pop:not([hidden])),' +

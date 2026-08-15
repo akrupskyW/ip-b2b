@@ -10518,6 +10518,28 @@ html.dark .adm-icon-btn--danger { color: #FF9E96; }
    exactly like the Invoices surface. */
 body[data-adm-page] #agent-main-header { display: none; }
 body[data-adm-page] .agent-main-scroll { padding: 0; }
+/* All Modules keeps the module's ⋯ + width cluster: the header collapses to
+   zero height (title block dropped, like header-float) but stays rendered so
+   the .panel-controls can float pinned to the module's top-right corner. */
+body[data-nav-id="all-modules"] #agent-main-header {
+  display: flex;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  background: transparent !important;
+  position: relative;
+  overflow: visible;
+  z-index: 6;
+}
+body[data-nav-id="all-modules"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
+body[data-nav-id="all-modules"] #agent-main-header .panel-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  z-index: 6;
+}
 /* Shadow gutter via padding + equal negative margin — see the verification
    rule; keeps admin modules flush with the nav height while letting their
    drop-shadow bleed into the body's bottom gap instead of clipping flush. */

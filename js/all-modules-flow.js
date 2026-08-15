@@ -406,6 +406,10 @@ function renderDirectory() {
           <span class="material-symbols-outlined">search</span>
           <input type="search" class="mi-search" id="mi-dir-search" placeholder="Search modules by name or file…" aria-label="Search modules" autocomplete="off" />
         </div>
+        <div class="mi-view" role="group" aria-label="Directory view">
+          <button type="button" class="mi-view-btn is-active" data-view="grid" aria-pressed="true"><span class="material-symbols-outlined">grid_view</span>Grid</button>
+          <button type="button" class="mi-view-btn" data-view="rail" aria-pressed="false"><span class="material-symbols-outlined">view_column</span>Rail</button>
+        </div>
       </div>
 
       <div class="mi-stats" id="mi-dir-stats" role="group" aria-label="Filter modules by area">
@@ -2003,10 +2007,7 @@ function renderProjects() {
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Project Breakdown</h2>
-          <p class="mi-module-lede">The same app, sliced for building. Every module and component above rolls up
-            into ${PROJECT_BREAKDOWN.length} coherent <strong>projects</strong>, and each project breaks down into small,
-            component-oriented <strong>chunks</strong> — the smallest slice that still ships something. Open a project
-            to see its chunks; each chunk names the exact components and screens it touches.</p>
+          <p class="mi-module-lede">The app sliced into ${PROJECT_BREAKDOWN.length} buildable <strong>projects</strong> — open one to see its component-oriented chunks.</p>
         </div>
         ${moduleControlsHTML('mi-projects')}
       </header>
@@ -3111,7 +3112,10 @@ function moduleStyles() {
        in situ render inline + inert inside the demo stage. */
     .dsc-demo .topbar-popover { position: static; animation: none; display: block; }
     .dsc-demo .ag-toast { animation: none; }
-    .dsc-demo .topbar-profile { position: static; transform: none; }
+    /* relative (not static) so the unread-dot ::after anchors to the chip —
+       static would let it escape to the module's top-right corner and float
+       there as a stray red dot. */
+    .dsc-demo .topbar-profile { position: relative; top: auto; right: auto; transform: none; }
     .dsc-demo .topbar-profile:hover { transform: scale(1.04); }
     .dsc-demo .topbar-profile.has-dot::after { top: -1px; right: -1px; }
     .dsc-demo .dash-text-link { margin-top: 0; }
@@ -3576,16 +3580,7 @@ export function renderAllModules(mainEl) {
       <header class="mi-hero">
         <div class="mi-hero-text">
           <h1 class="mi-hero-title">All Modules</h1>
-          <p class="mi-hero-lede">An admin index of every module in the WISE app, plus the Project Breakdown
-            (the whole app sliced into projects and bite-sized, component-oriented chunks), the Codebase score
-            cards (lines of code, trend, and page count), the Icon Inventory, the Design System (fonts, type
-            scale, and every color token), and the Component Library — every reusable component rendered live
-            in its default state, with where it's used. Use it as a design-system map and a jumping-off point
-            to any screen.</p>
-        </div>
-        <div class="mi-view" role="group" aria-label="Directory view">
-          <button type="button" class="mi-view-btn is-active" data-view="grid" aria-pressed="true"><span class="material-symbols-outlined">grid_view</span>Grid</button>
-          <button type="button" class="mi-view-btn" data-view="rail" aria-pressed="false"><span class="material-symbols-outlined">view_column</span>Rail</button>
+          <p class="mi-hero-lede">Every module, component, icon and design token in the WISE app — indexed, rendered live, and one tap away.</p>
         </div>
       </header>
       ${renderSectionNav()}

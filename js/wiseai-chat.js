@@ -1148,24 +1148,10 @@ function injectChatExtras() {
     html:not(.dark) .wch-ask-search-clear { background: rgba(20,40,80,0.06); }
     .wch-ask-search-clear .material-symbols-outlined { font-size: 15px; }
 
-    /* Break-out board — the panel detaches from the chat and portals to <body>
-       as a large, fixed drawer that escapes the narrow chat column, laying the
-       prompts out as a multi-column gallery. Reuses the shared .wch-right enter/
-       exit animation, just at board scale. */
-    .wch-scrim.wch-ask-board-scrim { position: fixed; inset: 0; z-index: 4000;
-      background: rgba(4,8,18,0.58); backdrop-filter: blur(2px); }
-    .wch-sidebar.wch-ask-panel.wch-ask-board { position: fixed; top: 0; bottom: 0; right: 0; left: auto;
-      width: min(940px, 96vw); max-width: 96vw; z-index: 4001; border-radius: 18px 0 0 18px;
-      box-shadow: -18px 0 60px rgba(0,0,0,0.46); }
-    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-intro { font-size: 13px; }
-    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-cards { display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-list { padding: 6px 18px 20px; }
-    .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-search { margin: 0 18px 10px; }
-    @media (max-width: 620px) {
-      .wch-sidebar.wch-ask-panel.wch-ask-board { width: 100vw; max-width: 100vw; border-radius: 0; }
-      .wch-sidebar.wch-ask-panel.wch-ask-board .wch-ask-cards { grid-template-columns: 1fr; }
-    }
+    /* Broken-out "What can I ask?" module — the shared .wch-sidebar.wch-docked
+       rules (injected by chat-history.js) dress it like every other docked
+       module (Turns, History); the list just breathes a little more. */
+    .wch-sidebar.wch-ask-panel.wch-docked .wch-ask-list { padding-bottom: 18px; }
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
@@ -3069,7 +3055,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* Never let both overlays sit open at once. */
     chatHistory?.close?.();
     dismissTurnsOverlay();
-    closeAskHelp();
+    dismissAskOverlay();
     clearTimeout(connCloseTimer);
     connPanel.classList.remove('wch-closing');
     connScrim.classList.remove('wch-closing');
@@ -3100,10 +3086,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      cards, grouped into sections. A card sends its prompt straight away ("off
      you go"); its insert icon drops the prompt into the composer instead so it
      can be tweaked first. A search field filters the prompts, and the header's
-     breakout icon detaches the panel OUT of the chat into a large fixed board
-     (portaled to <body>) so long prompt sets read as a gallery. Built lazily on
-     first open. */
-  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askBroken = false, askQuery = '';
+     breakout icon breaks the panel OUT of the chat into its own standalone
+     module docked beside the chat — a real flex sibling in the modules row,
+     exactly like the Turns module's breakout. Built lazily on first open. */
+  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askDocked = false, askQuery = '';
+  const askBreakoutWidth = opts.askBreakoutWidth || 360;
   const askHost = () => rootEl.querySelector('.sc-body') || rootEl;
 
   /* Compose the surface's suggestions from the two sources that already drive
@@ -3192,47 +3179,77 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     applyAskQuery('');
   }
   /* Update the header break-out button to reflect the panel's current state:
-     an outward "expand" glyph while docked inside the chat, an inward
-     "collapse" glyph once broken out into the standalone board. */
+     an outward "split" glyph while it's the in-chat overlay, an inward
+     "collapse" glyph once broken out as a standalone module (tap to merge
+     back). Same glyph pair as the Turns module's dock button. */
   function updateAskBreakBtn() {
     if (!askPanel) return;
     const btn = askPanel.querySelector('.wch-ask-breakout');
     if (!btn) return;
-    btn.title = askBroken ? 'Collapse back into the chat' : 'Break out — expand to a full board';
-    btn.setAttribute('aria-label', btn.title);
-    btn.setAttribute('aria-pressed', askBroken ? 'true' : 'false');
+    btn.title = askDocked ? 'Merge back into the chat' : 'Break out as a side module';
+    btn.setAttribute('aria-label', askDocked
+      ? 'Merge "What can I ask?" back into the chat'
+      : 'Break "What can I ask?" out as a side module');
+    btn.setAttribute('aria-pressed', askDocked ? 'true' : 'false');
     const g = btn.querySelector('.material-symbols-outlined');
-    if (g) g.textContent = askBroken ? 'close_fullscreen' : 'open_in_full';
+    if (g) g.textContent = askDocked ? 'close_fullscreen' : 'vertical_split';
   }
-  /* Break the panel OUT of the chat: portal it (and its scrim) to <body> as a
-     large fixed board that escapes the narrow chat column, or merge it back in
-     as the in-chat overlay. Works on every surface that mounts the chat,
-     regardless of the page's own module layout. */
-  function setAskBroken(next) {
-    askBroken = !!next;
-    if (!askPanel || !askScrim) return;
+  /* Move the panel between the in-chat overlay and a standalone module docked
+     to the RIGHT of the chat — a real flex sibling in the modules row, inserted
+     right after the chat's mount element and dressed by the shared
+     `.wch-sidebar.wch-docked` rules. Mirrors setTurnsDocked exactly. */
+  function setAskDocked(on) {
+    ensureAskPanel();
+    askDocked = !!on;
     clearTimeout(askCloseTimer);
-    if (askBroken) {
-      if (askScrim.parentElement !== document.body) document.body.appendChild(askScrim);
-      if (askPanel.parentElement !== document.body) document.body.appendChild(askPanel);
-      askScrim.classList.add('wch-ask-board-scrim');
-      askPanel.classList.add('wch-ask-board');
+    if (askDocked) {
+      askPanel.classList.remove('wch-open', 'wch-closing', 'wch-docked-hidden');
+      askScrim.classList.remove('wch-open', 'wch-closing');
+      document.removeEventListener('keydown', onAskKey);
+      const container = resolveEl(opts.askBreakoutContainer) || rootEl.parentElement;
+      const anchor = resolveEl(opts.askBreakoutAnchor) || rootEl;
+      if (container) {
+        if (anchor && anchor.parentElement === container && anchor.nextSibling) container.insertBefore(askPanel, anchor.nextSibling);
+        else container.appendChild(askPanel);
+      }
+      askPanel.classList.add('wch-docked');
+      askPanel.style.flex = '0 0 ' + askBreakoutWidth + 'px';
+      askPanel.style.width = askBreakoutWidth + 'px';
+      updateAskBreakBtn();
+      renderAskList();
     } else {
-      askPanel.classList.remove('wch-ask-board');
-      askScrim.classList.remove('wch-ask-board-scrim');
-      const host = askHost();
-      host.classList.add('wch-host');
-      host.appendChild(askScrim);
-      host.appendChild(askPanel);
+      askPanel.classList.remove('wch-docked', 'wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+      askPanel.style.flex = '';
+      askPanel.style.width = '';
+      const paneHost = askHost();
+      paneHost.classList.add('wch-host');
+      if (!paneHost.contains(askPanel)) paneHost.appendChild(askPanel);
+      updateAskBreakBtn();
+      openAskHelp(); /* keep it visible as an overlay right after merging back */
     }
-    /* Re-run the enter animation so the move reads as a deliberate transition. */
-    askPanel.classList.remove('wch-open');
-    askScrim.classList.remove('wch-open');
+  }
+  /* Docked reveal / conceal — the module slides out from behind the chat card
+     when shown and tucks back in behind before hiding, exactly like Turns. */
+  let askConcealTimer = null, askRevealTimer = null;
+  function revealAskDocked() {
+    if (!askPanel) return;
+    clearTimeout(askRevealTimer);
+    askPanel.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+    void askPanel.offsetWidth;                 /* restart the animation */
+    askPanel.classList.add('wch-dock-reveal');
+    askRevealTimer = setTimeout(() => { if (askPanel) askPanel.classList.remove('wch-dock-reveal'); }, 480);
+  }
+  function concealAskDocked() {
+    if (!askPanel) return;
+    clearTimeout(askConcealTimer);
+    askPanel.classList.remove('wch-dock-reveal');
     void askPanel.offsetWidth;
-    askPanel.classList.add('wch-open');
-    askScrim.classList.add('wch-open');
-    updateAskBreakBtn();
-    renderAskList();
+    askPanel.classList.add('wch-dock-conceal');
+    askConcealTimer = setTimeout(() => {
+      if (!askPanel) return;
+      askPanel.classList.add('wch-docked-hidden');
+      askPanel.classList.remove('wch-dock-conceal');
+    }, 300);
   }
   function ensureAskPanel() {
     if (askPanel) return;
@@ -3246,7 +3263,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     askPanel.innerHTML =
       '<div class="wch-head">' +
         `<span class="wch-head-title"><span class="material-symbols-outlined">help</span>${esc(askHelpLabel || 'What can I ask?')}</span>` +
-        '<button type="button" class="wch-head-btn wch-ask-breakout" title="Break out — expand to a full board" aria-label="Break out — expand to a full board" aria-pressed="false"><span class="material-symbols-outlined">open_in_full</span></button>' +
+        '<button type="button" class="wch-head-btn wch-ask-breakout" title="Break out as a side module" aria-label="Break &quot;What can I ask?&quot; out as a side module" aria-pressed="false"><span class="material-symbols-outlined">vertical_split</span></button>' +
         '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<p class="wch-ask-intro">Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.</p>' +
@@ -3264,7 +3281,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     askPanel.querySelector('.wch-close').addEventListener('click', closeAskHelp);
     askPanel.querySelector('.wch-ask-breakout').addEventListener('click', (e) => {
       e.stopPropagation();
-      setAskBroken(!askBroken);
+      setAskDocked(!askDocked);
     });
     const askSearchInput = askPanel.querySelector('.wch-ask-search-input');
     const askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
@@ -3284,9 +3301,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }
     });
   }
-  /* Drop a prompt into the composer, focused and grown, without sending. */
+  /* Drop a prompt into the composer, focused and grown, without sending. A
+     broken-out module stays put — only the overlay form dismisses. */
   function insertAskIntoComposer(text) {
-    closeAskHelp();
+    dismissAskOverlay();
     if (!input) return;
     input.value = text;
     input.focus();
@@ -3294,9 +3312,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
   /* Post a prompt as its own turn — same routing a chip/scorecard click uses so
-     the host's onIntent still drives navigation. */
+     the host's onIntent still drives navigation. A broken-out module stays put. */
   function sendAsk(text, intent) {
-    closeAskHelp();
+    dismissAskOverlay();
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
     if (intent) markIntentUsed(intent);
     hideWelcome();
@@ -3306,12 +3324,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function onAskKey(e) {
     if (e.key !== 'Escape') return;
     if (askQuery && askQuery.trim()) { clearAskQuery(); return; }
-    if (askBroken) { setAskBroken(false); return; }
     closeAskHelp();
   }
   function openAskHelp() {
     ensureAskPanel();
     if (!askPanel) return;
+    /* Broken-out module: show it and slide it out from behind the chat. */
+    if (askDocked) { clearTimeout(askConcealTimer); renderAskList(); revealAskDocked(); return; }
     /* Never let more than one overlay sit open at once. */
     chatHistory?.close?.();
     dismissTurnsOverlay();
@@ -3326,6 +3345,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   function closeAskHelp() {
     if (!askPanel) return;
+    /* Broken-out module: "close" tucks the module back in behind the chat (via
+       the conceal animation) rather than running the overlay animation. */
+    if (askDocked) { concealAskDocked(); return; }
     if (!askPanel.classList.contains('wch-open') && !askPanel.classList.contains('wch-closing')) return;
     askPanel.classList.remove('wch-open');
     askScrim.classList.remove('wch-open');
@@ -3336,20 +3358,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     askCloseTimer = setTimeout(() => {
       askPanel.classList.remove('wch-closing');
       askScrim.classList.remove('wch-closing');
-      /* Merge a broken-out board back into the chat once it's off-screen so the
-         next open always starts as the in-chat overlay. */
-      if (askBroken) {
-        askBroken = false;
-        askPanel.classList.remove('wch-ask-board');
-        askScrim.classList.remove('wch-ask-board-scrim');
-        const host = askHost();
-        host.classList.add('wch-host');
-        host.appendChild(askScrim);
-        host.appendChild(askPanel);
-        updateAskBreakBtn();
-      }
     }, 300);
   }
+  /* Close ONLY the in-chat overlay form (cross-panel coordination). A broken-
+     out module is a first-class sibling of the chat, so it's left in place —
+     the same contract as dismissTurnsOverlay. */
+  function dismissAskOverlay() { if (askPanel && !askDocked) closeAskHelp(); }
 
   /* ── Turns Module — a "Fork from here" side panel ────────────────────────
      A right-docked overlay (same shell + open/close animation as History) that
@@ -3974,7 +3988,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* Never let two overlays sit open at once. */
     chatHistory?.close?.();
     closeConnectors();
-    closeAskHelp();
+    dismissAskOverlay();
     clearTimeout(turnsCloseTimer);
     turnsPanel.classList.remove('wch-closing');
     turnsScrim.classList.remove('wch-closing');
@@ -5203,7 +5217,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const asToggle = item.classList.contains('sc-mcp-item');
       if (!asToggle) closeMore();
       closeConnectors(); /* keep only one overlay open at a time */
-      closeAskHelp();
+      dismissAskOverlay();
       dismissTurnsOverlay();
       if (chatHistory) chatHistory.toggle();
       else if (typeof opts.onHistory === 'function') opts.onHistory();
@@ -5484,5 +5498,5 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
-  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => askDocked, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
 }

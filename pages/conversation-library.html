@@ -300,6 +300,137 @@
     .lib-count .material-symbols-outlined { font-size: 14px !important; }
 
     /* ===================================================================
+       Folders — "special" score cards that sit in their own row below the
+       type + scope score cards. Each folder tile reuses the .lib-stat score
+       card look (count on top, dot + name below) and adds folder affordances:
+       click to open (filters the grid to that folder), a hover ⋯ menu
+       (rename / ungroup), an inline name editor with dot-color swatches, and
+       drag-and-drop filing (drop a card on a tile to file it, on the "Remove
+       from folder" tile to unfile). Dropping one card onto another founds a
+       new folder.
+    =================================================================== */
+    .lib-card.lib-dragging { opacity: .38; }
+    .lib-card.lib-drop-target {
+      transform: scale(.97);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
+    }
+
+    /* Section label above the folders row (mirrors .lib-stats-label). */
+    .lib-folders-head { display: flex; align-items: center; gap: 6px; margin: 16px 2px 0; }
+    .lib-folders-head-label { flex: 1; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+
+    /* The folders row — a fluid grid so the tiles stretch to fill the row and
+       reflow at any module width (auto-fit stretches; the type/scope rows use
+       fixed column counts, but folders are dynamic so they flow). The top
+       padding leaves headroom for each folder's protruding tab. */
+    .lib-row-folders {
+      display: grid; gap: 10px; margin-top: 10px; padding-top: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    /* A folder tile = a score card dressed as a manila folder: a protruding
+       colored tab on top, a faint tint of the folder color, and the count +
+       dot + name. Inherits all .lib-stat visuals (hover lift, active/focus
+       ring). */
+    .lib-fstat { position: relative; }
+    /* Folder tab — a small slanted tab sitting just above the card's top edge
+       (only real folder tiles + the inline editor get it; the dashed New /
+       Remove utility tiles stay plain). */
+    .lib-fstat[data-folder-id]::before,
+    .lib-fstat.is-editing::before {
+      content: ""; position: absolute; top: -7px; left: 16px;
+      width: 44px; height: 9px;
+      background: var(--lib-folder-color, var(--primary));
+      border-radius: 6px 6px 0 0;
+      clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
+    }
+    .lib-fstat[data-folder-id] { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 6%, var(--surface-2)); }
+    html.dark .lib-fstat[data-folder-id] { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 13%, rgba(255,255,255,0.04)); }
+    .lib-fstat .lib-stat-label { gap: 6px; }
+    .lib-fdot { width: 9px; height: 9px; border-radius: 50%; background: var(--lib-folder-color, var(--primary)); flex: 0 0 auto; }
+    .lib-fstat.is-active {
+      border-color: var(--lib-folder-color, var(--primary));
+      background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 10%, var(--surface-2));
+      box-shadow: inset 0 0 0 1px var(--lib-folder-color, var(--primary)), var(--shadow-1);
+    }
+    html.dark .lib-fstat.is-active { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 26%, transparent); }
+    /* Filing drop highlight (drag a card over a tile). */
+    .lib-fstat.lib-drop-on {
+      border-color: var(--lib-folder-color, var(--primary));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--lib-folder-color, var(--primary)) 26%, transparent);
+    }
+    /* Hover ⋯ menu, pinned top-right of the tile. */
+    .lib-fstat-menu {
+      position: absolute; top: 5px; right: 5px;
+      width: 24px; height: 24px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+    }
+    .lib-fstat:hover .lib-fstat-menu,
+    .lib-fstat:focus-within .lib-fstat-menu { display: flex; }
+    .lib-fstat-menu:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .lib-fstat-menu:hover { background: rgba(255,255,255,0.10); }
+    .lib-fstat-menu .material-symbols-outlined { font-size: 16px !important; }
+
+    /* "New folder" + drag-only "Remove from folder" tiles — dashed, muted. */
+    .lib-fstat-add, .lib-fstat-unfile {
+      border-style: dashed;
+      color: var(--text-muted);
+      box-shadow: none;
+    }
+    .lib-fstat-add .material-symbols-outlined,
+    .lib-fstat-unfile .material-symbols-outlined { font-size: 22px !important; color: var(--text-subtle); }
+    .lib-fstat-add:hover { border-color: var(--primary); color: var(--text); }
+    .lib-fstat-add:hover .material-symbols-outlined { color: var(--primary); }
+    html.dark .lib-fstat-add:hover .material-symbols-outlined { color: var(--primary-bright); }
+    /* The unfile tile only exists while a filed card is being dragged. */
+    .lib-fstat-unfile { display: none; color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+    html.dark .lib-fstat-unfile { color: var(--primary-bright); }
+    .lib-fstat-unfile .material-symbols-outlined { color: currentColor; }
+    body.lib-drag-active .lib-fstat-unfile { display: flex; }
+    .lib-fstat-unfile.lib-drop-on { background: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 26%, transparent); }
+
+    /* Inline name editor (create + rename) — the editing tile grows to two
+       columns so the name input + color swatches have room. */
+    .lib-fstat.is-editing {
+      grid-column: span 2; cursor: default;
+      align-items: stretch; justify-content: center; gap: 8px;
+      padding: 12px;
+    }
+    .lib-fstat.is-editing:hover { transform: none; box-shadow: inset 0 0 0 1px var(--lib-folder-color, var(--primary)), var(--shadow-1); }
+    .lib-fstat-edit { display: flex; flex-direction: column; gap: 8px; }
+    .lib-folder-edit-input {
+      width: 100%; min-width: 0; height: 32px; box-sizing: border-box; padding: 0 10px;
+      border-radius: 8px; font: inherit; font-size: .8125rem; font-weight: 600; color: var(--text); outline: none;
+      background: var(--surface-2); border: 1px solid var(--lib-folder-color, var(--primary));
+    }
+    html.dark .lib-folder-edit-input { background: rgba(255,255,255,0.06); }
+    .lib-folder-swatches { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .lib-folder-swatch {
+      flex: 0 0 auto; width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%;
+      background: currentColor; cursor: pointer; transition: transform .12s ease;
+    }
+    .lib-folder-swatch:hover { transform: scale(1.25); }
+    .lib-folder-swatch.is-sel { outline: 2px solid currentColor; outline-offset: 2px; }
+
+    /* Folder options popover (rename / ungroup) — mirrors .wch-pop. */
+    .lib-pop {
+      position: fixed; z-index: 80; min-width: 180px; padding: 6px; border-radius: 12px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      box-shadow: var(--shadow-2, 0 14px 38px rgba(0,0,0,0.2));
+    }
+    .lib-pop-item {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+      border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer;
+      font: inherit; font-size: .8125rem; font-weight: 600; text-align: left;
+    }
+    .lib-pop-item:hover { background: var(--surface-2); }
+    html.dark .lib-pop-item:hover { background: rgba(255,255,255,0.08); }
+    .lib-pop-item .material-symbols-outlined { font-size: 17px !important; opacity: .8; }
+    .lib-pop-item--danger { color: var(--sec-red, #E5484D); }
+
+    /* ===================================================================
        Workspace layout — mirror reports.html: the persistent WISEcodeAI chat
        sits directly right of the nav, and the Library module docks to its
        right. The shared shell (js/agent-overview.js) drops the WISEcodeAI dock
@@ -333,9 +464,21 @@
        of in the standard gutter, making this page's nav look mis-positioned. */
     body[data-nav-id="library"] { padding: var(--modules-bottom-pad, 12px); }
 
-    /* The Library module owns its own scroll; drop the separate 60px header
-       bar so the serif masthead leads the scroll body, matching reports.html. */
-    body[data-nav-id="library"] #agent-main-header { display: none; }
+    /* The Library module owns its own scroll; collapse the separate 60px
+       header bar to ZERO height so the serif masthead leads the scroll body —
+       but KEEP the module's standard control cluster (the ⋯ menu + width
+       toggle that agent-overview.js injects as .panel-controls) pinned over
+       the top-right corner, exactly like the app-wide header-float treatment.
+       (display:none here would delete those controls with the bar.) */
+    body[data-nav-id="library"] #agent-main-header {
+      height: 0 !important; min-height: 0 !important; padding: 0 !important;
+      border-bottom: 0 !important; background: transparent !important;
+      position: relative; overflow: visible; z-index: 5;
+    }
+    body[data-nav-id="library"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
+    body[data-nav-id="library"] #agent-main-header .panel-controls {
+      position: absolute; top: 8px; right: 8px; margin: 0 !important; z-index: 6;
+    }
     body[data-nav-id="library"] .agent-main-scroll { padding: 0; }
   </style>
   <script src="../js/cwr-toggle.js"></script>
@@ -365,7 +508,7 @@
                   <div class="lib-title-row">
                     <h1 class="lib-title-main">WISEcodeAI Library</h1>
                   </div>
-                  <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place.</p>
+                  <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place. Drag a card onto a folder to file it — or onto another card to start a new folder.</p>
                 </div>
               </div>
 
@@ -485,6 +628,20 @@
                     <span class="lib-stat-label"><span class="material-symbols-outlined">folder_open</span>Unfiled</span>
                   </button>
                 </div>
+              </div>
+
+              <!-- ============ FOLDERS — "special" score cards ============
+                   A third score-card row below the type + scope rows. Each
+                   folder is a tile (count + colored dot + name) that opens the
+                   folder when clicked and accepts dropped cards. Tiles are
+                   rendered by JS into #lib-folders-row; the trailing "New
+                   folder" tile and the drag-only "Remove from folder" tile are
+                   part of the same row. -->
+              <div class="lib-folders-head">
+                <span class="lib-folders-head-label">Folders</span>
+              </div>
+              <div class="lib-stats-wrap">
+                <div class="lib-stats-row lib-row-folders" id="lib-folders-row" role="group" aria-label="Folders"></div>
               </div>
 
               <div class="lib-board-divider"></div>
@@ -746,10 +903,13 @@
       const statsWrap = document.querySelector('.lib-stats-wrap');
       if (!grid || !searchEl || !filterBtn || !filterPop) return;
 
-      const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest' };
+      const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest', openFolder: null };
 
-      // Snapshot each card's derived metadata once.
-      const cards = Array.from(grid.querySelectorAll('.lib-card')).map((el) => {
+      // Snapshot each card's derived metadata once. Each card gets a stable
+      // position-derived id (the shelf is static demo HTML) so folder
+      // membership can persist across reloads, and is made draggable so cards
+      // can be collected into folders.
+      const cards = Array.from(grid.querySelectorAll('.lib-card')).map((el, i) => {
         let type = 'chat';
         if (el.querySelector('.lib-chatprev')) {
           type = 'chat';
@@ -761,13 +921,49 @@
           else if (badgeTxt.includes('reference')) type = 'ref';
         }
         const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
-        const filed = el.dataset.filed === '1' ? 'filed' : 'unfiled';
         const name = (el.querySelector('.lib-cname')?.textContent || '').toLowerCase();
         const sharedTxt = (el.querySelector('.lib-shared')?.textContent || '').toLowerCase();
         const dateTxt = el.querySelector('.lib-date')?.textContent || '';
         const time = Date.parse(dateTxt) || 0;
-        return { el, type, shared, filed, name, sharedTxt, dateTxt, time };
+        const id = 'item-' + i;
+        el.dataset.libId = id;
+        el.setAttribute('draggable', 'true');
+        return { el, id, type, shared, name, sharedTxt, dateTxt, time };
       });
+
+      /* ---- Folder store — mirrors the History module's projects: a folder is
+         { id, name, color, ts, items:[cardIds] }, persisted so the collections
+         survive reloads. Same palette as History's project dots. ---- */
+      const FOLDER_KEY = 'wise-lib-folders';
+      const FOLDER_COLORS = ['#2F6DF6', '#12B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#84CC16'];
+      let folders = [];
+      let storedFolders = null;
+      try { storedFolders = localStorage.getItem(FOLDER_KEY); } catch (_) {}
+      try { folders = JSON.parse(storedFolders || '[]') || []; } catch (_) { folders = []; }
+      folders = folders.filter((f) => f && f.id && Array.isArray(f.items));
+      /* First-run seed — open with a few curated folders (like the History
+         module seeds conversations) so the shelf never reads empty and the
+         drag-to-file affordance is discoverable. Only when nothing has ever
+         been stored; a user who ungroups everything stays folderless. */
+      if (storedFolders === null) {
+        folders = [
+          { id: 'seed-upf', name: 'UPF Stuff', color: '#2F6DF6', ts: Date.now() - 3 * 86400000, items: ['item-1', 'item-2', 'item-5', 'item-9'] },
+          { id: 'seed-demos', name: 'Demos', color: '#12B981', ts: Date.now() - 2 * 86400000, items: ['item-7', 'item-8'] },
+          { id: 'seed-reports', name: 'Impressive Reports', color: '#F59E0B', ts: Date.now() - 86400000, items: ['item-0', 'item-10'] }
+        ].map((f) => ({ ...f, items: f.items.filter((id) => cardById(id)) }));
+        try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folders)); } catch (_) {}
+      }
+      /* Transient folder UI state (never persisted). */
+      let editingFolder = null;   /* folder id currently shown as an inline name editor */
+      let creatingFolder = false; /* the "new folder" inline editor row is shown */
+      let pendingColor = null;    /* swatch picked while editing (applied on save) */
+      let dragId = null;          /* card id currently being dragged */
+      let suppressClick = false;  /* swallow the click that trails a drag */
+
+      function saveFolders() { try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folders)); } catch (_) {} }
+      function findFolder(id) { return folders.find((f) => f.id === id) || null; }
+      function folderOf(cardId) { return folders.find((f) => f.items.includes(cardId)) || null; }
+      function cardById(id) { return cards.find((c) => c.id === id) || null; }
 
       /* ---- Derived counts — every score-card number comes from the cards
          actually in the grid, so the tiles can never drift from the data. ---- */
@@ -779,8 +975,22 @@
       cards.forEach((c) => {
         if (counts.type[c.type] != null) counts.type[c.type]++;
         if (c.shared === 'with') counts.shared.with++;
-        counts.folder[c.filed]++;
       });
+
+      /* Filed / Unfiled come from live folder membership (they change as cards
+         are dragged into and out of folders), so they get their own refresher
+         that also repaints the two scope score cards. */
+      function refreshFolderCounts() {
+        counts.folder.filed = cards.reduce((n, c) => n + (folderOf(c.id) ? 1 : 0), 0);
+        counts.folder.unfiled = cards.length - counts.folder.filed;
+        if (statsWrap) {
+          statsWrap.querySelectorAll('.lib-stat[data-stat="folder"]').forEach((btn) => {
+            const numEl = btn.querySelector('.lib-stat-num');
+            if (numEl) numEl.textContent = counts.folder[btn.dataset.val];
+          });
+        }
+      }
+      refreshFolderCounts();
 
       // Paint the derived counts onto the score cards.
       if (statsWrap) {
@@ -825,16 +1035,21 @@
       }
 
       function apply() {
+        const openF = state.openFolder ? findFolder(state.openFolder) : null;
+        if (!openF) state.openFolder = null;
+
         cards.forEach((c) => {
+          const fold = folderOf(c.id);
           let ok = true;
-          if (state.type !== 'all' && c.type !== state.type) ok = false;
+          if (openF && !openF.items.includes(c.id)) ok = false;
+          if (ok && state.type !== 'all' && c.type !== state.type) ok = false;
           if (ok && state.shared !== 'all') {
             if (state.shared === 'with' && c.shared !== 'with') ok = false;
             if (state.shared === 'by') ok = false; // demo data has none shared by me
           }
-          if (ok && state.folder !== 'all' && c.filed !== state.folder) ok = false;
+          if (ok && state.folder !== 'all' && (fold ? 'filed' : 'unfiled') !== state.folder) ok = false;
           if (ok && state.q) {
-            const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type;
+            const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type + ' ' + (fold ? fold.name.toLowerCase() : '');
             if (!hay.includes(state.q)) ok = false;
           }
           c.el.style.display = ok ? '' : 'none';
@@ -847,6 +1062,7 @@
         else if (state.sort === 'az') sorted.sort((a, b) => a.name.localeCompare(b.name));
         sorted.forEach((c) => grid.appendChild(c.el));
 
+        renderRail();
         syncControls();
       }
 
@@ -859,7 +1075,14 @@
       filterBtn.addEventListener('click', (e) => { e.stopPropagation(); setPop(filterPop.hidden); });
       filterPop.addEventListener('click', (e) => e.stopPropagation());
       document.addEventListener('click', () => setPop(false));
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setPop(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        setPop(false);
+        closeFolderMenu();
+        /* Back out of an open folder (the inline rename editor swallows its
+           own Escape before it reaches here). */
+        if (state.openFolder && !editingFolder) { state.openFolder = null; apply(); }
+      });
 
       // Single-select funnel chip groups.
       [['lib-filter-type', 'type', 'type'], ['lib-filter-shared', 'shared', 'shared'],
@@ -888,6 +1111,7 @@
           const btn = e.target.closest('.lib-stat');
           if (!btn) return;
           const stat = btn.dataset.stat, val = btn.dataset.val;
+          state.openFolder = null; // score cards operate on the whole library
           // Is this card currently the only thing narrowing the grid?
           const wasSole = state[stat] === val &&
             STAT_DIMS.every((d) => d === stat || state[d] === 'all');
@@ -912,6 +1136,7 @@
         lib_mcp: 'mcp', lib_references: 'ref',
       };
       window.__wiseLibraryIntent = (intent) => {
+        state.openFolder = null; // intents filter the whole library
         if (intent === 'lib_shared') {
           state.shared = 'with';
         } else if (INTENT_TYPE[intent]) {
@@ -934,6 +1159,365 @@
         if (!n) return 'You don\u2019t have any <strong>' + label + '</strong> in your library yet.';
         return 'Filtered your library to <strong>' + label + '</strong> \u2014 showing <strong>' + n + '</strong>.';
       };
+
+      /* =================================================================
+         Folders — the interaction layer. Folders render as "special" score
+         cards in their own row below the type + scope score cards. A tile
+         opens its folder when clicked (filtering the grid), accepts dropped
+         cards to file them, carries a hover ⋯ menu (Rename / Ungroup) and an
+         inline name editor with color swatches. A "New folder" tile creates
+         one; a drag-only "Remove from folder" tile unfiles. Dropping one card
+         onto another founds a new folder.
+         ================================================================= */
+      const foldersRowEl = document.getElementById('lib-folders-row');
+
+      function genFolderId() {
+        return 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+
+      /* ---- Inline editor markup for an editing tile (create + rename) ---- */
+      function folderEditHtml(f) {
+        const cur = pendingColor || (f ? f.color : FOLDER_COLORS[folders.length % FOLDER_COLORS.length]);
+        let sw = '';
+        FOLDER_COLORS.forEach((c) => {
+          sw += '<button type="button" class="lib-folder-swatch' + (c === cur ? ' is-sel' : '') + '" data-swatch="' + c + '" style="color:' + c + '" title="Folder color" aria-label="Set folder color"></button>';
+        });
+        return '<div class="lib-fstat-edit" data-edit-id="' + (f ? f.id : 'new') + '">' +
+          '<input type="text" class="lib-folder-edit-input" maxlength="60" placeholder="Folder name…">' +
+          '<div class="lib-folder-swatches">' + sw + '</div>' +
+        '</div>';
+      }
+
+      /* ---- Folders row rendering (rebuilt on every apply) ---- */
+      function renderRail() {
+        if (!foldersRowEl) return;
+        let html = '';
+        /* Leading tile: the "New folder" creator sits at the FAR LEFT. While
+           creating, it becomes the inline editor in place. */
+        if (creatingFolder) {
+          html += '<div class="lib-stat lib-fstat is-editing" style="--lib-folder-color:' +
+            (pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length]) + '">' + folderEditHtml(null) + '</div>';
+        } else {
+          html += '<button type="button" class="lib-stat lib-fstat lib-fstat-add" id="lib-folders-add" title="New folder" aria-label="New folder">' +
+              '<span class="material-symbols-outlined">create_new_folder</span>' +
+              '<span class="lib-stat-label">New folder</span>' +
+            '</button>';
+        }
+        folders.forEach((f) => {
+          if (editingFolder === f.id) {
+            html += '<div class="lib-stat lib-fstat is-editing" style="--lib-folder-color:' + (pendingColor || f.color) + '">' + folderEditHtml(f) + '</div>';
+            return;
+          }
+          const n = f.items.length;
+          html += '<button type="button" class="lib-stat lib-fstat' + (state.openFolder === f.id ? ' is-active' : '') +
+              '" data-folder-id="' + f.id + '" style="--lib-folder-color:' + f.color + '" aria-pressed="' + (state.openFolder === f.id ? 'true' : 'false') + '">' +
+            '<span class="lib-fstat-menu" data-frow-menu="' + f.id + '" role="button" tabindex="0" title="Folder options" aria-label="Folder options"><span class="material-symbols-outlined">more_horiz</span></span>' +
+            '<span class="lib-stat-num">' + n + '</span>' +
+            '<span class="lib-stat-label"><span class="lib-fdot"></span><span class="lib-fstat-name"></span></span>' +
+          '</button>';
+        });
+        /* Trailing (drag-only) unfile tile. */
+        html += '<div class="lib-stat lib-fstat lib-fstat-unfile" id="lib-folders-unfile" aria-label="Remove from folder">' +
+            '<span class="material-symbols-outlined">folder_off</span>' +
+            '<span class="lib-stat-label">Remove from folder</span>' +
+          '</div>';
+        foldersRowEl.innerHTML = html;
+        /* Folder names via textContent (user input). */
+        foldersRowEl.querySelectorAll('.lib-fstat[data-folder-id]').forEach((tile) => {
+          const f = findFolder(tile.dataset.folderId);
+          if (!f) return;
+          const nameEl = tile.querySelector('.lib-fstat-name');
+          if (nameEl) nameEl.textContent = f.name;
+          tile.setAttribute('aria-label', 'Open folder ' + f.name + ', ' + f.items.length + ' item' + (f.items.length === 1 ? '' : 's'));
+        });
+        const edit = foldersRowEl.querySelector('.lib-fstat-edit');
+        if (edit) wireRowEditor(edit);
+      }
+
+      /* ---- Inline name editor (create + rename) ---- */
+      function wireRowEditor(row) {
+        const input = row.querySelector('.lib-folder-edit-input');
+        const target = row.dataset.editId;
+        const f = target === 'new' ? null : findFolder(target);
+        input.value = f ? f.name : '';
+        const commit = (save) => {
+          if (input._done) return;
+          input._done = true;
+          if (target === 'new') {
+            creatingFolder = false;
+            if (save && input.value.trim()) {
+              folders.unshift({
+                id: genFolderId(),
+                name: input.value.trim(),
+                color: pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
+                ts: Date.now(),
+                items: []
+              });
+              saveFolders();
+            }
+          } else {
+            editingFolder = null;
+            if (save && f) {
+              const v = input.value.trim();
+              if (v) f.name = v;
+              if (pendingColor) f.color = pendingColor;
+              saveFolders();
+            }
+          }
+          pendingColor = null;
+          refreshFolderCounts();
+          apply();
+        };
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+          else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); commit(false); }
+        });
+        input.addEventListener('blur', () => commit(true));
+        input.addEventListener('click', (e) => e.stopPropagation());
+        /* Swatches: mousedown is suppressed so picking a color doesn't blur
+           (and save-close) the input; the pick previews on the tile and
+           commits together with the name. */
+        const tile = row.closest('.lib-fstat');
+        row.querySelectorAll('.lib-folder-swatch').forEach((sw) => {
+          sw.addEventListener('mousedown', (e) => e.preventDefault());
+          sw.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            pendingColor = sw.dataset.swatch;
+            row.querySelectorAll('.lib-folder-swatch').forEach((x) => x.classList.toggle('is-sel', x === sw));
+            if (tile) tile.style.setProperty('--lib-folder-color', pendingColor);
+            input.focus();
+          });
+        });
+        try { input.focus(); input.select(); } catch (_) {}
+      }
+
+      /* ---- Folder options popover (⋯ → Rename / Ungroup), as in History ---- */
+      let popMenuEl = null;
+      function closeFolderMenu() {
+        if (popMenuEl && popMenuEl.parentNode) popMenuEl.parentNode.removeChild(popMenuEl);
+        popMenuEl = null;
+        document.removeEventListener('mousedown', onMenuOutside, true);
+        window.removeEventListener('scroll', closeFolderMenu, true);
+        window.removeEventListener('resize', closeFolderMenu);
+      }
+      function onMenuOutside(e) { if (popMenuEl && !popMenuEl.contains(e.target)) closeFolderMenu(); }
+      function openFolderMenu(f, anchor) {
+        closeFolderMenu();
+        popMenuEl = document.createElement('div');
+        popMenuEl.className = 'lib-pop';
+        popMenuEl.setAttribute('role', 'menu');
+        popMenuEl.innerHTML =
+          '<button type="button" class="lib-pop-item" data-act="rename" role="menuitem"><span class="material-symbols-outlined">edit</span>Rename</button>' +
+          '<button type="button" class="lib-pop-item lib-pop-item--danger" data-act="ungroup" role="menuitem"><span class="material-symbols-outlined">folder_off</span>Ungroup folder</button>';
+        document.body.appendChild(popMenuEl);
+        const r = anchor.getBoundingClientRect();
+        let left = Math.max(8, Math.min(r.left, window.innerWidth - popMenuEl.offsetWidth - 8));
+        let top = r.bottom + 6;
+        if (top + popMenuEl.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - popMenuEl.offsetHeight - 6);
+        popMenuEl.style.left = left + 'px';
+        popMenuEl.style.top = top + 'px';
+        popMenuEl.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-act]');
+          if (!b) return;
+          const act = b.dataset.act;
+          closeFolderMenu();
+          if (act === 'rename') { editingFolder = f.id; creatingFolder = false; pendingColor = f.color; apply(); }
+          else if (act === 'ungroup') ungroupFolder(f.id);
+        });
+        setTimeout(() => {
+          document.addEventListener('mousedown', onMenuOutside, true);
+          window.addEventListener('scroll', closeFolderMenu, true);
+          window.addEventListener('resize', closeFolderMenu);
+        }, 0);
+      }
+
+      /* ---- Folder operations ---- */
+      function removeFromAnyFolder(cardId) {
+        folders.forEach((f) => {
+          const i = f.items.indexOf(cardId);
+          if (i !== -1) f.items.splice(i, 1);
+        });
+      }
+      /* Card-on-card: found a new folder holding both, then open its inline
+         rename editor on the fresh tile. */
+      function createFolder(ids) {
+        const f = {
+          id: genFolderId(),
+          name: 'New folder',
+          color: FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
+          ts: Date.now(),
+          items: []
+        };
+        ids.forEach((id) => { removeFromAnyFolder(id); f.items.push(id); });
+        folders.unshift(f);
+        saveFolders();
+        editingFolder = f.id;
+        creatingFolder = false;
+        pendingColor = f.color;
+        refreshFolderCounts();
+        apply();
+      }
+      function addToFolder(cardId, folderId) {
+        const f = findFolder(folderId);
+        if (!f || f.items.includes(cardId)) return;
+        removeFromAnyFolder(cardId);
+        f.items.push(cardId);
+        saveFolders();
+        refreshFolderCounts();
+        apply();
+      }
+      function unfileCard(cardId) {
+        removeFromAnyFolder(cardId);
+        saveFolders();
+        refreshFolderCounts();
+        apply();
+      }
+      /* Ungroup: delete the folder; its cards return to the shelf untouched. */
+      function ungroupFolder(id) {
+        folders = folders.filter((f) => f.id !== id);
+        if (state.openFolder === id) state.openFolder = null;
+        if (editingFolder === id) { editingFolder = null; pendingColor = null; }
+        saveFolders();
+        refreshFolderCounts();
+        apply();
+      }
+      function openFolderView(id) {
+        state.openFolder = id;
+        /* A folder is a scope of its own — clear the score-card dimensions so
+           the grid shows the whole folder. Search stays applied. */
+        state.type = 'all'; state.shared = 'all'; state.folder = 'all';
+        editingFolder = null;
+        creatingFolder = false;
+        pendingColor = null;
+        apply();
+      }
+
+      /* ---- Folders-row clicks: open folder, +, ⋯ ---- */
+      foldersRowEl.addEventListener('click', (e) => {
+        if (e.target.closest('.lib-fstat-edit')) return;
+        if (e.target.closest('#lib-folders-add')) {
+          creatingFolder = true;
+          editingFolder = null;
+          pendingColor = null;
+          apply();
+          return;
+        }
+        const menuBtn = e.target.closest('[data-frow-menu]');
+        if (menuBtn) {
+          e.stopPropagation(); e.preventDefault();
+          const f = findFolder(menuBtn.dataset.frowMenu);
+          if (f) openFolderMenu(f, menuBtn);
+          return;
+        }
+        const tile = e.target.closest('.lib-fstat[data-folder-id]');
+        if (tile) { openFolderView(tile.dataset.folderId); return; }
+      });
+      foldersRowEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const menuBtn = e.target.closest('[data-frow-menu]');
+        if (menuBtn) {
+          e.preventDefault(); e.stopPropagation();
+          const f = findFolder(menuBtn.dataset.frowMenu);
+          if (f) openFolderMenu(f, menuBtn);
+        }
+        /* Folder tiles are <button>s, so Enter/Space fire click natively. */
+      });
+
+      /* Swallow the phantom click that trails a drag so it doesn't follow
+         the card's link. */
+      grid.addEventListener('click', (e) => {
+        if (suppressClick && e.target.closest('.lib-card')) e.preventDefault();
+      });
+
+      /* ---- Drag & drop ---- */
+      function clearDropHints() {
+        grid.querySelectorAll('.lib-drop-target').forEach((el) => el.classList.remove('lib-drop-target'));
+        foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+      }
+      grid.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.lib-card');
+        if (!card || !card.dataset.libId) return;
+        dragId = card.dataset.libId;
+        card.classList.add('lib-dragging');
+        /* Reveal the "Remove from folder" tile only when a filed card is in
+           flight (there's nothing to unfile otherwise). */
+        if (folderOf(dragId)) document.body.classList.add('lib-drag-active');
+        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); } catch (_) {}
+      });
+      grid.addEventListener('dragend', () => {
+        dragId = null;
+        document.body.classList.remove('lib-drag-active');
+        clearDropHints();
+        grid.querySelectorAll('.lib-dragging').forEach((el) => el.classList.remove('lib-dragging'));
+        suppressClick = true;
+        setTimeout(() => { suppressClick = false; }, 250);
+      });
+      /* Grid targets: another card → found a new folder together (or join the
+         target card's folder if it already has one). */
+      function gridDropTarget(e) {
+        const card = e.target.closest('.lib-card');
+        if (card && card.dataset.libId && card.dataset.libId !== dragId) return card;
+        return null;
+      }
+      grid.addEventListener('dragover', (e) => {
+        if (!dragId) return;
+        const t = gridDropTarget(e);
+        if (!t) { clearDropHints(); return; }
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+        clearDropHints();
+        t.classList.add('lib-drop-target');
+      });
+      grid.addEventListener('dragleave', (e) => {
+        const t = e.target.closest('.lib-card');
+        if (t && !t.contains(e.relatedTarget)) t.classList.remove('lib-drop-target');
+      });
+      grid.addEventListener('drop', (e) => {
+        if (!dragId) return;
+        const t = gridDropTarget(e);
+        if (!t) return;
+        e.preventDefault();
+        const id = dragId;
+        dragId = null;
+        document.body.classList.remove('lib-drag-active');
+        clearDropHints();
+        const targetId = t.dataset.libId;
+        const tf = folderOf(targetId);
+        if (tf) addToFolder(id, tf.id);
+        else createFolder([targetId, id]);
+      });
+      /* Folders-row targets: folder tiles file the card; the unfile tile
+         removes it. */
+      function folderRowDropTarget(e) {
+        const tile = e.target.closest('.lib-fstat[data-folder-id]');
+        if (tile) return tile;
+        return e.target.closest('#lib-folders-unfile');
+      }
+      foldersRowEl.addEventListener('dragover', (e) => {
+        if (!dragId) return;
+        const t = folderRowDropTarget(e);
+        if (!t) { clearDropHints(); return; }
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+        clearDropHints();
+        t.classList.add('lib-drop-on');
+      });
+      foldersRowEl.addEventListener('dragleave', (e) => {
+        const t = e.target.closest('.lib-fstat[data-folder-id], #lib-folders-unfile');
+        if (t && !t.contains(e.relatedTarget)) t.classList.remove('lib-drop-on');
+      });
+      foldersRowEl.addEventListener('drop', (e) => {
+        if (!dragId) return;
+        const t = folderRowDropTarget(e);
+        if (!t) return;
+        e.preventDefault();
+        const id = dragId;
+        dragId = null;
+        document.body.classList.remove('lib-drag-active');
+        clearDropHints();
+        if (t.id === 'lib-folders-unfile') unfileCard(id);
+        else addToFolder(id, t.dataset.folderId);
+      });
 
       apply();
     })();
