@@ -771,9 +771,27 @@ function injectChatExtras() {
        timestamp inside .sc-line-meta — small, filled glyphs. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
     .sc-fb { display: flex; align-items: center; gap: 1px; width: 100%; }
-    /* Turn cluster — the re-run / edit / fork controls plus the turn ID, pinned
-       to the far right of the meta row. */
-    .sc-fb-turn { display: inline-flex; align-items: center; gap: 1px; margin-left: auto; padding-left: 6px; }
+    /* Three-dot ("more") control — floated to the far right of the thumbs. It
+       holds the timestamp + the re-run / edit / fork controls + the turn ID,
+       spilling them into a small floating menu on click so the row itself stays
+       down to copy / thumbs up / thumbs down. */
+    .sc-fb-more-wrap { position: relative; display: inline-flex; margin-left: auto; padding-left: 6px; }
+    .sc-fb-menu { position: absolute; top: calc(100% + 8px); right: -4px; z-index: 60;
+      display: inline-flex; align-items: center; gap: 2px; width: max-content;
+      padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 10px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
+    .sc-fb-menu::before { content: ''; position: absolute; bottom: 100%; right: 11px;
+      border: 6px solid transparent; border-bottom-color: var(--border-strong); }
+    .sc-fb-menu::after { content: ''; position: absolute; bottom: 100%; right: 12px; transform: translateY(1px);
+      border: 5px solid transparent; border-bottom-color: var(--surface); }
+    html.dark .sc-fb-menu { background: #1A2339; border-color: rgba(37,80,124,0.22); }
+    html.dark .sc-fb-menu::after { border-bottom-color: #1A2339; }
+    .sc-fb-menu[hidden] { display: none; }
+    .sc-fb-menu-time { margin-right: 4px; padding-right: 6px; white-space: nowrap;
+      border-right: 1px solid var(--border); }
+    .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    .sc-fb-more.is-on, .sc-fb-more[aria-expanded="true"] { background: var(--surface-3); color: var(--text); }
+    html.dark .sc-fb-more[aria-expanded="true"] { background: rgba(255,255,255,0.07); }
     .sc-fb-id { margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
       color: var(--text-subtle); font-variant-numeric: tabular-nums; }
     .sc-fb-btn { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
@@ -1074,14 +1092,14 @@ function injectChatExtras() {
        own turn ("off you go"). A search field filters the prompts, and the
        header's breakout icon detaches the panel OUT of the chat into a large
        fixed board (portaled to <body>) so long prompt sets read as a gallery. */
-    .wch-ask-empty { padding: 18px 16px; color: var(--text-subtle); font-size: 13px; }
-    .wch-ask-intro { margin: 2px 16px 6px; font-size: 12px; line-height: 1.45; opacity: .7; }
+    .wch-ask-empty { padding: 18px 16px; color: var(--text-muted); font-size: 13.5px; line-height: 1.5; }
+    .wch-ask-intro { margin: 2px 16px 8px; font-size: 13px; line-height: 1.5; opacity: .82; }
     .wch-ask-list { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
     .wch-ask-group { margin: 8px 0 4px; }
-    .wch-ask-group + .wch-ask-group { margin-top: 14px; }
-    .wch-ask-group-title { display: flex; align-items: center; gap: 7px; padding: 2px 6px 8px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .55; }
-    .wch-ask-group-title .material-symbols-outlined { font-size: 15px; opacity: .8; }
+    .wch-ask-group + .wch-ask-group { margin-top: 16px; }
+    .wch-ask-group-title { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px;
+      font-size: 14px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--text); opacity: 1; }
+    .wch-ask-group-title .material-symbols-outlined { font-size: 18px; opacity: .9; }
     .wch-ask-cards { display: flex; flex-direction: column; gap: 6px; }
 
     .wch-ask-card { position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%;
@@ -1094,32 +1112,28 @@ function injectChatExtras() {
     html:not(.dark) .wch-ask-card:hover { background: rgba(20,40,80,0.045); border-color: rgba(20,40,80,0.18);
       box-shadow: 0 8px 20px rgba(20,30,60,0.10); }
     .wch-ask-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 9px; margin-top: 1px;
-      background: color-mix(in srgb, var(--primary, #2F6DF6) 16%, transparent);
-      color: var(--primary-ink, var(--primary, #2F6DF6)); }
-    .wch-ask-ico .material-symbols-outlined { font-size: 19px; }
-    .wch-ask-card--gold .wch-ask-ico { background: color-mix(in srgb, var(--ter-amber, #FFC434) 22%, transparent);
-      color: var(--ter-amber-text, #B5851B); }
+      margin-top: 1px; background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); }
+    .wch-ask-ico .material-symbols-outlined { font-size: 22px; }
+    .wch-ask-card--gold .wch-ask-ico { background: none; color: var(--ter-amber-text, #B5851B); }
     html.dark .wch-ask-card--gold .wch-ask-ico { color: var(--ter-amber, #FFC434); }
     .wch-ask-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;
       padding-right: 26px; }
-    .wch-ask-card-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
-    .wch-ask-card-desc { font-size: 11.5px; line-height: 1.4; opacity: .62; }
-    .wch-ask-card-q { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.4; opacity: .82;
+    .wch-ask-card-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+    .wch-ask-card-desc { font-size: 13px; line-height: 1.45; opacity: .8; }
+    .wch-ask-card-q { display: block; margin-top: 3px; font-size: 13px; line-height: 1.45; opacity: .92;
       font-style: italic; color: var(--primary-ink, var(--primary, #2F6DF6)); }
 
     /* Insert-into-composer control — the "some sort of an icon" that drops the
        prompt into the input without sending, so it can be tweaked first. The
        whole card SENDS the prompt straight away ("off you go"). */
-    .wch-ask-insert { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center;
-      justify-content: center; width: 26px; height: 26px; border: 0; border-radius: 8px; cursor: pointer;
-      background: rgba(255,255,255,0.06); color: var(--text-muted); opacity: 0;
-      transition: background .14s ease, color .14s ease, opacity .14s ease; }
-    html:not(.dark) .wch-ask-insert { background: rgba(20,40,80,0.06); }
-    .wch-ask-card:hover .wch-ask-insert, .wch-ask-card:focus-within .wch-ask-insert { opacity: 1; }
-    .wch-ask-insert:hover { background: var(--primary, #2F6DF6); color: #fff; }
-    .wch-ask-insert .material-symbols-outlined { font-size: 16px; }
-    @media (hover: none) { .wch-ask-insert { opacity: 1; } }
+    .wch-ask-insert { position: absolute; top: 9px; right: 9px; display: inline-flex; align-items: center;
+      justify-content: center; width: 22px; height: 22px; border: 0; border-radius: 0; cursor: pointer;
+      background: none; color: var(--text-muted); opacity: 0;
+      transition: color .14s ease, opacity .14s ease, transform .12s ease; }
+    .wch-ask-card:hover .wch-ask-insert, .wch-ask-card:focus-within .wch-ask-insert { opacity: .7; }
+    .wch-ask-insert:hover { background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); opacity: 1; transform: scale(1.08); }
+    .wch-ask-insert .material-symbols-outlined { font-size: 19px; }
+    @media (hover: none) { .wch-ask-insert { opacity: .7; } }
 
     /* Header controls row — a breakout (expand) toggle sits left of the close
        button, matching the shared .wch-head layout. */
@@ -1132,26 +1146,82 @@ function injectChatExtras() {
 
     /* Search row — pinned above the prompt list so long libraries can be
        filtered by keyword (mirrors the Turns module's search field). */
-    .wch-ask-search { display: flex; align-items: center; gap: 7px; margin: 0 12px 8px; padding: 0 10px;
-      height: 36px; border: 1px solid rgba(255,255,255,0.10); border-radius: 10px; background: rgba(255,255,255,0.03);
-      transition: border-color .14s ease, background .14s ease; }
-    .wch-ask-search:focus-within { border-color: color-mix(in srgb, var(--primary, #2F6DF6) 55%, transparent);
-      background: rgba(255,255,255,0.05); }
-    html:not(.dark) .wch-ask-search { border-color: rgba(20,40,80,0.12); background: rgba(20,40,80,0.02); }
-    .wch-ask-search > .material-symbols-outlined { font-size: 18px; opacity: .6; }
+    .wch-ask-search { display: flex; align-items: center; gap: 8px; margin: 0 12px 8px; padding: 0 14px;
+      height: 38px; border: 1px solid rgba(20,40,80,0.10); border-radius: 999px; background: rgba(20,40,80,0.04);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+    html.dark .wch-ask-search { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
+    .wch-ask-search:focus-within { border-color: var(--primary, #2F6DF6);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent); }
+    .wch-ask-search > .material-symbols-outlined { font-size: 18px; opacity: .55; }
     .wch-ask-search-input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; color: inherit;
-      font-family: inherit; font-size: 13px; }
+      font-family: inherit; font-size: 13.5px; }
     .wch-ask-search-input::placeholder { color: var(--text-subtle); opacity: .8; }
     .wch-ask-search-clear { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
-      border: 0; border-radius: 6px; background: rgba(255,255,255,0.06); color: var(--text-muted); cursor: pointer; }
-    .wch-ask-search-clear:hover { background: rgba(255,255,255,0.12); color: var(--text); }
-    html:not(.dark) .wch-ask-search-clear { background: rgba(20,40,80,0.06); }
-    .wch-ask-search-clear .material-symbols-outlined { font-size: 15px; }
+      border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); cursor: pointer; opacity: .7; }
+    .wch-ask-search-clear:hover { background: rgba(20,40,80,0.08); color: var(--text); opacity: 1; }
+    html.dark .wch-ask-search-clear:hover { background: rgba(255,255,255,0.12); }
+    .wch-ask-search-clear .material-symbols-outlined { font-size: 16px; }
 
     /* Broken-out "What can I ask?" module — the shared .wch-sidebar.wch-docked
        rules (injected by chat-history.js) dress it like every other docked
        module (Turns, History); the list just breathes a little more. */
     .wch-sidebar.wch-ask-panel.wch-docked .wch-ask-list { padding-bottom: 18px; }
+
+    /* ── Rich catalog mode ("askCatalog") ────────────────────────────────────
+       When the surface supplies a structured catalog, the panel renders it as a
+       set of SECTIONS, each with a header + blurb and a stack of CAPABILITY
+       cards. Every capability lists one or more example prompts (each clickable
+       to send, or insertable via its icon) plus a subdued "Behind the scenes"
+       tool footer. A row of filter chips above the list scopes to one section. */
+    .wch-ask-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 12px 10px; }
+    .wch-ask-filter { border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);
+      color: var(--text-muted); border-radius: 999px; padding: 5px 13px; font-family: inherit;
+      font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      transition: background .14s ease, border-color .14s ease, color .14s ease; }
+    .wch-ask-filter:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+    html:not(.dark) .wch-ask-filter { border-color: rgba(20,40,80,0.12); background: rgba(20,40,80,0.02); }
+    html:not(.dark) .wch-ask-filter:hover { background: rgba(20,40,80,0.05); }
+    .wch-ask-filter.is-active { background: var(--primary, #2F6DF6); border-color: var(--primary, #2F6DF6); color: #fff; }
+    .wch-ask-filter.is-active:hover { background: var(--primary, #2F6DF6); color: #fff; }
+
+    .wch-ask-group-desc { padding: 0 6px 10px; font-size: 13px; line-height: 1.5; opacity: .8; }
+
+    .wch-ask-cap { border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.02);
+      border-radius: 12px; padding: 12px 13px 11px; }
+    html:not(.dark) .wch-ask-cap { border-color: rgba(20,40,80,0.10); background: rgba(20,40,80,0.015); }
+    .wch-ask-cap-head { display: flex; align-items: flex-start; gap: 11px; }
+    .wch-ask-cap-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+      margin-top: 1px; background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); }
+    .wch-ask-cap-ico .material-symbols-outlined { font-size: 22px; }
+    .wch-ask-cap-titles { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .wch-ask-cap-title { font-size: 15px; font-weight: 650; line-height: 1.35; }
+    .wch-ask-cap-desc { font-size: 13px; line-height: 1.48; opacity: .8; }
+
+    .wch-ask-prompts { display: flex; flex-direction: column; gap: 5px; margin: 9px 0 0; }
+    .wch-ask-prompt { position: relative; display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 7px 9px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
+      border-radius: 9px; cursor: pointer; text-align: left; color: inherit; font-family: inherit;
+      transition: background .14s ease, border-color .14s ease; }
+    .wch-ask-prompt:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.16); }
+    html:not(.dark) .wch-ask-prompt { border-color: rgba(20,40,80,0.09); background: rgba(20,40,80,0.015); }
+    html:not(.dark) .wch-ask-prompt:hover { background: rgba(20,40,80,0.05); border-color: rgba(20,40,80,0.18); }
+    .wch-ask-prompt-text { flex: 1 1 auto; min-width: 0; font-size: 13.5px; line-height: 1.45;
+      color: var(--primary-ink, var(--primary, #2F6DF6)); }
+    html.dark .wch-ask-prompt-text { color: #cfe0ff; }
+    .wch-ask-prompt-actions { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+    .wch-ask-prompt-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+      border: 0; border-radius: 0; background: none; color: var(--text-muted); cursor: pointer;
+      opacity: .6; transition: color .14s ease, opacity .14s ease, transform .12s ease; }
+    .wch-ask-prompt:hover .wch-ask-prompt-btn { opacity: .85; }
+    .wch-ask-prompt-btn:hover { background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); opacity: 1; transform: scale(1.1); }
+    .wch-ask-prompt-btn .material-symbols-outlined { font-size: 19px; }
+    @media (hover: none) { .wch-ask-prompt-btn { opacity: .85; } }
+
+    .wch-ask-cap-tools { margin: 10px 0 0; padding-top: 9px; border-top: 1px dashed rgba(255,255,255,0.09);
+      font-size: 12px; line-height: 1.5; opacity: .72; }
+    html:not(.dark) .wch-ask-cap-tools { border-top-color: rgba(20,40,80,0.12); }
+    .wch-ask-cap-tools b { font-weight: 700; text-transform: none; letter-spacing: 0; opacity: .95; }
+    .wch-ask-cap-tools code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; opacity: .95; }
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
@@ -1171,6 +1241,74 @@ function injectChatExtras() {
     .wai-img-close .material-symbols-outlined { font-size: 20px; }
     .wai-img-body { display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--surface-2, #f2f4f7); }
     .wai-img-body img { max-width: 100%; max-height: calc(88vh - 62px); object-fit: contain; border-radius: 8px; display: block; }
+
+    /* "Background animation" (Admin) — the welcome-only ambient canvas of a
+       rotating food-item DNA/RNA helix. It sits above the card surface but below
+       the welcome content (z-index 10) and the transcript, never taking pointer
+       input; it only fades in while live, and the welcome panel drops its opaque
+       fill so the strip reads behind the copy. */
+    .sc-bganim-canvas { position: absolute; inset: 0; width: 100%; height: 100%;
+      z-index: 1; pointer-events: none; opacity: 0; transition: opacity .55s ease; }
+    .sc-card.sc-bganim-live .sc-bganim-canvas { opacity: 1; }
+    .sc-card.sc-bganim-live .sc-welcome { background: transparent !important; }
+
+    /* Opacity control that sits just under the "Background animation" toggle. Mirrors
+       the streaming-detail sub-row; uses the admin pink accent to match the toggle. */
+    .sc-bganim-detail { display: flex; align-items: center; gap: 10px;
+      margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
+    .sc-bganim-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
+    .sc-bganim-opacity { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
+      accent-color: rgb(219, 39, 119); }
+    .sc-bganim-opacity-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
+      width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+    .sc-bganim-detail.is-disabled { opacity: .45; pointer-events: none; }
+
+    /* While the DNA field is live, the centre owl/pulse logo steps aside — the strand
+       carries the owl instead. */
+    .sc-card.sc-bganim-live .ws-logo-wrap { display: none; }
+
+    /* Hover card for a product on the DNA field — our surface + tokens, round thumb,
+       a caret aimed at the bug, and a brand-blue deep-link into the product's NFP. */
+    .wch-food-card { position: absolute; z-index: 13; width: 340px; max-width: calc(100% - 16px);
+      padding: 18px; display: flex; flex-direction: column; gap: 16px; pointer-events: auto;
+      background: var(--surface, #fff); border: 1px solid var(--border, rgba(15,30,55,.10));
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(10,20,40,.07), 0 26px 56px rgba(10,20,40,.26);
+      font-size: 13px; color: var(--text); transform-origin: left center;
+      animation: wchFoodCardIn .24s cubic-bezier(.2,.9,.25,1.15) both; }
+    /* Truly hidden by default — an author display value would otherwise beat [hidden]. */
+    .wch-food-card[hidden] { display: none !important; }
+    .wch-food-card.is-left { transform-origin: right center; }
+    /* When the card opens leftward, mirror it so the thumbnail is the right edge that
+       covers the bug, and the copy + link fan out to the left. */
+    .wch-food-card.is-left .wch-food-card-top { flex-direction: row-reverse; }
+    .wch-food-card.is-left .wch-food-card-meta { text-align: right; }
+    .wch-food-card.is-left .wch-food-card-link { align-self: flex-start; }
+    @keyframes wchFoodCardIn {
+      0% { opacity: 0; transform: translateX(-6px) scale(.9); }
+      60% { opacity: 1; }
+      100% { opacity: 1; transform: none; } }
+    .wch-food-card.is-left { animation-name: wchFoodCardInL; }
+    @keyframes wchFoodCardInL {
+      0% { opacity: 0; transform: translateX(6px) scale(.9); }
+      60% { opacity: 1; }
+      100% { opacity: 1; transform: none; } }
+    .wch-food-card-top { display: flex; align-items: center; gap: 15px; }
+    .wch-food-card-thumb { width: 68px; height: 68px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--primary); background: var(--surface-2, #f2f4f7);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent); }
+    .wch-food-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wch-food-card-meta { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+    .wch-food-card-brand { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      color: var(--primary); }
+    .wch-food-card-name { font-size: 17px; font-weight: 700; line-height: 1.25; color: var(--text); }
+    /* Plain text link, floated to the right, with an up-right arrow. */
+    .wch-food-card-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px;
+      padding: 0; background: none; border: 0; box-shadow: none; text-decoration: none;
+      font-weight: 700; font-size: 14px; color: var(--primary); transition: gap .12s ease; }
+    .wch-food-card-link:hover { text-decoration: underline; text-underline-offset: 2px; gap: 7px; }
+    .wch-food-card-link .material-symbols-outlined { font-size: 18px; }
   `;
   const style = document.createElement('style');
   style.id = 'wiseai-chat-extras';
@@ -1760,8 +1898,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      the chat) — History + Turns adopt the same base so they read as an equal
      pair; drag-resize still overrides it per side. */
   const STICKY_MODULE_W = opts.stickyModulesWidth || 280;
-  /* History's sticky drawer runs a touch thinner than Turns by default. */
-  const HISTORY_STICKY_W = opts.historyStickyWidth || (STICKY_MODULE_W - 20);
+  /* History's sticky drawer defaults to a 240px minimum, then flexes to fill. */
+  const HISTORY_STICKY_W = opts.historyStickyWidth || 240;
   /* WISEcodeAI opts: open Turns docked from the start (its own module, never an
      in-chat popover), dress its header like the result panes (three-dot menu +
      width changer), pin a search box above the list, and give each turn Share +
@@ -1919,25 +2057,64 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (localStorage.getItem(BRANDTEXT_PREF_KEY) === '1') brandtextDefaultOn = true;
   } catch (_) {}
   document.documentElement.classList.toggle('chat-brandtext', brandtextDefaultOn);
+  /* "Background animation" (three-dot ▸ Admin, pink) — an admin-only ambient
+     backdrop for the WELCOME state only: a DNA/RNA double helix that chain-links a
+     run of our real product photos as round thumbnails, with brand-blue backbones +
+     base-pair rungs. It rides a tilted axis that drops left→right, its loops crawl
+     end-to-end slowly, and the strand expands and contracts as products swap
+     front/back in 3-D. It plays solely on the welcome screen; the moment the member
+     acts (submits a
+     prompt, taps an intent chip or scorecard) the transcript advances via
+     hideWelcome(), which stops it.
+     OFF by default; a stored '1' restores it. The choice is shared APP-WIDE (one
+     key, broadcast on wise:chat-bg-anim) so every mounted chat's switch follows. */
+  const BGANIM_PREF_KEY = 'wise:chat-bg-anim';
+  let bgAnimOn = false;
+  try { if (localStorage.getItem(BGANIM_PREF_KEY) === '1') bgAnimOn = true; } catch (_) {}
+  /* Opacity of the background animation (0.1–1). Shared APP-WIDE (one key, broadcast
+     on wise:chat-bg-anim-opacity), adjustable from the slider below the toggle. */
+  const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  /* Default opacity keys on how many panes the chat occupies: a single- or
+     double-pane (single/double width) chat gets a subtle 30% field, while any
+     wider layout (triple/fill) opens it up to a bolder 65%. This default holds
+     until the member drags the opacity slider, at which point their explicit
+     choice (`bgAnimOpacityUserSet`) takes over app-wide. */
+  let bgAnimOpacity = 0.3;
+  let bgAnimOpacityUserSet = false;
+  try { const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
+  /* Pane-count default: single/double-pane → 0.30, anything wider → 0.65. */
+  function paneDefaultBgAnimOpacity() {
+    const wide = rootEl.classList.contains('panel-triple') || rootEl.classList.contains('panel-fill');
+    return wide ? 0.65 : 0.30;
+  }
+  /* The opacity actually applied: the member's explicit slider choice when set,
+     otherwise the pane-count default (recomputed live so a width change re-tunes
+     a running field on its next frame). */
+  function effectiveBgAnimOpacity() {
+    return bgAnimOpacityUserSet ? bgAnimOpacity : paneDefaultBgAnimOpacity();
+  }
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
      shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
      broadcast on the wise:chat-stream-level event) so every mounted chat module
-     stays in lockstep, and persisted so the choice sticks across reloads:
+     stays in lockstep. It ALWAYS starts each load at 'full' (see below); an
+     in-session change is honoured everywhere but does not persist past a reload:
        • 'full'  — the full reasoning trace: every milestone step PLUS the
                    subdued "glob" story text that streams in beneath each
                    (the default, unchanged behaviour).
        • 'steps' — the milestone STEPS only, appearing one after another, with
                    NONE of the glob story text in between them.
        • 'final' — no trace at all: just a brief thinking beat, then the answer.
-     The host can seed the initial mode with `streamLevelDefault`; a stored
-     preference always wins so the user's own choice is honoured. */
+     The host can seed the initial mode with `streamLevelDefault`, but each load
+     otherwise resets to 'full' — a stored preference no longer forces a narrower
+     level (so it always defaults to the fullest detail). */
   const STREAM_PREF_KEY = 'wise:chat-stream-level';
   const STREAM_LEVELS = ['full', 'steps', 'final'];
+  /* Every load starts at 'full' — the fullest reasoning trace — regardless of
+     any previously stored choice. The host can still seed a different starting
+     mode with `streamLevelDefault`, but a stale saved preference never forces a
+     narrower level; the user's in-session picks below persist across sibling
+     chats (and are written for that session) but do NOT survive a reload. */
   let streamLevel = STREAM_LEVELS.includes(opts.streamLevelDefault) ? opts.streamLevelDefault : 'full';
-  try {
-    const v = localStorage.getItem(STREAM_PREF_KEY);
-    if (STREAM_LEVELS.includes(v)) streamLevel = v;
-  } catch (_) {}
   /* Master "Response streaming" on/off switch (regular brand-blue, not Admin).
      ON (the default) streams the thinking at the chosen level above; OFF skips
      the trace entirely — the answer just lands after the briefest beat. Shared
@@ -2004,6 +2181,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <div class="sc-bganim-detail">
+            <span class="sc-bganim-detail-label">Opacity</span>
+            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="90" aria-label="Background animation opacity">
+            <span class="sc-bganim-opacity-val">90%</span>
+          </div>
           ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
@@ -2312,10 +2495,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               </div>
             </div>`;
   }
-  function feedbackRowHtml() {
+  function feedbackRowHtml(timeLabel) {
     const tid = makeTurnId();
     const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
     const downPop = reasonsPopoverHtml('down', feedbackReasons, 'What wasn\u2019t right?', 'Tell us more (optional)');
+    const time = timeLabel != null ? timeLabel : nowLabel();
+    /* The timestamp and the turn controls (re-run / edit / fork + turn ID) no
+       longer sit strewn across the meta row — they're tucked behind a single
+       horizontal three-dot button floated to the far right of the thumbs, and
+       spill out into a small floating menu on click. The left of the row stays
+       the quick-hit trio: copy, thumbs up, thumbs down. */
     return `<div class="sc-fb-wrap">
         <div class="sc-fb" role="group" aria-label="Answer actions">
           <span class="sc-fb-copy-wrap">
@@ -2330,11 +2519,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <button type="button" class="sc-fb-btn" data-fb="down" data-tip="Not accurate" aria-label="Mark not accurate" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">thumb_down</span></button>
             ${downPop}
           </span>
-          <span class="sc-fb-turn">
-            <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
-            <button type="button" class="sc-fb-btn" data-fb="edit" data-tip="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>
-            <button type="button" class="sc-fb-btn" data-fb="turn" data-tip="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>
-            <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span>
+          <span class="sc-fb-more-wrap">
+            <button type="button" class="sc-fb-btn sc-fb-more" data-fb-more data-tip="More" aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>
+            <div class="sc-fb-menu" role="menu" hidden>
+              <span class="sc-line-time sc-fb-menu-time">${esc(time)}</span>
+              <span class="sc-fb-menu-actions">
+                <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
+                <button type="button" class="sc-fb-btn" data-fb="edit" data-tip="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>
+                <button type="button" class="sc-fb-btn" data-fb="turn" data-tip="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>
+                <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span>
+              </span>
+            </div>
           </span>
         </div>
         <div class="sc-fb-note" hidden></div>
@@ -2405,6 +2600,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      welcome is shown again (see reset()). */
   function revealWelcome() {
     if (!welcome || welcome.classList.contains('sc-hidden')) return;
+    /* Arm the admin background field whenever the welcome is (re)shown — mount or
+       a fresh conversation. start() no-ops unless the toggle is on. */
+    bgAnim.start();
     const heading = welcome.querySelector('.ws-heading');
     const subEl = welcome.querySelector('.ws-sub');
     /* The larger "at a glance" scorecards and the small intent chips share ONE
@@ -2430,13 +2628,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   /* Collect a line's meta pieces in reveal order: the timestamp first, then the
      action icons (grounding chip, feedback buttons, turn id) left→right. */
-  function metaTimeEl(metaEl) { return metaEl ? metaEl.querySelector('.sc-line-time') : null; }
+  function metaTimeEl(metaEl) {
+    if (!metaEl) return null;
+    /* The timestamp now lives INSIDE the three-dot menu on answers that carry a
+       feedback row, so it must not be part of the meta row's reveal stagger (it
+       would animate an element that's hidden behind the menu). Only a standalone
+       timestamp — a "you"/status line with no menu — animates in here. */
+    const t = metaEl.querySelector('.sc-line-time');
+    return (t && !t.closest('.sc-fb-menu')) ? t : null;
+  }
   function metaIconEls(metaEl) {
     const icons = [];
     if (!metaEl) return icons;
     const srcEl = metaEl.querySelector('.sc-trust-chip');
     if (srcEl) icons.push(srcEl);
-    metaEl.querySelectorAll('.sc-fb-btn, .sc-fb-id').forEach((el) => icons.push(el));
+    /* Skip anything tucked inside the collapsed three-dot menu — those reveal
+       with the menu, not with the row. */
+    metaEl.querySelectorAll('.sc-fb-btn, .sc-fb-id').forEach((el) => {
+      if (!el.closest('.sc-fb-menu')) icons.push(el);
+    });
     return icons;
   }
   /* Hide the timestamp + icons up-front so they can animate in later. */
@@ -2581,11 +2791,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function addWISEcodeAI(html, meta = {}) {
     if (!messages) return null;
     html = transformOpenChips(html, meta);
-    const src = meta.source !== undefined ? meta.source : sourceLabel;
-    const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml() : '';
+    /* Every WISEcodeAI turn names where it's grounded. When the caller doesn't
+       specify a source (or leaves it blank), fall back to a connected data
+       source so the trust chip is ALWAYS present — the transcript never shows an
+       answer without a source. Pass source:false to explicitly opt out. */
+    let src = meta.source !== undefined ? meta.source : sourceLabel;
+    if (src !== false && !src) src = pickSourceName();
+    if (src === false) src = '';
+    const timeLabel = nowLabel();
+    const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml(timeLabel) : '';
     const footer = `<div class="sc-line-meta">${
       src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
-    }<span class="sc-line-time">${esc(nowLabel())}</span>${fb}</div>`;
+    }${fb ? '' : `<span class="sc-line-time">${esc(timeLabel)}</span>`}${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
@@ -2660,6 +2877,50 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
+  /* The reasoning trace's left rail, drawn as a DNA double-helix instead of a
+     flat line. Two sine backbones cross down a narrow tile, with colored "food"
+     base-pair dots riding the rungs. The tile is one full, seamless vertical
+     period so it tiles (background-repeat:repeat-y in CSS) down a trace of any
+     height; the CSS scrolls it (scDnaFlow) so the dots travel down the strand
+     while thinking, and freezes it once the trace completes. Returns a ready
+     `url("data:image/svg+xml,...")` for a .sc-trace-dna element's background. */
+  function scDnaRailUrl(dotColor) {
+    const W = 16;          /* tile width */
+    const PERIOD = 44;     /* one helix turn */
+    const PERIODS = 2;     /* two turns per tile — must match scDnaFlow's 88px */
+    const H = PERIOD * PERIODS;
+    const cx = W / 2, amp = 4.6;
+    const xa = (y) => cx + amp * Math.sin((2 * Math.PI * y) / PERIOD);
+    const xb = (y) => cx - amp * Math.sin((2 * Math.PI * y) / PERIOD);
+    let pa = '', pb = '';
+    for (let y = 0; y <= H; y += 2) {
+      pa += `${y === 0 ? 'M' : 'L'}${xa(y).toFixed(2)},${y}`;
+      pb += `${y === 0 ? 'M' : 'L'}${xb(y).toFixed(2)},${y}`;
+    }
+    /* All base-pair dots share one hue so the strand reads as a progress track:
+       blue while still working, green once a section is done. The two coexisting
+       layers (blue base + green "done" fill) are built from this same geometry so
+       they overlay pixel-for-pixel — only the dot color differs. */
+    const dot = dotColor || '#4C6EF5';
+    const rungY = [11, 33, 55, 77]; /* the strands' widest points, evenly spaced */
+    let rungs = '', dots = '';
+    rungY.forEach((y) => {
+      const x1 = xb(y), x2 = xa(y);
+      rungs += `<line x1="${x1.toFixed(2)}" y1="${y}" x2="${x2.toFixed(2)}" y2="${y}"/>`;
+      dots += `<circle cx="${x2.toFixed(2)}" cy="${y}" r="2.1" fill="${dot}"/>`;
+      dots += `<circle cx="${x1.toFixed(2)}" cy="${y}" r="2.1" fill="${dot}"/>`;
+    });
+    const backbone = 'rgba(74,120,184,0.85)';
+    const rung = 'rgba(120,150,200,0.35)';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
+      + `<g fill="none" stroke="${backbone}" stroke-width="1.4" stroke-linecap="round">`
+      + `<path d="${pa}"/><path d="${pb}"/></g>`
+      + `<g stroke="${rung}" stroke-width="1" stroke-linecap="round">${rungs}</g>`
+      + dots
+      + `</svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+
   /* Stream the behind-the-scenes reasoning trace for a turn, then hand off to
      `done()` (which posts the real answer). Instead of the answer landing the
      instant you ask, the transcript first "thinks out loud":
@@ -2702,6 +2963,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        until they're done. */
     if (tail && tail.key) steps.push(tail);
 
+    /* The strand's two hues: blue while a section is still being worked, green
+       once it's done. The rail lives in the BODY (below the header), as a blue
+       base layer with a green "done" layer clipped over it that grows downward
+       as steps land — so the helix turns green section-by-section and each
+       step's check only appears once its own section has gone green. */
+    const DNA_BLUE = '#4C6EF5';
+    const DNA_GREEN = '#12b76a';
+    const strandMarkup = '<div class="sc-trace-strand" aria-hidden="true">'
+      + '<span class="sc-trace-dna sc-trace-dna--base"></span>'
+      + '<span class="sc-trace-dna sc-trace-dna--fill"></span></div>';
+
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing sc-line-trace';
     el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`
@@ -2710,7 +2982,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       + `<span class="sc-trace-title">Thinking</span>`
       + `<span class="sc-trace-timer" aria-hidden="true">0:00</span>`
       + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
-      + `</button><div class="sc-trace-body"></div></div></div>`;
+      + `</button><div class="sc-trace-body">${strandMarkup}</div></div></div>`;
     messages.appendChild(el);
     scrollDown();
 
@@ -2721,6 +2993,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const titleEl = el.querySelector('.sc-trace-title');
     const timerEl = el.querySelector('.sc-trace-timer');
     const bodyEl = el.querySelector('.sc-trace-body');
+
+    /* Paint the current strand's two layers (blue base + green done-fill) and
+       hand back the fill layer so callers can grow its --dna-fill as sections
+       complete. Re-run after any rebuild of the body (the summary swap). */
+    const paintStrand = () => {
+      const base = bodyEl.querySelector('.sc-trace-dna--base');
+      const fill = bodyEl.querySelector('.sc-trace-dna--fill');
+      if (base) base.style.backgroundImage = scDnaRailUrl(DNA_BLUE);
+      if (fill) fill.style.backgroundImage = scDnaRailUrl(DNA_GREEN);
+      return fill;
+    };
+    paintStrand();
 
     /* The header collapses the whole trace (live glob or final summary) and back. */
     head.addEventListener('click', () => {
@@ -2734,8 +3018,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* The landmarks we've passed — key + the clock reading when each landed.
        Only surfaced at the very end, as the summary. */
     const landmarks = [];
-    const summaryHtml = () => `<ul class="sc-trace-steps">${landmarks.map((l) =>
-      `<li class="sc-trace-step is-done"><span class="sc-trace-step-ic"><span class="material-symbols-outlined" aria-hidden="true">check</span></span>`
+    /* The summary: the strand rail + the milestone list. No check marks — the
+       strand's green base-pair dots are the "done" signal, so a section reads as
+       complete once its dots have gone green. Pass revealed=true to mark them all
+       done at once (reduced motion / no sweep). */
+    const stepsHtml = (revealed) => strandMarkup + `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step${revealed ? ' is-revealed' : ''}">`
       + `<span class="sc-trace-step-key">${esc(l.key)}</span>`
       + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
 
@@ -2746,11 +3034,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtTraceClock(acc) }); });
       const srcHtml = sourceLine
         ? `<div class="sc-trace-story"><span class="sc-trace-story-line sc-trace-story-source is-in">${sourceLine}</span></div>` : '';
-      bodyEl.innerHTML = srcHtml + summaryHtml();
+      bodyEl.innerHTML = srcHtml + stepsHtml(true);
       titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(acc)}`;
       timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
+      /* No sweep in reduced motion — the whole strand is already green. */
+      const rmFill = paintStrand();
+      if (rmFill) rmFill.style.setProperty('--dna-fill', '100%');
       scrollDown();
       setTimeout(() => { if (done) done(); }, 480);
       return;
@@ -2761,13 +3052,26 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
     const finish = () => {
       clearInterval(timer);
-      bodyEl.innerHTML = summaryHtml();
+      bodyEl.innerHTML = stepsHtml(false);
       titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(now())}`;
       timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
+      const fill = paintStrand();
       scrollDown();
       if (done) done();
+      /* Sweep the strand green from the top, one section at a time, and pop each
+         step's check the moment its section has turned green. What lies below the
+         green front stays blue until the sweep reaches it. */
+      const stepEls = Array.from(bodyEl.querySelectorAll('.sc-trace-step'));
+      const n = stepEls.length || 1;
+      stepEls.forEach((li, i) => {
+        setTimeout(() => {
+          if (fill) fill.style.setProperty('--dna-fill', `${Math.round(((i + 1) / n) * 100)}%`);
+          li.classList.add('is-revealed');
+          scrollDown();
+        }, 160 + i * 420);
+      });
     };
 
     const runMilestone = () => {
@@ -2880,15 +3184,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        are grounded in it. Drawn from the connected input sources, picked variably
        (it needn't match any particular input from one turn to the next). */
     const sourceName = pickSourceName();
-    /* If the turn produced an OUTPUT (chart / table / report), name its data
-       source as the very last thing at the end of that output. */
-    const html = replyHasOutput(baseHtml) ? baseHtml + outputSourceHtml(sourceName) : baseHtml;
+    /* The answer's trust chip in the meta row already names this turn's source,
+       so we no longer repeat it as a "Source:" caption at the end of the output —
+       that duplicated the same label one line above it. */
+    const html = baseHtml;
     const done = () => {
       /* Host side-effects that render output (e.g. opening the result/visual
          panes) are deferred to here so they land WITH the answer, never during
          the thinking globs. */
       if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
-      addWISEcodeAI(html);
+      /* Ground the visible answer in the SAME source the trace just named, so the
+         trust chip and the reasoning trace agree on where it came from. */
+      addWISEcodeAI(html, { source: sourceName });
     };
     runReasoningTrace(reasoningTraceFor(text, intent), done, assemblyMilestoneFor(baseHtml), sourceLineFor(sourceName));
   }
@@ -3089,9 +3396,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      breakout icon breaks the panel OUT of the chat into its own standalone
      module docked beside the chat — a real flex sibling in the modules row,
      exactly like the Turns module's breakout. Built lazily on first open. */
-  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askDocked = false, askQuery = '';
+  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askDocked = false, askQuery = '', askSection = 'all', askMorePop = null;
   const askBreakoutWidth = opts.askBreakoutWidth || 360;
   const askHost = () => rootEl.querySelector('.sc-body') || rootEl;
+
+  /* Optional rich catalog — a structured, page-authored library of everything
+     the surface can do, grouped into sections, each capability carrying several
+     example prompts and a "behind the scenes" tool list. When supplied it fully
+     replaces the auto-derived (scorecards + chips) suggestions below. Shape:
+       { intro, searchPlaceholder,
+         sections: [ { id, title, icon, desc,
+           items: [ { title, icon, desc, prompts:[...], tools:[...] } ] } ] } */
+  const askCatalog = opts.askCatalog && Array.isArray(opts.askCatalog.sections) && opts.askCatalog.sections.length
+    ? opts.askCatalog : null;
 
   /* Compose the surface's suggestions from the two sources that already drive
      the welcome screen: the rich "at a glance" scorecards and the intent chips.
@@ -3133,11 +3450,74 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return `<button type="button" class="wch-ask-card${gold}" data-ask="${esc(c.ask)}"${c.intent ? ` data-intent="${esc(c.intent)}"` : ''} title="Ask: ${esc(c.ask)}">
         <span class="wch-ask-ico"><span class="material-symbols-outlined">${esc(c.icon)}</span></span>
         <span class="wch-ask-card-body"><span class="wch-ask-card-title">${esc(c.title)}</span>${desc}${q}</span>
-        <span class="wch-ask-insert" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">input</span></span>
+        <span class="wch-ask-insert" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
       </button>`;
+  }
+  /* Render one catalog capability: header (icon + title + blurb), its example
+     prompts (each a click-to-send button with an insert affordance), and a
+     subdued "behind the scenes" tool footer. */
+  function askCapHtml(item, sectionIcon) {
+    const prompts = (item.prompts || []).map((p) =>
+      `<button type="button" class="wch-ask-prompt" data-ask="${esc(p)}" title="Ask: ${esc(p)}">
+        <span class="wch-ask-prompt-text">${esc(p)}</span>
+        <span class="wch-ask-prompt-actions">
+          <span class="wch-ask-prompt-btn" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
+          <span class="wch-ask-prompt-btn" role="button" tabindex="-1" aria-hidden="true" title="Ask this"><span class="material-symbols-outlined">play_arrow</span></span>
+        </span>
+      </button>`).join('');
+    const tools = (item.tools && item.tools.length)
+      ? `<div class="wch-ask-cap-tools"><b>Behind the scenes</b> ${item.tools.map((t) => `<code>${esc(t)}</code>`).join(' \u00B7 ')}</div>`
+      : '';
+    const desc = item.desc ? `<span class="wch-ask-cap-desc">${esc(item.desc)}</span>` : '';
+    return `<div class="wch-ask-cap">
+      <div class="wch-ask-cap-head">
+        <span class="wch-ask-cap-ico"><span class="material-symbols-outlined">${esc(item.icon || sectionIcon || 'bolt')}</span></span>
+        <span class="wch-ask-cap-titles"><span class="wch-ask-cap-title">${esc(item.title || '')}</span>${desc}</span>
+      </div>
+      <div class="wch-ask-prompts">${prompts}</div>
+      ${tools}
+    </div>`;
+  }
+  /* Catalog mode: filter chips (All + one per section) above section groups,
+     each with a header + blurb and its capability cards. A search query narrows
+     capabilities across whichever section scope is active. */
+  function renderAskCatalog() {
+    const q = (askQuery || '').trim().toLowerCase();
+    const matchItem = (it) => {
+      if (!q) return true;
+      const hay = [it.title, it.desc, (it.prompts || []).join(' '), (it.tools || []).join(' ')]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.indexOf(q) !== -1;
+    };
+    const sections = askCatalog.sections;
+    if (askSection !== 'all' && !sections.some((s) => s.id === askSection)) askSection = 'all';
+    const chips = ['<div class="wch-ask-filters">',
+      `<button type="button" class="wch-ask-filter${askSection === 'all' ? ' is-active' : ''}" data-section="all">All</button>`]
+      .concat(sections.map((s) =>
+        `<button type="button" class="wch-ask-filter${askSection === s.id ? ' is-active' : ''}" data-section="${esc(s.id)}">${esc(s.title)}</button>`))
+      .concat('</div>').join('');
+    const scoped = sections.filter((s) => askSection === 'all' || s.id === askSection);
+    const groups = scoped
+      .map((s) => ({ s, items: (s.items || []).filter(matchItem) }))
+      .filter((g) => g.items.length);
+    let body;
+    if (!groups.length) {
+      body = q
+        ? '<div class="wch-ask-empty">No prompts match \u201C' + esc((askQuery || '').trim()) + '\u201D. Try another word, or just type your question in your own words.</div>'
+        : '<div class="wch-ask-empty">Nothing here yet.</div>';
+    } else {
+      body = groups.map(({ s, items }) =>
+        `<div class="wch-ask-group" data-section="${esc(s.id)}">
+          <div class="wch-ask-group-title"><span class="material-symbols-outlined">${esc(s.icon || 'bolt')}</span>${esc(s.title)}</div>
+          ${s.desc ? `<div class="wch-ask-group-desc">${esc(s.desc)}</div>` : ''}
+          <div class="wch-ask-cards">${items.map((it) => askCapHtml(it, s.icon)).join('')}</div>
+        </div>`).join('');
+    }
+    askList.innerHTML = chips + body;
   }
   function renderAskList() {
     if (!askList) return;
+    if (askCatalog) { renderAskCatalog(); return; }
     let groups = askSuggestions();
     const q = (askQuery || '').trim().toLowerCase();
     if (q) {
@@ -3178,21 +3558,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (inp) { inp.value = ''; inp.focus(); }
     applyAskQuery('');
   }
-  /* Update the header break-out button to reflect the panel's current state:
-     an outward "split" glyph while it's the in-chat overlay, an inward
-     "collapse" glyph once broken out as a standalone module (tap to merge
-     back). Same glyph pair as the Turns module's dock button. */
+  /* Reflect the panel's current state on the three-dot menu's "break out" item:
+     a "split" glyph + "Break out…" label while it's the in-chat overlay, a
+     "collapse" glyph + "Merge back…" label once broken out as a standalone
+     module. Same glyph pair as the Turns module's dock button. */
   function updateAskBreakBtn() {
     if (!askPanel) return;
-    const btn = askPanel.querySelector('.wch-ask-breakout');
-    if (!btn) return;
-    btn.title = askDocked ? 'Merge back into the chat' : 'Break out as a side module';
-    btn.setAttribute('aria-label', askDocked
-      ? 'Merge "What can I ask?" back into the chat'
-      : 'Break "What can I ask?" out as a side module');
-    btn.setAttribute('aria-pressed', askDocked ? 'true' : 'false');
-    const g = btn.querySelector('.material-symbols-outlined');
+    /* The menu item may have been portaled to <body> with its popover, so look
+       there too rather than only inside the panel. */
+    const item = (askMorePop || askPanel).querySelector('.wch-ask-breakout')
+      || askPanel.querySelector('.wch-ask-breakout');
+    if (!item) return;
+    item.setAttribute('aria-pressed', askDocked ? 'true' : 'false');
+    const g = item.querySelector('.material-symbols-outlined');
     if (g) g.textContent = askDocked ? 'close_fullscreen' : 'vertical_split';
+    const lbl = item.querySelector('.wch-ask-breakout-label');
+    if (lbl) lbl.textContent = askDocked ? 'Merge back into the chat' : 'Break out as a side module';
   }
   /* Move the panel between the in-chat overlay and a standalone module docked
      to the RIGHT of the chat — a real flex sibling in the modules row, inserted
@@ -3263,13 +3644,21 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     askPanel.innerHTML =
       '<div class="wch-head">' +
         `<span class="wch-head-title"><span class="material-symbols-outlined">help</span>${esc(askHelpLabel || 'What can I ask?')}</span>` +
-        '<button type="button" class="wch-head-btn wch-ask-breakout" title="Break out as a side module" aria-label="Break &quot;What can I ask?&quot; out as a side module" aria-pressed="false"><span class="material-symbols-outlined">vertical_split</span></button>' +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
+        '<div class="wch-controls">' +
+          '<div class="panel-more-wrap wch-ask-more-wrap">' +
+            '<button type="button" class="panel-more-btn wch-ask-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
+            '<div class="topbar-popover hidden wch-ask-more-pop" role="menu">' +
+              '<button type="button" class="topbar-menu-item wch-ask-breakout" data-ask-act="breakout"><span class="material-symbols-outlined topbar-menu-icon">vertical_split</span><span class="wch-ask-breakout-label">Break out as a side module</span></button>' +
+              '<div class="topbar-menu-divider"></div>' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-ask-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
-      '<p class="wch-ask-intro">Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.</p>' +
+      `<p class="wch-ask-intro">${esc((askCatalog && askCatalog.intro) || 'Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.')}</p>` +
       '<div class="wch-ask-search">' +
         '<span class="material-symbols-outlined">search</span>' +
-        '<input type="text" class="wch-ask-search-input" placeholder="Search prompts\u2026" aria-label="Search prompts" autocomplete="off">' +
+        `<input type="text" class="wch-ask-search-input" placeholder="${esc((askCatalog && askCatalog.searchPlaceholder) || 'Search prompts\u2026')}" aria-label="Search prompts" autocomplete="off">` +
         '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<div class="wch-list wch-ask-list" role="list"></div>';
@@ -3278,17 +3667,60 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     askList = askPanel.querySelector('.wch-ask-list');
     renderAskList();
     askScrim.addEventListener('click', closeAskHelp);
-    askPanel.querySelector('.wch-close').addEventListener('click', closeAskHelp);
-    askPanel.querySelector('.wch-ask-breakout').addEventListener('click', (e) => {
+
+    /* Header three-dot menu — holds "Break out / Merge" and "Close pane" so the
+       header carries a single control (no overlapping X). The docked module
+       clips its own overflow (rounded corners), so the popover is portaled to
+       <body> and pinned fixed under the trigger, exactly like the Turns menu. */
+    const askMoreWrap = askPanel.querySelector('.wch-ask-more-wrap');
+    const askMoreBtn = askPanel.querySelector('.wch-ask-more-btn');
+    askMorePop = askPanel.querySelector('.wch-ask-more-pop');
+    const closeAskMore = () => {
+      askMorePop.classList.add('hidden');
+      askMoreBtn.classList.remove('is-open');
+      askMoreBtn.setAttribute('aria-expanded', 'false');
+    };
+    askMoreBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      setAskDocked(!askDocked);
+      const willOpen = askMorePop.classList.contains('hidden');
+      askMorePop.classList.toggle('hidden', !willOpen);
+      askMoreBtn.classList.toggle('is-open', willOpen);
+      askMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      if (willOpen) {
+        if (askMorePop.parentElement !== document.body) document.body.appendChild(askMorePop);
+        askMorePop.style.position = 'fixed';
+        askMorePop.style.zIndex = '3000';
+        const w = askMorePop.offsetWidth || 220;
+        const r = askMoreBtn.getBoundingClientRect();
+        askMorePop.style.top = (r.bottom + 6) + 'px';
+        askMorePop.style.left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6)) + 'px';
+        askMorePop.style.right = 'auto';
+      }
+    });
+    askMorePop.addEventListener('click', (e) => {
+      const it = e.target.closest('[data-ask-act]');
+      if (!it) return;
+      const act = it.getAttribute('data-ask-act');
+      closeAskMore();
+      if (act === 'breakout') setAskDocked(!askDocked);
+      else if (act === 'close') closeAskHelp();
+    });
+    document.addEventListener('click', (e) => {
+      if (!askMorePop.classList.contains('hidden') && !askMoreWrap.contains(e.target) && !askMorePop.contains(e.target)) closeAskMore();
     });
     const askSearchInput = askPanel.querySelector('.wch-ask-search-input');
     const askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
     if (askSearchInput) askSearchInput.addEventListener('input', () => applyAskQuery(askSearchInput.value));
     if (askSearchClear) askSearchClear.addEventListener('click', clearAskQuery);
     askPanel.addEventListener('click', (e) => {
-      const card = e.target.closest('.wch-ask-card[data-ask]');
+      /* Catalog filter chip — scope the list to one section (or All). */
+      const filter = e.target.closest('.wch-ask-filter');
+      if (filter) {
+        askSection = filter.getAttribute('data-section') || 'all';
+        renderAskList();
+        return;
+      }
+      const card = e.target.closest('[data-ask]');
       if (!card) return;
       const text = card.getAttribute('data-ask') || '';
       if (!text) return;
@@ -4083,6 +4515,553 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-brandtext', syncBrandtextMenu);
+  /* ── "Background animation" (Admin) engine ─────────────────────────────────
+     A welcome-only ambient canvas: a DNA/RNA double helix whose two backbones +
+     base-pair "rungs" are drawn in brand blue, chain-linking a run of OUR REAL
+     PRODUCT PHOTOS drawn as round thumbnails (the app's circular product "bug"),
+     with the WISEcodeAI owl logo itself sprinkled into the chain in a few places.
+     It runs along a tilted, slowly-swaying axis that descends left→right (high on
+     the left, low on the right); its loops TRAVEL end-to-end at a slow crawl — a
+     moving twist, not an in-place spin. The strand EXPANDS AND CONTRACTS, its radius
+     swelling wide then drawing back in on a slow breathing cycle. Depth trades the
+     strands front/back in 3-D: near products swell and brighten, far ones shrink and
+     fade. The canvas is created lazily the first time the animation is turned on,
+     lives behind the welcome content (which goes transparent while live), and is
+     torn down to a cleared, faded layer the instant the transcript advances. */
+  const bgAnim = (() => {
+    /* Our real products, strung along the helix (cycled across columns) and drawn as
+       circular thumbnails — the same round product "bug" the app uses in its portfolio
+       / comparison tables. `img` is relative to assets/; name/brand/upc feed the hover
+       card + its "Open Nutrition Facts" deep-link. */
+    const PRODUCTS = [
+      { img: 'portfolio/coconut_brownies.png', name: 'Toasted Coconut Brownies-12 ct', brand: 'Flax4Life', upc: '8 57287 00420 3' },
+      { img: 'portfolio/chocolate_chip_muffins.png', name: 'Chocolate Chip Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63152 0' },
+      { img: 'portfolio/blueberry_muffins.png', name: 'Blueberry Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63153 7' },
+      { img: 'portfolio/apple_cinnamon_muffins.png', name: 'Apple Cinnamon Muffins-4 ct', brand: 'Flax4Life' },
+      { img: 'portfolio/oatmeal_raisin_cookies.png', name: 'Oatmeal Raisin Cookies-5 ct', brand: 'Flax4Life', upc: '8 57287 00456 2' },
+      { img: 'portfolio/dark_cherry_brownies.png', name: 'Mini Dark Cherry Brownie Flax Muffins', brand: 'Flax4Life' },
+      { img: 'portfolio/chocolate_brownies.png', name: 'Chocolate Brownies-12 ct', brand: 'Flax4Life' },
+      { img: 'portfolio/carrot_raisin_muffins.png', name: 'Carrot Raisin Muffins-4 ct', brand: 'Flax4Life' },
+      { img: 'portfolio/granola.jpg', name: 'Chunky Chocolate Granola', brand: 'Flax4Life', upc: '8 57287 00427 2' },
+      { img: 'portfolio/vegan_blueberry_mini.png', name: 'Vegan Blueberry Mini Muffins', brand: 'Flax4Life' },
+      { img: 'top5-ginger-turmeric-bar.png', name: 'Ginger Turmeric Bar', brand: 'Date Better' },
+      { img: 'top5-almond-coconut-crisp.png', name: 'Almond Coconut Crisp', brand: 'Date Better' },
+      { img: 'top5-pistachio-rose-bar.png', name: 'Pistachio Rose Bar', brand: 'Date Better' },
+      { img: 'top5-matcha-cashew-bites.png', name: 'Matcha Cashew Bites', brand: 'Date Better' },
+      { img: 'top5-walnut-brownie-bar.png', name: 'Walnut Brownie Bar', brand: 'Date Better' },
+      { img: 'date-better-cashew-lime-crisp.png', name: 'Cashew Lime Crisp', brand: 'Date Better' },
+      { img: 'verification/ns-powdered-vitamin-eggs.png', name: 'Powdered Vitamin Eggs', brand: 'Nutrient Survival', upc: '818491020984' },
+      { img: 'verification/ns-homestyle-scramble.png', name: 'Homestyle Scramble — Protein Meal', brand: 'Nutrient Survival' },
+      { img: 'verification/ns-triple-cheese-mac.png', name: 'Triple Cheese Mac — Protein Meal', brand: 'Nutrient Survival' },
+      { img: 'verification/ns-protein-cereal-chocolate.png', name: 'Protein Cereal — Chocolate', brand: 'Nutrient Survival' },
+      { img: 'verification/ns-freeze-dried-mixed-vegetables.png', name: 'Freeze-Dried Mixed Vegetables', brand: 'Nutrient Survival' },
+      { img: 'verification/ns-powdered-vitamin-milk.png', name: 'Powdered Vitamin Milk', brand: 'Nutrient Survival' }
+    ];
+    let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
+    let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false;
+    /* Hover interaction state: the product circles' hit boxes from the last frame, the
+       currently hovered product, the branded info card, and the freeze bookkeeping. */
+    let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
+    let frozen = false, frozenT = 0, card = null, overCard = false, hideTimer = 0;
+
+    /* Resolve assets/ relative to THIS module so the photos load no matter how deep
+       the host page sits; falls back to the project's ../assets convention. */
+    function assetBase() {
+      try { return new URL('../assets/', import.meta.url).href; } catch (_) {}
+      return '../assets/';
+    }
+
+    function loadImages() {
+      if (images) return;
+      images = {};
+      const base = assetBase();
+      PRODUCTS.forEach((p) => {
+        const im = new Image();
+        im.decoding = 'async';
+        im.src = base + p.img;
+        images[p.img] = im;
+      });
+      /* The WISEcodeAI owl mark itself — the same logo that sits at the chat's centre —
+         rides the strand as a recurring node. Sized explicitly so the SVG data URL has
+         an intrinsic width for drawImage. */
+      owlImg = new Image();
+      owlImg.decoding = 'async';
+      owlImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(OWL_MARK.replace('<svg ', '<svg width="193" height="100" '));
+    }
+
+    /* Draw the owl as a brand-blue disc with the white owl mark centred, ringed to match
+       the DNA strand stroke — the centre logo, now travelling the helix. */
+    function drawOwl(cx, cy, d, discAlpha, strokeAlpha) {
+      const [r, g, b] = rgb;
+      const rad = d / 2;
+      ctx.globalAlpha = Math.min(1, discAlpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+      ctx.fill();
+      if (owlImg && owlImg.complete && owlImg.naturalWidth) {
+        const ow = d * 0.72;                        // 0.6 base, enlarged 20% within the circle
+        const oh = ow * (owlImg.naturalHeight / owlImg.naturalWidth || 100 / 193);
+        ctx.drawImage(owlImg, cx - ow / 2, cy - oh / 2, ow, oh);
+      }
+      ctx.globalAlpha = Math.min(1, strokeAlpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    /* Draw a product photo as a circular thumbnail (cover-fit + clip), ringed in the
+       brand blue. An OPAQUE backing disc is laid down first so the DNA strand lines can
+       never show through the photo — regardless of the field's opacity setting. */
+    function drawBug(im, cx, cy, d, alpha) {
+      const [r, g, b] = rgb;
+      const rad = d / 2;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, alpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.closePath();
+      ctx.fillStyle = '#ffffff'; ctx.fill();      // solid backing → nothing behind bleeds through
+      ctx.clip();
+      const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1;
+      const s = Math.max(d / iw, d / ih) * 1.2;   // cover-fit, image enlarged 20% within the circle
+      ctx.drawImage(im, cx - iw * s / 2, cy - ih * s / 2, iw * s, ih * s);
+      ctx.restore();
+      ctx.globalAlpha = Math.min(1, alpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    /* Read the live brand blue off the theme (bright variant in dark mode) so the
+       strands always track the palette; falls back to the canonical --primary. */
+    function readColor() {
+      let col = '#25507C';
+      try {
+        const cs = getComputedStyle(document.documentElement);
+        const dark = document.documentElement.classList.contains('dark');
+        col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
+      } catch (_) {}
+      if (col[0] === '#') {
+        let x = col.slice(1);
+        if (x.length === 3) x = x.split('').map((c) => c + c).join('');
+        const n = parseInt(x, 16);
+        if (!isNaN(n)) return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      const m = col.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
+      return m ? [+m[1], +m[2], +m[3]] : [37, 80, 124];
+    }
+
+    function ensure() {
+      if (canvas) return;
+      const body = rootEl.querySelector('.sc-body');
+      if (!body) return;
+      loadImages();
+      canvas = document.createElement('canvas');
+      canvas.className = 'sc-bganim-canvas';
+      canvas.setAttribute('aria-hidden', 'true');
+      body.insertBefore(canvas, body.firstChild);
+      ctx = canvas.getContext('2d');
+      buf = document.createElement('canvas');            // offscreen: draw opaque, blit at opacity
+      bctx = buf.getContext('2d');
+      buildCard(body);
+      resize();
+      try { ro = new ResizeObserver(resize); ro.observe(body); } catch (_) {}
+      /* Hover interaction — listen on the body so we get coordinates even though the
+         canvas sits behind the (transparent) welcome. Hovering a product freezes the
+         helix and opens its card; leaving both the product and the card resumes it. */
+      body.addEventListener('mousemove', onMove);
+      body.addEventListener('mouseleave', () => { if (!overCard) scheduleHide(); });
+    }
+
+    /* The branded hover card (our surface + tokens) with a thumbnail, name/brand and a
+       deep-link into the product's Nutrition Facts (NFP) view. */
+    function buildCard(body) {
+      card = document.createElement('div');
+      card.className = 'wch-food-card';
+      card.hidden = true;
+      card.innerHTML =
+        '<div class="wch-food-card-top">' +
+          '<span class="wch-food-card-thumb"><img alt="" /></span>' +
+          '<span class="wch-food-card-meta"><span class="wch-food-card-brand"></span>' +
+          '<span class="wch-food-card-name"></span></span>' +
+        '</div>' +
+        '<a class="wch-food-card-link" href="#"><span>View Details</span>' +
+          '<span class="material-symbols-outlined">arrow_outward</span></a>';
+      body.appendChild(card);
+      card.addEventListener('mouseenter', () => { overCard = true; if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } });
+      card.addEventListener('mouseleave', () => { overCard = false; scheduleHide(); });
+    }
+
+    /* Point-in-circle hit test against the last frame's product bugs, front-most first.
+       Only the circle itself is interactive — a tiny pad forgives the moving target, but
+       hovering the surrounding strand does NOT trigger the popover. */
+    function hitTest(mx, my) {
+      const pad = 2;
+      for (let i = hitNodes.length - 1; i >= 0; i--) {
+        const n = hitNodes[i];
+        const dx = mx - n.x, dy = my - n.y;
+        const rr = n.r + pad;
+        if (dx * dx + dy * dy <= rr * rr) return n;
+      }
+      return null;
+    }
+
+    function onMove(e) {
+      if (!rootEl.classList.contains('sc-bganim-live')) return;
+      const body = canvas && canvas.parentElement;
+      if (!body) return;
+      const rect = body.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const hit = hitTest(mx, my);
+      if (hit) {
+        body.style.cursor = 'pointer';                 // affordance: the bugs are interactive
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+        showCard(hit);
+      } else {
+        body.style.cursor = '';
+        if (!overCard) scheduleHide();
+      }
+    }
+
+    function scheduleHide() {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
+    }
+
+    /* Freeze the helix on the hovered product and fill + place the card beside it. */
+    function showCard(node) {
+      const p = node.prod;
+      if (!p) return;
+      /* Same bug already open — nothing to redo. */
+      if (frozen && hoverImg === p.img && Math.abs(hoverX - node.x) < 1 && Math.abs(hoverY - node.y) < 1) return;
+      freeze();
+      hoverImg = p.img; hoverX = node.x; hoverY = node.y;
+      if (card) {
+        const img = card.querySelector('img');
+        if (img) img.src = assetBase() + p.img;
+        const nm = card.querySelector('.wch-food-card-name');
+        if (nm) nm.textContent = p.name || '';
+        const br = card.querySelector('.wch-food-card-brand');
+        if (br) br.textContent = p.brand || '';
+        const link = card.querySelector('.wch-food-card-link');
+        if (link) link.setAttribute('href', nfpHref(p));
+        card.hidden = false;
+        placeCard(node);                         // unhidden first so we can measure + pick a side
+        card.style.animation = 'none';           // restart the pop-in every time it appears
+        void card.offsetWidth;
+        card.style.animation = '';
+      }
+      redraw();
+    }
+
+    /* Lay the card OVER the hovered bug — its round thumbnail sits exactly on top of the
+       circle so the product never reads twice — and let the rest of the card fan out to
+       whichever side has room (right by default, left when close to the right edge). The
+       layout mirrors so the thumbnail is always the edge that covers the bug. */
+    function placeCard(node) {
+      if (!card) return;
+      const body = canvas.parentElement;
+      const cw = card.offsetWidth || 340, ch = card.offsetHeight || 148;
+      const bw = body.clientWidth || w, bh = body.clientHeight || h;
+      const PAD = 18, THUMB = 68;                     // must track the card CSS
+      const anchor = PAD + THUMB / 2;                 // thumb centre offset from its edge
+      const toLeft = (node.x - anchor + cw + 8) > bw; // card would overflow the right edge
+      card.classList.toggle('is-left', toLeft);
+      let x = toLeft ? (node.x - (cw - anchor)) : (node.x - anchor);
+      let y = node.y - anchor;                        // thumb sits over the bug vertically
+      x = Math.max(8, Math.min(x, bw - cw - 8));
+      y = Math.max(8, Math.min(y, bh - ch - 8));
+      card.style.left = x + 'px';
+      card.style.top = y + 'px';
+    }
+
+    function hideCard() {
+      hoverImg = null; hoverX = hoverY = -1;
+      if (card) card.hidden = true;
+      const body = canvas && canvas.parentElement;
+      if (body) body.style.cursor = '';
+      resume();
+    }
+
+    /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
+       dashboard "View" href (view-product.html?name=…&upc=…&img=…). */
+    function nfpHref(p) {
+      const params = new URLSearchParams();
+      if (p.name) params.set('name', p.name);
+      if (p.upc) params.set('upc', p.upc);
+      params.set('img', assetBase() + p.img);
+      const qs = params.toString();
+      return 'view-product.html' + (qs ? '?' + qs : '');
+    }
+
+    function freeze() {
+      if (frozen) return;
+      frozen = true;
+      if (running && raf) { cancelAnimationFrame(raf); raf = 0; }
+      running = false;
+    }
+
+    function resume() {
+      if (!frozen) return;
+      frozen = false;
+      if (!bgAnimOn || prefersReducedMotion) return;
+      if (!rootEl.classList.contains('sc-bganim-live')) return;
+      /* Continue the timeline from where it froze so nothing jumps. */
+      t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - frozenT * 1000;
+      running = true;
+      raf = requestAnimationFrame(frame);
+    }
+
+    /* Repaint the current (frozen) frame — used when the hover highlight changes. */
+    function redraw() { draw(frozenT); }
+
+    function resize() {
+      if (!canvas || !ctx) return;
+      const body = canvas.parentElement;
+      if (!body) return;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = body.clientWidth; h = body.clientHeight;
+      canvas.width = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (buf && bctx) {
+        buf.width = canvas.width; buf.height = canvas.height;
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      /* Keep a shown card glued to its bug after a resize/reflow. */
+      if (card && !card.hidden && hoverX >= 0) placeCard({ x: hoverX, y: hoverY, r: 17 });
+    }
+
+    /* Smootherstep for the soft fade at the strand's two ends. */
+    function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+
+    /* Paint one frame at time `t` (seconds). The strand runs along a tilted, slowly-
+       swaying axis that DESCENDS left→right (high on the left, low on the right); its
+       loops TRAVEL end-to-end at a slow crawl (a moving twist, not an in-place spin).
+       The helix EXPANDS AND CONTRACTS as a very slow wave that travels left→right — at
+       any instant one stretch is fattening while another is pinching in. The product
+       photos are drawn as identical, fixed-size circles (no per-item resizing); their
+       ring matches the strand stroke, and everything is scaled by the shared opacity. */
+    function draw(t) {
+      if (!ctx || !bctx || w < 2 || h < 2) return;
+      frozenT = t;                                               // remember the last painted time (for freeze/redraw)
+      const O = Math.max(0, Math.min(1, effectiveBgAnimOpacity())); // shared opacity control (pane-count default until user-set)
+      /* Draw the whole field to an OFFSCREEN buffer at full strength — the opaque product
+         discs hide the strand lines *inside* the buffer — then blit the buffer onto the
+         visible canvas at O. So the opacity slider fades EVERYTHING together, yet no line
+         ever shows through a circle. `ctx` is aliased to the buffer for the render below. */
+      const mainCtx = ctx;
+      ctx = bctx;
+      ctx.clearRect(0, 0, w, h);
+      const [r, g, b] = rgb;
+      const cx = w / 2, cy = h * 0.36;                           // ride higher in the chat body
+      const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
+      /* Angled axis that slowly sways; base tilt is POSITIVE so the strand rides high
+         on the left and drops toward the right. */
+      const theta = 0.17 + 0.06 * Math.sin(t * 0.045);
+      const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
+      const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
+      const L = Math.hypot(w, h) * 1.2;                          // cover the tilted diagonal
+      /* Depth "breathes" on an ultra-slow, irregular cycle (~2–3 min): the helix opens
+         and closes its 3-D volume every once in a while, very very slowly. */
+      const depth = 1 + 0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3);
+      const ampBase = Math.min(h * 0.26, 120) * depth;
+      const prodSize = 34;                                       // base circle size (before depth + breath)
+      /* Expand ↔ contract as a slow wave travelling left→right along the strand. */
+      const breathK = (Math.PI * 2 * 1.4) / L;                   // ~1.4 squeezes across the strand
+      const breathSpeed = 0.11;                                  // how fast the wave crawls (very slow)
+      /* --- Sample the double helix at HIGH resolution so the backbones read as smooth,
+         rounded flows (a real DNA helix is two out-of-phase sine curves, not a zig-zag).
+         `lambda` is the pitch (px per full turn); `phase` crawls the twist along the axis
+         very slowly; each sample carries z = depth so we can shade + sort front/back. --- */
+      const lambda = Math.max(150, Math.min(240, L / 5.5));      // pitch — long, gentle loops
+      const kw = (Math.PI * 2) / lambda;                         // angular frequency along axis
+      const twistDrift = 1 + 0.05 * Math.sin(t * 0.03);          // pitch drifts a touch, slowly
+      const phase = t * 0.08;                                    // loops crawl along the axis (very slow)
+      const STEP = 7;                                            // px between samples → rounded curve
+      const N = Math.max(24, Math.round(L / STEP));
+      const A = [], B = [];
+      for (let i = 0; i <= N; i++) {
+        const u = (i / N - 0.5) * L;
+        const phi = u * kw * twistDrift - phase;
+        const s = Math.sin(phi), c = Math.cos(phi);
+        const endFade = smooth((L * 0.5 - Math.abs(u)) / (L * 0.13));
+        const amp = ampBase * intro * (1 + 0.4 * Math.sin(u * breathK - t * breathSpeed));
+        const bx = cx + ax * u, by = cy + ay * u;                // point on the axis
+        A.push({ x: bx + px * amp * s, y: by + py * amp * s, z: c, alpha: endFade });
+        B.push({ x: bx - px * amp * s, y: by - py * amp * s, z: -c, alpha: endFade });
+      }
+      /* --- Backbones as depth-sorted round-capped segments: the nearer half of each turn
+         (z→+1) is drawn thicker + brighter and OVER the farther half (z→−1), so the two
+         strands weave in front of / behind one another — a rounded, 3-D tube. --- */
+      const segs = [];
+      for (let i = 0; i < N; i++) {
+        const pa = A[i], qa = A[i + 1], pb = B[i], qb = B[i + 1];
+        if (Math.min(pa.alpha, qa.alpha) > 0.01) segs.push({ x1: pa.x, y1: pa.y, x2: qa.x, y2: qa.y, z: (pa.z + qa.z) * 0.5, a: Math.min(pa.alpha, qa.alpha) });
+        if (Math.min(pb.alpha, qb.alpha) > 0.01) segs.push({ x1: pb.x, y1: pb.y, x2: qb.x, y2: qb.y, z: (pb.z + qb.z) * 0.5, a: Math.min(pb.alpha, qb.alpha) });
+      }
+      segs.sort((m, n) => m.z - n.z);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (const seg of segs) {
+        const d = (seg.z + 1) * 0.5;                             // 0 (far) → 1 (near)
+        const la = seg.a * (0.26 + 0.6 * d);
+        if (la <= 0.01) continue;
+        ctx.lineWidth = 1.1 + 1.9 * d;                           // near strand is fatter
+        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+        ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+      }
+      /* Rungs — base-pair links, a couple per turn, shaded by their own depth. */
+      const rungEvery = Math.max(4, Math.round(lambda / (STEP * 2)));
+      for (let i = 0; i <= N; i += rungEvery) {
+        const p = A[i], q = B[i];
+        const a = Math.min(p.alpha, q.alpha);
+        if (a <= 0.01) continue;
+        const d = (((p.z + q.z) * 0.5) + 1) * 0.5;
+        const la = a * (0.16 + 0.28 * d);
+        ctx.lineWidth = 1.1 + 0.6 * d;
+        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      }
+      /* A slow, deep "breath" pulses every circle's size together — echoing the original
+         centre owl's pulse. Combined with depth (near = bigger), the circles swell as they
+         come to the FRONT of the helix and shrink as they swing to the back. */
+      const breathe = 1 + 0.09 * Math.sin(t * 0.42);             // deep + slow, ~15s
+      const nodeEvery = Math.max(3, Math.round(48 / STEP));
+      const nodes = [];
+      let ni = 0;
+      for (let i = 0; i <= N; i += nodeEvery) {
+        const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
+        const a = A[i], b = B[i];
+        nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA, prod: owlA ? null : PRODUCTS[ni % PRODUCTS.length] });
+        nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB, prod: owlB ? null : PRODUCTS[(ni + 11) % PRODUCTS.length] });
+        ni++;
+      }
+      nodes.sort((p, q) => p.z - q.z);
+      hitNodes = [];
+      for (const n of nodes) {
+        if (n.alpha <= 0.02) continue;
+        const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
+        const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
+        const rad = size / 2;
+        if (n.owl) { drawOwl(n.x, n.y, size, n.alpha, n.alpha); continue; }
+        if (!n.prod) continue;
+        const im = images && images[n.prod.img];
+        if (!im || !im.complete || !im.naturalWidth) continue;
+        const isHover = hoverImg && n.prod.img === hoverImg && Math.abs(n.x - hoverX) < 1 && Math.abs(n.y - hoverY) < 1;
+        drawBug(im, n.x, n.y, size, n.alpha);
+        if (isHover) {
+          ctx.globalAlpha = 1;
+          ctx.beginPath(); ctx.arc(n.x, n.y, rad + 1.5, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        hitNodes.push({ x: n.x, y: n.y, r: rad, prod: n.prod });
+      }
+      /* Blit the finished (opaque) buffer onto the visible canvas at the field opacity. */
+      ctx = mainCtx;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, buf.width, buf.height);
+      ctx.globalAlpha = O;
+      ctx.drawImage(buf, 0, 0);
+      ctx.restore();
+    }
+
+    function frame(now) {
+      if (!running) return;
+      if (!t0) t0 = now;
+      draw((now - t0) / 1000);
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (!bgAnimOn || typeof document === 'undefined') return;
+      ensure();
+      if (!canvas || !ctx) return;
+      rgb = readColor();
+      rootEl.classList.add('sc-bganim-live');
+      /* Reduced-motion: honour the calm by painting a single still frame of the strip. */
+      if (prefersReducedMotion) {
+        running = false; frozen = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        t0 = 0; draw(3);
+        /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
+        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+        pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
+        return;
+      }
+      if (running) return;
+      running = true; t0 = 0;
+      raf = requestAnimationFrame(frame);
+    }
+
+    function stop() {
+      running = false; frozen = false;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+      overCard = false; hoverImg = null; hoverX = hoverY = -1;
+      if (card) card.hidden = true;
+      const cbody = canvas && canvas.parentElement;
+      if (cbody) cbody.style.cursor = '';
+      rootEl.classList.remove('sc-bganim-live');
+      if (ctx) ctx.clearRect(0, 0, w, h);
+    }
+
+    return { start, stop };
+  })();
+  /* Sync the "Background animation" switch to this surface's on/off state, and
+     (re)start or stop the field to match — but only draw while the welcome is up,
+     so turning it on mid-conversation just arms it for the next welcome. Shared
+     app-wide: the wise:chat-bg-anim broadcast keeps every mounted chat in step. */
+  function syncBgAnimMenu() {
+    const item = rootEl.querySelector('[data-sc="bg-anim"]');
+    if (item) {
+      item.classList.toggle('is-on', bgAnimOn);
+      item.setAttribute('aria-checked', bgAnimOn ? 'true' : 'false');
+    }
+    /* The opacity slider (below the toggle) dims + locks while the animation is off. */
+    const detail = rootEl.querySelector('.sc-bganim-detail');
+    if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
+    const pct = Math.round(effectiveBgAnimOpacity() * 100);
+    const range = rootEl.querySelector('.sc-bganim-opacity');
+    if (range && document.activeElement !== range) range.value = String(pct);
+    const val = rootEl.querySelector('.sc-bganim-opacity-val');
+    if (val) val.textContent = pct + '%';
+  }
+  document.addEventListener('wise:chat-bg-anim', (e) => {
+    bgAnimOn = !!(e && e.detail && e.detail.on);
+    syncBgAnimMenu();
+    if (bgAnimOn && welcome && !welcome.classList.contains('sc-hidden')) bgAnim.start();
+    else bgAnim.stop();
+  });
+  /* Opacity slider — drag to fade the whole field. Persist + broadcast so every
+     mounted chat's slider (and its live canvas) follows the one shared setting.
+     draw() multiplies every alpha by bgAnimOpacity, so a running field updates on
+     the next frame; a paused reduced-motion still frame is repainted via start(). */
+  const bgOpacityRange = rootEl.querySelector('.sc-bganim-opacity');
+  if (bgOpacityRange) {
+    bgOpacityRange.addEventListener('input', () => {
+      const pct = Math.max(10, Math.min(100, parseInt(bgOpacityRange.value, 10) || 100));
+      bgAnimOpacity = pct / 100;
+      bgAnimOpacityUserSet = true;                 // an explicit drag overrides the pane-count default
+      try { localStorage.setItem(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: bgAnimOpacity } })); } catch (_) {}
+      const val = rootEl.querySelector('.sc-bganim-opacity-val');
+      if (val) val.textContent = pct + '%';
+      if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
+    const v = e && e.detail && e.detail.opacity;
+    if (typeof v !== 'number') return;
+    bgAnimOpacity = Math.max(0.1, Math.min(1, v));
+    bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
+    syncBgAnimMenu();
+    if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+  });
   /* Sync the "Response streaming" controls — the master switch plus the
      three-level segment — to the shared streamOn/streamLevel. Called on mount
      and whenever any module changes either (via wise:chat-stream-on /
@@ -4299,6 +5278,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      thread here first. */
   let chatHistory = null;
   function hideWelcome() {
+    /* The transcript has advanced to its next state — retire the welcome-only
+       background animation (if it was armed) so it never bleeds into a live thread. */
+    bgAnim.stop();
     welcome?.classList.add('sc-hidden');
     /* A clicked intent chip starts a fresh turn, so drop any half-typed copy
        left in the composer — the placeholder returns so the input reads clean
@@ -4386,11 +5368,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta"><span class="sc-line-time">${esc(clock)}</span></div></div></div>`;
       }
       const body = t.html != null ? t.html : esc(t.text || '');
-      const src = t.source !== undefined ? t.source : sourceLabel;
-      const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml() : '';
+      /* Seeded history turns are grounded too — fall back to a connected source
+         so restored threads always carry a source, just like live answers. */
+      let src = t.source !== undefined ? t.source : sourceLabel;
+      if (src !== false && !src) src = pickSourceName();
+      if (src === false) src = '';
+      const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml(clock) : '';
       const footer = `<div class="sc-line-meta">${
         src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
-      }<span class="sc-line-time">${esc(clock)}</span>${fb}</div>`;
+      }${fb ? '' : `<span class="sc-line-time">${esc(clock)}</span>`}${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
   }
@@ -4577,6 +5563,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     else done();
   }
   messages?.addEventListener('click', (e) => {
+    const moreBtn = e.target.closest('.sc-fb-more');
+    if (moreBtn) {
+      const wrap = moreBtn.closest('.sc-fb-more-wrap');
+      const menu = wrap && wrap.querySelector('.sc-fb-menu');
+      const willOpen = !!menu && menu.hidden;
+      /* Only one three-dot menu open at a time across the transcript. */
+      closeMoreMenus();
+      if (menu) {
+        menu.hidden = !willOpen;
+        moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
+      return;
+    }
     const idEl = e.target.closest('.sc-fb-id');
     if (idEl) {
       copyText((idEl.textContent || '').trim(), idEl);
@@ -4659,11 +5658,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   }
+  /* Collapse any open three-dot (timestamp + turn controls) menu. */
+  function closeMoreMenus() {
+    messages?.querySelectorAll('.sc-fb-menu:not([hidden])').forEach((menu) => {
+      menu.hidden = true;
+      const btn = menu.closest('.sc-fb-more-wrap')?.querySelector('.sc-fb-more');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')) return;
-    closeReasonPopovers();
+    if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')) closeReasonPopovers();
+    /* Leave the menu open while interacting inside it (copy turn ID, etc.); a
+       click that lands on the trigger is handled by its own toggle above. */
+    if (!e.target.closest('.sc-fb-more-wrap')) closeMoreMenus();
   });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReasonPopovers(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeReasonPopovers(); closeMoreMenus(); }
+  });
 
   /* Stylized hover/focus tooltip for the per-answer action icons. Reads its
      short caption from `data-tip`, floats a dark card just above the control,
@@ -4887,6 +5898,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       btn.title = SC_WIDTH_TITLES[tier];
       const icon = btn.querySelector('.material-symbols-outlined');
       if (icon) icon.textContent = SC_WIDTH_ICONS[tier];
+    }
+    /* When the field's opacity is still on its pane-count default, a width change
+       re-tunes it (single/double → 30%, wider → 65%): refresh the slider readout
+       and repaint any reduced-motion still frame (the live rAF loop self-updates). */
+    if (!bgAnimOpacityUserSet) {
+      syncBgAnimMenu();
+      if (prefersReducedMotion && bgAnimOn && rootEl.classList.contains('sc-bganim-live')) bgAnim.start();
     }
   };
   rootEl.addEventListener('click', (e) => {
@@ -5281,6 +6299,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-brandtext', { detail: { on } })); } catch (_) {}
       syncBrandtextMenu();
     }
+    else if (action === 'bg-anim') {
+      /* Admin-only ambient backdrop for the welcome state. Flip the shared pref,
+         persist + broadcast it; the wise:chat-bg-anim listener does the actual
+         switch sync + start/stop (here and on every sibling chat). Keep the menu
+         open so the pink switch reads back its new state. */
+      bgAnimOn = !bgAnimOn;
+      try { localStorage.setItem(BGANIM_PREF_KEY, bgAnimOn ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgAnimOn } })); } catch (_) {}
+    }
     else if (action === 'stream-toggle') {
       /* Master streaming switch: ON streams the thinking at the chosen level,
          OFF skips the trace so answers just land. Keep the menu open so the
@@ -5460,6 +6487,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncTurnsMenu();
   syncCompactMenu();
   syncBrandtextMenu();
+  syncBgAnimMenu();
   syncStreamMenu();
   syncActivityStripMenu();
 

@@ -240,26 +240,14 @@ function renderRail(mods) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Per-module control cluster (three-dot + width changer)             */
+/* Per-module control cluster (three-dot menu)                        */
 /*                                                                    */
-/* Every module pane in the app carries the same header cluster — a    */
-/* more-options (⋯) menu + a width toggle. The two modules on this     */
-/* page render inside a shared scroll surface, so they get their own   */
-/* clusters here, reusing the globally-styled .panel-controls /        */
-/* .panel-more-btn / .panel-width-toggle-btn / .topbar-popover classes */
-/* so they look + behave identically to the rest of the app.          */
+/* Every module pane on this page carries a more-options (⋯) menu of   */
+/* its own on-page controls. Width is handled once by the main panel   */
+/* width toggle at the very top, so modules don't repeat it. These     */
+/* clusters reuse the globally-styled .panel-controls / .panel-more-btn */
+/* / .topbar-popover classes so they match the rest of the app.       */
 /* ------------------------------------------------------------------ */
-
-/* Canonical four-tier reading width shared with the main panel:
-   single → double → triple → fill. Tier → class: 0 narrow · 1 wide ·
-   2 triple · 3 fill (no class). */
-const MODULE_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
-const MODULE_WIDTH_TITLES = [
-  'Width (single) — tap to widen',
-  'Width (double) — tap to widen',
-  'Width (triple) — tap to widen',
-  'Width (fill) — tap to reset',
-];
 
 /* The three-dot menu items per module — each maps to a real on-page control
    so the menu does exactly what the module's own toolbar does. */
@@ -297,13 +285,6 @@ function moduleMoreItems(moduleId) {
       { action: 'int-act', icon: 'chat_bubble', label: 'Show chips needing transcript' },
     ];
   }
-  if (moduleId === 'mi-projects') {
-    return [
-      { action: 'proj-first', icon: 'category', label: 'Open first project' },
-      { action: 'proj-close', icon: 'close', label: 'Close breakdown panel' },
-      { action: 'proj-components', icon: 'widgets', label: 'Jump to Component Library' },
-    ];
-  }
   return [
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -323,7 +304,6 @@ function moduleControlsHTML(moduleId) {
         <button type="button" class="panel-more-btn" data-mi-more aria-haspopup="menu" aria-expanded="false" title="More options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" data-mi-more-pop role="menu">${items}</div>
       </div>
-      <button type="button" class="panel-width-toggle-btn" data-mi-width aria-pressed="false" title="${esc(MODULE_WIDTH_TITLES[3])}" aria-label="Module width"><span class="material-symbols-outlined">${MODULE_WIDTH_ICONS[3]}</span></button>
     </div>`;
 }
 
@@ -409,6 +389,14 @@ function renderDirectory() {
         <div class="mi-view" role="group" aria-label="Directory view">
           <button type="button" class="mi-view-btn is-active" data-view="grid" aria-pressed="true"><span class="material-symbols-outlined">grid_view</span>Grid</button>
           <button type="button" class="mi-view-btn" data-view="rail" aria-pressed="false"><span class="material-symbols-outlined">view_column</span>Rail</button>
+        </div>
+        <div class="mi-export" role="group" aria-label="Export screenshots">
+          <button type="button" class="mi-export-btn" data-export="pages" title="Capture the full page (nav + top bar + content) for every unique screen and download them as a zipped folder">
+            <span class="material-symbols-outlined">photo_library</span>Export page shots
+          </button>
+          <button type="button" class="mi-export-btn" data-export="modules" title="Capture just the module content panel (no app chrome) for every module and download them as a zipped folder">
+            <span class="material-symbols-outlined">dashboard_customize</span>Export module shots
+          </button>
         </div>
       </div>
 
@@ -1762,377 +1750,6 @@ function componentCategoryScorecards() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Project Breakdown                                                   */
-/*                                                                    */
-/* The other modules on this page enumerate the app as a flat list of  */
-/* screens, tokens and components. This one answers a different        */
-/* question: "if I were to BUILD this, how would I slice it?" It groups */
-/* the whole app into a handful of coherent PROJECTS, and breaks each   */
-/* project into small, component-oriented CHUNKS — the smallest unit    */
-/* of work that still ships something usable. Each chunk names the      */
-/* exact components + screens it touches, so the breakdown always ties  */
-/* back to the Component Library and Module Directory above.           */
-/*                                                                    */
-/* Opened as a slide-in panel: the section shows one card per project,  */
-/* and tapping a project reveals its chunks in a right-hand drawer.    */
-/* ------------------------------------------------------------------ */
-
-/* Relative sizing — a lightweight t-shirt scale. `pts` roll up into a
-   project total so the cards can show a rough "size". */
-const EFFORT = { S: { pts: 1, label: 'S' }, M: { pts: 2, label: 'M' }, L: { pts: 3, label: 'L' }, XL: { pts: 5, label: 'XL' } };
-
-/* Every chunk lists the components it leans on by their exact name in
-   COMPONENTS (so a chip can jump straight to that card in the Component
-   Library) and the screens it lands on by label + href (so a chip opens
-   the real page). Kept curated by hand — this is a build map, not a
-   mechanical flatten of the nav. */
-const PROJECT_BREAKDOWN = [
-  {
-    id: 'proj-foundation',
-    title: 'Design System Foundation',
-    icon: 'palette',
-    tone: 'ai',
-    summary: 'The tokens and base components everything else is built on — colors, type, and the primitive controls. Build this first; every other project consumes it.',
-    chunks: [
-      { title: 'Color & theme tokens', effort: 'M', why: 'The light/dark token set every surface reads from — do this before any component so theming is free later.', components: ['Status pills', 'Badges'], modules: [{ label: 'Design System', href: 'all-modules.html#mi-design' }] },
-      { title: 'Typography & type scale', effort: 'S', why: 'Font families + the shared size ramp. Small, self-contained, unblocks every text surface.', components: [], modules: [{ label: 'Design System', href: 'all-modules.html#mi-design' }] },
-      { title: 'Buttons & links', effort: 'S', why: 'Primary / ghost / text-link — the most-reused control in the app. Tiny but touches every screen.', components: ['Buttons', 'Admin buttons'], modules: [] },
-      { title: 'Chips & badges', effort: 'S', why: 'Intent chips, status pills, badges — one chip family in two sizes. Ships independently.', components: ['Intent chips', 'Status pills', 'Badges', 'Status chips (domain)'], modules: [] },
-      { title: 'Inputs, search & forms', effort: 'M', why: 'Text fields, the search pill, and form field groups — the input primitives every flow reuses.', components: ['Form fields', 'Search pill', 'Chat composer'], modules: [] },
-      { title: 'Overlays kit', effort: 'M', why: 'Popover, modal, bottom sheet, tooltip, toast — the shared overlay shells. One pass, reused everywhere.', components: ['Popover menu', 'Menu popover', 'Modal dialog', 'Bottom sheet', 'Tooltip', 'Toast'], modules: [] },
-    ],
-  },
-  {
-    id: 'proj-shell',
-    title: 'App Shell & Navigation',
-    icon: 'space_dashboard',
-    tone: 'workspace',
-    summary: 'The persistent frame — left nav, top bar, avatar/appearance menus, per-module controls, and the alerts panel. Wraps every logged-in page.',
-    chunks: [
-      { title: 'Left-nav rail + items', effort: 'M', why: 'Sectioned nav with collapse-to-rail. The spine of navigation — build once, wire per page.', components: ['Left-nav item'], modules: [{ label: 'Overview', href: 'overview.html' }] },
-      { title: 'Top bar + icon buttons', effort: 'S', why: 'Logo, menu toggle, alerts + more actions. Small surface, high visibility.', components: ['Top-bar icon button'], modules: [] },
-      { title: 'Avatar & appearance menus', effort: 'M', why: 'User popover (profile, sign out) + appearance popover (theme, text size, dock). Two popovers on the shared shell.', components: ['Avatar button', 'Avatars', 'Popover menu'], modules: [{ label: 'My profile', href: 'profile.html' }, { label: 'Preferences', href: 'preferences.html' }] },
-      { title: 'Module control cluster', effort: 'S', why: 'The ⋯ menu + width toggle every pane carries. Self-contained, drops onto any module.', components: ['Module control cluster', 'View toggle'], modules: [] },
-      { title: 'Alerts & notifications panel', effort: 'M', why: 'The side panel + notification rows + toasts. A vertical slice you can ship on its own.', components: ['Notification rows', 'Toast'], modules: [{ label: 'Alerts', href: 'alerts.html' }] },
-    ],
-  },
-  {
-    id: 'proj-wiseai',
-    title: 'WISEcodeAI Chat Dock',
-    icon: 'auto_awesome',
-    tone: 'ai',
-    summary: 'The shared chat that docks on every page — composer, intent chips, and the Turns / History drawers. Build the dock once; each page just feeds it content.',
-    chunks: [
-      { title: 'Chat composer', effort: 'M', why: 'Input + attach/dictate/send. The heart of the dock — nothing else works without it.', components: ['Chat composer'], modules: [{ label: 'Chat', href: 'wiseai.html' }] },
-      { title: 'Welcome cards & intent chips', effort: 'M', why: 'Scorecards + chips that map 1:1 to page actions. Reused across every page dock.', components: ['Intent chips', 'Scorecard stat tile'], modules: [{ label: 'Chat', href: 'wiseai.html' }] },
-      { title: 'Turns drawer', effort: 'L', why: 'Per-turn list with fork / jump / share / note. A meaty, standalone module docked beside the chat.', components: ['Module control cluster'], modules: [{ label: 'Turns', href: 'wiseai.html#turns' }] },
-      { title: 'History & Projects drawer', effort: 'M', why: 'The left-side history breakout. Ships after the dock frame lands.', components: [], modules: [{ label: 'History', href: 'wiseai.html#history' }, { label: 'Library', href: 'conversation-library.html' }] },
-      { title: 'Activity read-out', effort: 'S', why: 'The tokens/cost hover indicator. Small, bolt-on, no dependencies once the dock exists.', components: [], modules: [{ label: 'Data Sources', href: 'wiseai.html#data-sources' }] },
-    ],
-  },
-  {
-    id: 'proj-portfolio',
-    title: 'Portfolio & Products',
-    icon: 'inventory_2',
-    tone: 'portfolio',
-    summary: 'The product line-up — the portfolio table, comparison, add/view flows, and the Non-UPF dashboard. Depends on the data table + filter primitives.',
-    chunks: [
-      { title: 'Product portfolio table', effort: 'L', why: 'Sortable, paginated table with row menus — the core surface. Build the table primitive here.', components: ['Data table', 'Pagination footer', 'Row action menu'], modules: [{ label: 'Product Portfolio', href: 'product-portfolio.html' }] },
-      { title: 'Filter toolbar + stat board', effort: 'M', why: 'Click-to-filter scorecards + the filter toolbar. Sits on top of the table, ships next.', components: ['Filter toolbar', 'Stat filter board', 'Scorecard stat tile'], modules: [{ label: 'Product Portfolio', href: 'product-portfolio.html' }] },
-      { title: 'Product comparison', effort: 'M', why: 'Side-by-side compare of two SKUs. Reuses the table + chips; a discrete deliverable.', components: ['Status chips (domain)'], modules: [{ label: 'Comparison', href: 'product-comparison.html' }] },
-      { title: 'Add / View product', effort: 'M', why: 'The create + detail forms. Leans entirely on the form primitives from Foundation.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Add Product', href: 'add-product.html' }, { label: 'View Product', href: 'view-product.html' }] },
-      { title: 'Non-UPF dashboard', effort: 'M', why: 'Charts + distribution bars over the portfolio. A visual slice you can demo alone.', components: ['Charts & graphs', 'Distribution bar', 'Dashboard card'], modules: [{ label: 'NON-UPF Dashboard', href: 'non-upf-dashboard.html' }] },
-    ],
-  },
-  {
-    id: 'proj-verify',
-    title: 'Verification Flows',
-    icon: 'verified',
-    tone: 'verify',
-    summary: 'The step-by-step verification wizards (Non-UPF and GRAS) plus the progress + attestation surfaces. A chat-and-surface pairing.',
-    chunks: [
-      { title: 'Non-UPF wizard steps', effort: 'L', why: 'Select → attest → payment. The wizard scaffold both flows share — build it here.', components: ['Tabs & segmented', 'Form fields', 'Buttons'], modules: [{ label: 'Non-UPF Verification', href: 'verification.html' }] },
-      { title: 'GRAS documentation wizard', effort: 'L', why: 'The 5-step ingredient documentation flow. Reuses the wizard scaffold above.', components: ['Form fields', 'Status chips (domain)'], modules: [{ label: 'GRAS Verification', href: 'gras-verification.html' }] },
-      { title: 'Progress + result sheet', effort: 'S', why: 'The bottom-sheet progress flow + done state. Small, shared by both wizards.', components: ['Bottom sheet', 'Toast'], modules: [] },
-    ],
-  },
-  {
-    id: 'proj-reports',
-    title: 'Reports & Analytics',
-    icon: 'insights',
-    tone: 'report',
-    summary: 'The report library, the inline report surface, and every chart primitive. Depends on the charts + card components.',
-    chunks: [
-      { title: 'Report library cards', effort: 'M', why: 'The catalog of available reports. Entry point — ships first.', components: ['Dashboard card', 'Badges'], modules: [{ label: 'Reports', href: 'reports.html' }] },
-      { title: 'Inline report surface', effort: 'L', why: 'Opening a report next to the chat (no modal). The mirrored chat-and-surface pattern.', components: ['Charts & graphs', 'Distribution bar'], modules: [{ label: 'Reports', href: 'reports.html' }, { label: 'Analytics Types', href: 'analytics-types.html' }] },
-      { title: 'Guiding Stars report', effort: 'M', why: 'A specific report end-to-end. Good vertical slice once the surface exists.', components: ['Charts & graphs', 'Status pills'], modules: [{ label: 'Guiding Stars Report', href: 'report-guiding-stars.html' }] },
-    ],
-  },
-  {
-    id: 'proj-reform',
-    title: 'Reformulation Studio',
-    icon: 'auto_fix_high',
-    tone: 'reform',
-    summary: 'The reformulation workspace and its dashboard — an AI-assisted studio pane with a simulation progress surface.',
-    chunks: [
-      { title: 'Reformulation studio pane', effort: 'L', why: 'The main editing workspace. The centerpiece — build the pane and its state first.', components: ['Chat composer', 'Intent chips', 'Buttons'], modules: [{ label: 'Reformulation Studio', href: 'reformulation.html' }] },
-      { title: 'Reformulation dashboard', effort: 'M', why: 'The metrics view over reformulation runs. Charts on top of the studio data.', components: ['Charts & graphs', 'Dashboard card'], modules: [{ label: 'Reformulation Dashboard', href: 'reformulation.html#dashboard' }] },
-    ],
-  },
-  {
-    id: 'proj-admin',
-    title: 'Admin & Org Management',
-    icon: 'shield',
-    tone: 'admin',
-    summary: 'The WISEcode admin surfaces — orgs, users, invites, audit queue, and utilities. Heavy on the data table + row-action primitives.',
-    chunks: [
-      { title: 'Organizations directory', effort: 'M', why: 'The customer org table + counts. Reuses the portfolio table primitive.', components: ['Data table', 'Pagination footer'], modules: [{ label: 'Organizations', href: 'organizations.html' }] },
-      { title: 'User & role management', effort: 'M', why: 'Users table with role editing + row menus. Discrete admin deliverable.', components: ['Data table', 'Row action menu', 'Status pills'], modules: [{ label: 'User Management', href: 'user-management.html' }] },
-      { title: 'Quick invite', effort: 'S', why: 'One-step org invite + history. Small form flow, ships alone.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Quick Invite', href: 'quick-invite.html' }] },
-      { title: 'Audit queue', effort: 'M', why: 'Ingredient audit review queue. Table + status chips + row actions.', components: ['Data table', 'Status chips (domain)', 'Row action menu'], modules: [{ label: 'Audit Queue', href: 'audit-queue.html' }] },
-      { title: 'Admin utilities', effort: 'S', why: 'Maintenance + seeding tools. Independent, low-risk grab bag.', components: ['Admin buttons', 'Empty state'], modules: [{ label: 'Admin Utils', href: 'admin-utils.html' }, { label: 'Accessibility Review', href: 'accessibility-review.html' }] },
-    ],
-  },
-  {
-    id: 'proj-account',
-    title: 'Account & Support',
-    icon: 'account_circle',
-    tone: 'account',
-    summary: 'Everything behind the avatar menu — profile, preferences, API keys, invoices, help and docs. Mostly form + table surfaces.',
-    chunks: [
-      { title: 'My profile', effort: 'M', why: 'Editable identity card + activity/security tabs. Form-heavy, self-contained.', components: ['Form fields', 'Tabs & segmented', 'Avatars'], modules: [{ label: 'My profile', href: 'profile.html' }] },
-      { title: 'Preferences', effort: 'S', why: 'Appearance, notifications, workspace, accessibility toggles. Small settings surface.', components: ['Brand toggle', 'Form fields'], modules: [{ label: 'Preferences', href: 'preferences.html' }] },
-      { title: 'API keys', effort: 'S', why: 'Create / reveal / revoke keys + usage. Discrete, security-scoped.', components: ['Data table', 'Buttons'], modules: [{ label: 'API keys', href: 'api-keys.html' }] },
-      { title: 'Invoices & downloads', effort: 'M', why: 'Filterable billing board + downloads. Table + filter reuse.', components: ['Data table', 'Filter toolbar', 'Status pills'], modules: [{ label: 'Invoices & Downloads', href: 'invoices.html' }] },
-      { title: 'Help & docs', effort: 'M', why: 'Search + browse help and the docs reading pane. A content project, ships last.', components: ['Search pill', 'Empty state'], modules: [{ label: 'Help', href: 'help.html' }, { label: 'Docs', href: 'docs.html' }] },
-    ],
-  },
-  {
-    id: 'proj-auth',
-    title: 'Auth & Onboarding',
-    icon: 'lock',
-    tone: 'auth',
-    summary: 'The entry gate — login, create account, and forgot password. Small, form-only, buildable up front in parallel with Foundation.',
-    chunks: [
-      { title: 'Log in', effort: 'S', why: 'Email/password + session. The gate everything else sits behind.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Log in', href: 'login.html' }] },
-      { title: 'Create account', effort: 'S', why: 'Signup form + validation. Reuses the login form primitives.', components: ['Form fields', 'Intent chips'], modules: [{ label: 'Create Account', href: 'create-account.html' }] },
-      { title: 'Forgot password', effort: 'S', why: 'Reset request flow. Tiny, independent, closes out the auth set.', components: ['Form fields', 'Buttons'], modules: [{ label: 'Forgot Password', href: 'forgot-password.html' }] },
-    ],
-  },
-  {
-    id: 'proj-marketing',
-    title: 'Marketing Site',
-    icon: 'campaign',
-    tone: 'marketing',
-    summary: 'The public-facing site — landing, product/solution pages, pricing, and feature deep-dives. Its own shell, separate from the app.',
-    chunks: [
-      { title: 'Home & shell', effort: 'M', why: 'Landing page + marketing nav/footer. The shared frame every other page reuses.', components: ['Buttons', 'Intent chips'], modules: [{ label: 'Home', href: '../index.html' }] },
-      { title: 'Product & solution pages', effort: 'M', why: 'The evergreen content pages. Ship on the shell once it lands.', components: ['Dashboard card'], modules: [{ label: 'Products', href: '../marketing-products.html' }, { label: 'Solutions', href: '../marketing-solutions.html' }] },
-      { title: 'Pricing', effort: 'S', why: 'Plan comparison + CTAs. Self-contained, conversion-critical.', components: ['Buttons', 'Badges'], modules: [{ label: 'Pricing', href: '../marketing-pricing.html' }] },
-      { title: 'Feature deep-dives', effort: 'M', why: 'WISEcodeAI / GRAS / Non-UPF / Alliance / Enterprise pages. A content batch, parallelizable.', components: [], modules: [{ label: 'WISEcodeAI', href: '../marketing-wiseai.html' }, { label: 'GRAS', href: '../marketing-gras.html' }, { label: 'Non-UPF', href: '../marketing-nonupf.html' }] },
-    ],
-  },
-];
-
-/* Roll a project up into { chunks, pts, comps } for the card face + the drawer
-   header. `comps` counts the unique components the whole project touches, which
-   is the "component-wise" size the breakdown is organised around. */
-function projectStats(p) {
-  const comps = new Set();
-  let pts = 0;
-  p.chunks.forEach((c) => {
-    pts += (EFFORT[c.effort] || EFFORT.M).pts;
-    (c.components || []).forEach((n) => comps.add(n));
-  });
-  return { chunks: p.chunks.length, pts, comps: comps.size };
-}
-
-/* Turn a rough pts total into a plain-language size, so a card can say
-   "Small / Medium / Large / Epic" instead of a bare number. */
-function projectSize(pts) {
-  if (pts <= 4) return 'Small';
-  if (pts <= 8) return 'Medium';
-  if (pts <= 12) return 'Large';
-  return 'Epic';
-}
-
-function projectCard(p) {
-  const s = projectStats(p);
-  return `
-    <button type="button" class="mi-proj-card" data-proj="${esc(p.id)}" data-tone="${esc(p.tone)}" aria-haspopup="dialog">
-      <span class="mi-proj-ic"><span class="material-symbols-outlined">${esc(p.icon)}</span></span>
-      <span class="mi-proj-body">
-        <span class="mi-proj-title">${esc(p.title)}</span>
-        <span class="mi-proj-summary">${esc(p.summary)}</span>
-        <span class="mi-proj-meta">
-          <span class="mi-proj-tag"><span class="material-symbols-outlined">check_box</span>${s.chunks} chunks</span>
-          <span class="mi-proj-tag"><span class="material-symbols-outlined">widgets</span>${s.comps} components</span>
-          <span class="mi-proj-tag mi-proj-tag--size">${esc(projectSize(s.pts))}</span>
-        </span>
-      </span>
-      <span class="mi-proj-go material-symbols-outlined" aria-hidden="true">chevron_right</span>
-    </button>`;
-}
-
-/* One chunk row inside the drawer. Component chips jump to (and filter) the
-   Component Library; module chips open the real screen. */
-function chunkComponentChip(name) {
-  return `<button type="button" class="mi-chunk-chip mi-chunk-chip--comp" data-chunk-comp="${esc(name)}"><span class="material-symbols-outlined">widgets</span>${esc(name)}</button>`;
-}
-
-function chunkModuleChip(m) {
-  return `<a class="mi-chunk-chip mi-chunk-chip--mod" href="${esc(m.href)}"><span class="material-symbols-outlined">arrow_outward</span>${esc(m.label)}</a>`;
-}
-
-function chunkRow(c, i) {
-  const eff = EFFORT[c.effort] || EFFORT.M;
-  const comps = (c.components || []).map(chunkComponentChip).join('');
-  const mods = (c.modules || []).map(chunkModuleChip).join('');
-  return `
-    <li class="mi-chunk">
-      <div class="mi-chunk-head">
-        <span class="mi-chunk-num">${i + 1}</span>
-        <span class="mi-chunk-title">${esc(c.title)}</span>
-        <span class="mi-chunk-eff" data-eff="${esc(c.effort)}" title="Relative effort">${esc(eff.label)}</span>
-      </div>
-      <p class="mi-chunk-why">${esc(c.why)}</p>
-      ${(comps || mods) ? `<div class="mi-chunk-chips">${comps}${mods}</div>` : ''}
-    </li>`;
-}
-
-function renderProjects() {
-  const totalChunks = PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0);
-  return `
-    <section class="mi-module" id="mi-projects">
-      <header class="mi-module-head">
-        <div class="mi-module-head-text">
-          <h2 class="mi-module-title">Project Breakdown</h2>
-          <p class="mi-module-lede">The app sliced into ${PROJECT_BREAKDOWN.length} buildable <strong>projects</strong> — open one to see its component-oriented chunks.</p>
-        </div>
-        ${moduleControlsHTML('mi-projects')}
-      </header>
-
-      <div class="mi-projects-summary">
-        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">category</span>${PROJECT_BREAKDOWN.length} projects</span>
-        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">check_box</span>${totalChunks} bite-sized chunks</span>
-        <span class="mi-projects-summary-item"><span class="material-symbols-outlined">touch_app</span>Tap a project to open its breakdown</span>
-      </div>
-
-      <div class="mi-proj-grid">
-        ${PROJECT_BREAKDOWN.map(projectCard).join('')}
-      </div>
-
-      <!-- Slide-in breakdown panel (one drawer, re-filled per project) -->
-      <div class="mi-drawer-scrim" id="mi-proj-scrim" hidden></div>
-      <aside class="mi-drawer" id="mi-proj-drawer" role="dialog" aria-modal="true" aria-labelledby="mi-drawer-title" aria-hidden="true" hidden>
-        <header class="mi-drawer-head">
-          <span class="mi-drawer-ic" id="mi-drawer-ic"><span class="material-symbols-outlined">category</span></span>
-          <div class="mi-drawer-titles">
-            <div class="mi-drawer-eyebrow" id="mi-drawer-eyebrow">Project</div>
-            <div class="mi-drawer-title" id="mi-drawer-title">Project</div>
-          </div>
-          <button type="button" class="mi-drawer-close" id="mi-drawer-close" aria-label="Close breakdown"><span class="material-symbols-outlined">close</span></button>
-        </header>
-        <div class="mi-drawer-body" id="mi-drawer-body"></div>
-      </aside>
-    </section>`;
-}
-
-/* ------------------------------------------------------------------ */
-/* Project drawer open / close + wiring                                */
-/* ------------------------------------------------------------------ */
-
-let projDrawerReturnFocus = null;
-
-function fillProjectDrawer(root, p) {
-  const s = projectStats(p);
-  const ic = root.querySelector('#mi-drawer-ic .material-symbols-outlined');
-  if (ic) ic.textContent = p.icon;
-  const eyebrow = root.querySelector('#mi-drawer-eyebrow');
-  if (eyebrow) eyebrow.textContent = `Project · ${projectSize(s.pts)}`;
-  const title = root.querySelector('#mi-drawer-title');
-  if (title) title.textContent = p.title;
-  const body = root.querySelector('#mi-drawer-body');
-  if (!body) return;
-  body.innerHTML = `
-    <p class="mi-drawer-lede">${esc(p.summary)}</p>
-    <div class="mi-drawer-stats">
-      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.chunks}</span><span class="mi-drawer-stat-label">chunks</span></span>
-      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.comps}</span><span class="mi-drawer-stat-label">components</span></span>
-      <span class="mi-drawer-stat"><span class="mi-drawer-stat-num">${s.pts}</span><span class="mi-drawer-stat-label">effort pts</span></span>
-    </div>
-    <ol class="mi-chunk-list">
-      ${p.chunks.map(chunkRow).join('')}
-    </ol>`;
-  body.scrollTop = 0;
-}
-
-function openProjectDrawer(root, id, opener) {
-  const p = PROJECT_BREAKDOWN.find((x) => x.id === id);
-  if (!p) return;
-  const scrim = root.querySelector('#mi-proj-scrim');
-  const drawer = root.querySelector('#mi-proj-drawer');
-  if (!scrim || !drawer) return;
-  fillProjectDrawer(root, p);
-  scrim.hidden = false;
-  drawer.hidden = false;
-  drawer.setAttribute('aria-hidden', 'false');
-  projDrawerReturnFocus = opener || null;
-  requestAnimationFrame(() => {
-    scrim.classList.add('is-open');
-    drawer.classList.add('is-open');
-  });
-  root.querySelector('#mi-drawer-close')?.focus();
-}
-
-function closeProjectDrawer(root) {
-  const scrim = root.querySelector('#mi-proj-scrim');
-  const drawer = root.querySelector('#mi-proj-drawer');
-  if (!drawer || drawer.hidden) return;
-  scrim?.classList.remove('is-open');
-  drawer.classList.remove('is-open');
-  drawer.setAttribute('aria-hidden', 'true');
-  const done = () => { drawer.hidden = true; if (scrim) scrim.hidden = true; };
-  setTimeout(done, 240);
-  if (projDrawerReturnFocus && document.contains(projDrawerReturnFocus)) projDrawerReturnFocus.focus();
-  projDrawerReturnFocus = null;
-}
-
-function wireProjects(root) {
-  const section = root.querySelector('#mi-projects');
-  if (!section) return;
-
-  section.querySelector('.mi-proj-grid')?.addEventListener('click', (e) => {
-    const card = e.target.closest('[data-proj]');
-    if (!card) return;
-    openProjectDrawer(root, card.dataset.proj, card);
-  });
-
-  root.querySelector('#mi-proj-scrim')?.addEventListener('click', () => closeProjectDrawer(root));
-  root.querySelector('#mi-drawer-close')?.addEventListener('click', () => closeProjectDrawer(root));
-
-  /* A component chip jumps to the Component Library and filters it to that one
-     component (via its search box), tying the plan back to the live catalog.
-     A module chip is a plain link and navigates on its own. */
-  root.querySelector('#mi-drawer-body')?.addEventListener('click', (e) => {
-    const chip = e.target.closest('[data-chunk-comp]');
-    if (!chip) return;
-    const name = chip.getAttribute('data-chunk-comp');
-    closeProjectDrawer(root);
-    const search = root.querySelector('#dsc-search');
-    if (search) {
-      search.value = name;
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    root.querySelector('#mi-components')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeProjectDrawer(root);
-  });
-}
-
-/* ------------------------------------------------------------------ */
 /* Intent Chip Audit module                                            */
 /*                                                                     */
 /* Every WISEcodeAI dock across the app ships "intent chips" — the      */
@@ -2156,14 +1773,14 @@ function wireProjects(root) {
 const INTENT_AUDIT = [
   {
     label: 'Dashboard', icon: 'space_dashboard', href: 'overview.html', src: 'agent-overview.js',
-    note: 'Every chip fires its matching on-page control and suppresses the chip reply — the narration comes from the mirrored page control (setDashChat), so none carry their own chip transcript.',
+    note: 'Every chip posts its own scripted transcript (DASHBOARD_WISEAI_REPLIES) first, then fires its matching on-page control — so the narration always lands in the thread before the chip navigates or opens the logo editor.',
     chips: [
-      { i: 'claim_products',   label: 'Claim your products',          t: false, l: true },
-      { i: 'review_portfolio', label: 'Review your food portfolio',   t: false, l: true },
-      { i: 'add_food',         label: 'Add a food',                   t: false, l: true },
-      { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: false, l: true },
-      { i: 'verify_gras',      label: 'Verify your GRAS products',    t: false, l: true },
-      { i: 'update_logo',      label: 'Update your brand logo',       t: false, l: true },
+      { i: 'claim_products',   label: 'Claim your products',          t: true, l: true },
+      { i: 'review_portfolio', label: 'Review your food portfolio',   t: true, l: true },
+      { i: 'add_food',         label: 'Add a food',                   t: true, l: true },
+      { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: true, l: true },
+      { i: 'verify_gras',      label: 'Verify your GRAS products',    t: true, l: true },
+      { i: 'update_logo',      label: 'Update your brand logo',       t: true, l: true },
     ],
   },
   {
@@ -2401,7 +2018,6 @@ const INTENT_AUDIT = [
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
     note: 'This very page. The four “Jump to…” chips scroll to a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found.',
     chips: [
-      { i: 'projects',   label: 'Show me the project breakdown', t: true, l: true },
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true },
       { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true },
@@ -2641,6 +2257,82 @@ function moduleStyles() {
     html.dark .mi-view-btn.is-active { color: var(--primary-bright, #93C5FD); }
     .mi-view-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
 
+    /* ---- Screenshot export buttons ---- */
+    .mi-export { display: inline-flex; gap: 8px; flex: 0 0 auto; }
+    .mi-export-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 15px; height: 40px; box-sizing: border-box;
+      border: 1px solid var(--border-strong); border-radius: 999px;
+      background: var(--surface-2); cursor: pointer;
+      font: inherit; font-size: 0.8125rem; font-weight: 700; color: var(--text);
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    html.dark .mi-export-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .mi-export-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; color: var(--primary); }
+    .mi-export-btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: var(--shadow-1); }
+    .mi-export-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-export-btn[disabled] { opacity: 0.55; cursor: default; box-shadow: none; }
+    .mi-export-btn[disabled] .material-symbols-outlined { animation: mi-export-spin 0.9s linear infinite; }
+    @keyframes mi-export-spin { to { transform: rotate(360deg); } }
+
+    /* ---- Capture progress overlay ---- */
+    .mi-cap-scrim {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, #0b1220 55%, transparent);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .mi-cap-scrim.is-open { opacity: 1; pointer-events: auto; }
+    .mi-cap-card {
+      width: min(460px, calc(100vw - 40px)); max-height: min(70vh, 620px);
+      display: flex; flex-direction: column;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 18px;
+      box-shadow: var(--shadow-2); overflow: hidden;
+      transform: translateY(10px) scale(0.98); transition: transform 0.2s ease;
+    }
+    .mi-cap-scrim.is-open .mi-cap-card { transform: none; }
+    .mi-cap-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px; }
+    .mi-cap-ic {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
+      background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary);
+    }
+    .mi-cap-ic .material-symbols-outlined { font-size: 20px !important; }
+    .mi-cap-titles { flex: 1 1 auto; min-width: 0; }
+    .mi-cap-title { font-size: 0.95rem; font-weight: 800; }
+    .mi-cap-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .mi-cap-close {
+      border: 0; background: transparent; cursor: pointer; color: var(--text-muted);
+      border-radius: 8px; padding: 6px; line-height: 0;
+    }
+    .mi-cap-close:hover { background: var(--surface-2); color: var(--text); }
+    .mi-cap-bar { height: 6px; margin: 0 20px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    .mi-cap-fill { height: 100%; width: 0%; border-radius: 999px; background: var(--primary); transition: width 0.25s ease; }
+    .mi-cap-list { margin: 14px 20px 4px; padding: 0; list-style: none; overflow-y: auto; }
+    .mi-cap-row {
+      display: flex; align-items: center; gap: 8px; padding: 6px 0;
+      font-size: 0.82rem; border-bottom: 1px solid var(--border);
+    }
+    .mi-cap-row:last-child { border-bottom: 0; }
+    .mi-cap-row .material-symbols-outlined { font-size: 17px !important; flex: 0 0 auto; }
+    .mi-cap-row-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mi-cap-row[data-state="pending"] { color: var(--text-subtle); }
+    .mi-cap-row[data-state="run"] { color: var(--text); }
+    .mi-cap-row[data-state="run"] .material-symbols-outlined { color: var(--primary); animation: mi-export-spin 0.9s linear infinite; }
+    .mi-cap-row[data-state="ok"] .material-symbols-outlined { color: #16A34A; }
+    html.dark .mi-cap-row[data-state="ok"] .material-symbols-outlined { color: #4ADE80; }
+    .mi-cap-row[data-state="err"] { color: var(--text-muted); }
+    .mi-cap-row[data-state="err"] .material-symbols-outlined { color: #DC2626; }
+    .mi-cap-foot { padding: 12px 20px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .mi-cap-note { font-size: 0.78rem; color: var(--text-muted); }
+    .mi-cap-done-btn {
+      border: 0; border-radius: 999px; padding: 9px 18px; cursor: pointer;
+      font: inherit; font-size: 0.82rem; font-weight: 700;
+      background: var(--primary); color: #fff;
+    }
+    .mi-cap-done-btn[disabled] { opacity: 0.5; cursor: default; }
+
     /* ---- Rail view: live previews of every actual module, side by side ---- */
     .mi-rail {
       position: relative; margin-top: 22px; display: flex; align-items: stretch; gap: 8px;
@@ -2712,10 +2404,6 @@ function moduleStyles() {
     .mi-pane-viewport:hover .mi-pane-open { opacity: 1; transform: translateY(0); }
 
     .mi-module { margin-top: 40px; }
-    /* Per-module reading-width tiers driven by the width toggle (left-aligned). */
-    .mi-module.mi-w-narrow { max-width: 820px; }
-    .mi-module.mi-w-wide { max-width: 1180px; }
-    .mi-module.mi-w-triple { max-width: 1480px; }
     .mi-module-head {
       margin-bottom: 20px;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
@@ -3313,154 +3001,6 @@ function moduleStyles() {
     .mi-code-updated { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-subtle); }
     .mi-code-updated .material-symbols-outlined { font-size: 15px !important; }
 
-    /* ---- Project Breakdown ---- */
-    .mi-projects-summary {
-      display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 20px;
-    }
-    .mi-projects-summary-item {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
-    }
-    .mi-projects-summary-item .material-symbols-outlined { font-size: 17px !important; color: var(--text-subtle); }
-    .mi-proj-grid {
-      display: grid; gap: 12px;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-    .mi-proj-card {
-      display: flex; align-items: flex-start; gap: 14px; text-align: left;
-      padding: 16px 16px 15px; border-radius: 16px; cursor: pointer; font: inherit;
-      border: 1px solid var(--border); background: var(--surface); color: inherit;
-      box-shadow: var(--shadow-1);
-      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-    }
-    .mi-proj-card:hover {
-      transform: translateY(-3px); box-shadow: var(--shadow-2);
-      border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-    }
-    .mi-proj-card:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .mi-proj-ic {
-      flex: 0 0 42px; width: 42px; height: 42px; border-radius: 12px;
-      display: grid; place-items: center; color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
-    }
-    html.dark .mi-proj-ic { color: var(--primary-bright, #93C5FD); }
-    .mi-proj-ic .material-symbols-outlined { font-size: 23px !important; }
-    .mi-proj-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
-    .mi-proj-title { font-size: 0.98rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
-    .mi-proj-summary { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
-    .mi-proj-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .mi-proj-tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.6875rem; font-weight: 700; color: var(--text-muted);
-      padding: 3px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
-    }
-    html.dark .mi-proj-tag { background: rgba(255,255,255,0.05); }
-    .mi-proj-tag .material-symbols-outlined { font-size: 13px !important; }
-    .mi-proj-tag--size { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, transparent); }
-    html.dark .mi-proj-tag--size { color: var(--primary-bright, #93C5FD); }
-    .mi-proj-go { align-self: center; flex: 0 0 auto; color: var(--text-subtle); font-size: 22px !important; transition: transform 0.16s ease, color 0.16s ease; }
-    .mi-proj-card:hover .mi-proj-go { transform: translateX(3px); color: var(--primary); }
-    html.dark .mi-proj-card:hover .mi-proj-go { color: var(--primary-bright, #93C5FD); }
-
-    /* ---- Slide-in breakdown drawer ---- */
-    .mi-drawer-scrim {
-      position: fixed; inset: 0; z-index: 1200;
-      background: color-mix(in srgb, #0b1220 42%, transparent);
-      opacity: 0; transition: opacity 0.24s ease;
-    }
-    .mi-drawer-scrim.is-open { opacity: 1; }
-    .mi-drawer-scrim[hidden] { display: none; }
-    .mi-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 1201;
-      width: min(460px, 92vw); display: flex; flex-direction: column;
-      background: var(--surface); border-left: 1px solid var(--border);
-      box-shadow: -18px 0 48px rgba(0,0,0,0.22);
-      transform: translateX(100%); transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .mi-drawer.is-open { transform: translateX(0); }
-    .mi-drawer[hidden] { display: none; }
-    .mi-drawer-head {
-      display: flex; align-items: center; gap: 12px; padding: 18px 18px 16px;
-      border-bottom: 1px solid var(--border); flex: 0 0 auto;
-    }
-    .mi-drawer-ic {
-      flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px;
-      display: grid; place-items: center; color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
-    }
-    html.dark .mi-drawer-ic { color: var(--primary-bright, #93C5FD); }
-    .mi-drawer-ic .material-symbols-outlined { font-size: 21px !important; }
-    .mi-drawer-titles { min-width: 0; flex: 1; }
-    .mi-drawer-eyebrow {
-      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--primary);
-    }
-    html.dark .mi-drawer-eyebrow { color: var(--primary-bright, #93C5FD); }
-    .mi-drawer-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-      font-size: 1.12rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; margin-top: 2px;
-    }
-    .mi-drawer-close {
-      flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
-      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
-      display: grid; place-items: center;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    }
-    .mi-drawer-close:hover { border-color: var(--primary); color: var(--primary); }
-    .mi-drawer-close .material-symbols-outlined { font-size: 19px !important; }
-    .mi-drawer-body { flex: 1; overflow-y: auto; padding: 18px; scrollbar-width: thin; }
-    .mi-drawer-lede { font-size: 0.875rem; color: var(--text-muted); margin: 0 0 14px; line-height: 1.5; }
-    .mi-drawer-stats { display: flex; gap: 8px; margin-bottom: 18px; }
-    .mi-drawer-stat {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-      padding: 10px 8px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border);
-    }
-    html.dark .mi-drawer-stat { background: rgba(255,255,255,0.04); }
-    .mi-drawer-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1; }
-    .mi-drawer-stat-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
-
-    .mi-chunk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    .mi-chunk {
-      border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
-      padding: 13px 14px; box-shadow: var(--shadow-1);
-    }
-    .mi-chunk-head { display: flex; align-items: center; gap: 10px; }
-    .mi-chunk-num {
-      flex: 0 0 22px; width: 22px; height: 22px; border-radius: 999px;
-      display: grid; place-items: center; font-size: 0.7rem; font-weight: 800;
-      background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary);
-    }
-    html.dark .mi-chunk-num { color: var(--primary-bright, #93C5FD); }
-    .mi-chunk-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: var(--text); }
-    .mi-chunk-eff {
-      flex: 0 0 auto; min-width: 26px; text-align: center;
-      font-size: 0.6875rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;
-      background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
-    }
-    .mi-chunk-eff[data-eff="S"] { color: #15803D; background: rgba(34,197,94,0.12); border-color: transparent; }
-    .mi-chunk-eff[data-eff="M"] { color: #b45309; background: rgba(245,158,11,0.14); border-color: transparent; }
-    .mi-chunk-eff[data-eff="L"] { color: #B91C1C; background: rgba(239,68,68,0.12); border-color: transparent; }
-    .mi-chunk-eff[data-eff="XL"] { color: #7c3aed; background: rgba(139,92,246,0.14); border-color: transparent; }
-    html.dark .mi-chunk-eff[data-eff="S"] { color: #4ADE80; }
-    html.dark .mi-chunk-eff[data-eff="M"] { color: #FBBF24; }
-    html.dark .mi-chunk-eff[data-eff="L"] { color: #F87171; }
-    html.dark .mi-chunk-eff[data-eff="XL"] { color: #C4B5FD; }
-    .mi-chunk-why { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin: 8px 0 0; }
-    .mi-chunk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .mi-chunk-chip {
-      display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; font: inherit;
-      font-size: 0.6875rem; font-weight: 700; padding: 4px 9px; border-radius: 999px;
-      border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted);
-      transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
-    }
-    html.dark .mi-chunk-chip { background: rgba(255,255,255,0.05); }
-    .mi-chunk-chip .material-symbols-outlined { font-size: 13px !important; }
-    .mi-chunk-chip--comp:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
-    html.dark .mi-chunk-chip--comp:hover { color: var(--primary-bright, #93C5FD); }
-    .mi-chunk-chip--mod { color: var(--text); }
-    .mi-chunk-chip--mod:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--primary); }
-    html.dark .mi-chunk-chip--mod:hover { color: var(--primary-bright, #93C5FD); }
-
     /* ---- Intent Chip Audit ---- */
     .mi-int-stats {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
@@ -3584,7 +3124,6 @@ export function renderAllModules(mainEl) {
         </div>
       </header>
       ${renderSectionNav()}
-      ${renderProjects()}
       ${renderCodebase()}
       ${renderDirectory()}
       ${renderIntentAudit()}
@@ -3595,9 +3134,9 @@ export function renderAllModules(mainEl) {
 
   wireView(mainEl);
   wireSectionNav(mainEl);
-  wireProjects(mainEl);
   wireCodebase(mainEl);
   wireDirectory(mainEl);
+  wireDirectoryExport(mainEl);
   wireRailFrames(mainEl);
   wireIntentAudit(mainEl);
   wireIconInventory(mainEl);
@@ -3623,9 +3162,7 @@ function moduleTotal() {
 
 function renderSectionNav() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
-  const projectChunks = PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0);
   const tiles = [
-    { id: 'mi-projects', icon: 'category', num: PROJECT_BREAKDOWN.length, label: 'Projects', sub: `${projectChunks} bite-sized chunks` },
     { id: 'mi-code', icon: 'code', num: fmtNum(CODE_STATS?.now?.total), label: 'Lines of code', sub: `${fmtNum(CODE_STATS?.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chips', sub: 'Transcript + logic audit' },
@@ -3688,48 +3225,11 @@ function runModuleAction(root, action) {
     case 'int-all': click('#mi-intents [data-int-filter="all"]'); break;
     case 'int-talk': click('#mi-intents [data-int-filter="talk"]'); break;
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
-    case 'proj-first': click('.mi-proj-grid [data-proj]'); break;
-    case 'proj-close': closeProjectDrawer(root); break;
-    case 'proj-components': root.querySelector('#mi-components')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
   }
 }
 
 function wireModuleControls(root) {
   root.querySelectorAll('[data-mi-controls]').forEach((cluster) => {
-    const moduleId = cluster.getAttribute('data-mi-controls');
-    const moduleEl = root.querySelector('#' + moduleId);
-
-    /* ---- Width changer: cycle single → double → triple → fill ---- */
-    const widthBtn = cluster.querySelector('[data-mi-width]');
-    const key = 'mi-modwidth-' + moduleId;
-    const readTier = () => {
-      try {
-        const n = parseInt(localStorage.getItem(key), 10);
-        return Number.isFinite(n) ? Math.max(0, Math.min(3, n)) : 3;
-      } catch { return 3; }
-    };
-    const applyTier = (t) => {
-      if (moduleEl) {
-        moduleEl.classList.toggle('mi-w-narrow', t === 0);
-        moduleEl.classList.toggle('mi-w-wide', t === 1);
-        moduleEl.classList.toggle('mi-w-triple', t === 2);
-      }
-      if (widthBtn) {
-        widthBtn.classList.toggle('is-on', t <= 2);
-        widthBtn.setAttribute('aria-pressed', t <= 2 ? 'true' : 'false');
-        widthBtn.title = MODULE_WIDTH_TITLES[t];
-        const ic = widthBtn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = MODULE_WIDTH_ICONS[t];
-      }
-    };
-    applyTier(readTier());
-    widthBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const next = (readTier() + 1) % 4;
-      try { localStorage.setItem(key, String(next)); } catch {}
-      applyTier(next);
-    });
-
     /* ---- Three-dot menu ---- */
     const moreBtn = cluster.querySelector('[data-mi-more]');
     const morePop = cluster.querySelector('[data-mi-more-pop]');
@@ -4081,6 +3581,418 @@ function wireDirectory(root) {
   apply();
 }
 
+/* ------------------------------------------------------------------ */
+/* Screenshot export                                                   */
+/*                                                                     */
+/* Two client-side exports that mirror the screenshots/ folder the      */
+/* Playwright script (screenshots/_shoot.py) produces — but generated   */
+/* live in the browser and downloaded as a zipped folder of PNGs:       */
+/*   • "Export page shots"   — the WHOLE page (menu rail + top bar +     */
+/*     module content) for every UNIQUE screen → pages/<file>.png       */
+/*   • "Export module shots" — just the module's content panel, with     */
+/*     the app chrome cropped away, for every directory entry →          */
+/*     modules/<area>-<label>.png                                        */
+/*                                                                      */
+/* Each target loads in a hidden, same-origin iframe (so it shares the   */
+/* logged-in session + localStorage — no auth bounce), tagged ?preview=1 */
+/* (previewSrc) so self-redirecting screens stay put, GROWN until no pane */
+/* overflows (the WISE shell scrolls its inner panels, not the document — */
+/* same trick as _shoot.py), then rasterised with modern-screenshot.      */
+/* modern-screenshot renders through an SVG <foreignObject>, so it draws   */
+/* the app's modern CSS (color-mix / color()) + inlines the Material       */
+/* Symbols web font faithfully — html2canvas can't parse those. JSZip      */
+/* bundles the PNGs. Both libraries are lazy-loaded from a CDN on first    */
+/* use, so the page carries no extra weight until you actually export.     */
+/* ------------------------------------------------------------------ */
+
+const CAPTURE_W = 1440;          // capture viewport width (matches _shoot.py)
+const CAPTURE_MAX_H = 16000;     // clamp very tall pages so the canvas stays sane
+const CAPTURE_MAX_PX_H = 30000;  // hard ceiling on the rasterised pixel height
+
+const CAPTURE_CDN = {
+  rasterizer: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js',
+  jszip: 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+};
+
+const capWait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* Reject a promise if it doesn't settle in `ms` — so one wedged page (a load
+   that never fires, a rasterizer that stalls) turns into a skipped capture
+   instead of freezing the whole batch. */
+function withTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+    promise.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const sel = `script[data-mi-lib="${src}"]`;
+    const existing = document.querySelector(sel);
+    if (existing) {
+      if (existing.dataset.loaded === '1') { resolve(); return; }
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('load failed')));
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.dataset.miLib = src;
+    s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve(); });
+    s.addEventListener('error', () => reject(new Error('load failed')));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureCaptureLibs() {
+  if (!window.modernScreenshot) await loadScriptOnce(CAPTURE_CDN.rasterizer);
+  if (!window.JSZip) await loadScriptOnce(CAPTURE_CDN.jszip);
+  if (!window.modernScreenshot || !window.JSZip) throw new Error('capture libs unavailable');
+}
+
+/* Safe, lowercase, hyphenated filename fragment. */
+function capSlug(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'module';
+}
+
+/* Fixups injected INTO the captured iframe's document before rasterising —
+   the same treatment _shoot.py applies: force light theme, kill transitions +
+   scroll-behavior, and force any reveal-on-scroll content visible so nothing
+   is captured mid-animation or hidden. */
+function applyCaptureFixups(win, doc) {
+  try { win.localStorage.setItem('wise-theme', 'light'); win.localStorage.setItem('chat-theme', 'light'); } catch (_) {}
+  doc.documentElement.classList.remove('dark');
+  const s = doc.createElement('style');
+  s.textContent = '*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}';
+  doc.documentElement.appendChild(s);
+  doc.querySelectorAll('[class*="reveal"],[data-reveal]').forEach((el) => {
+    el.style.setProperty('opacity', '1', 'important');
+    el.style.setProperty('transform', 'none', 'important');
+  });
+}
+
+/* Scroll every scroll pane end-to-end to trigger lazy / IntersectionObserver
+   content, then return to the top — same idea as the Playwright TRIGGER step. */
+async function triggerLazyContent(win, doc) {
+  const panes = Array.from(doc.querySelectorAll('*')).filter((el) => {
+    const cs = win.getComputedStyle(el);
+    return /(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 4;
+  });
+  const scroller = doc.scrollingElement || doc.documentElement;
+  if (scroller) panes.push(scroller);
+  for (const p of panes) {
+    if (!p) continue;
+    const h = p.scrollHeight;
+    const stepPx = Math.max(200, p.clientHeight * 0.8);
+    for (let y = 0; y <= h; y += stepPx) { p.scrollTop = y; await capWait(30); }
+    p.scrollTop = 0;
+  }
+}
+
+/* The largest vertical overflow across any scroll pane (and the document) —
+   how much taller the iframe must get so nothing needs to scroll. */
+function maxScrollDelta(win, doc) {
+  let max = 0;
+  doc.querySelectorAll('*').forEach((el) => {
+    const cs = win.getComputedStyle(el);
+    if (/(auto|scroll)/.test(cs.overflowY)) {
+      const d = el.scrollHeight - el.clientHeight;
+      if (d > max) max = d;
+    }
+  });
+  const de = doc.scrollingElement || doc.documentElement;
+  const dd = de.scrollHeight - de.clientHeight;
+  if (dd > max) max = dd;
+  return Math.round(max);
+}
+
+/* Grow the iframe until no pane overflows, so every flex/grid layout expands
+   in place and the whole screen is visible at once (chat composer stays docked,
+   the full transcript shows …) — a direct port of _shoot.py's growth loop. */
+async function growViewport(frame, win, doc) {
+  let h = 1000;
+  let lastDelta = null;
+  for (let i = 0; i < 9; i++) {
+    const delta = maxScrollDelta(win, doc);
+    if (delta <= 4) break;
+    if (lastDelta !== null && delta >= lastDelta - 4) {
+      // A fixed-height pane isn't shrinking — force it open once, then stop.
+      doc.querySelectorAll('*').forEach((el) => {
+        const cs = win.getComputedStyle(el);
+        if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 4) {
+          el.style.setProperty('max-height', 'none', 'important');
+          el.style.setProperty('height', 'auto', 'important');
+          el.style.setProperty('overflow-y', 'visible', 'important');
+        }
+      });
+      await capWait(300);
+      break;
+    }
+    lastDelta = delta;
+    h = Math.min(CAPTURE_MAX_H, h + delta + 60);
+    frame.style.height = `${h}px`;
+    await capWait(350);
+  }
+  await capWait(250);
+}
+
+/* The module's content panel on a given page — the central pane, with the
+   left menu rail + top bar cropped away. If the directory entry carried a
+   #hash that resolves to a real element, that element wins (so a broken-out
+   sub-module captures itself). Falls back to the whole document. */
+function pickModuleTarget(doc, hash) {
+  if (hash) {
+    const byId = doc.getElementById(hash);
+    if (byId) return byId;
+  }
+  return doc.querySelector('#agent-main')
+    || doc.querySelector('main')
+    || doc.querySelector('[role="main"]')
+    || doc.querySelector('.mi-wrap')
+    || doc.documentElement;
+}
+
+/* Load one URL in a hidden iframe and rasterise `pickTarget(doc)` (or the whole
+   document when pickTarget is null) straight to a PNG Blob. The blob is encoded
+   while the iframe is still attached — canvas.toBlob() never fires its callback
+   once the source iframe has been torn down — then the frame is removed in the
+   finally. Resolves to a Blob, throws on failure. */
+async function captureTarget(url, pickTarget) {
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.setAttribute('tabindex', '-1');
+  frame.style.cssText = `position:fixed; left:0; top:0; width:${CAPTURE_W}px; height:1000px; border:0; visibility:hidden; opacity:0; z-index:-1; pointer-events:none;`;
+  document.body.appendChild(frame);
+  try {
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; resolve(); } };
+      frame.addEventListener('load', finish);
+      frame.addEventListener('error', () => { if (!settled) { settled = true; reject(new Error('iframe error')); } });
+      frame.src = url;
+      setTimeout(finish, 25000); // never hang the whole run on one page
+    });
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    if (!doc || !win) throw new Error('no document');
+
+    await capWait(900);             // let scripts boot
+    try { await win.document.fonts?.ready; } catch (_) {}
+    applyCaptureFixups(win, doc);
+    await triggerLazyContent(win, doc);
+    await capWait(300);
+
+    // Grow the viewport until no inner pane overflows — nothing clips.
+    await growViewport(frame, win, doc);
+
+    const target = (typeof pickTarget === 'function' ? pickTarget(doc) : null) || doc.documentElement;
+    const rect = target.getBoundingClientRect();
+    const h = Math.max(1, Math.ceil(target.scrollHeight || rect.height));
+
+    // Adaptive scale: aim for retina (2×) but never blow past the pixel ceiling.
+    let scale = 2;
+    if (h * scale > CAPTURE_MAX_PX_H) scale = Math.max(1, CAPTURE_MAX_PX_H / h);
+
+    const canvas = await window.modernScreenshot.domToCanvas(target, {
+      backgroundColor: '#ffffff',
+      scale,
+    });
+    if (!canvas || !canvas.width) throw new Error('rasterizer returned nothing');
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('could not encode PNG');
+    return blob;
+  } finally {
+    frame.remove();
+  }
+}
+
+/* Unique page FILES (strip #hash + ?query) → one full-page shot each. */
+function pageCaptureTargets() {
+  const seen = new Set();
+  const out = [];
+  MODULE_SECTIONS.forEach((s) => s.modules.forEach((m) => {
+    const path = String(m.href).split('#')[0].split('?')[0];
+    if (!path || path === '#') return;
+    if (seen.has(path)) return;
+    seen.add(path);
+    const base = path.replace(/\.html?$/i, '').split('/').pop();
+    out.push({ name: `${capSlug(base)}.png`, href: path });
+  }));
+  return out;
+}
+
+/* Every directory entry → one module-panel shot each (keeps the broken-out
+   sub-modules that share a page as their own labelled capture). */
+function moduleCaptureTargets() {
+  return MODULE_SECTIONS.flatMap((s) => s.modules.map((m) => ({
+    name: `${capSlug(s.tone)}-${capSlug(m.label)}.png`,
+    href: m.href,
+    hash: String(m.href).split('#')[1] || '',
+  })));
+}
+
+/* The progress dialog shown while an export runs. Returns a small controller. */
+function openCaptureOverlay(kind, items) {
+  const label = kind === 'pages' ? 'Full-page screenshots' : 'Module screenshots';
+  const folder = kind === 'pages' ? 'pages/' : 'modules/';
+  const headIcon = kind === 'pages' ? 'photo_library' : 'dashboard_customize';
+  const scrim = document.createElement('div');
+  scrim.className = 'mi-cap-scrim';
+  scrim.innerHTML = `
+    <div class="mi-cap-card" role="dialog" aria-modal="true" aria-label="${esc(label)} export">
+      <div class="mi-cap-head">
+        <span class="mi-cap-ic"><span class="material-symbols-outlined">${headIcon}</span></span>
+        <div class="mi-cap-titles">
+          <div class="mi-cap-title">${esc(label)}</div>
+          <div class="mi-cap-sub" data-cap-sub>Preparing ${items.length} captures → <strong>${esc(folder)}</strong></div>
+        </div>
+        <button type="button" class="mi-cap-close" data-cap-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="mi-cap-bar"><span class="mi-cap-fill" data-cap-fill></span></div>
+      <ul class="mi-cap-list" data-cap-list>
+        ${items.map((it, i) => `
+          <li class="mi-cap-row" data-cap-row="${i}" data-state="pending">
+            <span class="material-symbols-outlined">schedule</span>
+            <span class="mi-cap-row-name">${esc(it.name)}</span>
+          </li>`).join('')}
+      </ul>
+      <div class="mi-cap-foot">
+        <span class="mi-cap-note" data-cap-note>Keep this tab focused while it captures.</span>
+        <button type="button" class="mi-cap-done-btn" data-cap-done disabled>Working…</button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+
+  const close = () => { scrim.classList.remove('is-open'); setTimeout(() => scrim.remove(), 220); };
+  scrim.querySelector('[data-cap-close]').addEventListener('click', close);
+  const doneBtn = scrim.querySelector('[data-cap-done]');
+  doneBtn.addEventListener('click', () => { if (!doneBtn.disabled) close(); });
+
+  const rowIcon = { run: 'autorenew', ok: 'check_circle', err: 'error', pending: 'schedule' };
+  return {
+    setRow(i, state) {
+      const row = scrim.querySelector(`[data-cap-row="${i}"]`);
+      if (!row) return;
+      row.dataset.state = state;
+      const ic = row.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = rowIcon[state] || 'schedule';
+      row.scrollIntoView({ block: 'nearest' });
+    },
+    setProgress(done, total) {
+      const fill = scrim.querySelector('[data-cap-fill]');
+      if (fill) fill.style.width = `${Math.round((done / total) * 100)}%`;
+      const sub = scrim.querySelector('[data-cap-sub]');
+      if (sub) sub.innerHTML = `Captured <strong>${done}</strong> of <strong>${total}</strong> → <strong>${esc(folder)}</strong>`;
+    },
+    finish(ok, err) {
+      const note = scrim.querySelector('[data-cap-note]');
+      if (note) note.textContent = err ? `${ok} captured · ${err} failed — the zip has the rest.` : `All ${ok} captured. Downloading…`;
+      doneBtn.disabled = false;
+      doneBtn.textContent = 'Done';
+    },
+    fail(msg) {
+      const note = scrim.querySelector('[data-cap-note]');
+      if (note) note.textContent = msg;
+      doneBtn.disabled = false;
+      doneBtn.textContent = 'Close';
+    },
+  };
+}
+
+let captureInFlight = false;
+
+async function runCaptureExport(kind, buttons) {
+  if (captureInFlight) return;
+  captureInFlight = true;
+  buttons.forEach((b) => { b.disabled = true; });
+
+  const items = kind === 'pages' ? pageCaptureTargets() : moduleCaptureTargets();
+  const folder = kind === 'pages' ? 'pages' : 'modules';
+  const ui = openCaptureOverlay(kind, items);
+
+  const release = () => { captureInFlight = false; buttons.forEach((b) => { b.disabled = false; }); };
+
+  try {
+    await ensureCaptureLibs();
+  } catch (_) {
+    ui.fail('Could not load the capture engine (needs a network connection).');
+    release();
+    return;
+  }
+
+  const zip = new window.JSZip();
+  const dir = zip.folder(folder);
+  let ok = 0;
+  let err = 0;
+  const failures = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    ui.setRow(i, 'run');
+    try {
+      const blob = await withTimeout(
+        captureTarget(previewSrc(it.href), kind === 'modules' ? (doc) => pickModuleTarget(doc, it.hash) : null),
+        60000,
+        it.name,
+      );
+      dir.file(it.name, blob);
+      ok++;
+      ui.setRow(i, 'ok');
+    } catch (e) {
+      err++;
+      const reason = e && e.message ? e.message : 'failed';
+      failures.push(`${it.name}\t${it.href}\t${reason}`);
+      ui.setRow(i, 'err');
+    }
+    ui.setProgress(i + 1, items.length);
+  }
+
+  // A manifest so the folder documents itself (what / when / any failures).
+  const manifest = [
+    `WISE ${kind === 'pages' ? 'full-page' : 'module'} screenshots`,
+    `Generated ${new Date().toISOString()}`,
+    `Captured ${ok} of ${items.length}${err ? ` · ${err} failed` : ''}`,
+    '',
+    ...(failures.length ? ['Failed captures (name\thref\treason):', ...failures] : []),
+  ].join('\n');
+  dir.file('_manifest.txt', manifest);
+
+  ui.finish(ok, err);
+
+  try {
+    const out = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(out);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wise-${folder}-screenshots.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (_) {
+    ui.fail('Captured, but zipping the folder failed.');
+  }
+
+  release();
+}
+
+function wireDirectoryExport(root) {
+  const group = root.querySelector('.mi-export');
+  if (!group) return;
+  const buttons = Array.from(group.querySelectorAll('[data-export]'));
+  group.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-export]');
+    if (!btn) return;
+    runCaptureExport(btn.dataset.export, buttons);
+  });
+}
+
 function wireIconInventory(root) {
   const grid = root.querySelector('#ii-grid');
   const emptyEl = root.querySelector('#ii-empty');
@@ -4261,7 +4173,6 @@ export const ALL_MODULES_WISEAI = {
   sub: 'Your app’s codebase stats, module map, icon inventory, design system and component library.',
   chipsFlow: 'wrap',
   intents: [
-    { intent: 'projects', label: 'Show me the project breakdown', icon: 'category' },
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
     { intent: 'intents', label: 'Which intent chips work?', icon: 'bolt' },
@@ -4271,7 +4182,6 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
-    projects: `The <strong>Project Breakdown</strong> slices the whole app into <strong>${PROJECT_BREAKDOWN.length} projects</strong> and <strong>${PROJECT_BREAKDOWN.reduce((n, p) => n + p.chunks.length, 0)} bite-sized chunks</strong> — each chunk names the exact components and screens it touches. Tap any project card to open its breakdown panel.`,
     codebase: `The app is <strong>${fmtNum(CODE_STATS?.now?.total)} lines of code</strong> across <strong>${fmtNum(CODE_STATS?.now?.files)} files</strong> — ${fmtNum(CODE_STATS?.now?.html)} HTML, ${fmtNum(CODE_STATS?.now?.js)} JavaScript, ${fmtNum(CODE_STATS?.now?.css)} CSS and ${fmtNum(CODE_STATS?.now?.py)} Python — shipping <strong>${fmtNum(CODE_STATS?.now?.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`,
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
     intents: () => {
@@ -4290,10 +4200,6 @@ export const ALL_MODULES_WISEAI = {
        score cards into view AND let the sizing answer post in the thread. */
     if (intent === 'codebase') {
       document.getElementById('mi-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return false;
-    }
-    if (intent === 'projects') {
-      document.getElementById('mi-projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return false;
     }
     /* "Which intent chips work?" is a question — scroll to the audit module AND

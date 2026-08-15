@@ -810,6 +810,130 @@ export function restoreSharpEdges() {
   applySharpEdges(isSharpEdgesOn());
 }
 
+/* ------------------------------------------------------------------ */
+/* Branding style — "Style 1": a refined app-surface treatment.
+
+   A per-app branding treatment chosen from the Appearance popover's "Branding"
+   section. "Style 1" deliberately DOES NOT touch the owl bug or WISE wordmark —
+   the brand mark stays exactly as drawn (its SVGs paint from currentColor, not
+   the surface tokens this treatment retunes). Instead it re-skins the app's
+   WORKING SURFACES: the module panels and chat panes in #modules-row, plus the
+   cards, inputs and popovers around them. It does this by retuning the shared
+   design tokens (--border / --border-strong and the --shadow-* scale) so every
+   surface that already consumes them picks up a crisper on-brand hairline and a
+   deeper, softer, layered elevation. Working through the tokens keeps the look
+   consistent on every page and means no single module is special-cased. Driven
+   by a `brand-inset` class on <html>; persisted across navigation. Default (no
+   class) keeps the standard surfaces. */
+const BRAND_KEY = 'wise-brand-style';
+const BRAND_STYLE_ID = 'wise-brand-style-el';
+
+const BRAND_CSS = `
+/* ----------------------------------------------------------------------------
+   "Style 1" — the inset "stamp" surface treatment.
+
+   The DEFAULT look floats every card ABOVE the page on an outer drop shadow.
+   Style 1 flips that completely: surfaces are pressed INTO the page (debossed /
+   letterpress "stamp"). The two are meant to read as opposites — no outer
+   elevation shadow at all in Style 1, just an inner shadow + a crisp on-brand
+   border, so a rounded card looks stamped rather than lifted.
+
+   Two layers, both scoped under html.brand-inset:
+
+   1. TOKEN FLIP. We redefine the shared --shadow-* scale from OUTER drop
+      shadows to INNER (inset) shadows, and firm up --border/--border-strong.
+      Because virtually every rounded surface in the app already paints with
+      box-shadow: var(--shadow-card) (or --shadow-2/1), flipping the token turns
+      ALL of them inset at once — including the rounded cards that weren't
+      changing before, since they were never named individually.
+
+   2. NAMED OVERRIDE (!important). A few working surfaces hard-code their own
+      OUTER box-shadow at a higher specificity than :root (e.g. the dark
+      .sc-card, whose 0 4px 56px drop shadow ignored the token entirely), so
+      the token flip alone can't reach them. We force those concrete surfaces
+      back onto the now-inset token so nothing keeps a leftover default shadow.
+
+   The owl bug + WISE wordmark are never selected here — the brand mark is left
+   exactly as drawn.
+   ---------------------------------------------------------------------------- */
+
+/* 1 — token flip (light): outer elevation → inner deboss. */
+html.brand-inset {
+  --border: color-mix(in srgb, var(--primary) 34%, transparent);
+  --border-strong: color-mix(in srgb, var(--primary) 52%, transparent);
+  --shadow-1:
+    inset 0 1px 2px rgba(16, 24, 40, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.70);
+  --shadow-2:
+    inset 0 2px 6px -1px rgba(16, 24, 40, 0.16),
+    inset 0 1px 1px rgba(16, 24, 40, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.80);
+  --shadow-card: var(--shadow-2);
+}
+/* 1 — token flip (dark): same deboss, tuned for navy. */
+html.brand-inset.dark {
+  --border: color-mix(in srgb, var(--primary-bright) 36%, transparent);
+  --border-strong: color-mix(in srgb, var(--primary-bright) 54%, transparent);
+  --shadow-1:
+    inset 0 1px 2px rgba(0, 0, 0, 0.50),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-2:
+    inset 0 2px 8px -1px rgba(0, 0, 0, 0.55),
+    inset 0 1px 2px rgba(0, 0, 0, 0.40),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+  --shadow-card: var(--shadow-2);
+}
+
+/* 2 — named override: force the surfaces that hard-code an OUTER shadow (so
+   they never picked up the token) onto the now-inset token, with a crisp brand
+   border. Resolves to the light/dark inset stack automatically via the token.
+   !important beats the base per-surface box-shadow/border rules on a tie. */
+html.brand-inset #modules-row > *,
+html.brand-inset .sc-card,
+html.brand-inset .wa-pane,
+html.brand-inset .cmp-inner,
+html.brand-inset .wise-popover,
+html.brand-inset .wise-card {
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: var(--shadow-card) !important;
+}`;
+
+/** Inject the branding-style stylesheet once (idempotent). */
+function ensureBrandStyle() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(BRAND_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = BRAND_STYLE_ID;
+  style.textContent = BRAND_CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+/** The active branding style: '' (default flat mark) or 'inset' ("Style 1"). */
+export function getBrandStyle() {
+  try { return localStorage.getItem(BRAND_KEY) === 'inset' ? 'inset' : ''; } catch { return ''; }
+}
+
+/** True when the inset ("Style 1") branding treatment is on. */
+export function isBrandInsetOn() {
+  return getBrandStyle() === 'inset';
+}
+
+/** Apply a branding style ('' | 'inset'), toggle the class on <html>, persist. */
+export function applyBrandStyle(style) {
+  ensureBrandStyle();
+  const inset = style === 'inset';
+  document.documentElement.classList.toggle('brand-inset', inset);
+  try { localStorage.setItem(BRAND_KEY, inset ? 'inset' : ''); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:brand-style', { detail: { style: inset ? 'inset' : '' } }));
+  } catch {}
+}
+
+/** Restore the persisted branding style onto the document. */
+export function restoreBrandStyle() {
+  applyBrandStyle(getBrandStyle());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -892,6 +1016,7 @@ if (typeof document !== 'undefined') {
     restoreModuleGap();
     restoreColorblind();
     restoreSharpEdges();
+    restoreBrandStyle();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

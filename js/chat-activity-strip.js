@@ -199,11 +199,14 @@ function ensureActivityStripStyles() {
       border-radius: 0 4px 4px 0;
       pointer-events: auto;
       cursor: pointer;
+      /* A flat fill with just a whisper of top-down shading — enough to read as a
+         solid tab with a hint of dimension, without the glossy "bubble" look the
+         stronger highlight/shadow gradient gave it. */
       background-image: linear-gradient(155deg,
-        color-mix(in srgb, #fff 32%, transparent),
-        color-mix(in srgb, #fff 0%, transparent) 48%,
-        color-mix(in srgb, #000 15%, transparent));
-      box-shadow: 1.5px 1px 2px rgba(0, 0, 0, 0.18);
+        color-mix(in srgb, #fff 12%, transparent),
+        color-mix(in srgb, #fff 0%, transparent) 55%,
+        color-mix(in srgb, #000 6%, transparent));
+      box-shadow: 1px 0.5px 1px rgba(0, 0, 0, 0.12);
       transition: width 0.12s ease;
     }
     /* Invisible enlarged hit zone — a 3px sliver is too fine a click target,
@@ -221,7 +224,7 @@ function ensureActivityStripStyles() {
       left: auto;
       right: 0;
       border-radius: 4px 0 0 4px;
-      box-shadow: -1.5px 1px 2px rgba(0, 0, 0, 0.18);
+      box-shadow: -1px 0.5px 1px rgba(0, 0, 0, 0.12);
     }
     html.activity-strip-right .wa-activity-tick::after {
       left: -8px;
@@ -229,7 +232,8 @@ function ensureActivityStripStyles() {
     }
     .wa-activity-tick:hover { width: 14px; }
     /* Turn-ID caption riding beside each tick in tiny type — always reads INTO
-       the module, never off the rim. */
+       the module, never off the rim. Hidden by default so the rail stays clean;
+       it fades in only while its tick is hovered (see the :hover rule below). */
     .wa-activity-tick-id {
       position: absolute;
       top: 50%;
@@ -243,10 +247,12 @@ function ensureActivityStripStyles() {
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       color: var(--text-muted);
-      opacity: 0.8;
+      opacity: 0;
+      transition: opacity 0.12s ease;
       pointer-events: none;
       user-select: none;
     }
+    .wa-activity-tick:hover .wa-activity-tick-id { opacity: 0.9; }
     html.activity-strip-right .wa-activity-tick-id {
       left: auto;
       right: 100%;
@@ -269,7 +275,8 @@ function ensureActivityStripStyles() {
       100%    { outline-color: transparent; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .wa-activity-tick { transition: none; }
+      .wa-activity-tick,
+      .wa-activity-tick-id { transition: none; }
       .wa-activity-flash { animation: none; }
     }
   `;
@@ -378,29 +385,18 @@ function refresh(state) {
 
   const total = messages.scrollHeight || 1;
   const cRect = messages.getBoundingClientRect();
-  /* Pin the rail (position:fixed, viewport coords) to the TRANSCRIPT area only
-     (not the whole module): the tick fractions are computed against the
-     transcript's scroll content, so the rail must span exactly that region —
-     otherwise ticks land over the header or composer and stop correlating with
-     the conversation. */
+  /* The rail spans the FULL height of the chat MODULE (#wa-chat), edge to edge —
+     it reads as a continuous track stuck to the module's side, not a fragment
+     pinned to the transcript. The tick fractions are still computed against the
+     transcript's scroll content, but they're mapped into the module's inner band
+     (see EARMARK_INSET below) so they never ride over the header or composer. */
   const chatRect = state.chat.getBoundingClientRect();
   const RAIL_W = 3;
-  /* The rail lives at the body level (position:fixed), so the chat module's
-     overflow:hidden can't clip it. We clip it ourselves to stay tucked WITHIN
-     the module rather than riding over its outer edge / rounded corners:
-       • horizontally, inset the rail a few px inside the module's edge, and
-       • vertically, clamp to the module's body, clear of its rounded corners.
-     (The vertical clamp is normally a no-op — the transcript already sits between
-     the header and composer — but it guarantees the rail never spills onto a
-     corner in tight layouts.) */
   /* Flush to the module's own edge (no inset) so the rail reads as STUCK to the
-     left/right side rather than floating a few px inside it. The vertical corner
-     clamp below keeps it on the straight part of the edge, clear of the module's
-     rounded corners. */
+     left/right side rather than floating a few px inside it. */
   const EDGE_INSET = 0;
-  const CORNER = 12;
-  const top = Math.max(cRect.top, chatRect.top + CORNER);
-  const bottom = Math.min(cRect.bottom, chatRect.bottom - CORNER);
+  const top = chatRect.top;
+  const bottom = chatRect.bottom;
   strip.style.top = `${top}px`;
   strip.style.height = `${Math.max(0, bottom - top)}px`;
   /* Horizontal placement per edge — the rail always hugs the MODULE's own edge
@@ -414,6 +410,14 @@ function refresh(state) {
     strip.style.left = `${chatRect.left + EDGE_INSET}px`;
   }
   const frag = document.createDocumentFragment();
+
+  /* The rail is full-module-height, but the ear-mark ticks live only in its inner
+     80% band (10% padding top + bottom). That padding keeps the ticks off the
+     module's rounded corners and clear of the header/composer, WITHOUT clipping
+     the rail itself — so the track still reads as edge-to-edge while the marks
+     stay within the conversation's usable vertical span. */
+  const EARMARK_INSET = 10;
+  const EARMARK_SPAN = 100 - EARMARK_INSET * 2;
 
   els.forEach((el) => {
     const type = el.getAttribute('data-activity');
@@ -429,7 +433,7 @@ function refresh(state) {
 
     const tick = document.createElement('span');
     tick.className = `wa-activity-tick wa-activity-tick--${type}`;
-    tick.style.top = `${(frac * 100).toFixed(3)}%`;
+    tick.style.top = `${(EARMARK_INSET + frac * EARMARK_SPAN).toFixed(3)}%`;
     tick.title = meta.label;
     tick.addEventListener('click', (ev) => {
       ev.preventDefault();

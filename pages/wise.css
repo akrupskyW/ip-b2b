@@ -795,12 +795,56 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
   transition: transform .2s ease, opacity .18s ease;
 }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-/* Appearance popover runs a long row set, so trim the vertical padding (top and
-   bottom) to keep the menu compact. Scoped to the appearance popover only —
-   wireAppearancePopover() tags it — so the shorter avatar menu keeps its
-   roomier padding. */
-.wise-popover--appearance { padding: 2px 0; }
+/* Appearance popover runs a long row set. Rather than one tall single column
+   (which pushed the last groups — Branding, Admin links — off the viewport and
+   clipped them), it flows its GROUP CARDS through a responsive multi-column
+   (masonry) layout. Each group is break-inside:avoid, so a whole group — and
+   every row inside it — always stays within a SINGLE column; nothing is ever
+   split or stretched across more than one column. `column-width` makes it
+   naturally responsive: wide popovers get two columns, and on narrow / mobile
+   widths (where max-width clamps to the viewport) it collapses to one column
+   with no media query needed. Scoped to the appearance popover only
+   (wireAppearancePopover() tags it) so the shorter avatar menu is unaffected. */
+.wise-popover--appearance {
+  min-width: 260px;
+  width: 452px;
+  max-width: calc(100vw - 16px);
+  padding: 8px;
+  max-height: calc(100vh - 24px);
+  overflow: hidden auto;
+  column-width: 206px;
+  column-gap: 8px;
+}
 .wise-popover--appearance .wise-popover-header { padding-top: 6px; }
+
+/* Group card — visually binds a section's rows together. break-inside:avoid
+   keeps the whole card in one column so it is never split across the gap. */
+.wise-appearance-group {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  display: block;
+  margin: 0 0 8px;
+  padding: 2px 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.wise-appearance-group:last-child { margin-bottom: 0; }
+.wise-appearance-group > .wise-popover-header {
+  padding: 8px 12px 4px;
+}
+/* Tighten the row insets inside a group so labels + toggles fit the narrower
+   column comfortably and align to the group heading. */
+.wise-appearance-group .wise-popover-item { margin: 0 4px; width: calc(100% - 8px); padding: 7px 8px; gap: 8px; }
+.wise-appearance-group .fz-size,
+.wise-appearance-group .mg-size { padding: 6px 10px 8px; }
+.wise-appearance-group .fz-row { padding: 6px 10px; }
+.wise-appearance-group .jam-pop { margin: 4px 8px 2px; }
+html.dark .wise-appearance-group {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.09);
+}
 html.dark .wise-popover {
   background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
   border-color: rgba(37, 80, 124, 0.22);
@@ -4992,8 +5036,49 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
    swaps in the next. When it finishes, the live block is replaced by the quiet
    SUMMARY — every milestone's key + the m:ss elapsed when it landed. */
 .sc-trace {
-  margin-top: 4px; padding-left: 12px;
-  border-left: 2px solid color-mix(in srgb, var(--primary, #2F6DF6) 22%, transparent);
+  position: relative;
+  margin-top: 4px;
+}
+/* The DNA double-helix rail no longer runs beside the header — it lives in the
+   BODY's left gutter, so it sits UNDER the "Worked for" line and down alongside
+   the steps. Two stacked layers share one geometry (built in js/wiseai-chat.js):
+     • --base  a BLUE helix that fills the whole strand (what's still "to do")
+     • --fill  the SAME helix in GREEN, clipped from the top and grown downward
+               (--dna-fill 0→100%) as each step lands — so the strand turns green
+               section-by-section while everything below the front stays blue.
+   The base layer FLOWS (dots travelling down) while thinking, and freezes once
+   `.is-complete` lands. */
+.sc-trace-strand {
+  position: absolute;
+  left: 0; top: 1px; bottom: 1px;
+  width: 16px;
+  pointer-events: none;
+}
+.sc-trace-dna {
+  position: absolute; inset: 0;
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-size: 16px auto;
+  opacity: 0.92;
+}
+.sc-trace:not(.is-complete) .sc-trace-dna--base {
+  animation: scDnaFlow 3.8s linear infinite;
+}
+/* The green "done" layer is clipped to reveal only its top --dna-fill portion,
+   growing downward as sections complete (registered so the growth tweens). */
+@property --dna-fill { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+.sc-trace-dna--fill {
+  --dna-fill: 0%;
+  clip-path: inset(0 0 calc(100% - var(--dna-fill)) 0);
+  transition: --dna-fill 0.42s ease;
+}
+@keyframes scDnaFlow {
+  from { background-position: center 0; }
+  to   { background-position: center 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-trace:not(.is-complete) .sc-trace-dna--base { animation: none; }
+  .sc-trace-dna--fill { transition: none; }
 }
 .sc-trace-head {
   display: flex; align-items: center; gap: 6px; width: 100%;
@@ -5016,7 +5101,10 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   white-space: nowrap; letter-spacing: .01em; color: var(--text-subtle);
 }
 .sc-trace[data-open="0"] .sc-trace-body { display: none; }
-.sc-trace-body { margin-top: 5px; }
+/* The body carries the strand rail in its left gutter (position:relative host);
+   its content is inset past the strand so the helix reads to the LEFT of the
+   globs / steps, tucked directly under the header. */
+.sc-trace-body { position: relative; margin-top: 5px; padding-left: 20px; }
 
 /* Live view — a status with its big streaming glob of narration. The globs
    build on each other: each milestone block is appended below the last, so give
@@ -5050,15 +5138,12 @@ html.dark .sc-trace-story-line { color: #93B2DC; }
   .sc-trace-story-line { transition: none; opacity: 1; transform: none; }
 }
 
-/* Summary — the milestones + the clock reading when each one landed. */
-.sc-trace-step-ic { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
-.sc-trace-step-ic .material-symbols-outlined {
-  font-size: 15px; color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff);
-}
-html.dark .sc-trace-step-ic .material-symbols-outlined { color: #AEC8ED; }
+/* Summary — the milestones + the clock reading when each one landed. There are
+   no check marks: the strand's green base-pair dots are the completion signal,
+   so a step reads as done once its section of the helix has gone green. */
 .sc-trace-steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .sc-trace-step {
-  display: grid; grid-template-columns: 16px 1fr max-content; align-items: center;
+  display: grid; grid-template-columns: 1fr max-content; align-items: center;
   column-gap: 8px; padding: 1px 0;
 }
 .sc-trace-step-key { font-size: 0.75rem; font-weight: 600; color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff); }

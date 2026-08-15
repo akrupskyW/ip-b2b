@@ -1489,6 +1489,7 @@
         try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
         sidebar.style.setProperty('flex', '0 0 ' + RAIL_W + 'px', 'important');
         sidebar.style.setProperty('width', RAIL_W + 'px', 'important');
+        sidebar.style.setProperty('min-width', '0', 'important');
         sidebar.style.setProperty('max-width', 'none', 'important');
         return;
       }
@@ -1503,11 +1504,16 @@
         /* Fill — grow to take the rest of the row instead of a fixed column. */
         sidebar.style.setProperty('flex', '1000 1 auto', 'important');
         sidebar.style.setProperty('width', 'auto', 'important');
+        sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
         sidebar.style.setProperty('max-width', 'none', 'important');
       } else {
         var w = tiers[widthTier] || baseW;
         sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
         sidebar.style.setProperty('width', w + 'px', 'important');
+        /* While sticky, hold stickyWidth (240) as a hard minimum floor so the
+           module never renders — or drag-resizes — narrower than that; the width
+           beyond the floor stays flexible (tiers + the resize splitter). */
+        sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
         sidebar.style.setProperty('max-width', 'none', 'important');
       }
       var btn = sidebar.querySelector('.wch-width-btn');
@@ -1566,6 +1572,9 @@
       try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
       sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
       sidebar.style.setProperty('width', w + 'px', 'important');
+      /* Sticky keeps stickyWidth (240) as a hard minimum floor; the rest stays
+         flexible via drag-resize. */
+      sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
     }
 
     /* ── MCP-usage filter toggle ── */

@@ -48,6 +48,8 @@ import {
   applyCwrUi,
   isSharpEdgesOn,
   applySharpEdges,
+  getBrandStyle,
+  applyBrandStyle,
 } from './topbar.js';
 import {
   isJamStripOn,
@@ -198,8 +200,7 @@ function colorblindTypeSection() {
     <div class="fz-row cb-type-row">
       <span class="fz-row-label">CVD type</span>
       <div class="fz-btns" role="group" aria-label="Color-vision deficiency type">${btns}</div>
-    </div>
-    <div class="wise-popover-divider"></div>`;
+    </div>`;
 }
 
 /** "Module spacing" segmented control — an admin-only, pink-outlined toggle that
@@ -283,6 +284,75 @@ function allModulesSection() {
     </a>`;
 }
 
+/** "Surfaces" section — the segmented control that switches the app's surface
+    treatment between the flat default and "Style 1", a refined skin that gives
+    the module panels, chat panes, cards and popovers a crisper on-brand hairline
+    border and a deeper, softer elevation. It deliberately leaves the owl bug +
+    WISE wordmark untouched (see applyBrandStyle / BRAND_CSS in topbar.js). A
+    neutral segmented control (same skin as Text size), each button carrying a
+    `data-brandstyle` id that wireAppearancePopover() feeds to applyBrandStyle().
+    Clicking "Default" clears back to the flat surfaces. The surrounding
+    "Surfaces" group heading + card is supplied by apGroup(). */
+function brandingSection() {
+  const active = getBrandStyle();
+  const opts = [
+    { id: '', label: 'Default' },
+    { id: 'inset', label: 'Style 1' },
+  ];
+  const btns = opts
+    .map(
+      (o) =>
+        `<button type="button" class="fz-seg-btn${o.id === active ? ' is-active' : ''}" data-brandstyle="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
+    )
+    .join('');
+  return `
+    <div class="fz-size brand-style-row">
+      <span class="fz-size-label">Surface style</span>
+      <div class="fz-seg" role="group" aria-label="Surface style">${btns}</div>
+    </div>`;
+}
+
+/** Text-size segmented block (S / M / L / XL). Extracted so it can live inside
+    the "Accessibility" group card alongside the color controls. */
+function textSizeSection() {
+  const fz = getStoredFontSize();
+  const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
+  return `
+    <div class="fz-size">
+      <span class="fz-size-label">Text size</span>
+      <div class="fz-seg" role="group" aria-label="Text size">
+        ${Object.keys(sizes)
+          .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}">${sizes[s]}</button>`)
+          .join('')}
+      </div>
+    </div>`;
+}
+
+/** Light / dark theme row. Extracted so it can sit inside the "Experience"
+    group card. Keys off data-pop-action="theme" (handled by the shell). */
+function themeSection(isDark) {
+  return `
+    <div class="wise-popover-item" data-pop-action="theme">
+      <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
+      <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
+    </div>`;
+}
+
+/** Wrap a set of rows in a titled "group" card. Groups are the unit the
+    Appearance popover flows into its responsive column layout: each group (and
+    therefore every row inside it) stays within ONE column and is never split or
+    stretched across columns. An empty body (e.g. a section whose only rows are
+    conditionally hidden) renders nothing so we don't leave a stray empty card. */
+function apGroup(title, body) {
+  const inner = String(body || '').trim();
+  if (!inner) return '';
+  return `
+    <section class="wise-appearance-group">
+      <div class="wise-popover-header">${title}</div>
+      ${inner}
+    </section>`;
+}
+
 /**
  * Build the full innerHTML for an Appearance popover.
  *
@@ -309,42 +379,39 @@ export function buildAppearanceBody({
   isPivoted = false,
   isDark = false,
 } = {}) {
-  const fz = getStoredFontSize();
-  const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
   return `
-    <div class="wise-popover-header">Appearance</div>
-    ${pivotSection(showPivot, isPivoted)}
-    ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
-    ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
-    ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
-    ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
-    ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
-    ${jamPlayerSection()}
-    ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
-    ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
-    ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
-    ${activityStripSideSection()}
-    ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
-    ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
-    ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
-    <div class="wise-popover-divider"></div>
-    ${colorblindTypeSection()}
-    <div class="fz-size">
-      <span class="fz-size-label">Text size</span>
-      <div class="fz-seg" role="group" aria-label="Text size">
-        ${Object.keys(sizes)
-          .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}">${sizes[s]}</button>`)
-          .join('')}
-      </div>
-    </div>
-    <div class="wise-popover-divider"></div>
-    <div class="wise-popover-item" data-pop-action="theme">
-      <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
-      <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
-    </div>
-    <div class="wise-popover-divider"></div>
-    ${accessibilityReviewSection()}
-    ${allModulesSection()}
+    ${apGroup('Layout', `
+      ${pivotSection(showPivot, isPivoted)}
+      ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
+      ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
+      ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
+      ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
+      ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
+    `)}
+    ${apGroup('Chat', `
+      ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
+      ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
+      ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
+      ${activityStripSideSection()}
+    `)}
+    ${apGroup('Sound', `
+      ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
+      ${jamPlayerSection()}
+    `)}
+    ${apGroup('Accessibility', `
+      ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
+      ${colorblindTypeSection()}
+      ${textSizeSection()}
+    `)}
+    ${apGroup('Experience', `
+      ${themeSection(isDark)}
+      ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
+    `)}
+    ${apGroup('Surfaces', brandingSection())}
+    ${apGroup('Admin', `
+      ${accessibilityReviewSection()}
+      ${allModulesSection()}
+    `)}
   `;
 }
 
@@ -466,6 +533,11 @@ export function wireAppearancePopover(pop, ctx = {}) {
     const mg = within('[data-mg]');
     if (mg) { ev.stopPropagation(); applyModuleGap(getModuleGap() === mg.dataset.mg ? '' : mg.dataset.mg); render(); return; }
 
+    /* Branding style ("Default" / "Style 1" inset). Selecting a style applies it
+       app-wide; "Default" clears the inset treatment back to the flat mark. */
+    const bs = within('[data-brandstyle]');
+    if (bs) { ev.stopPropagation(); applyBrandStyle(bs.dataset.brandstyle); render(); return; }
+
     /* CVD-type buttons are handled by topbar.js's global capture-phase handler
        (it runs before this bubble handler and stops propagation), so we never
        reach here for them — but guard anyway so a stray click can't close us. */
@@ -480,7 +552,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.fz-row, .fz-size, .mg-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();
