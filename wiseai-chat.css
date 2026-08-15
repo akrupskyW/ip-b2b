@@ -675,10 +675,10 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
    so they read as orientation rather than data. */
 .sc-welcome--cards { justify-content: safe flex-end; overflow-y: auto; padding-top: 1.75rem; }
 .ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
-/* Overview cards hidden (three-dot menu → "Hide overview cards") — drop the
-   large "at a glance" card rail from the welcome; everything else stays. */
+/* Overview cards hidden (three-dot menu → "Overview cards" switch off) — drop
+   the large "at a glance" card rail from the welcome; everything else stays. */
 .sc-cards-hidden .ws-scorecards-section { display: none; }
-/* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the small
+/* Intent chips hidden (three-dot menu → "Intent chips" switch off) — drop the small
    suggested-action chips right below the overview cards on the welcome; the
    overview cards and everything else stay. */
 .sc-intent-chips-hidden .sc-welcome .ws-chips-wrap,

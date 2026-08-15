@@ -1410,7 +1410,10 @@ function pushDashChat(userLabel, replyHtml) {
   if (!dashChatApi) return;
   dashChatApi.hideWelcome?.();
   if (userLabel) dashChatApi.addUser(userLabel);
-  if (replyHtml) dashChatApi.addWISEcodeAI(replyHtml);
+  /* respond() streams the shared reasoning trace before the reply lands, so a
+     mirrored report/action reads like any other WISEcodeAI turn — never an
+     instant paste. */
+  if (replyHtml) (dashChatApi.respond || dashChatApi.addWISEcodeAI)(replyHtml);
 }
 
 /* Compact narration for the chat when a report opens on the surface. */

@@ -494,6 +494,38 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" data-ap="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
                 <button type="button" class="topbar-menu-item" role="menuitem" data-ap="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
+                <!-- Standard app-wide rows — Compact spacing, Brand AI text,
+                     Background animation (+ opacity) and Response streaming
+                     (+ detail). Markup mirrors the shared module template;
+                     behavior is wired by wireStandardChatMenu() from
+                     js/wiseai-chat.js so every chat module runs the exact same
+                     code and follows the one shared preference per control. -->
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+                <div class="sc-bganim-detail">
+                  <span class="sc-bganim-detail-label">Opacity</span>
+                  <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
+                  <span class="sc-bganim-opacity-val">30%</span>
+                </div>
+                <!-- Activity strip — the landmark rail on the chat's edge
+                     (shared app-wide preference, same as every other chat). -->
+                <button type="button" class="topbar-menu-item sc-mcp-item" id="ap-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
+                  <span class="material-symbols-outlined topbar-menu-icon">timeline</span>
+                  <span>Activity strip</span>
+                  <span class="sc-switch" aria-hidden="true"></span>
+                </button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
+                <div class="sc-stream-detail">
+                  <span class="sc-stream-detail-label">Streaming detail</span>
+                  <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
+                    <button type="button" class="sc-stream-seg-btn is-on" data-sc="stream-level" data-stream="full" role="radio" aria-checked="true" title="Full thinking" aria-label="Full thinking">Full</button>
+                    <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="steps" role="radio" aria-checked="false" title="Steps only" aria-label="Steps only">Steps</button>
+                    <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="final" role="radio" aria-checked="false" title="Final only" aria-label="Final only">Final</button>
+                  </div>
+                </div>
+                <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-ap="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
               </div>
             </div>
@@ -604,11 +636,49 @@
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
     import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
     import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
-    import { wireChatComposer } from '../js/wiseai-chat.js';
+    import { wireChatComposer, wireStandardChatMenu } from '../js/wiseai-chat.js';
+    import { restoreActivityStrip, mountActivityStrip, applyActivityStrip, isActivityStripOn } from '../js/chat-activity-strip.js';
 
     /* Add the canonical WISEcodeAI database selector to the wizard composer. The
        page keeps its own rich "+" attach popover, so skip the shared attach wiring. */
     document.querySelectorAll('.chat-input-rail[data-wise-composer]').forEach((rail) => wireChatComposer(rail, { skipAttach: true }));
+
+    /* Standard three-dot rows — Compact spacing, Brand AI text, Background
+       animation (+ opacity slider; the live DNA/RNA product helix runs on this
+       page's welcome exactly like on the shared module) and Response streaming
+       (+ detail) — wired by the SAME shared code every chat module uses,
+       against the same app-wide preferences and broadcast events. */
+    window.__wiseStdMenu = wireStandardChatMenu({
+      pop: document.getElementById('ap-chat-menu'),
+      bgAnim: {
+        host: document.querySelector('.ap-chat'),
+        getBody: () => document.querySelector('.ap-chat-body'),
+        welcomeEl: document.getElementById('welcome-screen'),
+        isWide: () => {
+          const c = document.querySelector('.ap-chat');
+          return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));
+        },
+      },
+    });
+
+    /* Activity strip — mount the landmark rail on this page's chat and wire
+       the three-dot switch to the shared app-wide preference, exactly like
+       every other chat module. */
+    restoreActivityStrip();
+    mountActivityStrip({ chatEl: document.querySelector('.ap-chat'), messagesEl: document.getElementById('chat-messages') });
+    const syncActivityStripItem = () => {
+      const item = document.getElementById('ap-actstrip-item');
+      if (!item) return;
+      const on = isActivityStripOn();
+      item.classList.toggle('is-on', on);
+      item.setAttribute('aria-checked', on ? 'true' : 'false');
+    };
+    window.toggleActivityStripModule = (e) => {
+      if (e) e.stopPropagation();
+      applyActivityStrip(!isActivityStripOn());
+    };
+    document.addEventListener('wise:activity-strip', syncActivityStripItem);
+    syncActivityStripItem();
 
     Object.assign(window, {
       isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,

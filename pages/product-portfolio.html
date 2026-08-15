@@ -518,9 +518,14 @@
       font-size: var(--fs-ui) !important;
     }
 
+    /* Single (default) tier — a fixed-width single pane. The chat is pinned to a
+       definite 380px so it reads as ONE column and never balloons to fill the
+       modules row (matches the product-comparison chat module). */
     #chat-shell {
-      flex: 1 1 0%;
-      min-width: 320px;
+      flex: 0 0 380px;
+      width: 380px;
+      min-width: 380px;
+      max-width: 380px;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -534,18 +539,27 @@
       --chat-line-height: 1.6;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    /* WISEcodeAI "double width": the chat normally grows to fill the centre of the
-       modules row, so wide means it claims more of the row and refuses to
-       shrink — neighbouring panels compress and the row scrolls. Most visible
-       when side modules are open beside the chat. */
+    @media (max-width: 1100px) {
+      #chat-shell {
+        flex-basis: 330px;
+        width: 330px;
+        min-width: 330px;
+        max-width: 330px;
+      }
+    }
+    /* WISEcodeAI "double width": the chat grows to a wider, viewport-capped definite
+       length so single → double is a clear step up. Most visible when side
+       modules are open beside the chat. */
     #chat-shell.panel-wide {
-      flex-grow: 2;
-      min-width: min(580px, 92vw);
+      --chat-w: min(580px, 92vw);
+      flex: 0 0 var(--chat-w);
+      width: var(--chat-w);
+      min-width: var(--chat-w);
+      max-width: var(--chat-w);
     }
     /* Triple width — third tier of the single → double → triple cycle. */
     #chat-shell.panel-wide.panel-triple {
-      flex-grow: 3;
-      min-width: min(760px, 96vw);
+      --chat-w: min(760px, 96vw);
     }
 
     /* ── Report mode ────────────────────────────────────────────────────
@@ -561,18 +575,31 @@
       overflow-x: hidden;
     }
     #modules-row.report-mode > #chat-shell {
-      flex: 1 1 0 !important;
-      min-width: 320px !important;
-      max-width: none !important;
+      flex: 0 0 380px !important;
+      width: 380px !important;
+      min-width: 380px !important;
+      max-width: 380px !important;
+    }
+    @media (max-width: 1100px) {
+      #modules-row.report-mode > #chat-shell {
+        flex-basis: 330px !important;
+        width: 330px !important;
+        min-width: 330px !important;
+        max-width: 330px !important;
+      }
     }
     /* The chat can still be widened with its own width toggle — single stays a
-       third of the split, double matches the report, triple overtakes it —
-       without ever forcing the modules row to scroll horizontally. */
+       true single pane, double/triple step up to definite viewport-capped
+       widths — without ever forcing the modules row to scroll horizontally. */
     #modules-row.report-mode > #chat-shell.panel-wide {
-      flex-grow: 2 !important;
+      --chat-w: min(580px, 92vw);
+      flex: 0 0 var(--chat-w) !important;
+      width: var(--chat-w) !important;
+      min-width: var(--chat-w) !important;
+      max-width: var(--chat-w) !important;
     }
     #modules-row.report-mode > #chat-shell.panel-wide.panel-triple {
-      flex-grow: 3 !important;
+      --chat-w: min(760px, 96vw);
     }
     /* The open report board fills the space to the right of the chat.
        Its fixed pixel widths are overridden so it can shrink to fit any
@@ -4414,10 +4441,10 @@
       margin: 0 auto 1.5rem;
     }
     /* Large "at a glance" overview cards are hidden by default; the three-dot
-       "Show overview cards" toggle reveals them. */
+       "Overview cards" switch reveals them. */
     .sc-cards-hidden .ws-scorecards-section { display: none; }
-    /* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the
-       small suggested-action chips right below the overview cards. */
+    /* Intent chips hidden (three-dot menu → "Intent chips" switch off) — drop
+       the small suggested-action chips right below the overview cards. */
     .sc-intent-chips-hidden .ws-chips-wrap { display: none; }
     .ws-scorecards-bar {
       display: flex;
@@ -7939,7 +7966,7 @@
       import { mountNotificationsPanel } from '../js/notifications-panel.js';
       import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
       import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
-      import { wireChatComposer } from '../js/wiseai-chat.js';
+      import { wireChatComposer, wireStandardChatMenu } from '../js/wiseai-chat.js';
       import { restoreActivityStrip, mountActivityStrip, applyActivityStrip, isActivityStripOn } from '../js/chat-activity-strip.js';
 
       /* Upgrade the inline portfolio chat input to the canonical WISEcodeAI composer:
@@ -7965,6 +7992,26 @@
       };
       document.addEventListener('wise:activity-strip', syncActivityStripItem);
       syncActivityStripItem();
+
+      /* Standard three-dot rows — Compact spacing, Brand AI text, Background
+         animation (+ opacity slider; the live DNA/RNA product helix runs on
+         this page's welcome exactly like on the shared module) and Response
+         streaming (+ detail) — wired by the SAME shared code every chat module
+         uses, against the same app-wide preferences and broadcast events. The
+         returned handle exposes the live streaming setting so this page's
+         reply engine can honour it. */
+      window.__wiseStdMenu = wireStandardChatMenu({
+        pop: document.getElementById('wiseai-menu'),
+        bgAnim: {
+          host: document.getElementById('chat-shell'),
+          getBody: () => { const m = document.getElementById('chat-messages'); return m ? m.parentElement : null; },
+          welcomeEl: document.getElementById('welcome-screen'),
+          isWide: () => {
+            const s = document.getElementById('chat-shell');
+            return !!(s && (s.classList.contains('panel-triple') || s.classList.contains('panel-fill')));
+          },
+        },
+      });
 
       Object.assign(window, {
         isMenuFooterAnchor,
@@ -8527,6 +8574,36 @@
               <span class="topbar-menu-badge">Admin</span>
               <span class="sc-switch" aria-hidden="true"></span>
             </button>
+            <div class="topbar-menu-divider"></div>
+            <!-- Overview cards / Intent chips — Admin switch rows (ON = shown),
+                 same badges + pink switches as the shared module's menu.
+                 Keeps the menu open so the switch state reads back. -->
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" id="wiseai-cards-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleOverviewCards()">
+              <span class="material-symbols-outlined topbar-menu-icon">dashboard</span>
+              <span>Overview cards</span>
+              <span class="topbar-menu-badge">Admin</span>
+              <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" id="wiseai-chips-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleIntentChips()">
+              <span class="material-symbols-outlined topbar-menu-icon">label</span>
+              <span>Intent chips</span>
+              <span class="topbar-menu-badge">Admin</span>
+              <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
+            </button>
+            <!-- Standard app-wide rows — Compact spacing, Brand AI text,
+                 Background animation (+ opacity) and Response streaming
+                 (+ detail). Markup mirrors the shared module template; behavior
+                 is wired by wireStandardChatMenu() from js/wiseai-chat.js so
+                 every chat module runs the exact same code and follows the one
+                 shared preference per control. -->
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+            <div class="sc-bganim-detail">
+              <span class="sc-bganim-detail-label">Opacity</span>
+              <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
+              <span class="sc-bganim-opacity-val">30%</span>
+            </div>
             <!-- Activity strip — the landmark rail on the chat's edge (shared
                  app-wide preference; mirrors the switch on pages/wiseai.html).
                  Keeps the menu open so the switch state reads back. -->
@@ -8536,14 +8613,15 @@
               <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>
-            <button type="button" class="topbar-menu-item" onclick="toggleOverviewCards(); closeAllMoreMenus()">
-              <span class="material-symbols-outlined topbar-menu-icon" id="wiseai-cards-icon">visibility</span>
-              <span id="wiseai-cards-label">Show overview cards</span>
-            </button>
-            <button type="button" class="topbar-menu-item" onclick="toggleIntentChips(); closeAllMoreMenus()">
-              <span class="material-symbols-outlined topbar-menu-icon" id="wiseai-chips-icon">visibility_off</span>
-              <span id="wiseai-chips-label">Hide intent chips</span>
-            </button>
+            <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
+            <div class="sc-stream-detail">
+              <span class="sc-stream-detail-label">Streaming detail</span>
+              <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
+                <button type="button" class="sc-stream-seg-btn is-on" data-sc="stream-level" data-stream="full" role="radio" aria-checked="true" title="Full thinking" aria-label="Full thinking">Full</button>
+                <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="steps" role="radio" aria-checked="false" title="Steps only" aria-label="Steps only">Steps</button>
+                <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="final" role="radio" aria-checked="false" title="Final only" aria-label="Final only">Final</button>
+              </div>
+            </div>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item topbar-menu-item--danger" onclick="restartConversation(); closeAllMoreMenus()">
               <span class="material-symbols-outlined topbar-menu-icon">close</span>
@@ -10359,6 +10437,20 @@
 
     /* WISEcodeAI panel header's mirror of the global "More" menu — same items,
        anchored to the wiseai-panel-header's right edge. */
+    /* Body-portal the chat's three-dot popover (same pattern as .cmp-add-menu):
+       fixed + top z-index, positioned off the button rect, so NO in-shell layer
+       (welcome overlay, report boards, sibling modules) can ever paint over it. */
+    function positionWISEcodeAIMenu() {
+      const pop = document.getElementById('wiseai-menu');
+      const btn = document.getElementById('wiseai-menu-btn');
+      if (!pop || !btn) return;
+      const r = btn.getBoundingClientRect();
+      pop.style.position = 'fixed';
+      pop.style.top = (r.bottom + 6) + 'px';
+      pop.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+      pop.style.left = 'auto';
+      pop.style.zIndex = '10000';
+    }
     function toggleWISEcodeAIMenu(e) {
       if (e) e.stopPropagation();
       const pop = document.getElementById('wiseai-menu');
@@ -10366,6 +10458,10 @@
       if (!pop) return;
       closeTopbarMenu();
       const opening = pop.classList.contains('hidden');
+      if (opening) {
+        if (pop.parentElement !== document.body) document.body.appendChild(pop);
+        positionWISEcodeAIMenu();
+      }
       pop.classList.toggle('hidden', !opening);
       if (btn) {
         btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
@@ -10396,10 +10492,11 @@
       try { stored = localStorage.getItem(OVERVIEW_CARDS_KEY); } catch (_) { stored = null; }
       var hidden = stored === null ? true : stored === '1';
       ws.classList.toggle('sc-cards-hidden', hidden);
-      var icon = document.getElementById('wiseai-cards-icon');
-      var label = document.getElementById('wiseai-cards-label');
-      if (icon) icon.textContent = hidden ? 'visibility' : 'visibility_off';
-      if (label) label.textContent = hidden ? 'Show overview cards' : 'Hide overview cards';
+      var item = document.getElementById('wiseai-cards-item');
+      if (item) {
+        item.classList.toggle('is-on', !hidden);
+        item.setAttribute('aria-checked', hidden ? 'false' : 'true');
+      }
     }
     function toggleOverviewCards() {
       var ws = document.getElementById('welcome-screen');
@@ -10411,26 +10508,22 @@
     applyOverviewCards();
 
     /* Welcome intent chips (the small suggested-action chips right below the
-       overview cards): shown by default, toggled from the three-dot menu, with
-       the choice remembered per surface. */
-    var INTENT_CHIPS_KEY = 'wise-chips-hidden:product-portfolio';
+       overview cards): ALWAYS ON by default — every load starts with them
+       shown. The three-dot switch hides them for the current visit only; the
+       choice is deliberately NOT remembered (unlike the overview cards). */
+    var intentChipsHidden = false;
     function applyIntentChips() {
       var ws = document.getElementById('welcome-screen');
       if (!ws) return;
-      var stored;
-      try { stored = localStorage.getItem(INTENT_CHIPS_KEY); } catch (_) { stored = null; }
-      var hidden = stored === '1';
-      ws.classList.toggle('sc-intent-chips-hidden', hidden);
-      var icon = document.getElementById('wiseai-chips-icon');
-      var label = document.getElementById('wiseai-chips-label');
-      if (icon) icon.textContent = hidden ? 'visibility' : 'visibility_off';
-      if (label) label.textContent = hidden ? 'Show intent chips' : 'Hide intent chips';
+      ws.classList.toggle('sc-intent-chips-hidden', intentChipsHidden);
+      var item = document.getElementById('wiseai-chips-item');
+      if (item) {
+        item.classList.toggle('is-on', !intentChipsHidden);
+        item.setAttribute('aria-checked', intentChipsHidden ? 'false' : 'true');
+      }
     }
     function toggleIntentChips() {
-      var ws = document.getElementById('welcome-screen');
-      if (!ws) return;
-      var willHide = !ws.classList.contains('sc-intent-chips-hidden');
-      try { localStorage.setItem(INTENT_CHIPS_KEY, willHide ? '1' : '0'); } catch (_) {}
+      intentChipsHidden = !intentChipsHidden;
       applyIntentChips();
     }
     applyIntentChips();
@@ -11739,12 +11832,27 @@
         openPortfolioModule(route.tab, null, route.reply, route.chips);
         return;
       }
+      /* Honour the shared "Response streaming" setting (three-dot menu, synced
+         app-wide by wireStandardChatMenu): OFF lands the answer after the
+         briefest beat, "Final only" shows a single short thinking beat, and
+         "Full"/"Steps" cycle the status lines exactly as before. */
+      const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+        ? window.__wiseStdMenu.stream()
+        : { on: true, level: 'full' };
+      const finish = function () {
+        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>10 claimed products</strong> (all still pending ingredient verification), <strong>47 discovered matches</strong> to review &amp; claim, and <strong>13 products in Needs Info</strong>. Tell me what you’d like to do, or pick a task below.');
+        pfOfferChips(['verify', 'discovered', 'needsinfo', 'claimed']);
+      };
+      if (!stream.on || stream.level === 'final') {
+        const typing = stream.on ? showWISEcodeAITyping(statusStepsFor(text, intent)[0]) : null;
+        setTimeout(function () { if (typing) typing.remove(); finish(); }, stream.on ? 420 : 160);
+        return;
+      }
       const steps = statusStepsFor(text, intent);
       const typing = showWISEcodeAITyping(steps[0]);
       cycleWISEcodeAIStatus(typing, steps, function() {
         if (typing) typing.remove();
-        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>10 claimed products</strong> (all still pending ingredient verification), <strong>47 discovered matches</strong> to review &amp; claim, and <strong>13 products in Needs Info</strong>. Tell me what you’d like to do, or pick a task below.');
-        pfOfferChips(['verify', 'discovered', 'needsinfo', 'claimed']);
+        finish();
       });
     }
 
@@ -17570,13 +17678,25 @@
 
     document.addEventListener('click', (e) => {
       if (!document.getElementById('topbar-menu-wrap')?.contains(e.target)) closeTopbarMenu();
-      if (!document.getElementById('wiseai-menu-wrap')?.contains(e.target)) closeWISEcodeAIMenu();
+      /* The wiseai popover is body-portalled while open, so clicks inside it
+         (switch rows keep the menu open) are no longer inside the wrap. */
+      const waiPop = document.getElementById('wiseai-menu');
+      if (!document.getElementById('wiseai-menu-wrap')?.contains(e.target) &&
+          !waiPop?.contains(e.target)) {
+        closeWISEcodeAIMenu();
+      } else if (waiPop && !waiPop.classList.contains('hidden') && waiPop.contains(e.target)) {
+        /* Switch rows (History / Turns / Activity) dock modules beside the chat
+           and shift the ⋯ button — re-anchor once the layout settles. */
+        setTimeout(positionWISEcodeAIMenu, 350);
+      }
       const lirWrap = document.getElementById('lir-more-wrap');
       if (lirWrap && !lirWrap.contains(e.target)) closeLirMorePopover();
     });
     window.addEventListener('resize', () => {
       const el = document.getElementById('topbar-overlay-close');
       if (el && !el.classList.contains('hidden')) positionTopbarOverlayClose();
+      const wm = document.getElementById('wiseai-menu');
+      if (wm && !wm.classList.contains('hidden')) positionWISEcodeAIMenu();
     });
 
     document.addEventListener('keydown', (e) => {

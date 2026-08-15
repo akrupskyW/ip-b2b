@@ -1119,7 +1119,9 @@ function pushChat(userLabel, replyHtml) {
   if (!chatApi) return;
   chatApi.hideWelcome?.();
   if (userLabel) chatApi.addUser(userLabel);
-  if (replyHtml) chatApi.addWISEcodeAI(replyHtml);
+  /* respond() streams the shared reasoning trace before the reply lands, so a
+     mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
+  if (replyHtml) (chatApi.respond || chatApi.addWISEcodeAI)(replyHtml);
 }
 
 /* Highest-leverage still-flagged ingredient (falls back to the first). */

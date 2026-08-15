@@ -113,7 +113,9 @@ export function setProfileChat(api) { chatApi = api; }
 function pushChat(html) {
   if (!chatApi || !html) return;
   chatApi.hideWelcome?.();
-  chatApi.addWISEcodeAI(html);
+  /* respond() streams the shared reasoning trace before the reply lands, so a
+     mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
+  (chatApi.respond || chatApi.addWISEcodeAI)(html);
 }
 
 /* ---- Toast --------------------------------------------------------- */

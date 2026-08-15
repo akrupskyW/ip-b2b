@@ -4270,10 +4270,10 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
    so they read as orientation rather than data. */
 .sc-welcome--cards { justify-content: safe flex-end; overflow-y: auto; padding-top: 1.75rem; }
 .ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
-/* Overview cards hidden (three-dot menu → "Hide overview cards") — drop the
-   large "at a glance" card rail from the welcome; everything else stays. */
+/* Overview cards hidden (three-dot menu → "Overview cards" switch off) — drop
+   the large "at a glance" card rail from the welcome; everything else stays. */
 .sc-cards-hidden .ws-scorecards-section { display: none; }
-/* Intent chips hidden (three-dot menu → "Hide intent chips") — drop the small
+/* Intent chips hidden (three-dot menu → "Intent chips" switch off) — drop the small
    suggested-action chips right below the overview cards on the welcome; the
    overview cards and everything else stay. */
 .sc-intent-chips-hidden .sc-welcome .ws-chips-wrap,
@@ -5062,7 +5062,15 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   opacity: 0.92;
 }
 .sc-trace:not(.is-complete) .sc-trace-dna--base {
-  animation: scDnaFlow 3.8s linear infinite;
+  /* Slower, unhurried drift down the strand so the helix reads as breathing
+     rather than mechanically scrolling. */
+  animation: scDnaFlow 7.2s linear infinite;
+}
+/* The whole strand breathes on its own, slower cycle — a gentle swell in and out
+   of presence so the two rhythms (drift + breath) never line up, and it never
+   feels metronomic. */
+.sc-trace:not(.is-complete) .sc-trace-strand {
+  animation: scDnaBreathe 9.5s ease-in-out infinite;
 }
 /* The green "done" layer is clipped to reveal only its top --dna-fill portion,
    growing downward as sections complete (registered so the growth tweens). */
@@ -5070,14 +5078,19 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 .sc-trace-dna--fill {
   --dna-fill: 0%;
   clip-path: inset(0 0 calc(100% - var(--dna-fill)) 0);
-  transition: --dna-fill 0.42s ease;
+  transition: --dna-fill 0.72s cubic-bezier(0.33, 0, 0.2, 1);
 }
 @keyframes scDnaFlow {
   from { background-position: center 0; }
-  to   { background-position: center 88px; }
+  to   { background-position: center 116px; }
+}
+@keyframes scDnaBreathe {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sc-trace:not(.is-complete) .sc-trace-dna--base { animation: none; }
+  .sc-trace:not(.is-complete) .sc-trace-strand { animation: none; }
   .sc-trace-dna--fill { transition: none; }
 }
 .sc-trace-head {

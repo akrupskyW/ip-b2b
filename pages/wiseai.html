@@ -6585,7 +6585,12 @@
          recalculate narration all post into the real transcript. */
       window.__waChatBridge = {
         addUser: (text) => chat.addUser(text),
-        addWISEcodeAI: (html, meta) => chat.addWISEcodeAI(html, meta || { source: '' }),
+        /* Bridged compare-engine replies stream the SAME full reasoning trace
+           as any chip-driven turn (chat.respond routes the trace off the
+           reply's own text — board/compare/rank asks land on the comparison
+           milestones), so the ported engine never posts an answer without
+           showing the thinking first. */
+        addWISEcodeAI: (html, meta) => chat.respond(html, meta || { source: '' }),
         typing: (label) => (chat.showTyping ? chat.showTyping(label) : { remove() {} }),
         /* The real transcript element + the module's chip prime/reveal so ported
            compare chips land in the live thread and fly in behind the answer

@@ -1377,8 +1377,22 @@
       }
       /* Guiding Stars mode flip just re-labels the move chips (no new turn). */
       function refreshChips() { setMoveChips(); }
-      /* A board-state reply: post it and refresh the move chips. */
-      function respond(html) { addWISEcodeAI(html, { chips: true }); }
+      /* A board-state reply: stream a quick "Rescoring" thinking beat first —
+         the shared module's full reasoning-trace machinery, at one milestone so
+         the live board keeps feeling immediate — then post the reply and
+         refresh the move chips to the new board state. Respects the app-wide
+         streaming level/switch like every other turn. */
+      function respond(html) {
+        if (!chat) return;
+        chat.hideWelcome();
+        chat.respond(html, {
+          milestones: [{ key: 'Rescoring', story: [
+            `Re-running the recipe against the ${ALGO_NAME[state.algo]} algorithm.`,
+            'Checking what moved \u2014 debits, credits, and the star line.',
+          ] }],
+          onDone: () => setTimeout(setMoveChips, 30),
+        });
+      }
 
       function scoreSentence(c) {
         const signed = `${c.net >= 0 ? '+' : ''}${c.net}`;
@@ -1666,11 +1680,16 @@
           : (c.disqualified ? `Right now it has <b>${c.dq.length}</b> flag${c.dq.length > 1 ? 's' : ''} to clear — ${dqClause(c)}.` : `Right now it sits at <b>${signed}</b> net nutrition points.`);
         const lead = GS ? 'onto the Guiding Stars board' : 'reformulated';
         const next = GS ? pathToNextStar(c).msg : 'Tap a move below to lift the score.';
-        /* Two-part opener, played IN ORDER: the second line only begins once the
-           first has finished typing in (onDone). The first line trails no chips
-           so the move chips land only under the final line — never a flash of the
-           picker chips mid-turn. */
-        addWISEcodeAI(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, {
+        /* Two-part opener, played IN ORDER: the reasoning trace streams first
+           (routed onto the reformulation milestones, so the thinking narrates
+           taking the recipe apart), then the first line types in, and the
+           second line only begins once the first has finished (onDone). The
+           first line trails no chips so the move chips land only under the
+           final line — never a flash of the picker chips mid-turn. */
+        if (!chat) return;
+        chat.hideWelcome();
+        chat.respond(`<span class="rf-lead">Let's get <span class="rf-accent">${esc(product.short)}</span> ${lead}.</span>${opener} I've broken the score into <b>debits &amp; credits</b> in the dashboard, and the studio on the right lets you dial the recipe by <b>serving, 100 kcal, or 100 g</b>.`, {
+          traceText: `reformulate the ${product.short} recipe`,
           trailChips: false,
           onDone: () => addWISEcodeAI(`${scoreSentence(c)} ${next} Tap a move below — or drag a slider — and the whole board updates live.`, { chips: true }),
         });

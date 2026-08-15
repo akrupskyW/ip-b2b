@@ -1,0 +1,72 @@
+WISE Platform — Progress Update
+August 13–14, 2026
+
+EXECUTIVE SUMMARY
+Over these two days the team delivered a major upgrade to the WISEcodeAI
+experience, introduced a workspace organization system across the entire
+platform, and completed a product-wide design-consistency pass. The result is
+an app that feels more like one coherent product: every page now shares the
+same AI chat, the same layout behaviors, and the same visual language in both
+light and dark mode.
+
+HIGHLIGHTS
+
+1. Smarter, more transparent AI workspace
+   The WISEcodeAI workspace now treats AI outputs like living documents.
+   Every chart, report, or table the AI produces is time-stamped and
+   versioned — ask the AI to redo its work and the previous versions stay
+   visible in an elegant stacked history, so users can see exactly how an
+   answer improved (demonstrated end-to-end with a recipe-optimization story
+   whose score climbs from Good to Excellent across three versions). Outputs
+   can be expanded directly inside the conversation, browsed from a new
+   dropdown menu, and the AI now visibly "thinks out loud" before presenting
+   results, building user trust in how answers are produced.
+
+2. A tidier, more flexible workspace on every page
+   A new "sticky module" behavior was rolled out platform-wide: any panel
+   sitting beside the AI chat can now tuck in behind it like a drawer,
+   keeping the screen calm and focused while remaining one click away. Panel
+   widths were standardized across the whole product, and the chat now
+   respects the reader — it never yanks the screen away while a long answer
+   is arriving.
+
+3. AI Operations Dashboard, fully integrated
+   The dashboard for monitoring AI usage, spend, and guardrails was rebuilt
+   from a standalone page into the standard product shell, complete with its
+   own AI assistant that can answer questions about usage and cost directly
+   from the dashboard data. All charts were redrawn in the WISE brand
+   palette so the page reads as part of the family.
+
+4. Conversation Library: folders arrive
+   Users can now organize their saved reports, dashboards, and chats into
+   color-coded folders — drag a card onto a folder to file it, or drop one
+   card onto another to start a new folder on the spot. Folders can be
+   renamed, recolored, and dissolved, and the library's filters were refined
+   so the numbers on screen always match what users see.
+
+5. Product Portfolio: from browsing to doing
+   The portfolio's quick actions now launch real guided workflows: verifying
+   ingredients opens the live Verification flow, activating Non-UPF Shields
+   opens the SHIELD workspace, and reformulation opportunities open the
+   Reformulation Plan — turning the portfolio from a list into a launchpad.
+
+6. Personalization and accessibility
+   Users can now upload a profile picture or pick from ready-made avatar
+   patterns, and their avatar follows them into every AI conversation.
+   Separately, the platform's built-in accessibility audit now grades the
+   app continuously, and that grade is surfaced in the appearance settings —
+   green, amber, or red — so accessibility stays visible, not buried.
+
+7. Design consistency, light and dark
+   A platform-wide color-token migration means brand-blue text now renders
+   correctly on every page in dark mode. Combined with the standardized
+   layouts and shared components, virtually every page in the product was
+   touched and brought in line.
+
+WHAT THIS MEANS FOR THE BUSINESS
+- Demo-ready polish: the AI workspace now tells a compelling, visual story
+  of iteration and improvement — ideal for customer demonstrations.
+- One product, not many pages: consistent behavior and branding across the
+  entire platform reduces user confusion and support friction.
+- Trust and transparency: visible AI reasoning, versioned outputs, and a
+  live accessibility grade all reinforce credibility with buyers.

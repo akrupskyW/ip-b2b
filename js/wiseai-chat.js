@@ -699,7 +699,7 @@ function openWiseImageModal(src, name) {
    and the "Connect a data source" side panel rows (which reuse the .wch-sidebar
    shell already injected by chat-history.js). Injected from JS so it works on
    every host page regardless of which stylesheet variant it loads. */
-function injectChatExtras() {
+export function injectChatExtras() {
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
     .ws-scorecard--locked { cursor: default; opacity: .7; }
@@ -1249,8 +1249,14 @@ function injectChatExtras() {
        fill so the strip reads behind the copy. */
     .sc-bganim-canvas { position: absolute; inset: 0; width: 100%; height: 100%;
       z-index: 1; pointer-events: none; opacity: 0; transition: opacity .55s ease; }
-    .sc-card.sc-bganim-live .sc-bganim-canvas { opacity: 1; }
-    .sc-card.sc-bganim-live .sc-welcome { background: transparent !important; }
+    .sc-bganim-live .sc-bganim-canvas { opacity: 1; }
+    /* The class is repeated to out-rank page-level skin rules such as
+       html.chat-tint:not(.dark) #welcome-screen (product portfolio/comparison,
+       an opaque 5%-blue wash with !important) — both rules carry !important,
+       so only specificity decides, and without the boost the tint wash covers
+       the canvas and the strand never shows in the light blue-chat theme. */
+    .sc-bganim-live.sc-bganim-live.sc-bganim-live .sc-welcome,
+    .sc-bganim-live.sc-bganim-live.sc-bganim-live #welcome-screen { background: transparent !important; }
 
     /* Opacity control that sits just under the "Background animation" toggle. Mirrors
        the streaming-detail sub-row; uses the admin pink accent to match the toggle. */
@@ -1266,7 +1272,7 @@ function injectChatExtras() {
 
     /* While the DNA field is live, the centre owl/pulse logo steps aside — the strand
        carries the owl instead. */
-    .sc-card.sc-bganim-live .ws-logo-wrap { display: none; }
+    .sc-bganim-live .ws-logo-wrap { display: none; }
 
     /* Hover card for a product on the DNA field — our surface + tokens, round thumb,
        a caret aimed at the bug, and a brand-blue deep-link into the product's NFP. */
@@ -1316,6 +1322,664 @@ function injectChatExtras() {
   (document.head || document.documentElement).appendChild(style);
 }
 
+/* ------------------------------------------------------------------ */
+/* Welcome "Background animation" — DNA/RNA product helix (shared)     */
+/* ------------------------------------------------------------------ */
+/* Extracted to module scope + parameterized so EVERY chat surface — the
+   shared mountWISEcodeAIChat() module AND the hand-rolled inline chats
+   (product comparison / portfolio, guiding-stars report, …) — runs the
+   exact same ambient field. cfg:
+     host          {el}   gets `sc-bganim-live` while the field is live
+     getBody       {fn}   () => element the canvas mounts into (chat body)
+     getOpacity    {fn}   () => 0.1–1 field opacity (the shared slider)
+     reducedMotion {bool} paint a single still frame instead of animating
+     isOn          {fn}   () => whether the shared preference is ON
+   Returns { start, stop }. */
+export function createHelixBgAnim(cfg) {
+  const host = cfg.host;
+  const getBody = cfg.getBody;
+  const getOpacity = cfg.getOpacity;
+  const reducedMotion = !!cfg.reducedMotion;
+  const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
+  /* The foods strung along the helix, drawn as circular thumbnails — the same round
+     product "bug" the app uses in its portfolio / comparison tables. Every product
+     appears AT MOST ONCE on the strand (no repeats), so the pool is deliberately
+     deep: our real demo-brand products plus a wide roster of recognizable market
+     products (photos in assets/helix/, sourced from the Open Food Facts database).
+     `img` is relative to assets/; name/brand/upc feed the hover card + its
+     "Open Nutrition Facts" deep-link. */
+  const PRODUCTS = [
+    { img: 'portfolio/coconut_brownies.png', name: 'Toasted Coconut Brownies-12 ct', brand: 'Flax4Life', upc: '8 57287 00420 3' },
+    { img: 'portfolio/chocolate_chip_muffins.png', name: 'Chocolate Chip Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63152 0' },
+    { img: 'portfolio/blueberry_muffins.png', name: 'Blueberry Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63153 7' },
+    { img: 'portfolio/apple_cinnamon_muffins.png', name: 'Apple Cinnamon Muffins-4 ct', brand: 'Flax4Life' },
+    { img: 'portfolio/oatmeal_raisin_cookies.png', name: 'Oatmeal Raisin Cookies-5 ct', brand: 'Flax4Life', upc: '8 57287 00456 2' },
+    { img: 'portfolio/dark_cherry_brownies.png', name: 'Mini Dark Cherry Brownie Flax Muffins', brand: 'Flax4Life' },
+    { img: 'portfolio/chocolate_brownies.png', name: 'Chocolate Brownies-12 ct', brand: 'Flax4Life' },
+    { img: 'portfolio/carrot_raisin_muffins.png', name: 'Carrot Raisin Muffins-4 ct', brand: 'Flax4Life' },
+    { img: 'portfolio/granola.jpg', name: 'Chunky Chocolate Granola', brand: 'Flax4Life', upc: '8 57287 00427 2' },
+    { img: 'portfolio/vegan_blueberry_mini.png', name: 'Vegan Blueberry Mini Muffins', brand: 'Flax4Life' },
+    { img: 'top5-ginger-turmeric-bar.png', name: 'Ginger Turmeric Bar', brand: 'Date Better' },
+    { img: 'top5-almond-coconut-crisp.png', name: 'Almond Coconut Crisp', brand: 'Date Better' },
+    { img: 'top5-pistachio-rose-bar.png', name: 'Pistachio Rose Bar', brand: 'Date Better' },
+    { img: 'top5-matcha-cashew-bites.png', name: 'Matcha Cashew Bites', brand: 'Date Better' },
+    { img: 'top5-walnut-brownie-bar.png', name: 'Walnut Brownie Bar', brand: 'Date Better' },
+    { img: 'date-better-cashew-lime-crisp.png', name: 'Cashew Lime Crisp', brand: 'Date Better' },
+    { img: 'verification/ns-powdered-vitamin-eggs.png', name: 'Powdered Vitamin Eggs', brand: 'Nutrient Survival', upc: '818491020984' },
+    { img: 'verification/ns-homestyle-scramble.png', name: 'Homestyle Scramble — Protein Meal', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-triple-cheese-mac.png', name: 'Triple Cheese Mac — Protein Meal', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-protein-cereal-chocolate.png', name: 'Protein Cereal — Chocolate', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-freeze-dried-mixed-vegetables.png', name: 'Freeze-Dried Mixed Vegetables', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-powdered-vitamin-milk.png', name: 'Powdered Vitamin Milk', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-powdered-vitamin-butter.png', name: 'Powdered Vitamin Butter', brand: 'Nutrient Survival' },
+    { img: 'verification/ns-powdered-vitamin-potato.png', name: 'Powdered Vitamin Potato', brand: 'Nutrient Survival' },
+    { img: 'portfolio/frosted_toaster_pastries.png', name: 'Frosted Toaster Pastries', brand: 'Great Value', upc: '0 78742 12908 4' },
+    { img: 'portfolio/nsa_carrot_raisin_mini.png', name: 'Carrot Raisin No Sugar Added Mini Flax Muffins', brand: 'Flax4Life', upc: '8 57287 00474 6' },
+    { img: 'portfolio/vegan_carrot_raisin_mini.png', name: 'Vegan Carrot Raisin Mini Muffins', brand: 'Flax4Life', upc: '8 57287 00482 1' },
+    { img: 'portfolio/vegan_chocolate_brownies.png', name: 'Vegan Chocolate Brownies', brand: 'Flax4Life', upc: '8 57287 00483 8' },
+    { img: 'portfolio/pf_cereal.png', name: 'Organic Honey Oat Toasted Cereal', brand: 'Simple Truth', upc: '0 11110 88461 6' },
+    { img: 'portfolio/pf_protein_bar.png', name: 'Organic Peanut Butter Protein Bar', brand: 'Simple Truth', upc: '0 11110 88474 6' },
+    { img: 'portfolio/pf_trail_mix.png', name: 'Organic Nut & Berry Trail Mix', brand: 'Simple Truth', upc: '0 11110 88440 1' },
+    { img: 'portfolio/pf_crackers.png', name: 'Organic Sea Salt Multi-Seed Crackers', brand: 'Simple Truth', upc: '0 11110 88452 4' },
+    { img: 'portfolio/pf_date_bites.png', name: 'Organic Chocolate Brownie Bites', brand: 'Simple Truth', upc: '0 11110 88701 0' },
+    { img: 'portfolio/pf_tortilla_chips.png', name: 'Grain-Free Sea Salt Tortilla Chips', brand: 'Siete', upc: '0 74992 90011 3' },
+    { img: 'portfolio/pf_popcorn.png', name: 'Grain-Free Butter Popcorn', brand: 'Siete', upc: '0 74992 90112 6' },
+    /* @helix-roster-start — generated by scripts/fetch_helix_foods.py */
+    { img: 'helix/ferrero-nutella.jpg', name: 'Nutella', brand: 'Ferrero', upc: '3017620425035' },
+    { img: 'helix/kinder-kinder-bueno.jpg', name: 'Kinder Bueno', brand: 'Kinder', upc: '8000500037560' },
+    { img: 'helix/terra-delyssa-extra-virgin-olive-oil.jpg', name: 'Extra Virgin Olive Oil', brand: 'Terra Delyssa', upc: '6191509900664' },
+    { img: 'helix/ritz-bakery-the-original-cracker.jpg', name: 'The Original Cracker', brand: 'Ritz Bakery', upc: '5000137487908' },
+    { img: 'helix/oatly-barista-edition-oat-drink.jpg', name: 'Barista edition oat drink', brand: 'Oatly!', upc: '7394376620157' },
+    { img: 'helix/yeo-valley-yoghurt.jpg', name: 'Yoghurt', brand: 'Yeo Valley', upc: '5036589255550' },
+    { img: 'helix/weetabix-super-smooth-porridge.jpg', name: 'Super smooth porridge', brand: 'Weetabix', upc: '5010029219494' },
+    { img: 'helix/peter-s-yard-peter-s-yard-original-sourdough-crackers.jpg', name: 'Peter\'s Yard Original Sourdough Crackers', brand: 'Peter\'s Yard', upc: '5060198820052' },
+    { img: 'helix/doritos-doritos-nachos-cheese-flavoured-100g.jpg', name: 'Doritos Nachos Cheese Flavoured 100g', brand: 'Doritos', upc: '5900259094704' },
+    { img: 'helix/ambrosia-ambrosia-rice-pudding.jpg', name: 'Ambrosia Rice pudding', brand: 'Ambrosia', upc: '5000354800931' },
+    { img: 'helix/vita-coco-coconut-water.jpg', name: 'Coconut Water', brand: 'Vita Coco', upc: '8 98999 00050 3' },
+    { img: 'helix/great-value-purified-drinking-water.jpg', name: 'Purified Drinking Water', brand: 'Great Value', upc: '0 78742 04037 0' },
+    { img: 'helix/lu-napolitain-l-original.jpg', name: 'Napolitain l\'Original', brand: 'Lu', upc: '3017760290692' },
+    { img: 'helix/terry-s-chocolate-orange-milk.jpg', name: 'Chocolate Orange Milk', brand: 'Terry\'s', upc: '3664346304863' },
+    { img: 'helix/nairn-s-fruit-seed-oatcakes.jpg', name: 'Fruit & Seed Oatcakes', brand: 'Nairn\'s', upc: '6 12322 00020 2' },
+    { img: 'helix/carozzi-pasta-mix.jpg', name: 'pasta mix', brand: 'Carozzi', upc: '7802575034038' },
+    { img: 'helix/cirio-rosii-cirio-diced-tomatoes.jpg', name: 'Rosii Cirio Diced Tomatoes', brand: 'Cirio', upc: '8000320010118' },
+    { img: 'helix/natural-set-yogurt-onken.jpg', name: 'Onken', brand: 'natural set yogurt', upc: '7610900299072' },
+    { img: 'helix/toblerone-toblerone-dark-chocolate-bar.jpg', name: 'Toblerone Dark Chocolate Bar', brand: 'Toblerone', upc: '7614500010617' },
+    { img: 'helix/nature-valley-nature-valley-crunchy-oats-n-honey-granola-bar.jpg', name: 'Nature Valley Crunchy Oats \'N Honey Granola Bar', brand: 'Nature Valley', upc: '0 16000 26469 4' },
+    { img: 'helix/terra-delyssa-organic-extra-virgin-olive-oil.jpg', name: 'Organic Extra Virgin Olive Oil', brand: 'Terra Delyssa', upc: '6191509903023' },
+    { img: 'helix/dave-s-killer-bread-21-whole-grains-and-seeds.jpg', name: '21 whole Grains and Seeds', brand: 'Dave\'s Killer Bread', upc: '0 13764 02705 3' },
+    { img: 'helix/soreen-malt-loaf-lunchbox-sized.jpg', name: 'Malt Loaf (Lunchbox Sized)', brand: 'Soreen', upc: '5018735224924' },
+    { img: 'helix/robinsons-robinsons-orange-squash.jpg', name: 'Robinsons Orange Squash', brand: 'Robinsons', upc: '5000147030125' },
+    { img: 'helix/kirkland-signature-water-bottled.jpg', name: 'Water, Bottled', brand: 'Kirkland Signature', upc: '0 96619 75680 3' },
+    { img: 'helix/frank-cooper-s-fine-cut-oxford-marmalade.jpg', name: 'Fine cut Oxford marmalade', brand: 'Frank Cooper\'s', upc: '5035660138782' },
+    { img: 'helix/crespo-pitted-ripe-olives.jpg', name: 'Pitted Ripe Olives', brand: 'Crespo', upc: '3076820002064' },
+    { img: 'helix/kellogg-s-coco-pops.jpg', name: 'Coco Pops', brand: 'Kellogg\'s', upc: '5059319024479' },
+    { img: 'helix/lu-cioccolato-al-latte.jpg', name: 'Cioccolato al latte', brand: 'LU', upc: '3017760363396' },
+    { img: 'helix/tesco-finest-wholemeal-loaf.jpg', name: 'Finest Wholemeal Loaf', brand: 'Tesco', upc: '5057545918791' },
+    { img: 'helix/lee-kum-kee-premium-soy-sauce.jpg', name: 'Premium Soy Sauce', brand: 'Lee Kum Kee', upc: '0 78895 12639 6' },
+    { img: 'helix/nairn-s-stem-ginger-oat-biscuits.jpg', name: 'Stem ginger oat biscuits', brand: 'Nairn\'s', upc: '0 61232 20104 7' },
+    { img: 'helix/reese-s-creamy-peanut-butter.jpg', name: 'Creamy Peanut Butter', brand: 'reese\'s', upc: '0 34000 40012 6' },
+    { img: 'helix/cadbury-bournville-cocoa.jpg', name: 'Bournville Cocoa', brand: 'Cadbury', upc: '5034660021445' },
+    { img: 'helix/acti-leaf-almond-unsweetened-uht-milk.jpg', name: 'Almond Unsweetened UHT Milk', brand: 'Acti Leaf', upc: '4061459332896' },
+    { img: 'helix/chobani-nonfat-greek-yogurt.jpg', name: 'Nonfat Greek Yogurt', brand: 'Chobani', upc: '8 94700 01013 7' },
+    { img: 'helix/warburtons-warburtons-old-english-medium-sliced-white-bread-.jpg', name: 'Warburtons Old English Medium Sliced White Bread 400G', brand: 'Warburtons', upc: '5010044006529' },
+    { img: 'helix/waitrose-duchy-organic-houmous.jpg', name: 'Houmous', brand: 'Waitrose Duchy Organic', upc: '5000169090336' },
+    { img: 'helix/toblerone-milk-chocolate-large-bar.jpg', name: 'Milk Chocolate Large Bar', brand: 'Toblerone', upc: '7622210496645' },
+    { img: 'helix/nature-s-own-100-whole-wheat-bread.jpg', name: '100% Whole Wheat Bread', brand: 'Nature\'s Own', upc: '0 72250 03712 9' },
+    { img: 'helix/jif-peanut-butter-creamy.jpg', name: 'Peanut Butter (Creamy)', brand: 'Jif', upc: '0 51500 24094 6' },
+    { img: 'helix/cadbury-dairymilk-buttons.jpg', name: 'Dairymilk buttons', brand: 'Cadbury', upc: '7622210286956' },
+    { img: 'helix/jif-jif-peanut-butter.jpg', name: 'Jif peanut butter', brand: 'Jif', upc: '0 51500 25516 2' },
+    { img: 'helix/member-s-mark-purified-water.jpg', name: 'Purified Water', brand: 'Member\'s Mark', upc: '0 78742 05145 1' },
+    { img: 'helix/oreo-oreo-original.jpg', name: 'Oreo Original', brand: 'Oreo', upc: '7622210021502' },
+    { img: 'helix/chocolove-ginger-crystallized-in-dark-chocolate.jpg', name: 'Ginger Crystallized In Dark Chocolate', brand: 'Chocolove', upc: '7 16270 00166 0' },
+    { img: 'helix/coca-cola-coca-cola-zero.jpg', name: 'Coca Cola Zero', brand: 'Coca-Cola', upc: '0 49000 04256 6' },
+    { img: 'helix/lipton-yeellow-label-tea.jpg', name: 'Yeellow Label Tea', brand: 'Lipton', upc: '6221048700705' },
+    { img: 'helix/warburtons-6-soft-white-rolls-sliced.jpg', name: '6 Soft White Rolls Sliced', brand: 'Warburtons', upc: '5010044002316' },
+    { img: 'helix/hellmann-s-mayonnaise.jpg', name: 'Mayonnaise', brand: 'Hellmann\'s', upc: '0 48001 21348 7' },
+    { img: 'helix/maruchan-ramen-noodle-soup-chicken-flavor.jpg', name: 'Ramen noodle soup chicken flavor', brand: 'Maruchan', upc: '0 41789 00211 3' },
+    { img: 'helix/kirkland-signature-creamy-almond-butter.jpg', name: 'Creamy Almond Butter', brand: 'Kirkland Signature', upc: '0 96619 67681 1' },
+    { img: 'helix/nature-valley-nature-valley-crunchy-oats-n-honey.jpg', name: 'Nature Valley Crunchy Oats \'N Honey', brand: 'Nature Valley', upc: '0 16000 26460 1' },
+    { img: 'helix/danone-hipro.jpg', name: 'Hipro', brand: 'Danone', upc: '0 34361 58813 6' },
+    { img: 'helix/bragg-organic-apple-cider-vinegar-imp.jpg', name: 'Organic Apple Cider Vinegar imp', brand: 'Bragg', upc: '0 74305 00132 1' },
+    { img: 'helix/post-grape-nuts.jpg', name: 'Grape-Nuts', brand: 'Post', upc: '8 84912 00471 0' },
+    { img: 'helix/bragg-organic-apple-cider-vinegar.jpg', name: 'Organic Apple Cider Vinegar', brand: 'Bragg', upc: '0 74305 00116 1' },
+    { img: 'helix/hershey-s-natural-unsweetened-cocoa.jpg', name: 'Natural Unsweetened Cocoa', brand: 'Hershey\'s', upc: '0 34000 05200 4' },
+    { img: 'helix/heinz-original-sandwich-spread.jpg', name: 'Original Sandwich Spread', brand: 'Heinz', upc: '5000157076021' },
+    { img: 'helix/kirkland-fancy-whole-cashews-with-sea-salt.jpg', name: 'Fancy Whole Cashews with Sea Salt', brand: 'Kirkland', upc: '0 96619 14245 3' },
+    { img: 'helix/honey-maid-graham-crackers.jpg', name: 'Graham Crackers', brand: 'Honey Maid', upc: '0 44000 00463 7' },
+    { img: 'helix/morinaga-mori-nu-shelf-stable-silken-tofu-firm.jpg', name: 'Mori-Nu Shelf Stable Silken Tofu Firm', brand: 'Morinaga', upc: '0 85696 60804 4' },
+    { img: 'helix/kirkland-organic-creamy-peanut-butter.jpg', name: 'Organic Creamy Peanut Butter', brand: 'Kirkland', upc: '0 96619 55550 5' },
+    { img: 'helix/heinz-tomato-ketchup-local.jpg', name: 'Tomato Ketchup Local', brand: 'Heinz', upc: '0 13000 00605 7' },
+    { img: 'helix/great-value-vitamin-d-milk.jpg', name: 'Vitamin D Milk', brand: 'Great Value', upc: '0 78742 35186 5' },
+    { img: 'helix/tilda-wholegrain-pilau-microwave-basmati-rice-classics.jpg', name: 'Wholegrain Pilau Microwave Basmati Rice Classics', brand: 'Tilda', upc: '5011157900025' },
+    { img: 'helix/general-mills-cheerios.jpg', name: 'Cheerios', brand: 'General Mills', upc: '0 16000 17003 2' },
+    { img: 'helix/dairylea-dairylea-processed-cheese-portions-regular.jpg', name: 'Dairylea processed cheese-portions regular', brand: 'Dairylea', upc: '7622210317643' },
+    { img: 'helix/branston-original-pickle.jpg', name: 'Original pickle', brand: 'Branston', upc: '5060336505049' },
+    { img: 'helix/tesco-finest-white-loaf.jpg', name: 'Finest White Loaf', brand: 'Tesco', upc: '5057545918814' },
+    { img: 'helix/morrisons-morrisons-spreadable.jpg', name: 'Morrisons Spreadable', brand: 'Morrisons', upc: '5010525201320' },
+    { img: 'helix/cheerios-cheerios-heart-shape-imp.jpg', name: 'Cheerios Heart shape imp', brand: 'Cheerios', upc: '0 16000 27526 3' },
+    { img: 'helix/danone-light-and-free.jpg', name: 'Light and Free', brand: 'Danone', upc: '0 34360 00598 6' },
+    { img: 'helix/quaker-oats-old-fashioned-oats.jpg', name: 'Old Fashioned Oats', brand: 'Quaker Oats', upc: '0 30000 01040 2' },
+    { img: 'helix/deer-park-100-natural-spring-water.jpg', name: '100% Natural Spring  Water', brand: 'Deer Park', upc: '0 82657 50063 8' },
+    { img: 'helix/kidfresh-super-duper-chicken-nuggets.jpg', name: 'Super Duper Chicken Nuggets', brand: 'Kidfresh', upc: '8 10882 01002 4' },
+    { img: 'helix/sara-lee-healthy-multi-grain-bread.jpg', name: 'Healthy Multi-Grain Bread', brand: 'Sara Lee', upc: '0 72945 71588 2' },
+    { img: 'helix/morrisons-all-bran-flakes.jpg', name: 'All Bran Flakes', brand: 'Morrisons', upc: '5010251720072' },
+    { img: 'helix/grupo-cuervo-s-a-cholula-hot-sauce-original-imp.jpg', name: 'Cholula Hot Sauce (Original) imp', brand: 'Grupo Cuervo S A', upc: '0 49733 12345 7' },
+    { img: 'helix/justin-s-classic-peanut-butter-jars.jpg', name: 'Classic Peanut Butter Jars', brand: 'Justin\'s', upc: '8 55188 00300 4' },
+    { img: 'helix/green-black-s-black-s-organic-cooking-dark-chocolate-bar.jpg', name: 'Black\'s Organic Cooking Dark Chocolate Bar', brand: 'Green & Black\'s', upc: '5011835102390' },
+    { img: 'helix/haugen-gruppen-as-french-sennep-yellow-397g.jpg', name: 'French Sennep Yellow 397g', brand: 'HAUGEN-GRUPPEN AS', upc: '0 41500 76367 5' },
+    { img: 'helix/mondelez-original.jpg', name: 'Original', brand: 'Mondelez', upc: '0 44000 05098 6' },
+    { img: 'helix/quaker-old-fashioned-oats-imp.jpg', name: 'Old Fashioned Oats imp', brand: 'Quaker', upc: '0 30000 01020 4' },
+    { img: 'helix/food-for-life-ezekiel-4-9-sprouted-grain-bread.jpg', name: 'Ezekiel 4:9 sprouted grain bread', brand: 'Food For Life', upc: '0 73472 00120 2' },
+    { img: 'helix/light-free-light-free-mousse.jpg', name: 'Light & Free mousse', brand: 'Light & Free', upc: '0 34360 00614 3' },
+    { img: 'helix/haugen-gruppen-as-sweet-baby-rays-bbq-sauce-510g.jpg', name: 'Sweet Baby Rays bbq Sauce 510g', brand: 'HAUGEN-GRUPPEN AS', upc: '0 13409 91810 4' },
+    { img: 'helix/general-mills-honey-nut-cheerios-imp.jpg', name: 'Honey Nut Cheerios imp', brand: 'General Mills', upc: '0 16000 12479 0' },
+    { img: 'helix/thomas-thomas-original-english-muffins.jpg', name: 'Thomas original english muffins', brand: 'Thomas', upc: '0 48121 10208 1' },
+    { img: 'helix/fairlife-chocolate-protien-shake.jpg', name: 'Chocolate protien shake', brand: 'Fairlife', upc: '8 11620 02211 8' },
+    { img: 'helix/maretti-bruschette-chips-spinach-cheese.jpg', name: 'Bruschette Chips Spinach & cheese', brand: 'Maretti', upc: '3800205875000' },
+    { img: 'helix/nestle-ritz-cheese-flavour.jpg', name: 'Ritz Cheese Flavour', brand: 'Nestle', upc: '5000137488905' },
+    { img: 'helix/soreen-strawberry-lunchbox-loaves.jpg', name: 'Strawberry lunchbox loaves', brand: 'Soreen', upc: '5088722225647' },
+    { img: 'helix/sheldon-s-lancashire-oven-bottom-muffins.jpg', name: 'Lancashire oven bottom muffins', brand: 'Sheldon\'s', upc: '5023528000036' },
+    { img: 'helix/chobani-natural-light-greek-yogurt.jpg', name: 'Natural Light Greek Yogurt', brand: 'Chobani', upc: '9310653102626' },
+    { img: 'helix/welch-s-mixed-fruit-fruit-snacks.jpg', name: 'Mixed Fruit Fruit Snacks', brand: 'Welch\'s', upc: '0 34856 00818 7' },
+    { img: 'helix/batchelors-batchelors-marrowfat-bigga-peas.jpg', name: 'Batchelors Marrowfat Bigga Peas', brand: 'Batchelors', upc: '5000232901286' },
+    { img: 'helix/lee-kum-kee-panda-brand-oyster-sauce.jpg', name: 'Panda Brand Oyster Sauce', brand: 'Lee Kum Kee', upc: '0 78895 30001 7' },
+    { img: 'helix/dasani-dasani-purified-water.jpg', name: 'Dasani Purified Water', brand: 'Dasani', upc: '0 49000 02762 4' },
+    { img: 'helix/florida-crystals-organic-raw-cane-sugar.jpg', name: 'Organic Raw Cane Sugar', brand: 'Florida Crystals', upc: '0 75779 31114 5' },
+    { img: 'helix/orgain-vanilla-bean-organic-protein-50-superfoods.jpg', name: 'Vanilla Bean Organic Protein + 50 Superfoods', brand: 'Orgain', upc: '8 51770 00756 6' },
+    { img: 'helix/oluf-lorentzen-as-shortbread-pure-butter-150g-walkers.jpg', name: 'Shortbread Pure Butter 150g Walkers', brand: 'Oluf lorentzen as', upc: '0 39047 00115 2' },
+    { img: 'helix/oatly-oatmilk.jpg', name: 'Oatmilk', brand: 'Oatly', upc: '1 90646 64101 6' },
+    { img: 'helix/nature-s-bakery-fig-bar-blueberry.jpg', name: 'Fig Bar Blueberry', brand: 'Nature\'s Bakery', upc: '0 47495 11290 0' },
+    { img: 'helix/daisy-sour-cream.jpg', name: 'Sour Cream', brand: 'Daisy', upc: '0 73420 00011 0' },
+    { img: 'helix/belvita-nabisco-belvita-cookies-cinnamon-brown-sugar-1x1-76-.jpg', name: 'Nabisco belvita cookies cinnamon brown sugar 1x1.76 oz', brand: 'Belvita', upc: '0 44000 03193 0' },
+    { img: 'helix/poland-spring-poland-spring.jpg', name: 'poland spring', brand: 'Poland Spring', upc: '0 75720 00081 4' },
+    { img: 'helix/oatly-oatmilk-full-fat.jpg', name: 'Oatmilk Full Fat', brand: 'Oatly', upc: '1 90646 63008 9' },
+    { img: 'helix/quaker-oats-quick-1-minute-oats-imp.jpg', name: 'Quick 1-minute Oats imp', brand: 'Quaker Oats', upc: '0 30000 01200 0' },
+    { img: 'helix/pepperidge-farm-goldfish.jpg', name: 'Goldfish', brand: 'Pepperidge Farm', upc: '0 14100 08547 8' },
+    { img: 'helix/napolina-spaghetti-no-6.jpg', name: 'Spaghetti no. 6', brand: 'Napolina', upc: '5000232024602' },
+    { img: 'helix/kerrygold-salted-butter.jpg', name: 'Salted Butter', brand: 'Kerrygold', upc: '7 67707 00106 7' },
+    { img: 'helix/quaker-lightly-salted-rice-cakes.jpg', name: 'Lightly salted rice cakes', brand: 'Quaker', upc: '0 30000 16901 8' },
+    { img: 'helix/nature-s-path-organic-kirkland-ancient-grains-probiotic-gran.jpg', name: 'Ancient Grains Probiotic Granola', brand: 'Nature\'s Path Organic - Kirkland', upc: '0 96619 19426 1' },
+    { img: 'helix/skippy-skippy-smooth-peanut-butter.jpg', name: 'Skippy Smooth Peanut Butter', brand: 'Skippy', upc: '0 37600 10668 9' },
+    { img: 'helix/poland-spring-poland-spring-water.jpg', name: 'Poland Spring Water', brand: 'Poland Spring', upc: '0 75720 48127 9' },
+    { img: 'helix/nutrail-keto-nut-granola.jpg', name: 'Keto Nut Granola', brand: 'NuTrail', upc: '8 19562 02279 1' },
+    { img: 'helix/wai-wai-instant-noodles-casserole-beef-flavour.jpg', name: 'Instant Noodles Casserole Beef Flavour', brand: 'Wai Wai', upc: '8850100002488' },
+    { img: 'helix/lidl-special-flakes-original.jpg', name: 'Special flakes original', brand: 'Lidl', upc: '4056489479413' },
+    { img: 'helix/nabisco-ritz.jpg', name: 'Ritz', brand: 'Nabisco', upc: '0 44000 03111 4' },
+    /* @helix-roster-end */
+  ];
+  /* One shuffle per page load: the strand consumes the pool front-to-back, so
+     shuffling varies which foods appear (and where) between sessions while staying
+     stable within one — every re-render must land on an identical roster. */
+  for (let i = PRODUCTS.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = PRODUCTS[i]; PRODUCTS[i] = PRODUCTS[j]; PRODUCTS[j] = tmp;
+  }
+  let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
+  let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false;
+  /* Hover interaction state: the product circles' hit boxes from the last frame, the
+     currently hovered product, the branded info card, and the last pointer position
+     (body-relative) so the running frame loop can tell when the hovered circle has
+     travelled out from under the cursor. */
+  let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
+  let lastT = 0, card = null, overCard = false, hideTimer = 0, ptrX = -1, ptrY = -1;
+
+  /* Resolve assets/ relative to THIS module so the photos load no matter how deep
+     the host page sits; falls back to the project's ../assets convention. */
+  function assetBase() {
+    try { return new URL('../assets/', import.meta.url).href; } catch (_) {}
+    return '../assets/';
+  }
+
+  function loadImages() {
+    if (images) return;
+    images = {};
+    const base = assetBase();
+    PRODUCTS.forEach((p) => {
+      const im = new Image();
+      im.decoding = 'async';
+      im.src = base + p.img;
+      images[p.img] = im;
+    });
+    /* The WISEcodeAI owl mark itself — the same logo that sits at the chat's centre —
+       rides the strand as a recurring node. Sized explicitly so the SVG data URL has
+       an intrinsic width for drawImage. */
+    owlImg = new Image();
+    owlImg.decoding = 'async';
+    owlImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(OWL_MARK.replace('<svg ', '<svg width="193" height="100" '));
+  }
+
+  /* Draw the owl as a brand-blue disc with the white owl mark centred, ringed to match
+     the DNA strand stroke — the centre logo, now travelling the helix. */
+  function drawOwl(cx, cy, d, discAlpha, strokeAlpha) {
+    const [r, g, b] = rgb;
+    const rad = d / 2;
+    ctx.globalAlpha = Math.min(1, discAlpha);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    ctx.fill();
+    if (owlImg && owlImg.complete && owlImg.naturalWidth) {
+      const ow = d * 0.72;                        // 0.6 base, enlarged 20% within the circle
+      const oh = ow * (owlImg.naturalHeight / owlImg.naturalWidth || 100 / 193);
+      ctx.drawImage(owlImg, cx - ow / 2, cy - oh / 2, ow, oh);
+    }
+    ctx.globalAlpha = Math.min(1, strokeAlpha);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /* Draw a product photo as a circular thumbnail (cover-fit + clip), ringed in the
+     brand blue. An OPAQUE backing disc is laid down first so the DNA strand lines can
+     never show through the photo — regardless of the field's opacity setting. */
+  function drawBug(im, cx, cy, d, alpha) {
+    const [r, g, b] = rgb;
+    const rad = d / 2;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = '#ffffff'; ctx.fill();      // solid backing → nothing behind bleeds through
+    ctx.clip();
+    const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1;
+    const s = Math.max(d / iw, d / ih) * 1.2;   // cover-fit, image enlarged 20% within the circle
+    ctx.drawImage(im, cx - iw * s / 2, cy - ih * s / 2, iw * s, ih * s);
+    ctx.restore();
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /* Read the live brand blue off the theme (bright variant in dark mode) so the
+     strands always track the palette; falls back to the canonical --primary. */
+  function readColor() {
+    let col = '#25507C';
+    try {
+      const cs = getComputedStyle(document.documentElement);
+      const dark = document.documentElement.classList.contains('dark');
+      col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
+    } catch (_) {}
+    if (col[0] === '#') {
+      let x = col.slice(1);
+      if (x.length === 3) x = x.split('').map((c) => c + c).join('');
+      const n = parseInt(x, 16);
+      if (!isNaN(n)) return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const m = col.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
+    return m ? [+m[1], +m[2], +m[3]] : [37, 80, 124];
+  }
+
+  function ensure() {
+    if (canvas) return;
+    const body = getBody();
+    if (!body) return;
+    loadImages();
+    canvas = document.createElement('canvas');
+    canvas.className = 'sc-bganim-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    body.insertBefore(canvas, body.firstChild);
+    ctx = canvas.getContext('2d');
+    buf = document.createElement('canvas');            // offscreen: draw opaque, blit at opacity
+    bctx = buf.getContext('2d');
+    buildCard(body);
+    resize();
+    try { ro = new ResizeObserver(resize); ro.observe(body); } catch (_) {}
+    /* Hover interaction — listen on the body so we get coordinates even though the
+       canvas sits behind the (transparent) welcome. Hovering DIRECTLY on a product
+       circle opens its card; the helix keeps travelling underneath, the card rides
+       its circle, and it closes once the pointer leaves both circle and card. */
+    body.addEventListener('mousemove', onMove);
+    body.addEventListener('mouseleave', () => { if (!overCard) scheduleHide(); });
+  }
+
+  /* The branded hover card (our surface + tokens) with a thumbnail, name/brand and a
+     deep-link into the product's Nutrition Facts (NFP) view. */
+  function buildCard(body) {
+    card = document.createElement('div');
+    card.className = 'wch-food-card';
+    card.hidden = true;
+    card.innerHTML =
+      '<div class="wch-food-card-top">' +
+        '<span class="wch-food-card-thumb"><img alt="" /></span>' +
+        '<span class="wch-food-card-meta"><span class="wch-food-card-brand"></span>' +
+        '<span class="wch-food-card-name"></span></span>' +
+      '</div>' +
+      '<a class="wch-food-card-link" href="#"><span>View Details</span>' +
+        '<span class="material-symbols-outlined">arrow_outward</span></a>';
+    body.appendChild(card);
+    card.addEventListener('mouseenter', () => { overCard = true; if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } });
+    card.addEventListener('mouseleave', () => { overCard = false; scheduleHide(); });
+  }
+
+  /* Point-in-circle hit test against the last frame's product bugs, front-most first.
+     Only the circle itself is interactive — a tiny pad forgives the moving target, but
+     hovering the surrounding strand does NOT trigger the popover. */
+  function hitTest(mx, my) {
+    const pad = 2;
+    for (let i = hitNodes.length - 1; i >= 0; i--) {
+      const n = hitNodes[i];
+      const dx = mx - n.x, dy = my - n.y;
+      const rr = n.r + pad;
+      if (dx * dx + dy * dy <= rr * rr) return n;
+    }
+    return null;
+  }
+
+  function onMove(e) {
+    if (!host.classList.contains('sc-bganim-live')) return;
+    const body = canvas && canvas.parentElement;
+    if (!body) return;
+    const rect = body.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    ptrX = mx; ptrY = my;                          // the frame loop re-checks this spot as circles travel
+    const hit = hitTest(mx, my);
+    if (hit) {
+      body.style.cursor = 'pointer';                 // affordance: the bugs are interactive
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+      showCard(hit);
+    } else {
+      body.style.cursor = '';
+      if (!overCard) scheduleHide();
+    }
+  }
+
+  function scheduleHide() {
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
+  }
+
+  /* Fill + place the card beside the hovered product. The helix keeps running:
+     the frame loop re-anchors the card to its (moving) circle every frame. */
+  function showCard(node) {
+    const p = node.prod;
+    if (!p) return;
+    /* Same bug already open — the frame loop keeps the card glued to it. */
+    if (hoverImg === p.img) return;
+    hoverImg = p.img; hoverX = node.x; hoverY = node.y;
+    if (card) {
+      const img = card.querySelector('img');
+      if (img) img.src = assetBase() + p.img;
+      const nm = card.querySelector('.wch-food-card-name');
+      if (nm) nm.textContent = p.name || '';
+      const br = card.querySelector('.wch-food-card-brand');
+      if (br) br.textContent = p.brand || '';
+      const link = card.querySelector('.wch-food-card-link');
+      if (link) link.setAttribute('href', nfpHref(p));
+      card.hidden = false;
+      placeCard(node);                         // unhidden first so we can measure + pick a side
+      card.style.animation = 'none';           // restart the pop-in every time it appears
+      void card.offsetWidth;
+      card.style.animation = '';
+    }
+    redraw();
+  }
+
+  /* Lay the card OVER the hovered bug — its round thumbnail sits exactly on top of the
+     circle so the product never reads twice — and let the rest of the card fan out to
+     whichever side has room (right by default, left when close to the right edge). The
+     layout mirrors so the thumbnail is always the edge that covers the bug. */
+  function placeCard(node) {
+    if (!card) return;
+    const body = canvas.parentElement;
+    const cw = card.offsetWidth || 340, ch = card.offsetHeight || 148;
+    const bw = body.clientWidth || w, bh = body.clientHeight || h;
+    const PAD = 18, THUMB = 68;                     // must track the card CSS
+    const anchor = PAD + THUMB / 2;                 // thumb centre offset from its edge
+    const toLeft = (node.x - anchor + cw + 8) > bw; // card would overflow the right edge
+    card.classList.toggle('is-left', toLeft);
+    let x = toLeft ? (node.x - (cw - anchor)) : (node.x - anchor);
+    let y = node.y - anchor;                        // thumb sits over the bug vertically
+    x = Math.max(8, Math.min(x, bw - cw - 8));
+    y = Math.max(8, Math.min(y, bh - ch - 8));
+    card.style.left = x + 'px';
+    card.style.top = y + 'px';
+  }
+
+  function hideCard() {
+    hoverImg = null; hoverX = hoverY = -1;
+    if (card) card.hidden = true;
+    const body = canvas && canvas.parentElement;
+    if (body) body.style.cursor = '';
+    if (!running) redraw();                       // reduced-motion still frame: drop the ring
+  }
+
+  /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
+     dashboard "View" href (view-product.html?name=…&upc=…&img=…). */
+  function nfpHref(p) {
+    const params = new URLSearchParams();
+    if (p.name) params.set('name', p.name);
+    if (p.upc) params.set('upc', p.upc);
+    params.set('img', assetBase() + p.img);
+    const qs = params.toString();
+    return 'view-product.html' + (qs ? '?' + qs : '');
+  }
+
+  /* Repaint the last-painted frame — used when the hover highlight changes while
+     the loop isn't running (the reduced-motion still frame). */
+  function redraw() { draw(lastT); }
+
+  function resize() {
+    if (!canvas || !ctx) return;
+    const body = canvas.parentElement;
+    if (!body) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = body.clientWidth; h = body.clientHeight;
+    canvas.width = Math.max(1, Math.round(w * dpr));
+    canvas.height = Math.max(1, Math.round(h * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (buf && bctx) {
+      buf.width = canvas.width; buf.height = canvas.height;
+      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    /* Keep a shown card glued to its bug after a resize/reflow. */
+    if (card && !card.hidden && hoverX >= 0) placeCard({ x: hoverX, y: hoverY, r: 17 });
+  }
+
+  /* Smootherstep for the soft fade at the strand's two ends. */
+  function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+
+  /* Paint one frame at time `t` (seconds). The strand runs along a tilted, slowly-
+     swaying axis that DESCENDS left→right (high on the left, low on the right); its
+     loops TRAVEL end-to-end at a slow crawl (a moving twist, not an in-place spin).
+     The helix EXPANDS AND CONTRACTS as a very slow wave that travels left→right — at
+     any instant one stretch is fattening while another is pinching in. The product
+     photos are drawn as identical, fixed-size circles (no per-item resizing); their
+     ring matches the strand stroke, and everything is scaled by the shared opacity. */
+  function draw(t) {
+    if (!ctx || !bctx || w < 2 || h < 2) return;
+    lastT = t;                                                 // remember the last painted time (for redraw)
+    const O = Math.max(0, Math.min(1, getOpacity())); // shared opacity control (pane-count default until user-set)
+    /* Draw the whole field to an OFFSCREEN buffer at full strength — the opaque product
+       discs hide the strand lines *inside* the buffer — then blit the buffer onto the
+       visible canvas at O. So the opacity slider fades EVERYTHING together, yet no line
+       ever shows through a circle. `ctx` is aliased to the buffer for the render below. */
+    const mainCtx = ctx;
+    ctx = bctx;
+    ctx.clearRect(0, 0, w, h);
+    const [r, g, b] = rgb;
+    const cx = w / 2, cy = h * 0.36;                           // ride higher in the chat body
+    const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
+    /* Angled axis that slowly sways; base tilt is POSITIVE so the strand rides high
+       on the left and drops toward the right. */
+    const theta = 0.17 + 0.06 * Math.sin(t * 0.045);
+    const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
+    const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
+    const L = Math.hypot(w, h) * 1.2;                          // cover the tilted diagonal
+    /* Depth "breathes" on an ultra-slow, irregular cycle (~2–3 min): the helix opens
+       and closes its 3-D volume every once in a while, very very slowly. */
+    const depth = 1 + 0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3);
+    const ampBase = Math.min(h * 0.26, 120) * depth;
+    const prodSize = 34;                                       // base circle size (before depth + breath)
+    /* Expand ↔ contract as a slow wave travelling left→right along the strand. */
+    const breathK = (Math.PI * 2 * 1.4) / L;                   // ~1.4 squeezes across the strand
+    const breathSpeed = 0.11;                                  // how fast the wave crawls (very slow)
+    /* --- Sample the double helix at HIGH resolution so the backbones read as smooth,
+       rounded flows (a real DNA helix is two out-of-phase sine curves, not a zig-zag).
+       `lambda` is the pitch (px per full turn); `phase` crawls the twist along the axis
+       very slowly; each sample carries z = depth so we can shade + sort front/back. --- */
+    const lambda = Math.max(150, Math.min(240, L / 5.5));      // pitch — long, gentle loops
+    const kw = (Math.PI * 2) / lambda;                         // angular frequency along axis
+    const twistDrift = 1 + 0.05 * Math.sin(t * 0.03);          // pitch drifts a touch, slowly
+    const phase = t * 0.08;                                    // loops crawl along the axis (very slow)
+    const STEP = 7;                                            // px between samples → rounded curve
+    const N = Math.max(24, Math.round(L / STEP));
+    const A = [], B = [];
+    for (let i = 0; i <= N; i++) {
+      const u = (i / N - 0.5) * L;
+      const phi = u * kw * twistDrift - phase;
+      const s = Math.sin(phi), c = Math.cos(phi);
+      const endFade = smooth((L * 0.5 - Math.abs(u)) / (L * 0.13));
+      const amp = ampBase * intro * (1 + 0.4 * Math.sin(u * breathK - t * breathSpeed));
+      const bx = cx + ax * u, by = cy + ay * u;                // point on the axis
+      A.push({ x: bx + px * amp * s, y: by + py * amp * s, z: c, alpha: endFade });
+      B.push({ x: bx - px * amp * s, y: by - py * amp * s, z: -c, alpha: endFade });
+    }
+    /* --- Backbones as depth-sorted round-capped segments: the nearer half of each turn
+       (z→+1) is drawn thicker + brighter and OVER the farther half (z→−1), so the two
+       strands weave in front of / behind one another — a rounded, 3-D tube. --- */
+    const segs = [];
+    for (let i = 0; i < N; i++) {
+      const pa = A[i], qa = A[i + 1], pb = B[i], qb = B[i + 1];
+      if (Math.min(pa.alpha, qa.alpha) > 0.01) segs.push({ x1: pa.x, y1: pa.y, x2: qa.x, y2: qa.y, z: (pa.z + qa.z) * 0.5, a: Math.min(pa.alpha, qa.alpha) });
+      if (Math.min(pb.alpha, qb.alpha) > 0.01) segs.push({ x1: pb.x, y1: pb.y, x2: qb.x, y2: qb.y, z: (pb.z + qb.z) * 0.5, a: Math.min(pb.alpha, qb.alpha) });
+    }
+    segs.sort((m, n) => m.z - n.z);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const seg of segs) {
+      const d = (seg.z + 1) * 0.5;                             // 0 (far) → 1 (near)
+      const la = seg.a * (0.26 + 0.6 * d);
+      if (la <= 0.01) continue;
+      ctx.lineWidth = 1.1 + 1.9 * d;                           // near strand is fatter
+      ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+      ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+    }
+    /* Rungs — base-pair links, a couple per turn, shaded by their own depth. */
+    const rungEvery = Math.max(4, Math.round(lambda / (STEP * 2)));
+    for (let i = 0; i <= N; i += rungEvery) {
+      const p = A[i], q = B[i];
+      const a = Math.min(p.alpha, q.alpha);
+      if (a <= 0.01) continue;
+      const d = (((p.z + q.z) * 0.5) + 1) * 0.5;
+      const la = a * (0.16 + 0.28 * d);
+      ctx.lineWidth = 1.1 + 0.6 * d;
+      ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    }
+    /* A slow, deep "breath" pulses every circle's size together — echoing the original
+       centre owl's pulse. Combined with depth (near = bigger), the circles swell as they
+       come to the FRONT of the helix and shrink as they swing to the back. */
+    const breathe = 1 + 0.09 * Math.sin(t * 0.42);             // deep + slow, ~15s
+    const nodeEvery = Math.max(3, Math.round(48 / STEP));
+    const nodes = [];
+    /* Every food on the strand is UNIQUE: `pi` walks the (session-shuffled) pool
+       once and never rewinds, so no product can appear twice in a frame. Should a
+       huge canvas ever outrun the pool, the owl mark stands in — never a repeat. */
+    let ni = 0, pi = 0;
+    for (let i = 0; i <= N; i += nodeEvery) {
+      const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
+      const a = A[i], b = B[i];
+      const pa = owlA ? null : PRODUCTS[pi++];
+      const pb = owlB ? null : PRODUCTS[pi++];
+      nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA || !pa, prod: pa || null });
+      nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB || !pb, prod: pb || null });
+      ni++;
+    }
+    nodes.sort((p, q) => p.z - q.z);
+    hitNodes = [];
+    for (const n of nodes) {
+      if (n.alpha <= 0.02) continue;
+      const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
+      const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
+      const rad = size / 2;
+      if (n.owl) { drawOwl(n.x, n.y, size, n.alpha, n.alpha); continue; }
+      if (!n.prod) continue;
+      const im = images && images[n.prod.img];
+      if (!im || !im.complete || !im.naturalWidth) continue;
+      const isHover = hoverImg && n.prod.img === hoverImg;
+      drawBug(im, n.x, n.y, size, n.alpha);
+      if (isHover) {
+        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(n.x, n.y, rad + 1.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      hitNodes.push({ x: n.x, y: n.y, r: rad, prod: n.prod });
+    }
+    /* A shown card rides its (moving) circle: re-anchor it every frame, and once the
+       circle has travelled out from under the pointer — and the pointer isn't parked
+       on the card itself — let the debounced hide close it. Every product is unique
+       on the strand, so the image key finds the one hovered circle. */
+    if (hoverImg) {
+      let live = null;
+      for (let i = hitNodes.length - 1; i >= 0; i--) {
+        if (hitNodes[i].prod.img === hoverImg) { live = hitNodes[i]; break; }
+      }
+      if (live) {
+        hoverX = live.x; hoverY = live.y;
+        if (card && !card.hidden) placeCard(live);
+        const dx = ptrX - live.x, dy = ptrY - live.y, rr = live.r + 2;
+        const onCircle = ptrX >= 0 && dx * dx + dy * dy <= rr * rr;
+        if (onCircle) { if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } }
+        else if (!overCard && !hideTimer) scheduleHide();
+      } else if (!overCard && !hideTimer) scheduleHide();
+    }
+    /* Blit the finished (opaque) buffer onto the visible canvas at the field opacity. */
+    ctx = mainCtx;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, buf.width, buf.height);
+    ctx.globalAlpha = O;
+    ctx.drawImage(buf, 0, 0);
+    ctx.restore();
+  }
+
+  function frame(now) {
+    if (!running) return;
+    if (!t0) t0 = now;
+    draw((now - t0) / 1000);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    if (!isOn() || typeof document === 'undefined') return;
+    ensure();
+    if (!canvas || !ctx) return;
+    rgb = readColor();
+    host.classList.add('sc-bganim-live');
+    /* Reduced-motion: honour the calm by painting a single still frame of the strip. */
+    if (reducedMotion) {
+      running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      t0 = 0; draw(3);
+      /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
+      const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+      pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
+      return;
+    }
+    if (running) return;
+    running = true; t0 = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stop() {
+    running = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+    overCard = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
+    if (card) card.hidden = true;
+    const cbody = canvas && canvas.parentElement;
+    if (cbody) cbody.style.cursor = '';
+    host.classList.remove('sc-bganim-live');
+    if (ctx) ctx.clearRect(0, 0, w, h);
+  }
+
+  return { start, stop };
+}
+
 function defaultReply(text, intent) {
   /* An intent-id match always wins so a clicked chip continues its own flow. */
   if (intent && DEFAULT_INTENT_REPLIES[intent]) return DEFAULT_INTENT_REPLIES[intent];
@@ -1348,11 +2012,11 @@ function statusStepsFor(text, intent) {
   };
   if (intent && byIntent[intent]) return byIntent[intent];
   const q = String(text || '').toLowerCase();
-  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return ['Building your dashboard', 'Crunching the numbers'];
+  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown|rank)/.test(q)) return ['Building your dashboard', 'Crunching the numbers'];
   if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return ['Assembling the comparison', 'Lining up the numbers'];
   if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return ['Modeling the reformulation'];
-  if (/(verif|shield|attest|non-upf|clean label|badge)/.test(q)) return ['Preparing the verification flow'];
-  if (/(food|registry|upc|product|search|look ?up|find)/.test(q)) return ['Searching the WISE Foods registry', 'Matching UPCs'];
+  if (/(verif|shield|attest|non-upf|ultra-?processed|\bupf\b|clean label|badge)/.test(q)) return ['Preparing the verification flow'];
+  if (/(food|registry|upc|product|search|look ?up|find|nutrient|\bbest\b|\bworst\b)/.test(q)) return ['Searching the WISE Foods registry', 'Matching UPCs'];
   if (/(portfolio|catalog|inventory)/.test(q)) return ['Opening your portfolio', 'Gathering the details'];
   if (/(connect|sync|integration|kroger|walmart|instacart|usda)/.test(q)) return ['Checking the connection', 'Gathering the details'];
   return ['Gathering the details'];
@@ -1534,13 +2198,19 @@ function reasoningTraceFor(text, intent) {
     edit_food_select: 'portfolio',
   };
   if (intent && byIntent[intent]) return S[byIntent[intent]];
+  /* Surface-namespaced intents (contextual chip sets swapped in live via
+     setIntents) route by their prefix, so e.g. the Reformulation page's move
+     chips narrate the recipe work and its product-picker chips narrate opening
+     the portfolio — the trace always follows the chip's own UX tree. */
+  if (intent && /^move:/.test(intent)) return S.reformulation;
+  if (intent && /^pick:/.test(intent)) return S.portfolio;
 
   const q = String(text || '').toLowerCase();
-  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return S.analytics;
+  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown|rank)/.test(q)) return S.analytics;
   if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return S.compare;
   if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return S.reformulation;
-  if (/(verif|shield|attest|non-upf|clean label|badge)/.test(q)) return S.verify;
-  if (/(food|registry|upc|product|search|look ?up|find)/.test(q)) return S.search;
+  if (/(verif|shield|attest|non-upf|ultra-?processed|\bupf\b|clean label|badge)/.test(q)) return S.verify;
+  if (/(food|registry|upc|product|search|look ?up|find|nutrient|\bbest\b|\bworst\b)/.test(q)) return S.search;
   if (/(portfolio|catalog|inventory)/.test(q)) return S.portfolio;
   if (/(connect|sync|integration|kroger|walmart|instacart|usda)/.test(q)) return S.connect;
   return S.generic;
@@ -2008,7 +2678,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const CHIPS_PREF_KEY = opts.chipsPrefKey || `${opts.historyKey || 'wise-wiseai-chat'}-cards-hidden`;
   /* The large "at a glance" cards are collapsed by DEFAULT on every surface —
      the welcome leads with the owl, headline and small intent chips, and the
-     big cards are opt-in via the three-dot "Show overview cards" toggle. A host
+     big cards are opt-in via the three-dot "Overview cards" switch. A host
      can force them open on first load by passing `cardsHiddenDefault: false`;
      a stored preference (from the toggle) always wins so the user's own choice
      sticks across reloads. */
@@ -2018,18 +2688,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (stored === '1') cardsHidden = true;
     else if (stored === '0') cardsHidden = false;
   } catch (_) {}
-  /* Remembered preference for the welcome INTENT CHIPS (the small suggested-
-     action chips right below the overview cards). Toggled from the three-dot
-     menu and persisted per surface. Chips are SHOWN by default; a host can hide
-     them on first load with `chipsHiddenDefault: true`, and a stored preference
-     always wins so the user's own choice sticks across reloads. */
-  const CHIPS_HIDE_PREF_KEY = opts.chipsHidePrefKey || `${opts.historyKey || 'wise-wiseai-chat'}-chips-hidden`;
+  /* Welcome INTENT CHIPS (the small suggested-action chips right below the
+     overview cards) are ALWAYS ON by default: every load starts with them
+     shown, unlike the large overview cards whose hidden state persists. The
+     three-dot switch still hides them, but only for the current visit — the
+     choice is deliberately NOT remembered across reloads. A host can still
+     start them hidden with `chipsHiddenDefault: true`. */
   let chipsHidden = opts.chipsHiddenDefault === true;
-  try {
-    const stored = localStorage.getItem(CHIPS_HIDE_PREF_KEY);
-    if (stored === '1') chipsHidden = true;
-    else if (stored === '0') chipsHidden = false;
-  } catch (_) {}
   /* "Compact spacing" (three-dot ▸ Admin, pink) trims the chat container's chrome
      padding APP-WIDE so the transcript, the avatars and the input rail all get
      more room. It flips a single global `chat-compact` class on <html>, so every
@@ -2118,13 +2783,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Master "Response streaming" on/off switch (regular brand-blue, not Admin).
      ON (the default) streams the thinking at the chosen level above; OFF skips
      the trace entirely — the answer just lands after the briefest beat. Shared
-     APP-WIDE like the level (own key, broadcast on wise:chat-stream-on) and
-     persisted; only an explicit stored '0' keeps it off. */
+     APP-WIDE like the level (own key, broadcast on wise:chat-stream-on).
+     Exactly like the level, every load starts with streaming ON — full
+     streaming is the guaranteed baseline on every surface; switching it off is
+     an in-session choice that never carries into the next load. */
   const STREAM_ON_PREF_KEY = 'wise:chat-stream-on';
   let streamOn = true;
-  try {
-    if (localStorage.getItem(STREAM_ON_PREF_KEY) === '0') streamOn = false;
-  } catch (_) {}
   const persistChipsHtml = persistChips
     ? `<div class="ws-chips-bar ws-chips-wrap" id="${id}-pchips-wrap" aria-label="Quick actions">
         <div class="ws-chips" id="${id}-pchips" role="list">${chipsHtml}</div>
@@ -2177,8 +2841,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
-          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-cards"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-cards-icon">visibility</span><span id="${id}-cards-label">Show overview cards</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
-          ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="toggle-intent-chips"><span class="material-symbols-outlined topbar-menu-icon" id="${id}-chips-icon">visibility_off</span><span id="${id}-chips-label">Hide intent chips</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
+          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Overview cards</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
+          ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-intent-chips" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">label</span><span>Intent chips</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
@@ -2417,24 +3081,27 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Reflect the overview-cards preference: a root class hides the large "at a
      glance" scorecards block on the welcome screen. Nothing else on the welcome
-     is touched. The three-dot menu item's icon + label flip to match. */
+     is touched. The three-dot menu row is a switch (like every other stateful
+     row) — ON means the cards are shown. */
   function syncCards() {
     rootEl.classList.toggle('sc-cards-hidden', cardsHidden);
-    const ci = rootEl.querySelector(`#${id}-cards-icon`);
-    const cl = rootEl.querySelector(`#${id}-cards-label`);
-    if (ci) ci.textContent = cardsHidden ? 'visibility' : 'visibility_off';
-    if (cl) cl.textContent = cardsHidden ? 'Show overview cards' : 'Hide overview cards';
+    const item = rootEl.querySelector('[data-sc="toggle-cards"]');
+    if (item) {
+      item.classList.toggle('is-on', !cardsHidden);
+      item.setAttribute('aria-checked', cardsHidden ? 'false' : 'true');
+    }
   }
 
   /* Reflect the intent-chips preference: a root class hides the welcome intent
      chips (the small suggested-action chips right below the overview cards).
-     The three-dot menu item's icon + label flip to match. */
+     The three-dot menu row is a switch — ON means the chips are shown. */
   function syncChips() {
     rootEl.classList.toggle('sc-intent-chips-hidden', chipsHidden);
-    const ci = rootEl.querySelector(`#${id}-chips-icon`);
-    const cl = rootEl.querySelector(`#${id}-chips-label`);
-    if (ci) ci.textContent = chipsHidden ? 'visibility' : 'visibility_off';
-    if (cl) cl.textContent = chipsHidden ? 'Show intent chips' : 'Hide intent chips';
+    const item = rootEl.querySelector('[data-sc="toggle-intent-chips"]');
+    if (item) {
+      item.classList.toggle('is-on', !chipsHidden);
+      item.setAttribute('aria-checked', chipsHidden ? 'false' : 'true');
+    }
   }
 
   /* The in-chat "Agent Settings" panel slides over the messages, just like the
@@ -2886,23 +3553,40 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      `url("data:image/svg+xml,...")` for a .sc-trace-dna element's background. */
   function scDnaRailUrl(dotColor) {
     const W = 16;          /* tile width */
-    const PERIOD = 44;     /* one helix turn */
-    const PERIODS = 2;     /* two turns per tile — must match scDnaFlow's 88px */
+    const PERIOD = 58;     /* one helix turn — longer, gentler turns read rounder + deeper */
+    const PERIODS = 2;     /* two turns per tile — H must match scDnaFlow's translate (116px) */
     const H = PERIOD * PERIODS;
-    const cx = W / 2, amp = 4.6;
+    const cx = W / 2, amp = 5.2;
     const xa = (y) => cx + amp * Math.sin((2 * Math.PI * y) / PERIOD);
     const xb = (y) => cx - amp * Math.sin((2 * Math.PI * y) / PERIOD);
-    let pa = '', pb = '';
-    for (let y = 0; y <= H; y += 2) {
-      pa += `${y === 0 ? 'M' : 'L'}${xa(y).toFixed(2)},${y}`;
-      pb += `${y === 0 ? 'M' : 'L'}${xb(y).toFixed(2)},${y}`;
-    }
+    /* Emit each backbone as a smooth cubic-Bézier path (Catmull-Rom sampled at a
+       coarse step, then converted to curves) so the crests read as soft, rounded
+       arcs rather than a many-segment polyline — the strand breathes rather than
+       zig-zags. */
+    const smoothPath = (fx) => {
+      const step = PERIOD / 8;               /* few, fat samples → rounder crests */
+      const pts = [];
+      for (let y = 0; y <= H + 0.001; y += step) pts.push([fx(y), y]);
+      let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[i + 2] || p2;
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += `C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+      }
+      return d;
+    };
+    const pa = smoothPath(xa), pb = smoothPath(xb);
     /* All base-pair dots share one hue so the strand reads as a progress track:
        blue while still working, green once a section is done. The two coexisting
        layers (blue base + green "done" fill) are built from this same geometry so
        they overlay pixel-for-pixel — only the dot color differs. */
     const dot = dotColor || '#4C6EF5';
-    const rungY = [11, 33, 55, 77]; /* the strands' widest points, evenly spaced */
+    const rungY = [];               /* the strands' widest points (where sin = ±1) */
+    for (let k = 0; k < PERIODS * 2; k++) rungY.push(PERIOD * (0.25 + 0.5 * k));
     let rungs = '', dots = '';
     rungY.forEach((y) => {
       const x1 = xb(y), x2 = xa(y);
@@ -2913,7 +3597,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const backbone = 'rgba(74,120,184,0.85)';
     const rung = 'rgba(120,150,200,0.35)';
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
-      + `<g fill="none" stroke="${backbone}" stroke-width="1.4" stroke-linecap="round">`
+      + `<g fill="none" stroke="${backbone}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">`
       + `<path d="${pa}"/><path d="${pb}"/></g>`
       + `<g stroke="${rung}" stroke-width="1" stroke-linecap="round">${rungs}</g>`
       + dots
@@ -3174,39 +3858,67 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       + `<span class="sc-out-source-txt">Source: <strong>${name}</strong></span></div>`;
   }
 
+  /* The ONE streamed-turn path: stream the reasoning trace for an already-
+     resolved reply, then post it. Every WISEcodeAI answer — chip-routed
+     (wiseaiRespond), fixed (respondFixed), or host-posted via the mount's
+     `respond()` — goes through here so the full thinking stream is never
+     skipped, whatever drove the turn.
+     meta (all optional; anything else is forwarded to addWISEcodeAI):
+       traceText  — the text the trace routing reads (defaults to the reply's
+                    own plain text, so the milestones stay on-topic);
+       intent     — routes the trace by intent id, exactly like a clicked chip;
+       milestones — caller-built milestone list replacing the routed one (e.g.
+                    a single quick "Rescoring" beat for a live board echo);
+       onTraceDone — fires the moment the trace completes, right before the
+                    answer posts (host side-effects like opening output panes);
+       source     — the turn's grounding ('' / undefined picks a connected
+                    source; false drops the trust chip AND the trace's closing
+                    grounding line, so the two always agree). */
+  function respondWithTrace(html, meta = {}) {
+    const routeText = meta.traceText != null
+      ? meta.traceText
+      : String(html || '').replace(/<[^>]*>/g, ' ');
+    /* One data source for this turn — resolved up front so the trace's closing
+       glob line and the answer's trust chip always name the SAME place. */
+    const sourceName = meta.source === false ? '' : (meta.source || pickSourceName());
+    const milestones = (Array.isArray(meta.milestones) && meta.milestones.length)
+      ? meta.milestones
+      : reasoningTraceFor(routeText, meta.intent);
+    const lineMeta = { ...meta, source: meta.source === false ? false : sourceName };
+    delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
+    const done = () => {
+      /* Host side-effects that render output (e.g. opening the result/visual
+         panes) are deferred to here so they land WITH the answer, never during
+         the thinking globs. */
+      if (typeof meta.onTraceDone === 'function') { try { meta.onTraceDone(); } catch (_) { /* host hook */ } }
+      addWISEcodeAI(html, lineMeta);
+    };
+    runReasoningTrace(milestones, done, assemblyMilestoneFor(html), sourceLineFor(sourceName));
+  }
+
   function wiseaiRespond(text, intent) {
     /* Resolve the answer up front so the trace can narrate assembling the exact
        pieces it will contain — and so nothing (chart/table/report cards, source
        chips, suggested actions, or host-surfaced output panes) renders until the
        whole trace has finished. */
     const baseHtml = reply(text, intent);
-    /* One data source for this turn — the answer, and any output it produced,
-       are grounded in it. Drawn from the connected input sources, picked variably
-       (it needn't match any particular input from one turn to the next). */
-    const sourceName = pickSourceName();
-    /* The answer's trust chip in the meta row already names this turn's source,
-       so we no longer repeat it as a "Source:" caption at the end of the output —
-       that duplicated the same label one line above it. */
-    const html = baseHtml;
-    const done = () => {
-      /* Host side-effects that render output (e.g. opening the result/visual
-         panes) are deferred to here so they land WITH the answer, never during
-         the thinking globs. */
-      if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
-      /* Ground the visible answer in the SAME source the trace just named, so the
-         trust chip and the reasoning trace agree on where it came from. */
-      addWISEcodeAI(html, { source: sourceName });
-    };
-    runReasoningTrace(reasoningTraceFor(text, intent), done, assemblyMilestoneFor(baseHtml), sourceLineFor(sourceName));
+    respondWithTrace(baseHtml, {
+      traceText: text,
+      intent,
+      onTraceDone: () => {
+        if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
+      },
+    });
   }
   /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
      resolver) — used by controls like the brand connectors where the answer is
-     the action's own confirmation, not a routed intent response. */
+     the action's own confirmation, not a routed intent response. Streams the
+     same full reasoning trace as any routed turn, so a fixed reply never just
+     "lands" without showing the work. */
   function respondFixed(userText, replyHtml, meta) {
     hideWelcome();
     if (userText) addUser(userText);
-    const typing = showTyping();
-    setTimeout(() => { typing?.remove(); addWISEcodeAI(replyHtml, meta || { source: '' }); }, 600);
+    respondWithTrace(replyHtml, { ...(userText ? { traceText: userText } : {}), ...(meta || {}) });
   }
 
   /* ── Data-source connection walkthrough ──────────────────────────────────
@@ -3286,9 +3998,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       : `<strong>${esc(name)}</strong> is connected. I can now pull live product, pricing, availability, and nutrition data from ${esc(name)} — search its catalog, cross-reference UPCs against the WISE Foods registry, and score any item in real time. What would you like to look up first?`;
     hideWelcome();
     addUser(connected ? `Refresh ${name}` : `Connect ${name}`);
-    const typing = showTyping();
-    setTimeout(() => {
-      typing?.remove();
+    /* A short streamed thinking beat opens the turn (respecting the shared
+       streaming level/switch), then the walkthrough card takes over as the live
+       "what's happening" display — its steps animate pending → active → done,
+       so the whole connection streams its progress end to end. */
+    const traceSteps = [{
+      key: 'Reaching out',
+      story: connected
+        ? [
+            `Opening the ${name} connection and offering the stored credentials.`,
+            'Confirming the authorization is still valid before asking the catalog for anything.',
+            'Queuing the re-sync steps so you can watch each one land below.',
+          ]
+        : [
+            `Opening a secure line to ${name} and introducing WISEcodeAI.`,
+            'Preparing the authorization, data-scope, matching and sync steps.',
+            'Walking through each one below so you can see exactly what\u2019s shared.',
+          ],
+    }];
+    runReasoningTrace(traceSteps, () => {
       /* The "Connecting…" card is a mid-turn status card — the real answer
          (doneReply) lands after it, so let the chips trail that, not the card. */
       const line = addWISEcodeAI(connectFlowCardHtml(name, steps, headline), { source: '', feedback: false, trailChips: false });
@@ -3297,7 +4025,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          activity strip; a re-sync of an already-connected source is not. */
       if (card && !connected) card.dataset.activity = 'source';
       animateConnectFlow(card, cid, name, steps, doneHead, doneReply);
-    }, 600);
+    }, null, '');
   }
 
   /* ── "Connect a data source" side panel ──────────────────────────────────
@@ -4528,490 +5256,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      fade. The canvas is created lazily the first time the animation is turned on,
      lives behind the welcome content (which goes transparent while live), and is
      torn down to a cleared, faded layer the instant the transcript advances. */
-  const bgAnim = (() => {
-    /* Our real products, strung along the helix (cycled across columns) and drawn as
-       circular thumbnails — the same round product "bug" the app uses in its portfolio
-       / comparison tables. `img` is relative to assets/; name/brand/upc feed the hover
-       card + its "Open Nutrition Facts" deep-link. */
-    const PRODUCTS = [
-      { img: 'portfolio/coconut_brownies.png', name: 'Toasted Coconut Brownies-12 ct', brand: 'Flax4Life', upc: '8 57287 00420 3' },
-      { img: 'portfolio/chocolate_chip_muffins.png', name: 'Chocolate Chip Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63152 0' },
-      { img: 'portfolio/blueberry_muffins.png', name: 'Blueberry Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63153 7' },
-      { img: 'portfolio/apple_cinnamon_muffins.png', name: 'Apple Cinnamon Muffins-4 ct', brand: 'Flax4Life' },
-      { img: 'portfolio/oatmeal_raisin_cookies.png', name: 'Oatmeal Raisin Cookies-5 ct', brand: 'Flax4Life', upc: '8 57287 00456 2' },
-      { img: 'portfolio/dark_cherry_brownies.png', name: 'Mini Dark Cherry Brownie Flax Muffins', brand: 'Flax4Life' },
-      { img: 'portfolio/chocolate_brownies.png', name: 'Chocolate Brownies-12 ct', brand: 'Flax4Life' },
-      { img: 'portfolio/carrot_raisin_muffins.png', name: 'Carrot Raisin Muffins-4 ct', brand: 'Flax4Life' },
-      { img: 'portfolio/granola.jpg', name: 'Chunky Chocolate Granola', brand: 'Flax4Life', upc: '8 57287 00427 2' },
-      { img: 'portfolio/vegan_blueberry_mini.png', name: 'Vegan Blueberry Mini Muffins', brand: 'Flax4Life' },
-      { img: 'top5-ginger-turmeric-bar.png', name: 'Ginger Turmeric Bar', brand: 'Date Better' },
-      { img: 'top5-almond-coconut-crisp.png', name: 'Almond Coconut Crisp', brand: 'Date Better' },
-      { img: 'top5-pistachio-rose-bar.png', name: 'Pistachio Rose Bar', brand: 'Date Better' },
-      { img: 'top5-matcha-cashew-bites.png', name: 'Matcha Cashew Bites', brand: 'Date Better' },
-      { img: 'top5-walnut-brownie-bar.png', name: 'Walnut Brownie Bar', brand: 'Date Better' },
-      { img: 'date-better-cashew-lime-crisp.png', name: 'Cashew Lime Crisp', brand: 'Date Better' },
-      { img: 'verification/ns-powdered-vitamin-eggs.png', name: 'Powdered Vitamin Eggs', brand: 'Nutrient Survival', upc: '818491020984' },
-      { img: 'verification/ns-homestyle-scramble.png', name: 'Homestyle Scramble — Protein Meal', brand: 'Nutrient Survival' },
-      { img: 'verification/ns-triple-cheese-mac.png', name: 'Triple Cheese Mac — Protein Meal', brand: 'Nutrient Survival' },
-      { img: 'verification/ns-protein-cereal-chocolate.png', name: 'Protein Cereal — Chocolate', brand: 'Nutrient Survival' },
-      { img: 'verification/ns-freeze-dried-mixed-vegetables.png', name: 'Freeze-Dried Mixed Vegetables', brand: 'Nutrient Survival' },
-      { img: 'verification/ns-powdered-vitamin-milk.png', name: 'Powdered Vitamin Milk', brand: 'Nutrient Survival' }
-    ];
-    let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
-    let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false;
-    /* Hover interaction state: the product circles' hit boxes from the last frame, the
-       currently hovered product, the branded info card, and the freeze bookkeeping. */
-    let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
-    let frozen = false, frozenT = 0, card = null, overCard = false, hideTimer = 0;
-
-    /* Resolve assets/ relative to THIS module so the photos load no matter how deep
-       the host page sits; falls back to the project's ../assets convention. */
-    function assetBase() {
-      try { return new URL('../assets/', import.meta.url).href; } catch (_) {}
-      return '../assets/';
-    }
-
-    function loadImages() {
-      if (images) return;
-      images = {};
-      const base = assetBase();
-      PRODUCTS.forEach((p) => {
-        const im = new Image();
-        im.decoding = 'async';
-        im.src = base + p.img;
-        images[p.img] = im;
-      });
-      /* The WISEcodeAI owl mark itself — the same logo that sits at the chat's centre —
-         rides the strand as a recurring node. Sized explicitly so the SVG data URL has
-         an intrinsic width for drawImage. */
-      owlImg = new Image();
-      owlImg.decoding = 'async';
-      owlImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(OWL_MARK.replace('<svg ', '<svg width="193" height="100" '));
-    }
-
-    /* Draw the owl as a brand-blue disc with the white owl mark centred, ringed to match
-       the DNA strand stroke — the centre logo, now travelling the helix. */
-    function drawOwl(cx, cy, d, discAlpha, strokeAlpha) {
-      const [r, g, b] = rgb;
-      const rad = d / 2;
-      ctx.globalAlpha = Math.min(1, discAlpha);
-      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-      ctx.fill();
-      if (owlImg && owlImg.complete && owlImg.naturalWidth) {
-        const ow = d * 0.72;                        // 0.6 base, enlarged 20% within the circle
-        const oh = ow * (owlImg.naturalHeight / owlImg.naturalWidth || 100 / 193);
-        ctx.drawImage(owlImg, cx - ow / 2, cy - oh / 2, ow, oh);
-      }
-      ctx.globalAlpha = Math.min(1, strokeAlpha);
-      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    /* Draw a product photo as a circular thumbnail (cover-fit + clip), ringed in the
-       brand blue. An OPAQUE backing disc is laid down first so the DNA strand lines can
-       never show through the photo — regardless of the field's opacity setting. */
-    function drawBug(im, cx, cy, d, alpha) {
-      const [r, g, b] = rgb;
-      const rad = d / 2;
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, alpha);
-      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.closePath();
-      ctx.fillStyle = '#ffffff'; ctx.fill();      // solid backing → nothing behind bleeds through
-      ctx.clip();
-      const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1;
-      const s = Math.max(d / iw, d / ih) * 1.2;   // cover-fit, image enlarged 20% within the circle
-      ctx.drawImage(im, cx - iw * s / 2, cy - ih * s / 2, iw * s, ih * s);
-      ctx.restore();
-      ctx.globalAlpha = Math.min(1, alpha);
-      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    /* Read the live brand blue off the theme (bright variant in dark mode) so the
-       strands always track the palette; falls back to the canonical --primary. */
-    function readColor() {
-      let col = '#25507C';
-      try {
-        const cs = getComputedStyle(document.documentElement);
-        const dark = document.documentElement.classList.contains('dark');
-        col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
-      } catch (_) {}
-      if (col[0] === '#') {
-        let x = col.slice(1);
-        if (x.length === 3) x = x.split('').map((c) => c + c).join('');
-        const n = parseInt(x, 16);
-        if (!isNaN(n)) return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-      }
-      const m = col.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
-      return m ? [+m[1], +m[2], +m[3]] : [37, 80, 124];
-    }
-
-    function ensure() {
-      if (canvas) return;
-      const body = rootEl.querySelector('.sc-body');
-      if (!body) return;
-      loadImages();
-      canvas = document.createElement('canvas');
-      canvas.className = 'sc-bganim-canvas';
-      canvas.setAttribute('aria-hidden', 'true');
-      body.insertBefore(canvas, body.firstChild);
-      ctx = canvas.getContext('2d');
-      buf = document.createElement('canvas');            // offscreen: draw opaque, blit at opacity
-      bctx = buf.getContext('2d');
-      buildCard(body);
-      resize();
-      try { ro = new ResizeObserver(resize); ro.observe(body); } catch (_) {}
-      /* Hover interaction — listen on the body so we get coordinates even though the
-         canvas sits behind the (transparent) welcome. Hovering a product freezes the
-         helix and opens its card; leaving both the product and the card resumes it. */
-      body.addEventListener('mousemove', onMove);
-      body.addEventListener('mouseleave', () => { if (!overCard) scheduleHide(); });
-    }
-
-    /* The branded hover card (our surface + tokens) with a thumbnail, name/brand and a
-       deep-link into the product's Nutrition Facts (NFP) view. */
-    function buildCard(body) {
-      card = document.createElement('div');
-      card.className = 'wch-food-card';
-      card.hidden = true;
-      card.innerHTML =
-        '<div class="wch-food-card-top">' +
-          '<span class="wch-food-card-thumb"><img alt="" /></span>' +
-          '<span class="wch-food-card-meta"><span class="wch-food-card-brand"></span>' +
-          '<span class="wch-food-card-name"></span></span>' +
-        '</div>' +
-        '<a class="wch-food-card-link" href="#"><span>View Details</span>' +
-          '<span class="material-symbols-outlined">arrow_outward</span></a>';
-      body.appendChild(card);
-      card.addEventListener('mouseenter', () => { overCard = true; if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } });
-      card.addEventListener('mouseleave', () => { overCard = false; scheduleHide(); });
-    }
-
-    /* Point-in-circle hit test against the last frame's product bugs, front-most first.
-       Only the circle itself is interactive — a tiny pad forgives the moving target, but
-       hovering the surrounding strand does NOT trigger the popover. */
-    function hitTest(mx, my) {
-      const pad = 2;
-      for (let i = hitNodes.length - 1; i >= 0; i--) {
-        const n = hitNodes[i];
-        const dx = mx - n.x, dy = my - n.y;
-        const rr = n.r + pad;
-        if (dx * dx + dy * dy <= rr * rr) return n;
-      }
-      return null;
-    }
-
-    function onMove(e) {
-      if (!rootEl.classList.contains('sc-bganim-live')) return;
-      const body = canvas && canvas.parentElement;
-      if (!body) return;
-      const rect = body.getBoundingClientRect();
-      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-      const hit = hitTest(mx, my);
-      if (hit) {
-        body.style.cursor = 'pointer';                 // affordance: the bugs are interactive
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
-        showCard(hit);
-      } else {
-        body.style.cursor = '';
-        if (!overCard) scheduleHide();
-      }
-    }
-
-    function scheduleHide() {
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
-    }
-
-    /* Freeze the helix on the hovered product and fill + place the card beside it. */
-    function showCard(node) {
-      const p = node.prod;
-      if (!p) return;
-      /* Same bug already open — nothing to redo. */
-      if (frozen && hoverImg === p.img && Math.abs(hoverX - node.x) < 1 && Math.abs(hoverY - node.y) < 1) return;
-      freeze();
-      hoverImg = p.img; hoverX = node.x; hoverY = node.y;
-      if (card) {
-        const img = card.querySelector('img');
-        if (img) img.src = assetBase() + p.img;
-        const nm = card.querySelector('.wch-food-card-name');
-        if (nm) nm.textContent = p.name || '';
-        const br = card.querySelector('.wch-food-card-brand');
-        if (br) br.textContent = p.brand || '';
-        const link = card.querySelector('.wch-food-card-link');
-        if (link) link.setAttribute('href', nfpHref(p));
-        card.hidden = false;
-        placeCard(node);                         // unhidden first so we can measure + pick a side
-        card.style.animation = 'none';           // restart the pop-in every time it appears
-        void card.offsetWidth;
-        card.style.animation = '';
-      }
-      redraw();
-    }
-
-    /* Lay the card OVER the hovered bug — its round thumbnail sits exactly on top of the
-       circle so the product never reads twice — and let the rest of the card fan out to
-       whichever side has room (right by default, left when close to the right edge). The
-       layout mirrors so the thumbnail is always the edge that covers the bug. */
-    function placeCard(node) {
-      if (!card) return;
-      const body = canvas.parentElement;
-      const cw = card.offsetWidth || 340, ch = card.offsetHeight || 148;
-      const bw = body.clientWidth || w, bh = body.clientHeight || h;
-      const PAD = 18, THUMB = 68;                     // must track the card CSS
-      const anchor = PAD + THUMB / 2;                 // thumb centre offset from its edge
-      const toLeft = (node.x - anchor + cw + 8) > bw; // card would overflow the right edge
-      card.classList.toggle('is-left', toLeft);
-      let x = toLeft ? (node.x - (cw - anchor)) : (node.x - anchor);
-      let y = node.y - anchor;                        // thumb sits over the bug vertically
-      x = Math.max(8, Math.min(x, bw - cw - 8));
-      y = Math.max(8, Math.min(y, bh - ch - 8));
-      card.style.left = x + 'px';
-      card.style.top = y + 'px';
-    }
-
-    function hideCard() {
-      hoverImg = null; hoverX = hoverY = -1;
-      if (card) card.hidden = true;
-      const body = canvas && canvas.parentElement;
-      if (body) body.style.cursor = '';
-      resume();
-    }
-
-    /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
-       dashboard "View" href (view-product.html?name=…&upc=…&img=…). */
-    function nfpHref(p) {
-      const params = new URLSearchParams();
-      if (p.name) params.set('name', p.name);
-      if (p.upc) params.set('upc', p.upc);
-      params.set('img', assetBase() + p.img);
-      const qs = params.toString();
-      return 'view-product.html' + (qs ? '?' + qs : '');
-    }
-
-    function freeze() {
-      if (frozen) return;
-      frozen = true;
-      if (running && raf) { cancelAnimationFrame(raf); raf = 0; }
-      running = false;
-    }
-
-    function resume() {
-      if (!frozen) return;
-      frozen = false;
-      if (!bgAnimOn || prefersReducedMotion) return;
-      if (!rootEl.classList.contains('sc-bganim-live')) return;
-      /* Continue the timeline from where it froze so nothing jumps. */
-      t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - frozenT * 1000;
-      running = true;
-      raf = requestAnimationFrame(frame);
-    }
-
-    /* Repaint the current (frozen) frame — used when the hover highlight changes. */
-    function redraw() { draw(frozenT); }
-
-    function resize() {
-      if (!canvas || !ctx) return;
-      const body = canvas.parentElement;
-      if (!body) return;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = body.clientWidth; h = body.clientHeight;
-      canvas.width = Math.max(1, Math.round(w * dpr));
-      canvas.height = Math.max(1, Math.round(h * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (buf && bctx) {
-        buf.width = canvas.width; buf.height = canvas.height;
-        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-      /* Keep a shown card glued to its bug after a resize/reflow. */
-      if (card && !card.hidden && hoverX >= 0) placeCard({ x: hoverX, y: hoverY, r: 17 });
-    }
-
-    /* Smootherstep for the soft fade at the strand's two ends. */
-    function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
-
-    /* Paint one frame at time `t` (seconds). The strand runs along a tilted, slowly-
-       swaying axis that DESCENDS left→right (high on the left, low on the right); its
-       loops TRAVEL end-to-end at a slow crawl (a moving twist, not an in-place spin).
-       The helix EXPANDS AND CONTRACTS as a very slow wave that travels left→right — at
-       any instant one stretch is fattening while another is pinching in. The product
-       photos are drawn as identical, fixed-size circles (no per-item resizing); their
-       ring matches the strand stroke, and everything is scaled by the shared opacity. */
-    function draw(t) {
-      if (!ctx || !bctx || w < 2 || h < 2) return;
-      frozenT = t;                                               // remember the last painted time (for freeze/redraw)
-      const O = Math.max(0, Math.min(1, effectiveBgAnimOpacity())); // shared opacity control (pane-count default until user-set)
-      /* Draw the whole field to an OFFSCREEN buffer at full strength — the opaque product
-         discs hide the strand lines *inside* the buffer — then blit the buffer onto the
-         visible canvas at O. So the opacity slider fades EVERYTHING together, yet no line
-         ever shows through a circle. `ctx` is aliased to the buffer for the render below. */
-      const mainCtx = ctx;
-      ctx = bctx;
-      ctx.clearRect(0, 0, w, h);
-      const [r, g, b] = rgb;
-      const cx = w / 2, cy = h * 0.36;                           // ride higher in the chat body
-      const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
-      /* Angled axis that slowly sways; base tilt is POSITIVE so the strand rides high
-         on the left and drops toward the right. */
-      const theta = 0.17 + 0.06 * Math.sin(t * 0.045);
-      const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
-      const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
-      const L = Math.hypot(w, h) * 1.2;                          // cover the tilted diagonal
-      /* Depth "breathes" on an ultra-slow, irregular cycle (~2–3 min): the helix opens
-         and closes its 3-D volume every once in a while, very very slowly. */
-      const depth = 1 + 0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3);
-      const ampBase = Math.min(h * 0.26, 120) * depth;
-      const prodSize = 34;                                       // base circle size (before depth + breath)
-      /* Expand ↔ contract as a slow wave travelling left→right along the strand. */
-      const breathK = (Math.PI * 2 * 1.4) / L;                   // ~1.4 squeezes across the strand
-      const breathSpeed = 0.11;                                  // how fast the wave crawls (very slow)
-      /* --- Sample the double helix at HIGH resolution so the backbones read as smooth,
-         rounded flows (a real DNA helix is two out-of-phase sine curves, not a zig-zag).
-         `lambda` is the pitch (px per full turn); `phase` crawls the twist along the axis
-         very slowly; each sample carries z = depth so we can shade + sort front/back. --- */
-      const lambda = Math.max(150, Math.min(240, L / 5.5));      // pitch — long, gentle loops
-      const kw = (Math.PI * 2) / lambda;                         // angular frequency along axis
-      const twistDrift = 1 + 0.05 * Math.sin(t * 0.03);          // pitch drifts a touch, slowly
-      const phase = t * 0.08;                                    // loops crawl along the axis (very slow)
-      const STEP = 7;                                            // px between samples → rounded curve
-      const N = Math.max(24, Math.round(L / STEP));
-      const A = [], B = [];
-      for (let i = 0; i <= N; i++) {
-        const u = (i / N - 0.5) * L;
-        const phi = u * kw * twistDrift - phase;
-        const s = Math.sin(phi), c = Math.cos(phi);
-        const endFade = smooth((L * 0.5 - Math.abs(u)) / (L * 0.13));
-        const amp = ampBase * intro * (1 + 0.4 * Math.sin(u * breathK - t * breathSpeed));
-        const bx = cx + ax * u, by = cy + ay * u;                // point on the axis
-        A.push({ x: bx + px * amp * s, y: by + py * amp * s, z: c, alpha: endFade });
-        B.push({ x: bx - px * amp * s, y: by - py * amp * s, z: -c, alpha: endFade });
-      }
-      /* --- Backbones as depth-sorted round-capped segments: the nearer half of each turn
-         (z→+1) is drawn thicker + brighter and OVER the farther half (z→−1), so the two
-         strands weave in front of / behind one another — a rounded, 3-D tube. --- */
-      const segs = [];
-      for (let i = 0; i < N; i++) {
-        const pa = A[i], qa = A[i + 1], pb = B[i], qb = B[i + 1];
-        if (Math.min(pa.alpha, qa.alpha) > 0.01) segs.push({ x1: pa.x, y1: pa.y, x2: qa.x, y2: qa.y, z: (pa.z + qa.z) * 0.5, a: Math.min(pa.alpha, qa.alpha) });
-        if (Math.min(pb.alpha, qb.alpha) > 0.01) segs.push({ x1: pb.x, y1: pb.y, x2: qb.x, y2: qb.y, z: (pb.z + qb.z) * 0.5, a: Math.min(pb.alpha, qb.alpha) });
-      }
-      segs.sort((m, n) => m.z - n.z);
-      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      for (const seg of segs) {
-        const d = (seg.z + 1) * 0.5;                             // 0 (far) → 1 (near)
-        const la = seg.a * (0.26 + 0.6 * d);
-        if (la <= 0.01) continue;
-        ctx.lineWidth = 1.1 + 1.9 * d;                           // near strand is fatter
-        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
-        ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
-      }
-      /* Rungs — base-pair links, a couple per turn, shaded by their own depth. */
-      const rungEvery = Math.max(4, Math.round(lambda / (STEP * 2)));
-      for (let i = 0; i <= N; i += rungEvery) {
-        const p = A[i], q = B[i];
-        const a = Math.min(p.alpha, q.alpha);
-        if (a <= 0.01) continue;
-        const d = (((p.z + q.z) * 0.5) + 1) * 0.5;
-        const la = a * (0.16 + 0.28 * d);
-        ctx.lineWidth = 1.1 + 0.6 * d;
-        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
-      }
-      /* A slow, deep "breath" pulses every circle's size together — echoing the original
-         centre owl's pulse. Combined with depth (near = bigger), the circles swell as they
-         come to the FRONT of the helix and shrink as they swing to the back. */
-      const breathe = 1 + 0.09 * Math.sin(t * 0.42);             // deep + slow, ~15s
-      const nodeEvery = Math.max(3, Math.round(48 / STEP));
-      const nodes = [];
-      let ni = 0;
-      for (let i = 0; i <= N; i += nodeEvery) {
-        const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
-        const a = A[i], b = B[i];
-        nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA, prod: owlA ? null : PRODUCTS[ni % PRODUCTS.length] });
-        nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB, prod: owlB ? null : PRODUCTS[(ni + 11) % PRODUCTS.length] });
-        ni++;
-      }
-      nodes.sort((p, q) => p.z - q.z);
-      hitNodes = [];
-      for (const n of nodes) {
-        if (n.alpha <= 0.02) continue;
-        const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
-        const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
-        const rad = size / 2;
-        if (n.owl) { drawOwl(n.x, n.y, size, n.alpha, n.alpha); continue; }
-        if (!n.prod) continue;
-        const im = images && images[n.prod.img];
-        if (!im || !im.complete || !im.naturalWidth) continue;
-        const isHover = hoverImg && n.prod.img === hoverImg && Math.abs(n.x - hoverX) < 1 && Math.abs(n.y - hoverY) < 1;
-        drawBug(im, n.x, n.y, size, n.alpha);
-        if (isHover) {
-          ctx.globalAlpha = 1;
-          ctx.beginPath(); ctx.arc(n.x, n.y, rad + 1.5, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-          ctx.lineWidth = 2.5;
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
-        hitNodes.push({ x: n.x, y: n.y, r: rad, prod: n.prod });
-      }
-      /* Blit the finished (opaque) buffer onto the visible canvas at the field opacity. */
-      ctx = mainCtx;
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, buf.width, buf.height);
-      ctx.globalAlpha = O;
-      ctx.drawImage(buf, 0, 0);
-      ctx.restore();
-    }
-
-    function frame(now) {
-      if (!running) return;
-      if (!t0) t0 = now;
-      draw((now - t0) / 1000);
-      raf = requestAnimationFrame(frame);
-    }
-
-    function start() {
-      if (!bgAnimOn || typeof document === 'undefined') return;
-      ensure();
-      if (!canvas || !ctx) return;
-      rgb = readColor();
-      rootEl.classList.add('sc-bganim-live');
-      /* Reduced-motion: honour the calm by painting a single still frame of the strip. */
-      if (prefersReducedMotion) {
-        running = false; frozen = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
-        t0 = 0; draw(3);
-        /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
-        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
-        pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
-        return;
-      }
-      if (running) return;
-      running = true; t0 = 0;
-      raf = requestAnimationFrame(frame);
-    }
-
-    function stop() {
-      running = false; frozen = false;
-      if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
-      overCard = false; hoverImg = null; hoverX = hoverY = -1;
-      if (card) card.hidden = true;
-      const cbody = canvas && canvas.parentElement;
-      if (cbody) cbody.style.cursor = '';
-      rootEl.classList.remove('sc-bganim-live');
-      if (ctx) ctx.clearRect(0, 0, w, h);
-    }
-
-    return { start, stop };
-  })();
+  /* The welcome-only ambient DNA/RNA product-helix field — the SAME engine
+     every other chat surface uses (createHelixBgAnim), fed this module's
+     body, shared opacity and reduced-motion context. */
+  const bgAnim = createHelixBgAnim({
+    host: rootEl,
+    getBody: () => rootEl.querySelector('.sc-body'),
+    getOpacity: effectiveBgAnimOpacity,
+    reducedMotion: prefersReducedMotion,
+    isOn: () => bgAnimOn,
+  });
   /* Sync the "Background animation" switch to this surface's on/off state, and
      (re)start or stop the field to match — but only draw while the welcome is up,
      so turning it on mid-conversation just arms it for the next welcome. Shared
@@ -6338,15 +6592,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       syncActivityStripMenu();
     }
     else if (action === 'toggle-cards') {
-      closeMore();
+      /* Switch row — keep the menu open so the flipped state reads back. */
       cardsHidden = !cardsHidden;
       try { localStorage.setItem(CHIPS_PREF_KEY, cardsHidden ? '1' : '0'); } catch (_) {}
       syncCards();
     }
     else if (action === 'toggle-intent-chips') {
-      closeMore();
+      /* Switch row — keep the menu open so the flipped state reads back.
+         Session-only: the chips come back ON at the next load by design. */
       chipsHidden = !chipsHidden;
-      try { localStorage.setItem(CHIPS_HIDE_PREF_KEY, chipsHidden ? '1' : '0'); } catch (_) {}
       syncChips();
     }
     else if (action === 'new') {
@@ -6526,5 +6780,227 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
-  return { addUser, addWISEcodeAI, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => askDocked, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+  /* `respond` is the streamed host-reply path: it runs the same full reasoning
+     trace as a chip-driven turn before posting the given reply, so hosts that
+     post their own answers (bridged engines, board mirrors) never skip the
+     thinking stream the way a raw addWISEcodeAI would. */
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => askDocked, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+}
+
+/* ------------------------------------------------------------------ */
+/* Standard three-dot menu wiring for HAND-ROLLED chat surfaces        */
+/* ------------------------------------------------------------------ */
+/* Every WISE chat module offers the SAME app-wide rows in its three-dot
+   menu — Compact spacing, Brand AI text, Background animation (+ opacity)
+   and Response streaming (+ detail). The shared mountWISEcodeAIChat()
+   surface wires these internally; pages that still carry a hand-rolled
+   inline chat (product comparison / portfolio, guiding-stars report,
+   add/view product) call THIS to wire the exact same rows with the exact
+   same semantics: one shared preference per control (same localStorage
+   keys), one broadcast event per control (same event names), so flipping
+   a switch on any surface updates every other mounted chat in lockstep.
+
+   cfg:
+     pop     {el}  the .topbar-popover holding the standard rows (markup
+                   copied from the shared module template — same data-sc
+                   attributes, classes and Admin badges)
+     bgAnim  {obj?} enables the LIVE welcome helix on this surface:
+       host      {el}  gets `sc-bganim-live` while the field runs
+       getBody   {fn}  () => the chat-body element the canvas mounts into
+       welcomeEl {el}  the welcome screen — the field only runs while it
+                       is visible (class/style watched via MutationObserver)
+       isWide    {fn?} () => true when the chat spans 3+ panes (bolder
+                       default opacity, mirroring the shared module)
+
+   Returns { stream } where stream() → { on, level } so the page's reply
+   engine can honour the shared Response-streaming setting. */
+export function wireStandardChatMenu(cfg = {}) {
+  injectChatExtras();
+  const pop = cfg.pop;
+  if (!pop || pop.__wiseStdMenuWired) return pop && pop.__wiseStdMenuWired || null;
+  const q = (sel) => pop.querySelector(sel);
+  const setSwitch = (el, on) => {
+    if (!el) return;
+    el.classList.toggle('is-on', !!on);
+    el.setAttribute('aria-checked', on ? 'true' : 'false');
+  };
+  const reducedMotion = (() => {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (_) { return false; }
+  })();
+
+  /* ── Compact spacing — app-wide <html>.chat-compact; ON by default, a
+     stored '0' (explicitly turned off) wins. Same key/event as the shared
+     module so every surface follows one preference. ── */
+  const COMPACT_KEY = 'wise:chat-compact';
+  let compactOn = true;
+  try { if (localStorage.getItem(COMPACT_KEY) === '0') compactOn = false; } catch (_) {}
+  document.documentElement.classList.toggle('chat-compact', compactOn);
+  const compactItem = q('[data-sc="compact"]');
+  const syncCompact = () => setSwitch(compactItem, document.documentElement.classList.contains('chat-compact'));
+  if (compactItem) compactItem.addEventListener('click', () => {
+    const on = !document.documentElement.classList.contains('chat-compact');
+    document.documentElement.classList.toggle('chat-compact', on);
+    try { localStorage.setItem(COMPACT_KEY, on ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-compact', { detail: { on } })); } catch (_) {}
+    syncCompact();
+  });
+  document.addEventListener('wise:chat-compact', syncCompact);
+  syncCompact();
+
+  /* ── Brand AI text — app-wide <html>.chat-brandtext; OFF by default, a
+     stored '1' wins. ── */
+  const BRANDTEXT_KEY = 'wise:chat-brandtext';
+  let brandOn = false;
+  try { if (localStorage.getItem(BRANDTEXT_KEY) === '1') brandOn = true; } catch (_) {}
+  document.documentElement.classList.toggle('chat-brandtext', brandOn);
+  const brandItem = q('[data-sc="brandtext"]');
+  const syncBrand = () => setSwitch(brandItem, document.documentElement.classList.contains('chat-brandtext'));
+  if (brandItem) brandItem.addEventListener('click', () => {
+    const on = !document.documentElement.classList.contains('chat-brandtext');
+    document.documentElement.classList.toggle('chat-brandtext', on);
+    try { localStorage.setItem(BRANDTEXT_KEY, on ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-brandtext', { detail: { on } })); } catch (_) {}
+    syncBrand();
+  });
+  document.addEventListener('wise:chat-brandtext', syncBrand);
+  syncBrand();
+
+  /* ── Background animation (+ opacity) — OFF by default, stored '1'
+     restores; opacity is user-set via the slider or falls back to the
+     pane-count default (0.30 narrow / 0.65 wide). The LIVE field mounts
+     only when the page provides cfg.bgAnim; either way the switch drives
+     the one shared app-wide preference. ── */
+  const BGANIM_KEY = 'wise:chat-bg-anim';
+  const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  let bgOn = false;
+  try { if (localStorage.getItem(BGANIM_KEY) === '1') bgOn = true; } catch (_) {}
+  let bgOpacity = 0.3, bgUserSet = false;
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
+    if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
+  } catch (_) {}
+  const isWide = (cfg.bgAnim && typeof cfg.bgAnim.isWide === 'function') ? cfg.bgAnim.isWide : () => false;
+  const effOpacity = () => (bgUserSet ? bgOpacity : (isWide() ? 0.65 : 0.30));
+  let engine = null;
+  const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
+  const welcomeVisible = () => !!(welcomeEl
+    && !welcomeEl.classList.contains('ws-hidden')
+    && !welcomeEl.classList.contains('sc-hidden')
+    && welcomeEl.style.display !== 'none');
+  function maybeRunBgAnim() {
+    if (!cfg.bgAnim || !cfg.bgAnim.host || !cfg.bgAnim.getBody) return;
+    if (bgOn && welcomeVisible()) {
+      if (!engine) engine = createHelixBgAnim({
+        host: cfg.bgAnim.host,
+        getBody: cfg.bgAnim.getBody,
+        getOpacity: effOpacity,
+        reducedMotion,
+        isOn: () => bgOn,
+      });
+      engine.start();
+    } else if (engine) {
+      engine.stop();
+    }
+  }
+  if (welcomeEl) {
+    try {
+      new MutationObserver(maybeRunBgAnim)
+        .observe(welcomeEl, { attributes: true, attributeFilter: ['class', 'style'] });
+    } catch (_) {}
+  }
+  const bgItem = q('[data-sc="bg-anim"]');
+  const syncBg = () => {
+    setSwitch(bgItem, bgOn);
+    const detail = q('.sc-bganim-detail');
+    if (detail) detail.classList.toggle('is-disabled', !bgOn);
+    const pct = Math.round(effOpacity() * 100);
+    const range = q('.sc-bganim-opacity');
+    if (range && document.activeElement !== range) range.value = String(pct);
+    const val = q('.sc-bganim-opacity-val');
+    if (val) val.textContent = pct + '%';
+  };
+  if (bgItem) bgItem.addEventListener('click', () => {
+    bgOn = !bgOn;
+    try { localStorage.setItem(BGANIM_KEY, bgOn ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgOn } })); } catch (_) {}
+  });
+  document.addEventListener('wise:chat-bg-anim', (e) => {
+    bgOn = !!(e && e.detail && e.detail.on);
+    syncBg();
+    maybeRunBgAnim();
+  });
+  const bgRange = q('.sc-bganim-opacity');
+  if (bgRange) bgRange.addEventListener('input', () => {
+    const pct = Math.max(10, Math.min(100, parseInt(bgRange.value, 10) || 100));
+    bgOpacity = pct / 100;
+    bgUserSet = true;
+    try { localStorage.setItem(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: bgOpacity } })); } catch (_) {}
+    const val = q('.sc-bganim-opacity-val');
+    if (val) val.textContent = pct + '%';
+    if (reducedMotion && bgOn) maybeRunBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
+    const v = e && e.detail && e.detail.opacity;
+    if (typeof v !== 'number') return;
+    bgOpacity = Math.max(0.1, Math.min(1, v));
+    bgUserSet = true;
+    syncBg();
+    if (reducedMotion && bgOn) maybeRunBgAnim();
+  });
+  syncBg();
+  maybeRunBgAnim();
+
+  /* ── Response streaming (+ detail) — every load starts ON at 'full'
+     (deliberately not restored from storage — full streaming is the
+     guaranteed baseline). In-session changes persist + broadcast so all
+     sibling chats follow. ── */
+  const STREAM_ON_KEY = 'wise:chat-stream-on';
+  const STREAM_LEVEL_KEY = 'wise:chat-stream-level';
+  const STREAM_LEVELS = ['full', 'steps', 'final'];
+  let streamOn = true;
+  let streamLevel = 'full';
+  const syncStream = () => {
+    setSwitch(q('[data-sc="stream-toggle"]'), streamOn);
+    const seg = q('.sc-stream-detail');
+    if (seg) seg.classList.toggle('is-disabled', !streamOn);
+    pop.querySelectorAll('.sc-stream-seg-btn').forEach((el) => {
+      const on = el.dataset.stream === streamLevel;
+      el.classList.toggle('is-on', on);
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  };
+  const streamToggle = q('[data-sc="stream-toggle"]');
+  if (streamToggle) streamToggle.addEventListener('click', () => {
+    streamOn = !streamToggle.classList.contains('is-on');
+    try { localStorage.setItem(STREAM_ON_KEY, streamOn ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-stream-on', { detail: { on: streamOn } })); } catch (_) {}
+    syncStream();
+  });
+  pop.querySelectorAll('[data-sc="stream-level"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const lvl = btn.dataset.stream;
+      if (STREAM_LEVELS.includes(lvl) && lvl !== streamLevel) {
+        streamLevel = lvl;
+        try { localStorage.setItem(STREAM_LEVEL_KEY, lvl); } catch (_) {}
+        try { document.dispatchEvent(new CustomEvent('wise:chat-stream-level', { detail: { level: lvl } })); } catch (_) {}
+      }
+      syncStream();
+    });
+  });
+  document.addEventListener('wise:chat-stream-on', (e) => {
+    streamOn = !(e && e.detail && e.detail.on === false);
+    syncStream();
+  });
+  document.addEventListener('wise:chat-stream-level', (e) => {
+    const lvl = e && e.detail && e.detail.level;
+    if (STREAM_LEVELS.includes(lvl)) streamLevel = lvl;
+    syncStream();
+  });
+  syncStream();
+
+  const api = { stream: () => ({ on: streamOn, level: streamLevel }) };
+  pop.__wiseStdMenuWired = api;
+  return api;
 }

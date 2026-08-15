@@ -79,7 +79,9 @@ let sortKey = null, sortDir = 1;
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
 export function setQuickInviteChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); chatApi.addWISEcodeAI(html); } }
+/* respond() streams the shared reasoning trace before the reply lands, so a
+   mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
+function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('adm-toast-wrap');

@@ -289,10 +289,17 @@
     scrollDown();
     return el;
   }
-  /* Post a WISEcodeAI reply after a short "thinking" beat. */
+  /* Post a WISEcodeAI reply after a short "thinking" beat. Honours the shared
+     "Response streaming" setting (three-dot menu, synced app-wide by
+     wireStandardChatMenu): OFF lands the answer immediately, "Final only"
+     keeps just a brief beat, "Full"/"Steps" keep the standard beat. */
   function wiseSay(html, chips, delay) {
+    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+      ? window.__wiseStdMenu.stream()
+      : { on: true, level: 'full' };
+    if (!stream.on) { addWISEcodeAI(html, chips); return; }
     const t = showTyping();
-    setTimeout(() => { t.remove(); addWISEcodeAI(html, chips); }, delay || 560);
+    setTimeout(() => { t.remove(); addWISEcodeAI(html, chips); }, stream.level === 'final' ? 300 : (delay || 560));
   }
 
   /* ─────────────────────────── NFP module render ─────────────────────────── */
