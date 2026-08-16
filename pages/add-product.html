@@ -219,6 +219,36 @@
     .nfp-hero-field-note { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--sec-red); }
     .nfp-hero-field-note .material-symbols-outlined { font-size: 13px !important; }
 
+    /* Icon-only replace/edit affordance — a small circular button (no label)
+       pinned to the top-right of the product photo. */
+    .nfp-hero-edit--icon {
+      gap: 0; padding: 0; width: 30px; height: 30px; border-radius: 50%; justify-content: center;
+    }
+    .nfp-hero-edit--icon .material-symbols-outlined { font-size: 16px !important; }
+
+    /* Brand logo (circle) + Brand-Claimed chip, floated on the bottom-left of
+       the product photo — the same round brand badge as the overview hero, just
+       smaller and tucked into the corner. */
+    .nfp-hero-brandrow { position: absolute; left: 10px; bottom: 10px; z-index: 3; display: flex; align-items: center; gap: 7px; }
+    .nfp-hero-logo {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; background: #fff;
+      box-shadow: 0 4px 12px rgba(7, 12, 26, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.35);
+    }
+    .nfp-hero-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .nfp-hero-logo-mono { font-weight: 800; font-size: 0.58rem; letter-spacing: -0.02em; color: var(--primary); }
+    /* Brand-Claimed chip — matches the portfolio's "Verified" claim language
+       (primary-blue + gpp_good shield). A white pill so it stays legible on the
+       photo, consistent with the on-photo category chip. */
+    .nfp-hero-claimed {
+      display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px 0 8px;
+      border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
+      color: var(--primary); background: rgba(255, 255, 255, 0.94); border: 1px solid transparent;
+      box-shadow: 0 2px 10px rgba(7, 12, 26, 0.22);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .nfp-hero-claimed .material-symbols-outlined { font-size: 15px !important; color: var(--primary); }
+
     /* Category block */
     .nfp-cat { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
     .nfp-cat-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 5px; }
@@ -260,6 +290,18 @@
     }
     .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .nfp-fi-add .material-symbols-outlined { font-size: 18px !important; }
+
+    /* Pack Formats — an additional section (below Product Images) for products
+       that come in multiple sizes / packs. Reuses the Product Images thumb + add
+       layout so it looks and functions the same. */
+    .nfp-fi--packs { border-top: 1px dashed var(--border); }
+    .nfp-fi-thumb-icon { display: flex; align-items: center; justify-content: center; color: var(--text-subtle); }
+    .nfp-fi-thumb-icon .material-symbols-outlined { font-size: 20px !important; }
+    .nfp-pack-caption {
+      display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap;
+      margin-top: 7px; font-size: 0.62rem; color: var(--text-muted); text-align: center;
+    }
+    .nfp-pack-caption .material-symbols-outlined { font-size: 13px !important; color: var(--primary-ink, var(--primary)); }
 
     /* ── NFP width toggle + double-pane (wide) layout ─────────────────────
        The header toggle widens the module and splits it into two panes:
@@ -508,6 +550,13 @@
                   <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
                   <span class="sc-bganim-opacity-val">30%</span>
                 </div>
+                <div class="sc-bganim-playback">
+                  <span class="sc-bganim-playback-label">Playback</span>
+                  <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+                    <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+                    <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+                  </button>
+                </div>
                 <!-- Activity strip — the landmark rail on the chat's edge
                      (shared app-wide preference, same as every other chat). -->
                 <button type="button" class="topbar-menu-item sc-mcp-item" id="ap-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
@@ -611,7 +660,7 @@
               <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
             </div>
             <button type="button" class="nfp-width-toggle" id="nfp-width" aria-pressed="false" title="Widen to two panes" aria-label="Product Details width"><span class="material-symbols-outlined">width_normal</span></button>
-            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><span class="nfp-brand-logo-mono">F4L</span></span>
+            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></span>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
           <div class="nfp-foot">
@@ -621,7 +670,10 @@
         </div>
       </aside>
 
-      <!-- Right progress module (shared vf-progress-pane / vfp-*) -->
+      <!-- Right progress module (shared vf-progress-pane / vfp-*). Defaults to a
+           Sticky drawer (tucked behind Product Details, one level deeper) like
+           every progress tracker app-wide; the ⋯ menu carries the Sticky toggle
+           and a "Remove panel" option. -->
       <aside id="ap-progress" class="vf-progress-pane" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
     </div><!-- /#modules-row -->
   </div>
@@ -803,6 +855,10 @@
   </script>
 
   <script src="../js/chat-history.js"></script>
+  <!-- Opt this page into the branded hero: icon-only replace button, a small
+       brand-logo badge + Brand-Claimed chip floated on the photo, and the Pack
+       Formats section for multi-size products. -->
+  <script>window.WISE_HERO_BRANDROW = true;</script>
   <script src="../js/add-product-flow.js"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>

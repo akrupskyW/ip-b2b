@@ -10,6 +10,7 @@
   <script src="../js/text-size-fouc.js"></script>
   <script src="../js/sortable-tables.js" defer></script>
   <script src="../js/table-pagination.js" defer></script>
+  <script src="../js/responsive-tables.js" defer></script>
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
        font, e.g. `side_navigation` used by the menu toggle and panel-dock controls. -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -787,8 +788,8 @@
     }
     #menu-panel.mp-open {
       display: flex !important;
-      width: 280px;
-      min-width: 280px;
+      width: 260px;
+      min-width: 260px;
       visibility: visible !important;
       opacity: 1 !important;
     }
@@ -808,7 +809,7 @@
       animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
     #menu-panel .menu-inner {
-      width: 280px;
+      width: 260px;
       min-height: 100%;
       height: 100%;
       display: flex;
@@ -1981,8 +1982,10 @@
 
     /* Stat tiles */
     .sc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .sc-stat { padding: 9px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
-    html.dark .sc-stat { background: var(--surface-3); }
+    .sc-stat { padding: 9px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+    html.dark .sc-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .sc-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .sc-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .sc-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .sc-stat-num small { font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle); }
     .sc-stat-label { font-size: 0.625rem; font-weight: 600; color: var(--text-subtle); margin-top: 3px; line-height: 1.25; }
@@ -2772,8 +2775,11 @@
     .cmp-takeaway {
       display: flex; flex-direction: column; align-items: stretch; gap: 0;
       padding: 13px 15px; border-radius: 14px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
     }
+    html.dark .cmp-takeaway { background: #1A2339; }
+    html.chat-tint:not(.dark) .cmp-takeaway { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .cmp-takeaway { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .cmp-takeaway-head {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
@@ -3407,6 +3413,63 @@
       .cmp-rank-bar { width: 64px; }
     }
 
+    /* ── Per-column responsiveness ────────────────────────────────────────
+       The metric rail and each entity column watch their OWN width (not just
+       the board's) so the board stays clean whether it's squeezed by a narrow
+       docked panel (e.g. inside WISEcodeAI) or by simply carrying more
+       columns. Making each cell its own inline-size container is what lets a
+       4-up board react the same as a narrow 2-up one. */
+    .cmp-cell--rail { container: cmprail / inline-size; }
+    .cmp-cell--entity.cmp-hcell { container: cmpcol / inline-size; }
+
+    /* Rail: once the metric column gets tight, the icon+label "score" lead and
+       the description body stop sitting side-by-side (which crushes the
+       description into a sliver) and STACK into one block — icon + label on
+       top, full-width description beneath. */
+    @container cmprail (max-width: 250px) {
+      .cmp-rail-metric { flex-direction: column; align-items: stretch; gap: 5px; }
+      .cmp-rail-metric-lead {
+        flex: 0 0 auto; width: auto; align-self: stretch;
+        flex-direction: row; align-items: center; justify-content: flex-start;
+        gap: 8px; text-align: left;
+      }
+      .cmp-rail-metric-lead .cmp-rail-metric-name {
+        flex-direction: row; flex-wrap: wrap; align-items: center;
+        justify-content: flex-start; gap: 4px 6px; text-align: left;
+      }
+      .cmp-rail-metric > .cmp-rail-body { align-self: stretch; }
+    }
+
+    /* Entity columns: product name, category line, score gauge and the on-tile
+       type dropdown chip all step down a size as their column narrows, so a
+       docked or many-column board never renders oversized names / chips. */
+    @container cmpcol (max-width: 168px) {
+      .cmp-hcell .cmp-ent-name { font-size: 0.78rem; }
+      .cmp-hcell .cmp-ent-cat { font-size: 9px; }
+      .cmp-tile { height: 178px; }
+      .cmp-gauge { width: 96px; height: 96px; }
+      .cmp-gauge-num { font-size: 1.85rem; }
+      .cmp-kind-chip { top: 9px; left: 9px; padding: 5px 8px 5px 5px; font-size: 10px; gap: 5px; }
+      .cmp-kind-chip .cmp-kind-rank { width: 17px; height: 17px; font-size: 10px; }
+      .cmp-kind-chip .cmp-kind-chip-caret { font-size: 16px !important; padding-left: 7px; padding-right: 7px; margin: -5px -8px -5px 0; }
+      .cmp-tile-toppill { top: 44px; }
+    }
+    @container cmpcol (max-width: 128px) {
+      .cmp-hcell .cmp-ent-name { font-size: 0.7rem; }
+      .cmp-hcell .cmp-ent-cat { font-size: 8.5px; }
+      .cmp-tile { height: 150px; }
+      .cmp-gauge { width: 76px; height: 76px; }
+      .cmp-gauge-num { font-size: 1.45rem; }
+      .cmp-gauge-lbl { font-size: 7px; }
+      .cmp-kind-chip .cmp-kind-chip-label { display: none; }
+    }
+
+    /* Fixed popovers live on <body>, outside the board container, so they cap
+       against the viewport instead — on a phone the type / takeaway menus never
+       spill past the screen edge. */
+    .cmp-kind-menu { width: min(246px, calc(100vw - 24px)); }
+    .cmp-takeaway-menu { max-width: min(360px, calc(100vw - 24px)); }
+
     /* ── Guiding Stars ────────────────────────────────────────────────────
        A pink toggle in the Compare Foods header flips the board into a
        "Guiding Stars"-style nutrition rating table — debit/credit points,
@@ -3450,6 +3513,9 @@
     }
     .pf-module-menu-item.pf-mi-gs.is-on .pf-mi-switch { background: #EC4899; border-color: #EC4899; }
     .pf-module-menu-item.pf-mi-gs.is-on .pf-mi-knob { transform: translateX(14px); }
+    /* "Sticky module" admin toggle injected into this menu by js/sticky-modules.js. */
+    .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-switch { background: #EC4899; border-color: #EC4899; }
+    .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-knob { transform: translateX(14px); }
 
     /* In-chat Guiding Stars intent chip — pink star accent. */
     .sc-reply-chips .chip.chip-gs .material-symbols-outlined,
@@ -3604,7 +3670,10 @@
 
     /* Stat tiles */
     .vf-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .vf-stat { border-radius: 10px; padding: 9px 10px; background: var(--surface-2); border: 1px solid var(--border); }
+    .vf-stat { border-radius: 10px; padding: 9px 10px; background: var(--surface); border: 1px solid var(--border); }
+    html.dark .vf-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .vf-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .vf-stat-label { font-size: 9px; font-weight: 600; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
     .vf-stat--green .vf-stat-num { color: var(--sec-green-text); } html.dark .vf-stat--green .vf-stat-num { color: #B6C9BE; }
@@ -7849,9 +7918,9 @@
 
     <!-- Chat card -->
     <div id="chat-shell">
-      <div class="chat-topbar flex items-center shrink-0 relative z-50 px-12 py-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
+      <div class="chat-topbar">
+        <div class="sc-topbar-lead">
+          <div class="sc-bug">
             <svg viewBox="0 0 193 100" style="width:18px;height:10px;" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/>
               <path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/>
@@ -7861,7 +7930,7 @@
             </svg>
           </div>
           <div class="sc-topbar-titles flex items-center gap-2 min-w-0">
-            <span class="topbar-title">WISEcodeAI<sup class="title-tm">™</sup></span>
+            <span class="topbar-title">WISEcodeAI<sup style="font-size:9px;font-weight:600;opacity:.6">™</sup></span>
             <button id="agents-panel-btn" type="button" onclick="openSettings()" title="Open Agent Settings" class="topbar-agents-btn shrink-0" style="padding:1px 7px 1px 5px;font-size:0.65rem;">
               <span class="material-symbols-outlined" style="font-size:12px!important;">smart_toy</span>
               <span class="agents-count-pill" id="agents-active-count" style="min-width:14px;height:14px;font-size:0.6rem;">1</span>
@@ -7869,7 +7938,7 @@
             </button>
           </div>
         </div>
-        <div class="flex items-center gap-1" style="margin-left:auto;">
+        <div class="sc-topbar-controls">
         <div class="panel-more-wrap" id="wiseai-menu-wrap" style="margin-left:0;">
           <button id="wiseai-menu-btn" type="button" class="panel-more-btn" onclick="toggleWISEcodeAIMenu(event)" title="More options" aria-expanded="false" aria-haspopup="menu" aria-controls="wiseai-menu" aria-label="More options">
             <span class="material-symbols-outlined">more_vert</span>
@@ -7935,6 +8004,13 @@
               <span class="sc-bganim-detail-label">Opacity</span>
               <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
               <span class="sc-bganim-opacity-val">30%</span>
+            </div>
+            <div class="sc-bganim-playback">
+              <span class="sc-bganim-playback-label">Playback</span>
+              <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+                <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+                <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+              </button>
             </div>
             <!-- Activity strip — the landmark rail on the chat's edge (shared
                  app-wide preference; mirrors the switch on pages/wiseai.html).
@@ -8497,13 +8573,20 @@
                 <div class="fl-attachments"></div>
               </div>
               <div class="fl-input-line">
-                <textarea id="chat-input" placeholder="Type your message" class="fl-input" rows="1" autocomplete="off"></textarea>
+                <textarea id="chat-input" placeholder="Ask WISEcodeAI about this comparison…" class="fl-input" rows="1" autocomplete="off"></textarea>
               </div>
             </div>
             <button type="button" id="send-btn" class="sc-send">
               <span class="material-symbols-outlined">send</span>
             </button>
           </div>
+        </div>
+        <!-- Below-input meta row — the canonical WISEcodeAI "What can I ask?"
+             ask-help link. Its styles are already injected on this page by
+             injectChatExtras() (run from wireStandardChatMenu()); it's wired to
+             this page's own reply engine in the module script below. -->
+        <div class="sc-belowinput sc-belowinput--ask">
+          <button type="button" class="sc-ask-help" id="cmp-ask-help" data-sc="ask-help" aria-label="What can I ask?"></button>
         </div>
       </div>
     </div>
@@ -15729,6 +15812,39 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('send-btn')?.click(); }
     });
 
+    /* "What can I ask?" ask-help link (below-input, left) — the exact canonical
+       WISEcodeAI affordance. Paints the gold shimmer letters (per-letter --ch-i),
+       keeps its text left-aligned to the composer's placeholder at runtime (like
+       alignAskHelp() in js/wiseai-chat.js), and drives this page's own reply
+       engine so it behaves like sending "What can I ask?". */
+    (function wireAskHelp() {
+      const btn = document.getElementById('cmp-ask-help');
+      if (!btn) return;
+      const label = 'What can I ask?';
+      btn.innerHTML = '<span aria-hidden="true">' + label.split('').map((ch, i) =>
+        ch === ' ' ? ' ' : `<span class="sc-ask-ch" style="--ch-i:${i}">${ch}</span>`
+      ).join('') + '</span>';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideWelcomeScreen(() => { addUserMessage(label); wiseaiRespond(label); });
+      });
+      const input = document.getElementById('chat-input');
+      const row = btn.closest('.sc-belowinput');
+      const align = () => {
+        if (!input || !row) return;
+        const inRect = input.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        if (!inRect.width || !rowRect.width) return;
+        const inPadL = parseFloat(getComputedStyle(input).paddingLeft) || 0;
+        const btnPadL = parseFloat(getComputedStyle(btn).paddingLeft) || 0;
+        btn.style.marginLeft = `${Math.max(0, Math.round((inRect.left + inPadL) - rowRect.left - btnPadL))}px`;
+      };
+      align();
+      setTimeout(align, 200);
+      window.addEventListener('resize', align);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(align).catch(() => {});
+    })();
+
     /* ── NFP+ toggle & variant selector ──────────────────────────────────── */
     function toggleNfpPanel(force) {
       const panel = document.getElementById('nfp-panel');
@@ -16449,8 +16565,13 @@
         controls.classList.remove('panel-controls--stacked');
 
         /* Keep the originals in the DOM (hidden) so syncPanelWidthUI /
-           syncPanelFlipUI keep updating them; we delegate clicks to them. */
-        Array.from(controls.children).forEach((c) => { c.style.display = 'none'; });
+           syncPanelFlipUI keep updating them; we delegate clicks to them. The
+           width toggle stays VISIBLE — it sits as its own button to the right of
+           the ⋯ menu (matching pages/wiseai.html), never folded into the menu. */
+        Array.from(controls.children).forEach((c) => {
+          if (c === widthBtn) { c.style.display = ''; return; }
+          c.style.display = 'none';
+        });
 
         const menu = document.createElement('div');
         menu.className = 'pf-module-menu';
@@ -16514,14 +16635,9 @@
           }));
         }
 
+        /* Width is NOT a menu item — it stays a visible standalone button to the
+           right of the ⋯ menu (see the visibility carve-out above). */
         let widthItem = null;
-        if (widthBtn) {
-          widthItem = makeItem({
-            icon: 'width_normal', label: 'Width', extraClass: 'pf-menu-wide',
-            onClick: () => { widthBtn.click(); syncWidthItem(); },
-          });
-          pop.appendChild(widthItem);
-        }
 
         function syncWidthItem() {
           if (!widthItem || !widthBtn) return;
@@ -16536,7 +16652,9 @@
         }
         menu._syncWidthItem = syncWidthItem;
 
-        controls.appendChild(menu);
+        /* ⋯ menu sits to the LEFT of the visible width toggle: [⋯][width]. */
+        if (widthBtn && widthBtn.parentElement === controls) controls.insertBefore(menu, widthBtn);
+        else controls.appendChild(menu);
         syncWidthItem();
       }
 

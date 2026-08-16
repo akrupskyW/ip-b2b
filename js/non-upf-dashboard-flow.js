@@ -331,11 +331,11 @@ function productRow(p) {
   const st = PROD_STATUS[p.status];
   return `
     <div class="adm-trow" data-adm-prow="${esc(p.upc)}" data-adm-pstatus="${esc(p.status)}" data-adm-pupf="${esc(p.upf)}">
-      <span class="adm-td"><span class="adm-actions"><button type="button" class="adm-icon-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_horiz</span></button></span></span>
+      <span class="adm-td"><span class="adm-actions nud-actions"><button type="button" class="adm-icon-btn nud-rowmenu-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_vert</span></button></span></span>
       <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:'SF Mono',ui-monospace,Menlo,monospace">UPC · ${esc(p.upc)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${upf.cls}">${esc(upf.label)}</span></span>
       <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-symbols-outlined">${esc(st.icon)}</span>${esc(st.label)}</span></span>
-      <span class="adm-td"><span class="adm-idcell-body"><span style="font-weight:600;font-size:0.82rem">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span></span>
+      <span class="adm-td"><span class="adm-idcell-body nud-updated"><span class="nud-updated-date">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span></span>
     </div>`;
 }
 
@@ -408,10 +408,7 @@ function paint() {
           <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
-        <div class="adm-view-toggle" role="group" aria-label="Table layout">
-          <button type="button" class="adm-view-btn${viewMode === 'rows' ? ' is-active' : ''}" data-adm-view="rows" aria-pressed="${viewMode === 'rows'}" title="Row view" aria-label="Row view"><span class="material-symbols-outlined">table_rows</span></button>
-          <button type="button" class="adm-view-btn${viewMode === 'cards' ? ' is-active' : ''}" data-adm-view="cards" aria-pressed="${viewMode === 'cards'}" title="Card view" aria-label="Card view"><span class="material-symbols-outlined">grid_view</span></button>
-        </div>
+        <button type="button" class="adm-icon-btn nud-rowmenu-btn nud-table-menu-btn" data-adm-action="table-options" aria-haspopup="menu" aria-expanded="false" aria-label="Table view options" title="View options"><span class="material-symbols-outlined">more_vert</span></button>
       </div>
 
       <div class="adm-chart-grid">
@@ -603,18 +600,14 @@ const MENU_ITEMS = [
 let openMenuEl = null;
 function closeRowMenu() {
   if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
+  hostEl?.querySelector('[data-adm-action="table-options"]')?.setAttribute('aria-expanded', 'false');
   document.removeEventListener('scroll', closeRowMenu, true);
   window.removeEventListener('resize', closeRowMenu);
 }
-function openRowMenu(btn, upc) {
-  closeRowMenu();
-  const menu = document.createElement('div');
-  menu.className = 'adm-menu';
-  menu.setAttribute('role', 'menu');
-  menu.innerHTML = MENU_ITEMS.map((it) => it.sep
-    ? '<div class="adm-menu-sep"></div>'
-    : `<button type="button" role="menuitem" class="adm-menu-item${it.danger ? ' adm-menu-item--danger' : ''}" data-adm-menu-action="${it.action}" data-adm-upc="${esc(upc)}"><span class="material-symbols-outlined">${it.icon}</span>${esc(it.label)}</button>`
-  ).join('');
+
+/* Anchor a portalled .adm-menu to a trigger button, flipping above / clamping
+   to the viewport so it never spills off-screen. Shared by every ⋮ menu. */
+function placeMenu(menu, btn) {
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect();
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
@@ -625,6 +618,20 @@ function openRowMenu(btn, upc) {
   menu.style.left = `${Math.round(left)}px`;
   menu.style.top = `${Math.round(Math.max(8, top))}px`;
   openMenuEl = menu;
+  document.addEventListener('scroll', closeRowMenu, true);
+  window.addEventListener('resize', closeRowMenu);
+}
+
+function openRowMenu(btn, upc) {
+  closeRowMenu();
+  const menu = document.createElement('div');
+  menu.className = 'adm-menu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = MENU_ITEMS.map((it) => it.sep
+    ? '<div class="adm-menu-sep"></div>'
+    : `<button type="button" role="menuitem" class="adm-menu-item${it.danger ? ' adm-menu-item--danger' : ''}" data-adm-menu-action="${it.action}" data-adm-upc="${esc(upc)}"><span class="material-symbols-outlined">${it.icon}</span>${esc(it.label)}</button>`
+  ).join('');
+  placeMenu(menu, btn);
   menu.addEventListener('click', (e) => {
     const item = e.target.closest('[data-adm-menu-action]');
     if (!item) return;
@@ -633,8 +640,31 @@ function openRowMenu(btn, upc) {
     closeRowMenu();
     runAction(action, ctx);
   });
-  document.addEventListener('scroll', closeRowMenu, true);
-  window.addEventListener('resize', closeRowMenu);
+}
+
+/* Table-level ⋮ menu — the row / card layout choice lives here now, as a pair
+   of radio menu items with a check on the active layout. */
+const VIEW_MENU_ITEMS = [
+  { view: 'rows',  icon: 'table_rows', label: 'Row view' },
+  { view: 'cards', icon: 'grid_view',  label: 'Card view' },
+];
+function openViewMenu(btn) {
+  closeRowMenu();
+  const menu = document.createElement('div');
+  menu.className = 'adm-menu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = VIEW_MENU_ITEMS.map((it) => {
+    const on = viewMode === it.view;
+    return `<button type="button" role="menuitemradio" aria-checked="${on}" class="adm-menu-item nud-view-item${on ? ' is-active' : ''}" data-adm-view-menu="${it.view}"><span class="material-symbols-outlined">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
+  }).join('');
+  placeMenu(menu, btn);
+  btn.setAttribute('aria-expanded', 'true');
+  menu.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-adm-view-menu]');
+    if (!item) return;
+    setViewMode(item.dataset.admViewMenu);
+    closeRowMenu();
+  });
 }
 
 /* Map a verification stat tile → the product-table status filter. */
@@ -782,8 +812,8 @@ export function renderNonUpfDashboard(mainEl) {
     if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
-    const viewBtn = e.target.closest('[data-adm-view]');
-    if (viewBtn) { setViewMode(viewBtn.dataset.admView); return; }
+    const optBtn = e.target.closest('[data-adm-action="table-options"]');
+    if (optBtn) { e.preventDefault(); e.stopPropagation(); openViewMenu(optBtn); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');
     if (menuBtn) { e.preventDefault(); e.stopPropagation(); openRowMenu(menuBtn, menuBtn.dataset.admUpc || ''); return; }
     const vf = e.target.closest('[data-adm-vf]');
@@ -812,7 +842,7 @@ export function renderNonUpfDashboard(mainEl) {
     docListenersBound = true;
     document.addEventListener('click', (e) => {
       if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
-      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]')) closeRowMenu();
+      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]') && !e.target.closest('[data-adm-action="table-options"]')) closeRowMenu();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setFilterOpen(false); closeRowMenu(); } });
   }

@@ -66,9 +66,13 @@
     step: null,
     productName: '',
     brand: 'Flax4Life',
+    brandClaimed: true,   // brand-owned product → shows the "Brand Claimed" chip
+    brandLogo: '../assets/brand-flax4life-logo.png', // brand logo image; falls back to a monogram badge
     image: null,          // main product image (data URL or URL)
     images: [],           // additional images: {src,label}
     activeImage: 0,
+    packs: [],            // size / pack formats: {label,size,image,upc,servingsPer,servingSize,calories}
+    activePack: 0,        // highlighted pack thumbnail
     category: '',
     ingredients: '',
     allergens: [],        // ['Wheat','Soy']
@@ -376,7 +380,7 @@
       const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
       return `<div class="nfp-hero-upc"><button type="button" class="${btnCls}" data-nfp="upc-edit"><span class="material-symbols-outlined">qr_code_2</span>Add a UPC</button></div>`;
     }
-    return `<div class="nfp-hero-upc nfp-rupc">${barcodeSVG(state.upc)}<div class="nfp-rupc-num">${editSpan('upc', state.upc, 'UPC digits')}</div></div>`;
+    return `<div class="nfp-hero-upc nfp-rupc">${barcodeSVG(state.upc)}<div class="nfp-rupc-num">${editSpan('upc', formatUpc(state.upc), 'UPC digits')}</div></div>`;
   }
 
   /* Combined hero — one container holding the product photo (or the upload
@@ -392,14 +396,34 @@
     if (mono.length < 2) mono = b.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase();
     return mono.slice(0, 3);
   }
+  /* Round brand badge — a real logo image if one is set, otherwise the monogram. */
+  function brandLogoInner() {
+    return state.brandLogo
+      ? `<img src="${esc(state.brandLogo)}" alt="${esc(state.brand)} logo" onerror="this.style.display='none'">`
+      : `<span class="nfp-hero-logo-mono">${esc(brandMono())}</span>`;
+  }
+  /* The brand-logo circle + (when the product is brand-claimed) a Brand-Claimed
+     chip, floated on the bottom-left of the product photo. */
+  function heroBrandRowHTML() {
+    if (!state.brand) return '';
+    const claimed = state.brandClaimed
+      ? `<span class="nfp-hero-claimed"><span class="material-symbols-outlined">gpp_good</span>Brand Claimed</span>`
+      : '';
+    return `<div class="nfp-hero-brandrow">
+        <span class="nfp-hero-logo" title="${esc(state.brand)}" aria-label="${esc(state.brand)} logo">${brandLogoInner()}</span>
+        ${claimed}
+      </div>`;
+  }
   function richHeroHTML() {
     const onPhoto = !!state.image;
-    /* Opt-in (per page) to the branded hero: icon-only edit affordance plus a
-       small circular brand-logo badge in the top-right corner. */
+    /* Opt-in (per page) to the branded hero. Two flavors:
+         WISE_HERO_BRAND     — legacy: icon edit + top-right logo badge (view-product).
+         WISE_HERO_BRANDROW  — icon edit + bottom-left logo + Brand-Claimed chip. */
     const wantHeroBrand = !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
+    const wantBrandRow = !!(typeof window !== 'undefined' && window.WISE_HERO_BRANDROW);
+    const iconEdit = wantHeroBrand || wantBrandRow;
     const stack = `<div class="nfp-hero-stack${onPhoto ? '' : ' nfp-hero-stack--light'}">
         <div class="nfp-hero-name">${editSpan('productName', state.productName, 'Product name')}</div>
-        ${state.brand ? `<div class="nfp-hero-brand">${esc(state.brand)}</div>` : ''}
         ${heroCatHTML(onPhoto)}
         ${heroUpcHTML(onPhoto)}
       </div>`;
@@ -413,17 +437,21 @@
         ${stack}
       </div>`;
     }
-    const heroEdit = wantHeroBrand
+    const heroEdit = iconEdit
       ? `<button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-main" title="Replace photo" aria-label="Replace photo"><span class="material-symbols-outlined">edit</span></button>`
       : `<button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-symbols-outlined">photo_camera</span>Replace</button>`;
-    const heroLogo = wantHeroBrand && state.brand
-      ? `<span class="nfp-hero-logo" title="${esc(state.brand)}" aria-label="${esc(state.brand)} logo"><span class="nfp-hero-logo-mono">${esc(brandMono())}</span></span>`
+    /* Legacy top-right monogram badge (view-product); the new brand row lives
+       bottom-left and includes the Brand-Claimed chip. */
+    const heroLogoTR = (wantHeroBrand && !wantBrandRow && state.brand)
+      ? `<span class="nfp-hero-logo" title="${esc(state.brand)}" aria-label="${esc(state.brand)} logo">${brandLogoInner()}</span>`
       : '';
+    const brandRow = wantBrandRow ? heroBrandRowHTML() : '';
     return `<div class="nfp-hero nfp-hero--rich">
       <img class="nfp-hero-img" src="${esc(state.image)}" alt="" onerror="this.src='https://placehold.co/300x260/1A2339/ffffff?text=Product'">
       <div class="nfp-hero-scrim" aria-hidden="true"></div>
       ${heroEdit}
-      ${heroLogo}
+      ${heroLogoTR}
+      ${brandRow}
       ${stack}
     </div>`;
   }
@@ -461,6 +489,40 @@
         ${thumbs}
         <div class="nfp-fi-add" data-nfp="add-image" title="Add another image"><span class="material-symbols-outlined">add</span></div>
       </div>
+    </div>`;
+  }
+
+  /* Pack Formats — an additional section (below Product Images) for products
+     that ship in multiple size / pack formats. It mirrors the Product Images
+     thumb + add layout: each format is a thumbnail (its own photo, falling back
+     to a pack icon) with the size/count label, plus an add button that runs the
+     same add-a-product flow for a new pack. The section always renders so a
+     format can be added from the default add-product panel; when empty it shows
+     just the add button with a short hint. */
+  function packFormatsHTML() {
+    const thumbs = state.packs.map((p, i) => `
+      <div class="nfp-fi-thumb${i === state.activePack ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Pack')}">
+        ${p.image
+          ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(p.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
+          : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
+        <span class="nfp-fi-thumb-label">${esc(p.label || 'Pack')}</span>
+      </div>`).join('');
+    const badge = state.packs.length
+      ? `<span class="nfp-fi-badge">${state.packs.length} ${state.packs.length === 1 ? 'format' : 'formats'}</span>`
+      : '';
+    const hint = state.packs.length
+      ? ''
+      : `<div class="nfp-pack-caption">Add each size or multipack this product ships in.</div>`;
+    return `<div class="nfp-fi nfp-fi--packs">
+      <div class="nfp-fi-header">
+        <span class="nfp-fi-title">Pack Formats</span>
+        ${badge}
+      </div>
+      <div class="nfp-fi-thumbs">
+        ${thumbs}
+        <div class="nfp-fi-add" data-nfp="add-pack" title="Add a pack format"><span class="material-symbols-outlined">add</span></div>
+      </div>
+      ${hint}
     </div>`;
   }
 
@@ -555,7 +617,7 @@
     }
     return `<div class="nfp-rupc">
       ${barcodeSVG(state.upc)}
-      <div class="nfp-rupc-num">${editSpan('upc', state.upc, 'UPC digits')}</div>
+      <div class="nfp-rupc-num">${editSpan('upc', formatUpc(state.upc), 'UPC digits')}</div>
     </div>`;
   }
   function rightColumnHTML() {
@@ -571,20 +633,20 @@
         </div>
         <div class="nfp-rcol-foot">
           <div class="nfp-rcol-name">${editSpan('productName', state.productName, 'Product name')}</div>
-          ${state.brand ? `<div class="nfp-rcol-brand">${esc(state.brand)}</div>` : ''}
           ${rUpcHTML()}
         </div>
       </div>`;
     }
     const active = all[Math.min(state.activeImage, all.length - 1)];
+    const wantBrandRow = !!(typeof window !== 'undefined' && window.WISE_HERO_BRANDROW);
     return `<div class="nfp-rcol">
       <img class="nfp-rcol-img" src="${esc(active.src)}" alt="" onerror="this.src='https://placehold.co/400x640/1A2339/ffffff?text=Product'">
       <div class="nfp-rcol-scrim" aria-hidden="true"></div>
-      <button type="button" class="nfp-rcol-replace" data-nfp="upload-main" title="Replace photo"><span class="material-symbols-outlined">photo_camera</span></button>
+      <button type="button" class="nfp-rcol-replace" data-nfp="upload-main" title="Replace photo" aria-label="Replace photo"><span class="material-symbols-outlined">edit</span></button>
+      ${wantBrandRow ? heroBrandRowHTML() : ''}
       <div class="nfp-rcol-top">${rThumbsHTML(all)}</div>
       <div class="nfp-rcol-bottom">
         <div class="nfp-rcol-name">${editSpan('productName', state.productName, 'Product name')}</div>
-        ${state.brand ? `<div class="nfp-rcol-brand">${esc(state.brand)}</div>` : ''}
         ${rUpcHTML()}
       </div>
     </div>`;
@@ -597,11 +659,11 @@
          the product photo column with the gallery + UPC overlaid on it. */
       nfpBody.innerHTML =
         `<div class="nfp-cols">
-          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${ingredientsHTML()}</div>
+          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${ingredientsHTML()}${packFormatsHTML()}</div>
           <div class="nfp-col-right">${rightColumnHTML()}</div>
         </div>`;
     } else {
-      nfpBody.innerHTML = richHeroHTML() + foodIdentityHTML() + nutritionHTML() + ingredientsHTML();
+      nfpBody.innerHTML = richHeroHTML() + foodIdentityHTML() + packFormatsHTML() + nutritionHTML() + ingredientsHTML();
     }
     updateSaveState();
   }
@@ -784,6 +846,7 @@
       name: state.productName, brand: state.brand, category: state.category,
       ingredients: state.ingredients, allergens: state.allergens, contains: state.contains,
       upc: state.upc, nf: state.nf, image: state.image, images: state.images,
+      packs: state.packs,
       savedAt: new Date().toISOString(),
     };
     try {
@@ -969,6 +1032,7 @@
         upc: 'Type the 12-digit UPC…',
         url: 'Paste the product URL…',
         allergens: 'List allergens, comma-separated…',
+        packSize: 'Type the pack size / count (e.g. 12-pack)…',
       };
       inputEl.placeholder = hints[field] || 'Type your answer…';
       inputEl.focus();
@@ -1096,6 +1160,15 @@
       const src = reader.result;
       if (ctx === 'upc') {
         scanUpcFromImage(src, file.name);
+      } else if (ctx === 'pack') {
+        const p = state.packs[state.activePack];
+        if (p) p.image = src;
+        addUserImage(src, file.name);
+        renderNFP(); renderProgress();
+        wiseSay('Added that photo to the <strong>' + esc((p && p.label) || 'pack') + '</strong> format.',
+          [{ label: 'Done with packs', icon: 'check', action: 'packsDone', primary: true }]);
+      } else if (ctx === 'packUpc') {
+        scanPackUpcFromImage(src, file.name);
       } else if (ctx === 'label') {
         addUserImage(src, file.name);
         parseLabel(src);
@@ -1179,6 +1252,54 @@
     renderNFP(); renderProgress();
   }
 
+  /* ─────────────────────────── pack / size formats ─────────────────────────── */
+  /* Adding a pack is the same flow as adding a product — one shows up right
+     away (below Product Images), then it captures its own photo, UPC and
+     Nutrition Facts. Only the pack-level values differ (e.g. servings per
+     container), so a new pack is seeded from the base product and adjusted. */
+  function createPack() {
+    const n = state.packs.length + 1;
+    const label = n === 1 ? 'Single' : (n <= 4 ? n * 3 : n) + '-pack';
+    const pack = {
+      label,
+      size: n === 1 ? '1 ct' : (n * 3) + ' ct',
+      image: state.image || null,
+      upc: '',
+      servingSize: state.nf.servingSize || '',
+      servingsPer: n === 1 ? (state.nf.servingsPer || '1') : String(n * 3),
+      calories: state.nf.calories || '',
+    };
+    state.packs.push(pack);
+    state.activePack = state.packs.length - 1;
+    renderNFP(); renderProgress();
+    return pack;
+  }
+  function startAddPack() {
+    addUser('Add a pack format');
+    const pack = createPack();
+    addWISEcodeAI(`Added a <strong>${esc(pack.label)}</strong> format below <strong>Product Images</strong>. Adding a pack works just like adding a product — capture its own photo, UPC and Nutrition Facts. Only the pack-level values differ (like <strong>servings per container</strong>), so I seeded it from the base product. How do you want to set up this pack?`,
+      [
+        { label: 'Upload pack photo', icon: 'add_photo_alternate', action: 'packPhoto' },
+        { label: 'Scan pack UPC', icon: 'qr_code_scanner', action: 'packUpc' },
+        { label: 'Set size / count', icon: 'edit', action: 'packSize' },
+        { label: 'Add another pack', icon: 'add', action: 'addPack' },
+        { label: 'Done with packs', icon: 'check', action: 'packsDone', primary: true },
+      ]);
+  }
+  function scanPackUpcFromImage(src, name) {
+    addUserImage(src, name);
+    const t = showTyping();
+    setTimeout(() => {
+      t.remove();
+      const digits = extractUpcDigits();
+      const p = state.packs[state.activePack];
+      if (p) p.upc = digits;
+      renderNFP(); renderProgress();
+      addWISEcodeAI(`Scanned the pack barcode — UPC <strong>${esc(formatUpc(digits))}</strong> is set on the <strong>${esc((p && p.label) || 'pack')}</strong> format.`,
+        [{ label: 'Done with packs', icon: 'check', action: 'packsDone', primary: true }]);
+    }, 900);
+  }
+
   /* ─────────────────────────── chip / click dispatch ─────────────────────────── */
   function dispatch(action, arg) {
     if (!action) return;
@@ -1208,6 +1329,11 @@
       case 'noAllergens': addUser('No allergens'); state.allergens = []; state.done.allergens = true; renderNFP(); renderProgress(); addSysNote('No allergens declared.', 'edit'); maybeAdvanceAfter(); break;
       case 'allergensDone': addUser('Done with allergens'); state.done.allergens = true; renderProgress(); maybeAdvanceAfter(); break;
       case 'focusNf': addUser('I\'ll type it in the panel'); focusFirstNfError(); break;
+      case 'addPack': startAddPack(); break;
+      case 'packPhoto': addUser('Upload a pack photo'); openPicker('pack'); break;
+      case 'packUpc': addUser('Scan the pack barcode'); openPicker('packUpc'); break;
+      case 'packSize': addUser('Set the size / count'); promptFor('packSize', 'What size or count is this pack? (e.g. 12-pack, 12 oz)'); break;
+      case 'packsDone': addUser('Done with pack formats'); addSysNote('Pack formats saved.', 'inventory_2'); break;
       case 'save': doSave(); break;
       case 'restart': restart(); break;
       case 'exit': window.location.href = 'product-portfolio.html'; break;
@@ -1243,6 +1369,14 @@
     if (inputEl) inputEl.placeholder = 'Type a value, paste a URL, or ask me anything…';
 
     if (awaiting === 'url') { simulateUrlParse(v); return; }
+    if (awaiting === 'packSize') {
+      addUser(v);
+      const p = state.packs[state.activePack];
+      if (p) { p.size = v; p.label = v; }
+      renderNFP(); renderProgress();
+      addSysNote('Pack format set to “' + v + '”.', 'inventory_2');
+      return;
+    }
     if (awaiting === 'allergens') {
       addUser(v);
       v.split(/[,;]+/).map((s) => s.trim()).filter(Boolean).forEach(addAllergen);
@@ -1295,6 +1429,17 @@
     wiseSay('Great — we\'ll go step by step. You can jump around using the progress list on the right anytime.', undefined, 380);
     setTimeout(() => promptStep('photo'), 900);
   }
+  /* Seed the sample product's real-world size / pack formats so the Pack Formats
+     section renders below Product Images (it stays hidden until a product has
+     more than one size). Mirrors the Flax4Life Chocolate Chip Muffin lineup. */
+  function seedSamplePacks() {
+    state.packs = [
+      { label: '4 ct', size: '4-count box', image: state.image, upc: '065776631520', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '4', calories: state.nf.calories || '190' },
+      { label: '6-pack', size: '6 × 14 oz', image: state.image, upc: '461272475918', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '6', calories: state.nf.calories || '190' },
+      { label: 'Single serve', size: '1 muffin (57g)', image: state.image, upc: '857287004128', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '1', calories: state.nf.calories || '190' },
+    ];
+    state.activePack = 0;
+  }
   function loadSample() {
     addUser('Show me an example');
     const p = SAMPLE_PARSE;
@@ -1305,6 +1450,7 @@
     ['vitaminD', 'calcium', 'iron', 'potassium'].forEach((k) => {
       state.nf[k] = { amt: k === 'vitaminD' ? '0mcg' : k === 'calcium' ? '40mg' : k === 'iron' ? '2mg' : '95mg', dv: k === 'vitaminD' ? '0%' : k === 'calcium' ? '3%' : k === 'iron' ? '10%' : '2%' };
     });
+    seedSamplePacks();
     renderNFP(); renderProgress();
     wiseSay('Here\'s a fully filled example so you can see the finished shape. Edit anything on the panel, then save — or start your own.',
       [{ label: 'Save this example', icon: 'save', action: 'goto:save', primary: true }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
@@ -1332,8 +1478,24 @@
     if (upc) { const d = upc.replace(/\D/g, ''); if (d) state.upc = d; }
     if (img) state.image = img;
     state.errors = {};
+    seedSamplePacks();
     hideWelcome();
     renderNFP(); renderProgress();
+    // Deep-linked from the portfolio's ⋮ menu → "Add pack formats / sizes":
+    // open the product and drop straight into the add-a-pack flow, with the
+    // Pack Formats section scrolled into view.
+    if (params.get('packs') === '1' || params.get('focus') === 'packs') {
+      const tag = document.querySelector('.ap-topbar-tag');
+      if (tag && tag.firstChild && tag.firstChild.nodeType === 3) {
+        tag.firstChild.textContent = 'Pack Formats · ';
+      }
+      addWISEcodeAI(`Let\u2019s add another size or pack format for <strong>${esc(state.productName)}</strong>. Its current formats are listed under <strong>Pack Formats</strong> on the right — add each additional size or multipack it ships in.`);
+      startAddPack();
+      setTimeout(() => {
+        document.querySelector('.nfp-fi--packs')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+      return;
+    }
     if (editMode) {
       // Retitle the chat topbar for the edit surface (same page as View).
       const tag = document.querySelector('.ap-topbar-tag');
@@ -1364,6 +1526,7 @@
   function restart() {
     Object.assign(state, {
       step: null, productName: '', image: null, images: [], activeImage: 0,
+      packs: [], activePack: 0,
       category: '', ingredients: '', allergens: [], contains: '', upc: '',
       nf: blankNf(), errors: {}, done: {}, skipped: {}, awaiting: null, saved: false,
     });
@@ -1378,6 +1541,7 @@
     { label: 'Paste a product URL', icon: 'link', action: 'url' },
     { label: 'Enter details manually', icon: 'edit_note', action: 'manual' },
     { label: 'I have a barcode / UPC', icon: 'qr_code_2', action: 'field:upc' },
+    { label: 'This comes in multiple sizes / packs', icon: 'inventory_2', action: 'addPack' },
     { label: 'Show me an example', icon: 'auto_awesome', action: 'sample' },
   ];
 
@@ -1439,7 +1603,10 @@
       if (val === ph) return; // untouched placeholder
       const current = getPath(path);
       if (!val && !current) { renderNFP(); return; } // empty stayed empty — just restore placeholder
-      if (val === String(current == null ? '' : current)) return; // unchanged
+      const cur = String(current == null ? '' : current);
+      /* UPC is shown grouped (e.g. "8 53620 00627 9") but stored as raw digits —
+         compare digits-only so re-formatting an untouched value isn't seen as an edit. */
+      if (path === 'upc' ? val.replace(/\D/g, '') === cur : val === cur) return; // unchanged
       /* Nutrition cells update in place (keeps caret while fixing flagged rows);
          other fields (name, UPC, ingredients, contains) rebuild the card. */
       commitField(path, val, { fromPanel: true, inPlace: path.startsWith('nf.') });
@@ -1609,6 +1776,8 @@
         break;
       }
       case 'pick-image': { const i = Number(arg); if (!isNaN(i)) { state.activeImage = i; renderNFP(); } break; }
+      case 'add-pack': startAddPack(); break;
+      case 'pick-pack': { const i = Number(arg); if (!isNaN(i)) { state.activePack = i; renderNFP(); } break; }
       default: break;
     }
   }

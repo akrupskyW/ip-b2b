@@ -765,8 +765,13 @@
     /* ── Scorecards (result-set) — scoped to .wa-resultset so the report's own
        scorecard styling below can't bleed in and vice-versa. ── */
     .wa-resultset .wa-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
-    .wa-resultset .wa-stat { flex: 1 1 118px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-1); text-align: center; }
-    html.dark .wa-resultset .wa-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module's own background across every theme
+       (light / dark / chat-tint), matching .sc-card exactly — so the stat tiles
+       read as part of the chat surface, set apart only by their hairline border. */
+    .wa-resultset .wa-stat { flex: 1 1 118px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-1); text-align: center; }
+    html.dark .wa-resultset .wa-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .wa-resultset .wa-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .wa-resultset .wa-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .wa-resultset .wa-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
     .wa-resultset .wa-stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
     .wa-resultset .wa-stat--alert .wa-stat-num { color: var(--sec-red-text); }
@@ -916,11 +921,13 @@
        filters, laid out on a grid that never leaves a lone orphan card. */
     .wa-refset .wa-ref-stats { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
     @container (min-width: 520px) { .wa-refset .wa-ref-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    .wa-refset .wa-ref-stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease; }
-    html.dark .wa-refset .wa-ref-stat { background: rgba(255,255,255,0.04); }
+    .wa-refset .wa-ref-stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease; }
+    html.dark .wa-refset .wa-ref-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .wa-refset .wa-ref-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .wa-refset .wa-ref-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .wa-refset .wa-ref-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
     .wa-refset .wa-ref-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .wa-refset .wa-ref-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    .wa-refset .wa-ref-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
     html.dark .wa-refset .wa-ref-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
     .wa-refset .wa-ref-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
     .wa-refset .wa-ref-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
@@ -989,8 +996,10 @@
     .wa-report-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 900; font-size: 1.55rem; line-height: 1.15; letter-spacing: -.015em; color: var(--text); margin: 0 0 10px; }
     .wa-report-lede { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); margin: 0; max-width: 640px; }
     .wa-report .wa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 22px; }
-    .wa-report .wa-stat { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
-    html.dark .wa-report .wa-stat { background: rgba(255,255,255,0.04); }
+    .wa-report .wa-stat { padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+    html.dark .wa-report .wa-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .wa-report .wa-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .wa-report .wa-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .wa-report .wa-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 26px; line-height: 1; color: var(--text); }
     .wa-report .wa-stat-num .u { font-size: 14px; color: var(--text-muted); font-weight: 700; }
     .wa-report .wa-stat-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); margin-top: 7px; }
@@ -1012,13 +1021,17 @@
        filled container. The inner .wa-chart-card stays transparent — the block
        now carries the surface. */
     .wa-chart-card { border: 0; border-radius: 0; padding: 0; background: transparent; }
+    /* The chart container's fill mirrors the chat module's own background across
+       every theme (light / dark / chat-tint), matching .sc-card exactly. */
     .wa-pane-body > .wa-block:has(> .wa-chart-card) {
-      background: var(--surface-2);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 18px 20px;
     }
-    html.dark .wa-pane-body > .wa-block:has(> .wa-chart-card) { background: rgba(255,255,255,0.03); }
+    html.dark .wa-pane-body > .wa-block:has(> .wa-chart-card) { background: #1A2339; }
+    html.chat-tint:not(.dark) .wa-pane-body > .wa-block:has(> .wa-chart-card) { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .wa-pane-body > .wa-block:has(> .wa-chart-card) { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     /* A carded chart carries its own edge, so drop the hairline separator that
        normally divides stacked blocks when one sits beside it. */
     .wa-pane-body > .wa-block:has(> .wa-chart-card) + .wa-block,
@@ -1110,15 +1123,23 @@
        full module. It's a <div role="button"> (not a <button>) so it can safely
        wrap the inner content of the surfaced view. */
     .sc-surface-card {
-      display: inline-flex; align-items: center; gap: 10px; width: auto; max-width: min(360px, 100%);
-      text-align: left; margin: 4px 0 0; padding: 6px 12px 6px 6px;
+      position: relative;
+      display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: min(360px, 100%);
+      text-align: left; margin: 4px 0 0; padding: 6px;
       /* Thin, light gold-yellow stroke so the output chips echo the amber
          activity-strip ticks on the chat's right edge — but the fill matches the
          chat container's own background so only the outline reads as gold. */
       background: var(--surface); border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
       border-radius: 12px; cursor: pointer; font-family: inherit;
-      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, max-width .35s ease;
     }
+    /* The chip's top row: thumbnail(s) + title. Room is kept at the right for the
+       floating expand / collapse control that rides the chip's top-right corner. */
+    .sc-surface-head { display: flex; align-items: center; gap: 10px; padding-right: 28px; }
+    /* Expanding the output happens WITHIN the chip: the same bordered container
+       widens to give the chart room and reveals the full output beneath its head
+       row, rather than dropping a separate panel outside the chip. */
+    .sc-surface-card:has(.sc-surface-expand.is-open) { max-width: min(560px, 100%); cursor: default; }
     /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
     html.dark .sc-surface-card { background: #1A2339; }
     html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
@@ -1170,19 +1191,36 @@
       font-size: 10px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
       color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
-    .sc-surface-expand-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 20px; height: 20px; padding: 0; border-radius: 6px;
-      border: 0; background: transparent; color: var(--text-subtle);
-      cursor: pointer; transition: color .15s ease, background .15s ease;
+    /* Version tag tucked into the three-dot menu, right after the timestamp. */
+    .sc-fb-menu-ver {
+      margin-right: 4px; padding-right: 6px; white-space: nowrap;
+      border-right: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+      color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
-    .sc-surface-expand-btn:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    /* Inline-expand control — a circular icon button floated to the chip's
+       TOP-RIGHT; it toggles the output open/closed inside the chip and stays put
+       in both states so it reads as the chip's own expand/collapse handle. */
+    .sc-surface-expand-btn {
+      position: absolute; top: 5px; right: 5px; z-index: 2;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; padding: 0; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text-subtle);
+      box-shadow: 0 1px 3px rgba(15,30,55,0.12);
+      cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, top .2s ease, bottom .2s ease;
+    }
+    html.dark .sc-surface-expand-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .sc-surface-expand-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
     .sc-surface-expand-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-surface-expand-btn .material-symbols-outlined { font-size: 15px !important; }
-    html.dark .sc-surface-expand-btn:hover { color: var(--primary-bright, #8B9FAF); }
-
+    html.dark .sc-surface-expand-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
+    /* Once expanded, the control becomes a COLLAPSE handle and drops to the
+       chip's bottom-right — you read the chart all the way down, then close it
+       right where your eye lands at the bottom instead of scrolling back up. */
+    .sc-surface-card:has(.sc-surface-expand.is-open) .sc-surface-expand-btn { top: auto; bottom: 5px; }
     /* Collapsible inline output — a smooth height reveal using the grid 0fr→1fr
-       trick (animatable, unlike auto height). */
+       trick (animatable, unlike auto height). Lives inside the chip, so its
+       reveal grows the chip itself. */
     .sc-surface-expand { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
     .sc-surface-expand.is-open { grid-template-rows: 1fr; }
     .sc-surface-expand-inner {
@@ -1191,10 +1229,9 @@
     }
     .sc-surface-expand.is-open .sc-surface-expand-inner { opacity: 1; transform: none; }
     .sc-surface-expand-pad {
-      margin-top: 10px; max-width: min(560px, 100%); overflow: hidden;
-      border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px;
+      margin-top: 8px; padding-top: 12px; overflow: hidden;
+      border-top: 1px solid var(--border);
     }
-    html.dark .sc-surface-expand-pad { background: #1A2339; }
     .sc-surface-expand-pad > * { margin: 0 !important; }
     @media (prefers-reduced-motion: reduce) {
       .sc-surface-expand, .sc-surface-expand-inner { transition: none; }
@@ -1215,6 +1252,9 @@
     /* Newest version is emphasized: full opacity + brand ring, the rest recede. */
     .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
     .sc-surface-stack .sc-surface-thumb.is-latest { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
+    /* The version currently mirrored into the chip's inline expansion / pane gets
+       a stronger ring so the stack, the expanded output and the pane all agree. */
+    .sc-surface-stack .sc-surface-thumb.is-active { z-index: 3; border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb { margin-left: -10px; }
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
     /* Each stacked version thumb is its own click target — tapping it opens that
@@ -2176,8 +2216,11 @@
     .cmp-takeaway {
       display: flex; flex-direction: column; align-items: stretch; gap: 0;
       padding: 13px 15px; border-radius: 14px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
     }
+    html.dark .cmp-takeaway { background: #1A2339; }
+    html.chat-tint:not(.dark) .cmp-takeaway { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .cmp-takeaway { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .cmp-takeaway-head {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
@@ -2794,6 +2837,63 @@
       .cmp-takeaways { grid-template-columns: 1fr; }
       .cmp-rank-bar { width: 64px; }
     }
+
+    /* ── Per-column responsiveness ────────────────────────────────────────
+       The metric rail and each entity column watch their OWN width (not just
+       the board's) so the board stays clean whether it's squeezed by a narrow
+       docked panel (e.g. inside WISEcodeAI) or by simply carrying more
+       columns. Making each cell its own inline-size container is what lets a
+       4-up board react the same as a narrow 2-up one. */
+    .cmp-cell--rail { container: cmprail / inline-size; }
+    .cmp-cell--entity.cmp-hcell { container: cmpcol / inline-size; }
+
+    /* Rail: once the metric column gets tight, the icon+label "score" lead and
+       the description body stop sitting side-by-side (which crushes the
+       description into a sliver) and STACK into one block — icon + label on
+       top, full-width description beneath. */
+    @container cmprail (max-width: 250px) {
+      .cmp-rail-metric { flex-direction: column; align-items: stretch; gap: 5px; }
+      .cmp-rail-metric-lead {
+        flex: 0 0 auto; width: auto; align-self: stretch;
+        flex-direction: row; align-items: center; justify-content: flex-start;
+        gap: 8px; text-align: left;
+      }
+      .cmp-rail-metric-lead .cmp-rail-metric-name {
+        flex-direction: row; flex-wrap: wrap; align-items: center;
+        justify-content: flex-start; gap: 4px 6px; text-align: left;
+      }
+      .cmp-rail-metric > .cmp-rail-body { align-self: stretch; }
+    }
+
+    /* Entity columns: product name, category line, score gauge and the on-tile
+       type dropdown chip all step down a size as their column narrows, so a
+       docked or many-column board never renders oversized names / chips. */
+    @container cmpcol (max-width: 168px) {
+      .cmp-hcell .cmp-ent-name { font-size: 0.78rem; }
+      .cmp-hcell .cmp-ent-cat { font-size: 9px; }
+      .cmp-tile { height: 178px; }
+      .cmp-gauge { width: 96px; height: 96px; }
+      .cmp-gauge-num { font-size: 1.85rem; }
+      .cmp-kind-chip { top: 9px; left: 9px; padding: 5px 8px 5px 5px; font-size: 10px; gap: 5px; }
+      .cmp-kind-chip .cmp-kind-rank { width: 17px; height: 17px; font-size: 10px; }
+      .cmp-kind-chip .cmp-kind-chip-caret { font-size: 16px !important; padding-left: 7px; padding-right: 7px; margin: -5px -8px -5px 0; }
+      .cmp-tile-toppill { top: 44px; }
+    }
+    @container cmpcol (max-width: 128px) {
+      .cmp-hcell .cmp-ent-name { font-size: 0.7rem; }
+      .cmp-hcell .cmp-ent-cat { font-size: 8.5px; }
+      .cmp-tile { height: 150px; }
+      .cmp-gauge { width: 76px; height: 76px; }
+      .cmp-gauge-num { font-size: 1.45rem; }
+      .cmp-gauge-lbl { font-size: 7px; }
+      .cmp-kind-chip .cmp-kind-chip-label { display: none; }
+    }
+
+    /* Fixed popovers live on <body>, outside the board container, so they cap
+       against the viewport instead — on a phone the type / takeaway menus never
+       spill past the screen edge. */
+    .cmp-kind-menu { width: min(246px, calc(100vw - 24px)); }
+    .cmp-takeaway-menu { max-width: min(360px, calc(100vw - 24px)); }
 
     /* ── Guiding Stars ────────────────────────────────────────────────────
        A pink toggle in the Compare Foods header flips the board into a
@@ -5475,13 +5575,16 @@
 
       return `<div class="sc-surface-slot">
           <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
-            ${thumb}
-            <div class="sc-surface-body">
-              <div class="sc-surface-title">${esc(title)}</div>
+            <div class="sc-surface-head">
+              ${thumb}
+              <div class="sc-surface-body">
+                <div class="sc-surface-title">${esc(title)}</div>
+              </div>
             </div>
-          </div>
-          <div class="sc-surface-expand" id="expand-${blockId}" role="region" aria-label="${esc(title)} — expanded inline">
-            <div class="sc-surface-expand-inner"><div class="sc-surface-expand-pad">${expandInner}</div></div>
+            <button type="button" class="sc-surface-expand-btn" data-expand-toggle="${blockId}" aria-controls="expand-${blockId}" aria-expanded="false" aria-label="Expand chart inline" data-tip="Expand inline" title="Expand inline"><span class="material-symbols-outlined">open_in_full</span></button>
+            <div class="sc-surface-expand" id="expand-${blockId}" role="region" aria-label="${esc(title)} — expanded inline">
+              <div class="sc-surface-expand-inner"><div class="sc-surface-expand-pad">${expandInner}</div></div>
+            </div>
           </div>
         </div>`;
     }
@@ -5490,35 +5593,24 @@
        string ("v1.0.0", "v1.0.1", …) instead of a bare "v1" chip. */
     function verLabel(n) { return `v1.0.${Math.max(0, (n | 0) - 1)}`; }
 
-    /* Move the timestamp + version out of the chip and into the turn's meta row,
-       directly left-aligned (floated left, below the chip), alongside a simple
-       expand control that reveals the full output inline in the transcript
-       (smoothly, via the toggle handler). The metabar is prepended so the
-       time/version/expand cluster leads the row; any feedback icons follow. */
+    /* The timestamp + version live INSIDE the turn's three-dot ("more") menu —
+       the same collapsed popover that already carries the wall-clock stamp. Drop
+       the version number in right after the time so both read together when the
+       menu is opened. The inline-expand control now floats on the chip itself
+       (see surfaceCardHtml), so nothing is added to the visible meta row. */
     function decorateSurfaceMeta(line, o) {
       if (!line) return;
       const metaEl = line.querySelector('.sc-line-meta');
       if (!metaEl) return;
       metaEl.classList.add('sc-line-meta--output');
-      const bar = document.createElement('div');
-      bar.className = 'sc-surface-metabar';
-      const timeEl = metaEl.querySelector('.sc-line-time');
-      if (timeEl) bar.appendChild(timeEl);
+      const menu = metaEl.querySelector('.sc-fb-menu');
+      if (!menu) return;
       const ver = document.createElement('span');
-      ver.className = 'sc-surface-ver-num';
+      ver.className = 'sc-fb-menu-ver';
       ver.textContent = verLabel(o.version) + (o.count > 1 ? ` · ${o.count} versions` : '');
-      bar.appendChild(ver);
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'sc-surface-expand-btn';
-      btn.setAttribute('data-expand-toggle', o.blockId);
-      btn.setAttribute('aria-controls', 'expand-' + o.blockId);
-      btn.setAttribute('aria-expanded', 'false');
-      btn.setAttribute('aria-label', 'Expand chart inline');
-      btn.setAttribute('data-tip', 'Expand inline');
-      btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
-      bar.appendChild(btn);
-      metaEl.insertBefore(bar, metaEl.firstChild);
+      const timeEl = menu.querySelector('.sc-fb-menu-time');
+      if (timeEl) timeEl.insertAdjacentElement('afterend', ver);
+      else menu.insertBefore(ver, menu.firstChild);
     }
 
     /* ── Conversation manifest (floating Outputs / Sources box) ───────────────
@@ -5735,6 +5827,22 @@
       }
     }
 
+    /* Mirror a chosen version into the chip itself: swap the chip's inline
+       expanded output (the copy revealed beneath the head row) to that version
+       and flag its thumbnail as active in the stack — so switching versions up in
+       the chip also switches the output shown at the bottom of the chip, not just
+       the pane on the right. */
+    function syncSurfaceExpand(blockId, entry) {
+      if (!entry) return;
+      const pad = document.querySelector(`#expand-${blockId} .sc-surface-expand-pad`);
+      if (pad) {
+        pad.innerHTML = String(entry.previewHtml == null ? '' : entry.previewHtml).replace(/\sid="[^"]*"/g, '');
+      }
+      document.querySelectorAll(`.sc-surface-thumb[data-surface-ver="${blockId}"]`).forEach((t) => {
+        t.classList.toggle('is-active', Number(t.getAttribute('data-ver')) === entry.version);
+      });
+    }
+
     /* Open a SPECIFIC version of a surfaced output in its pane (tapping one of the
        stacked version thumbnails on the transcript card). The chosen version's
        content is swapped in place of whatever version is currently shown, and the
@@ -5749,6 +5857,8 @@
       const entry = list[idx];
       const count = list.length;
       const verText = `${verLabel(entry.version)}${count > 1 ? ` · ${count} versions` : ''}`;
+      /* Keep the chip's own inline expansion in lock-step with the pane. */
+      syncSurfaceExpand(blockId, entry);
       const dest = mergedMode ? 'unified' : e.which;
       const pane = paneEl[dest];
       const body = paneBody[dest];
@@ -6635,12 +6745,20 @@
           openSurfaceVersion(verThumb.getAttribute('data-surface-ver'), Number(verThumb.getAttribute('data-ver')));
           return;
         }
+        /* Clicks inside the chip's inline expanded output shouldn't re-open the
+           pane — the content lives within the chip now, so let it be read /
+           interacted with in place. */
+        if (e.target.closest('.sc-surface-expand')) return;
         const card = e.target.closest('.sc-surface-card[data-surface]');
         if (!card) return;
         reopenSurface(card.getAttribute('data-surface'));
       });
       host.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
+        /* The floating expand control is a real <button> nested in the chip — let
+           its native Enter/Space fire the click (toggle) without ALSO reopening
+           the whole card here. */
+        if (e.target.closest('[data-expand-toggle]')) return;
         const cite = e.target.closest('[data-cat-ref]');
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const verThumb = e.target.closest('.sc-surface-thumb[data-surface-ver]');
@@ -10107,6 +10225,7 @@
     }
   </script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/responsive-tables.js"></script>
   <script defer src="../js/sticky-modules.js"></script>
 </body>
 </html>

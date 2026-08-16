@@ -302,6 +302,18 @@
     .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
     .nfp-fi-add .material-symbols-outlined { font-size: 18px !important; }
 
+    /* Pack Formats — an additional section (below Product Images) for products
+       that come in multiple sizes / packs. Reuses the Product Images thumb + add
+       layout so it looks and functions the same. */
+    .nfp-fi--packs { border-top: 1px dashed var(--border); }
+    .nfp-fi-thumb-icon { display: flex; align-items: center; justify-content: center; color: var(--text-subtle); }
+    .nfp-fi-thumb-icon .material-symbols-outlined { font-size: 20px !important; }
+    .nfp-pack-caption {
+      display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap;
+      margin-top: 7px; font-size: 0.62rem; color: var(--text-muted); text-align: center;
+    }
+    .nfp-pack-caption .material-symbols-outlined { font-size: 13px !important; color: var(--primary-ink, var(--primary)); }
+
     /* ── NFP width toggle + double-pane (wide) layout ─────────────────────
        The header toggle widens the module and splits it into two panes:
        LEFT = category + Nutrition Facts + ingredients/allergens (scrolls),
@@ -575,6 +587,13 @@
                   <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
                   <span class="sc-bganim-opacity-val">30%</span>
                 </div>
+                <div class="sc-bganim-playback">
+                  <span class="sc-bganim-playback-label">Playback</span>
+                  <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+                    <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+                    <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+                  </button>
+                </div>
                 <!-- Activity strip — the landmark rail on the chat's edge
                      (shared app-wide preference, same as every other chat). -->
                 <button type="button" class="topbar-menu-item sc-mcp-item" id="ap-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
@@ -678,7 +697,7 @@
               <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
             </div>
             <button type="button" class="nfp-width-toggle" id="nfp-width" aria-pressed="false" title="Widen to two panes" aria-label="Product Details width"><span class="material-symbols-outlined">width_normal</span></button>
-            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><span class="nfp-brand-logo-mono">F4L</span></span>
+            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></span>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
           <div class="nfp-foot">
@@ -687,7 +706,10 @@
         </div>
       </aside>
 
-      <!-- Right progress module (shared vf-progress-pane / vfp-*) -->
+      <!-- Right progress module (shared vf-progress-pane / vfp-*). Defaults to a
+           Sticky drawer (tucked behind Product Details, one level deeper) like
+           every progress tracker app-wide; the ⋯ menu carries the Sticky toggle
+           and a "Remove panel" option. -->
       <aside id="ap-progress" class="vf-progress-pane" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
     </div><!-- /#modules-row -->
   </div>

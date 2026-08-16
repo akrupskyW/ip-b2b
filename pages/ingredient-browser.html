@@ -181,18 +181,22 @@
       flex: 1 1 130px; min-width: 116px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
       padding: 12px 14px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       border-radius: 6px;
       box-shadow: var(--shadow-1);
       font-family: inherit; text-align: center; cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    html.dark .ib-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme so
+       the stat tiles share the chat surface, set apart only by their border. */
+    html.dark .ib-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .ib-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .ib-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .ib-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-2)); border-color: var(--border-strong); }
     .ib-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .ib-stat.is-active {
       border-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface));
       box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
     }
     html.dark .ib-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
@@ -375,6 +379,17 @@
        changer via setupMainPanelControls) — the page leads with a slim count
        chip rather than a duplicate serif title. */
     body[data-nav-id="ingredients"] .agent-main-scroll { padding: 0; }
+
+    /* Align the nav's brand strip (owl + collapse chevron) to the shared
+       --panel-header-h so the primary navigation matches every other chat-dock
+       page (reformulation, add-product, studio-ai …). Without this the rail's
+       header falls back to the shorter --shell-topbar-h and looks squeezed /
+       misaligned versus the rest of the app. */
+    #agent-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>

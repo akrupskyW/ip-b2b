@@ -240,13 +240,30 @@ body {
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "menu modules";
-  column-gap: 8px;
+  /* EXPANDED nav: the module's LEFT gap is the page's body side-padding
+     (--modules-bottom-pad); match the nav↔content gap to it so the primary
+     navigation has identical breathing room on both sides on every page. */
+  column-gap: var(--modules-bottom-pad, 12px);
   row-gap: 0;
 }
 #agent-shell-wrap.menu-brand-integrated:not(:has(#menu-panel.mp-open)),
 #chat-shell-wrap.menu-brand-integrated:not(:has(#menu-panel.mp-open)) {
   grid-template-columns: 1fr;
   grid-template-areas: "modules";
+}
+/* COLLAPSED nav (icon rail): shrink the module to almost nothing — just the
+   container + its interior padding. Tighten the nav↔content gap AND cancel most
+   of the body side-padding on the LEFT (via negative margin) so the rail hugs
+   the page edge symmetrically instead of keeping the full expanded breathing
+   room. Excludes the pivoted top-bar mode, which has its own single-column
+   layout. --nav-rail-gap is the tiny outer gap kept on both sides. */
+#agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)),
+#chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) {
+  column-gap: var(--nav-rail-gap, 2px);
+}
+#agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel,
+#chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel {
+  margin-left: calc(var(--nav-rail-gap, 2px) - var(--modules-bottom-pad, 12px));
 }
 
 /* ===== TOP BAR ===== */
@@ -1128,6 +1145,105 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .mg-seg-btn:hover { background: color-mix(in srgb, rgb(219, 39, 119) 12%, transparent); color: var(--text); }
 .mg-seg-btn.is-active { background: rgb(219, 39, 119); color: #fff; }
 
+/* Full-bleed sub-controls — the colour pickers, right-module behaviour toggle
+   and preset themes revealed under the "Full bleed" row once it's switched on
+   (js/appearance-menu.js fullBleedOptionsSection). They sit in an indented,
+   hairline-bordered well so they read as belonging to Full bleed rather than as
+   free-standing rows, and carry the same pink "Admin" affordance as the other
+   admin sub-controls in the menu. */
+.fb-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 4px 8px 2px;
+  padding: 9px 9px 10px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--primary);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+/* Compact the sub-control labels so the whole section fits without wrapping. */
+.fb-opts .fz-size { gap: 5px; padding: 2px 0 0; }
+.fb-opts .fz-size-label { font-size: 10px; letter-spacing: 0.08em; }
+.fb-opts .fz-seg-btn { height: 24px; font-size: 10.5px; }
+.fb-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fb-color-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+/* Native colour input, dressed as a round swatch chip. */
+.fb-color-input {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+.fb-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.fb-color-input::-webkit-color-swatch { border: 0; border-radius: 5px; }
+.fb-color-input::-moz-color-swatch { border: 0; border-radius: 5px; }
+.fb-preset-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1px;
+}
+.fb-preset-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.fb-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 10.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.fb-preset-btn:hover { background: var(--surface-3); color: var(--text); }
+.fb-preset-btn.is-active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--text);
+}
+/* Tiny three-band swatch previewing a preset's nav / chat / right-module tint. */
+.fb-preset-sw {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background-image: linear-gradient(
+    90deg,
+    var(--sw-nav) 0 33.33%,
+    var(--sw-chat) 33.33% 66.66%,
+    var(--sw-rmod) 66.66% 100%
+  );
+}
+
 /* Colorblind CVD-type picker (Deut / Prot / Trit) — auto-size the pills so the
    short type labels fit instead of clipping inside the 30px number pills. */
 .cb-type-row .fz-btn {
@@ -1386,6 +1502,73 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
 @media (prefers-reduced-motion: reduce) {
   #modules-row .sticky-mod.is-sticky { animation: none !important; }
 }
+
+/* Progress trackers are a "supporting" module: they tuck one level DEEPER than
+   the module they sit behind (Product Details / the flow's main pane). Two
+   fixes ride on that:
+     1) z-index 0 — a plain .sticky-mod is z-index 1, so with equal z-index the
+        LATER progress pane painted OVER its left neighbour, and its 14px
+        tucked-in surface-2 strip showed as a lighter seam that read as a gap.
+        Dropping it under z-index 1 makes it slide cleanly UNDER the neighbour.
+     2) shorter — a plain drawer is calc(100% - 30px); the progress tracker is
+        held ~30px shorter still so it reads as nested BELOW the taller module
+        to its left rather than the same height. */
+#modules-row .vf-progress-pane.sticky-mod.is-sticky,
+#modules-row .gv-progress-pane.sticky-mod.is-sticky {
+  z-index: 0;
+  height: calc(100% - 60px);
+  max-height: calc(100% - 60px);
+  align-self: center;
+}
+/* Menu-open: lift just enough to clear the left neighbour so the popover isn't
+   clipped, but stay under the chat (z-index 3). */
+#modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
+#modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+  z-index: 2;
+}
+
+/* Restore tab left behind after a progress module's "Remove panel" — a slim
+   vertically-centred pill pinned to the row's right edge that brings the
+   tracker back. Injected by js/sticky-modules.js. */
+#modules-row .wise-progress-restore {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: auto;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  border-right: 0;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  writing-mode: vertical-rl;
+  transition: color .15s ease, background .15s ease;
+}
+#modules-row .wise-progress-restore:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--primary);
+}
+#modules-row .wise-progress-restore .material-symbols-outlined {
+  font-size: 18px;
+  writing-mode: horizontal-tb;
+}
+#modules-row .wise-progress-restore .wpr-label { letter-spacing: 0.04em; }
 
 /* The canonical fixed chat width (var(--chat-pane-w)) is meant for the DEFAULT
    horizontal modules row. The phone breakpoint overrides the chat's `flex` but
@@ -1707,7 +1890,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 .menu-footer-profile.has-dot.is-read .menu-nav-icon::after { display: none; }
 #menu-panel.mp-rail .menu-footer {
-  padding: 10px 8px;
+  padding: 10px 5px;
 }
 #menu-panel.mp-rail .menu-footer .menu-nav-item {
   justify-content: center;
@@ -2621,8 +2804,8 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
               min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#menu-panel.mp-rail:not(.mp-pivot).mp-open { width: 66px; min-width: 66px; }
-#menu-panel.mp-rail:not(.mp-pivot) .menu-inner { width: 66px; }
+#menu-panel.mp-rail:not(.mp-pivot).mp-open { width: 54px; min-width: 54px; }
+#menu-panel.mp-rail:not(.mp-pivot) .menu-inner { width: 54px; }
 
 /* "Icons only" (Appearance) doesn't just drop the labels — per the Appearance
    model it strips the nav module's background CONTAINER too, so the icon rail
@@ -2689,7 +2872,7 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
   padding: 2px 0 !important;
 }
 .menu-brand-integrated #menu-panel.mp-rail .menu-panel-body {
-  padding: calc(9px + 32px) 8px 10px;
+  padding: calc(9px + 32px) 5px 10px;
 }
 /* Collapsed to the bare icon rail, the body must NOT reserve a right-side
    scrollbar gutter: that space (which appears whenever the OS shows scrollbars
@@ -2697,8 +2880,14 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
    the centered icons left and giving them uneven left/right padding. With the
    background container removed by "Icons only", that asymmetry is now visible.
    Hide the scrollbar so the icons stay symmetrically centered; the rail still
-   scrolls on overflow. */
-#menu-panel.mp-rail .menu-panel-body { scrollbar-width: none; }
+   scrolls on overflow. `scrollbar-gutter: stable both-edges` is the belt-and-
+   suspenders guard: if a browser/OS still lays out a scrollbar gutter despite
+   the hide, it is reserved on BOTH edges so the icons stay centered instead of
+   drifting left. */
+#menu-panel.mp-rail .menu-panel-body {
+  scrollbar-width: none;
+  scrollbar-gutter: stable both-edges;
+}
 #menu-panel.mp-rail .menu-panel-body::-webkit-scrollbar { width: 0; display: none; }
 #menu-panel.mp-rail .menu-nav-label,
 #menu-panel.mp-rail .menu-nav-chevron-btn,
@@ -3182,6 +3371,7 @@ html.header-float .pf-history-header,
 html.header-float .agent-main-header,
 html.header-float .side-panel-header,
 html.header-float .nfp-panel-header,
+html.header-float .ac-panel-header,
 html.header-float .ss-header,
 html.header-float .alerts-panel-header,
 html.header-float .notif-panel-header,
@@ -3202,6 +3392,7 @@ html.header-float .pf-history-header > *:not(.panel-controls),
 html.header-float .agent-main-header > *:not(.panel-controls),
 html.header-float .side-panel-header > *:not(.panel-controls),
 html.header-float .nfp-panel-header > *:not(.panel-controls),
+html.header-float .ac-panel-header > *:not(.panel-controls),
 html.header-float .ss-header > *:not(.panel-controls),
 html.header-float .alerts-panel-header > *:not(.panel-controls),
 html.header-float .notif-panel-header > *:not(.panel-controls) {
@@ -3213,6 +3404,7 @@ html.header-float .pf-history-header .panel-controls,
 html.header-float .agent-main-header .panel-controls,
 html.header-float .side-panel-header .panel-controls,
 html.header-float .nfp-panel-header .panel-controls,
+html.header-float .ac-panel-header .panel-controls,
 html.header-float .ss-header .panel-controls,
 html.header-float .alerts-panel-header .panel-controls,
 html.header-float .notif-panel-header .panel-controls {
@@ -3410,6 +3602,269 @@ html.full-bleed #wiseai-dock-panel {
   height: 100% !important;
   max-height: 100% !important;
   align-self: stretch !important;
+}
+/* …and open STICKY (drawer) modules top-to-bottom too. A module tucked to the
+   right of the chat normally reads as a shorter, vertically-centred drawer (see
+   `.sticky-mod.is-sticky` far above), but full bleed means EVERY module — the
+   sticky drawers and the nested progress trackers included — must run the full
+   height of the window. Stretch them back to full height and drop the drawer's
+   corner rounding + slide-in so they read edge-to-edge like every other module,
+   while KEEPING the tuck (negative margin) so the drawer relationship survives.
+   Higher-specificity (id + double class) so it beats the drawer rules and the
+   per-page `#modules-row #agent-main { height:100% }` overrides alike. */
+html.full-bleed #modules-row .sticky-mod.is-sticky,
+html.full-bleed #modules-row #agent-main.sticky-mod.is-sticky,
+html.full-bleed #modules-row .vf-progress-pane.sticky-mod.is-sticky,
+html.full-bleed #modules-row .gv-progress-pane.sticky-mod.is-sticky,
+html.full-bleed #modules-row.modules-sticky .wch-sidebar.wch-docked {
+  align-self: stretch !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-radius: 0 !important;
+  animation: none !important;
+}
+html.full-bleed #modules-row .sticky-mod.is-sticky > .panel-inner,
+html.full-bleed #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+  border-radius: 0 !important;
+}
+
+/* ===== Full bleed ▸ surface colours (Appearance popover sub-controls) =======
+   Once modules run edge-to-edge, the Full bleed section of the Appearance
+   popover recolours the three surfaces that frame the workspace: the primary
+   navigation, the chat window, and any module docked to the RIGHT of the chat.
+
+   THE NAV IS INVERTED BY DEFAULT. The moment full bleed turns on — with no
+   custom colour picked — the primary nav flips to the OPPOSITE of the current
+   theme so it reads like dark mode:
+     • Light theme → deep brand-blue nav with light contents ("everything else
+       in reverse").
+     • Dark theme  → white / linen nav with dark-blue icons.
+   Because the whole nav is token-driven (var(--text) / --primary / --primary-
+   soft / --border …), we flip it by overriding those tokens SCOPED to
+   #menu-panel — every nav row, icon disc, label, footer and the WISE wordmark
+   (which paints from currentColor) follow automatically. Only the two hard-
+   coded bits (the .menu-inner gradient, and dark mode's white hover fills) are
+   restated explicitly so nothing "doesn't add up".
+
+   A custom colour (or a preset) adds `.fb-nav-tint` / `.fb-chat-tint` /
+   `.fb-rmod-tint` and supplies BOTH a background (--fb-*-bg) and a matching
+   foreground ink (--fb-*-ink, chosen for contrast by js/topbar.js), so every
+   surface stays legible. All of it is gated on `html.full-bleed`, so the
+   treatment is genuinely PART of full bleed and lifts the moment it's off. */
+
+/* ------------------------------------------------------------------------
+   SCHEME PALETTES. A tinted surface is classed by js/topbar.js as `fb-<s>-dark`
+   or `fb-<s>-light` (by the colour's luminance), and the default inverted nav
+   is dark-schemed in a light theme / light-schemed in a dark theme. Each scheme
+   remaps the FULL token set the surface's contents read — muted + subtle text,
+   the semantic chip inks (green/amber/red), accent + border tokens — so labels,
+   icons and chips stop rendering "in the other mode". We deliberately DON'T
+   remap --primary (it's also used as a solid fill, e.g. the jam-strip play
+   button and send buttons); icon/hover accents are handled explicitly below. */
+
+/* DARK-scheme token palette (light body ink on a dark surface). */
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel,
+html.full-bleed.fb-nav-dark #menu-panel,
+html.full-bleed.fb-chat-dark .sc-card,
+html.full-bleed.fb-chat-dark #wa-chat,
+html.full-bleed.fb-chat-dark #rf-chat,
+html.full-bleed.fb-chat-dark #sa-chat,
+html.full-bleed.fb-chat-dark #aid-chat,
+html.full-bleed.fb-chat-dark .ap-chat,
+html.full-bleed.fb-chat-dark #gs-chat,
+html.full-bleed.fb-chat-dark #chat-shell,
+html.full-bleed.fb-chat-dark #pf-chat-panel,
+html.full-bleed.fb-chat-dark #wiseai-dock-panel,
+html.full-bleed.fb-rmod-dark #modules-row .sticky-mod {
+  --text: #F3F4F6;
+  --text-muted: #BCC6D3;
+  --text-subtle: #B1BAC7;
+  --primary-bright: #8B9FAF;
+  --primary-ink: #F3F4F6;
+  --ter-violet: #8B9FAF;
+  --ter-cyan: #8B9FAF;
+  --primary-soft: rgba(139, 159, 175, 0.16);
+  --border: color-mix(in srgb, #8B9FAF 20%, transparent);
+  --border-strong: color-mix(in srgb, #8B9FAF 32%, transparent);
+  --sec-green-text: #B6C9BE;
+  --ter-amber-text: #D7BE91;
+  --sec-red-text: #FFE1DC;
+}
+/* LIGHT-scheme token palette (dark body ink on a light surface). */
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel,
+html.full-bleed.fb-nav-light #menu-panel,
+html.full-bleed.fb-chat-light .sc-card,
+html.full-bleed.fb-chat-light #wa-chat,
+html.full-bleed.fb-chat-light #rf-chat,
+html.full-bleed.fb-chat-light #sa-chat,
+html.full-bleed.fb-chat-light #aid-chat,
+html.full-bleed.fb-chat-light .ap-chat,
+html.full-bleed.fb-chat-light #gs-chat,
+html.full-bleed.fb-chat-light #chat-shell,
+html.full-bleed.fb-chat-light #pf-chat-panel,
+html.full-bleed.fb-chat-light #wiseai-dock-panel,
+html.full-bleed.fb-rmod-light #modules-row .sticky-mod {
+  --text: #111827;
+  --text-muted: #444B55;
+  --text-subtle: #474E58;
+  --primary-bright: #25507C;
+  --primary-ink: #25507C;
+  --ter-violet: #25507C;
+  --ter-cyan: #25507C;
+  --primary-soft: rgba(37, 80, 124, 0.08);
+  --border: color-mix(in srgb, #25507C 16%, transparent);
+  --border-strong: color-mix(in srgb, #25507C 28%, transparent);
+  --sec-green-text: #245E3B;
+  --ter-amber-text: #75360A;
+  --sec-red-text: #831F23;
+}
+
+/* ---- Default nav inversion (no custom colour) ----
+   LIGHT theme → deep brand-blue nav; DARK theme → white / linen nav. The
+   palettes above already flipped the contents; here we set the panel gradient
+   and the icon/hover accents the token palette can't (base rules colour those
+   from --primary, which we don't remap). */
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-inner {
+  background: linear-gradient(165deg, #1C3E60 0%, #17324F 60%, #14293F 100%) !important;
+  border: 1px solid rgba(157, 189, 228, 0.22) !important;
+  box-shadow: 0 4px 40px rgba(10, 22, 38, 0.28) !important;
+}
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-icon .material-symbols-outlined,
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-chevron,
+html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
+  color: #C9D8EC !important;
+}
+
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-inner {
+  background: linear-gradient(165deg, #FFFFFF 0%, #F9F8F3 100%) !important;
+  border: 1px solid color-mix(in srgb, #25507C 16%, transparent) !important;
+  box-shadow: 0 4px 40px rgba(10, 22, 38, 0.14) !important;
+}
+/* Dark mode hard-codes white hover/active fills + a white footer border (both
+   invisible on the flipped white nav) — restate them as brand-blue. */
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-subitem:hover,
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
+  background: rgba(37, 80, 124, 0.08) !important;
+  color: #111827 !important;
+}
+html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-footer {
+  border-top-color: color-mix(in srgb, #25507C 16%, transparent) !important;
+}
+
+/* ---- Custom / preset NAV colour ---- */
+html.full-bleed.fb-nav-tint #menu-panel {
+  --text: var(--fb-nav-fg, #EAF1F9);
+  --text-muted: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 78%, transparent);
+  --text-subtle: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 66%, transparent);
+  --primary-bright: var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9));
+  --primary-ink: var(--fb-nav-fg, #EAF1F9);
+  --primary-soft: color-mix(in srgb, var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9)) 16%, transparent);
+  --border: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 24%, transparent);
+  --border-strong: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 38%, transparent);
+}
+html.full-bleed.fb-nav-tint #menu-panel .menu-inner {
+  background: var(--fb-nav-bg) !important;
+  border: 1px solid color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 22%, transparent) !important;
+}
+/* Icon + hover/active accents follow the picked accent (base rules use
+   --primary, which we don't remap). */
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-icon .material-symbols-outlined,
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item:hover,
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item.is-active,
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item.is-open,
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-chevron,
+html.full-bleed.fb-nav-tint #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
+  color: var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9)) !important;
+}
+/* Neutralise dark mode's hard-coded white hover fills + footer border. */
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item:hover,
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item.is-active,
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item.is-open,
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-subitem:hover,
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
+  background: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 12%, transparent) !important;
+}
+html.full-bleed.dark.fb-nav-tint #menu-panel .menu-footer {
+  border-top-color: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 18%, transparent) !important;
+}
+
+/* ---- Chat window colour ----
+   Re-point the surface tokens (so nested panes inherit the chosen colour) and
+   paint the card + its inner surfaces + overlays. Text/chip inks come from the
+   scheme palette above. */
+html.full-bleed.fb-chat-tint .sc-card,
+html.full-bleed.fb-chat-tint #wa-chat,
+html.full-bleed.fb-chat-tint #rf-chat,
+html.full-bleed.fb-chat-tint #sa-chat,
+html.full-bleed.fb-chat-tint #aid-chat,
+html.full-bleed.fb-chat-tint .ap-chat,
+html.full-bleed.fb-chat-tint #gs-chat,
+html.full-bleed.fb-chat-tint #chat-shell,
+html.full-bleed.fb-chat-tint #pf-chat-panel,
+html.full-bleed.fb-chat-tint #wiseai-dock-panel {
+  --surface: var(--fb-chat-bg);
+  --surface-2: var(--fb-chat-bg);
+  --surface-3: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+}
+html.full-bleed.fb-chat-tint .sc-card,
+html.full-bleed.fb-chat-tint .chat-messages-area,
+html.full-bleed.fb-chat-tint .chat-input-rail,
+html.full-bleed.fb-chat-tint .sc-welcome,
+html.full-bleed.fb-chat-tint .sc-settings,
+html.full-bleed.fb-chat-tint #wa-chat,
+html.full-bleed.fb-chat-tint #rf-chat,
+html.full-bleed.fb-chat-tint #sa-chat,
+html.full-bleed.fb-chat-tint #aid-chat,
+html.full-bleed.fb-chat-tint .ap-chat,
+html.full-bleed.fb-chat-tint #gs-chat,
+html.full-bleed.fb-chat-tint #chat-shell,
+html.full-bleed.fb-chat-tint #pf-chat-panel,
+html.full-bleed.fb-chat-tint #wiseai-dock-panel {
+  background: var(--fb-chat-bg) !important;
+  color: var(--fb-chat-fg, #16233B);
+}
+
+/* ---- Right-of-chat module colour ---- */
+html.full-bleed.fb-rmod-tint #modules-row .sticky-mod {
+  --surface: var(--fb-rmod-bg);
+  --surface-2: var(--fb-rmod-bg);
+  --surface-3: color-mix(in srgb, var(--fb-rmod-fg, #16233B) 8%, var(--fb-rmod-bg));
+}
+html.full-bleed.fb-rmod-tint #modules-row .sticky-mod,
+html.full-bleed.fb-rmod-tint #modules-row .sticky-mod > .panel-inner,
+html.full-bleed.fb-rmod-tint #modules-row .sticky-mod > [class*="-inner"],
+html.full-bleed.fb-rmod-tint #modules-row .sticky-mod .panel-inner {
+  background: var(--fb-rmod-bg) !important;
+  color: var(--fb-rmod-fg, #16233B);
+}
+
+/* ===== Full bleed ▸ right-module functionality =============================
+   The Full bleed section also switches how right-of-chat modules BEHAVE:
+   'drawer' (default tuck), 'flat' (a full-height column flush beside the chat)
+   or 'hidden'. Driven by an `rmod-<mode>` class on <html> (applyRightModuleMode
+   in topbar.js), also gated on full bleed so it's part of the same feature. */
+html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  border-left: 1px solid var(--border) !important;
+  z-index: 1 !important;
+}
+html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky > .panel-inner,
+html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+  border-left: 1px solid var(--border) !important;
+}
+html.full-bleed.rmod-hidden #modules-row .sticky-mod {
+  display: none !important;
 }
 
 .agent-hero {
@@ -4388,6 +4843,11 @@ html.dark .chip.chip-primary { background: var(--primary); border-color: var(--p
    navigation icons (#left-icon-rail .lir-btn = 20px). */
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
 .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
+/* Leading intent glyph always reads in brand blue (the trailing .ws-lock badge
+   keeps its own resting/hover colours; the amber ask-help variant overrides via
+   higher specificity). */
+.ws-intent-chip > .material-symbols-outlined { color: var(--primary); }
+html.dark .ws-intent-chip > .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 .ws-intent-chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: chips take the composer's brightened brand-blue tint (matching
    html.dark .fl-input-wrap) with our royal-blue border so they don't read as
@@ -4417,6 +4877,67 @@ html.dark .chat-input-rail { background: transparent; border-top-color: transpar
    the composer stands out as a blue surface against the navy card. */
 html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+
+/* ===== Living sheen stroke — a shiny brand-blue gradient that travels around
+   the composer border and only the border. A ::before is filled edge-to-edge,
+   painted with a conic gradient, then masked so paint survives ONLY in the ~1.5px
+   ring (content-box XOR border-box), never across the field. The angle rotates
+   slowly (the "goes around") while opacity/brightness pulse (the "breathing").
+   The base 1px border stays as the resting stroke beneath the sweep. ===== */
+@property --wise-sheen-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.fl-input-wrap::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  /* Broad, gently-graduated sweep: never fully transparent (keeps a low brand
+     tint all the way round so it melts into the base stroke) and the specular
+     highlight fans out over a wide arc rather than a hard glint. */
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary) 14%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 24%, transparent) 45deg,
+    color-mix(in srgb, var(--primary) 45%, transparent) 95deg,
+    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 150deg,
+    #f2f8ff 182deg,
+    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 214deg,
+    color-mix(in srgb, var(--primary) 45%, transparent) 268deg,
+    color-mix(in srgb, var(--primary) 24%, transparent) 318deg,
+    color-mix(in srgb, var(--primary) 14%, transparent) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: wise-sheen-rotate 9s linear infinite, wise-sheen-breathe 4.5s ease-in-out infinite;
+}
+html.dark .fl-input-wrap::before {
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 0deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 45deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 95deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 150deg,
+    #ffffff 182deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 214deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 268deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 318deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 360deg);
+}
+@keyframes wise-sheen-rotate {
+  to { --wise-sheen-angle: 360deg; }
+}
+@keyframes wise-sheen-breathe {
+  0%, 100% { opacity: 0.5; filter: brightness(0.95) saturate(1); }
+  50%      { opacity: 1;   filter: brightness(1.3) saturate(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-input-wrap::before { animation: none; opacity: 0.75; }
+}
+/* Input glow toggle (three-dot ▸ "Input glow"): OFF removes the sheen ring app-wide. */
+html.chat-sheen-off .fl-input-wrap::before { display: none; }
 /* The text field is a 1-row <textarea> (so composer-v2 can grow it) but is
    locked to single-line input behaviour by default: wrap="off" + hidden
    overflow scroll horizontally exactly like the old <input>. */
@@ -5039,59 +5560,40 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   position: relative;
   margin-top: 4px;
 }
-/* The DNA double-helix rail no longer runs beside the header — it lives in the
-   BODY's left gutter, so it sits UNDER the "Worked for" line and down alongside
-   the steps. Two stacked layers share one geometry (built in js/wiseai-chat.js):
-     • --base  a BLUE helix that fills the whole strand (what's still "to do")
-     • --fill  the SAME helix in GREEN, clipped from the top and grown downward
-               (--dna-fill 0→100%) as each step lands — so the strand turns green
-               section-by-section while everything below the front stays blue.
-   The base layer FLOWS (dots travelling down) while thinking, and freezes once
-   `.is-complete` lands. */
+/* The DNA double-helix rail lives in the BODY's left gutter, so it sits UNDER
+   the "Worked for" line and runs down alongside the steps. A single .sc-trace-dna
+   host carries an inline <svg> helix rebuilt in js/wiseai-chat.js: while thinking
+   it TWISTS (spins about its vertical axis, backbones swapping front-to-back at
+   each crossover), and once `.is-complete` lands it freezes with a base-pair dot
+   aligned to each milestone row, sweeping green from the top as steps land. */
 .sc-trace-strand {
   position: absolute;
   left: 0; top: 1px; bottom: 1px;
-  width: 16px;
+  width: 26px;
   pointer-events: none;
 }
+/* Let the helix's widest swells spill out of the 26px rail rather than being
+   capped flat at the edge — the contraction/expansion has to read. */
 .sc-trace-dna {
   position: absolute; inset: 0;
-  background-repeat: repeat-y;
-  background-position: center top;
-  background-size: 16px auto;
-  opacity: 0.92;
+  overflow: visible;
 }
-.sc-trace:not(.is-complete) .sc-trace-dna--base {
-  /* Slower, unhurried drift down the strand so the helix reads as breathing
-     rather than mechanically scrolling. */
-  animation: scDnaFlow 7.2s linear infinite;
+.sc-trace-dna svg {
+  display: block;
+  width: 26px; height: 100%;
+  overflow: visible;
 }
-/* The whole strand breathes on its own, slower cycle — a gentle swell in and out
-   of presence so the two rhythms (drift + breath) never line up, and it never
-   feels metronomic. */
+/* The whole strand breathes on its own slow cycle while thinking — a gentle
+   swell in and out of presence so the twist never feels metronomic. */
 .sc-trace:not(.is-complete) .sc-trace-strand {
   animation: scDnaBreathe 9.5s ease-in-out infinite;
-}
-/* The green "done" layer is clipped to reveal only its top --dna-fill portion,
-   growing downward as sections complete (registered so the growth tweens). */
-@property --dna-fill { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
-.sc-trace-dna--fill {
-  --dna-fill: 0%;
-  clip-path: inset(0 0 calc(100% - var(--dna-fill)) 0);
-  transition: --dna-fill 0.72s cubic-bezier(0.33, 0, 0.2, 1);
-}
-@keyframes scDnaFlow {
-  from { background-position: center 0; }
-  to   { background-position: center 116px; }
 }
 @keyframes scDnaBreathe {
   0%, 100% { opacity: 0.72; }
   50%      { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sc-trace:not(.is-complete) .sc-trace-dna--base { animation: none; }
   .sc-trace:not(.is-complete) .sc-trace-strand { animation: none; }
-  .sc-trace-dna--fill { transition: none; }
 }
 .sc-trace-head {
   display: flex; align-items: center; gap: 6px; width: 100%;
@@ -5117,7 +5619,7 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 /* The body carries the strand rail in its left gutter (position:relative host);
    its content is inset past the strand so the helix reads to the LEFT of the
    globs / steps, tucked directly under the header. */
-.sc-trace-body { position: relative; margin-top: 5px; padding-left: 20px; }
+.sc-trace-body { position: relative; margin-top: 5px; padding-left: 30px; }
 
 /* Live view — a status with its big streaming glob of narration. The globs
    build on each other: each milestone block is appended below the last, so give
@@ -5131,6 +5633,42 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   /* Light blue — the milestone key + its glob read as their own soft-blue
      "thinking" voice rather than full-strength transcript text. */
   color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff);
+  /* Shimmer palette — while a section loads the title rests on WISE gold, with
+     shades of brand blue drifting across it. */
+  --sc-shimmer-base: var(--ter-amber, #FFC434);
+  --sc-shimmer-glow: var(--primary, #25507C);
+}
+/* While a primary section is still loading (its glob lines are streaming in and
+   the block hasn't been marked .is-done yet) the title gently shimmers: a WISE
+   gold highlight drifts through the resting brand blue, gradient-clipped to the
+   text so it reads as a soft gold↔blue glow sweeping left across the label. */
+.sc-trace-live:not(.is-done) .sc-trace-now-key {
+  /* A tiling gradient (gold at both ends so the seam is invisible) with a band
+     of brand blue drifting through the middle. It REPEATS and the sweep shifts
+     by exactly one tile, so the text is always fully covered — no transparent
+     gap, no disappear/reappear flicker as new content streams in below. */
+  background-image: linear-gradient(
+    100deg,
+    var(--sc-shimmer-base) 0%,
+    var(--sc-shimmer-base) 40%,
+    color-mix(in srgb, var(--sc-shimmer-glow) 60%, var(--sc-shimmer-base)) 47%,
+    var(--sc-shimmer-glow) 50%,
+    color-mix(in srgb, var(--sc-shimmer-glow) 60%, var(--sc-shimmer-base)) 53%,
+    var(--sc-shimmer-base) 60%,
+    var(--sc-shimmer-base) 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  will-change: background-position;
+  animation: scTraceShimmer 2.8s linear infinite;
+}
+@keyframes scTraceShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: 0% 0; }
 }
 .sc-trace-story { display: block; max-width: 54ch; }
 .sc-trace-story-line {
@@ -5140,8 +5678,23 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   opacity: 0; transform: translateY(3px);
   transition: opacity .32s ease, transform .32s ease;
 }
-html.dark .sc-trace-now-key { color: #AEC8ED; }
+html.dark .sc-trace-now-key {
+  color: #AEC8ED;
+  /* On navy: a warm gold resting tone with a soft ice-blue sweep, both lifted
+     lighter so the shimmer stays legible in dark mode. */
+  --sc-shimmer-base: color-mix(in srgb, var(--ter-amber, #FFC434) 90%, #ffffff);
+  --sc-shimmer-glow: #AEC8ED;
+}
 html.dark .sc-trace-story-line { color: #93B2DC; }
+/* Reduced motion: no sweep — the title rests on its solid brand-blue tone. */
+@media (prefers-reduced-motion: reduce) {
+  .sc-trace-live:not(.is-done) .sc-trace-now-key {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: var(--sc-shimmer-base);
+    color: var(--sc-shimmer-base);
+  }
+}
 .sc-trace-story-line.is-in { opacity: 1; transform: none; }
 /* The closing line names the data source the answer is grounded in — same glob
    styling, just set off a touch with the source name in bold. */
@@ -8677,9 +9230,12 @@ html.dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
   padding: 12px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
-  background: var(--surface-2);
+  background: var(--surface);
 }
-html.dark .dash-report-stat { background: rgba(255, 255, 255, 0.03); }
+/* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+html.dark .dash-report-stat { background: #1A2339; }
+html.chat-tint:not(.dark) .dash-report-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.dark.chat-tint .dash-report-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .dash-report-stat-val {
   font-size: 1.45rem;
   font-weight: 800;
@@ -8906,12 +9462,17 @@ html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(25
   flex: 1 1 120px; min-width: 108px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   padding: 12px 14px;
-  background: var(--surface-2); border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-sm);
   box-shadow: var(--shadow-1);
   text-align: center;
 }
-.vf-stat--active { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 7%, var(--surface-2)); }
+/* Scorecard fill mirrors the chat module (.sc-card) across every theme so the
+   stat tiles share the chat surface, set apart only by their hairline border. */
+html.dark .vf-stat { background: #1A2339; }
+html.chat-tint:not(.dark) .vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+.vf-stat--active { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
 .vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .vf-stat--active .vf-stat-num { color: var(--primary); }
 html.dark .vf-stat--active .vf-stat-num { color: var(--vf-ink); }
@@ -9741,9 +10302,13 @@ html.dark .gv-search { background: rgba(255,255,255,0.05); border-color: rgba(25
 .gv-stat {
   flex: 1 1 120px; min-width: 108px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border);
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-sm); box-shadow: var(--shadow-1); text-align: center;
 }
+/* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+html.dark .gv-stat { background: #1A2339; }
+html.chat-tint:not(.dark) .gv-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.dark.chat-tint .gv-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .gv-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-stat--verified .gv-stat-num { color: var(--gv-ink); }
 .gv-stat--verified .gv-stat-label .material-symbols-outlined { color: var(--gv-ink); }
@@ -10485,6 +11050,10 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 @container adm (max-width: 541px)  { .adm-vf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container adm (max-width: 265px)  { .adm-vf-stats { grid-template-columns: 1fr; } }
 .adm-vf-stat { display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; padding: 16px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-1); text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
+/* Scorecard fill mirrors the chat module (.sc-card) in dark + chat-tint too. */
+html.dark .adm-vf-stat { background: #1A2339; }
+html.chat-tint:not(.dark) .adm-vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.dark.chat-tint .adm-vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 /* Fixed-height chip slot so the chip (whether it wraps to one or two lines)
    always occupies the same vertical band — this keeps the description text
    below it on the same axis across every scorecard. */
@@ -10616,10 +11185,14 @@ html.dark .adm-icon-btn--danger { color: #FF9E96; }
    exactly like the Invoices surface. */
 body[data-adm-page] #agent-main-header { display: none; }
 body[data-adm-page] .agent-main-scroll { padding: 0; }
-/* All Modules keeps the module's ⋯ + width cluster: the header collapses to
-   zero height (title block dropped, like header-float) but stays rendered so
-   the .panel-controls can float pinned to the module's top-right corner. */
-body[data-nav-id="all-modules"] #agent-main-header {
+/* All Modules (and the admin dashboards that supply their own head — Non-UPF
+   Dashboard, Marketing Assets) keep the module's ⋯ + width cluster: the header
+   collapses to zero height (title block dropped, like header-float) but stays
+   rendered so the .panel-controls can float pinned to the module's top-right
+   corner. Every right-of-chat module reads the same [⋯][width] this way. */
+body[data-nav-id="all-modules"] #agent-main-header,
+body[data-nav-id="non-upf-dashboard"] #agent-main-header,
+body[data-nav-id="marketing-assets"] #agent-main-header {
   display: flex;
   height: 0 !important;
   min-height: 0 !important;
@@ -10630,8 +11203,12 @@ body[data-nav-id="all-modules"] #agent-main-header {
   overflow: visible;
   z-index: 6;
 }
-body[data-nav-id="all-modules"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
-body[data-nav-id="all-modules"] #agent-main-header .panel-controls {
+body[data-nav-id="all-modules"] #agent-main-header > *:not(.panel-controls),
+body[data-nav-id="non-upf-dashboard"] #agent-main-header > *:not(.panel-controls),
+body[data-nav-id="marketing-assets"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
+body[data-nav-id="all-modules"] #agent-main-header .panel-controls,
+body[data-nav-id="non-upf-dashboard"] #agent-main-header .panel-controls,
+body[data-nav-id="marketing-assets"] #agent-main-header .panel-controls {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -10977,4 +11554,104 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
 }
 @media (max-width: 640px) {
   .adm-wrap { padding: 20px 20px 48px; }
+}
+
+/* ============================================================================
+   Responsive data tables — every table collapses into stacked cards once it is
+   phone-narrow (<= 560px). js/responsive-tables.js MEASURES each table's width
+   (ResizeObserver) and toggles the classes below; it never sets container-type,
+   so it can't disturb the page's existing container queries.
+
+   Tags applied by the script:
+     • .rtbl / .rtbl-grid  → the table root (real <table> / CSS-grid faux-table).
+     • .rtbl-cards         → added to the root only while it is narrow.
+     • .rtbl-ghead         → a grid table's header row (hidden in card mode).
+     • .rtbl-grow          → each grid row (becomes a card).
+     • .rtbl-fld           → each VISIBLE cell. Cells the page has hidden are NOT
+                             tagged, so card mode can never reveal a column that
+                             is toggled off. Card styles only ever touch .rtbl-fld.
+     • data-rlabel         → the cell's column header, shown as a small label
+                             beside the value. Action / menu / icon-only columns
+                             carry none and render as a full-width block.
+
+   Admin (.adm-*) and invoices (.inv-*) grids keep their own breakpoints and are
+   never tagged here.
+   ========================================================================= */
+
+/* ---- Real <table> → stacked cards -------------------------------------- */
+table.rtbl.rtbl-cards { display: block; width: 100%; min-width: 0; border-collapse: collapse; }
+table.rtbl.rtbl-cards > thead, table.rtbl.rtbl-cards > tbody, table.rtbl.rtbl-cards > tfoot { display: block; width: 100%; }
+table.rtbl.rtbl-cards thead { display: none; }
+table.rtbl.rtbl-cards tbody > tr {
+  display: block;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+table.rtbl.rtbl-cards tbody > tr:last-child { margin-bottom: 0; }
+
+/* ---- Grid faux-tables → stacked cards ---------------------------------- */
+.rtbl-grid.rtbl-cards { display: block; min-width: 0; }
+.rtbl-grid.rtbl-cards .rtbl-ghead { display: none; }
+.rtbl-grid.rtbl-cards .rtbl-grow {
+  display: block;
+  grid-template-columns: none;
+  min-width: 0;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+.rtbl-grid.rtbl-cards .rtbl-grow:last-child { margin-bottom: 0; }
+
+/* ---- Shared field layout inside a card --------------------------------- *
+   Labelled fields read as a row: LABEL on the left, value on the right, wrapping
+   underneath when long. Identity / action cells (no data-rlabel) sit full-width.
+   Only .rtbl-fld (visible) cells are affected — hidden columns keep their state. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 5px 0;
+  text-align: left;
+  white-space: normal;
+}
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not(:last-child),
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not(:last-child) {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel],
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel] {
+  display: flex;
+  align-items: baseline;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  justify-self: stretch;
+}
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel]::before,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel]::before {
+  content: attr(data-rlabel);
+  flex: 0 0 auto;
+  margin-right: auto;                 /* push the value to the right */
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+/* Unlabelled cells (product identity, action buttons, checkboxes) span full width. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not([data-rlabel]) {
+  display: block;
+  justify-self: stretch;
 }

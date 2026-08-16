@@ -794,6 +794,11 @@ html.dark .chip.chip-primary { background: var(--primary); border-color: var(--p
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px;
   white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; flex: 0 0 auto; }
+/* Leading intent glyph always reads in brand blue (the trailing .ws-lock badge
+   keeps its own resting/hover colours; the amber ask-help variant overrides via
+   higher specificity). */
+.ws-intent-chip > .material-symbols-outlined { color: var(--primary); }
+html.dark .ws-intent-chip > .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 .ws-intent-chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
 /* Dark mode: chips take the composer's brightened brand-blue tint (matching
    html.dark .fl-input-wrap) with our royal-blue border so they don't read as
@@ -843,6 +848,67 @@ html.dark .chat-input-rail { background: transparent; border-top-color: transpar
    the composer stands out as a blue surface against the navy card. */
 html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+
+/* ===== Living sheen stroke — a shiny brand-blue gradient that travels around
+   the composer border and only the border. A ::before is filled edge-to-edge,
+   painted with a conic gradient, then masked so paint survives ONLY in the ~1.5px
+   ring (content-box XOR border-box), never across the field. The angle rotates
+   slowly (the "goes around") while opacity/brightness pulse (the "breathing").
+   The base 1px border stays as the resting stroke beneath the sweep. ===== */
+@property --wise-sheen-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.fl-input-wrap::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit;
+  padding: 1px;                /* ring thickness the sheen lives in */
+  pointer-events: none;
+  /* Broad, gently-graduated sweep: never fully transparent (keeps a low brand
+     tint all the way round so it melts into the base stroke) and the specular
+     highlight fans out over a wide arc rather than a hard glint. */
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary) 14%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 24%, transparent) 45deg,
+    color-mix(in srgb, var(--primary) 45%, transparent) 95deg,
+    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 150deg,
+    #f2f8ff 182deg,           /* specular highlight — the shine */
+    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 214deg,
+    color-mix(in srgb, var(--primary) 45%, transparent) 268deg,
+    color-mix(in srgb, var(--primary) 24%, transparent) 318deg,
+    color-mix(in srgb, var(--primary) 14%, transparent) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: wise-sheen-rotate 9s linear infinite, wise-sheen-breathe 4.5s ease-in-out infinite;
+}
+html.dark .fl-input-wrap::before {
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 0deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 45deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 95deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 150deg,
+    #ffffff 182deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 214deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 268deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 318deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 360deg);
+}
+@keyframes wise-sheen-rotate {
+  to { --wise-sheen-angle: 360deg; }
+}
+@keyframes wise-sheen-breathe {
+  0%, 100% { opacity: 0.5; filter: brightness(0.95) saturate(1); }
+  50%      { opacity: 1;   filter: brightness(1.3) saturate(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-input-wrap::before { animation: none; opacity: 0.75; }
+}
+/* Input glow toggle (three-dot ▸ "Input glow"): OFF removes the sheen ring app-wide. */
+html.chat-sheen-off .fl-input-wrap::before { display: none; }
 /* The text field is a 1-row <textarea> (so composer-v2 can grow it) but is
    locked to single-line input behaviour by default: wrap="off" + hidden
    overflow scroll horizontally exactly like the old <input>. */

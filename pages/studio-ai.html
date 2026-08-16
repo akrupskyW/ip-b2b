@@ -123,6 +123,13 @@
       box-shadow: var(--shadow-card);
       overflow: hidden;
     }
+    /* Width changer tiers (js/pane-width.js). single/double/triple cap the panel
+       to a reading width (a right gutter opens as it narrows); the fill tier
+       removes the cap via pane-width.js's universal `.panel-fill` !important rule,
+       so it grows to absorb the row. The panel opens at fill (its natural look). */
+    #sa-panel.panel-wide:not(.panel-triple) { max-width: 1180px; }
+    #sa-panel.panel-triple { max-width: 1480px; }
+    #sa-panel:not(.panel-wide):not(.panel-triple):not(.panel-fill) { max-width: 900px; }
     /* Persistent module headline (survives header-float, which collapses the
        shared .agent-main-header) — same component as product-portfolio's .pf-head:
        a Noto Serif display title with a muted meta subline. */
@@ -133,6 +140,10 @@
     .sa-panel-head-titles { flex: 1 1 auto; min-width: 0; }
     .sa-panel-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; }
     .sa-panel-head-meta { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; }
+    /* [⋯ menu][width changer] cluster, pinned to the head's right edge — the
+       same control pair every module right of the chat carries. */
+    .sa-head-controls { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+    .sa-head-controls .panel-more-wrap { margin-left: 0; }
     .sa-soon-pill {
       display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
       padding: 5px 11px; border-radius: 9999px;
@@ -224,6 +235,16 @@
           <p class="sa-panel-head-meta">Studio &amp; AI · what's launching in the private beta</p>
         </div>
         <span class="sa-soon-pill"><span class="material-symbols-outlined">schedule</span>Private beta</span>
+        <!-- Standard module controls: [⋯ menu][width changer] — same pair every
+             right-of-chat module carries. sticky-modules.js drops its "Sticky
+             module" admin toggle into this menu (no second ⋯). -->
+        <div class="sa-head-controls">
+          <div class="panel-more-wrap" id="sa-panel-menu-wrap">
+            <button type="button" id="sa-panel-menu-btn" class="panel-more-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="sa-panel-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+            <div id="sa-panel-menu" class="topbar-popover hidden" role="menu"></div>
+          </div>
+          <button type="button" class="panel-width-toggle-btn" id="sa-panel-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Panel width"><span class="material-symbols-outlined">width_normal</span></button>
+        </div>
       </div>
 
       <div class="sa-panel-body">
@@ -556,6 +577,76 @@
       }
     }
   </script>
+  <!-- Wire the coming-soon module's [⋯ menu][width changer] controls. The ⋯ menu
+       opens/closes here (popover-layer.js floats it above overflow; sticky-modules.js
+       fills it with the "Sticky module" admin toggle). The width changer cycles the
+       one canonical pane-width model (js/pane-width.js) on #sa-panel. -->
+  <script>
+    (function () {
+      var panel = document.getElementById('sa-panel');
+      var menuBtn = document.getElementById('sa-panel-menu-btn');
+      var menu = document.getElementById('sa-panel-menu');
+      var widthBtn = document.getElementById('sa-panel-width');
+      if (!panel) return;
+
+      /* ── ⋯ module menu ── */
+      if (menuBtn && menu) {
+        function closeMenu() {
+          if (menu.classList.contains('hidden')) return;
+          menu.classList.add('hidden');
+          menuBtn.classList.remove('is-open');
+          menuBtn.setAttribute('aria-expanded', 'false');
+        }
+        function openMenu() {
+          menu.classList.remove('hidden');
+          menuBtn.classList.add('is-open');
+          menuBtn.setAttribute('aria-expanded', 'true');
+        }
+        menuBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (menu.classList.contains('hidden')) openMenu(); else closeMenu();
+        });
+        document.addEventListener('click', function (e) {
+          if (!menu.contains(e.target) && !menuBtn.contains(e.target)) closeMenu();
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+      }
+
+      /* ── width changer (canonical js/pane-width.js) ── */
+      if (widthBtn) {
+        var KEY = 'wise-width:studio-ai:sa-panel';
+        function readTier() {
+          var W = window.WPaneWidth;
+          try {
+            var v = localStorage.getItem(KEY);
+            /* Default to the fill tier so the panel keeps its natural full-row
+               width; tapping the control then steps down to reading widths. */
+            return v == null ? (W ? W.TIERS - 1 : 3) : (W ? W.clamp(v) : parseInt(v, 10) || 0);
+          } catch (_) { return 3; }
+        }
+        function applyTier(tier) {
+          var W = window.WPaneWidth;
+          if (W) { W.applyClasses(panel, tier, 'panel'); W.syncButton(widthBtn, tier); }
+          try { localStorage.setItem(KEY, String(tier)); } catch (_) {}
+        }
+        function boot() { applyTier(readTier()); }
+        if (window.WPaneWidth) boot();
+        else {
+          /* pane-width.js is loaded (deferred) by agent-menu.js — wait a tick. */
+          var tries = 0;
+          var iv = setInterval(function () {
+            if (window.WPaneWidth || tries++ > 40) { clearInterval(iv); boot(); }
+          }, 50);
+        }
+        widthBtn.addEventListener('click', function () {
+          var W = window.WPaneWidth;
+          var cur = W ? W.tierOfEl(panel) : 0;
+          applyTier(W ? W.next(cur) : (cur + 1) % 4);
+        });
+      }
+    })();
+  </script>
+
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
 </body>

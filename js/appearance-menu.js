@@ -34,6 +34,19 @@ import {
   applyHeaderFloat,
   isFullBleedOn,
   applyFullBleed,
+  getNavBg,
+  applyNavBg,
+  getChatBg,
+  applyChatBg,
+  getRightModuleBg,
+  applyRightModuleBg,
+  RMOD_MODES,
+  getRightModuleMode,
+  applyRightModuleMode,
+  FB_PRESETS,
+  getFullBleedTheme,
+  applyFullBleedTheme,
+  clearFullBleedThemeMark,
   isColorblindOn,
   applyColorblind,
   getColorblindMode,
@@ -338,6 +351,57 @@ function themeSection(isDark) {
     </div>`;
 }
 
+/** Full-bleed sub-controls — revealed directly under the "Full bleed" toggle
+    once it's switched on (like the Jam player under "Jam strip"). They let an
+    admin recolour the three surfaces full bleed exposes edge-to-edge — the
+    primary navigation background, the chat window, and any module docked to the
+    RIGHT of the chat — switch how those right modules behave, and drop in one of
+    three preset themes. Colour pickers key off `data-fbcolor`, the behaviour
+    segmented control off `data-rmodmode`, and the presets off `data-fbpreset`;
+    all handled in wireAppearancePopover(). Renders nothing while full bleed is
+    off so the menu stays clean. */
+function fbColorRow(kind, label, value, fallback) {
+  const hex = /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : fallback;
+  return `
+    <div class="fb-color-row">
+      <span class="fb-color-label">${label}</span>
+      <input type="color" class="fb-color-input" data-fbcolor="${kind}" value="${hex}" aria-label="${label} colour">
+    </div>`;
+}
+function fullBleedOptionsSection() {
+  if (!isFullBleedOn()) return '';
+  const mode = getRightModuleMode();
+  const theme = getFullBleedTheme();
+
+  const modeBtns = RMOD_MODES.map(
+    (m) =>
+      `<button type="button" class="fz-seg-btn${m.id === mode ? ' is-active' : ''}" data-rmodmode="${m.id}" aria-pressed="${m.id === mode ? 'true' : 'false'}">${m.label}</button>`
+  ).join('');
+
+  const presetBtns = FB_PRESETS.map((p) => {
+    const sw = `--sw-nav:${p.nav};--sw-chat:${p.chat};--sw-rmod:${p.rmod}`;
+    return `<button type="button" class="fb-preset-btn${p.id === theme ? ' is-active' : ''}" data-fbpreset="${p.id}" aria-pressed="${p.id === theme ? 'true' : 'false'}">
+        <span class="fb-preset-sw" style="${sw}" aria-hidden="true"></span>${p.label}
+      </button>`;
+  }).join('');
+  const resetBtn = `<button type="button" class="fb-preset-btn${theme ? '' : ' is-active'}" data-fbpreset="" aria-pressed="${theme ? 'false' : 'true'}">Default</button>`;
+
+  return `
+    <div class="fb-opts" role="group" aria-label="Full bleed options">
+      ${fbColorRow('nav', 'Navigation background', getNavBg(), '#ffffff')}
+      ${fbColorRow('chat', 'Chat window background', getChatBg(), '#ffffff')}
+      ${fbColorRow('rmod', 'Right module background', getRightModuleBg(), '#f4f2ea')}
+      <div class="fz-size fb-rmod-mode">
+        <span class="fz-size-label">Right module<span class="wise-popover-badge">Admin</span></span>
+        <div class="fz-seg" role="group" aria-label="Right module behaviour">${modeBtns}</div>
+      </div>
+      <div class="fb-presets">
+        <span class="fb-preset-label">Preset themes</span>
+        <div class="fb-preset-btns" role="group" aria-label="Preset themes">${presetBtns}${resetBtn}</div>
+      </div>
+    </div>`;
+}
+
 /** Wrap a set of rows in a titled "group" card. Groups are the unit the
     Appearance popover flows into its responsive column layout: each group (and
     therefore every row inside it) stays within ONE column and is never split or
@@ -386,6 +450,7 @@ export function buildAppearanceBody({
       ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
       ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
       ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
+      ${fullBleedOptionsSection()}
       ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
     `)}
     ${apGroup('Chat', `
@@ -533,6 +598,21 @@ export function wireAppearancePopover(pop, ctx = {}) {
     const mg = within('[data-mg]');
     if (mg) { ev.stopPropagation(); applyModuleGap(getModuleGap() === mg.dataset.mg ? '' : mg.dataset.mg); render(); return; }
 
+    /* Full bleed ▸ right-module behaviour (Drawer / Flat / Hidden). */
+    const rmm = within('[data-rmodmode]');
+    if (rmm) { ev.stopPropagation(); applyRightModuleMode(rmm.dataset.rmodmode); render(); return; }
+
+    /* Full bleed ▸ preset theme (sets nav/chat/right-module colours at once;
+       the empty "Default" chip clears them). Re-render so the colour swatches
+       and the active-chip state both refresh. */
+    const fbp = within('[data-fbpreset]');
+    if (fbp) { ev.stopPropagation(); applyFullBleedTheme(fbp.dataset.fbpreset); render(); return; }
+
+    /* Full bleed ▸ colour swatch. The <input type="color"> opens a native
+       picker and reports via the 'input' listener below; swallow the click so
+       it neither toggles a row nor closes the popover. */
+    if (within('[data-fbcolor]')) { ev.stopPropagation(); return; }
+
     /* Branding style ("Default" / "Style 1" inset). Selecting a style applies it
        app-wide; "Default" clears the inset treatment back to the flat mark. */
     const bs = within('[data-brandstyle]');
@@ -552,9 +632,31 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .jam-pop, .fb-opts, .fb-color-row, .fb-presets, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();
+  });
+
+  /* Full bleed ▸ live surface colour pickers. Colour inputs report through
+     'input' (fired continuously as the swatch changes), not 'click', so they
+     get their own delegated listener. We deliberately DON'T re-render on every
+     input — that would recreate the picker node mid-drag — and instead push the
+     colour live and update the preset highlight in place (a hand-tweaked colour
+     drops the active preset back to "Default"). */
+  pop.addEventListener('input', (ev) => {
+    const ci = ev.target.closest?.('[data-fbcolor]');
+    if (!ci || !pop.contains(ci)) return;
+    const kind = ci.dataset.fbcolor;
+    const val = ci.value;
+    if (kind === 'nav') applyNavBg(val);
+    else if (kind === 'chat') applyChatBg(val);
+    else if (kind === 'rmod') applyRightModuleBg(val);
+    clearFullBleedThemeMark();
+    pop.querySelectorAll('[data-fbpreset]').forEach((b) => {
+      const isDefault = b.dataset.fbpreset === '';
+      b.classList.toggle('is-active', isDefault);
+      b.setAttribute('aria-pressed', isDefault ? 'true' : 'false');
+    });
   });
 }

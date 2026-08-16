@@ -285,6 +285,12 @@ function moduleMoreItems(moduleId) {
       { action: 'int-act', icon: 'chat_bubble', label: 'Show chips needing transcript' },
     ];
   }
+  if (moduleId === 'mi-tables') {
+    return [
+      { action: 'tbl-start', icon: 'first_page', label: 'Back to start' },
+      { action: 'tbl-clear', icon: 'restart_alt', label: 'Clear search' },
+    ];
+  }
   return [
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -409,6 +415,115 @@ function renderDirectory() {
         ${sections.map(directorySection).join('')}
       </div>
       ${renderRail(flat)}
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Table Gallery — every data table in the app, in one carousel rail   */
+/*                                                                     */
+/* The app ships ~two dozen table UIs, built two ways (real <table>s   */
+/* and CSS-grid "faux tables" — see js/responsive-tables.js for the    */
+/* full taxonomy). This module collects EVERY one of them and lines    */
+/* them up as live previews in a single horizontal carousel. Each pane */
+/* loads the real host page in an iframe (same live-preview mechanism  */
+/* as the Module Directory rail) and then isolates just the target     */
+/* table from its page chrome (see focusFrameTable). If a table can't  */
+/* be isolated (e.g. it only renders after an interaction), the pane   */
+/* gracefully falls back to the chrome-stripped page preview so it     */
+/* never shows an empty card. `selector` is resolved inside the frame. */
+const TABLE_CATALOG = [
+  /* Portfolio */
+  { label: 'Portfolio · Claimed', href: 'product-portfolio.html', selector: '.pf-table--claimed', icon: 'inventory_2', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Claimed SKUs with compliance and ingredient health.' },
+  { label: 'Portfolio · Discovered', href: 'product-portfolio.html', selector: '.pf-table--discovered', icon: 'travel_explore', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Auto-discovered UPCs waiting to be claimed.' },
+  { label: 'Portfolio · Needs info', href: 'product-portfolio.html', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products missing data before they can be verified.' },
+  { label: 'Product Comparison', href: 'product-comparison.html', selector: '.cmp-grid', icon: 'compare', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Side-by-side attribute matrix for two products.' },
+  { label: 'Marketing Assets tree', href: 'marketing-assets.html', selector: '#ma-root-table', icon: 'photo_library', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Nested file tree of the co-branding toolkit.' },
+
+  /* WISEcodeAI Studio */
+  { label: 'AI Dashboard · Users', href: 'ai-dashboard.html', selector: '#aid-user-table', icon: 'group', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'Per-user AI activity and usage.' },
+  { label: 'Ingredient Browser', href: 'ingredient-browser.html', selector: '#ib-table', icon: 'science', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The full ingredient registry with GRAS status.' },
+  { label: 'Chat · Ingredient table', href: 'wiseai.html', selector: '.wa-tbl', icon: 'forum', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The sortable ingredient table rendered inside a chat answer.' },
+
+  /* Reformulation */
+  { label: 'Reformulation · Picks', href: 'reformulation.html', selector: '.rf-table:not(.rf-table--moves)', icon: 'auto_fix_high', area: 'reform', areaTitle: 'Reformulation', desc: 'Products you can pick to reformulate.' },
+  { label: 'Reformulation · Moves', href: 'reformulation.html', selector: '#rf-moves-table', icon: 'route', area: 'reform', areaTitle: 'Reformulation', desc: 'Recommended ingredient moves with impact and effort.' },
+
+  /* Reports & Analytics */
+  { label: 'Guiding Stars', href: 'report-guiding-stars.html', selector: '#gs-table', icon: 'star', area: 'report', areaTitle: 'Reports', desc: 'Every product scored on the Guiding Stars scale.' },
+  { label: 'Analytics · UPF', href: 'analytics-types.html', selector: '#upf-table-wrap', icon: 'insights', area: 'report', areaTitle: 'Reports', desc: 'Portfolio UPF classification matrix.' },
+  { label: 'Analytics · GRAS status', href: 'analytics-types.html', selector: '#gras-table-wrap', icon: 'verified', area: 'report', areaTitle: 'Reports', desc: 'GRAS status broken down across the portfolio.' },
+  { label: 'Analytics · Processing', href: 'analytics-types.html', selector: '#proc-table-wrap', icon: 'blender', area: 'report', areaTitle: 'Reports', desc: 'Processing-level (NOVA) distribution table.' },
+  { label: 'Analytics · GRAS by product', href: 'analytics-types.html', selector: '#gras-prod-table-wrap', icon: 'table_rows', area: 'report', areaTitle: 'Reports', desc: 'GRAS documentation status per product.' },
+
+  /* Verification */
+  { label: 'Non-UPF · Select', href: 'verification.html', selector: '.vf-table', icon: 'verified', area: 'verify', areaTitle: 'Verification', desc: 'Qualifying SKUs to run through Non-UPF verification.' },
+  { label: 'GRAS · Ingredients', href: 'gras-verification.html', selector: '.gv-table', icon: 'shield', area: 'verify', areaTitle: 'Verification', desc: 'Ingredient-level GRAS documentation table.' },
+
+  /* Admin */
+  { label: 'Organizations', href: 'organizations.html', selector: '.adm-table', icon: 'apartment', area: 'admin', areaTitle: 'Admin', desc: 'Customer org directory with member counts.' },
+  { label: 'User Management', href: 'user-management.html', selector: '.adm-table', icon: 'group', area: 'admin', areaTitle: 'Admin', desc: 'Users and roles across the workspace.' },
+  { label: 'Audit Queue', href: 'audit-queue.html', selector: '.adm-table', icon: 'fact_check', area: 'admin', areaTitle: 'Admin', desc: 'Ingredient audit review queue.' },
+  { label: 'Non-UPF Dashboard', href: 'non-upf-dashboard.html', selector: '.adm-table', icon: 'dashboard', area: 'admin', areaTitle: 'Admin', desc: 'Verification analytics board.' },
+  { label: 'Quick Invite · History', href: 'quick-invite.html', selector: '.adm-table', icon: 'bolt', area: 'admin', areaTitle: 'Admin', desc: 'Recent one-step org invitations.' },
+  { label: 'Accessibility · Contrast', href: 'accessibility-review.html', selector: '#contrast .table-wrap table', icon: 'contrast', area: 'admin', areaTitle: 'Admin', desc: 'Live text-contrast ratios graded to AAA.' },
+  { label: 'Accessibility · Non-text', href: 'accessibility-review.html', selector: '#nontext .table-wrap table', icon: 'category', area: 'admin', areaTitle: 'Admin', desc: 'Non-text / UI contrast against the 3:1 rule.' },
+
+  /* Account */
+  { label: 'Invoices', href: 'invoices.html', selector: '.inv-table', icon: 'receipt_long', area: 'account', areaTitle: 'Account', desc: 'Billing board of every invoice and its status.' },
+  { label: 'API Keys', href: 'api-keys.html', selector: '.ak-table', icon: 'key', area: 'account', areaTitle: 'Account', desc: 'Created keys with scope, usage and revoke.' },
+];
+
+/* One rail pane per table — the real page in a scaled iframe, isolated to just
+   the table via `data-focus` (resolved on load by focusFrameTable). Same
+   data-search / data-area hooks as the module panes so the search filter works,
+   and the same data-pane / data-href so link validation flags dead pages. */
+function tablePane(t) {
+  const search = `${t.label} ${t.href} ${t.areaTitle} ${t.desc || ''}`.toLowerCase();
+  return `
+    <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(t.href)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
+      <div class="mi-pane-head">
+        <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'table_chart')}</span>
+        <span class="mi-pane-name">${esc(t.label)}</span>
+        <span class="mi-pane-area">${esc(t.areaTitle)}</span>
+      </div>
+      <a class="mi-pane-viewport" href="${esc(t.href)}" aria-label="Open ${esc(t.label)}">
+        <iframe class="mi-pane-frame" src="${esc(previewSrc(t.href))}" data-focus="${esc(t.selector)}" title="${esc(t.label)} table preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
+      </a>
+      ${t.desc ? `<p class="mi-tpane-desc">${esc(t.desc)}</p>` : ''}
+    </div>`;
+}
+
+function renderTableGallery() {
+  const total = TABLE_CATALOG.length;
+  return `
+    <section class="mi-module" id="mi-tables">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Table Gallery</h2>
+          <p class="mi-module-lede">Every data table in the app — portfolio grids, verification and analytics tables,
+            admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane
+            isolates the real table from its page; hover and open it to jump to the source.</p>
+        </div>
+        ${moduleControlsHTML('mi-tables')}
+      </header>
+
+      <div class="mi-toolbar">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="mi-search" id="mi-tbl-search" placeholder="Search tables by name, page or area…" aria-label="Search tables" autocomplete="off" />
+        </div>
+        <div class="mi-tbl-count"><span id="mi-tbl-shown">${total}</span> of ${total} tables</div>
+      </div>
+
+      <div class="mi-rail mi-rail--tables" id="mi-tbl-rail">
+        <button type="button" class="mi-rail-nav" data-trail-prev aria-label="Scroll left"><span class="material-symbols-outlined">chevron_left</span></button>
+        <div class="mi-rail-track" id="mi-tbl-track">
+          ${TABLE_CATALOG.map(tablePane).join('')}
+        </div>
+        <button type="button" class="mi-rail-nav" data-trail-next aria-label="Scroll right"><span class="material-symbols-outlined">chevron_right</span></button>
+        <div class="mi-rail-empty" id="mi-tbl-empty" hidden>No tables match your search.</div>
+      </div>
     </section>`;
 }
 
@@ -1213,61 +1328,56 @@ const COMPONENTS = [
     name: 'Data table',
     cat: 'Tables & data',
     wide: true,
-    cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num/--check) · .adm-td · .adm-idcell · .adm-chip · .adm-actions · .adm-rowmenu · .wtp-foot (= .pf-table · .inv-table · .rf-table)',
-    used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Invoices · Portfolio — every admin & module list',
-    note: 'The fully-loaded table: leading <strong>checkbox</strong> column, a <strong>sortable</strong> header with the active sort lit, an <strong>identity cell</strong> (avatar + name + sub), tabular numeric with a "hot" highlight, token <strong>status chips</strong>, an <strong>actions</strong> rail plus a per-row <strong>⋯ menu</strong>, and the shared "load more" <strong>pagination footer</strong>. All from one CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by a single <code>--adm-cols</code> variable; sort (<code>sortable-tables.js</code>) + paging (<code>table-pagination.js</code>) attach app-wide.',
+    cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-chip · .adm-rowmenu · .wtp-foot (= .pf-table · .inv-table · .rf-table · .gs-table · .ib-table)',
+    used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Quick Invite · Invoices · Portfolio · Ingredient Browser · Guiding Stars · Reformulation — every admin & module list',
+    note: 'The real shared table, exactly as it renders app-wide: the <strong>Actions</strong> column comes <strong>first (left)</strong> as a single per-row <strong>⋯ kebab menu</strong> (no separate edit button, no select-all checkbox), then a <strong>sortable</strong> header with the active sort lit, a plain <strong>identity cell</strong> (name + sub — no avatar chrome), token <strong>status chips</strong>, tabular numeric columns with a "hot" highlight for non-zero values, and the shared "load more" <strong>pagination footer</strong>. One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by a single <code>--adm-cols</code> variable; sort (<code>sortable-tables.js</code>) + paging (<code>table-pagination.js</code>) attach app-wide.',
     noteIcon: 'table_rows',
     demo: `
       <div class="adm-table-card adm-card" style="width:100%">
-        <div class="adm-table" style="--adm-cols: 22px 2.2fr 0.9fr 0.7fr 1fr 1fr 92px">
+        <div class="adm-table" style="--adm-cols: 72px minmax(200px, 2.2fr) 132px 140px 84px 100px">
           <div class="adm-thead">
-            <span class="adm-th adm-th--check"><input type="checkbox" class="adm-check" aria-label="Select all" /></span>
-            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Organization ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th">Plan</span>
-            <span class="adm-th adm-th--num adm-th--sortable" data-adm-dir="desc">Products ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th">Owner</span>
-            <span class="adm-th">Status</span>
-            <span class="adm-th adm-th--end">Actions</span>
+            <span class="adm-th">Actions</span>
+            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Company + Type ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable">Status ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable">Joined ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Users ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Products ${ARROW_SVG_DEMO}</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--check"><input type="checkbox" class="adm-check" checked aria-label="Select row" /></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">AF</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Acme Foods</a></span><span class="adm-idcell-sub">acme.example.com · EIN 47-1029384</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--blue">Enterprise</span></span>
-            <span class="adm-td adm-td--num is-hot">128</span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round" style="width:26px;height:26px;font-size:0.62rem">MC</span><span class="adm-idcell-body"><span class="adm-idcell-name" style="font-size:0.8rem">Maria Chen</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
-            <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td" style="font-size:0.8rem">Jun 26, 2026</span>
+            <span class="adm-td adm-td--num is-hot">1</span>
+            <span class="adm-td adm-td--num is-hot">6</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--check"><input type="checkbox" class="adm-check" aria-label="Select row" /></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">NB</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Nourish Brands</a></span><span class="adm-idcell-sub">nourish.example.com · EIN 82-5567013</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--muted">Growth</span></span>
-            <span class="adm-td adm-td--num">46</span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round" style="width:26px;height:26px;font-size:0.62rem">JR</span><span class="adm-idcell-body"><span class="adm-idcell-name" style="font-size:0.8rem">Jordan Rivera</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">pending</span>In review</span></span>
-            <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Flax4Life</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td" style="font-size:0.8rem">Apr 18, 2026</span>
+            <span class="adm-td adm-td--num is-hot">3</span>
+            <span class="adm-td adm-td--num is-hot">9</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--check"><input type="checkbox" class="adm-check" aria-label="Select row" /></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">GP</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Garden Provisions</a></span><span class="adm-idcell-sub">garden.example.com · EIN 61-8890271</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--muted">Starter</span></span>
-            <span class="adm-td adm-td--num">12</span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round" style="width:26px;height:26px;font-size:0.62rem">AP</span><span class="adm-idcell-body"><span class="adm-idcell-name" style="font-size:0.8rem">Avery Park</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">error</span>Action needed</span></span>
-            <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Goodles</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td" style="font-size:0.8rem">May 2, 2026</span>
+            <span class="adm-td adm-td--num is-hot">2</span>
+            <span class="adm-td adm-td--num is-hot">4</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--check"><input type="checkbox" class="adm-check" aria-label="Select row" /></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">SK</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Sunny Kitchen Co.</a></span><span class="adm-idcell-sub">sunnykitchen.example.com · EIN 29-4471908</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--muted">Draft</span></span>
-            <span class="adm-td adm-td--num">3</span>
-            <span class="adm-td"><span class="adm-idcell-sub" style="padding-left:2px">Unassigned</span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--outline"><span class="material-symbols-outlined">schedule</span>Draft</span></span>
-            <span class="adm-td adm-td--end"><span class="adm-actions"><button type="button" class="adm-icon-btn" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Brave Foods</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">mail</span>Invited</span></span>
+            <span class="adm-td" style="font-size:0.8rem"><span style="color:var(--text-subtle)">—</span></span>
+            <span class="adm-td adm-td--num">0</span>
+            <span class="adm-td adm-td--num">0</span>
           </div>
         </div>
         <div class="wtp-foot">
-          <span class="wtp-count">Showing <b>4</b> of <b>128</b> organizations</span>
+          <span class="wtp-count">Showing <b>4</b> of <b>315</b> organizations</span>
           <button type="button" class="wtp-more">Load more<span class="material-symbols-outlined">expand_more</span></button>
         </div>
       </div>`,
@@ -2403,6 +2513,40 @@ function moduleStyles() {
     }
     .mi-pane-viewport:hover .mi-pane-open { opacity: 1; transform: translateY(0); }
 
+    /* ---- Table Gallery rail: landscape panes tuned for wide-and-short tables ---- */
+    .mi-rail--tables {
+      margin-top: 6px;
+      --frame-w: 1180px; --frame-h: 760px; --pane-scale: 0.46;
+    }
+    .mi-tpane { width: var(--pane-w); }
+    .mi-tpane .mi-pane-viewport { background: var(--surface-2, var(--surface)); }
+    /* The isolated table sits at the top-left of the framed page; nudge the
+       scaled frame in a hair so the table's own padding shows as a card inset. */
+    .mi-tpane .mi-pane-frame { background: var(--surface); }
+    .mi-tpane-desc {
+      margin: 2px 2px 0; font-size: 0.75rem; line-height: 1.35; color: var(--text-muted);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    /* While a pane is still resolving its table, show a soft shimmer so an
+       empty-looking frame reads as "loading", not "broken". */
+    .mi-tpane .mi-pane-viewport::after {
+      content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--primary) 8%, transparent) 50%, transparent 70%);
+      background-size: 200% 100%; animation: mi-tbl-shimmer 1.2s ease-in-out infinite;
+      opacity: 1; transition: opacity 0.3s ease;
+    }
+    .mi-tpane.is-focused .mi-pane-viewport::after,
+    .mi-tpane.is-unfocused .mi-pane-viewport::after { opacity: 0; }
+    @keyframes mi-tbl-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .mi-tpane .mi-pane-viewport::after { animation: none; }
+    }
+    .mi-tbl-count {
+      margin-left: auto; align-self: center; flex: 0 0 auto;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+    }
+    .mi-tbl-count span { color: var(--text); }
+
     .mi-module { margin-top: 40px; }
     .mi-module-head {
       margin-bottom: 20px;
@@ -2426,6 +2570,40 @@ function moduleStyles() {
       font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.8em;
       padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
     }
+
+    /* ---- Accordion: every module section collapses from its own header ---- */
+    /* Expand / collapse-all control row under the section quick-nav. */
+    .mi-acc-controls {
+      display: flex; align-items: center; gap: 8px; margin-top: 14px;
+    }
+    .mi-acc-allbtn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+    .mi-acc-allbtn:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+    .mi-acc-allbtn .material-symbols-outlined { font-size: 18px !important; }
+
+    /* Turn the module header into a toggle bar. The whole header is clickable
+       except its trailing ⋯ controls cluster. */
+    .mi-module.mi-acc { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 22px; }
+    .mi-module.mi-acc > .mi-module-head { cursor: pointer; user-select: none; margin-bottom: 20px; }
+    .mi-module.mi-acc > .mi-module-head > .mi-module-head-text { margin-right: auto; }
+    .mi-acc-chevron {
+      flex: 0 0 auto; align-self: flex-start; margin-top: 2px; margin-right: 2px;
+      font-size: 24px !important; color: var(--text-muted);
+      transition: transform 0.2s ease, color 0.15s ease;
+    }
+    .mi-module.mi-acc > .mi-module-head:hover .mi-acc-chevron { color: var(--primary); }
+    .mi-module.is-collapsed > .mi-module-head { margin-bottom: 0; }
+    .mi-module.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); }
+    .mi-module.is-collapsed > .mi-acc-body { display: none; }
+    .mi-module.mi-acc > .mi-module-head:focus-visible {
+      outline: none; border-radius: 12px;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    @media (prefers-reduced-motion: reduce) { .mi-acc-chevron { transition: none; } }
 
     /* ---- Module Directory ---- */
     .mi-dir-section { margin-top: 26px; }
@@ -2555,16 +2733,19 @@ function moduleStyles() {
       flex: 1 1 130px; min-width: 118px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
       padding: 14px 16px;
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
       box-shadow: var(--shadow-1); font: inherit; text-align: center; cursor: pointer; color: inherit;
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    html.dark .mi-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+    html.dark .mi-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .mi-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .mi-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .mi-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
     .mi-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .mi-stat.is-active {
       border-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface));
       box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
     }
     html.dark .mi-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
@@ -3124,19 +3305,26 @@ export function renderAllModules(mainEl) {
         </div>
       </header>
       ${renderSectionNav()}
+      <div class="mi-acc-controls" role="group" aria-label="Expand or collapse all sections">
+        <button type="button" class="mi-acc-allbtn" data-acc-all="expand"><span class="material-symbols-outlined">unfold_more</span>Expand all</button>
+        <button type="button" class="mi-acc-allbtn" data-acc-all="collapse"><span class="material-symbols-outlined">unfold_less</span>Collapse all</button>
+      </div>
       ${renderCodebase()}
       ${renderDirectory()}
+      ${renderTableGallery()}
       ${renderIntentAudit()}
       ${renderIconInventory()}
       ${renderDesignSystem()}
       ${renderComponentLibrary()}
     </div>`;
 
+  setupAccordion(mainEl);
   wireView(mainEl);
   wireSectionNav(mainEl);
   wireCodebase(mainEl);
   wireDirectory(mainEl);
   wireDirectoryExport(mainEl);
+  wireTableGallery(mainEl);
   wireRailFrames(mainEl);
   wireIntentAudit(mainEl);
   wireIconInventory(mainEl);
@@ -3144,6 +3332,99 @@ export function renderAllModules(mainEl) {
   wireComponentLibrary(mainEl);
   wireModuleControls(mainEl);
   wireLinkValidation(mainEl);
+}
+
+/* ------------------------------------------------------------------ */
+/* Accordion — every module section collapses from its own header.    */
+/*                                                                    */
+/* Each section already ships as <section class="mi-module"> with a   */
+/* leading <header class="mi-module-head">. We reuse that header as    */
+/* the toggle (adding a chevron + a11y) and wrap everything after it   */
+/* in a collapsible .mi-acc-body, so no per-section render function    */
+/* changes. Clicks on the header's trailing ⋯ controls never toggle.  */
+/* State is per-section and remembered across visits; the very first   */
+/* load opens collapsed so the page reads as a high-level index.       */
+/* ------------------------------------------------------------------ */
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-icons', 'mi-design', 'mi-components'];
+const ACC_STATE_KEY = 'mi-acc-collapsed';
+
+function readAccState() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(ACC_STATE_KEY));
+    return Array.isArray(arr) ? new Set(arr) : null;
+  } catch (e) { return null; }
+}
+
+function writeAccState(root) {
+  try {
+    const collapsed = ACC_SECTION_IDS.filter((id) => root.querySelector('#' + id)?.classList.contains('is-collapsed'));
+    localStorage.setItem(ACC_STATE_KEY, JSON.stringify(collapsed));
+  } catch (e) { /* storage unavailable */ }
+}
+
+function setSectionCollapsed(root, sec, collapsed) {
+  sec.classList.toggle('is-collapsed', collapsed);
+  sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  writeAccState(root);
+}
+
+/* Open a section (used when the quick-nav or a WISEcodeAI chip jumps to it). */
+function expandAccordionSection(root, id) {
+  const sec = (root || document).querySelector('#' + id);
+  if (!sec || !sec.classList.contains('is-collapsed')) return;
+  sec.classList.remove('is-collapsed');
+  sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', 'true');
+  writeAccState(root || document);
+}
+
+function setupAccordion(root) {
+  const saved = readAccState(); // null → first ever load
+  ACC_SECTION_IDS.forEach((id) => {
+    const sec = root.querySelector('#' + id);
+    if (!sec || sec.classList.contains('mi-acc')) return;
+    const head = sec.querySelector(':scope > .mi-module-head');
+    if (!head) return;
+
+    /* Move every node after the header into a collapsible body wrapper. */
+    const body = document.createElement('div');
+    body.className = 'mi-acc-body';
+    body.id = 'acc-body-' + id;
+    let n = head.nextSibling;
+    while (n) { const next = n.nextSibling; body.appendChild(n); n = next; }
+    sec.appendChild(body);
+    sec.classList.add('mi-acc');
+
+    head.insertAdjacentHTML('afterbegin', '<span class="mi-acc-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>');
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    head.setAttribute('aria-controls', body.id);
+
+    const collapsed = saved ? saved.has(id) : true;
+    sec.classList.toggle('is-collapsed', collapsed);
+    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+
+    const toggle = (e) => {
+      if (e.target.closest('.panel-controls')) return; // let the ⋯ menu work
+      setSectionCollapsed(root, sec, !sec.classList.contains('is-collapsed'));
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target.closest('.panel-controls')) return;
+      e.preventDefault();
+      toggle(e);
+    });
+  });
+
+  root.querySelectorAll('[data-acc-all]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const collapse = btn.dataset.accAll === 'collapse';
+      ACC_SECTION_IDS.forEach((id) => {
+        const sec = root.querySelector('#' + id);
+        if (sec) setSectionCollapsed(root, sec, collapse);
+      });
+    });
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -3165,6 +3446,7 @@ function renderSectionNav() {
   const tiles = [
     { id: 'mi-code', icon: 'code', num: fmtNum(CODE_STATS?.now?.total), label: 'Lines of code', sub: `${fmtNum(CODE_STATS?.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
+    { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chips', sub: 'Transcript + logic audit' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || 0, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
@@ -3191,8 +3473,11 @@ function wireSectionNav(root) {
   nav.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-jump]');
     if (!btn) return;
-    const el = document.getElementById(btn.dataset.jump);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const id = btn.dataset.jump;
+    /* Jumping to a collapsed section opens it first, then scrolls. */
+    expandAccordionSection(root, id);
+    const el = document.getElementById(id);
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   });
 }
 
@@ -3215,9 +3500,9 @@ function runModuleAction(root, action) {
     case 'ii-name': click('[data-ii-sort="name"]'); break;
     case 'ii-count': click('[data-ii-sort="count"]'); break;
     case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); break;
-    case 'ds-type': root.querySelector('#ds-typography')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
-    case 'ds-colors': root.querySelector('#ds-colors')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
-    case 'ds-jump': root.querySelector('#mi-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'ds-type': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-typography')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'ds-colors': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-colors')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'ds-jump': expandAccordionSection(root, 'mi-design'); root.querySelector('#mi-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'dsc-clear': clearInput('#dsc-search'); break;
     case 'code-7': click('[data-code-win="7"]'); break;
     case 'code-30': click('[data-code-win="30"]'); break;
@@ -3225,6 +3510,8 @@ function runModuleAction(root, action) {
     case 'int-all': click('#mi-intents [data-int-filter="all"]'); break;
     case 'int-talk': click('#mi-intents [data-int-filter="talk"]'); break;
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
+    case 'tbl-clear': clearInput('#mi-tbl-search'); break;
+    case 'tbl-start': root.querySelector('#mi-tbl-track')?.scrollTo({ left: 0, behavior: 'smooth' }); break;
   }
 }
 
@@ -3462,12 +3749,85 @@ const RAIL_EMBED_CSS = `
 function embedRailFrame(frame) {
   try {
     const doc = frame.contentDocument;
-    if (!doc || doc.getElementById('mi-embed-style')) return;
-    const style = doc.createElement('style');
-    style.id = 'mi-embed-style';
-    style.textContent = RAIL_EMBED_CSS;
-    (doc.head || doc.documentElement).appendChild(style);
+    if (!doc) return;
+    if (!doc.getElementById('mi-embed-style')) {
+      const style = doc.createElement('style');
+      style.id = 'mi-embed-style';
+      style.textContent = RAIL_EMBED_CSS;
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+    /* Table Gallery panes carry a `data-focus` selector — once the chrome is
+       stripped, isolate just that table from the rest of the page. */
+    if (frame.dataset.focus) tryFocusFrameTable(frame, frame.dataset.focus, 0);
   } catch (e) { /* cross-origin frame — leave the full page as-is */ }
+}
+
+/* Reveal an element (and force a display if it, or an ancestor, was hidden —
+   e.g. a table living in an inactive tab panel). */
+function railReveal(node) {
+  try {
+    const cs = node.ownerDocument.defaultView.getComputedStyle(node);
+    if (cs.display === 'none') {
+      node.style.setProperty('display', node.tagName === 'TABLE' ? 'table' : 'block', 'important');
+    }
+    if (cs.visibility === 'hidden') node.style.setProperty('visibility', 'visible', 'important');
+  } catch (e) { /* getComputedStyle can throw on detached nodes */ }
+}
+
+/* Inside a (same-origin) preview frame, hide everything except the target table
+   and its ancestors, then relax any clipping/height on that path so the table
+   shows in full. Returns true only once the table actually exists in the DOM. */
+function focusFrameTable(doc, selector) {
+  const el = doc.querySelector(selector);
+  if (!el) return false;
+
+  railReveal(el);
+  let node = el;
+  while (node && node.parentElement && node !== doc.body) {
+    const parent = node.parentElement;
+    railReveal(parent);
+    /* Let the table grow to its natural size on the isolation path. */
+    parent.style.setProperty('max-height', 'none', 'important');
+    parent.style.setProperty('overflow', 'visible', 'important');
+    Array.prototype.forEach.call(parent.children, (sib) => {
+      if (sib === node) return;
+      const tag = sib.tagName;
+      if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'LINK') return;
+      sib.style.setProperty('display', 'none', 'important');
+    });
+    node = parent;
+  }
+
+  const iso = doc.createElement('style');
+  iso.id = 'mi-embed-focus';
+  iso.textContent = `
+    html, body { overflow: hidden !important; }
+    body { margin: 0 !important; padding: 22px !important; }
+  `;
+  (doc.head || doc.documentElement).appendChild(iso);
+  return true;
+}
+
+/* Poll for the target table: many are rendered by page scripts after load, so
+   we retry briefly. Once found we mark the pane focused; if it never appears we
+   mark it unfocused and leave the chrome-stripped page preview as a fallback so
+   the pane is never blank. */
+function tryFocusFrameTable(frame, selector, attempt) {
+  let doc;
+  try { doc = frame.contentDocument; } catch (e) { return; }
+  if (!doc) return;
+  if (doc.getElementById('mi-embed-focus')) return;
+
+  const pane = frame.closest('.mi-pane');
+  if (focusFrameTable(doc, selector)) {
+    if (pane) pane.classList.add('is-focused');
+    return;
+  }
+  if (attempt < 34) {
+    setTimeout(() => tryFocusFrameTable(frame, selector, attempt + 1), 130);
+  } else if (pane) {
+    pane.classList.add('is-unfocused');
+  }
 }
 
 function wireRailFrames(root) {
@@ -3477,6 +3837,16 @@ function wireRailFrames(root) {
     try {
       if (f.contentDocument && f.contentDocument.readyState === 'complete') embedRailFrame(f);
     } catch (e) { /* not ready / cross-origin */ }
+
+    /* Safety net for the Table Gallery loading shimmer: if isolation can't run
+       (cross-origin / file://) or the table never appears, clear the shimmer so
+       the pane doesn't animate forever. */
+    if (f.dataset.focus) {
+      const pane = f.closest('.mi-pane');
+      setTimeout(() => {
+        if (pane && !pane.classList.contains('is-focused')) pane.classList.add('is-unfocused');
+      }, 6000);
+    }
   });
 }
 
@@ -3521,7 +3891,9 @@ function wireDirectory(root) {
 
   const cards = Array.from(sectionsRoot.querySelectorAll('[data-mod-card]'));
   const sections = Array.from(sectionsRoot.querySelectorAll('.mi-dir-section'));
-  const panes = Array.from(root.querySelectorAll('[data-pane]'));
+  /* Scope to the directory's own rail so the Table Gallery panes (which also
+     carry [data-pane] for link validation) aren't hidden by this filter. */
+  const panes = Array.from((root.querySelector('#mi-rail') || root).querySelectorAll('[data-pane]'));
   const railEmpty = root.querySelector('#mi-rail-empty');
   const state = { q: '', area: 'all' };
 
@@ -3577,6 +3949,39 @@ function wireDirectory(root) {
   const step = () => Math.max(280, (track ? track.clientWidth : 600) * 0.8);
   root.querySelector('[data-rail-prev]')?.addEventListener('click', () => track?.scrollBy({ left: -step(), behavior: 'smooth' }));
   root.querySelector('[data-rail-next]')?.addEventListener('click', () => track?.scrollBy({ left: step(), behavior: 'smooth' }));
+
+  apply();
+}
+
+/* ------------------------------------------------------------------ */
+/* Table Gallery wiring — search filter + carousel prev/next          */
+/* ------------------------------------------------------------------ */
+function wireTableGallery(root) {
+  const track = root.querySelector('#mi-tbl-track');
+  if (!track) return;
+
+  const panes = Array.from(track.querySelectorAll('[data-tpane]'));
+  const searchInput = root.querySelector('#mi-tbl-search');
+  const emptyEl = root.querySelector('#mi-tbl-empty');
+  const shownEl = root.querySelector('#mi-tbl-shown');
+
+  const apply = () => {
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    let shown = 0;
+    panes.forEach((p) => {
+      const vis = !q || p.dataset.search.indexOf(q) !== -1;
+      p.hidden = !vis;
+      if (vis) shown++;
+    });
+    if (emptyEl) emptyEl.hidden = shown !== 0;
+    if (shownEl) shownEl.textContent = String(shown);
+  };
+
+  if (searchInput) searchInput.addEventListener('input', apply);
+
+  const step = () => Math.max(320, track.clientWidth * 0.85);
+  root.querySelector('[data-trail-prev]')?.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+  root.querySelector('[data-trail-next]')?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
 
   apply();
 }
@@ -4175,6 +4580,7 @@ export const ALL_MODULES_WISEAI = {
   intents: [
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
+    { intent: 'tables', label: 'Show every table', icon: 'table_chart' },
     { intent: 'intents', label: 'Which intent chips work?', icon: 'bolt' },
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
@@ -4184,6 +4590,7 @@ export const ALL_MODULES_WISEAI = {
   intentReplies: {
     codebase: `The app is <strong>${fmtNum(CODE_STATS?.now?.total)} lines of code</strong> across <strong>${fmtNum(CODE_STATS?.now?.files)} files</strong> — ${fmtNum(CODE_STATS?.now?.html)} HTML, ${fmtNum(CODE_STATS?.now?.js)} JavaScript, ${fmtNum(CODE_STATS?.now?.css)} CSS and ${fmtNum(CODE_STATS?.now?.py)} Python — shipping <strong>${fmtNum(CODE_STATS?.now?.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`,
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
+    tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page.`,
     intents: () => {
       const s = intentAuditStats();
       return s.gaps
@@ -4196,24 +4603,28 @@ export const ALL_MODULES_WISEAI = {
     counts: `There are <strong>${ICON_INVENTORY?.totalUniqueIcons || 0} unique icons</strong> across <strong>${ICON_INVENTORY?.totalUses || 0} placements</strong> in the app.`,
   },
   onIntent: (intent) => {
-    /* "How big is the codebase?" is a question, not just a jump — scroll the
-       score cards into view AND let the sizing answer post in the thread. */
+    /* "How big is the codebase?" is a question, not just a jump — open + scroll
+       the score cards into view AND let the sizing answer post in the thread. */
     if (intent === 'codebase') {
+      expandAccordionSection(document, 'mi-code');
       document.getElementById('mi-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return false;
     }
-    /* "Which intent chips work?" is a question — scroll to the audit module AND
-       let the state-aware answer post in the thread. */
+    /* "Which intent chips work?" is a question — open + scroll to the audit
+       module AND let the state-aware answer post in the thread. */
     if (intent === 'intents') {
+      expandAccordionSection(document, 'mi-intents');
       document.getElementById('mi-intents')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return false;
     }
     const id = intent === 'icons' ? 'mi-icons'
       : intent === 'directory' ? 'mi-directory'
+      : intent === 'tables' ? 'mi-tables'
       : intent === 'design' ? 'mi-design'
       : intent === 'components' ? 'mi-components'
       : null;
     if (id) {
+      expandAccordionSection(document, id);
       const el = document.getElementById(id);
       if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     }

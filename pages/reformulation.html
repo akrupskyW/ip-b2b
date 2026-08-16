@@ -489,15 +489,18 @@
       flex: 1 1 120px; min-width: 108px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
       padding: 12px 14px; border-radius: 6px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       box-shadow: var(--shadow-1);
       font-family: inherit; text-align: center; cursor: pointer;
       transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
     }
-    html.dark .rf-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+    html.dark .rf-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .rf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .rf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .rf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
     .rf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .rf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    .rf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
     html.dark .rf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
     .rf-stat:disabled { cursor: default; }
     .rf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
@@ -2079,6 +2082,7 @@
     })();
   </script>
   <script src="../js/table-pagination.js" defer></script>
+  <script src="../js/responsive-tables.js" defer></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
 </body>

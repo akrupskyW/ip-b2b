@@ -43,6 +43,18 @@
     '.pf-filter-pop',
     '.pf-gs-infopop',
     '#lir-more-popover',
+    /* Chat-module popovers anchored INSIDE the transcript. They're pinned
+       absolutely within an answer's meta row (low z-index), so the chat card's
+       overflow clipping and any later transcript element (reply chips, the next
+       answer) can cover them. The chat rules it all: float them like every
+       other menu so they always sit on top of everything on screen. Each toggles
+       via `hidden`/`.hidden`, which the observer below already watches.
+         .sc-fb-reasons — answer thumbs-up / thumbs-down reason picker
+         .sc-fb-menu    — the per-answer three-dot "more" menu
+         .sc-fb-pop     — compare-board / portfolio reply feedback reasons */
+    '.sc-fb-reasons',
+    '.sc-fb-menu',
+    '.sc-fb-pop',
   ].join(',');
 
   var floated = new Set();

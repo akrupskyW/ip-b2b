@@ -37,6 +37,38 @@
       font-size: 12px;
     }
 
+    /* ── Row actions "⋮" — mirror Product Portfolio's .pf-rowmenu-btn ──────
+       The shared .adm-icon-btn is a bordered, filled 34px circle; the portfolio
+       uses a bare, transparent 30px button with only a subtle hover fill. Match
+       it here so the three-dot trigger reads identically across both surfaces. */
+    [data-nav-id="non-upf-dashboard"] .nud-actions { justify-content: center; }
+    [data-nav-id="non-upf-dashboard"] .nud-rowmenu-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+    }
+    [data-nav-id="non-upf-dashboard"] .nud-rowmenu-btn:hover {
+      border-color: transparent; background: var(--surface-2); color: var(--text);
+    }
+    html.dark [data-nav-id="non-upf-dashboard"] .nud-rowmenu-btn { background: transparent; }
+    html.dark [data-nav-id="non-upf-dashboard"] .nud-rowmenu-btn:hover { background: rgba(255,255,255,0.06); }
+    [data-nav-id="non-upf-dashboard"] .nud-rowmenu-btn .material-symbols-outlined { font-size: 18px; }
+
+    /* ── Product name wraps instead of truncating ─────────────────────────
+       The shared .adm-idcell-name is nowrap + ellipsis, which clipped long
+       product names. Let the name wrap onto multiple lines within its column
+       so it never spills into (or is cut short by) the neighbouring columns. */
+    [data-nav-id="non-upf-dashboard"] .adm-idcell-name {
+      white-space: normal; overflow: visible; text-overflow: clip;
+      line-height: 1.3; overflow-wrap: anywhere;
+    }
+
+    /* ── Updated column matches the other columns' visual weight ───────────
+       Drop the one-off inline font styling so the date reads at the same size
+       and weight as the product name / status text, with the time as a sub. */
+    [data-nav-id="non-upf-dashboard"] .nud-updated-date {
+      font-size: 0.86rem; font-weight: 700; color: var(--text); line-height: 1.3;
+    }
+
     /* ── Product table: rows by default, cards only on mobile ─────────────
        The shared adm table collapses to stacked cards at a 720px container
        width, which fires too eagerly when this dashboard is docked beside the
@@ -69,14 +101,21 @@
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-td--num { justify-content: flex-start; text-align: left; }
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
 
-    /* Rows ⇆ Cards segmented toggle in the toolbar. */
-    [data-nav-id="non-upf-dashboard"] .adm-view-toggle { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; padding: 3px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 999px; }
-    html.dark [data-nav-id="non-upf-dashboard"] .adm-view-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-    [data-nav-id="non-upf-dashboard"] .adm-view-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 30px; border: none; background: transparent; border-radius: 999px; color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
-    [data-nav-id="non-upf-dashboard"] .adm-view-btn .material-symbols-outlined { font-size: 18px; }
-    [data-nav-id="non-upf-dashboard"] .adm-view-btn:hover { color: var(--text); }
-    [data-nav-id="non-upf-dashboard"] .adm-view-btn.is-active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-1); }
-    html.dark [data-nav-id="non-upf-dashboard"] .adm-view-btn.is-active { background: rgba(255,255,255,0.10); color: var(--primary-bright, #93C5FD); }
+    /* Row ⇆ Card layout now lives in the table's ⋮ menu (see openViewMenu). The
+       trigger reuses .nud-rowmenu-btn (bare 30px circle) and sits at the end of
+       the toolbar; it grows a subtle "active" tint while its menu is open. */
+    [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn { flex: 0 0 auto; }
+    [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+    html.dark [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn[aria-expanded="true"] { background: rgba(255,255,255,0.06); }
+
+    /* Row / Card items inside the ⋮ menu: label fills the row, a trailing check
+       marks the active layout in the brand colour. */
+    .nud-view-item .nud-view-item-label { flex: 1 1 auto; }
+    .nud-view-item .nud-view-item-check { font-size: 17px; color: var(--primary); }
+    html.dark .nud-view-item .nud-view-item-check { color: var(--primary-bright, #93C5FD); }
+    .nud-view-item.is-active { color: var(--primary); }
+    html.dark .nud-view-item.is-active { color: var(--primary-bright, #93C5FD); }
+    .nud-view-item.is-active .material-symbols-outlined { color: inherit; }
 
     /* True mobile — cards are the only sensible layout, so force them and hide
        the toggle regardless of the saved preference. */
@@ -87,7 +126,7 @@
       [data-nav-id="non-upf-dashboard"] .adm-actions { justify-content: flex-start; }
       [data-nav-id="non-upf-dashboard"] .adm-td--num { justify-content: flex-start; text-align: left; }
       [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
-      [data-nav-id="non-upf-dashboard"] .adm-view-toggle { display: none; }
+      [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn { display: none; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

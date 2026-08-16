@@ -49,6 +49,7 @@ import { renderAllModules, ALL_MODULES_WISEAI } from './all-modules-flow.js';
    table. Both are side-effecting IIFE modules — importing runs them. */
 import './sortable-tables.js';
 import './table-pagination.js';
+import './responsive-tables.js';
 
 function escHtml(s) {
   return String(s)

@@ -10,6 +10,7 @@
   <script src="../js/text-size-fouc.js"></script>
   <script src="../js/sortable-tables.js" defer></script>
   <script src="../js/table-pagination.js" defer></script>
+  <script src="../js/responsive-tables.js" defer></script>
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
        font, e.g. `side_navigation` used by the menu toggle and panel-dock controls. -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -798,8 +799,8 @@
     }
     #menu-panel.mp-open {
       display: flex !important;
-      width: 280px;
-      min-width: 280px;
+      width: 260px;
+      min-width: 260px;
       visibility: visible !important;
       opacity: 1 !important;
     }
@@ -819,7 +820,7 @@
       animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
     #menu-panel .menu-inner {
-      width: 280px;
+      width: 260px;
       min-height: 100%;
       height: 100%;
       display: flex;
@@ -1996,8 +1997,10 @@
 
     /* Stat tiles */
     .sc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .sc-stat { padding: 9px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
-    html.dark .sc-stat { background: var(--surface-3); }
+    .sc-stat { padding: 9px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+    html.dark .sc-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .sc-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .sc-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .sc-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .sc-stat-num small { font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle); }
     .sc-stat-label { font-size: 0.625rem; font-weight: 600; color: var(--text-subtle); margin-top: 3px; line-height: 1.25; }
@@ -2781,8 +2784,11 @@
     .cmp-takeaway {
       display: flex; flex-direction: column; align-items: stretch; gap: 0;
       padding: 13px 15px; border-radius: 14px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
     }
+    html.dark .cmp-takeaway { background: #1A2339; }
+    html.chat-tint:not(.dark) .cmp-takeaway { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .cmp-takeaway { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .cmp-takeaway-head {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
@@ -3502,7 +3508,10 @@
 
     /* Stat tiles */
     .vf-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .vf-stat { border-radius: 10px; padding: 9px 10px; background: var(--surface-2); border: 1px solid var(--border); }
+    .vf-stat { border-radius: 10px; padding: 9px 10px; background: var(--surface); border: 1px solid var(--border); }
+    html.dark .vf-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .vf-stat-num { font-size: 1.125rem; font-weight: 800; color: var(--text); line-height: 1.1; }
     .vf-stat-label { font-size: 9px; font-weight: 600; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
     .vf-stat--green .vf-stat-num { color: var(--sec-green-text); } html.dark .vf-stat--green .vf-stat-num { color: #B6C9BE; }
@@ -4207,7 +4216,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      /* Bottom-anchored like every other WISEcodeAI surface (shared .sc-welcome):
+         the transcript grows UP from the input rail, so the welcome (logo →
+         heading → score cards → chips) should sit just above the composer and
+         flow upward, not float dead-centre with empty space beneath it. `safe`
+         flips back to top-alignment when the content is taller than the dock,
+         and overflow-y lets you scroll up to the logo instead of clipping it. */
+      justify-content: safe flex-end;
+      overflow-y: auto;
       padding: 2rem;
       font-size: var(--fs-ui);
       transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
@@ -4407,6 +4423,82 @@
     .ws-chips-wrap .ws-sc-scroll { display: none !important; }
     .ws-chips-wrap::before,
     .ws-chips-wrap::after { content: none; display: none; }
+
+    /* ── "What can I ask?" affordance ─────────────────────────────────────────
+       Ported from the shared chat (js/wiseai-chat.js) so this bespoke portfolio
+       chat carries the SAME gold affordance every other WISEcodeAI surface has:
+       a gold-bordered intent chip in the welcome set + a quiet gold text link
+       docked below-left of the composer. Both start a page-specific "here's what
+       you can ask" turn (startWhatCanIAsk). */
+
+    /* Below-input meta row — hosts the "What can I ask?" link on the left. */
+    .sc-belowinput { display: flex; align-items: center; }
+    .sc-belowinput .sc-ask-help { margin-left: 0; }
+    /* The gold text link (no icon). Its left inset lines up under the composer's
+       placeholder text (the "+" button + input padding above it). */
+    .sc-ask-help {
+      display: inline-flex; align-items: center; margin: 8px 0 2px 4px;
+      padding: 3px 6px; border: 0; background: transparent; border-radius: 8px; cursor: pointer;
+      font: inherit; font-size: 12.5px; font-weight: 400; line-height: 1.2; letter-spacing: .01em;
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 78%, #000);
+      transition: background .15s ease, color .15s ease;
+    }
+    .sc-ask-help:hover { background: var(--surface-3, rgba(20,40,80,0.06)); }
+    html.dark .sc-ask-help { color: var(--ter-amber, #FFC434); }
+    html.dark .sc-ask-help:hover { background: rgba(255,255,255,0.07); }
+    /* Gold shimmer, clipped through the glyphs — a bright band sweeps L→R once
+       per cycle while each letter bubbles up ~1.5px; per-letter delay staggers
+       the phase. Both keyframe extremes show only flat gold, so the loop seam
+       is invisible. */
+    .sc-ask-help .sc-ask-ch {
+      display: inline-block;
+      background: linear-gradient(105deg,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
+        var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
+      background-size: 250% 100%; background-position: 100% 0;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
+      animation: sc-ask-shimmer 7.5s ease-in-out infinite;
+      animation-delay: calc(var(--ch-i, 0) * 90ms);
+    }
+    @keyframes sc-ask-shimmer {
+      0%, 8%    { background-position: 100% 0; transform: translateY(0); }
+      20%       { transform: translateY(-1.5px); }
+      34%, 100% { background-position: 0% 0; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sc-ask-help .sc-ask-ch { animation: none; }
+    }
+
+    /* The gold-bordered intent chip — the twin of the link above. Doubled .chip
+       selector so it outranks the base .ws-intent-chip rules. */
+    .chip.ws-intent-chip--askhelp {
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 75%, var(--border-strong));
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 9%, #fff);
+    }
+    .chip.ws-intent-chip--askhelp .material-symbols-outlined { color: inherit; }
+    .chip.ws-intent-chip--askhelp:hover {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, #fff);
+      border-color: var(--ter-amber, #FFC434);
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 50%, #000);
+    }
+    html.dark .chip.ws-intent-chip--askhelp {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 12%, transparent);
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 70%, transparent);
+      color: var(--ter-amber, #FFC434);
+    }
+    html.dark .chip.ws-intent-chip--askhelp:hover {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 20%, transparent);
+      border-color: var(--ter-amber, #FFC434);
+    }
+    /* The bulleted ask-list inside the "what can I ask" reply. */
+    .sc-line-body .sc-askhelp-list { margin: 8px 0; padding-left: 18px; }
+    .sc-line-body .sc-askhelp-list li { margin: 4px 0; }
     .ws-hint {
       font-size: var(--fs-ui);
       color: var(--text-subtle);
@@ -6683,6 +6775,9 @@
     }
     .pf-module-menu-item--gs.is-on .pf-mi-switch { background: var(--pf-pink, #EC4899); border-color: var(--pf-pink, #EC4899); }
     .pf-module-menu-item--gs.is-on .pf-mi-knob { transform: translateX(14px); }
+    /* "Sticky module" admin toggle injected into this menu by js/sticky-modules.js. */
+    .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-switch { background: var(--pf-pink, #EC4899); border-color: var(--pf-pink, #EC4899); }
+    .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-knob { transform: translateX(14px); }
     .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
     .pf-module-menu-item--off:hover {
       background: color-mix(in srgb, #DC3038 14%, transparent);
@@ -7277,7 +7372,39 @@
       transition: filter 0.2s ease;
     }
     .pf-add-btn:hover { filter: brightness(1.08); }
-    .pf-add-btn .material-symbols-outlined { font-size: 16px; }
+    .pf-add-btn .material-symbols-outlined { font-size: 18px !important; }
+    /* Add ▾ split-dropdown — the button opens a small menu (Product / Catalog).
+       Menu surface mirrors .pf-brand-menu so both dropdowns read identically. */
+    .pf-add-wrap { position: relative; display: inline-flex; }
+    .pf-add-caret { margin-left: 1px; transition: transform 0.15s ease; }
+    .pf-add-btn[aria-expanded="true"] .pf-add-caret { transform: rotate(180deg); }
+    .pf-add-menu {
+      position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+      min-width: 268px; max-width: 320px; padding: 6px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 14px; box-shadow: var(--shadow-card);
+      animation: fadeSlideUp 0.15s ease-out both;
+    }
+    .pf-add-menu[hidden] { display: none; }
+    html.dark .pf-add-menu {
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%);
+      border-color: rgba(37,80,124,0.28); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .pf-add-item {
+      display: flex; align-items: flex-start; gap: 11px; width: 100%;
+      padding: 10px 11px; border: none; border-radius: 10px; cursor: pointer;
+      background: transparent; text-align: left; font-family: inherit; color: var(--text);
+      transition: background 0.12s ease;
+    }
+    .pf-add-item:hover { background: var(--surface-2); }
+    html.dark .pf-add-item:hover { background: rgba(255,255,255,0.06); }
+    .pf-add-item > .material-symbols-outlined {
+      font-size: 20px; color: var(--primary-ink, var(--primary));
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .pf-add-item-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .pf-add-item-title { font-size: 0.82rem; font-weight: 700; }
+    .pf-add-item-desc { font-size: 0.68rem; color: var(--text-muted); }
 
     /* Board header — serif title + a line of details, mirroring the Compare
        module's .cmp-board-title / .cmp-board-meta so the two modules read
@@ -7630,7 +7757,7 @@
       flex: 1 1 120px; min-width: 108px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
       padding: 12px 14px;
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       box-shadow: var(--shadow-1);
       font-family: inherit; text-align: center; cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
@@ -7638,12 +7765,15 @@
     /* Rectangular tiles, not pills — override the app-wide pill radius forced
        on every button inside #chat-shell-wrap. */
     #chat-shell-wrap .pf-stat { border-radius: 6px !important; }
-    html.dark .pf-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+    html.dark .pf-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .pf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .pf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .pf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
     .pf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .pf-stat.is-active {
       border-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface));
       box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
     }
     html.dark .pf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
@@ -7714,9 +7844,13 @@
     .pf-state-card {
       display: flex; flex-direction: column; gap: 8px; min-width: 130px;
       padding: 12px 14px; border-radius: 12px; cursor: pointer;
-      border: 1px solid var(--border); background: var(--surface-2);
+      border: 1px solid var(--border); background: var(--surface);
       font-family: inherit; text-align: left; transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+    html.dark .pf-state-card { background: #1A2339; }
+    html.chat-tint:not(.dark) .pf-state-card { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .pf-state-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .pf-state-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
     .pf-state-card--alert { border-top: 3px solid var(--sec-red); }
     .pf-state-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 24px; font-weight: 800; color: var(--sec-red); line-height: 1; }
@@ -7772,14 +7906,66 @@
     .pf-table--discovered .pf-thead, .pf-table--discovered .pf-trow,
     .pf-table--needsinfo .pf-thead, .pf-table--needsinfo .pf-trow { grid-template-columns: 34px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
     /* Updated column — the row's update history is always visible here (never
-       dropped): the Updated date and the Last edited date, each with its
-       status label. */
-    /* Side by side by default; wraps to stacked only when the column is too
-       narrow to fit both (responsive). */
-    .pf-col-updated { display: flex; flex-flow: row wrap; gap: 5px 16px; }
-    .pf-date { display: flex; flex-direction: column; line-height: 1.2; }
+       dropped): the Updated date and the Last edited date, stacked as two
+       lines. The three-dot menu in the header chooses which date leads (and is
+       the one the column sorts by); the leading date shows prominently, the
+       other sits beneath it, dimmed. */
+    .pf-td.pf-col-updated { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .pf-date { display: flex; flex-direction: row; align-items: baseline; gap: 5px; line-height: 1.25; }
     .pf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
     .pf-date-val { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .pf-date--secondary { opacity: 0.6; }
+    .pf-date--secondary .pf-date-val { font-size: 10px; }
+
+    /* Pack sizes — the actual sizes / counts a product is sold in, shown as a
+       row of bar-separated links beneath the UPC. Only rendered for products
+       that come in more than one size (about half the portfolio); single-size
+       products show nothing here. */
+    .pf-sizes { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 3px; }
+    .pf-size-link {
+      font-size: 10.5px; font-weight: 700; color: var(--primary);
+      text-decoration: none; cursor: pointer; letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .pf-size-link:hover { text-decoration: underline; }
+    html.dark .pf-size-link { color: #93C5FD; }
+    .pf-size-sep { color: var(--text-subtle); font-size: 10px; opacity: 0.55; user-select: none; }
+
+    /* Header date-type switch — a small ⋮ button beside the Updated column's
+       sort control that opens a menu to pick which date (Updated / Last edited)
+       the column leads with and sorts by. */
+    .pf-th.pf-col-updated { display: flex; align-items: center; gap: 2px; }
+    .pf-th.pf-col-updated .pf-datemenu { order: 5; }
+    .pf-datemenu { position: relative; display: inline-flex; }
+    .pf-datemenu-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; padding: 0; border-radius: 5px;
+      border: 1px solid transparent; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pf-datemenu-btn:hover, .pf-datemenu.is-open .pf-datemenu-btn { background: var(--surface-2); color: var(--text); }
+    html.dark .pf-datemenu-btn:hover, html.dark .pf-datemenu.is-open .pf-datemenu-btn { background: rgba(255,255,255,0.08); }
+    .pf-datemenu-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+    .pf-datemenu-pop {
+      position: absolute; top: calc(100% + 5px); right: 0; z-index: 40; min-width: 156px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 5px;
+    }
+    .pf-datemenu-pop[hidden] { display: none; }
+    .pf-datemenu-item {
+      width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+      border: none; background: transparent; cursor: pointer; border-radius: 7px;
+      font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--text);
+      text-align: left; text-transform: none; letter-spacing: 0;
+    }
+    .pf-datemenu-item:hover { background: var(--surface-2); }
+    html.dark .pf-datemenu-item:hover { background: rgba(255,255,255,0.06); }
+    .pf-datemenu-item .material-symbols-outlined {
+      font-size: 15px !important; line-height: 1 !important; color: var(--text-subtle);
+      width: 16px; flex-shrink: 0;
+    }
+    .pf-datemenu-item.is-active { color: var(--primary); }
+    .pf-datemenu-item.is-active .material-symbols-outlined { color: var(--primary); }
     /* Sticky header — pins to the top of the scrolling #pf-body so columns stay
        labelled while the portfolio list scrolls. */
     .pf-thead { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); }
@@ -8604,6 +8790,13 @@
               <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
               <span class="sc-bganim-opacity-val">30%</span>
             </div>
+            <div class="sc-bganim-playback">
+              <span class="sc-bganim-playback-label">Playback</span>
+              <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+                <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+                <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+              </button>
+            </div>
             <!-- Activity strip — the landmark rail on the chat's edge (shared
                  app-wide preference; mirrors the switch on pages/wiseai.html).
                  Keeps the menu open so the switch state reads back. -->
@@ -8809,6 +9002,12 @@
                 </button>
                 <button class="chip ws-intent-chip" onclick="askWiseAiPortfolio()">
                     <span class="material-symbols-outlined" style="font-size:16px">help_outline</span>Ask WISEcodeAI a Question
+                </button>
+                <!-- Gold "What can I ask?" chip — the standing affordance every
+                     other WISEcodeAI surface carries; always rides at the end of
+                     the set and starts a page-specific "here's what you can ask" turn. -->
+                <button class="chip ws-intent-chip ws-intent-chip--askhelp" onclick="startWhatCanIAsk()">
+                    <span class="material-symbols-outlined" style="font-size:16px">help</span>What can I ask?
                 </button>
             </div>
                 <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-chips-prev" aria-label="Scroll to previous actions" onclick="scrollChips(-1)" hidden><span class="material-symbols-outlined">chevron_left</span></button>
@@ -9163,6 +9362,13 @@
               <span class="material-symbols-outlined">send</span>
             </button>
           </div>
+        </div>
+        <!-- Below-input meta row — the gold "What can I ask?" text link, docked
+             below-left of the composer exactly like every other WISEcodeAI
+             surface. Letters are split into per-glyph spans so CSS can run the
+             staggered gold shimmer across the label. -->
+        <div class="sc-belowinput sc-belowinput--ask">
+          <button type="button" class="sc-ask-help" onclick="startWhatCanIAsk()" aria-label="What can I ask?"><span class="sc-ask-ch" style="--ch-i:0">W</span><span class="sc-ask-ch" style="--ch-i:1">h</span><span class="sc-ask-ch" style="--ch-i:2">a</span><span class="sc-ask-ch" style="--ch-i:3">t</span> <span class="sc-ask-ch" style="--ch-i:5">c</span><span class="sc-ask-ch" style="--ch-i:6">a</span><span class="sc-ask-ch" style="--ch-i:7">n</span> <span class="sc-ask-ch" style="--ch-i:9">I</span> <span class="sc-ask-ch" style="--ch-i:11">a</span><span class="sc-ask-ch" style="--ch-i:12">s</span><span class="sc-ask-ch" style="--ch-i:13">k</span><span class="sc-ask-ch" style="--ch-i:14">?</span></button>
         </div>
       </div>
     </div>
@@ -9963,7 +10169,21 @@
               </div>
             </div>
             <span class="pf-tool-spacer"></span>
-            <button type="button" class="pf-add-btn" onclick="startAddProduct()"><span class="material-symbols-outlined">add</span>Add Product</button>
+            <!-- Add ▾ — one entry point that splits into the single-product
+                 builder (Add Product) and the brand-new bulk Catalog upload. -->
+            <div class="pf-add-wrap" id="pf-add-wrap">
+              <button type="button" class="pf-add-btn" id="pf-add-btn" aria-haspopup="menu" aria-expanded="false" onclick="pfToggleAddMenu(event)"><span class="material-symbols-outlined">add</span>Add<span class="material-symbols-outlined pf-add-caret">expand_more</span></button>
+              <div class="pf-add-menu" id="pf-add-menu" role="menu" aria-label="Add to portfolio" hidden>
+                <button type="button" class="pf-add-item" role="menuitem" onclick="startAddProduct()">
+                  <span class="material-symbols-outlined">inventory_2</span>
+                  <span class="pf-add-item-text"><span class="pf-add-item-title">Product</span><span class="pf-add-item-desc">Build one product with WISEcodeAI</span></span>
+                </button>
+                <button type="button" class="pf-add-item" role="menuitem" onclick="startAddCatalog()">
+                  <span class="material-symbols-outlined">upload_file</span>
+                  <span class="pf-add-item-text"><span class="pf-add-item-title">Catalog</span><span class="pf-add-item-desc">Upload a CSV — up to 500 products</span></span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- At-a-glance + tables — ONE component. The score cards are
@@ -10019,6 +10239,12 @@
                 <span class="pf-stat-num">2</span>
                 <span class="pf-stat-label">Ineligible</span>
               </button>
+              <!-- Products sold in more than one pack size. Count + filter are
+                   kept in sync with the rows by pfUpdateSizesStat(). -->
+              <button type="button" class="pf-stat pf-stat--info" id="pf-stat-sizes" data-status="sizes" aria-pressed="false" onclick="pfFilterClick('claimed', 'sizes')">
+                <span class="pf-stat-num">0</span>
+                <span class="pf-stat-label"><span class="material-symbols-outlined">straighten</span>Multiple sizes</span>
+              </button>
             </div>
             <!-- Guiding Stars breakdown — swaps in for the status cards when the
                  Guiding Stars switch is on. Populated by pfRenderStarStats(). -->
@@ -10037,7 +10263,7 @@
                   <span class="pf-th pf-col-product">Product</span>
                   <span class="pf-th pf-col-data">Data</span>
                   <span class="pf-th pf-col-shield">Non-UPF Shield</span>
-                  <span class="pf-th pf-col-updated">Updated</span>
+                  <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
@@ -10117,7 +10343,7 @@
                   <span class="pf-th pf-col-product">Product</span>
                   <span class="pf-th pf-col-data">Data</span>
                   <span class="pf-th pf-col-shield">Non-UPF Shield</span>
-                  <span class="pf-th pf-col-updated">Updated</span>
+                  <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">bookmark_add</span>Review &amp; claim</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
@@ -10198,7 +10424,7 @@
                   <span class="pf-th pf-col-product">Product</span>
                   <span class="pf-th pf-col-data">Data</span>
                   <span class="pf-th pf-col-shield">Non-UPF Shield</span>
-                  <span class="pf-th pf-col-updated">Updated</span>
+                  <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit_note</span>Add details</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button><button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Aug 29, 2024</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Aug 25, 2024</div></div></div></span>
@@ -13122,6 +13348,8 @@
       if (row.querySelector('.pf-chip--verified')) tags.push('verified');
       if (row.querySelector('.pf-chip--pay')) tags.push('pending');
       if (row.querySelector('.pf-chip--inelig')) tags.push('ineligible');
+      /* Sold in more than one pack size (size line is only rendered for those). */
+      if (row.querySelector('.pf-sizes')) tags.push('sizes');
       return tags;
     }
 
@@ -13238,22 +13466,87 @@
     }
     window.pfFilterClick = pfFilterClick;
 
+    /* Which date the Updated column leads with (and sorts by): 'updated' or
+       'edited'. Toggled from the ⋮ menu in the column header. */
+    let pfDateType = 'updated';
+
+    /* The actual pack sizes a product is sold in, keyed by its UPC (digits
+       only). Only about half the portfolio comes in more than one size; the
+       rest are single-size and get no size line. Placeholder demo data until
+       the Add Product flow captures each product's real set of sizes. */
+    const PF_PRODUCT_SIZES = {
+      '857287004203': ['4 ct', '12 ct'],            /* Toasted Coconut Brownies */
+      '065776631520': ['4 ct', '6 ct', '12 ct'],    /* Chocolate Chip Muffins */
+      '065776635504': ['4 ct', '12 ct'],            /* Chocolate Brownies */
+      '857287004272': ['11 oz', '20 oz'],           /* Chunky Chocolate Granola */
+      '857287004562': ['5 ct', '10 ct'],            /* Oatmeal Raisin Cookies */
+    };
+    function pfUpcDigits(row) {
+      return ((row.querySelector('.pf-upc') || {}).textContent || '').replace(/\D/g, '');
+    }
+    function pfSizesFor(row) {
+      return PF_PRODUCT_SIZES[pfUpcDigits(row)] || null;
+    }
+
+    /* Render the pack-size chip row beneath a product's UPC, but only for
+       products sold in more than one size. Idempotent — an existing size line
+       is replaced, and single-size / unknown products have theirs removed. */
+    function pfPopulateSizes(row) {
+      const cellText = row.querySelector('.pf-pcell-text');
+      const upc = row.querySelector('.pf-upc');
+      if (!cellText || !upc) return;
+      const existing = cellText.querySelector('.pf-sizes');
+      const sizes = pfSizesFor(row);
+      if (!sizes || sizes.length < 2) { if (existing) existing.remove(); return; }
+      const html = sizes.map((s) => '<a class="pf-size-link" role="link" tabindex="0">' + s + '</a>')
+        .join('<span class="pf-size-sep" aria-hidden="true">|</span>');
+      let line = existing;
+      if (!line) {
+        line = document.createElement('span');
+        line.className = 'pf-sizes';
+        upc.after(line);
+      }
+      line.innerHTML = html;
+    }
+
+    /* Count of Claimed products sold in more than one size, pushed into the
+       "Multiple sizes" scorecard so it always matches what the rows show. */
+    function pfUpdateSizesStat() {
+      const view = document.getElementById('pf-view-claimed');
+      const card = document.getElementById('pf-stat-sizes');
+      if (!card) return;
+      const n = view ? view.querySelectorAll('.pf-trow .pf-sizes').length : 0;
+      const num = card.querySelector('.pf-stat-num');
+      if (num) num.textContent = n;
+      card.hidden = n === 0;
+    }
+
     /* Surface each row's update history — the Updated date and the Last edited
-       date, each with its status label — into the always-visible "Updated"
-       column. Read from the row's ⋮ menu so the dates can never be dropped.
-       Idempotent, so it can safely run more than once. */
+       date — into the always-visible "Updated" column, stacked as two lines.
+       The date chosen in the header menu (pfDateType) leads (and is what the
+       column sorts by, since the sorter reads the first .pf-date-val); the
+       other date follows, dimmed. Read from the row's ⋮ menu so the dates can
+       never be dropped. Idempotent, so it can safely run more than once. */
     function pfPopulateDates() {
       document.querySelectorAll('#portfolio-panel .pf-trow').forEach((row) => {
-        const html = Array.from(row.querySelectorAll('.pf-rowmenu-info')).map((info) => {
+        pfPopulateSizes(row);
+        const dates = Array.from(row.querySelectorAll('.pf-rowmenu-info')).map((info) => {
           const clone = info.cloneNode(true);
           clone.querySelectorAll('.material-symbols-outlined').forEach((n) => n.remove());
           const txt = (clone.textContent || '').replace(/\s+/g, ' ').trim();
           const i = txt.indexOf('\u00B7');
           const status = i === -1 ? txt : txt.slice(0, i).trim();
           const val = i === -1 ? '' : txt.slice(i + 1).trim();
-          return '<span class="pf-date"><span class="pf-date-status">' + status +
-                 '</span><span class="pf-date-val">' + val + '</span></span>';
-        }).join('');
+          const kind = /edit/i.test(status) ? 'edited' : 'updated';
+          return { status: status, val: val, kind: kind };
+        });
+        /* Put the selected date type first so it displays prominently and the
+           column sorts by it. Stable sort keeps the other date in place. */
+        dates.sort((a, b) => (a.kind === pfDateType ? 0 : 1) - (b.kind === pfDateType ? 0 : 1));
+        const html = dates.map((d, idx) =>
+          '<span class="pf-date ' + (idx === 0 ? 'pf-date--primary' : 'pf-date--secondary') + '">' +
+          '<span class="pf-date-status">' + d.status + '</span>' +
+          '<span class="pf-date-val">' + d.val + '</span></span>').join('');
         let cell = row.querySelector('.pf-col-updated');
         if (!cell) {
           cell = document.createElement('span');
@@ -13262,7 +13555,52 @@
         }
         cell.innerHTML = html;
       });
+      pfUpdateSizesStat();
     }
+
+    /* Open / close the header's date-type menu. */
+    function pfToggleDateMenu(e) {
+      if (e) { e.stopPropagation(); e.preventDefault(); }
+      const btn = e.currentTarget;
+      const menu = btn.closest('.pf-datemenu');
+      const pop = menu && menu.querySelector('.pf-datemenu-pop');
+      if (!pop) return;
+      const willOpen = pop.hasAttribute('hidden');
+      pfCloseDateMenus();
+      if (willOpen) {
+        pop.removeAttribute('hidden');
+        menu.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    }
+    function pfCloseDateMenus() {
+      document.querySelectorAll('.pf-datemenu-pop').forEach((p) => p.setAttribute('hidden', ''));
+      document.querySelectorAll('.pf-datemenu').forEach((m) => m.classList.remove('is-open'));
+      document.querySelectorAll('.pf-datemenu-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    }
+    /* Switch which date the Updated column leads with and sorts by. */
+    function pfSetDateType(type, e) {
+      if (e) { e.stopPropagation(); e.preventDefault(); }
+      pfDateType = (type === 'edited') ? 'edited' : 'updated';
+      const label = pfDateType === 'edited' ? 'Last edited' : 'Updated';
+      document.querySelectorAll('.pf-th.pf-col-updated .pf-updated-label')
+        .forEach((l) => { l.textContent = label; });
+      document.querySelectorAll('.pf-datemenu-item').forEach((it) => {
+        const on = it.dataset.datetype === pfDateType;
+        it.classList.toggle('is-active', on);
+        it.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      pfPopulateDates();
+      pfCloseDateMenus();
+    }
+    window.pfToggleDateMenu = pfToggleDateMenu;
+    window.pfSetDateType = pfSetDateType;
+    /* Dismiss the date-type menu on an outside click or Escape. */
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest || !e.target.closest('.pf-datemenu')) pfCloseDateMenus();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') pfCloseDateMenus(); });
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', pfPopulateDates);
     } else {
@@ -13310,6 +13648,45 @@
       const href = pfViewHref(row);
       return href + (href.indexOf('?') === -1 ? '?' : '&') + 'mode=edit';
     }
+    /* Deep-link into the add-product flow focused on adding another size / pack
+       format for the product opened from the row. Opens the product on the edit
+       surface (name / UPC / thumbnail travel over in the URL) and jumps straight
+       into the Pack Formats flow already built into add-product.html. */
+    function pfAddPacksHref(row) {
+      const params = new URLSearchParams();
+      if (row) {
+        const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
+        const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
+        const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+        if (name) params.set('name', name);
+        if (upc) params.set('upc', upc);
+        if (img) params.set('img', img);
+      }
+      params.set('mode', 'edit');
+      params.set('packs', '1');
+      return 'add-product.html?' + params.toString();
+    }
+    /* Inject an "Add pack formats / sizes" action into a claimed product's ⋮
+       menu (rows that carry an Edit action — discovered/unclaimed rows don't get
+       it). Mirrors pfInjectReformulate and runs when the menu opens. */
+    function pfInjectAddPacks(pop) {
+      if (!pop || pop.querySelector('.pf-rowmenu-item--addpacks')) return;
+      const row = pop.closest('.pf-trow');
+      if (!row) return;
+      const items = Array.from(pop.querySelectorAll('.pf-rowmenu-item'));
+      const hasEdit = items.some((b) => /\bedit\b/i.test(b.textContent || ''));
+      if (!hasEdit) return;
+      const item = document.createElement('a');
+      item.className = 'pf-rowmenu-item pf-rowmenu-item--addpacks';
+      item.setAttribute('role', 'menuitem');
+      item.href = pfAddPacksHref(row);
+      item.style.textDecoration = 'none';
+      item.innerHTML = '<span class="material-symbols-outlined">inventory_2</span>Add pack formats / sizes';
+      const ref = pop.querySelector('.pf-rowmenu-item--reformulate');
+      if (ref && ref.nextSibling) pop.insertBefore(item, ref.nextSibling);
+      else if (ref) pop.appendChild(item);
+      else pop.insertBefore(item, pop.firstChild);
+    }
     function pfInjectReformulate(pop) {
       if (!pop || pop.querySelector('.pf-rowmenu-item--reformulate')) return;
       const row = pop.closest('.pf-trow');
@@ -13350,6 +13727,7 @@
           rm.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); pop.setAttribute('hidden', '');
         } else {
           pfInjectReformulate(pop);
+          pfInjectAddPacks(pop);
           rm.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); pop.removeAttribute('hidden');
         }
         return;
@@ -14166,6 +14544,28 @@
       if (!(e.target instanceof Element) || !e.target.closest('#pf-brand')) pfCloseBrandMenu();
     });
 
+    /* Add ▾ dropdown (Product / Catalog) — same open/close contract as the
+       brand menu so both toolbar dropdowns behave identically. */
+    function pfToggleAddMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('pf-add-menu');
+      const btn = document.getElementById('pf-add-btn');
+      if (!menu) return;
+      const open = menu.hasAttribute('hidden');
+      if (open) { menu.removeAttribute('hidden'); } else { menu.setAttribute('hidden', ''); }
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function pfCloseAddMenu() {
+      const menu = document.getElementById('pf-add-menu');
+      const btn = document.getElementById('pf-add-btn');
+      if (menu) menu.setAttribute('hidden', '');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+    window.pfToggleAddMenu = pfToggleAddMenu;
+    document.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element) || !e.target.closest('#pf-add-wrap')) pfCloseAddMenu();
+    });
+
     function pfInitBrands() {
       const board = document.querySelector('#portfolio-panel .pf-board');
       if (!board) return;
@@ -14415,6 +14815,14 @@
          progress module beside it. Nothing persists until the user saves. */
       window.location.href = 'add-product.html';
     }
+    /* Add Catalog opens the bulk-upload builder: a WISEcodeAI chat that reads a
+       CSV of up to 500 products, matches its columns to our fields, imports what
+       validates and lists the rows to fix — then verifies the whole catalog's
+       ingredients in one pass. Nothing persists until the user confirms import. */
+    function startAddCatalog() {
+      window.location.href = 'add-catalog.html';
+    }
+    window.startAddCatalog = startAddCatalog;
     function startSearchPortfolio() {
       openPortfolioModule('claimed', 'Search my portfolio',
         'Every view has a search box — filter by product name or UPC across <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Needs Info</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
@@ -14463,6 +14871,42 @@
         'I can do the heavy lifting across your whole portfolio — batch-verify ingredients, attest and activate Non-UPF Shields, claim the right discovered products, and complete the ones missing info. Your board is on the right; pick a task below and I’ll drive it.',
         ['verify', 'shields', 'discovered', 'needsinfo']);
     }
+    /* Gold "What can I ask?" affordance (chip + below-input link) — starts a
+       page-specific listing of everything you can ask on THIS surface, grounded
+       in the portfolio's own quick actions. Mirrors the shared chat's
+       askHelpReplyHtml so the affordance behaves the same everywhere. */
+    function startWhatCanIAsk() {
+      hideWelcomeScreen(() => {
+        addUserMessage('What can I ask you here?');
+        const typing = showWISEcodeAITyping('WISEcodeAI is gathering what you can ask');
+        setTimeout(() => {
+          typing?.remove();
+          const rows = [
+            ['Review discovered matches', 'Review the products you discovered for me'],
+            ['Verify ingredients', 'Batch-verify ingredients across my claimed products'],
+            ['Activate Non-UPF Shields', 'Activate the Non-UPF Shields I\u2019m eligible for'],
+            ['Complete Needs Info products', 'Help me complete my Needs Info products'],
+            ['View claimed portfolio', 'Show me my claimed portfolio'],
+            ['Claim a product', 'I want to claim a product'],
+            ['Resolve ineligible product', 'Why can\u2019t this product earn a Non-UPF Shield yet?'],
+            ['Add a product', 'Add a product manually'],
+            ['Search the portfolio', 'Search my portfolio by name or UPC'],
+            ['Guiding Stars ratings', 'Show my Guiding Stars ratings'],
+            ['Tour my portfolio', 'Give me a quick tour of my portfolio'],
+          ];
+          const items = rows.map(([label, q]) =>
+            `<li><strong>${label}</strong> — <em>\u201C${q}\u201D</em></li>`).join('');
+          addWISEcodeAIMessage(
+            'Here\u2019s what you can ask me on <strong>Product Portfolio</strong> — everything below is grounded in what this page can actually do:' +
+            `<ul class="sc-askhelp-list">${items}</ul>` +
+            'You can also just type a question in your own words — I\u2019ll route it to the right agents.',
+            { source: false }
+          );
+          pfOfferChips(['discovered', 'verify', 'shields', 'needsinfo']);
+        }, 620);
+      });
+    }
+    window.startWhatCanIAsk = startWhatCanIAsk;
 
     function compareResetState() {
       compareState = {
@@ -18493,8 +18937,13 @@
         controls.classList.remove('panel-controls--stacked');
 
         /* Keep the originals in the DOM (hidden) so syncPanelWidthUI /
-           syncPanelFlipUI keep updating them; we delegate clicks to them. */
-        Array.from(controls.children).forEach((c) => { c.style.display = 'none'; });
+           syncPanelFlipUI keep updating them; we delegate clicks to them. The
+           width toggle stays VISIBLE — it sits as its own button to the right of
+           the ⋯ menu (matching pages/wiseai.html), never folded into the menu. */
+        Array.from(controls.children).forEach((c) => {
+          if (c === widthBtn) { c.style.display = ''; return; }
+          c.style.display = 'none';
+        });
 
         const menu = document.createElement('div');
         menu.className = 'pf-module-menu';
@@ -18520,14 +18969,9 @@
           }));
         }
 
+        /* Width is NOT a menu item — it stays a visible standalone button to the
+           right of the ⋯ menu (see the visibility carve-out above). */
         let widthItem = null;
-        if (widthBtn) {
-          widthItem = makeItem({
-            icon: 'width_normal', label: 'Width', extraClass: 'pf-menu-wide',
-            onClick: () => { widthBtn.click(); syncWidthItem(); },
-          });
-          pop.appendChild(widthItem);
-        }
 
         /* Portfolio only: the Guiding Stars on/off control lives in this menu
            (it used to be a pink pill beside the board title). Toggling it
@@ -18585,7 +19029,9 @@
         }
         menu._syncWidthItem = syncWidthItem;
 
-        controls.appendChild(menu);
+        /* ⋯ menu sits to the LEFT of the visible width toggle: [⋯][width]. */
+        if (widthBtn && widthBtn.parentElement === controls) controls.insertBefore(menu, widthBtn);
+        else controls.appendChild(menu);
         syncWidthItem();
       }
 

@@ -433,6 +433,189 @@ export function restoreFullBleed() {
   applyFullBleed(isFullBleedOn());
 }
 
+/* ── Full bleed ▸ surface customisation ──────────────────────────────────
+   Sub-controls that live UNDER the Full bleed row in the Appearance popover
+   (rendered only while full bleed is on, see js/appearance-menu.js). They let
+   an admin recolour the three surfaces that frame the workspace once modules
+   run edge-to-edge — the primary navigation background, the chat window, and
+   any module docked to the RIGHT of the chat — plus switch how those right
+   modules behave and drop in one of three preset themes that set all three
+   colours at once. Each colour is pushed onto <html> as a CSS custom property
+   plus a marker class; wise.css turns those into `!important` background
+   overrides GATED on `html.full-bleed`, so the customisation is genuinely part
+   of full bleed (it only shows while full bleed is on, and lifts the moment
+   it's switched off). Everything is persisted so it survives navigation and
+   applies on every page — the surfaces it targets (.menu-inner, the chat cards,
+   and .sticky-mod) exist app-wide. */
+const FB_NAV_BG_KEY = 'wise-fb-nav-bg';
+const FB_CHAT_BG_KEY = 'wise-fb-chat-bg';
+const FB_RMOD_BG_KEY = 'wise-fb-rmod-bg';
+const FB_RMOD_MODE_KEY = 'wise-fb-rmod-mode';
+const FB_THEME_KEY = 'wise-fb-theme';
+
+/** Three one-tap preset themes for the full-bleed surfaces. Each is a cohesive
+    named look that sets the nav, chat and right-module backgrounds together
+    WITH an accent per surface (used for icons / highlights); the readable body
+    text is derived automatically, and the light/dark scheme of each surface's
+    labels + chips follows its background's luminance:
+      • Cyberpunk — near-black indigo panels lit by neon cyan / magenta accents.
+      • Sunset Green — deep botanical-green nav with warm cream + sage panels.
+      • Blue Sky — an airy sky-blue nav over pale, cloud-light chat + module.
+    The bg fields also drive the popover's preview swatch. */
+export const FB_PRESETS = [
+  {
+    id: 'cyber', label: 'Cyberpunk',
+    nav: '#0A0E27', navAccent: '#22E6E6',
+    chat: '#0D0B1F', chatAccent: '#7DF9FF',
+    rmod: '#170B2C', rmodAccent: '#FF6EC7',
+  },
+  {
+    id: 'botanic', label: 'Sunset Green',
+    nav: '#1E3A2B', navAccent: '#F3D8A6',
+    chat: '#FBF3E4', chatAccent: '#B4741F',
+    rmod: '#DCE8CE', rmodAccent: '#2E3A22',
+  },
+  {
+    id: 'sky', label: 'Blue Sky',
+    nav: '#3E86C7', navAccent: '#FFFFFF',
+    chat: '#EAF4FE', chatAccent: '#2E6FB0',
+    rmod: '#D3E8FA', rmodAccent: '#2E6FB0',
+  },
+];
+
+function fbRead(key) {
+  try { return localStorage.getItem(key) || ''; } catch { return ''; }
+}
+function fbStore(key, val) {
+  try { if (val) localStorage.setItem(key, val); else localStorage.removeItem(key); } catch {}
+}
+/** Relative luminance (WCAG) of a #rrggbb colour, 0 (black) → 1 (white). */
+function fbLuminance(hex) {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
+  if (!m) return 1;
+  const n = parseInt(m[1], 16);
+  const chan = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+    c /= 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * chan[0] + 0.7152 * chan[1] + 0.0722 * chan[2];
+}
+/** Readable body/label ink for a background: near-white on dark surfaces, dark
+    navy on light ones. */
+function fbAutoFg(hex) { return fbLuminance(hex) > 0.45 ? '#16233B' : '#EAF1F9'; }
+
+/** Push (or clear) a surface colour. When a colour is given we set THREE custom
+    properties on <html> — the background, a readable body/label foreground
+    (auto-contrast), and an accent for icons/highlights (a preset supplies its
+    own accent; hand-picked colours reuse the foreground) — plus the marker
+    class AND a `fb-<prefix>-dark|light` scheme class so wise.css can flip the
+    WHOLE token palette (labels, muted text, chip inks, borders) to match the
+    surface's lightness. Clearing removes all of it. `prefix` is nav|chat|rmod. */
+function fbSetSurface(prefix, color, accent) {
+  const root = document.documentElement;
+  const val = typeof color === 'string' ? color.trim() : '';
+  const tint = 'fb-' + prefix + '-tint';
+  const darkCls = 'fb-' + prefix + '-dark';
+  const lightCls = 'fb-' + prefix + '-light';
+  if (val) {
+    const fg = fbAutoFg(val);
+    const isDark = fbLuminance(val) <= 0.45;
+    root.style.setProperty('--fb-' + prefix + '-bg', val);
+    root.style.setProperty('--fb-' + prefix + '-fg', fg);
+    root.style.setProperty('--fb-' + prefix + '-accent', accent || fg);
+    root.classList.add(tint);
+    root.classList.toggle(darkCls, isDark);
+    root.classList.toggle(lightCls, !isDark);
+  } else {
+    root.style.removeProperty('--fb-' + prefix + '-bg');
+    root.style.removeProperty('--fb-' + prefix + '-fg');
+    root.style.removeProperty('--fb-' + prefix + '-accent');
+    root.classList.remove(tint, darkCls, lightCls);
+  }
+}
+
+/** Primary-navigation background colour ('' when unset). */
+export function getNavBg() { return fbRead(FB_NAV_BG_KEY); }
+export function applyNavBg(color, accent) {
+  fbSetSurface('nav', color, accent);
+  fbStore(FB_NAV_BG_KEY, typeof color === 'string' ? color.trim() : '');
+}
+
+/** Chat-window background colour ('' when unset). */
+export function getChatBg() { return fbRead(FB_CHAT_BG_KEY); }
+export function applyChatBg(color, accent) {
+  fbSetSurface('chat', color, accent);
+  fbStore(FB_CHAT_BG_KEY, typeof color === 'string' ? color.trim() : '');
+}
+
+/** Right-of-chat module background colour ('' when unset). */
+export function getRightModuleBg() { return fbRead(FB_RMOD_BG_KEY); }
+export function applyRightModuleBg(color, accent) {
+  fbSetSurface('rmod', color, accent);
+  fbStore(FB_RMOD_BG_KEY, typeof color === 'string' ? color.trim() : '');
+}
+
+/** How right-of-chat modules behave in full bleed: 'drawer' (default tuck),
+    'flat' (full-height column) or 'hidden'. Driven by an `rmod-<mode>` class. */
+export const RMOD_MODES = [
+  { id: '', label: 'Drawer' },
+  { id: 'flat', label: 'Flat' },
+  { id: 'hidden', label: 'Hidden' },
+];
+const RMOD_MODE_CLASSES = ['rmod-flat', 'rmod-hidden'];
+export function getRightModuleMode() {
+  const v = fbRead(FB_RMOD_MODE_KEY);
+  return v === 'flat' || v === 'hidden' ? v : '';
+}
+export function applyRightModuleMode(mode) {
+  const valid = mode === 'flat' || mode === 'hidden';
+  const root = document.documentElement;
+  RMOD_MODE_CLASSES.forEach((c) => root.classList.toggle(c, valid && c === 'rmod-' + mode));
+  fbStore(FB_RMOD_MODE_KEY, valid ? mode : '');
+}
+
+/** The active preset theme id, or '' when the surfaces are custom / default. */
+export function getFullBleedTheme() {
+  const v = fbRead(FB_THEME_KEY);
+  return FB_PRESETS.some((p) => p.id === v) ? v : '';
+}
+/** Apply a preset theme (sets all three surface colours at once), or pass ''
+    to clear the surfaces back to their defaults. */
+export function applyFullBleedTheme(id) {
+  const preset = FB_PRESETS.find((p) => p.id === id);
+  if (preset) {
+    applyNavBg(preset.nav, preset.navAccent);
+    applyChatBg(preset.chat, preset.chatAccent);
+    applyRightModuleBg(preset.rmod, preset.rmodAccent);
+    fbStore(FB_THEME_KEY, preset.id);
+  } else {
+    applyNavBg('');
+    applyChatBg('');
+    applyRightModuleBg('');
+    fbStore(FB_THEME_KEY, '');
+  }
+}
+/** Forget the active-preset mark WITHOUT touching the colours — used when a
+    single surface is hand-tweaked, so the preset chip stops reading as active
+    even though the other two surfaces still match it. */
+export function clearFullBleedThemeMark() { fbStore(FB_THEME_KEY, ''); }
+
+/** Restore the persisted full-bleed surface colours + right-module behaviour
+    onto the document (no popover needed). If a named preset is active we replay
+    it so each surface gets its exact preset ink back; otherwise the individual
+    hand-picked backgrounds are restored (their ink re-derived by contrast). */
+export function restoreFullBleedSurfaces() {
+  const theme = getFullBleedTheme();
+  if (theme) {
+    applyFullBleedTheme(theme);
+  } else {
+    applyNavBg(getNavBg());
+    applyChatBg(getChatBg());
+    applyRightModuleBg(getRightModuleBg());
+  }
+  applyRightModuleMode(getRightModuleMode());
+}
+
 /* Composer v2 — the redesigned chat-module input: one pill row with "+" far
    left, the growing text field beside it, and the database selector docked
    bottom-right just left of send. The text field grows upward as you type
@@ -1011,6 +1194,7 @@ if (typeof document !== 'undefined') {
     restoreMinimalUi();
     restoreHeaderFloat();
     restoreFullBleed();
+    restoreFullBleedSurfaces();
     restoreComposerV2();
     restoreChatTint();
     restoreModuleGap();

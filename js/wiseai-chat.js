@@ -771,12 +771,16 @@ export function injectChatExtras() {
        timestamp inside .sc-line-meta — small, filled glyphs. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
     .sc-fb { display: flex; align-items: center; gap: 1px; width: 100%; }
-    /* Three-dot ("more") control — floated to the far right of the thumbs. It
-       holds the timestamp + the re-run / edit / fork controls + the turn ID,
-       spilling them into a small floating menu on click so the row itself stays
-       down to copy / thumbs up / thumbs down. */
-    .sc-fb-more-wrap { position: relative; display: inline-flex; margin-left: auto; padding-left: 6px; }
-    .sc-fb-menu { position: absolute; top: calc(100% + 8px); right: -4px; z-index: 60;
+    /* Three-dot ("more") control — sits directly to the RIGHT of thumbs-down
+       (not floated to the far edge of the row). It holds the timestamp + the
+       re-run / edit / fork controls + the turn ID, spilling them into a small
+       floating menu on click so the row itself stays down to copy / thumbs up /
+       thumbs down. */
+    .sc-fb-more-wrap { position: relative; display: inline-flex; padding-left: 2px; }
+    /* z-index 80 keeps this menu ABOVE the body-level activity-strip rail
+       (z-index 70 in js/chat-activity-strip.js), which hugs the same module edge —
+       otherwise the rail/ticks paint over the popover's near corner. */
+    .sc-fb-menu { position: absolute; top: calc(100% + 8px); right: -4px; z-index: 80;
       display: inline-flex; align-items: center; gap: 2px; width: max-content;
       padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 10px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
@@ -790,12 +794,15 @@ export function injectChatExtras() {
     .sc-fb-menu-time { margin-right: 4px; padding-right: 6px; white-space: nowrap;
       border-right: 1px solid var(--border); }
     .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    /* The three-dot "more" control reads as a proper round chip — its hover /
+       open background is a full circle, never a rounded square. */
+    .sc-fb-more { border-radius: 50%; }
     .sc-fb-more.is-on, .sc-fb-more[aria-expanded="true"] { background: var(--surface-3); color: var(--text); }
     html.dark .sc-fb-more[aria-expanded="true"] { background: rgba(255,255,255,0.07); }
     .sc-fb-id { margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
       color: var(--text-subtle); font-variant-numeric: tabular-nums; }
     .sc-fb-btn { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
-      border: 0; border-radius: 5px; background: transparent; color: var(--text-subtle); cursor: pointer; padding: 0;
+      border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle); cursor: pointer; padding: 0;
       transition: background .14s ease, color .14s ease; }
     .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
     html.dark .sc-fb-btn:hover { background: rgba(255,255,255,0.07); }
@@ -810,7 +817,7 @@ export function injectChatExtras() {
     /* "Copied" confirmation pill — floats just above the copy button, snaps in
        and fades away after copyAnswer() flips the .is-vis flag. */
     .sc-fb-copied { position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%) translateY(3px) scale(.96);
-      z-index: 70; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; pointer-events: none;
+      z-index: 80; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; pointer-events: none;
       padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .01em;
       background: var(--sec-green-bg, #E6F4EA); color: var(--sec-green-text, #1E7A34);
       border: 1px solid color-mix(in srgb, var(--sec-green-text, #1E7A34) 26%, transparent);
@@ -822,7 +829,8 @@ export function injectChatExtras() {
        chip + free-form panel opens rightward and can't clip off the left of the
        transcript — the thumbs sit close to the meta row's left edge. */
     .sc-fb-reasons { position: absolute; top: calc(100% + 8px); left: -6px;
-      z-index: 60; width: max-content; max-width: 260px; display: flex; flex-direction: column; gap: 8px;
+      /* Above the body-level activity strip (z-index 70) — see .sc-fb-menu. */
+      z-index: 80; width: max-content; max-width: 260px; display: flex; flex-direction: column; gap: 8px;
       padding: 11px 12px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 12px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
     .sc-fb-reasons::before { content: ''; position: absolute; bottom: 100%; left: 15px;
@@ -907,7 +915,7 @@ export function injectChatExtras() {
     html:not(.dark) .wt-chip { background: rgba(20,40,80,0.06); }
     .wt-chip .material-symbols-outlined { font-size: 13px; }
     .wt-actions { display: flex; align-items: center; gap: 6px; }
-    .wt-fork { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+    .wt-fork { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 50%;
       background: transparent; color: var(--primary-ink, var(--primary, #2F6DF6)); cursor: pointer; opacity: .9; transition: background .14s ease, color .14s ease, opacity .14s ease; }
     .wt-fork:hover { opacity: 1; background: color-mix(in srgb, var(--primary, #2F6DF6) 14%, transparent); }
     .wt-fork .material-symbols-outlined { font-size: 17px; }
@@ -934,7 +942,7 @@ export function injectChatExtras() {
     .wt-search.has-q .wt-search-clear { display: flex; }
 
     /* Per-turn Share + Note controls, tucked beside Fork/Jump. */
-    .wt-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+    .wt-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 50%;
       background: transparent; color: var(--text-muted, inherit); cursor: pointer; opacity: .82; transition: background .14s ease, color .14s ease, opacity .14s ease; }
     .wt-iconbtn:hover { opacity: 1; color: var(--primary-ink, var(--primary, #2F6DF6)); background: color-mix(in srgb, var(--primary, #2F6DF6) 12%, transparent); }
     .wt-iconbtn .material-symbols-outlined { font-size: 17px; }
@@ -1138,7 +1146,7 @@ export function injectChatExtras() {
     /* Header controls row — a breakout (expand) toggle sits left of the close
        button, matching the shared .wch-head layout. */
     .wch-head-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
-      border: 0; border-radius: 8px; background: none; cursor: pointer; color: var(--text-muted);
+      border: 0; border-radius: 50%; background: none; cursor: pointer; color: var(--text-muted);
       transition: background .14s ease, color .14s ease; }
     .wch-head-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
     html:not(.dark) .wch-head-btn:hover { background: rgba(20,40,80,0.06); }
@@ -1236,7 +1244,7 @@ export function injectChatExtras() {
     .wai-img-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border, rgba(0,0,0,.08)); }
     .wai-img-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wai-img-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0;
-      border: 0; border-radius: 8px; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background .12s, color .12s; }
+      border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background .12s, color .12s; }
     .wai-img-close:hover { background: var(--surface-2); color: var(--text); }
     .wai-img-close .material-symbols-outlined { font-size: 20px; }
     .wai-img-body { display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--surface-2, #f2f4f7); }
@@ -1269,6 +1277,28 @@ export function injectChatExtras() {
     .sc-bganim-opacity-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
       width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
     .sc-bganim-detail.is-disabled { opacity: .45; pointer-events: none; }
+
+    /* Playback control that sits just below the opacity row — a subtle (reduced
+       opacity) pill that freezes / resumes the running field. Dims + locks along
+       with the opacity slider while the animation toggle is off. */
+    .sc-bganim-playback { display: flex; align-items: center; gap: 10px;
+      margin: -4px 12px 8px 42px; opacity: .78; transition: opacity .15s ease; }
+    .sc-bganim-playback:hover { opacity: 1; }
+    .sc-bganim-playback-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
+    .sc-bganim-pp { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 11px; border: 1px solid var(--border, rgba(15,30,55,.12)); border-radius: 999px;
+      background: transparent; color: var(--text-muted); font: inherit; font-size: 11px;
+      font-weight: 700; cursor: pointer; transition: background .14s ease, color .14s ease, border-color .14s ease; }
+    .sc-bganim-pp:hover { color: rgb(219, 39, 119);
+      border-color: color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
+      background: color-mix(in srgb, rgb(219, 39, 119) 10%, transparent); }
+    .sc-bganim-pp .material-symbols-outlined { font-size: 16px; }
+    /* Icon + label swap with the paused state (default markup shows "Pause"). */
+    .sc-bganim-pp .sc-bganim-pp-play, .sc-bganim-pp.is-paused .sc-bganim-pp-pause { display: none; }
+    .sc-bganim-pp.is-paused .sc-bganim-pp-play { display: inline-flex; align-items: center; gap: 6px; }
+    .sc-bganim-pp-pause { display: inline-flex; align-items: center; gap: 6px; }
+    .sc-bganim-playback.is-disabled { opacity: .45; pointer-events: none; }
 
     /* While the DNA field is live, the centre owl/pulse logo steps aside — the strand
        carries the owl instead. */
@@ -1334,13 +1364,17 @@ export function injectChatExtras() {
      getOpacity    {fn}   () => 0.1–1 field opacity (the shared slider)
      reducedMotion {bool} paint a single still frame instead of animating
      isOn          {fn}   () => whether the shared preference is ON
-   Returns { start, stop }. */
+     isPaused      {fn}   () => whether the (shared) playback is paused —
+                          when true the field freezes on its current frame
+                          rather than advancing (the canvas stays visible)
+   Returns { start, stop, pause, resume }. */
 export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
   const getOpacity = cfg.getOpacity;
   const reducedMotion = !!cfg.reducedMotion;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
+  const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
   /* The foods strung along the helix, drawn as circular thumbnails — the same round
      product "bug" the app uses in its portfolio / comparison tables. Every product
      appears AT MOST ONCE on the strand (no repeats), so the pool is deliberately
@@ -1515,7 +1549,7 @@ export function createHelixBgAnim(cfg) {
     const tmp = PRODUCTS[i]; PRODUCTS[i] = PRODUCTS[j]; PRODUCTS[j] = tmp;
   }
   let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
-  let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false;
+  let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false, paused = false;
   /* Hover interaction state: the product circles' hit boxes from the last frame, the
      currently hovered product, the branded info card, and the last pointer position
      (body-relative) so the running frame loop can tell when the hovered circle has
@@ -1939,7 +1973,7 @@ export function createHelixBgAnim(cfg) {
   }
 
   function frame(now) {
-    if (!running) return;
+    if (!running || paused) return;
     if (!t0) t0 = now;
     draw((now - t0) / 1000);
     raf = requestAnimationFrame(frame);
@@ -1953,20 +1987,47 @@ export function createHelixBgAnim(cfg) {
     host.classList.add('sc-bganim-live');
     /* Reduced-motion: honour the calm by painting a single still frame of the strip. */
     if (reducedMotion) {
-      running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      running = false; paused = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
       t0 = 0; draw(3);
       /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
       const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
       pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
       return;
     }
-    if (running) return;
-    running = true; t0 = 0;
+    /* Start FROZEN when playback is paused app-wide: run the field but hold it on a
+       representative (fully-grown) still frame; resume() picks up smoothly from here. */
+    if (isPaused()) {
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      running = true; paused = true; t0 = 0; lastT = 3; draw(3);
+      const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+      pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (paused) draw(lastT); }, { once: true }); });
+      return;
+    }
+    if (running && !paused) return;
+    running = true; paused = false; t0 = 0;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(frame);
+  }
+
+  /* Freeze the running field on its current frame (canvas stays visible). */
+  function pause() {
+    if (!running || paused) return;
+    paused = true;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }
+
+  /* Resume from the frozen frame, continuing the loop smoothly (no jump/restart). */
+  function resume() {
+    if (!running || !paused) return;
+    paused = false;
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    t0 = now - lastT * 1000;                       // continue from the frozen time
+    if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(frame);
   }
 
   function stop() {
-    running = false;
+    running = false; paused = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
     overCard = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
@@ -1977,7 +2038,7 @@ export function createHelixBgAnim(cfg) {
     if (ctx) ctx.clearRect(0, 0, w, h);
   }
 
-  return { start, stop };
+  return { start, stop, pause, resume };
 }
 
 function defaultReply(text, intent) {
@@ -2722,6 +2783,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (localStorage.getItem(BRANDTEXT_PREF_KEY) === '1') brandtextDefaultOn = true;
   } catch (_) {}
   document.documentElement.classList.toggle('chat-brandtext', brandtextDefaultOn);
+  /* "Input glow" (three-dot ▸ Admin, pink) — the living sheen stroke that travels
+     around the composer's border. It's ON everywhere by default; turning it OFF
+     flips a single global `chat-sheen-off` class on <html> that suppresses the
+     ::before ring app-wide. Uses a negative class so the glow keeps showing on
+     surfaces that never mount this menu (e.g. auth) until explicitly disabled.
+     The choice is shared (one key, broadcast on wise:chat-sheen) and re-applied
+     on mount so a reload keeps it. */
+  const SHEEN_PREF_KEY = 'wise:chat-sheen';
+  let sheenDefaultOn = true;
+  try {
+    if (localStorage.getItem(SHEEN_PREF_KEY) === '0') sheenDefaultOn = false;
+  } catch (_) {}
+  document.documentElement.classList.toggle('chat-sheen-off', !sheenDefaultOn);
   /* "Background animation" (three-dot ▸ Admin, pink) — an admin-only ambient
      backdrop for the WELCOME state only: a DNA/RNA double helix that chain-links a
      run of our real product photos as round thumbnails, with brand-blue backbones +
@@ -2758,6 +2832,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function effectiveBgAnimOpacity() {
     return bgAnimOpacityUserSet ? bgAnimOpacity : paneDefaultBgAnimOpacity();
   }
+  /* Playback state of the background animation — whether the running field is
+     frozen (paused) on its current frame. Shared APP-WIDE (one key, broadcast
+     on wise:chat-bg-anim-paused) so every mounted chat's Play/Pause follows the
+     one shared setting; plays by default, a stored '1' restores the paused state. */
+  const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
+  let bgAnimPaused = false;
+  try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
      shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
      broadcast on the wise:chat-stream-level event) so every mounted chat module
@@ -2845,11 +2926,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-intent-chips" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">label</span><span>Intent chips</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-sheen-item" data-sc="sheen" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span><span>Input glow</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <div class="sc-bganim-detail">
             <span class="sc-bganim-detail-label">Opacity</span>
             <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="90" aria-label="Background animation opacity">
             <span class="sc-bganim-opacity-val">90%</span>
+          </div>
+          <div class="sc-bganim-playback">
+            <span class="sc-bganim-playback-label">Playback</span>
+            <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+              <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+              <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+            </button>
           </div>
           ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
@@ -3468,7 +3557,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const timeLabel = nowLabel();
     const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml(timeLabel) : '';
     const footer = `<div class="sc-line-meta">${
-      src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
+      src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
     }${fb ? '' : `<span class="sc-line-time">${esc(timeLabel)}</span>`}${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
@@ -3544,65 +3633,196 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  /* The reasoning trace's left rail, drawn as a DNA double-helix instead of a
-     flat line. Two sine backbones cross down a narrow tile, with colored "food"
-     base-pair dots riding the rungs. The tile is one full, seamless vertical
-     period so it tiles (background-repeat:repeat-y in CSS) down a trace of any
-     height; the CSS scrolls it (scDnaFlow) so the dots travel down the strand
-     while thinking, and freezes it once the trace completes. Returns a ready
-     `url("data:image/svg+xml,...")` for a .sc-trace-dna element's background. */
-  function scDnaRailUrl(dotColor) {
-    const W = 16;          /* tile width */
-    const PERIOD = 58;     /* one helix turn — longer, gentler turns read rounder + deeper */
-    const PERIODS = 2;     /* two turns per tile — H must match scDnaFlow's translate (116px) */
-    const H = PERIOD * PERIODS;
-    const cx = W / 2, amp = 5.2;
-    const xa = (y) => cx + amp * Math.sin((2 * Math.PI * y) / PERIOD);
-    const xb = (y) => cx - amp * Math.sin((2 * Math.PI * y) / PERIOD);
-    /* Emit each backbone as a smooth cubic-Bézier path (Catmull-Rom sampled at a
-       coarse step, then converted to curves) so the crests read as soft, rounded
-       arcs rather than a many-segment polyline — the strand breathes rather than
-       zig-zags. */
-    const smoothPath = (fx) => {
-      const step = PERIOD / 8;               /* few, fat samples → rounder crests */
+  /* The reasoning trace's left rail, drawn as a DNA double-helix that actually
+     TWISTS. Rather than a flat sine tile scrolled downward (which reads as the
+     strand merely "growing down"), this renders the helix in a side-on 3D
+     projection and rotates it about its own vertical axis over time: the two
+     backbones swap front-to-back at every crossover, so the rope visibly turns.
+
+     Geometry — a strand at height y sits at angle θ = 2πy/period + phase. In
+     side view its screen x is cx + amp·cos(θ) and its DEPTH (toward/away from
+     the viewer) is sin(θ). The partner strand is exactly half a turn opposite.
+     The depth cue is what sells the twist: the segment coming toward you is
+     drawn bold and on top, the one going away is drawn faint and behind, and
+     they trade places as the phase advances.
+
+       H        strand height in px
+       phase    current rotation of the whole helix (radians)
+       rungsY   the y-centres at which to hang base-pair rungs + dots. During the
+                live twist these are evenly spaced; in the final summary they are
+                the measured centres of the milestone rows, so the green dots
+                land exactly beside the elements they represent.
+       greenCount  how many rungs (from the top) have gone green ("done").
+
+     Returns raw <svg> markup for a .sc-trace-dna element's innerHTML. */
+  function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
+    const W = 26, cx = W / 2, PERIOD = 36;
+    uid = uid || 'h';
+    const h = Math.max(20, Math.round(H));
+    const TWO_PI = Math.PI * 2;
+    /* Theme-aware ink: brand navy on light, a bright periwinkle on dark (the deep
+       --primary is invisible over the dark-mode navy surface). */
+    const dark = typeof document !== 'undefined'
+      && document.documentElement.classList.contains('dark');
+    const blueRGB = dark ? '150,178,220' : '37,80,124';
+    const dotBlue = dark ? '#AEC8ED' : '#25507C';
+    const dotGreen = dark ? '#3DD68C' : '#12b76a';
+    /* The helix's DIAMETER (not just its on-screen width, which the twist already
+       pinches to zero at each crossover) is the star of the show: it swells and
+       contracts as a wave that TRAVELS DOWN the rail. To keep it from ever looking
+       like the same loop repeating, the envelope is the SUM of two waves whose
+       periods don't divide each other (88 & 133) drifting at different speeds — so
+       the swell pattern never lines back up. A gentle PERSPECTIVE widens the strand
+       toward the bottom (depth on descent), and a whisper of AXIS SWAY plus a
+       NON-UNIFORM twist (turns subtly tighten and loosen along the length) break
+       the mirror symmetry so no two turns are identical. */
+    const AMP_BASE = 6.1;
+    const env = (y) => 1
+      + 0.26 * Math.sin((TWO_PI * y) / 88 - phase * 0.6)
+      + 0.15 * Math.sin((TWO_PI * y) / 133 - phase * 0.33 + 1.7);
+    const persp = (y) => 1 + 0.14 * (y / h);                 /* depth on descent */
+    const amp = (y) => AMP_BASE * env(y) * persp(y);
+    const axis = (y) => cx + 0.8 * Math.sin((TWO_PI * y) / 150 + phase * 0.24);
+    /* Non-uniform twist: local turn spacing warps ±~20% down the length, so the
+       rope never reads as one tile stamped over and over. Stays monotonic. */
+    const theta = (y) => (TWO_PI / PERIOD) * (y + 6 * Math.sin((TWO_PI * y) / 165 + phase * 0.2)) + phase;
+    const xA = (y) => axis(y) + amp(y) * Math.cos(theta(y));
+    const xB = (y) => axis(y) - amp(y) * Math.cos(theta(y));
+    /* Depth also deepens toward the bottom (perspective), so lower turns push
+       further front-to-back than upper ones. */
+    const depthA = (y) => Math.sin(theta(y)) * (0.82 + 0.18 * (y / h));
+
+    /* Each backbone is drawn as SMOOTH Bézier arcs, one per span between depth
+       crossings (the widest points, where a strand lies in the plane of the
+       screen). Across a span a strand dives from the screen plane, through its
+       nearest/farthest point (the on-screen crossover, mid-span), and back — so
+       depth varies smoothly 0→±1→0. We shade each arc with a vertical gradient
+       that tracks exactly that: the strand in front is brightest and boldest at
+       mid-span (closest to you) and fades to the plane tone at the ends; its
+       partner is faintest at mid-span (farthest) and rises to the same plane
+       tone at the ends. The two therefore meet seamlessly at every widest point
+       and separate into real depth through each crossover — a continuous rope
+       turning, with no hard steps. */
+    const smooth = (fx, y0, y1) => {
+      const span = y1 - y0;
+      const n = Math.max(2, Math.round(span / 4) + 1);
       const pts = [];
-      for (let y = 0; y <= H + 0.001; y += step) pts.push([fx(y), y]);
+      for (let i = 0; i < n; i++) { const y = y0 + (span * i) / (n - 1); pts.push([fx(y), y]); }
       let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
       for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[i - 1] || pts[i];
-        const p1 = pts[i];
-        const p2 = pts[i + 1];
-        const p3 = pts[i + 2] || p2;
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
         const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
         const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
         d += `C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
       }
       return d;
     };
-    const pa = smoothPath(xa), pb = smoothPath(xb);
-    /* All base-pair dots share one hue so the strand reads as a progress track:
-       blue while still working, green once a section is done. The two coexisting
-       layers (blue base + green "done" fill) are built from this same geometry so
-       they overlay pixel-for-pixel — only the dot color differs. */
-    const dot = dotColor || '#4C6EF5';
-    const rungY = [];               /* the strands' widest points (where sin = ±1) */
-    for (let k = 0; k < PERIODS * 2; k++) rungY.push(PERIOD * (0.25 + 0.5 * k));
+    /* Depth crossings (sin(θ)=0) — found numerically now that the twist warps, so
+       the front/back arc split still lands exactly where each strand passes
+       through the screen plane whatever the local turn spacing. */
+    const bounds = [0];
+    const SCAN = 1.5;
+    let prev = Math.sin(theta(0));
+    for (let y = SCAN; y <= h; y += SCAN) {
+      const cur = Math.sin(theta(y));
+      if ((prev < 0) !== (cur < 0)) {
+        const yc = y - SCAN * (cur / (cur - prev));   /* linear-interpolate the zero */
+        if (yc > 0.3 && yc < h - 0.3) bounds.push(yc);
+      }
+      prev = cur;
+    }
+    bounds.push(h);
+    const RGB = blueRGB;
+    const grad = (id, y0, y1, oEnd, oMid) =>
+      `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${y0.toFixed(1)}" x2="0" y2="${y1.toFixed(1)}">`
+      + `<stop offset="0" stop-color="rgb(${RGB})" stop-opacity="${oEnd}"/>`
+      + `<stop offset="0.5" stop-color="rgb(${RGB})" stop-opacity="${oMid}"/>`
+      + `<stop offset="1" stop-color="rgb(${RGB})" stop-opacity="${oEnd}"/></linearGradient>`;
+    let defs = '', backPaths = '', frontPaths = '';
+    for (let i = 0; i < bounds.length - 1; i++) {
+      const y0 = bounds[i], y1 = bounds[i + 1];
+      if (y1 - y0 < 0.5) continue;
+      const aFront = depthA((y0 + y1) / 2) >= 0;
+      const frontFx = aFront ? xA : xB;   /* the strand in front on this span */
+      const backFx = aFront ? xB : xA;    /* its partner, behind */
+      const gF = `${uid}f${i}`, gB = `${uid}b${i}`;
+      defs += grad(gF, y0, y1, 0.42, 1) + grad(gB, y0, y1, 0.42, 0.05);
+      frontPaths += `<path d="${smooth(frontFx, y0, y1)}" stroke="url(#${gF})"/>`;
+      backPaths += `<path d="${smooth(backFx, y0, y1)}" stroke="url(#${gB})"/>`;
+    }
+
+    /* Base-pair rungs + their two end dots, hung at the requested y-centres. The
+       nearer dot is larger, brighter and drawn last (in front); the far one is
+       smaller and dimmer. Done rungs are green, pending rungs blue. */
     let rungs = '', dots = '';
-    rungY.forEach((y) => {
-      const x1 = xb(y), x2 = xa(y);
-      rungs += `<line x1="${x1.toFixed(2)}" y1="${y}" x2="${x2.toFixed(2)}" y2="${y}"/>`;
-      dots += `<circle cx="${x2.toFixed(2)}" cy="${y}" r="2.1" fill="${dot}"/>`;
-      dots += `<circle cx="${x1.toFixed(2)}" cy="${y}" r="2.1" fill="${dot}"/>`;
+    (rungsY || []).forEach((ry, i) => {
+      const ax = xA(ry), bx = xB(ry);
+      const col = i < (greenCount || 0) ? dotGreen : dotBlue;
+      rungs += `<line x1="${bx.toFixed(2)}" y1="${ry.toFixed(1)}" x2="${ax.toFixed(2)}" y2="${ry.toFixed(1)}"/>`;
+      const dA = depthA(ry), dB = -dA;
+      const dot = (x, d) => `<circle cx="${x.toFixed(2)}" cy="${ry.toFixed(1)}" r="${(1.55 + 0.9 * d).toFixed(2)}"`
+        + ` fill="${col}" fill-opacity="${(0.58 + 0.42 * d).toFixed(2)}"/>`;
+      dots += dA >= dB ? (dot(bx, dB) + dot(ax, dA)) : (dot(ax, dA) + dot(bx, dB));
     });
-    const backbone = 'rgba(74,120,184,0.85)';
-    const rung = 'rgba(120,150,200,0.35)';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
-      + `<g fill="none" stroke="${backbone}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">`
-      + `<path d="${pa}"/><path d="${pb}"/></g>`
-      + `<g stroke="${rung}" stroke-width="1" stroke-linecap="round">${rungs}</g>`
+
+    const rungCol = `rgba(${blueRGB},0.28)`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${h}" viewBox="0 0 ${W} ${h}">`
+      + `<defs>${defs}</defs>`
+      + `<g fill="none" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round">${backPaths}</g>`
+      + `<g stroke="${rungCol}" stroke-width="0.65" stroke-linecap="round">${rungs}</g>`
+      + `<g fill="none" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">${frontPaths}</g>`
       + dots
       + `</svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+
+  /* Drives one strand element: spins the helix while thinking (rAF, ~30fps), then
+     freezes it aligned to the milestone rows and sweeps it green from the top. */
+  function makeHelix(bodyEl) {
+    let raf = null, phase = 0, last = 0, lastDraw = 0, running = false;
+    let mode = 'live', staticRungs = null, greenCount = 0;
+    const uid = 'h' + Math.random().toString(36).slice(2, 7);   /* unique gradient ns */
+    const dnaEl = () => bodyEl.querySelector('.sc-trace-dna');
+    const draw = () => {
+      const el = dnaEl(); if (!el) return;
+      const strand = el.parentElement;
+      const h = (strand && strand.clientHeight) || el.clientHeight || 40;
+      let rungsY;
+      if (mode === 'static' && staticRungs) rungsY = staticRungs;
+      else { rungsY = []; for (let y = 11; y < h; y += 22) rungsY.push(y); }
+      el.innerHTML = scBuildHelixSVG(h, phase, rungsY, mode === 'static' ? greenCount : 0, uid);
+    };
+    const frame = (t) => {
+      if (!running) return;
+      raf = requestAnimationFrame(frame);
+      if (!last) last = t;
+      phase += (t - last) * 0.0015;   /* twist speed (live/progress) */
+      last = t;
+      if (t - lastDraw < 33) return;   /* ~30fps redraw */
+      lastDraw = t;
+      draw();
+    };
+    return {
+      startLive() {
+        if (prefersReducedMotion) { draw(); return; }
+        running = true; last = 0; lastDraw = 0;
+        raf = requestAnimationFrame(frame);
+      },
+      stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; },
+      /* Freeze the spin and re-hang the rungs on the measured milestone centres
+         so every dot lines up with its row. */
+      freezeAligned(rungsY) { this.stop(); mode = 'static'; staticRungs = rungsY; draw(); },
+      setGreen(n) { greenCount = n; draw(); },
+      redraw: draw,
+    };
+  }
+
+  /* Measure the vertical centre of each milestone row, in the strand's own
+     coordinate space, so the frozen helix can drop a base-pair dot on each. */
+  function measureRungCentres(bodyEl) {
+    const strand = bodyEl.querySelector('.sc-trace-strand');
+    const st = strand ? strand.offsetTop : 0;
+    return Array.from(bodyEl.querySelectorAll('.sc-trace-step'))
+      .map((li) => li.offsetTop + li.offsetHeight / 2 - st);
   }
 
   /* Stream the behind-the-scenes reasoning trace for a turn, then hand off to
@@ -3647,16 +3867,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        until they're done. */
     if (tail && tail.key) steps.push(tail);
 
-    /* The strand's two hues: blue while a section is still being worked, green
-       once it's done. The rail lives in the BODY (below the header), as a blue
-       base layer with a green "done" layer clipped over it that grows downward
-       as steps land — so the helix turns green section-by-section and each
-       step's check only appears once its own section has gone green. */
-    const DNA_BLUE = '#4C6EF5';
-    const DNA_GREEN = '#12b76a';
+    /* The strand rail lives in the BODY's left gutter. A single .sc-trace-dna
+       host carries the live SVG helix: it spins (twists) while thinking, then
+       freezes aligned to the milestone rows and sweeps green top-to-bottom. */
     const strandMarkup = '<div class="sc-trace-strand" aria-hidden="true">'
-      + '<span class="sc-trace-dna sc-trace-dna--base"></span>'
-      + '<span class="sc-trace-dna sc-trace-dna--fill"></span></div>';
+      + '<span class="sc-trace-dna"></span></div>';
 
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing sc-line-trace';
@@ -3678,17 +3893,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const timerEl = el.querySelector('.sc-trace-timer');
     const bodyEl = el.querySelector('.sc-trace-body');
 
-    /* Paint the current strand's two layers (blue base + green done-fill) and
-       hand back the fill layer so callers can grow its --dna-fill as sections
-       complete. Re-run after any rebuild of the body (the summary swap). */
-    const paintStrand = () => {
-      const base = bodyEl.querySelector('.sc-trace-dna--base');
-      const fill = bodyEl.querySelector('.sc-trace-dna--fill');
-      if (base) base.style.backgroundImage = scDnaRailUrl(DNA_BLUE);
-      if (fill) fill.style.backgroundImage = scDnaRailUrl(DNA_GREEN);
-      return fill;
-    };
-    paintStrand();
+    /* The helix controller for this trace — starts spinning right away and is
+       re-pointed at the summary strand after the body is rebuilt. */
+    const helix = makeHelix(bodyEl);
+    helix.startLive();
 
     /* The header collapses the whole trace (live glob or final summary) and back. */
     head.addEventListener('click', () => {
@@ -3723,9 +3931,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
-      /* No sweep in reduced motion — the whole strand is already green. */
-      const rmFill = paintStrand();
-      if (rmFill) rmFill.style.setProperty('--dna-fill', '100%');
+      /* No sweep in reduced motion — freeze the helix aligned to the rows with
+         every dot already green. */
+      helix.freezeAligned(measureRungCentres(bodyEl));
+      helix.setGreen(landmarks.length);
       scrollDown();
       setTimeout(() => { if (done) done(); }, 480);
       return;
@@ -3741,17 +3950,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
       trace.classList.add('is-complete');
       el.classList.remove('sc-line-typing');
-      const fill = paintStrand();
+      /* Freeze the twist and re-hang the helix so each base-pair dot lands on a
+         milestone row's centre — the green dots line up with the elements they
+         represent. */
+      helix.freezeAligned(measureRungCentres(bodyEl));
       scrollDown();
       if (done) done();
-      /* Sweep the strand green from the top, one section at a time, and pop each
-         step's check the moment its section has turned green. What lies below the
-         green front stays blue until the sweep reaches it. */
+      /* Sweep the strand green from the top, one dot at a time: each rung goes
+         green as its step "lands", the ones below staying blue until reached. */
       const stepEls = Array.from(bodyEl.querySelectorAll('.sc-trace-step'));
-      const n = stepEls.length || 1;
       stepEls.forEach((li, i) => {
         setTimeout(() => {
-          if (fill) fill.style.setProperty('--dna-fill', `${Math.round(((i + 1) / n) * 100)}%`);
+          helix.setGreen(i + 1);
           li.classList.add('is-revealed');
           scrollDown();
         }, 160 + i * 420);
@@ -3819,6 +4029,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      a different kind of question), so we lean toward the connected sources yet
      keep it variable. Returns the escaped source name, or '' when no sources are
      configured. */
+  /* The grounding chip names a data source, capped to 15 characters (matching
+     the source names shown in the input module's connector rail) so a long
+     source never blows out the meta row — anything longer is clipped with an
+     ellipsis. */
+  function truncSourceName(s) {
+    const str = String(s == null ? '' : s);
+    return str.length > 15 ? str.slice(0, 15).trimEnd() + '\u2026' : str;
+  }
+
   function pickSourceName() {
     if (!connectors.length) return '';
     const connected = connectors.filter((c) => c && c.connected);
@@ -5243,6 +5462,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-brandtext', syncBrandtextMenu);
+  /* Sync the "Input glow" switch to the shared <html>.chat-sheen-off state (ON =
+     class absent). Called on mount and whenever any module flips it (via the
+     wise:chat-sheen event) so every open chat's switch reflects the one setting. */
+  function syncSheenMenu() {
+    const item = rootEl.querySelector('[data-sc="sheen"]');
+    if (!item) return;
+    const on = !document.documentElement.classList.contains('chat-sheen-off');
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  document.addEventListener('wise:chat-sheen', syncSheenMenu);
   /* ── "Background animation" (Admin) engine ─────────────────────────────────
      A welcome-only ambient canvas: a DNA/RNA double helix whose two backbones +
      base-pair "rungs" are drawn in brand blue, chain-linking a run of OUR REAL
@@ -5265,6 +5495,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     getOpacity: effectiveBgAnimOpacity,
     reducedMotion: prefersReducedMotion,
     isOn: () => bgAnimOn,
+    isPaused: () => bgAnimPaused,
   });
   /* Sync the "Background animation" switch to this surface's on/off state, and
      (re)start or stop the field to match — but only draw while the welcome is up,
@@ -5284,6 +5515,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = rootEl.querySelector('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    /* The Play/Pause pill (below opacity) — dims + locks with the toggle, and its
+       icon/label + aria reflect whether the field is currently frozen. */
+    const playback = rootEl.querySelector('.sc-bganim-playback');
+    if (playback) playback.classList.toggle('is-disabled', !bgAnimOn);
+    const ppBtn = rootEl.querySelector('[data-sc="bg-anim-playback"]');
+    if (ppBtn) {
+      ppBtn.classList.toggle('is-paused', bgAnimPaused);
+      ppBtn.setAttribute('aria-pressed', bgAnimPaused ? 'true' : 'false');
+      const lbl = bgAnimPaused ? 'Play background animation' : 'Pause background animation';
+      ppBtn.setAttribute('aria-label', lbl);
+      ppBtn.setAttribute('title', lbl);
+    }
   }
   document.addEventListener('wise:chat-bg-anim', (e) => {
     bgAnimOn = !!(e && e.detail && e.detail.on);
@@ -5315,6 +5558,26 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
     syncBgAnimMenu();
     if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+  });
+  /* Play/Pause — freeze or resume the running field. Persist + broadcast so every
+     mounted chat's control (and its live canvas) follows the one shared setting. */
+  function applyBgAnimPaused() {
+    if (bgAnimPaused) bgAnim.pause(); else bgAnim.resume();
+  }
+  const bgPlaybackBtn = rootEl.querySelector('[data-sc="bg-anim-playback"]');
+  if (bgPlaybackBtn) {
+    bgPlaybackBtn.addEventListener('click', () => {
+      bgAnimPaused = !bgAnimPaused;
+      try { localStorage.setItem(BGANIM_PAUSED_KEY, bgAnimPaused ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-paused', { detail: { paused: bgAnimPaused } })); } catch (_) {}
+      syncBgAnimMenu();
+      applyBgAnimPaused();
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-paused', (e) => {
+    bgAnimPaused = !!(e && e.detail && e.detail.paused);
+    syncBgAnimMenu();
+    applyBgAnimPaused();
   });
   /* Sync the "Response streaming" controls — the master switch plus the
      three-level segment — to the shared streamOn/streamLevel. Called on mount
@@ -5629,7 +5892,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (src === false) src = '';
       const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml(clock) : '';
       const footer = `<div class="sc-line-meta">${
-        src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from"><span class="material-symbols-outlined">verified_user</span>${esc(src)}</span>` : ''
+        src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
       }${fb ? '' : `<span class="sc-line-time">${esc(clock)}</span>`}${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
@@ -6553,6 +6816,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-brandtext', { detail: { on } })); } catch (_) {}
       syncBrandtextMenu();
     }
+    else if (action === 'sheen') {
+      /* App-wide input glow: flip the shared <html>.chat-sheen-off class so every
+         mounted composer shows/hides its sheen stroke at once. Keep the menu open
+         so the switch state reads back; persist + broadcast so any sibling chat
+         modules' switches follow. */
+      const on = document.documentElement.classList.contains('chat-sheen-off');
+      document.documentElement.classList.toggle('chat-sheen-off', !on);
+      try { localStorage.setItem(SHEEN_PREF_KEY, on ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-sheen', { detail: { on } })); } catch (_) {}
+      syncSheenMenu();
+    }
     else if (action === 'bg-anim') {
       /* Admin-only ambient backdrop for the welcome state. Flip the shared pref,
          persist + broadcast it; the wise:chat-bg-anim listener does the actual
@@ -6741,6 +7015,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncTurnsMenu();
   syncCompactMenu();
   syncBrandtextMenu();
+  syncSheenMenu();
   syncBgAnimMenu();
   syncStreamMenu();
   syncActivityStripMenu();
@@ -6866,6 +7141,25 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:chat-brandtext', syncBrand);
   syncBrand();
 
+  /* ── Input glow — the living sheen stroke on the composer border. App-wide,
+     ON by default; a stored '0' adds <html>.chat-sheen-off to suppress it
+     everywhere at once. ── */
+  const SHEEN_KEY = 'wise:chat-sheen';
+  let sheenOn = true;
+  try { if (localStorage.getItem(SHEEN_KEY) === '0') sheenOn = false; } catch (_) {}
+  document.documentElement.classList.toggle('chat-sheen-off', !sheenOn);
+  const sheenItem = q('[data-sc="sheen"]');
+  const syncSheen = () => setSwitch(sheenItem, !document.documentElement.classList.contains('chat-sheen-off'));
+  if (sheenItem) sheenItem.addEventListener('click', () => {
+    const on = document.documentElement.classList.contains('chat-sheen-off');
+    document.documentElement.classList.toggle('chat-sheen-off', !on);
+    try { localStorage.setItem(SHEEN_KEY, on ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-sheen', { detail: { on } })); } catch (_) {}
+    syncSheen();
+  });
+  document.addEventListener('wise:chat-sheen', syncSheen);
+  syncSheen();
+
   /* ── Background animation (+ opacity) — OFF by default, stored '1'
      restores; opacity is user-set via the slider or falls back to the
      pane-count default (0.30 narrow / 0.65 wide). The LIVE field mounts
@@ -6873,6 +7167,7 @@ export function wireStandardChatMenu(cfg = {}) {
      the one shared app-wide preference. ── */
   const BGANIM_KEY = 'wise:chat-bg-anim';
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgOn = false;
   try { if (localStorage.getItem(BGANIM_KEY) === '1') bgOn = true; } catch (_) {}
   let bgOpacity = 0.3, bgUserSet = false;
@@ -6880,6 +7175,8 @@ export function wireStandardChatMenu(cfg = {}) {
     const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
+  let bgPaused = false;
+  try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
   const isWide = (cfg.bgAnim && typeof cfg.bgAnim.isWide === 'function') ? cfg.bgAnim.isWide : () => false;
   const effOpacity = () => (bgUserSet ? bgOpacity : (isWide() ? 0.65 : 0.30));
   let engine = null;
@@ -6897,6 +7194,7 @@ export function wireStandardChatMenu(cfg = {}) {
         getOpacity: effOpacity,
         reducedMotion,
         isOn: () => bgOn,
+        isPaused: () => bgPaused,
       });
       engine.start();
     } else if (engine) {
@@ -6919,6 +7217,20 @@ export function wireStandardChatMenu(cfg = {}) {
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    const playback = q('.sc-bganim-playback');
+    if (playback) playback.classList.toggle('is-disabled', !bgOn);
+    const ppBtn = q('[data-sc="bg-anim-playback"]');
+    if (ppBtn) {
+      ppBtn.classList.toggle('is-paused', bgPaused);
+      ppBtn.setAttribute('aria-pressed', bgPaused ? 'true' : 'false');
+      const lbl = bgPaused ? 'Play background animation' : 'Pause background animation';
+      ppBtn.setAttribute('aria-label', lbl);
+      ppBtn.setAttribute('title', lbl);
+    }
+  };
+  const applyBgPaused = () => {
+    if (!engine) return;
+    if (bgPaused) engine.pause(); else engine.resume();
   };
   if (bgItem) bgItem.addEventListener('click', () => {
     bgOn = !bgOn;
@@ -6948,6 +7260,19 @@ export function wireStandardChatMenu(cfg = {}) {
     bgUserSet = true;
     syncBg();
     if (reducedMotion && bgOn) maybeRunBgAnim();
+  });
+  const bgPlaybackBtn = q('[data-sc="bg-anim-playback"]');
+  if (bgPlaybackBtn) bgPlaybackBtn.addEventListener('click', () => {
+    bgPaused = !bgPaused;
+    try { localStorage.setItem(BGANIM_PAUSED_KEY, bgPaused ? '1' : '0'); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-paused', { detail: { paused: bgPaused } })); } catch (_) {}
+    syncBg();
+    applyBgPaused();
+  });
+  document.addEventListener('wise:chat-bg-anim-paused', (e) => {
+    bgPaused = !!(e && e.detail && e.detail.paused);
+    syncBg();
+    applyBgPaused();
   });
   syncBg();
   maybeRunBgAnim();

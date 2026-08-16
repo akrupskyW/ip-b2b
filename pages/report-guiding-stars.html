@@ -171,13 +171,16 @@
     .gs-stat {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
       padding: 14px 12px; border-radius: 10px; text-align: center; cursor: pointer;
-      background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
       transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
     }
-    html.dark .gs-stat { background: rgba(255,255,255,0.04); }
+    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
+    html.dark .gs-stat { background: #1A2339; }
+    html.chat-tint:not(.dark) .gs-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .gs-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .gs-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
     .gs-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .gs-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    .gs-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
     html.dark .gs-stat.is-active { background: color-mix(in srgb, var(--primary) 24%, transparent); border-color: var(--primary-bright, #8B9FAF); }
     .gs-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
     .gs-stat-label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); line-height: 1.3; }
@@ -417,6 +420,13 @@
                   <span class="sc-bganim-detail-label">Opacity</span>
                   <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
                   <span class="sc-bganim-opacity-val">30%</span>
+                </div>
+                <div class="sc-bganim-playback">
+                  <span class="sc-bganim-playback-label">Playback</span>
+                  <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+                    <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+                    <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+                  </button>
                 </div>
                 <!-- Activity strip — the landmark rail on the chat's edge
                      (shared app-wide preference, same as every other chat). -->
@@ -1319,6 +1329,7 @@
   <!-- App-wide sortable-table styles (injects the shared srt-* header arrow CSS). -->
   <script src="../js/sortable-tables.js"></script>
   <script src="../js/table-pagination.js"></script>
+  <script src="../js/responsive-tables.js"></script>
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>

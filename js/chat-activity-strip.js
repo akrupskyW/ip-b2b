@@ -176,15 +176,28 @@ function ensureActivityStripStyles() {
       height: 100%;
       z-index: 70;
       pointer-events: none;
-      /* A solid, readable rail so the strip reads as a continuous edge track the
-         ticks ride on — a barely-there line made the ticks look like they were
-         floating loose beside the module. Softly rounded on its outer end to sit
-         flush against the module's own edge. */
-      background: color-mix(in srgb, var(--border-strong, var(--border)) 90%, transparent);
-      border-radius: 0 2px 2px 0;
+      /* The strip is sized to the WHOLE chat module (in refresh) and clipped to the
+         module's rounded silhouette via clip-path. The module's own overflow:hidden
+         can't reach a body-level position:fixed element, so we replicate that clip
+         here — letting the rail + ticks run to the very top/bottom edge while their
+         ends are trimmed at the rounded corners instead of poking into the
+         transparent notch just outside them. */
     }
-    html.activity-strip-right .wa-activity-strip {
-      border-radius: 2px 0 0 2px;
+    /* The visible edge rail: a thin, solid track pinned to the module's chosen side
+       that runs the FULL module height (corner to corner) so the ticks read as
+       riding a continuous edge line. Its square ends are trimmed by the parent
+       strip's clip-path where the module rounds. */
+    .wa-activity-rail {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 3px;
+      background: color-mix(in srgb, var(--border-strong, var(--border)) 90%, transparent);
+    }
+    html.activity-strip-right .wa-activity-rail {
+      left: auto;
+      right: 0;
     }
     /* Ticks are small rectangles that jut out past the 3px rail, so each landmark
        reads as a tab poking out of the strip. On the LEFT edge (default) they sit
@@ -385,31 +398,37 @@ function refresh(state) {
 
   const total = messages.scrollHeight || 1;
   const cRect = messages.getBoundingClientRect();
-  /* The rail spans the FULL height of the chat MODULE (#wa-chat), edge to edge —
-     it reads as a continuous track stuck to the module's side, not a fragment
-     pinned to the transcript. The tick fractions are still computed against the
-     transcript's scroll content, but they're mapped into the module's inner band
-     (see EARMARK_INSET below) so they never ride over the header or composer. */
+  /* The rail spans the FULL height of the chat MODULE (#wa-chat), corner to corner
+     — it reads as a continuous track stuck to the module's side, not a fragment
+     pinned to the transcript, and its ends are trimmed right at the module's
+     rounded corners by the strip's clip-path (below). The tick fractions are still
+     computed against the transcript's scroll content, but they're mapped into the
+     module's inner band (see EARMARK_INSET below) so they never ride over the
+     header or composer. */
   const chatRect = state.chat.getBoundingClientRect();
-  const RAIL_W = 3;
-  /* Flush to the module's own edge (no inset) so the rail reads as STUCK to the
-     left/right side rather than floating a few px inside it. */
-  const EDGE_INSET = 0;
-  const top = chatRect.top;
-  const bottom = chatRect.bottom;
-  strip.style.top = `${top}px`;
-  strip.style.height = `${Math.max(0, bottom - top)}px`;
-  /* Horizontal placement per edge — the rail always hugs the MODULE's own edge
-     (just inside it), never a point derived from the transcript's content. The
-     transcript can be centered with wide side gutters (the welcome layout, wide
-     single-module pages), and pinning to its content box used to strand the
-     rail mid-page. */
-  if (getActivityStripSide() === 'right') {
-    strip.style.left = `${chatRect.right - RAIL_W - EDGE_INSET}px`;
-  } else {
-    strip.style.left = `${chatRect.left + EDGE_INSET}px`;
-  }
+  /* Size the strip to the WHOLE module box and clip it to the module's rounded
+     silhouette. The rail + ticks live at the module's chosen edge (pure CSS off
+     the side class), so a full-box strip still pins them exactly to that edge —
+     but now the module's corners can trim the rail's ends. The clip-path mirrors
+     the module's per-corner border-radius so the rail runs corner-to-corner yet
+     never pokes into the transparent notch just outside a rounded corner. */
+  const cs = getComputedStyle(state.chat);
+  const tl = parseFloat(cs.borderTopLeftRadius) || 0;
+  const tr = parseFloat(cs.borderTopRightRadius) || 0;
+  const br = parseFloat(cs.borderBottomRightRadius) || 0;
+  const bl = parseFloat(cs.borderBottomLeftRadius) || 0;
+  strip.style.top = `${chatRect.top}px`;
+  strip.style.left = `${chatRect.left}px`;
+  strip.style.width = `${chatRect.width}px`;
+  strip.style.height = `${chatRect.height}px`;
+  strip.style.clipPath = `inset(0 round ${tl}px ${tr}px ${br}px ${bl}px)`;
   const frag = document.createDocumentFragment();
+
+  /* The visible edge rail runs the full module height inside the clipped strip;
+     the ticks are layered over it. */
+  const rail = document.createElement('div');
+  rail.className = 'wa-activity-rail';
+  frag.appendChild(rail);
 
   /* The rail is full-module-height, but the ear-mark ticks live only in its inner
      80% band (10% padding top + bottom). That padding keeps the ticks off the

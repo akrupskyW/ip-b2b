@@ -50,6 +50,24 @@
      wait and inject only once their native menu appears (the observer re-scans). */
   var WAIT_FOR_NATIVE = '#agent-main';
 
+  /* Progress modules (the right-hand step tracker: verification, GRAS, add /
+     view product, add catalog). These share `.vf-progress-pane` / `.gv-progress-pane`
+     and re-render their innerHTML constantly. They get two extra behaviours over
+     a plain content module: they ALWAYS default to Sticky (tucked drawer) so the
+     tracker reads as a slim drawer off its left neighbour rather than a full
+     flat column, and they gain a "Remove panel" row to hide the tracker outright
+     (with a small restore tab left behind). */
+  var PROGRESS_SEL = '.vf-progress-pane,.gv-progress-pane';
+  var REMOVE_TOGGLE_ATTR = 'data-progress-remove';
+
+  function isProgressPane(el) { return !!(el && el.matches && el.matches(PROGRESS_SEL)); }
+  function progressKey(mod) {
+    return 'wise-progress-removed:' + location.pathname + ':' + (mod.id || (typeof mod.className === 'string' ? mod.className : 'progress'));
+  }
+  function isPanelRemoved(mod) {
+    try { return localStorage.getItem(progressKey(mod)) === '1'; } catch (_) { return false; }
+  }
+
   /* Preferred controls container to drop a created menu into, per module. The
      first selector that matches inside the module wins; otherwise a generic
      list (below) is tried, then a floating top-right menu as a last resort. */
@@ -67,7 +85,20 @@
 
   var STICKY_TOGGLE_ATTR = 'data-sticky-toggle';
 
-  function stickyItemHTML(on) {
+  function stickyItemHTML(on, pf) {
+    /* product-portfolio / product-comparison use a bespoke `.pf-module-menu`
+       whose rows are styled as `.pf-module-menu-item`; match that markup so the
+       injected toggle reads identically to the module's own menu rows. */
+    if (pf) {
+      return '<button type="button" class="pf-module-menu-item pf-mi-sticky' +
+        (on ? ' is-on' : '') + '" ' + STICKY_TOGGLE_ATTR + ' role="menuitemcheckbox" aria-checked="' +
+        (on ? 'true' : 'false') + '">' +
+        '<span class="material-symbols-outlined">dock_to_right</span>' +
+        '<span class="pf-mi-label">Sticky module</span>' +
+        '<span class="pf-mi-badge">Admin</span>' +
+        '<span class="pf-mi-switch"><span class="pf-mi-knob"></span></span>' +
+        '</button>';
+    }
     return '<button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle' +
       (on ? ' is-on' : '') + '" ' + STICKY_TOGGLE_ATTR + ' role="menuitemcheckbox" aria-checked="' +
       (on ? 'true' : 'false') + '">' +
@@ -75,6 +106,17 @@
       '<span>Sticky module</span>' +
       '<span class="topbar-menu-badge">Admin</span>' +
       '<span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span>' +
+      '</button>';
+  }
+
+  /* "Remove panel" row — progress modules only. Bespoke `.pf-module-menu`
+     variants (portfolio / comparison) don't host progress panes, so a single
+     topbar-styled row is enough. */
+  function removeItemHTML() {
+    return '<button type="button" class="topbar-menu-item topbar-menu-item--danger" ' +
+      REMOVE_TOGGLE_ATTR + ' role="menuitem">' +
+      '<span class="material-symbols-outlined topbar-menu-icon">visibility_off</span>' +
+      '<span>Remove panel</span>' +
       '</button>';
   }
 
@@ -111,6 +153,13 @@
   /* Right of the chat? Structural hints first (robust for hidden panels), then
      geometry, then DOM order. */
   function isRightOfChat(mod, chat) {
+    /* Progress trackers are, by construction, always the rightmost module of
+       the flow (add product / catalog / verification / view product / GRAS).
+       Skip the geometry probe for them: on the heavy flows it can momentarily
+       report a stale/left position mid-render, and syncSide would then STRIP
+       their default `.is-sticky` — leaving the tracker un-tucked. Force true so
+       progress panes are sticky by default and never lose it. */
+    if (isProgressPane(mod)) return true;
     if (isWchSidebar(mod)) return mod.classList.contains('wch-right');
     if (chat) {
       var mr = mod.getBoundingClientRect();
@@ -211,6 +260,16 @@
       if (pop) return pop;
       return null;
     }
+    /* product-portfolio / product-comparison build a bespoke `.pf-module-menu`
+       (via consolidatePanelControls) instead of a `.panel-more-wrap`. Reuse ITS
+       popover so we drop the Sticky toggle INTO the module's own ⋯ menu rather
+       than adding a second ⋯ button beside it. */
+    var pfMenu = mod.querySelector('.pf-module-menu');
+    if (pfMenu) return pfMenu.querySelector('.pf-module-menu-pop');
+    /* A module that still ships only raw `.panel-controls` will have its
+       `.pf-module-menu` built asynchronously — wait for it (the observer
+       re-scans) rather than creating a duplicate ⋯ now. */
+    if (mod.querySelector('.panel-controls')) return null;
     /* Builds its own menu later → wait for it rather than creating a duplicate. */
     if (mod.matches(WAIT_FOR_NATIVE)) return null;
     /* No menu yet. Create one in the best available controls host. */
@@ -277,10 +336,54 @@
     if (item) syncToggleItem(item, on);
   }
 
+  /* ── Remove / restore a progress panel ──────────────────────────────────
+     "Remove panel" hides the tracker outright and drops a slim restore tab at
+     the row's right edge so it can be brought back. The choice persists per
+     page. Hidden state is enforced with an inline `display:none` because some
+     pages pin the pane's display at id-level (e.g. add-product's
+     `#ap-progress { display:flex }`), which out-ranks the shared
+     `.vf-progress-pane[hidden]` rule. */
+  function applyRemoved(mod) {
+    mod.hidden = true;
+    mod.style.display = 'none';
+    ensureRestoreTab(mod);
+  }
+  function removePanel(mod) {
+    try { localStorage.setItem(progressKey(mod), '1'); } catch (_) {}
+    applyRemoved(mod);
+  }
+  function restorePanel(mod) {
+    try { localStorage.removeItem(progressKey(mod)); } catch (_) {}
+    mod.hidden = false;
+    mod.style.removeProperty('display');
+    var tab = document.querySelector('[data-progress-restore="' + restoreId(mod) + '"]');
+    if (tab) tab.remove();
+    scan(); /* re-wire the toggle/menu that was hidden away with the panel */
+  }
+  function restoreId(mod) { return mod.id || 'progress'; }
+  function ensureRestoreTab(mod) {
+    var row = getRow();
+    if (!row) return;
+    var id = restoreId(mod);
+    if (row.querySelector('[data-progress-restore="' + id + '"]')) return;
+    var tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'wise-progress-restore';
+    tab.setAttribute('data-progress-restore', id);
+    tab.title = 'Show progress panel';
+    tab.setAttribute('aria-label', 'Show progress panel');
+    tab.innerHTML = '<span class="material-symbols-outlined">chevron_left</span><span class="wpr-label">Progress</span>';
+    tab.addEventListener('click', function (e) { e.stopPropagation(); restorePanel(mod); });
+    row.appendChild(tab);
+  }
+
   /* Idempotently give a module its sticky toggle + wire it. Safe to re-call as
      the DOM changes (waits for async-built menus). `chat` is used only for the
      right-of-chat test, evaluated lazily so wired modules stay cheap. */
   function ensureToggle(mod, chat) {
+    /* Progress panel the user removed → keep it hidden (survives re-renders and
+       reloads) and leave the restore tab in place. */
+    if (isProgressPane(mod) && isPanelRemoved(mod)) { applyRemoved(mod); return; }
     if (isWchSidebar(mod) && !isWchRight(mod)) return; /* History (left) */
     if (mod.querySelector(NATIVE_STICKY_SEL)) return;  /* native toggle → leave */
     if (mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']')) { syncSide(mod, chat); return; }
@@ -294,13 +397,19 @@
     /* Default ON (matches wiseai.html), but preserve any prior state — some
        modules (e.g. progress panes) re-render their innerHTML, which wipes the
        toggle button while the module's own data-sticky-pref attribute /
-       `.wch-unsticky` class survives; re-derive so a user's choice isn't reset. */
+       `.wch-unsticky` class survives; re-derive so a user's choice isn't reset.
+       Progress panes ALWAYS default sticky ON (tucked drawer) — they carry no
+       stored preference of their own, so the fallback to `true` already covers
+       that, but keep it explicit so the intent survives future edits. */
     var on = wch
       ? !mod.classList.contains('wch-unsticky')
       : (mod.dataset.stickyPref
           ? mod.dataset.stickyPref === 'on'
-          : (mod.classList.contains('sticky-mod') ? mod.classList.contains('is-sticky') : true));
-    pop.insertAdjacentHTML('afterbegin', stickyItemHTML(on) + '<div class="topbar-menu-divider"></div>');
+          : (isProgressPane(mod) ? true
+              : (mod.classList.contains('sticky-mod') ? mod.classList.contains('is-sticky') : true)));
+    var isPf = pop.classList.contains('pf-module-menu-pop');
+    pop.insertAdjacentHTML('afterbegin', stickyItemHTML(on, isPf) +
+      (isPf ? '<div class="pf-module-menu-sep"></div>' : '<div class="topbar-menu-divider"></div>'));
     var item = pop.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
 
     item.addEventListener('click', function (e) {
@@ -308,6 +417,18 @@
       var nowOn = !item.classList.contains('is-on');
       if (wch) setWchSticky(mod, nowOn); else setGenericSticky(mod, nowOn);
     });
+
+    /* Progress modules only: append a "Remove panel" row that hides the tracker
+       outright (leaving a restore tab behind). The Sticky insert above already
+       leaves a trailing divider, so this row just follows it. */
+    if (isProgressPane(mod)) {
+      pop.insertAdjacentHTML('beforeend', removeItemHTML());
+      var rm = pop.querySelector('[' + REMOVE_TOGGLE_ATTR + ']');
+      if (rm) rm.addEventListener('click', function (e) {
+        e.stopPropagation();
+        removePanel(mod);
+      });
+    }
 
     /* Apply the default. */
     if (wch) setWchSticky(mod, on); else setGenericSticky(mod, on, chat);
