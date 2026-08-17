@@ -17,6 +17,7 @@
    history sidebar) so every mounted WISEcodeAI surface gets the same history +
    "start new conversation" behaviour. */
 import './chat-history.js';
+import './chat-ask.js';
 
 /* Shared user-avatar store — the "you" bubbles render the member's uploaded
    profile picture (set on the Organization Profile page) when present, and fall
@@ -29,6 +30,8 @@ import { userAvatarImg } from './user-avatar.js';
 import {
   isActivityStripOn,
   applyActivityStrip,
+  getActivityStripSide,
+  setActivityStripSide,
   restoreActivityStrip,
   mountActivityStrip,
 } from './chat-activity-strip.js';
@@ -155,18 +158,24 @@ function esc(s) {
 }
 
 /* Split a label into per-letter spans so CSS can run a staggered, text-clipped
-   gold shimmer across it (used by the "What can I ask?" link). Spaces stay as
-   plain text; each glyph carries its index for the animation-delay stagger. */
+   gold shimmer across it (used by the "What can I ask?" link). Spaces become
+   real elements (.sc-ask-sp, white-space:pre) — NOT bare text nodes — because
+   flex containers drop whitespace-only text nodes between children, which
+   scrunched the label into "WhatcanIask?" wherever the glyphs land directly
+   inside a flex button. Each glyph carries its index for the delay stagger. */
 function shimmerLetters(label) {
   return String(label).split('').map((ch, i) =>
-    ch === ' ' ? ' ' : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
+    ch === ' '
+      ? '<span class="sc-ask-sp"> </span>'
+      : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
   ).join('');
 }
 
 /* Animate a "live" food-count read-out: ease up from zero to the seeded total,
-   then keep ticking upward forever by small random amounts (mostly single
-   digits, with the odd larger jump) so the corpus feels like it is still
-   growing. Honors prefers-reduced-motion by snapping straight to the total. */
+   then surge briskly past the million mark, then keep ticking upward forever by
+   small random amounts (mostly single digits, with the odd larger jump) so the
+   corpus feels like it is still growing. Honors prefers-reduced-motion by
+   snapping straight to the total. */
 function startFoodCounter(el) {
   const final = parseInt(el.getAttribute('data-final'), 10) || 0;
   if (!final) return;
@@ -177,6 +186,9 @@ function startFoodCounter(el) {
   const dur = 1900;
   const t0 = performance.now();
   let current = 0;
+  /* If the seeded total sits just under a million, don't crawl the last stretch
+     — surge past 1,000,000 in a few seconds, then settle into the slow drift. */
+  const surgeTo = final < 1000000 ? 1000000 : 0;
 
   const drift = () => {
     const roll = Math.random();
@@ -189,6 +201,16 @@ function startFoodCounter(el) {
     setTimeout(drift, 350 + Math.random() * 1200);
   };
 
+  const surge = () => {
+    current += 250 + Math.floor(Math.random() * 700);
+    el.textContent = fmt(current);
+    if (current < surgeTo) {
+      setTimeout(surge, 60 + Math.random() * 140);
+    } else {
+      setTimeout(drift, 500 + Math.random() * 500);
+    }
+  };
+
   const rampUp = (now) => {
     const p = Math.min((now - t0) / dur, 1);
     const eased = 1 - Math.pow(1 - p, 3);
@@ -199,7 +221,7 @@ function startFoodCounter(el) {
     } else {
       current = final;
       el.textContent = fmt(current);
-      setTimeout(drift, 700);
+      setTimeout(current < surgeTo ? surge : drift, 700);
     }
   };
   requestAnimationFrame(rampUp);
@@ -528,13 +550,14 @@ export function wireChatComposer(railEl, opts = {}) {
     const initials = opts.userInitials || 'AK';
     const custom = typeof opts.userAvatar === 'function' ? opts.userAvatar() : opts.userAvatar;
     const userAvatar = custom || userAvatarImg('You') || esc(initials);
+    const tid = makeTurnId();
     const body = prev
       ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
       + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(initials)}">${userAvatar}</span>`
-      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -777,9 +800,11 @@ export function injectChatExtras() {
        floating menu on click so the row itself stays down to copy / thumbs up /
        thumbs down. */
     .sc-fb-more-wrap { position: relative; display: inline-flex; padding-left: 2px; }
-    /* z-index 80 keeps this menu ABOVE the body-level activity-strip rail
-       (z-index 70 in js/chat-activity-strip.js), which hugs the same module edge —
-       otherwise the rail/ticks paint over the popover's near corner. */
+    /* While this menu is open the body-level activity-strip rail tucks beneath
+       the chat module (see the body:has([hidden]-cleared .sc-fb-menu) rule in
+       js/chat-activity-strip.js), so the rail/ticks can never paint over the
+       popover — the chat's own low z-index means no in-module z-index could
+       beat the rail directly. */
     .sc-fb-menu { position: absolute; top: calc(100% + 8px); right: -4px; z-index: 80;
       display: inline-flex; align-items: center; gap: 2px; width: max-content;
       padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
@@ -829,7 +854,8 @@ export function injectChatExtras() {
        chip + free-form panel opens rightward and can't clip off the left of the
        transcript — the thumbs sit close to the meta row's left edge. */
     .sc-fb-reasons { position: absolute; top: calc(100% + 8px); left: -6px;
-      /* Above the body-level activity strip (z-index 70) — see .sc-fb-menu. */
+      /* The activity-strip rail tucks beneath the module while this is open —
+         see .sc-fb-menu. */
       z-index: 80; width: max-content; max-width: 260px; display: flex; flex-direction: column; gap: 8px;
       padding: 11px 12px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 12px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
@@ -1035,7 +1061,8 @@ export function injectChatExtras() {
        animation-delay staggers the phase so the shine travels left-to-right
        across the whole label. At both keyframe extremes only flat gold is in
        view, so the infinite-loop seam is invisible. */
-    .sc-ask-help .sc-ask-ch { display: inline-block;
+    .sc-ask-help .sc-ask-ch,
+    .chip.ws-intent-chip--askhelp .sc-ask-ch { display: inline-block;
       /* Darker gold FILL (deep amber) with the shimmer band riding a touch
          brighter than the base — so the glyph interior stays the darker tone
          while a lighter gold sweeps through. */
@@ -1053,13 +1080,17 @@ export function injectChatExtras() {
       -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
       animation: sc-ask-shimmer 7.5s ease-in-out infinite;
       animation-delay: calc(var(--ch-i, 0) * 90ms); }
+    /* Word gaps in the shimmer label are real elements (see shimmerLetters);
+       white-space:pre keeps the lone space from collapsing away. */
+    .sc-ask-sp { white-space: pre; }
     @keyframes sc-ask-shimmer {
       0%, 8%    { background-position: 100% 0; transform: translateY(0); }
       20%       { transform: translateY(-1.5px); }
       34%, 100% { background-position: 0% 0; transform: translateY(0); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .sc-ask-help .sc-ask-ch { animation: none; }
+      .sc-ask-help .sc-ask-ch,
+      .chip.ws-intent-chip--askhelp .sc-ask-ch { animation: none; }
     }
 
     /* "What can I ask?" INTENT CHIP — the gold-bordered twin of the link above.
@@ -1072,7 +1103,12 @@ export function injectChatExtras() {
       color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
       background: color-mix(in srgb, var(--ter-amber, #FFC434) 9%, #fff);
     }
-    .chip.ws-intent-chip--askhelp .material-symbols-outlined { color: inherit; }
+    /* Gold icon too — matched to the gold label. The dark-mode base rule
+       (html.dark .ws-intent-chip > .material-symbols-outlined) outranks a plain
+       descendant override, so this pair uses the child combinator + a dark twin
+       to keep the glyph inheriting the chip's gold in both themes. */
+    .chip.ws-intent-chip--askhelp > .material-symbols-outlined,
+    html.dark .chip.ws-intent-chip--askhelp > .material-symbols-outlined { color: inherit; }
     .chip.ws-intent-chip--askhelp:hover {
       background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, #fff);
       border-color: var(--ter-amber, #FFC434);
@@ -1140,7 +1176,7 @@ export function injectChatExtras() {
       transition: color .14s ease, opacity .14s ease, transform .12s ease; }
     .wch-ask-card:hover .wch-ask-insert, .wch-ask-card:focus-within .wch-ask-insert { opacity: .7; }
     .wch-ask-insert:hover { background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); opacity: 1; transform: scale(1.08); }
-    .wch-ask-insert .material-symbols-outlined { font-size: 19px; }
+    .wch-ask-insert .material-symbols-outlined { font-size: 19px; font-variation-settings: 'FILL' 1; }
     @media (hover: none) { .wch-ask-insert { opacity: .7; } }
 
     /* Header controls row — a breakout (expand) toggle sits left of the close
@@ -1170,6 +1206,12 @@ export function injectChatExtras() {
     html.dark .wch-ask-search-clear:hover { background: rgba(255,255,255,0.12); }
     .wch-ask-search-clear .material-symbols-outlined { font-size: 16px; }
 
+    /* "What can I ask?" header — serif title (like the docked module headers),
+       and no leading icon in front of it. */
+    .wch-ask-panel .wch-head-title { font-family: "WISE Digits", "Noto Serif", Georgia, serif;
+      font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; line-height: 1.16; }
+    .wch-ask-panel .wch-head-title .material-symbols-outlined { display: none; }
+
     /* Broken-out "What can I ask?" module — the shared .wch-sidebar.wch-docked
        rules (injected by chat-history.js) dress it like every other docked
        module (Turns, History); the list just breathes a little more. */
@@ -1181,16 +1223,22 @@ export function injectChatExtras() {
        cards. Every capability lists one or more example prompts (each clickable
        to send, or insertable via its icon) plus a subdued "Behind the scenes"
        tool footer. A row of filter chips above the list scopes to one section. */
+    /* Filter chips read exactly like the transcript's intent chips (.chip /
+       .ws-intent-chip): the composer's blue-tinted surface, --border-strong,
+       muted text, regular weight — never a bold white pill. */
     .wch-ask-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 12px 10px; }
-    .wch-ask-filter { border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);
+    .wch-ask-filter { border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--primary) 10%, #fff);
       color: var(--text-muted); border-radius: 999px; padding: 5px 13px; font-family: inherit;
-      font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      font-size: 12.5px; font-weight: 500; cursor: pointer; white-space: nowrap;
       transition: background .14s ease, border-color .14s ease, color .14s ease; }
-    .wch-ask-filter:hover { background: rgba(255,255,255,0.07); color: var(--text); }
-    html:not(.dark) .wch-ask-filter { border-color: rgba(20,40,80,0.12); background: rgba(20,40,80,0.02); }
-    html:not(.dark) .wch-ask-filter:hover { background: rgba(20,40,80,0.05); }
-    .wch-ask-filter.is-active { background: var(--primary, #2F6DF6); border-color: var(--primary, #2F6DF6); color: #fff; }
-    .wch-ask-filter.is-active:hover { background: var(--primary, #2F6DF6); color: #fff; }
+    .wch-ask-filter:hover { background: color-mix(in srgb, var(--primary) 16%, #fff);
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+    html.dark .wch-ask-filter { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+    html.dark .wch-ask-filter:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 20%, transparent); color: var(--text); }
+    .wch-ask-filter.is-active { background: var(--primary, #2F6DF6); border-color: var(--primary, #2F6DF6); color: #fff; font-weight: 600; }
+    .wch-ask-filter.is-active:hover { background: color-mix(in srgb, var(--primary) 90%, #000);
+      border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
+    html.dark .wch-ask-filter.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
     .wch-ask-group-desc { padding: 0 6px 10px; font-size: 13px; line-height: 1.5; opacity: .8; }
 
@@ -1222,7 +1270,7 @@ export function injectChatExtras() {
       opacity: .6; transition: color .14s ease, opacity .14s ease, transform .12s ease; }
     .wch-ask-prompt:hover .wch-ask-prompt-btn { opacity: .85; }
     .wch-ask-prompt-btn:hover { background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); opacity: 1; transform: scale(1.1); }
-    .wch-ask-prompt-btn .material-symbols-outlined { font-size: 19px; }
+    .wch-ask-prompt-btn .material-symbols-outlined { font-size: 19px; font-variation-settings: 'FILL' 1; }
     @media (hover: none) { .wch-ask-prompt-btn { opacity: .85; } }
 
     .wch-ask-cap-tools { margin: 10px 0 0; padding-top: 9px; border-top: 1px dashed rgba(255,255,255,0.09);
@@ -2095,159 +2143,224 @@ function statusStepsFor(text, intent) {
    point is to SEE the machine think, so make it read. Routed exactly like
    statusStepsFor so a clicked chip / typed ask narrates on-topic. */
 function reasoningTraceFor(text, intent) {
-  /* Named milestone sets. Each `story` is a paragraph's worth of lines so the
-     live view always has a substantial glob of text to read while it works. */
-  const S = {
+  /* Milestone POOLS. Each category is an ordered list of PHASES; a phase carries
+     several interchangeable landmark `keys` (so the top-level label varies turn
+     to turn) and a deep pool of dense, haiku-terse `story` lines. Some phases are
+     `opt` (included with probability `p`) so the NUMBER of milestones varies too.
+     Per turn we materialize ONE sequence — a random key + a random dense subset of
+     lines per phase — so no two turns read the same, while the phase progression
+     (read \u2192 gather \u2192 reason \u2192 compose) stays coherent and the key and its glob
+     stay in sync. */
+  const P = {
     generic: [
-      { key: 'Reading', story: [
-        'Reading your ask twice \u2014 once for the words, once for the want underneath them.',
-        'Tracing the thread back through the conversation so nothing lands out of place.',
-        'Naming the three things everything hangs on: the brand, the product, the claim.',
-        'Setting what looks certain apart from what still deserves a second look.',
-        'Sketching the questions I\u2019ll have to answer before I can answer yours.',
-        'Deciding where to start so the first step doesn\u2019t undo the last.',
+      { keys: ['Reading', 'Parsing intent', 'Listening', 'Framing the ask'], min: 3, max: 4, story: [
+        'Your words twice \u2014 once for sense, once for the want beneath.',
+        'The thread pulled back through the chat; nothing left adrift.',
+        'Three pegs named \u2014 brand, product, claim \u2014 and hung.',
+        'The certain set apart from the almost, the almost from the no.',
+        'The questions behind your question, lined up in order.',
+        'A first step chosen that won\u2019t undo the last.',
+        'Scope drawn tight; the rest, politely, aside.',
+        'The tone of the ask read, not just its nouns.',
       ] },
-      { key: 'Gathering', story: [
-        'Walking the WISE Foods registry row by patient row for anything that matches.',
-        'Reaching past it into the connected catalogs \u2014 retailer feeds, USDA, whatever\u2019s synced and fresh.',
-        'Reconciling the barcodes that agree, and quietly flagging the few that don\u2019t.',
-        'Weighing each source by how recently it was touched, because stale data lies without meaning to.',
-        'Keeping only the records that earn their place in the answer, letting the rest fall away.',
+      { keys: ['Gathering', 'Sourcing', 'Foraging', 'Pulling threads'], min: 3, max: 4, story: [
+        'The WISE Foods registry walked, row by patient row.',
+        'Past it into synced catalogs \u2014 retailer, USDA, whatever\u2019s fresh.',
+        'Barcodes that agree, kept; the quarrelers, flagged.',
+        'Each source weighed by how lately it was touched.',
+        'Stale data lies without meaning to; it\u2019s let go.',
+        'Only the records that earn a seat remain.',
+        'Duplicates folded down to the one that\u2019s true.',
       ] },
-      { key: 'Composing', story: [
-        'Folding the pile of facts into something you can actually read.',
-        'Leading with the number that matters and tucking the caveats where they belong.',
-        'Cutting every sentence that was only there to sound thorough.',
-        'Reading it back once in your voice, to be sure it\u2019s useful and not just correct.',
+      { keys: ['Cross-checking', 'Second-guessing', 'Stress-testing'], opt: true, p: 0.5, min: 2, max: 3, story: [
+        'The tidy answer poked at, to see if it holds.',
+        'What I assumed, held up against what the data says.',
+        'The one number that would embarrass me later, found early.',
+        'Edge cases invited in before you have to meet them.',
+      ] },
+      { keys: ['Composing', 'Distilling', 'Writing it plain', 'Shaping'], min: 3, max: 4, story: [
+        'Facts folded into something a person can read.',
+        'The number that matters, first; the caveats, tucked.',
+        'Every sentence that only postured \u2014 cut.',
+        'Read back once in your voice, to be sure it\u2019s useful.',
+        'Short where short is honest; longer only where it earns it.',
       ] },
     ],
     analytics: [
-      { key: 'Reading data', story: [
-        'Opening the tables behind this view and letting the columns introduce themselves.',
-        'Pulling the rows from the WISE Foods registry that actually back the question.',
-        'Cross-referencing the connected sources for anything newer than what I already hold.',
-        'Marking the gaps \u2014 the products with no score yet, the fields left politely blank.',
-        'Squinting at the outliers to tell the real finding from the fat-fingered typo.',
+      { keys: ['Reading data', 'Taking stock', 'Opening tables', 'Reading rows'], min: 3, max: 5, story: [
+        'Tables opened; the columns introduce themselves.',
+        'Only the rows that back the question, pulled.',
+        'Connected sources checked for anything newer.',
+        'Gaps marked \u2014 the unscored, the politely blank.',
+        'Outliers squinted at: real finding or fat-fingered typo.',
+        'Timestamps read; fresh trusted over familiar.',
+        'The shape of the data felt before it\u2019s named.',
       ] },
-      { key: 'Crunching', story: [
-        'Running WISEscore across every matched item, one ingredient list at a time.',
-        'Rolling the numbers into the cuts you asked for, and a couple you didn\u2019t, just in case.',
-        'Holding each average up to the light to see which ones are hiding a story.',
-        'Checking the math twice, because a confident wrong number is worse than no number.',
+      { keys: ['Crunching', 'Scoring', 'Running the math', 'Weighing'], min: 3, max: 4, story: [
+        'WISEscore across every match, one ingredient list at a time.',
+        'Numbers rolled into the cuts you asked \u2014 and one you didn\u2019t.',
+        'Each average held to the light for a hidden story.',
+        'Math checked twice; a confident wrong number is worse than none.',
+        'Medians set beside means, to catch the lie an average tells.',
+        'Weights sanity-checked so nothing loud drowns something true.',
       ] },
-      { key: 'Building view', story: [
-        'Laying it out the way an eye reads it: headline metric first, breakdowns beneath.',
-        'Choosing the chart that tells the truth fastest and cutting the ones that only decorate.',
-        'Labeling everything twice so nothing needs a caption to be understood.',
+      { keys: ['Sifting', 'Sorting signal', 'Ranking'], opt: true, p: 0.55, min: 2, max: 3, story: [
+        'Signal kept; the pretty noise set gently down.',
+        'The movers pulled to the front, the flat left flat.',
+        'Ties broken by what a person would actually care about.',
+      ] },
+      { keys: ['Building view', 'Laying it out', 'Shaping the view', 'Composing'], min: 3, max: 4, story: [
+        'Read the way an eye reads: headline first, breakdowns beneath.',
+        'The chart that tells truth fastest, kept; the d\u00e9cor, cut.',
+        'Everything labeled twice, so no caption is needed.',
+        'Color spent only where it means something.',
+        'The axis honest, even when a lie would flatter.',
       ] },
     ],
     compare: [
-      { key: 'Gathering', story: [
-        'Pulling each item you want to line up and standing them shoulder to shoulder.',
-        'Aligning them on the same fields so it\u2019s apples to apples, never apples to marketing.',
-        'Filling the blanks from the registry where one side knows what the other forgot.',
-        'Making sure I\u2019m comparing the versions that are actually on shelf today.',
+      { keys: ['Gathering', 'Lining up', 'Assembling the field'], min: 3, max: 4, story: [
+        'Each contender stood shoulder to shoulder.',
+        'Same fields, both sides \u2014 apples to apples, never to marketing.',
+        'Blanks filled from the registry where one side forgot.',
+        'Only the versions actually on shelf today.',
+        'The unit made common, so the numbers can even speak.',
       ] },
-      { key: 'Scoring', story: [
-        'Re-running WISEscore on each so the comparison is today\u2019s, not last quarter\u2019s.',
-        'Separating the differences that matter to a shopper from the ones that only matter to a lab.',
-        'Noting where two products look identical until you read the eighth ingredient.',
+      { keys: ['Scoring', 'Weighing', 'Re-scoring'], min: 2, max: 4, story: [
+        'WISEscore re-run so it\u2019s today\u2019s, not last quarter\u2019s.',
+        'Shopper-differences split from lab-differences.',
+        'Twins that match until the eighth ingredient, noted.',
+        'The gap measured where a buyer would feel it.',
       ] },
-      { key: 'Framing it', story: [
-        'Setting the side-by-side so the real gaps step forward and the noise steps back.',
-        'Deciding what earns bold and what\u2019s content to live in the footnotes.',
+      { keys: ['Framing it', 'Setting the table', 'Drawing the line'], min: 2, max: 3, story: [
+        'Real gaps stepped forward; the noise stepped back.',
+        'What earns bold, decided; the rest, to footnotes.',
+        'The verdict placed where the eye lands first.',
       ] },
     ],
     reformulation: [
-      { key: 'Reading recipe', story: [
-        'Taking the formula apart ingredient by ingredient, the way you\u2019d unpick a seam.',
-        'Noting where each one earns its place \u2014 texture, shelf life, cost, or plain old habit.',
-        'Marking the two or three that keep this from clearing the Non-UPF bar.',
-        'Listening for the ingredient that\u2019s only there because it always has been.',
+      { keys: ['Reading recipe', 'Unpicking the formula', 'Reading the seam'], min: 3, max: 4, story: [
+        'The formula unpicked, ingredient by ingredient.',
+        'Each one\u2019s reason named \u2014 texture, shelf life, cost, or habit.',
+        'The two or three that keep it from clearing Non-UPF, marked.',
+        'The ingredient that\u2019s there only because it always has been, heard.',
+        'Function separated from tradition, gently.',
       ] },
-      { key: 'Modeling swaps', story: [
-        'Trying substitutions one at a time and watching what moves when they land.',
-        'Keeping an eye on cost and the WISEscore together, since fixing one often bruises the other.',
-        'Letting the swaps that help stay, and letting go of the clever ones that don\u2019t.',
-        'Re-checking the mouthfeel math so \u201ccleaner\u201d never quietly means \u201cworse.\u201d',
+      { keys: ['Modeling swaps', 'Trying substitutions', 'Turning the dials'], min: 3, max: 4, story: [
+        'Swaps tried one at a time; what moves, watched.',
+        'Cost and WISEscore watched together \u2014 fix one, bruise the other.',
+        'Helpful swaps stay; the clever-but-empty ones, released.',
+        'Mouthfeel math re-checked, so \u201ccleaner\u201d never means \u201cworse.\u201d',
+        'Every change asked: would the eater ever notice, and mind?',
       ] },
-      { key: 'Composing', story: [
-        'Writing up only the changes worth making, in the order I\u2019d make them.',
-        'Saying plainly what each swap buys you and what it asks in return.',
+      { keys: ['Composing', 'Writing the plan', 'Ordering the moves'], min: 2, max: 3, story: [
+        'Only the changes worth making, in the order I\u2019d make them.',
+        'What each swap buys, and what it asks in return \u2014 said plainly.',
+        'The risky move flagged, not buried.',
       ] },
     ],
     verify: [
-      { key: 'Checking rules', story: [
-        'Reading the current criteria for this claim, word for careful word.',
-        'Reminding myself what the badge promises so I don\u2019t promise more than it does.',
-        'Marking the lines that are pass/fail and the ones that ask for judgment.',
+      { keys: ['Checking rules', 'Reading the standard', 'Reading criteria'], min: 3, max: 4, story: [
+        'The claim\u2019s criteria read, word for careful word.',
+        'What the badge promises, remembered \u2014 no more than that.',
+        'Pass/fail lines split from the ones that ask for judgment.',
+        'The version of the standard current today, not last year\u2019s.',
       ] },
-      { key: 'Screening', story: [
-        'Running each eligible UPC through the ingredient screen, line by line.',
-        'Flagging the additives that draw a second glance and the ones that draw a stop.',
-        'Sorting the clean from the maybe from the not-today.',
-        'Double-checking the borderline cases against the source, not the summary.',
+      { keys: ['Screening', 'Running the screen', 'Sifting UPCs'], min: 3, max: 4, story: [
+        'Each eligible UPC through the ingredient screen, line by line.',
+        'Additives that draw a glance, flagged; those that draw a stop, halted.',
+        'Clean from maybe from not-today, sorted.',
+        'Borderline cases checked against source, not summary.',
+        'The quiet disqualifier caught before it costs you.',
       ] },
-      { key: 'Composing', story: [
-        'Laying out Confirm \u2192 Attest \u2192 Activate as three small steps, not one large one.',
-        'Writing the next move so it\u2019s obvious, not merely available.',
+      { keys: ['Composing', 'Laying the path', 'Writing the next move'], min: 2, max: 3, story: [
+        'Confirm \u2192 Attest \u2192 Activate \u2014 three small steps, not one large.',
+        'The next move written obvious, not merely available.',
+        'What\u2019s ready named apart from what still needs you.',
       ] },
     ],
     search: [
-      { key: 'Searching', story: [
-        'Querying the WISE Foods registry for anything that answers to this name.',
-        'Widening the net to the connected retailer catalogs when the first pass comes up thin.',
-        'Reading past the brand copy to the label underneath it.',
-        'Setting aside the near-misses that share a name but nothing else.',
+      { keys: ['Searching', 'Querying', 'Casting the net'], min: 3, max: 4, story: [
+        'The registry queried for anything answering to this name.',
+        'The net widened to retailer catalogs when the first pass runs thin.',
+        'Read past the brand copy to the label beneath.',
+        'Near-misses that share a name but nothing else, set aside.',
+        'Spelling forgiven, so a typo doesn\u2019t hide the answer.',
       ] },
-      { key: 'Matching UPCs', story: [
-        'Reconciling barcodes across sources and trusting the ones that agree.',
-        'Pulling the nutrition metadata and checking it\u2019s the version that\u2019s actually on shelf.',
-        'Untangling the private-label twins that hide behind the same numbers.',
+      { keys: ['Matching UPCs', 'Reconciling barcodes', 'Pinning codes'], min: 2, max: 4, story: [
+        'Barcodes reconciled; the ones that agree, trusted.',
+        'Nutrition metadata pulled, checked against the shelf.',
+        'Private-label twins untangled from shared numbers.',
+        'The current pack kept; the discontinued, dropped.',
       ] },
-      { key: 'Composing', story: [
-        'Bringing the best matches together and putting the closest one on top.',
-        'Noting for each why it made the cut, so you don\u2019t have to guess.',
+      { keys: ['Composing', 'Ranking', 'Ordering the finds'], min: 2, max: 3, story: [
+        'Best matches gathered, the closest laid on top.',
+        'Each one\u2019s reason for making the cut, noted.',
+        'The confident matches parted from the merely plausible.',
       ] },
     ],
     portfolio: [
-      { key: 'Opening', story: [
-        'Loading your portfolio and asking it when it last spoke to its sources.',
-        'Waiting for the sync state to settle before I trust a single number.',
+      { keys: ['Opening', 'Waking the portfolio', 'Taking stock'], min: 2, max: 3, story: [
+        'The portfolio loaded, asked when it last spoke to its sources.',
+        'The sync state let to settle before a number is trusted.',
+        'The shape of the shelf taken in at a glance.',
       ] },
-      { key: 'Reading', story: [
-        'Reading each product\u2019s score, status, and who can currently see it.',
-        'Noticing the ones that slipped \u2014 expired, unscored, or quietly hidden.',
-        'Grouping them so the ones that need you cluster near the top.',
+      { keys: ['Reading', 'Scanning', 'Reading the shelf'], min: 3, max: 4, story: [
+        'Each product\u2019s score, status, and audience, read.',
+        'The slipped ones noticed \u2014 expired, unscored, quietly hidden.',
+        'Grouped so the ones that need you cluster near the top.',
+        'What\u2019s thriving separated from what\u2019s merely present.',
       ] },
-      { key: 'Composing', story: [
-        'Summarizing what stands out and what would thank you for attention first.',
+      { keys: ['Composing', 'Summing up'], min: 1, max: 2, story: [
+        'What stands out, and what would thank you first \u2014 summarized.',
+        'The one thing to do next, made unmissable.',
       ] },
     ],
     connect: [
-      { key: 'Reaching out', story: [
-        'Opening the connection and offering the credentials politely.',
-        'Waiting to be recognized before I ask the catalog for anything.',
+      { keys: ['Reaching out', 'Knocking', 'Handshaking'], min: 2, max: 2, story: [
+        'The connection opened, credentials offered politely.',
+        'Waiting to be recognized before asking for anything.',
+        'The door held while the other side wakes.',
       ] },
-      { key: 'Syncing', story: [
-        'Pulling the catalog down and reconciling it against what we already hold.',
-        'Letting the fresh records overwrite the stale ones without losing the history.',
-        'Counting what changed so I can tell you plainly, not vaguely.',
+      { keys: ['Syncing', 'Reconciling', 'Pulling the catalog'], min: 3, max: 3, story: [
+        'The catalog pulled, reconciled against what we hold.',
+        'Fresh records over stale, the history kept.',
+        'What changed, counted \u2014 to tell you plainly, not vaguely.',
+        'Conflicts settled toward the source that was touched last.',
       ] },
-      { key: 'Composing', story: [
-        'Confirming what\u2019s newly available and what you can ask of it now.',
+      { keys: ['Composing', 'Reporting back'], min: 1, max: 2, story: [
+        'What\u2019s newly available, and what you can ask of it, confirmed.',
+        'The one broken link named, not glossed.',
       ] },
     ],
     ingest: [
-      { key: 'Prepping parser', story: [
-        'Warming up the label parser and reminding it what a serving size can disguise.',
-        'Deciding which fields to lift first: ingredients, NFP, claims, then the fine print.',
-        'Clearing a place to put whatever you hand me next.',
+      { keys: ['Prepping parser', 'Warming the parser', 'Clearing space'], min: 2, max: 3, story: [
+        'The label parser warmed, reminded what a serving size hides.',
+        'Order set: ingredients, NFP, claims, then the fine print.',
+        'A clean place cleared for whatever you hand me.',
       ] },
-      { key: 'Composing', story: [
-        'Writing the intake prompt so you can hand me a label, a spec sheet, or a link.',
+      { keys: ['Composing', 'Opening the door'], min: 1, max: 2, story: [
+        'The intake written so you can hand a label, a sheet, or a link.',
+        'What I\u2019ll do with it, promised up front.',
       ] },
     ],
+  };
+
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  /* A dense, order-preserving random subset of `arr`, size min..max. */
+  const sample = (arr, min, max) => {
+    const lo = Math.min(min || 2, arr.length);
+    const hi = Math.min(max || lo, arr.length);
+    const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+    const idx = arr.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    return idx.slice(0, n).sort((a, b) => a - b).map((i) => arr[i]);
+  };
+  /* Materialize one turn's sequence: drop optional phases by their odds (never
+     below two milestones), then choose a key + dense glob subset for each. */
+  const build = (phases) => {
+    let chosen = phases.filter((ph) => !ph.opt || Math.random() < (ph.p != null ? ph.p : 0.5));
+    if (chosen.length < 2) chosen = phases.filter((ph) => !ph.opt);
+    return chosen.map((ph) => ({ key: pick(ph.keys), story: sample(ph.story, ph.min, ph.max) }));
   };
 
   const byIntent = {
@@ -2258,23 +2371,23 @@ function reasoningTraceFor(text, intent) {
     add_food_intro: 'ingest',
     edit_food_select: 'portfolio',
   };
-  if (intent && byIntent[intent]) return S[byIntent[intent]];
+  if (intent && byIntent[intent]) return build(P[byIntent[intent]]);
   /* Surface-namespaced intents (contextual chip sets swapped in live via
      setIntents) route by their prefix, so e.g. the Reformulation page's move
      chips narrate the recipe work and its product-picker chips narrate opening
      the portfolio — the trace always follows the chip's own UX tree. */
-  if (intent && /^move:/.test(intent)) return S.reformulation;
-  if (intent && /^pick:/.test(intent)) return S.portfolio;
+  if (intent && /^move:/.test(intent)) return build(P.reformulation);
+  if (intent && /^pick:/.test(intent)) return build(P.portfolio);
 
   const q = String(text || '').toLowerCase();
-  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown|rank)/.test(q)) return S.analytics;
-  if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return S.compare;
-  if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return S.reformulation;
-  if (/(verif|shield|attest|non-upf|ultra-?processed|\bupf\b|clean label|badge)/.test(q)) return S.verify;
-  if (/(food|registry|upc|product|search|look ?up|find|nutrient|\bbest\b|\bworst\b)/.test(q)) return S.search;
-  if (/(portfolio|catalog|inventory)/.test(q)) return S.portfolio;
-  if (/(connect|sync|integration|kroger|walmart|instacart|usda)/.test(q)) return S.connect;
-  return S.generic;
+  if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown|rank)/.test(q)) return build(P.analytics);
+  if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return build(P.compare);
+  if (/(reformulat|recipe|ingredient swap|optimi|substitut)/.test(q)) return build(P.reformulation);
+  if (/(verif|shield|attest|non-upf|ultra-?processed|\bupf\b|clean label|badge)/.test(q)) return build(P.verify);
+  if (/(food|registry|upc|product|search|look ?up|find|nutrient|\bbest\b|\bworst\b)/.test(q)) return build(P.search);
+  if (/(portfolio|catalog|inventory)/.test(q)) return build(P.portfolio);
+  if (/(connect|sync|integration|kroger|walmart|instacart|usda)/.test(q)) return build(P.connect);
+  return build(P.generic);
 }
 
 /* The trailing "assembling" milestone, built from the answer HTML the turn is
@@ -2285,13 +2398,14 @@ function reasoningTraceFor(text, intent) {
 function assemblyMilestoneFor(html) {
   const h = String(html || '').toLowerCase();
   const lines = [];
-  if (/canvas|<svg|chart|graph|insights|spark/.test(h)) lines.push('Rendering the chart so the shape of the data reads at a glance.');
-  if (/<table|wa-tbl/.test(h)) lines.push('Laying the table out row by row, headers pinned to the top.');
-  if (/surface-card|report|summarize/.test(h)) lines.push('Stitching the report together section by section.');
-  if (/href=|<a\b/.test(h)) lines.push('Attaching the sources so every number stays traceable to where it came from.');
+  if (/canvas|<svg|chart|graph|insights|spark/.test(h)) lines.push('The chart drawn so the data\u2019s shape reads at a glance.');
+  if (/<table|wa-tbl/.test(h)) lines.push('The table laid row by row, headers pinned to the top.');
+  if (/surface-card|report|summarize/.test(h)) lines.push('The report stitched together, section by section.');
+  if (/href=|<a\b/.test(h)) lines.push('Sources attached, so every number traces back to where it came from.');
   if (!lines.length) return null;
-  lines.push('Bringing the suggested next steps in last, once everything else has settled.');
-  return { key: 'Assembling', story: lines };
+  lines.push('Suggested next steps brought in last, once the rest has settled.');
+  const keys = ['Assembling', 'Laying it out', 'Bringing it together', 'Setting the stage'];
+  return { key: keys[Math.floor(Math.random() * keys.length)], story: lines };
 }
 
 /* Build the in-chat "Agent Settings" overlay from an agent roster. Mirrors the
@@ -2469,6 +2583,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      marked spent. */
   const usedIntents = new Set();
   const placeholder = opts.placeholder || 'Type your message';
+  /* Opt-in lock glyph that sits inline with the placeholder text (only while the
+     input is empty) to flag that the composer is "not accessible at this
+     moment". Pass `placeholderLock: true` for the default hover copy, or a
+     string to override the tooltip text. Purely a visual affordance — it does
+     not disable the textarea. */
+  const placeholderLock = opts.placeholderLock === true || typeof opts.placeholderLock === 'string';
+  const placeholderLockTip = typeof opts.placeholderLock === 'string'
+    ? opts.placeholderLock
+    : 'Not accessible at this moment';
   /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK").
      When the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
   const userInitials = opts.userInitials || 'AK';
@@ -2636,6 +2759,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      width changer), pin a search box above the list, and give each turn Share +
      Note (annotate) controls. */
   const turnsBreakoutDefault = opts.turnsBreakoutDefault === true;
+  /* Dock the broken-out Turns module as the LAST module in the row (the far
+     right), rather than immediately to the right of the chat. This lets it sit
+     to the right of any output modules (e.g. result / visual panes) that are
+     already open, tucking in behind the last one as the next layered-down
+     drawer — sized like every other module. Opt-in via `turnsBreakoutFarRight`. */
+  const turnsBreakoutFarRight = opts.turnsBreakoutFarRight === true;
   const turnsDockedControls = opts.turnsDockedControls === true;
   /* Adds a pink "Sticky module" admin toggle to the docked Turns module's
      three-dot menu. ON by default (the module stays tucked behind the chat);
@@ -2717,8 +2846,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const spent = !!(c && c.intent && usedIntents.has(c.intent));
     /* The "What can I ask?" chip wears the gold border that pairs it with the
        below-input gold link of the same name. */
-    const gold = c && c.intent === ASK_HELP_INTENT ? ' ws-intent-chip--askhelp' : '';
-    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`;
+    const isAsk = c && c.intent === ASK_HELP_INTENT;
+    const gold = isAsk ? ' ws-intent-chip--askhelp' : '';
+    /* The ask-help chip's label runs the SAME per-letter gold shimmer as the
+       below-input link — split into .sc-ask-ch glyph spans, with a plain
+       aria-label carrying the readable text for assistive tech. */
+    const labelHtml = isAsk
+      ? `<span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters(c.label)}</span>`
+      : esc(c.label);
+    const aria = isAsk ? ` aria-label="${esc(c.label)}"` : '';
+    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
   }).join('');
   let chipsHtml = buildChipsHtml();
 
@@ -2916,7 +3053,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
-          ${(opts.stickyModules === true && opts.stickyModulesMenu !== false) ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="sticky" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky modules</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
@@ -2940,7 +3076,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
             </button>
           </div>
-          ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
+          <div class="sc-stream-detail sc-actside-detail">
+            <span class="sc-stream-detail-label">Strip side</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Activity strip side">
+              <button type="button" class="sc-stream-seg-btn" data-sc="activity-strip-side" data-actside="left" role="radio" aria-checked="false" title="Pin to the left edge" aria-label="Pin to the left edge">Left</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="activity-strip-side" data-actside="right" role="radio" aria-checked="false" title="Pin to the right edge" aria-label="Pin to the right edge">Right</button>
+            </div>
+          </div>` : ''}
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
           <div class="sc-stream-detail">
@@ -2995,12 +3138,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <div class="fl-model-row">
               ${buildModelSelectorHtml(id)}
             </div>
-            <div class="fl-input-line">
-              <textarea class="fl-input" id="${id}-input" placeholder="${esc(placeholder)}" rows="1" autocomplete="off"></textarea>
+            <div class="fl-input-line${placeholderLock ? ' fl-input-line--locked' : ''}">
+              <textarea class="fl-input${placeholderLock ? ' fl-input--locked' : ''}" id="${id}-input" placeholder="${esc(placeholder)}" rows="1" autocomplete="off"${placeholderLock ? ' readonly aria-disabled="true" tabindex="-1"' : ''}></textarea>
+              ${placeholderLock ? `<span class="fl-input-lock" tabindex="0" role="img" aria-label="${esc(placeholderLockTip)}" data-tip="${esc(placeholderLockTip)}"><span class="material-symbols-outlined">lock</span></span>` : ''}
             </div>
             <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
           </div>
-          <button type="button" class="sc-send" id="${id}-send" title="Send"><span class="material-symbols-outlined">send</span></button>
+          <button type="button" class="sc-send${placeholderLock ? ' sc-send--locked' : ''}" id="${id}-send" title="Send"${placeholderLock ? ' disabled aria-disabled="true"' : ''}><span class="material-symbols-outlined">send</span></button>
         </div>
       </div>
       ${(askHelpOn || activityOn) ? `<div class="sc-belowinput${askHelpOn ? ' sc-belowinput--ask' : ''}">
@@ -3276,7 +3420,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             ${downPop}
           </span>
           <span class="sc-fb-more-wrap">
-            <button type="button" class="sc-fb-btn sc-fb-more" data-fb-more data-tip="More" aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>
+            <button type="button" class="sc-fb-btn sc-fb-more" data-fb-more aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>
             <div class="sc-fb-menu" role="menu" hidden>
               <span class="sc-line-time sc-fb-menu-time">${esc(time)}</span>
               <span class="sc-fb-menu-actions">
@@ -3677,9 +3821,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        NON-UNIFORM twist (turns subtly tighten and loosen along the length) break
        the mirror symmetry so no two turns are identical. */
     const AMP_BASE = 6.1;
+    /* Breathing: a smaller, gentler swell than before — shallower depth over
+       longer periods (wider, more gradual taper) that drifts down more slowly,
+       so the diameter eases in and out rather than pumping. */
     const env = (y) => 1
-      + 0.26 * Math.sin((TWO_PI * y) / 88 - phase * 0.6)
-      + 0.15 * Math.sin((TWO_PI * y) / 133 - phase * 0.33 + 1.7);
+      + 0.15 * Math.sin((TWO_PI * y) / 104 - phase * 0.34)
+      + 0.08 * Math.sin((TWO_PI * y) / 150 - phase * 0.2 + 1.7);
     const persp = (y) => 1 + 0.14 * (y / h);                 /* depth on descent */
     const amp = (y) => AMP_BASE * env(y) * persp(y);
     const axis = (y) => cx + 0.8 * Math.sin((TWO_PI * y) / 150 + phase * 0.24);
@@ -3795,7 +3942,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (!running) return;
       raf = requestAnimationFrame(frame);
       if (!last) last = t;
-      phase += (t - last) * 0.0015;   /* twist speed (live/progress) */
+      phase += (t - last) * 0.0018;   /* twist speed — dots orbit the strand a touch faster */
       last = t;
       if (t - lastDraw < 33) return;   /* ~30fps redraw */
       lastDraw = t;
@@ -4023,27 +4170,34 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     setTimeout(runMilestone, rnd(220, 520));
   }
 
-  /* Pick ONE connected data source to ground this turn in. It's drawn from the
-     SAME pool of sources shown in the input — but not deterministically: asking
-     about the same thing can resolve to a different source (you might have asked
-     a different kind of question), so we lean toward the connected sources yet
-     keep it variable. Returns the escaped source name, or '' when no sources are
-     configured. */
-  /* The grounding chip names a data source, capped to 15 characters (matching
-     the source names shown in the input module's connector rail) so a long
-     source never blows out the meta row — anything longer is clipped with an
-     ellipsis. */
+  /* The grounding chip names a data source, capped to 28 characters (long
+     enough for the full database / snapshot names shown in the input's
+     selector, e.g. "ALPHA snapshot \u2014 2026-Jul-29") so a long source never
+     blows out the meta row — anything longer is clipped with an ellipsis. */
   function truncSourceName(s) {
     const str = String(s == null ? '' : s);
-    return str.length > 15 ? str.slice(0, 15).trimEnd() + '\u2026' : str;
+    return str.length > 28 ? str.slice(0, 28).trimEnd() + '\u2026' : str;
   }
 
+  /* The currently active database from the in-input selector. Declared here —
+     ahead of the selector wiring further down — because seeded history
+     transcripts resolve their grounding while the mount is still building. */
+  let currentDbId = defaultDbItem() ? defaultDbItem().id : null;
+
+  /* Ground every turn in a database from the in-input selector's roster — a
+     Postgres environment or snapshot — never the retailer connector rail
+     (Walmart, Kroger, …). Retailer connectors are ingestion pipes; a database
+     is where the answer is actually read from. NOT deterministic: most turns
+     resolve to the ACTIVE database, but some questions legitimately pull from
+     a different environment or snapshot, so the pick leans active yet stays
+     variable. Returns the escaped database name. */
   function pickSourceName() {
-    if (!connectors.length) return '';
-    const connected = connectors.filter((c) => c && c.connected);
-    const pool = connected.length ? connected : connectors;
-    const c = pool[Math.floor(Math.random() * pool.length)];
-    return esc(c && c.name ? c.name : 'the WISE Foods registry');
+    const active = dbItemById(currentDbId) || defaultDbItem();
+    const pool = allDbItems();
+    const db = (active && Math.random() < 0.6)
+      ? active
+      : (pool.length ? pool[Math.floor(Math.random() * pool.length)] : active);
+    return esc(db && db.name ? db.name : 'the WISE Foods registry');
   }
 
   /* The trace's closing glob line naming which data source the answer is grounded
@@ -4051,8 +4205,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function sourceLineFor(name) {
     if (!name) return '';
     const templates = [
-      `Grounding this answer in <strong>${name}</strong> \u2014 the source that best fit what you actually asked.`,
-      `Sourced from <strong>${name}</strong> for this one; a different question might have pulled from somewhere else.`,
+      `Grounding this answer in <strong>${name}</strong> \u2014 the database that best fit what you asked.`,
+      `Read from <strong>${name}</strong> for this one; a different question might have pulled from another environment.`,
       `Pulling the numbers behind this from <strong>${name}</strong>.`,
       `This answer is drawn from <strong>${name}</strong>.`,
     ];
@@ -4342,10 +4496,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      can be tweaked first. A search field filters the prompts, and the header's
      breakout icon breaks the panel OUT of the chat into its own standalone
      module docked beside the chat — a real flex sibling in the modules row,
-     exactly like the Turns module's breakout. Built lazily on first open. */
-  let askPanel = null, askScrim = null, askList = null, askCloseTimer = null, askDocked = false, askQuery = '', askSection = 'all', askMorePop = null;
+     exactly like the Turns module's breakout. Built lazily on first open via
+     the shared window.WiseChatAsk controller (js/chat-ask.js). */
   const askBreakoutWidth = opts.askBreakoutWidth || 360;
-  const askHost = () => rootEl.querySelector('.sc-body') || rootEl;
 
   /* Optional rich catalog — a structured, page-authored library of everything
      the surface can do, grouped into sections, each capability carrying several
@@ -4389,360 +4542,50 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     return groups;
   }
-  function askCardHtml(c) {
-    const gold = c.intent === ASK_HELP_INTENT ? ' wch-ask-card--gold' : '';
-    const q = c.ask && c.desc && c.ask !== c.title
-      ? `<span class="wch-ask-card-q">\u201C${esc(c.ask)}\u201D</span>` : '';
-    const desc = c.desc ? `<span class="wch-ask-card-desc">${esc(c.desc)}</span>` : '';
-    return `<button type="button" class="wch-ask-card${gold}" data-ask="${esc(c.ask)}"${c.intent ? ` data-intent="${esc(c.intent)}"` : ''} title="Ask: ${esc(c.ask)}">
-        <span class="wch-ask-ico"><span class="material-symbols-outlined">${esc(c.icon)}</span></span>
-        <span class="wch-ask-card-body"><span class="wch-ask-card-title">${esc(c.title)}</span>${desc}${q}</span>
-        <span class="wch-ask-insert" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
-      </button>`;
-  }
-  /* Render one catalog capability: header (icon + title + blurb), its example
-     prompts (each a click-to-send button with an insert affordance), and a
-     subdued "behind the scenes" tool footer. */
-  function askCapHtml(item, sectionIcon) {
-    const prompts = (item.prompts || []).map((p) =>
-      `<button type="button" class="wch-ask-prompt" data-ask="${esc(p)}" title="Ask: ${esc(p)}">
-        <span class="wch-ask-prompt-text">${esc(p)}</span>
-        <span class="wch-ask-prompt-actions">
-          <span class="wch-ask-prompt-btn" role="button" tabindex="-1" data-ask-insert="1" title="Insert into the message box" aria-label="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
-          <span class="wch-ask-prompt-btn" role="button" tabindex="-1" aria-hidden="true" title="Ask this"><span class="material-symbols-outlined">play_arrow</span></span>
-        </span>
-      </button>`).join('');
-    const tools = (item.tools && item.tools.length)
-      ? `<div class="wch-ask-cap-tools"><b>Behind the scenes</b> ${item.tools.map((t) => `<code>${esc(t)}</code>`).join(' \u00B7 ')}</div>`
-      : '';
-    const desc = item.desc ? `<span class="wch-ask-cap-desc">${esc(item.desc)}</span>` : '';
-    return `<div class="wch-ask-cap">
-      <div class="wch-ask-cap-head">
-        <span class="wch-ask-cap-ico"><span class="material-symbols-outlined">${esc(item.icon || sectionIcon || 'bolt')}</span></span>
-        <span class="wch-ask-cap-titles"><span class="wch-ask-cap-title">${esc(item.title || '')}</span>${desc}</span>
-      </div>
-      <div class="wch-ask-prompts">${prompts}</div>
-      ${tools}
-    </div>`;
-  }
-  /* Catalog mode: filter chips (All + one per section) above section groups,
-     each with a header + blurb and its capability cards. A search query narrows
-     capabilities across whichever section scope is active. */
-  function renderAskCatalog() {
-    const q = (askQuery || '').trim().toLowerCase();
-    const matchItem = (it) => {
-      if (!q) return true;
-      const hay = [it.title, it.desc, (it.prompts || []).join(' '), (it.tools || []).join(' ')]
-        .filter(Boolean).join(' ').toLowerCase();
-      return hay.indexOf(q) !== -1;
-    };
-    const sections = askCatalog.sections;
-    if (askSection !== 'all' && !sections.some((s) => s.id === askSection)) askSection = 'all';
-    const chips = ['<div class="wch-ask-filters">',
-      `<button type="button" class="wch-ask-filter${askSection === 'all' ? ' is-active' : ''}" data-section="all">All</button>`]
-      .concat(sections.map((s) =>
-        `<button type="button" class="wch-ask-filter${askSection === s.id ? ' is-active' : ''}" data-section="${esc(s.id)}">${esc(s.title)}</button>`))
-      .concat('</div>').join('');
-    const scoped = sections.filter((s) => askSection === 'all' || s.id === askSection);
-    const groups = scoped
-      .map((s) => ({ s, items: (s.items || []).filter(matchItem) }))
-      .filter((g) => g.items.length);
-    let body;
-    if (!groups.length) {
-      body = q
-        ? '<div class="wch-ask-empty">No prompts match \u201C' + esc((askQuery || '').trim()) + '\u201D. Try another word, or just type your question in your own words.</div>'
-        : '<div class="wch-ask-empty">Nothing here yet.</div>';
-    } else {
-      body = groups.map(({ s, items }) =>
-        `<div class="wch-ask-group" data-section="${esc(s.id)}">
-          <div class="wch-ask-group-title"><span class="material-symbols-outlined">${esc(s.icon || 'bolt')}</span>${esc(s.title)}</div>
-          ${s.desc ? `<div class="wch-ask-group-desc">${esc(s.desc)}</div>` : ''}
-          <div class="wch-ask-cards">${items.map((it) => askCapHtml(it, s.icon)).join('')}</div>
-        </div>`).join('');
-    }
-    askList.innerHTML = chips + body;
-  }
-  function renderAskList() {
-    if (!askList) return;
-    if (askCatalog) { renderAskCatalog(); return; }
-    let groups = askSuggestions();
-    const q = (askQuery || '').trim().toLowerCase();
-    if (q) {
-      groups = groups
-        .map((g) => ({
-          ...g,
-          cards: (g.cards || []).filter((c) => {
-            const hay = [c.title, c.desc, c.ask, c.intent].filter(Boolean).join(' ').toLowerCase();
-            return hay.indexOf(q) !== -1;
-          }),
-        }))
-        .filter((g) => g.cards.length);
-    }
-    if (!askSuggestions().length) {
-      askList.innerHTML = '<div class="wch-ask-empty">No suggestions on this page yet — just type a question in your own words and I\u2019ll route it to the right agents.</div>';
-      return;
-    }
-    if (!groups.length) {
-      askList.innerHTML = '<div class="wch-ask-empty">No prompts match \u201C' + esc((askQuery || '').trim()) + '\u201D. Try another word, or just type your question in your own words.</div>';
-      return;
-    }
-    askList.innerHTML = groups.map((g) =>
-      `<div class="wch-ask-group">
-        <div class="wch-ask-group-title"><span class="material-symbols-outlined">${esc(g.icon || 'bolt')}</span>${esc(g.title)}</div>
-        <div class="wch-ask-cards">${g.cards.map(askCardHtml).join('')}</div>
-      </div>`).join('');
-  }
-  function applyAskQuery(v) {
-    askQuery = v || '';
-    if (askPanel) {
-      const clr = askPanel.querySelector('.wch-ask-search-clear');
-      if (clr) clr.hidden = !askQuery;
-    }
-    renderAskList();
-  }
-  function clearAskQuery() {
-    const inp = askPanel && askPanel.querySelector('.wch-ask-search-input');
-    if (inp) { inp.value = ''; inp.focus(); }
-    applyAskQuery('');
-  }
-  /* Reflect the panel's current state on the three-dot menu's "break out" item:
-     a "split" glyph + "Break out…" label while it's the in-chat overlay, a
-     "collapse" glyph + "Merge back…" label once broken out as a standalone
-     module. Same glyph pair as the Turns module's dock button. */
-  function updateAskBreakBtn() {
-    if (!askPanel) return;
-    /* The menu item may have been portaled to <body> with its popover, so look
-       there too rather than only inside the panel. */
-    const item = (askMorePop || askPanel).querySelector('.wch-ask-breakout')
-      || askPanel.querySelector('.wch-ask-breakout');
-    if (!item) return;
-    item.setAttribute('aria-pressed', askDocked ? 'true' : 'false');
-    const g = item.querySelector('.material-symbols-outlined');
-    if (g) g.textContent = askDocked ? 'close_fullscreen' : 'vertical_split';
-    const lbl = item.querySelector('.wch-ask-breakout-label');
-    if (lbl) lbl.textContent = askDocked ? 'Merge back into the chat' : 'Break out as a side module';
-  }
-  /* Move the panel between the in-chat overlay and a standalone module docked
-     to the RIGHT of the chat — a real flex sibling in the modules row, inserted
-     right after the chat's mount element and dressed by the shared
-     `.wch-sidebar.wch-docked` rules. Mirrors setTurnsDocked exactly. */
-  function setAskDocked(on) {
-    ensureAskPanel();
-    askDocked = !!on;
-    clearTimeout(askCloseTimer);
-    if (askDocked) {
-      askPanel.classList.remove('wch-open', 'wch-closing', 'wch-docked-hidden');
-      askScrim.classList.remove('wch-open', 'wch-closing');
-      document.removeEventListener('keydown', onAskKey);
-      const container = resolveEl(opts.askBreakoutContainer) || rootEl.parentElement;
-      const anchor = resolveEl(opts.askBreakoutAnchor) || rootEl;
-      if (container) {
-        if (anchor && anchor.parentElement === container && anchor.nextSibling) container.insertBefore(askPanel, anchor.nextSibling);
-        else container.appendChild(askPanel);
-      }
-      askPanel.classList.add('wch-docked');
-      askPanel.style.flex = '0 0 ' + askBreakoutWidth + 'px';
-      askPanel.style.width = askBreakoutWidth + 'px';
-      updateAskBreakBtn();
-      renderAskList();
-    } else {
-      askPanel.classList.remove('wch-docked', 'wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
-      askPanel.style.flex = '';
-      askPanel.style.width = '';
-      const paneHost = askHost();
-      paneHost.classList.add('wch-host');
-      if (!paneHost.contains(askPanel)) paneHost.appendChild(askPanel);
-      updateAskBreakBtn();
-      openAskHelp(); /* keep it visible as an overlay right after merging back */
-    }
-  }
-  /* Docked reveal / conceal — the module slides out from behind the chat card
-     when shown and tucks back in behind before hiding, exactly like Turns. */
-  let askConcealTimer = null, askRevealTimer = null;
-  function revealAskDocked() {
-    if (!askPanel) return;
-    clearTimeout(askRevealTimer);
-    askPanel.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
-    void askPanel.offsetWidth;                 /* restart the animation */
-    askPanel.classList.add('wch-dock-reveal');
-    askRevealTimer = setTimeout(() => { if (askPanel) askPanel.classList.remove('wch-dock-reveal'); }, 480);
-  }
-  function concealAskDocked() {
-    if (!askPanel) return;
-    clearTimeout(askConcealTimer);
-    askPanel.classList.remove('wch-dock-reveal');
-    void askPanel.offsetWidth;
-    askPanel.classList.add('wch-dock-conceal');
-    askConcealTimer = setTimeout(() => {
-      if (!askPanel) return;
-      askPanel.classList.add('wch-docked-hidden');
-      askPanel.classList.remove('wch-dock-conceal');
-    }, 300);
-  }
+  /* Shared overlay controller — same panel, search, and breakout-to-sticky
+     module that hand-built chats mount via window.WiseChatAsk. Built lazily
+     on first open so unused surfaces don't pay for the DOM. */
+  let askHelpApi = null;
   function ensureAskPanel() {
-    if (askPanel) return;
-    const paneHost = rootEl.querySelector('.sc-body') || rootEl;
-    paneHost.classList.add('wch-host');
-    askScrim = document.createElement('div');
-    askScrim.className = 'wch-scrim';
-    askPanel = document.createElement('aside');
-    askPanel.className = 'wch-sidebar wch-right wch-ask-panel';
-    askPanel.setAttribute('aria-label', askHelpLabel || 'What can I ask?');
-    askPanel.innerHTML =
-      '<div class="wch-head">' +
-        `<span class="wch-head-title"><span class="material-symbols-outlined">help</span>${esc(askHelpLabel || 'What can I ask?')}</span>` +
-        '<div class="wch-controls">' +
-          '<div class="panel-more-wrap wch-ask-more-wrap">' +
-            '<button type="button" class="panel-more-btn wch-ask-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
-            '<div class="topbar-popover hidden wch-ask-more-pop" role="menu">' +
-              '<button type="button" class="topbar-menu-item wch-ask-breakout" data-ask-act="breakout"><span class="material-symbols-outlined topbar-menu-icon">vertical_split</span><span class="wch-ask-breakout-label">Break out as a side module</span></button>' +
-              '<div class="topbar-menu-divider"></div>' +
-              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-ask-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      `<p class="wch-ask-intro">${esc((askCatalog && askCatalog.intro) || 'Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.')}</p>` +
-      '<div class="wch-ask-search">' +
-        '<span class="material-symbols-outlined">search</span>' +
-        `<input type="text" class="wch-ask-search-input" placeholder="${esc((askCatalog && askCatalog.searchPlaceholder) || 'Search prompts\u2026')}" aria-label="Search prompts" autocomplete="off">` +
-        '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>' +
-      '</div>' +
-      '<div class="wch-list wch-ask-list" role="list"></div>';
-    paneHost.appendChild(askScrim);
-    paneHost.appendChild(askPanel);
-    askList = askPanel.querySelector('.wch-ask-list');
-    renderAskList();
-    askScrim.addEventListener('click', closeAskHelp);
-
-    /* Header three-dot menu — holds "Break out / Merge" and "Close pane" so the
-       header carries a single control (no overlapping X). The docked module
-       clips its own overflow (rounded corners), so the popover is portaled to
-       <body> and pinned fixed under the trigger, exactly like the Turns menu. */
-    const askMoreWrap = askPanel.querySelector('.wch-ask-more-wrap');
-    const askMoreBtn = askPanel.querySelector('.wch-ask-more-btn');
-    askMorePop = askPanel.querySelector('.wch-ask-more-pop');
-    const closeAskMore = () => {
-      askMorePop.classList.add('hidden');
-      askMoreBtn.classList.remove('is-open');
-      askMoreBtn.setAttribute('aria-expanded', 'false');
-    };
-    askMoreBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const willOpen = askMorePop.classList.contains('hidden');
-      askMorePop.classList.toggle('hidden', !willOpen);
-      askMoreBtn.classList.toggle('is-open', willOpen);
-      askMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-      if (willOpen) {
-        if (askMorePop.parentElement !== document.body) document.body.appendChild(askMorePop);
-        askMorePop.style.position = 'fixed';
-        askMorePop.style.zIndex = '3000';
-        const w = askMorePop.offsetWidth || 220;
-        const r = askMoreBtn.getBoundingClientRect();
-        askMorePop.style.top = (r.bottom + 6) + 'px';
-        askMorePop.style.left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6)) + 'px';
-        askMorePop.style.right = 'auto';
-      }
+    if (askHelpApi) return askHelpApi;
+    if (!window.WiseChatAsk) return null;
+    askHelpApi = window.WiseChatAsk.mount({
+      host: () => rootEl.querySelector('.sc-body') || rootEl,
+      container: opts.askBreakoutContainer || (() => rootEl.parentElement),
+      anchor: opts.askBreakoutAnchor || rootEl,
+      chatEl: rootEl,
+      label: askHelpLabel,
+      catalog: askCatalog,
+      getSuggestions: askSuggestions,
+      breakoutWidth: askBreakoutWidth,
+      stickyDefault: opts.askStickyDefault !== false,
+      inputEl: () => input,
+      onBeforeOpen: () => {
+        chatHistory?.close?.();
+        dismissTurnsOverlay();
+        closeConnectors();
+      },
+      onInsert: (text) => {
+        if (!input) return;
+        input.value = text;
+        input.focus();
+        try { input.setSelectionRange(text.length, text.length); } catch (_) {}
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      },
+      onAsk: (text, intent) => {
+        const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
+        if (intent) markIntentUsed(intent);
+        hideWelcome();
+        addUser(text);
+        if (!handled) wiseaiRespond(text, intent);
+      },
     });
-    askMorePop.addEventListener('click', (e) => {
-      const it = e.target.closest('[data-ask-act]');
-      if (!it) return;
-      const act = it.getAttribute('data-ask-act');
-      closeAskMore();
-      if (act === 'breakout') setAskDocked(!askDocked);
-      else if (act === 'close') closeAskHelp();
-    });
-    document.addEventListener('click', (e) => {
-      if (!askMorePop.classList.contains('hidden') && !askMoreWrap.contains(e.target) && !askMorePop.contains(e.target)) closeAskMore();
-    });
-    const askSearchInput = askPanel.querySelector('.wch-ask-search-input');
-    const askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
-    if (askSearchInput) askSearchInput.addEventListener('input', () => applyAskQuery(askSearchInput.value));
-    if (askSearchClear) askSearchClear.addEventListener('click', clearAskQuery);
-    askPanel.addEventListener('click', (e) => {
-      /* Catalog filter chip — scope the list to one section (or All). */
-      const filter = e.target.closest('.wch-ask-filter');
-      if (filter) {
-        askSection = filter.getAttribute('data-section') || 'all';
-        renderAskList();
-        return;
-      }
-      const card = e.target.closest('[data-ask]');
-      if (!card) return;
-      const text = card.getAttribute('data-ask') || '';
-      if (!text) return;
-      /* Insert icon → drop the prompt into the composer (editable, not sent).
-         Anywhere else on the card → send it straight away. */
-      if (e.target.closest('[data-ask-insert]')) {
-        insertAskIntoComposer(text);
-      } else {
-        sendAsk(text, card.getAttribute('data-intent') || undefined);
-      }
-    });
+    return askHelpApi;
   }
-  /* Drop a prompt into the composer, focused and grown, without sending. A
-     broken-out module stays put — only the overlay form dismisses. */
-  function insertAskIntoComposer(text) {
-    dismissAskOverlay();
-    if (!input) return;
-    input.value = text;
-    input.focus();
-    try { input.setSelectionRange(text.length, text.length); } catch (_) {}
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-  /* Post a prompt as its own turn — same routing a chip/scorecard click uses so
-     the host's onIntent still drives navigation. A broken-out module stays put. */
-  function sendAsk(text, intent) {
-    dismissAskOverlay();
-    const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
-    if (intent) markIntentUsed(intent);
-    hideWelcome();
-    addUser(text);
-    if (!handled) wiseaiRespond(text, intent);
-  }
-  function onAskKey(e) {
-    if (e.key !== 'Escape') return;
-    if (askQuery && askQuery.trim()) { clearAskQuery(); return; }
-    closeAskHelp();
-  }
-  function openAskHelp() {
-    ensureAskPanel();
-    if (!askPanel) return;
-    /* Broken-out module: show it and slide it out from behind the chat. */
-    if (askDocked) { clearTimeout(askConcealTimer); renderAskList(); revealAskDocked(); return; }
-    /* Never let more than one overlay sit open at once. */
-    chatHistory?.close?.();
-    dismissTurnsOverlay();
-    closeConnectors();
-    clearTimeout(askCloseTimer);
-    askPanel.classList.remove('wch-closing');
-    askScrim.classList.remove('wch-closing');
-    renderAskList();
-    askPanel.classList.add('wch-open');
-    askScrim.classList.add('wch-open');
-    document.addEventListener('keydown', onAskKey);
-  }
-  function closeAskHelp() {
-    if (!askPanel) return;
-    /* Broken-out module: "close" tucks the module back in behind the chat (via
-       the conceal animation) rather than running the overlay animation. */
-    if (askDocked) { concealAskDocked(); return; }
-    if (!askPanel.classList.contains('wch-open') && !askPanel.classList.contains('wch-closing')) return;
-    askPanel.classList.remove('wch-open');
-    askScrim.classList.remove('wch-open');
-    askPanel.classList.add('wch-closing');
-    askScrim.classList.add('wch-closing');
-    document.removeEventListener('keydown', onAskKey);
-    clearTimeout(askCloseTimer);
-    askCloseTimer = setTimeout(() => {
-      askPanel.classList.remove('wch-closing');
-      askScrim.classList.remove('wch-closing');
-    }, 300);
-  }
-  /* Close ONLY the in-chat overlay form (cross-panel coordination). A broken-
-     out module is a first-class sibling of the chat, so it's left in place —
-     the same contract as dismissTurnsOverlay. */
-  function dismissAskOverlay() { if (askPanel && !askDocked) closeAskHelp(); }
+  function openAskHelp() { ensureAskPanel()?.open(); }
+  function closeAskHelp() { askHelpApi?.close(); }
+  function setAskDocked(on) { ensureAskPanel()?.setDocked(!!on); }
+  function dismissAskOverlay() { askHelpApi?.dismissOverlay?.(); }
 
   /* ── Turns Module — a "Fork from here" side panel ────────────────────────
      A right-docked overlay (same shell + open/close animation as History) that
@@ -5139,10 +4982,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           '<div class="panel-more-wrap wt-more-wrap">' +
             '<button type="button" class="panel-more-btn wt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
             '<div class="topbar-popover hidden wt-more-pop" role="menu">' +
-              (turnsStickyToggle
-                ? '<button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle' + (turnsStickyDefault ? ' is-on' : '') + '" data-turns-act="sticky" role="menuitemcheckbox" aria-checked="' + (turnsStickyDefault ? 'true' : 'false') + '"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>' +
-                  '<div class="topbar-menu-divider"></div>'
-                : '') +
+              '<button type="button" class="topbar-menu-item" data-turns-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>' +
+              '<div class="topbar-menu-divider"></div>' +
               '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-turns-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close panel</span></button>' +
             '</div>' +
           '</div>' +
@@ -5207,20 +5048,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         const it = e.target.closest('[data-turns-act]');
         if (!it) return;
         const act = it.getAttribute('data-turns-act');
-        /* "Sticky module" is a settings switch — flip it and keep the menu open
-           so its state reads back (mirrors the result panes' sticky toggle). */
-        if (act === 'sticky') {
-          e.stopPropagation();
-          setTurnsSticky(!turnsSticky);
-          return;
-        }
         closeTMore();
         if (act === 'close') closeTurns();
+        else if (act === 'share') { if (typeof opts.onShare === 'function') opts.onShare(); }
       });
       document.addEventListener('click', (e) => { if (!tMorePop.classList.contains('hidden') && !tMoreWrap.contains(e.target) && !tMorePop.contains(e.target)) closeTMore(); });
     }
-    /* Apply the sticky module default (ON tucks it behind the chat). */
-    if (turnsStickyToggle) setTurnsSticky(turnsSticky);
+    /* Sticky is the only module style now — permanently tuck the docked Turns
+       module in behind the chat (no toggle). */
+    setTurnsSticky(true);
 
     /* Row actions: fork / jump / share / note. */
     turnsPanel.addEventListener('click', (e) => {
@@ -5307,7 +5143,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const container = resolveEl(opts.turnsBreakoutContainer) || rootEl.parentElement;
       const anchor = resolveEl(opts.turnsBreakoutAnchor) || rootEl;
       if (container) {
-        if (anchor && anchor.parentElement === container && anchor.nextSibling) container.insertBefore(turnsPanel, anchor.nextSibling);
+        /* Far-right dock: make Turns the last module in the row so it always
+           sits to the right of any open output modules (result / visual panes),
+           tucking behind the last one as the next layered-down drawer. Output
+           panes keep their fixed slot in the DOM, so once Turns is last it stays
+           rightmost no matter which panes open later. */
+        if (turnsBreakoutFarRight) container.appendChild(turnsPanel);
+        else if (anchor && anchor.parentElement === container && anchor.nextSibling) container.insertBefore(turnsPanel, anchor.nextSibling);
         else if (anchor && anchor.parentElement === container) container.appendChild(turnsPanel);
         else container.appendChild(turnsPanel);
       }
@@ -5607,15 +5449,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     streamOn = !(e && e.detail && e.detail.on === false);
     syncStreamMenu();
   });
-  /* Sync the "Activity strip" switch to the shared on/off state. Called on
-     mount and whenever anything flips it (this menu, another chat's menu, or
-     the Appearance popover — all via the wise:activity-strip event). */
+  /* Sync the "Activity strip" switch + its Left/Right side segment to the
+     shared state. Called on mount and whenever anything changes either (this
+     menu, another chat's menu, or the Appearance popover — all via the
+     wise:activity-strip event). The side segment dims while the strip is off. */
   function syncActivityStripMenu() {
     const item = rootEl.querySelector('[data-sc="activity-strip"]');
     if (!item) return;
     const on = isActivityStripOn();
     item.classList.toggle('is-on', on);
     item.setAttribute('aria-checked', on ? 'true' : 'false');
+    const detail = rootEl.querySelector('.sc-actside-detail');
+    if (detail) detail.classList.toggle('is-disabled', !on);
+    const side = getActivityStripSide();
+    rootEl.querySelectorAll('[data-sc="activity-strip-side"]').forEach((el) => {
+      const active = el.dataset.actside === side;
+      el.classList.toggle('is-on', active);
+      el.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
   }
   document.addEventListener('wise:activity-strip', syncActivityStripMenu);
   /* Re-flow both flanking modules to the sticky (equal, narrower) or normal base
@@ -5860,6 +5711,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function sendIntent(intent, label) {
     if (!intent) return;
     if (intent === 'choose_agents') { openAgents(); return; }
+    if (intent === ASK_HELP_INTENT) openAskHelp();
     const found = intents.find((c) => c && c.intent === intent);
     const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
@@ -5955,6 +5807,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       stripSelectors: ['.sc-inline-chips', '.sc-line-typing', '.sc-line-trace'],
       setHTML: (html) => {
         messages.innerHTML = html || '';
+        /* Retire the welcome-only DNA/RNA helix field the same way hideWelcome()
+           does — otherwise restoring a saved thread leaves `sc-bganim-live` on
+           the host and the animated background bleeds through behind the restored
+           transcript (it only draws while the welcome is up, but nothing stops it
+           on this path). */
+        bgAnim.stop();
         welcome?.classList.add('sc-hidden');
         if (welcome) welcome.style.display = '';
         closeAgents();
@@ -5998,6 +5856,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* "Choose Agents" opens the in-chat settings panel rather than starting a
        chat turn — it's a control, not a question. */
     if (def.intent === 'choose_agents') { openAgents(); return; }
+    if (def.intent === ASK_HELP_INTENT) openAskHelp();
     markIntentUsed(def.intent);
     hideWelcome();
     addUser(text);
@@ -6017,6 +5876,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
+    if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
@@ -6189,6 +6049,29 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        click that lands on the trigger is handled by its own toggle above. */
     if (!e.target.closest('.sc-fb-more-wrap')) closeMoreMenus();
   });
+  /* Hover-reveal for the three-dot menu — the timestamp + turn controls spill
+     open as soon as the pointer lands on the "more" control (no tooltip, no
+     click needed). A short close delay bridges the small gap between the
+     trigger and the floating menu so moving into it never flickers it shut. */
+  let scMoreCloseTimer = null;
+  messages?.addEventListener('mouseover', (e) => {
+    const wrap = e.target.closest('.sc-fb-more-wrap');
+    if (!wrap) return;
+    clearTimeout(scMoreCloseTimer);
+    const menu = wrap.querySelector('.sc-fb-menu');
+    if (menu && menu.hidden) {
+      closeMoreMenus();
+      menu.hidden = false;
+      const btn = wrap.querySelector('.sc-fb-more');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+  messages?.addEventListener('mouseout', (e) => {
+    const wrap = e.target.closest('.sc-fb-more-wrap');
+    if (!wrap || wrap.contains(e.relatedTarget)) return;
+    clearTimeout(scMoreCloseTimer);
+    scMoreCloseTimer = setTimeout(closeMoreMenus, 180);
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeReasonPopovers(); closeMoreMenus(); }
   });
@@ -6266,6 +6149,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
     if (def.intent === 'choose_agents') { openAgents(); return; }
+    if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
@@ -6434,7 +6318,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });
 
-  /* "What can I ask?" link (below-input, left) — opens the empty help panel. */
+  /* "What can I ask?" link (below-input, left) — opens the in-chat help panel
+     (break-out-able as a sticky module). The gold chip still also posts a
+     page-specific transcript listing. */
   const askHelpBtn = rootEl.querySelector(`#${id}-ask-help`);
   askHelpBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -6534,8 +6420,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }));
   }
 
-  /* The currently active database + the in-input trigger label that names it. */
-  let currentDbId = defaultDbItem() ? defaultDbItem().id : null;
+  /* The in-input trigger label naming the active database (currentDbId itself
+     is declared up by pickSourceName, which needs it before this wiring runs). */
   const flDbLabelEl = rootEl.querySelector(`#${id}-fl-db-label`);
 
   /* Has the conversation actually started? The very first database pick (before
@@ -6550,13 +6436,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      something they did. */
   function addDbChangeNote(prev, next) {
     if (!messages || !next) return;
+    const tid = makeTurnId();
     const body = prev
       ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
       + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span>`
-      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     scrollDown(true); /* fresh user action — always bring the marker into view */
     refreshDockedTurns();
@@ -6865,6 +6752,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       applyActivityStrip(!isActivityStripOn());
       syncActivityStripMenu();
     }
+    else if (action === 'activity-strip-side') {
+      /* Pick which edge the rail pins to (left = default, right = opt-in).
+         Keep the menu open so the segment selection reads back immediately;
+         setActivityStripSide persists the choice and broadcasts
+         wise:activity-strip so every open menu follows. */
+      setActivityStripSide(item.dataset.actside);
+      syncActivityStripMenu();
+    }
     else if (action === 'toggle-cards') {
       /* Switch row — keep the menu open so the flipped state reads back. */
       cardsHidden = !cardsHidden;
@@ -7059,7 +6954,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      trace as a chip-driven turn before posting the given reply, so hosts that
      post their own answers (bridged engines, board mirrors) never skip the
      thinking stream the way a raw addWISEcodeAI would. */
-  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => askDocked, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
 }
 
 /* ------------------------------------------------------------------ */
@@ -7326,6 +7221,114 @@ export function wireStandardChatMenu(cfg = {}) {
   syncStream();
 
   const api = { stream: () => ({ on: streamOn, level: streamLevel }) };
+
+  /* ── History & Projects — the shared sticky History module ──────────────────
+     Opt-in via cfg.history so EVERY chat module (not just the flagship shared
+     one) can open + view the same docked sticky History drawer from its three-
+     dot menu. When enabled we:
+       • inject a "History & Projects" switch row at the top of the popover if
+         the page didn't already hardcode one (data-sc="history"),
+       • mount the shared WiseChatHistory as a docked sticky module on the
+         chat's left (parity with pages/wiseai.html + report-guiding-stars),
+       • wire the row to reveal / tuck the module and reflect its state.
+     cfg.history:
+       chatEl        {el|sel} the chat shell (the flex sibling the module docks
+                              beside). Required.
+       messagesEl    {el|sel} the transcript node (default '#chat-messages').
+       container     {sel}    the modules row (default '#modules-row').
+       storageKey    {str}    per-surface history store key.
+       onNew         {fn?}    "Start new conversation" handler (falls back to
+                              clicking a [data-ap="restart"] control if present).
+       seed / seedVersion / stripSelectors / breakoutWidth / stickyWidth /
+       mcpFilter                as WiseChatHistory.mount(). */
+  if (cfg.history && window.WiseChatHistory) {
+    const h = cfg.history;
+    const chatEl = (typeof h.chatEl === 'string') ? document.querySelector(h.chatEl) : h.chatEl;
+    const msgSel = h.messagesEl || '#chat-messages';
+    const messagesNode = (typeof msgSel === 'string') ? (chatEl || document).querySelector(msgSel) : msgSel;
+    if (chatEl && messagesNode) {
+      /* Inject the menu row when the page didn't hardcode it — placed at the top
+         of the popover, above the standard rows, matching the flagship menus. */
+      let histItem = pop.querySelector('[data-sc="history"]');
+      if (!histItem) {
+        histItem = document.createElement('button');
+        histItem.type = 'button';
+        histItem.className = 'topbar-menu-item sc-mcp-item';
+        histItem.setAttribute('data-sc', 'history');
+        histItem.setAttribute('role', 'menuitemcheckbox');
+        histItem.setAttribute('aria-checked', 'false');
+        histItem.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span>' +
+          '<span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+        const divider = document.createElement('div');
+        divider.className = 'topbar-menu-divider';
+        pop.insertBefore(divider, pop.firstChild);
+        pop.insertBefore(histItem, pop.firstChild);
+      }
+
+      const containerSel = h.container || '#modules-row';
+      const ctrl = window.WiseChatHistory.mount(chatEl, {
+        storageKey: h.storageKey || ('wise-chat-history:' + location.pathname),
+        messagesEl: messagesNode,
+        paneHost: messagesNode.parentElement,
+        stripSelectors: h.stripSelectors || ['.sc-line-typing'],
+        seed: h.seed,
+        seedVersion: h.seedVersion || 0,
+        onNew: () => {
+          if (typeof h.onNew === 'function') { h.onNew(); return; }
+          /* No explicit handler → mirror the page's own "Start new conversation"
+             so restoring the fresh slate stays consistent. */
+          const restart = chatEl.querySelector('[data-ap="restart"]') || document.querySelector('[data-ap="restart"]');
+          if (restart) restart.click();
+        },
+        /* History docks as its own STICKY module on the chat's left — never an
+           in-chat overlay. Starts tucked behind the chat; the switch reveals it. */
+        breakout: true,
+        breakoutWidth: h.breakoutWidth || 300,
+        stickyWidth: h.stickyWidth || 280,
+        breakoutDefault: true,
+        dockedControls: true,
+        breakoutStartHidden: true,
+        breakoutContainer: containerSel,
+        breakoutAnchor: chatEl,
+        mcpFilter: h.mcpFilter === true,
+      });
+
+      /* Sticky is the only module style (same as wiseai.html / guiding-stars). */
+      const row = document.querySelector(containerSel);
+      if (row) row.classList.add('modules-sticky');
+      chatEl.classList.add('wch-chat-anchor');
+      try { ctrl.setSticky(true); } catch (_) {}
+
+      const syncHistItem = () => {
+        const el = ctrl && ctrl.root;
+        let on = false;
+        if (el && !el.classList.contains('wch-dock-conceal')) {
+          on = (ctrl.isDocked && ctrl.isDocked())
+            ? !el.classList.contains('wch-docked-hidden')
+            : (ctrl.isOpen ? ctrl.isOpen() : false);
+        }
+        setSwitch(histItem, on);
+      };
+      histItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ctrl.toggle();
+        syncHistItem();
+      });
+      /* Re-sync the switch whenever the three-dot menu is opened. */
+      const moreBtn = pop.closest('.panel-more-wrap') && pop.closest('.panel-more-wrap').querySelector('.panel-more-btn');
+      if (moreBtn) moreBtn.addEventListener('click', syncHistItem);
+      syncHistItem();
+
+      /* Expose so page code / sibling menus can drive + reflect it (parity with
+         the toggleWISEcodeAIHistoryModule global on the flagship pages). */
+      window.__wiseChatHistory = ctrl;
+      if (typeof window.toggleWISEcodeAIHistoryModule !== 'function') {
+        window.toggleWISEcodeAIHistoryModule = (e) => { if (e) e.stopPropagation(); ctrl.toggle(); syncHistItem(); };
+      }
+      api.history = ctrl;
+    }
+  }
+
   pop.__wiseStdMenuWired = api;
   return api;
 }

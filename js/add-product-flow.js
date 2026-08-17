@@ -27,6 +27,17 @@
     try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
     catch (_) { return ''; }
   }
+  /* Per-letter spans for the staggered gold shimmer on "What can I ask?"
+     (same as shimmerLetters in js/wiseai-chat.js). Spaces become real
+     .sc-ask-sp elements — flex containers drop bare whitespace text nodes,
+     which would scrunch the label into "WhatcanIask?". */
+  function shimmerLetters(label) {
+    return String(label).split('').map((ch, i) =>
+      ch === ' '
+        ? '<span class="sc-ask-sp"> </span>'
+        : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
+    ).join('');
+  }
   const OWL = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
 
   /* ─────────────────────────── model ─────────────────────────── */
@@ -61,6 +72,17 @@
     NF_ROWS.concat(NF_MICRO).forEach((r) => { nf[r.key] = { amt: '', dv: '' }; });
     return nf;
   }
+  /* Deep-copy an NFP so a pack starts seeded from the base product but edits
+     independently (packs share the base label, only pack-level values differ). */
+  function cloneNf(src) {
+    src = src || {};
+    const nf = { servingsPer: src.servingsPer || '', servingSize: src.servingSize || '', calories: src.calories || '' };
+    NF_ROWS.concat(NF_MICRO).forEach((r) => {
+      const v = src[r.key] || { amt: '', dv: '' };
+      nf[r.key] = { amt: v.amt || '', dv: v.dv || '' };
+    });
+    return nf;
+  }
 
   const state = {
     step: null,
@@ -73,6 +95,7 @@
     activeImage: 0,
     packs: [],            // size / pack formats: {label,size,image,upc,servingsPer,servingSize,calories}
     activePack: 0,        // highlighted pack thumbnail
+    view: 'product',      // which tab the Product Images / Pack Formats strip is filtering to: 'product' (base) or 'pack' (activePack)
     category: '',
     ingredients: '',
     allergens: [],        // ['Wheat','Soy']
@@ -85,6 +108,7 @@
     awaiting: null,       // field the chat input is currently capturing
     saved: false,
     nfpWide: false,       // false = single pane; true = double-pane (photo column)
+    nfpCompare: false,    // ⋯ menu → show every format side by side (compare matrix)
   };
 
   const ALLERGEN_EMOJI = {
@@ -127,10 +151,10 @@
   const STEPS = [
     { id: 'photo', label: 'Product photo', icon: 'photo_camera' },
     { id: 'category', label: 'Category', icon: 'category' },
-    { id: 'ingredients', label: 'Ingredients', icon: 'receipt_long' },
-    { id: 'nutrition', label: 'Nutrition Facts', icon: 'monitoring' },
-    { id: 'allergens', label: 'Allergens', icon: 'health_and_safety' },
     { id: 'upc', label: 'UPC / barcode', icon: 'qr_code_2' },
+    { id: 'nutrition', label: 'Nutrition Facts', icon: 'monitoring' },
+    { id: 'ingredients', label: 'Ingredients', icon: 'receipt_long' },
+    { id: 'allergens', label: 'Allergens', icon: 'health_and_safety' },
     { id: 'photos', label: 'Additional photos', icon: 'collections' },
     { id: 'save', label: 'Save to portfolio', icon: 'inventory_2' },
   ];
@@ -164,12 +188,16 @@
   }
   function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('sc-hidden'); }
 
-  /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
-     signature is kept so the timestamp / chip reveal chain runs unchanged. */
   const prefersReducedMotion = (() => {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
   })();
+  /* ── Reply reveal ─────────────────────────────────────────────────────────
+     Word-by-word text animation is OFF app-wide — this mirrors the shared chat
+     module's typeInLine (js/wiseai-chat.js), where the per-word reveal was
+     removed so every WISEcodeAI answer lands whole. The signature + `done`
+     callback are kept so the downstream reveal chain (timestamp, reply chips)
+     keeps firing in the same order; only the text no longer types in. */
   function typeInLine(bodyEl, done) {
     scrollDown();
     if (done) done();
@@ -316,7 +344,10 @@
       if (i % 2 === 0) bars.push(`<rect x="${x}" y="0" width="${w}" height="${H}" fill="#111"/>`);
       x += w + ((d % 3) === 0 ? 1 : 0.5);
     }
-    return `<svg class="nfp-barcode-svg" width="${Math.min(x, 220)}" height="${H}" viewBox="0 0 ${x} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars.join('')}</svg>`;
+    /* Render at the barcode's natural 1:1 size (viewBox === width/height) so the
+       bars never stretch; CSS max-width:100% scales it down proportionally when
+       the pill it sits in is narrower. */
+    return `<svg class="nfp-barcode-svg" width="${x}" height="${H}" viewBox="0 0 ${x} ${H}" aria-hidden="true">${bars.join('')}</svg>`;
   }
 
   function editSpan(fieldPath, value, placeholder) {
@@ -342,7 +373,7 @@
     'Vegetables, Dry Snacks',
   ];
   function useCatDropdown() {
-    return !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
+    return !!(typeof window !== 'undefined' && (window.WISE_HERO_BRAND || window.WISE_HERO_BRANDROW));
   }
   /* One self-contained dropdown (a native <select>, so it escapes the hero's
      overflow:hidden clipping) that replaces the old chip + separate "Change"
@@ -375,12 +406,62 @@
       : `<button type="button" class="${btnCls}" data-nfp="cat-edit"><span class="material-symbols-outlined">add</span>Add category <span class="nfp-req">*</span></button>`;
     return `<div class="nfp-hero-cat">${inner}</div>${note}`;
   }
-  function heroUpcHTML(onPhoto) {
-    if (!state.upc) {
-      const btnCls = onPhoto ? 'nfp-mini-btn nfp-mini-btn--onphoto' : 'nfp-mini-btn';
-      return `<div class="nfp-hero-upc"><button type="button" class="${btnCls}" data-nfp="upc-edit"><span class="material-symbols-outlined">qr_code_2</span>Add a UPC</button></div>`;
+  /* Segmented UPC-A entry — one box per digit, grouped the way the number
+     physically breaks down: 1 (number system) · 5 (manufacturer) · 5 (product)
+     · 1 (check digit), with a wider gap between each section (like an SSN or a
+     verification code). Above the boxes sits an empty barcode "slot" that is
+     kept in the layout from the start and pre-fills with the real barcode once
+     all 12 digits are entered. `packIdx` (a number) binds it to a pack format;
+     leave it null for the base product. */
+  /* Full-width, stylized barcode that fills the top of the UPC card. When all 12
+     digits are known it renders the real bars (from the digits); before that it
+     shows a faded placeholder in the exact same footprint so nothing shifts. The
+     SVG stretches to the card width (preserveAspectRatio=none) so it always reads
+     as a big barcode, not the tiny centered pill. */
+  function upcBarcodeBig(digits) {
+    const raw = String(digits || '').replace(/\D/g, '');
+    if (raw.length !== 12) return '<div class="nfp-upc-preview" aria-hidden="true"></div>';
+    let x = 0; const bars = []; const H = 100;
+    for (let i = 0; i < raw.length * 6; i++) {
+      const d = Number(raw[i % raw.length]);
+      const w = (d % 4) + 1;
+      if (i % 2 === 0) bars.push(`<rect x="${x}" y="0" width="${w}" height="${H}"/>`);
+      x += w + ((d % 3) === 0 ? 1 : 0.6);
     }
-    return `<div class="nfp-hero-upc nfp-rupc">${barcodeSVG(state.upc)}<div class="nfp-rupc-num">${editSpan('upc', formatUpc(state.upc), 'UPC digits')}</div></div>`;
+    return `<svg class="nfp-upc-bc" width="100%" height="100%" viewBox="0 0 ${x} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars.join('')}</svg>`;
+  }
+  /* One UPC look for every state (empty · editing · complete): a large stylized
+     barcode across the top of a white card, and the 12 digits below it as
+     individual mono line-inputs grouped 1·5·5·1 (UPC-A). Empty shows the same
+     card with a faded barcode and blank slots; a complete code pre-fills the
+     slots and swaps in the real bars — no separate UI, no layout shift. Editing
+     any digit in place re-commits once all 12 are present. `packIdx` binds it to
+     a pack format; leave it null for the base product. */
+  function upcSegmentedHTML(onPhoto, packIdx, digits) {
+    const isPack = packIdx != null;
+    const raw = String(digits || '').replace(/\D/g, '');
+    const filled = raw.length === 12;
+    /* Flat row of 12 equal-flex cells (every digit identical width). The UPC-A
+       sections 1·5·5·1 are shown with a wider gap before the cells that start a
+       new section (indices 1, 6, 11) — a fixed margin that never changes the
+       cells' shared width, so inner digits are no longer squeezed. */
+    const sectionStarts = { 1: true, 6: true, 11: true };
+    let cellsHTML = '';
+    for (let idx = 0; idx < 12; idx++) {
+      const v = filled ? raw[idx] : '';
+      const cellCls = 'nfp-upc-cell'
+        + (onPhoto ? ' nfp-upc-cell--onphoto' : '')
+        + (sectionStarts[idx] ? ' nfp-upc-cell--sep' : '');
+      cellsHTML += `<input type="text" inputmode="numeric" autocomplete="off" maxlength="1" class="${cellCls}" data-nfp-upc-cell data-idx="${idx}" value="${v}" aria-label="UPC digit ${idx + 1}">`;
+    }
+    const wrapCls = 'nfp-upc-entry' + (onPhoto ? ' nfp-upc-entry--onphoto' : '') + (filled ? ' nfp-upc-entry--filled' : '');
+    return `<div class="${wrapCls}" data-nfp-upc-entry${isPack ? ` data-pack="${packIdx}"` : ''}>
+        <div class="nfp-upc-barcode">${upcBarcodeBig(raw)}</div>
+        <div class="nfp-upc-cells" role="group" aria-label="UPC — 12 digits">${cellsHTML}</div>
+      </div>`;
+  }
+  function heroUpcHTML(onPhoto) {
+    return `<div class="nfp-hero-upc nfp-hero-upc--seg">${upcSegmentedHTML(onPhoto, null, state.upc)}</div>`;
   }
 
   /* Combined hero — one container holding the product photo (or the upload
@@ -424,21 +505,33 @@
     const iconEdit = wantHeroBrand || wantBrandRow;
     const stack = `<div class="nfp-hero-stack${onPhoto ? '' : ' nfp-hero-stack--light'}">
         <div class="nfp-hero-name">${editSpan('productName', state.productName, 'Product name')}</div>
-        ${heroCatHTML(onPhoto)}
-        ${heroUpcHTML(onPhoto)}
+        <div class="nfp-hero-actionrow">
+          ${heroCatHTML(onPhoto)}
+          ${heroUpcHTML(onPhoto)}
+        </div>
       </div>`;
     if (!onPhoto) {
       return `<div class="nfp-hero nfp-hero--rich nfp-hero--empty">
-        <div class="nfp-hero-empty" data-nfp="upload-main">
-          <span class="material-symbols-outlined">add_a_photo</span>
-          <span class="neh-t">Add a product photo</span>
-          <span class="neh-d">Upload, take a photo, or paste a URL</span>
+        <div class="nfp-hero-edit-tag">
+          <span class="nfp-hero-edit-tag-label">Product image</span>
+          <button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-main" title="Add product image" aria-label="Add product image"><span class="material-symbols-outlined">edit</span></button>
         </div>
-        ${stack}
+        <div class="nfp-hero-empty nfp-hero-photo-input">
+          <div class="nfp-hero-name nfp-hero-name--head">${editSpan('productName', state.productName, 'Add product name')}</div>
+        </div>
+        <div class="nfp-hero-stack nfp-hero-stack--light">
+          <div class="nfp-hero-actionrow">
+            ${heroCatHTML(onPhoto)}
+            ${heroUpcHTML(onPhoto)}
+          </div>
+        </div>
       </div>`;
     }
     const heroEdit = iconEdit
-      ? `<button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-main" title="Replace photo" aria-label="Replace photo"><span class="material-symbols-outlined">edit</span></button>`
+      ? `<div class="nfp-hero-edit-tag">
+          <span class="nfp-hero-edit-tag-label">Product image</span>
+          <button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-main" title="Replace product image" aria-label="Replace product image"><span class="material-symbols-outlined">edit</span></button>
+        </div>`
       : `<button type="button" class="nfp-hero-edit" data-nfp="upload-main"><span class="material-symbols-outlined">photo_camera</span>Replace</button>`;
     /* Legacy top-right monogram badge (view-product); the new brand row lives
        bottom-left and includes the Brand-Claimed chip. */
@@ -452,6 +545,60 @@
       ${heroEdit}
       ${heroLogoTR}
       ${brandRow}
+      ${stack}
+    </div>`;
+  }
+
+  /* Pack-format hero — the same rich hero the base product uses, but bound to a
+     single pack's photo, size/count label and UPC. Shown below the strip when a
+     Pack Format tab is the active filter, so the whole content area reflects the
+     selected format (its photo, its Nutrition Facts) instead of the base one. */
+  function packUpcHTML(i, onPhoto) {
+    const p = state.packs[i];
+    /* By default a size carries the same barcode as the single count: when the
+       size has no code of its own, reuse the base UPC (with a small note) so the
+       same barcode is shown. Editing any digit gives the size its own code. */
+    const reuse = !p.upc && !!state.upc;
+    const digits = p.upc || state.upc;
+    const note = reuse ? `<div class="nfp-pack-upc-note">Same as 1 ct</div>` : '';
+    return `<div class="nfp-hero-upc nfp-hero-upc--seg">${note}${upcSegmentedHTML(onPhoto, i, digits)}</div>`;
+  }
+  function packHeroHTML(i) {
+    const p = state.packs[i];
+    const img = p.image || state.image || '';
+    const onPhoto = !!img;
+    const wantBrandRow = !!(typeof window !== 'undefined' && window.WISE_HERO_BRANDROW);
+    const stack = `<div class="nfp-hero-stack${onPhoto ? '' : ' nfp-hero-stack--light'}">
+        <div class="nfp-hero-name">${editSpan('productName', state.productName, 'Product name')}</div>
+        <div class="nfp-hero-brand">${editSpan('packs.' + i + '.label', p.label, 'Pack size / count')}</div>
+        <div class="nfp-hero-actionrow">
+          ${packUpcHTML(i, onPhoto)}
+        </div>
+      </div>`;
+    if (!onPhoto) {
+      /* Exact same shape as the single-count (base) empty hero: the Product
+         image icon pinned top-right, a size/count input as the headline, and
+         the UPC below (reused from the single count by default). */
+      return `<div class="nfp-hero nfp-hero--rich nfp-hero--empty">
+        <div class="nfp-hero-edit-tag">
+          <span class="nfp-hero-edit-tag-label">Product image</span>
+          <button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-pack" data-arg="${i}" title="Add product image" aria-label="Add product image"><span class="material-symbols-outlined">edit</span></button>
+        </div>
+        <div class="nfp-hero-empty nfp-hero-photo-input">
+          <div class="nfp-hero-name nfp-hero-name--head">${editSpan('packs.' + i + '.label', p.label, 'Add pack size or count')}</div>
+        </div>
+        <div class="nfp-hero-stack nfp-hero-stack--light">
+          <div class="nfp-hero-actionrow">
+            ${packUpcHTML(i, false)}
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div class="nfp-hero nfp-hero--rich">
+      <img class="nfp-hero-img" src="${esc(img)}" alt="" onerror="this.src='https://placehold.co/300x260/1A2339/ffffff?text=Product'">
+      <div class="nfp-hero-scrim" aria-hidden="true"></div>
+      <button type="button" class="nfp-hero-edit nfp-hero-edit--icon" data-nfp="upload-pack" data-arg="${i}" title="Replace photo" aria-label="Replace photo"><span class="material-symbols-outlined">edit</span></button>
+      ${wantBrandRow ? heroBrandRowHTML() : ''}
       ${stack}
     </div>`;
   }
@@ -471,64 +618,53 @@
     </div>`;
   }
 
-  function foodIdentityHTML() {
-    const all = [];
-    if (state.image) all.push({ src: state.image, label: 'Primary' });
-    state.images.forEach((im) => all.push(im));
-    const thumbs = all.map((im, i) => `
-      <div class="nfp-fi-thumb${i === state.activeImage ? ' active' : ''}" data-nfp="pick-image" data-arg="${i}" title="${esc(im.label || 'Photo')}">
-        <img class="nfp-fi-thumb-img" src="${esc(im.src)}" alt="${esc(im.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">
-        <span class="nfp-fi-thumb-label">${esc(im.label || 'Photo')}</span>
-      </div>`).join('');
-    return `<div class="nfp-fi">
-      <div class="nfp-fi-header">
-        <span class="nfp-fi-title">Product Images</span>
-        <span class="nfp-fi-badge">${all.length} ${all.length === 1 ? 'image' : 'images'}</span>
-      </div>
-      <div class="nfp-fi-thumbs">
-        ${thumbs}
-        <div class="nfp-fi-add" data-nfp="add-image" title="Add another image"><span class="material-symbols-outlined">add</span></div>
-      </div>
-    </div>`;
-  }
-
-  /* Pack Formats — an additional section (below Product Images) for products
-     that ship in multiple size / pack formats. It mirrors the Product Images
-     thumb + add layout: each format is a thumbnail (its own photo, falling back
-     to a pack icon) with the size/count label, plus an add button that runs the
-     same add-a-product flow for a new pack. The section always renders so a
-     format can be added from the default add-product panel; when empty it shows
-     just the add button with a short hint. */
-  function packFormatsHTML() {
+  /* Product sizes — one section across the top. It starts with the default
+     "Single unit" (the base product itself), then any additional quantities
+     (multipacks / larger sizes) the user adds. The product photo is handled by
+     the hero thumbnail control, so there's no separate Product Images column. */
+  function productSizesGroupHTML() {
+    const unitActive = state.view === 'product';
+    const unitThumb = `
+      <div class="nfp-fi-thumb${unitActive ? ' active' : ''}" data-nfp="pick-image" data-arg="0" title="1 ct (default)">
+        ${state.image
+          ? `<img class="nfp-fi-thumb-img" src="${esc(state.image)}" alt="1 ct" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
+          : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">nutrition</span></span>`}
+        <span class="nfp-fi-thumb-label">1 ct</span>
+      </div>`;
     const thumbs = state.packs.map((p, i) => `
-      <div class="nfp-fi-thumb${i === state.activePack ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Pack')}">
+      <div class="nfp-fi-thumb${(state.view === 'pack' && i === state.activePack) ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Size')}">
         ${p.image
           ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(p.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
           : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
-        <span class="nfp-fi-thumb-label">${esc(p.label || 'Pack')}</span>
+        <span class="nfp-fi-thumb-label">${esc(p.label || 'Size')}</span>
       </div>`).join('');
-    const badge = state.packs.length
-      ? `<span class="nfp-fi-badge">${state.packs.length} ${state.packs.length === 1 ? 'format' : 'formats'}</span>`
-      : '';
     const hint = state.packs.length
       ? ''
-      : `<div class="nfp-pack-caption">Add each size or multipack this product ships in.</div>`;
-    return `<div class="nfp-fi nfp-fi--packs">
-      <div class="nfp-fi-header">
-        <span class="nfp-fi-title">Pack Formats</span>
-        ${badge}
-      </div>
-      <div class="nfp-fi-thumbs">
-        ${thumbs}
-        <div class="nfp-fi-add" data-nfp="add-pack" title="Add a pack format"><span class="material-symbols-outlined">add</span></div>
-      </div>
+      : `<div class="nfp-pack-caption">Starts with a single unit — add any multipacks or larger quantities this product also ships in.</div>`;
+    return `<div class="nfp-fi-group nfp-fi-group--packs">
+      <div class="nfp-fi-header"><span class="nfp-fi-title">Add Product Sizes</span></div>
       ${hint}
+      <div class="nfp-fi-thumbs">
+        ${unitThumb}
+        ${thumbs}
+        <div class="nfp-fi-add" data-nfp="add-pack" title="Add another quantity"><span class="material-symbols-outlined">add</span></div>
+      </div>
     </div>`;
   }
+  /* Single-pane: the Product sizes section across the top. */
+  function imagesAndPacksHTML() {
+    return `<div class="nfp-fi">${productSizesGroupHTML()}</div>`;
+  }
+  /* Wide (two-pane): the same Product sizes section in the left column. */
+  function packFormatsHTML() {
+    return `<div class="nfp-fi nfp-fi--packs">${productSizesGroupHTML()}</div>`;
+  }
 
-  function nfRowHTML(r) {
-    const val = state.nf[r.key] || { amt: '', dv: '' };
-    const errKey = 'nf.' + r.key;
+  function nfRowHTML(r, nf, prefix) {
+    nf = nf || state.nf;
+    prefix = prefix || 'nf';
+    const val = nf[r.key] || { amt: '', dv: '' };
+    const errKey = prefix + '.' + r.key;
     const err = state.errors[errKey];
     const indCls = r.ind === 1 ? ' nfp-nf-ind1' : r.ind === 2 ? ' nfp-nf-ind2' : '';
     const noB = r.noBorder ? ' nfp-nf-no-b' : '';
@@ -547,23 +683,39 @@
       </div>`;
   }
 
-  function nutritionHTML() {
+  function nutritionHTML(nf, prefix) {
+    nf = nf || state.nf;
+    prefix = prefix || 'nf';
     return `<div class="nfp-nf-panel">
       <div class="nfp-nf-title">Nutrition Facts</div>
       <div class="nfp-nf-serving">
-        <div class="nfp-nf-spc-row">${editSpan('nf.servingsPer', state.nf.servingsPer, '0')} servings per container</div>
-        <div class="nfp-nf-ss-row"><span>Serving size</span><strong>${editSpan('nf.servingSize', state.nf.servingSize, 'e.g. 1 muffin (57g)')}</strong></div>
+        <div class="nfp-nf-spc-row">${editSpan(prefix + '.servingsPer', nf.servingsPer, '0')} servings per container</div>
+        <div class="nfp-nf-ss-row"><span>Serving size</span><strong>${editSpan(prefix + '.servingSize', nf.servingSize, 'e.g. 1 muffin (57g)')}</strong></div>
       </div>
       <div class="nfp-nf-rule8"></div>
       <div class="nfp-nf-cal-band">
         <div class="nfp-nf-cal-left"><span class="nfp-nf-cal-sm">Amount Per Serving</span><span class="nfp-nf-cal-text">Calories</span></div>
-        <span class="nfp-nf-cal-num">${editSpan('nf.calories', state.nf.calories, '0')}</span>
+        <span class="nfp-nf-cal-num">${editSpan(prefix + '.calories', nf.calories, '0')}</span>
       </div>
       <div class="nfp-nf-dv-hdr">% Daily Value*</div>
-      ${NF_ROWS.map(nfRowHTML).join('')}
+      ${NF_ROWS.map((r) => nfRowHTML(r, nf, prefix)).join('')}
       <div class="nfp-nf-rule8"></div>
-      ${NF_MICRO.map(nfRowHTML).join('')}
+      ${NF_MICRO.map((r) => nfRowHTML(r, nf, prefix)).join('')}
       <div class="nfp-nf-footer">* The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.</div>
+    </div>`;
+  }
+
+  /* Editable Nutrition Facts for the currently-selected pack format. A pack's
+     NFP is seeded from the base product (cloneNf) but edits independently, so a
+     multipack can carry its own servings-per-container etc. Rendered only once a
+     pack exists; switching the active pack thumbnail swaps which one shows. */
+  function packNfSectionHTML() {
+    if (!state.packs.length) return '';
+    const i = Math.min(state.activePack, state.packs.length - 1);
+    const p = state.packs[i];
+    if (!p.nf) p.nf = cloneNf(state.nf);
+    return `<div class="nfp-pack-nf" id="pack-nf">
+      ${nutritionHTML(p.nf, 'packs.' + i + '.nf')}
     </div>`;
   }
 
@@ -610,27 +762,23 @@
     </div>`;
   }
   function rUpcHTML() {
-    if (!state.upc) {
-      return `<div class="nfp-rupc nfp-rupc-empty">
-        <button type="button" class="nfp-mini-btn nfp-mini-btn--onphoto" data-nfp="upc-edit"><span class="material-symbols-outlined">qr_code_2</span>Add a UPC</button>
-      </div>`;
-    }
-    return `<div class="nfp-rupc">
-      ${barcodeSVG(state.upc)}
-      <div class="nfp-rupc-num">${editSpan('upc', formatUpc(state.upc), 'UPC digits')}</div>
-    </div>`;
+    return `<div class="nfp-rcol-upc">${upcSegmentedHTML(true, null, state.upc)}</div>`;
   }
   function rightColumnHTML() {
     const all = allImages();
+    const wantBrandRow = !!(typeof window !== 'undefined' && window.WISE_HERO_BRANDROW);
     if (!all.length) {
       /* Keep the name/brand editable before a photo exists, mirroring the
-         single-pane hero and the chat's "type the name" action. */
+         single-pane hero and the chat's "type the name" action. The brand is
+         already known by default, so show the logo + Brand-Claimed chip in the
+         same bottom-left spot they occupy once a photo is added. */
       return `<div class="nfp-rcol-empty">
         <div class="nfp-hero-empty nfp-hero-empty--fill" data-nfp="upload-main">
           <span class="material-symbols-outlined">add_a_photo</span>
           <span class="neh-t">Add a product photo</span>
           <span class="neh-d">Fills the whole right pane</span>
         </div>
+        ${wantBrandRow ? heroBrandRowHTML() : ''}
         <div class="nfp-rcol-foot">
           <div class="nfp-rcol-name">${editSpan('productName', state.productName, 'Product name')}</div>
           ${rUpcHTML()}
@@ -638,7 +786,6 @@
       </div>`;
     }
     const active = all[Math.min(state.activeImage, all.length - 1)];
-    const wantBrandRow = !!(typeof window !== 'undefined' && window.WISE_HERO_BRANDROW);
     return `<div class="nfp-rcol">
       <img class="nfp-rcol-img" src="${esc(active.src)}" alt="" onerror="this.src='https://placehold.co/400x640/1A2339/ffffff?text=Product'">
       <div class="nfp-rcol-scrim" aria-hidden="true"></div>
@@ -652,18 +799,272 @@
     </div>`;
   }
 
+  /* ── Compare view ──────────────────────────────────────────────────────
+     Every format the product ships in, laid out side by side (base product +
+     each pack format), as a product-comparison-style matrix: a left rail of
+     field labels and one read-only column per format so their Nutrition Facts
+     line up. Toggled from the Product Details ⋯ menu. */
+  function compareEntities() {
+    const list = [{
+      key: 'base',
+      name: state.productName || 'Product',
+      sub: 'Base product',
+      img: state.image,
+      upc: state.upc,
+      nf: state.nf,
+    }];
+    state.packs.forEach((p, i) => {
+      if (!p.nf) p.nf = cloneNf(state.nf);
+      list.push({
+        key: 'pack' + i,
+        name: p.label || ('Pack ' + (i + 1)),
+        sub: 'Pack format',
+        img: p.image || state.image,
+        upc: p.upc,
+        nf: p.nf,
+      });
+    });
+    return list;
+  }
+
+  function cmpCell(text, opts) {
+    opts = opts || {};
+    const empty = text === undefined || text === null || text === '';
+    const cls = 'nfp-cmp-cell nfp-cmp-ent'
+      + (opts.baseCol ? ' is-base-col' : '')
+      + (opts.diff ? ' nfp-cmp-diff' : '')
+      + (opts.mono ? ' nfp-cmp-cell--mono' : '');
+    const inner = empty
+      ? '<span class="nfp-cmp-empty">—</span>'
+      : `<span class="nfp-cmp-amt">${esc(String(text))}</span>${opts.dv ? `<span class="nfp-cmp-dv">${esc(opts.dv)} DV</span>` : ''}`;
+    return `<div class="${cls}"><div class="nfp-cmp-val">${inner}</div></div>`;
+  }
+
+  /* Read-only barcode card for a format's UPC column — the same white barcode
+     card the single product view shows (big bars + spaced digits below), so the
+     UPC reads as a real, scannable code inside the comparison too. */
+  function cmpBarcodeCard(e, baseCol) {
+    const raw = String(e.upc || '').replace(/\D/g, '');
+    const cls = 'nfp-cmp-cell nfp-cmp-ent nfp-cmp-bc-cell' + (baseCol ? ' is-base-col' : '');
+    if (raw.length !== 12) {
+      return `<div class="${cls}"><span class="nfp-cmp-empty">—</span></div>`;
+    }
+    return `<div class="${cls}">
+      <div class="nfp-cmp-bc-card">
+        <div class="nfp-cmp-bc">${upcBarcodeBig(raw)}</div>
+        <div class="nfp-cmp-bc-num">${esc(formatUpc(raw))}</div>
+      </div>
+    </div>`;
+  }
+
+  function compareHTML() {
+    const ents = compareEntities();
+    const n = ents.length;
+    const cols = `minmax(104px, 128px) repeat(${n}, minmax(120px, 1fr))`;
+    const base = ents[0];
+
+    const head = `<div class="nfp-cmp-cell nfp-cmp-rail nfp-cmp-head-rail">Format</div>` + ents.map((e) => {
+      const isBase = e.key === 'base';
+      const media = e.img
+        ? `<img class="nfp-cmp-tile-img" src="${esc(e.img)}" alt="" onerror="this.style.display='none'">`
+        : `<span class="nfp-cmp-tile-ph"><span class="material-symbols-outlined">inventory_2</span></span>`;
+      const badge = isBase ? '<span class="nfp-cmp-tile-badge">BASE</span>' : '';
+      return `<div class="nfp-cmp-cell nfp-cmp-ent nfp-cmp-head${isBase ? ' is-base is-base-col' : ''}">
+        <div class="nfp-cmp-tile">
+          ${media}${badge}
+          <div class="nfp-cmp-tile-overlay">
+            <div class="nfp-cmp-tile-name">${esc(e.name || '—')}</div>
+            <div class="nfp-cmp-tile-sub">${esc(e.sub)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    function metricRow(label, getter, o) {
+      o = o || {};
+      const baseVal = getter(base);
+      const cells = ents.map((e) => {
+        const v = getter(e);
+        const diff = e !== base
+          && String(v.text || '') !== String(baseVal.text || '')
+          && !!(v.text || baseVal.text);
+        return cmpCell(v.text, { dv: v.dv, diff, mono: o.mono, baseCol: e === base });
+      }).join('');
+      return `<div class="nfp-cmp-cell nfp-cmp-rail">${esc(label)}</div>${cells}`;
+    }
+
+    let rows = '';
+    rows += metricRow('Serving size', (e) => ({ text: e.nf.servingSize }));
+    rows += metricRow('Servings/container', (e) => ({ text: e.nf.servingsPer }));
+    rows += metricRow('Calories', (e) => ({ text: e.nf.calories }));
+    NF_ROWS.forEach((r) => {
+      rows += metricRow(NF_LABELS[r.key], (e) => {
+        const v = e.nf[r.key] || {};
+        return { text: v.amt, dv: r.noDV ? '' : v.dv };
+      });
+    });
+    NF_MICRO.forEach((r) => {
+      rows += metricRow(NF_LABELS[r.key], (e) => {
+        const v = e.nf[r.key] || {};
+        return { text: v.amt, dv: v.dv };
+      });
+    });
+    rows += `<div class="nfp-cmp-cell nfp-cmp-rail">UPC / Barcode</div>`
+      + ents.map((e) => cmpBarcodeCard(e, e === base)).join('');
+
+    const note = n <= 1
+      ? `<div class="nfp-cmp-note"><span class="material-symbols-outlined">info</span>Only the base product exists so far. Add pack formats (sizes / multipacks) to line them up side by side here.</div>`
+      : '';
+    return `<div class="nfp-cmp">
+      <div class="nfp-cmp-intro">Comparing ${n} ${n === 1 ? 'format' : 'formats'} side by side</div>
+      ${note}
+      <div class="nfp-cmp-scroll">
+        <div class="nfp-cmp-grid" style="grid-template-columns:${cols}">
+          ${head}${rows}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* ── Product Insights row ──────────────────────────────────────────────
+     A summary strip shown below the product image + Nutrition Facts columns —
+     the same idea as the Key Takeaways row at the bottom of
+     pages/product-comparison.html. A "Next step" banner (earn the Non-UPF
+     shield) plus three scorecards: UPF verdict, GRAS status and WISEscore.
+     Content only from the product summary; styling is our own (.nfp-ins-* in
+     add-product.html, reusing the analytics-types debossed stamp discs). */
+  function insightsHTML() {
+    return `<div class="nfp-ins">
+      <div class="nfp-ins-label">Product Insights</div>
+      <div class="nfp-ins-next">
+        <span class="nfp-ins-next-ic" aria-hidden="true"><span class="material-symbols-outlined">gpp_good</span></span>
+        <div class="nfp-ins-next-body">
+          <div class="nfp-ins-next-title">Get the Non-UPF Shield</div>
+          <div class="nfp-ins-next-desc">This product qualifies for Non-UPF verification. Earn the shield so it stands out on retail listings.</div>
+        </div>
+        <a class="nfp-ins-next-btn" href="non-upf-dashboard.html"><span class="material-symbols-outlined">gpp_good</span>Get the Non-UPF Shield</a>
+      </div>
+      <div class="nfp-ins-grid">
+        <div class="nfp-ins-card">
+          <div class="nfp-ins-head">
+            <span class="nfp-ins-lbl">UPF Verdict</span>
+            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">science</span></span>
+          </div>
+          <div class="nfp-ins-val nfp-ins-val--pos">Non-Ultra-Processed</div>
+          <div class="nfp-ins-sub">Minimally Processed</div>
+          <a class="nfp-ins-link" href="non-upf-dashboard.html">Full UPF report <span class="material-symbols-outlined">arrow_outward</span></a>
+        </div>
+        <div class="nfp-ins-card">
+          <div class="nfp-ins-head">
+            <span class="nfp-ins-lbl">GRAS Status</span>
+            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">biotech</span></span>
+          </div>
+          <div class="nfp-ins-val">Unclear</div>
+          <div class="nfp-ins-sub">3 ingredients screened, 1 flagged.</div>
+          <a class="nfp-ins-link" href="gras-verification.html">Full GRAS report <span class="material-symbols-outlined">arrow_outward</span></a>
+        </div>
+        <div class="nfp-ins-card">
+          <div class="nfp-ins-head">
+            <span class="nfp-ins-lbl">WISEscore</span>
+            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">monitoring</span></span>
+          </div>
+          <div class="nfp-ins-val">84 <small>/ 100</small></div>
+          <div class="nfp-ins-sub">Excellent</div>
+          <a class="nfp-ins-link" href="analytics-types.html">Full Insights report <span class="material-symbols-outlined">arrow_outward</span></a>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* Add the "Compare formats side by side" toggle to the Product Details module's
+     ⋯ menu. That menu is built by sticky-modules.js (Share / Copy link / Export)
+     and lives on #nfp-panel (a floating ⋯ pinned to the panel corner), created
+     asynchronously — so we inject once it exists, retrying + observing until then. */
+  function installCompareMenuItem() {
+    const panel = document.getElementById('nfp-panel');
+    if (!panel) return;
+    let done = false;
+    function tryInject() {
+      if (done) return true;
+      const pop = panel.querySelector('.panel-more-wrap .topbar-popover, .pf-module-menu .pf-module-menu-pop');
+      if (!pop) return false;
+      if (pop.querySelector('#nfp-compare-item')) { done = true; return true; }
+      pop.insertAdjacentHTML('beforeend',
+        '<div class="topbar-menu-divider"></div>'
+        + '<button type="button" class="topbar-menu-item sc-mcp-item" id="nfp-compare-item" role="menuitemcheckbox" aria-checked="false">'
+        + '<span class="material-symbols-outlined topbar-menu-icon">view_column</span>'
+        + '<span>Compare formats side by side</span>'
+        + '<span class="sc-switch" aria-hidden="true"></span>'
+        + '</button>');
+      const item = pop.querySelector('#nfp-compare-item');
+      const sync = () => {
+        item.classList.toggle('is-on', state.nfpCompare);
+        item.setAttribute('aria-checked', state.nfpCompare ? 'true' : 'false');
+      };
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.nfpCompare = !state.nfpCompare;
+        sync();
+        /* Close the menu after toggling (mirrors sticky-modules' own closeMenu). */
+        const wrap = pop.closest('.panel-more-wrap, .pf-module-menu');
+        const btn = wrap && wrap.querySelector('.panel-more-btn, .pf-module-menu-btn');
+        pop.classList.add('hidden');
+        if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+        renderNFP();
+      });
+      sync();
+      done = true;
+      return true;
+    }
+    if (tryInject()) return;
+    const obs = new MutationObserver(() => { if (tryInject()) obs.disconnect(); });
+    obs.observe(panel, { childList: true, subtree: true });
+    let tries = 0;
+    const iv = setInterval(() => { if (tryInject() || ++tries > 60) clearInterval(iv); }, 120);
+  }
+
   function renderNFP() {
     if (!nfpBody) return;
+    if (state.nfpCompare) {
+      /* Compare takes precedence over the single/double-pane layout: the whole
+         body becomes the side-by-side matrix of every format. */
+      nfpBody.innerHTML = compareHTML();
+      updateSaveState();
+      return;
+    }
     if (state.nfpWide) {
       /* Double-pane: LEFT = category + Nutrition Facts + ingredients; RIGHT =
          the product photo column with the gallery + UPC overlaid on it. */
       nfpBody.innerHTML =
         `<div class="nfp-cols">
-          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${ingredientsHTML()}${packFormatsHTML()}</div>
+          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${ingredientsHTML()}${packFormatsHTML()}${packNfSectionHTML()}${insightsHTML()}</div>
           <div class="nfp-col-right">${rightColumnHTML()}</div>
         </div>`;
     } else {
-      nfpBody.innerHTML = richHeroHTML() + foodIdentityHTML() + packFormatsHTML() + nutritionHTML() + ingredientsHTML();
+      /* Single-pane: the product identity — the Product Images / Pack Formats
+         strip, the photo, category and UPC barcode — sits in a LEFT column and
+         the Nutrition Facts (+ ingredients) in a RIGHT column once the module
+         is wide enough to read both. Narrow widths (mobile) stack them into a
+         single column. Driven by the .nfp-sp container query in add-product.html
+         so it tracks the MODULE's width, not the viewport. */
+      const strip = imagesAndPacksHTML();
+      let media, facts;
+      if (state.view === 'pack' && state.packs.length) {
+        const i = Math.min(state.activePack, state.packs.length - 1);
+        media = packHeroHTML(i);
+        facts = packNfSectionHTML();
+      } else {
+        media = richHeroHTML();
+        facts = nutritionHTML() + ingredientsHTML();
+      }
+      /* The Product sizes strip spans the top of BOTH columns; the media (photo,
+         category, UPC) and facts (Nutrition Facts) columns sit beneath it. */
+      nfpBody.innerHTML =
+        `<div class="nfp-sp">
+          <div class="nfp-sp-strip">${strip}</div>
+          <div class="nfp-sp-media">${media}</div>
+          <div class="nfp-sp-facts">${facts}</div>
+        </div>${insightsHTML()}`;
     }
     updateSaveState();
   }
@@ -786,6 +1187,79 @@
         <div class="vfp-foot-row vfp-foot-total"><span>Ready to save</span><span class="vfp-foot-amt">${requiredLeft.length === 0 && !nfErrorCount() ? 'Yes' : 'No'}</span></div>
       </div>
     </div>`;
+    /* Re-apply the module's width tier after each re-render (the innerHTML wipe
+       drops the width classes when collapsed and restores them when expanded). */
+    applyProgressWidth();
+  }
+
+  /* ── Progress module width changer (in the ⋯ menu) ──────────────────────
+     A four-tier width control (single / double / triple / fill) lives in the
+     module's three-dot menu rather than a header button — the collapsed rail is
+     too narrow for one, and free drag-resize is disabled for this module
+     (data-pr-lock, set in init) so width is only ever changed from here. The
+     control is hidden while the module is collapsed. */
+  const AP_PW_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  const AP_PW_LABELS = ['Single width', 'Double width', 'Triple width', 'Fill width'];
+  let progressWidthTier = 0;
+  try {
+    const v = parseInt(localStorage.getItem('wise-ap-progress-width') || '0', 10);
+    if (isFinite(v)) progressWidthTier = Math.max(0, Math.min(3, v));
+  } catch (_) {}
+
+  function applyProgressWidth() {
+    if (!progressEl) return;
+    const on = !progressMin;
+    progressEl.classList.toggle('panel-wide', on && progressWidthTier >= 1);
+    progressEl.classList.toggle('panel-triple', on && progressWidthTier >= 2);
+    progressEl.classList.toggle('panel-fill', on && progressWidthTier >= 3);
+    syncProgressWidthItem();
+  }
+
+  function syncProgressWidthItem() {
+    const item = document.getElementById('ap-progress-width-item');
+    if (!item) return;
+    /* No width changer while collapsed. */
+    item.hidden = progressMin;
+    /* Write-only-on-change: this runs from a MutationObserver on the module,
+       and an unconditional textContent assignment replaces the text node even
+       when the string is identical — a fresh childList mutation that re-fires
+       the observer in an infinite microtask loop and freezes the page. */
+    const ic = item.querySelector('.topbar-menu-icon');
+    if (ic && ic.textContent !== AP_PW_ICONS[progressWidthTier]) ic.textContent = AP_PW_ICONS[progressWidthTier];
+    const lbl = item.querySelector('.ap-pw-label');
+    if (lbl && lbl.textContent !== AP_PW_LABELS[progressWidthTier]) lbl.textContent = AP_PW_LABELS[progressWidthTier];
+    const title = 'Panel width — ' + AP_PW_LABELS[progressWidthTier].toLowerCase();
+    if (item.title !== title) item.title = title;
+  }
+
+  /* Inject the width row into the ⋯ menu that sticky-modules.js builds for this
+     module (same menu that hosts Share / Copy link / Export / Remove panel).
+     renderProgress() wipes the header — and that menu — on every re-render, so a
+     persistent observer re-injects the row whenever the menu reappears. */
+  function installProgressWidthMenu() {
+    if (!progressEl) return;
+    function tryInject() {
+      const pop = progressEl.querySelector('.panel-more-wrap .topbar-popover');
+      if (!pop) return;
+      if (pop.querySelector('#ap-progress-width-item')) { syncProgressWidthItem(); return; }
+      pop.insertAdjacentHTML('afterbegin',
+        '<button type="button" class="topbar-menu-item" id="ap-progress-width-item" role="menuitem">'
+        + '<span class="material-symbols-outlined topbar-menu-icon">width_normal</span>'
+        + '<span class="ap-pw-label">Single width</span>'
+        + '</button>'
+        + '<div class="topbar-menu-divider"></div>');
+      const item = document.getElementById('ap-progress-width-item');
+      /* Cycle the tier in place; keep the menu open so it can be cycled again. */
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        progressWidthTier = (progressWidthTier + 1) % 4;
+        try { localStorage.setItem('wise-ap-progress-width', String(progressWidthTier)); } catch (_) {}
+        applyProgressWidth();
+      });
+      syncProgressWidthItem();
+    }
+    tryInject();
+    new MutationObserver(tryInject).observe(progressEl, { childList: true, subtree: true });
   }
 
   /* ─────────────────────────── required / save ─────────────────────────── */
@@ -877,6 +1351,85 @@
   }
 
   /* ─────────────────────────── commit / sync ─────────────────────────── */
+  /* Human label for any editable panel field path (name, category, a Nutrition
+     cell, a pack's Nutrition cell, …) — used to phrase the mirrored user turn. */
+  function panelFieldLabel(path) {
+    if (path.startsWith('nf.')) {
+      const parts = path.split('.'); // nf, key, [amt|dv]
+      const base = NF_LABELS[parts[1]] || parts[1];
+      return parts[2] === 'dv' ? base + ' % Daily Value' : base;
+    }
+    if (/^packs\.\d+\.nf\./.test(path)) {
+      const parts = path.split('.'); // packs, i, nf, key, [amt|dv]
+      const base = NF_LABELS[parts[3]] || parts[3];
+      const pack = state.packs[Number(parts[1])];
+      const suffix = parts[4] === 'dv' ? ' % Daily Value' : '';
+      return base + suffix + ' (' + ((pack && pack.label) || 'pack') + ')';
+    }
+    if (/^packs\.\d+\.(label|upc)$/.test(path)) {
+      const parts = path.split('.'); // packs, i, [label|upc]
+      const pack = state.packs[Number(parts[1])];
+      const which = parts[2] === 'upc' ? 'UPC' : 'size / count';
+      return which + ' (' + ((pack && pack.label) || 'pack') + ')';
+    }
+    const MAP = {
+      productName: 'product name', category: 'category', ingredients: 'ingredient list',
+      contains: 'contains statement', upc: 'UPC',
+    };
+    return MAP[path] || path;
+  }
+  /* Short value for a bot bubble (long lists like ingredients get trimmed so the
+     answer stays readable — the user's own bubble keeps the full text). */
+  function shortVal(value) {
+    const v = String(value || '');
+    return v.length > 72 ? v.slice(0, 69).trimEnd() + '…' : v;
+  }
+  /* Build the WISEcodeAI reply to a panel edit: confirm the value, surface any
+     remaining flagged Nutrition fields, and offer the natural next move. */
+  function panelEditReply(path, value, label) {
+    if (!value) {
+      return { html: `Cleared the <strong>${esc(label)}</strong> on the panel — done. Add a value whenever you're ready.` };
+    }
+    const isNf = path.startsWith('nf.') || /^packs\.\d+\.nf\./.test(path);
+    const nfErrs = nfErrorCount();
+    if (isNf && nfErrs > 0) {
+      return {
+        html: `Got it — <strong>${esc(label)}</strong> is now <strong>${esc(shortVal(value))}</strong>. ${nfErrs} nutrition field${nfErrs > 1 ? 's' : ''} still need${nfErrs > 1 ? '' : 's'} attention — I've flagged ${nfErrs > 1 ? 'them' : 'it'} in red on the panel.`,
+        chips: [{ label: 'Fix flagged fields', icon: 'error_outline', action: 'focusNf' }],
+      };
+    }
+    const missing = requiredMissing();
+    if (missing.length === 0 && !nfErrs) {
+      return {
+        html: `Updated <strong>${esc(label)}</strong> to <strong>${esc(shortVal(value))}</strong>. That's everything required — you're ready to save this to your portfolio.`,
+        chips: [{ label: 'Save to Portfolio', icon: 'inventory_2', action: 'save', primary: true }],
+      };
+    }
+    const next = nextStep();
+    const nextStepDef = STEPS.find((s) => s.id === next);
+    const chips = (next && next !== 'save' && next !== state.step && nextStepDef)
+      ? [{ label: 'Next: ' + nextStepDef.label, icon: 'arrow_forward', action: 'goto:' + next }]
+      : undefined;
+    return {
+      html: `Updated <strong>${esc(label)}</strong> to <strong>${esc(shortVal(value))}</strong> on the panel — got it.`,
+      chips,
+    };
+  }
+  /* Mirror a Product Details edit into the transcript as the user's OWN turn
+     (their AK bubble, as if they'd typed it), then answer it with a proper
+     streamed WISEcodeAI reply — never a silent grey system note. */
+  function announcePanelEdit(path, value) {
+    const label = panelFieldLabel(path);
+    if (value) {
+      const disp = /(^|\.)upc$/.test(path) ? formatUpc(value) : value;
+      addUser(`Set the ${label} to “${disp}”.`);
+    } else {
+      addUser(`Clear the ${label}.`);
+    }
+    const reply = panelEditReply(path, value, label);
+    wiseSay(reply.html, reply.chips);
+  }
+
   /* Central write for every field, from chat OR panel. Echoes a system note into
      the transcript, clears any error on that field, and refreshes both modules. */
   function commitField(path, rawVal, opts) {
@@ -900,8 +1453,44 @@
       delete state.errors['nf.' + key];
       label = NF_LABELS[key] || key;
     }
-    if (opts.silent !== true && label) {
-      addSysNote(`${label} ${value ? 'set to “' + value + '”' : 'cleared'}${opts.fromPanel ? ' (from Product Details)' : ''}.`, 'edit');
+    else if (/^packs\.\d+\.nf\./.test(path)) {
+      const parts = path.split('.'); // packs, i, nf, key, [amt|dv]
+      const i = Number(parts[1]);
+      const key = parts[3];
+      const pack = state.packs[i];
+      if (pack) {
+        if (!pack.nf) pack.nf = cloneNf(state.nf);
+        if (parts.length === 5) {
+          if (!pack.nf[key]) pack.nf[key] = { amt: '', dv: '' };
+          pack.nf[key][parts[4]] = value;
+        } else {
+          pack.nf[key] = value;
+          /* Keep the legacy summary fields (used to seed / caption) in sync. */
+          if (key === 'servingSize') pack.servingSize = value;
+          if (key === 'servingsPer') pack.servingsPer = value;
+          if (key === 'calories') pack.calories = value;
+        }
+        label = (NF_LABELS[key] || key) + ' · ' + (pack.label || 'pack');
+      }
+      delete state.errors['packs.' + i + '.nf.' + key];
+    }
+    else if (/^packs\.\d+\.(label|upc)$/.test(path)) {
+      const parts = path.split('.'); // packs, i, [label|upc]
+      const i = Number(parts[1]);
+      const pack = state.packs[i];
+      if (pack) {
+        if (parts[2] === 'upc') { pack.upc = value.replace(/[^0-9]/g, ''); label = 'Pack UPC · ' + (pack.label || 'pack'); }
+        else { pack.label = value; pack.size = value; label = 'Pack size / count'; }
+      }
+    }
+    /* A change made in the Product Details panel is a real user action — mirror
+       it into the transcript as the user's own turn and answer it properly
+       (streamed), exactly like a typed message. Everything else keeps the quiet
+       system note (or stays silent when the caller already added the turn). */
+    if (opts.fromPanel && label) {
+      announcePanelEdit(path, value);
+    } else if (opts.silent !== true && label) {
+      addSysNote(`${label} ${value ? 'set to “' + value + '”' : 'cleared'}.`, 'edit');
     }
     /* Panel edits of a nutrition cell update in place so focus/caret survive
        while fixing several flagged rows; everything else rebuilds the card. */
@@ -939,13 +1528,7 @@
           ]);
         break;
       case 'category':
-        addWISEcodeAI('What <strong>category</strong> does this product belong to? Pick a suggestion or type your own.',
-          [
-            { label: 'Bakery › Muffins', icon: 'sell', action: 'setCat', arg: 'Bakery › Muffins' },
-            { label: 'Snacks › Bars', icon: 'sell', action: 'setCat', arg: 'Snacks › Bars' },
-            { label: 'Bakery › Bread', icon: 'sell', action: 'setCat', arg: 'Bakery › Bread' },
-            { label: 'Type a category', icon: 'edit', action: 'field:category' },
-          ]);
+        promptCategory('What <strong>category</strong> does this product belong to? Pick one below or type your own.');
         break;
       case 'ingredients':
         addWISEcodeAI('Now the <strong>ingredient list</strong>. Paste it as text, upload a label photo and I\'ll read it, or type it in.',
@@ -974,12 +1557,7 @@
           ]);
         break;
       case 'upc':
-        addWISEcodeAI('Does this product have a <strong>UPC / barcode</strong>? Type the digits or upload a photo of the barcode and I\'ll read the number. No UPC yet? You can skip — WISEcodeAI can help you request one later.',
-          [
-            { label: 'Enter UPC', icon: 'edit', action: 'field:upc' },
-            { label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' },
-            { label: 'No UPC — skip', icon: 'skip_next', action: 'skip:upc' },
-          ]);
+        promptUpc();
         break;
       case 'photos':
         addWISEcodeAI('Want to add <strong>more product images</strong> — angles, packaging, lifestyle shots? Add as many as you like, or move on.',
@@ -1011,12 +1589,28 @@
     maybeAdvanceAfter();
   }
 
-  /* UPC-specific prompt: offers both typing and scanning, and arms the input so
-     an attached image is read as a barcode (not stored as the product photo). */
+  /* Category prompt: offers the taxonomy's top categories as one-tap chips (the
+     same list the panel's dropdown carries) plus a "type my own" escape hatch,
+     so category options show up in BOTH the chat and the panel. */
+  function promptCategory(lead) {
+    state.awaiting = null;
+    const chips = CATEGORIES.slice(0, 6).map((c) => ({ label: c, icon: 'sell', action: 'setCat', arg: c }));
+    chips.push({ label: 'Type my own', icon: 'edit', action: 'field:category' });
+    addWISEcodeAI(lead || 'What <strong>category</strong> does this product belong to? Pick one below or type your own.', chips);
+  }
+
+  /* UPC-specific prompt: TYPING is the primary path — the chat input is armed
+     (state.awaiting = 'upc') and focused so the next thing typed is captured as
+     the UPC number. Scanning a barcode photo and skipping are secondary chips,
+     so nobody is funnelled into an image upload when they just want to key in a
+     number. */
   function promptUpc() {
     state.awaiting = 'upc';
-    addWISEcodeAI('Add the <strong>UPC</strong> — type the 12 digits, or upload a photo of the barcode and I\'ll read the number and build a clean barcode.',
-      [{ label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' }]);
+    addWISEcodeAI('What\u2019s the <strong>UPC / barcode number</strong>? Type the 12 digits right here in the chat and I\u2019ll build a clean barcode on the panel. No number handy? Scan a barcode photo or skip for now.',
+      [
+        { label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' },
+        { label: 'No UPC — skip', icon: 'skip_next', action: 'skip:upc' },
+      ]);
     if (inputEl) { inputEl.placeholder = 'Type the 12-digit UPC…'; inputEl.focus(); }
   }
 
@@ -1180,17 +1774,135 @@
         wiseSay('Added to the gallery. Add more or continue.',
           [{ label: 'Add another', icon: 'add', action: 'photosUpload' }, { label: 'Continue', icon: 'arrow_forward', action: 'skip:photos' }]);
       } else {
-        // main product photo — keep any previous primary as an extra image
-        if (state.image) state.images.unshift({ src: state.image, label: 'Photo ' + (state.images.length + 1) });
-        state.image = src;
-        addUserImage(src, file.name);
-        renderNFP(); renderProgress();
-        wiseSay('Nice — that\'s the primary photo. ' + (state.productName ? '' : 'What\'s the product called?'),
-          state.productName ? undefined : [{ label: 'Type the name', icon: 'edit', action: 'field:productName' }]);
-        if (state.productName) maybeAdvanceAfter();
+        applyMainPhoto(src, file.name);
       }
     };
     reader.readAsDataURL(file);
+  }
+
+  /* Commit a chosen image (data URL from an upload, or a pasted remote URL) as
+     the primary product photo — shared by the file picker and the photo modal.
+     Any previous primary is kept as an extra gallery image. */
+  function applyMainPhoto(src, name) {
+    if (!src) return;
+    if (state.image) state.images.unshift({ src: state.image, label: 'Photo ' + (state.images.length + 1) });
+    state.image = src;
+    addUserImage(src, name || 'Product photo');
+    renderNFP(); renderProgress();
+    wiseSay('Nice — that\'s the primary photo. ' + (state.productName ? '' : 'What\'s the product called?'),
+      state.productName ? undefined : [{ label: 'Type the name', icon: 'edit', action: 'field:productName' }]);
+    if (state.productName) maybeAdvanceAfter();
+  }
+
+  /* ─── Product-photo modal ───────────────────────────────────────────────
+     The main "Add a product photo" affordance opens a centered panel (the same
+     one the overview hero uses — dash-modal styling from wise.css) that offers
+     drag/drop or file upload AND a paste-a-URL field, rather than jumping
+     straight to the OS file dialog. On save the choice becomes the primary. */
+  let photoModalEls = null;
+  function ensurePhotoModal() {
+    if (photoModalEls) return photoModalEls;
+    const scrim = document.createElement('div');
+    scrim.className = 'dash-modal-scrim';
+    const modal = document.createElement('div');
+    modal.className = 'dash-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    scrim.appendChild(modal);
+    document.body.appendChild(scrim);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) closePhotoModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePhotoModal(); });
+    photoModalEls = { scrim, modal };
+    return photoModalEls;
+  }
+  function closePhotoModal() {
+    if (photoModalEls) photoModalEls.scrim.classList.remove('is-open');
+  }
+  function openPhotoModal(packIdx) {
+    const { scrim, modal } = ensurePhotoModal();
+    const isPack = packIdx != null && !isNaN(packIdx);
+    const pack = isPack ? state.packs[packIdx] : null;
+    const replacing = isPack ? !!(pack && pack.image) : !!state.image;
+    const title = replacing ? 'Replace product photo' : 'Add a product photo';
+    modal.setAttribute('aria-label', title);
+    let draft = '';      // data URL (upload) or remote URL (pasted)
+    let draftName = '';  // file name carried into the transcript chip
+
+    modal.innerHTML = `
+      <header class="dash-modal-head">
+        <div class="dash-modal-titles">
+          <span class="dash-modal-eyebrow">Product photo</span>
+          <h2 class="dash-modal-title">${esc(title)}</h2>
+        </div>
+        <button class="dash-modal-close" type="button" data-photo-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="dash-modal-body">
+        <div class="dash-banner-preview">
+          <div class="dash-banner-preview-img" id="ap-photo-preview-img"></div>
+          <span class="dash-banner-preview-empty" id="ap-photo-preview-empty"><span class="material-symbols-outlined">image</span>No photo yet</span>
+        </div>
+        <label class="dash-banner-drop" id="ap-photo-drop">
+          <input type="file" accept="image/*" id="ap-photo-file" hidden>
+          <span class="material-symbols-outlined">cloud_upload</span>
+          <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">PNG, JPG or WEBP</span></span>
+        </label>
+        <div class="dash-banner-or"><span>or paste a URL</span></div>
+        <input type="url" class="dash-banner-url" id="ap-photo-url" placeholder="https://…/product.jpg" autocomplete="off">
+      </div>
+      <footer class="dash-modal-foot">
+        <span></span>
+        <div class="dash-modal-foot-right">
+          <button class="dash-btn dash-btn--ghost" type="button" data-photo-close>Cancel</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-photo-save disabled><span class="material-symbols-outlined">check</span>${replacing ? 'Replace photo' : 'Add photo'}</button>
+        </div>
+      </footer>`;
+
+    const previewImg = modal.querySelector('#ap-photo-preview-img');
+    const previewEmpty = modal.querySelector('#ap-photo-preview-empty');
+    const urlInput = modal.querySelector('#ap-photo-url');
+    const fileInputEl = modal.querySelector('#ap-photo-file');
+    const drop = modal.querySelector('#ap-photo-drop');
+    const saveBtn = modal.querySelector('[data-photo-save]');
+
+    const setPreview = (val, name) => {
+      draft = val || '';
+      if (name != null) draftName = name;
+      if (draft) {
+        previewImg.style.backgroundImage = `url('${String(draft).replace(/'/g, '%27')}')`;
+        previewImg.style.display = 'block';
+        previewEmpty.style.display = 'none';
+      } else {
+        previewImg.style.backgroundImage = '';
+        previewImg.style.display = 'none';
+        previewEmpty.style.display = '';
+      }
+      saveBtn.disabled = !draft;
+    };
+
+    urlInput.addEventListener('input', () => setPreview(urlInput.value.trim(), 'Product photo'));
+
+    const readFile = (file) => {
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = () => { urlInput.value = ''; setPreview(reader.result, file.name); };
+      reader.readAsDataURL(file);
+    };
+    fileInputEl.addEventListener('change', () => readFile(fileInputEl.files[0]));
+    ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-drag'); }));
+    ['dragleave', 'dragend'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('is-drag')));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-drag'); readFile(e.dataTransfer.files[0]); });
+
+    saveBtn.addEventListener('click', () => {
+      if (!draft) return;
+      const src = draft, name = draftName;
+      closePhotoModal();
+      if (isPack) applyPackPhoto(packIdx, src, name);
+      else applyMainPhoto(src, name);
+    });
+    modal.querySelectorAll('[data-photo-close]').forEach((b) => b.addEventListener('click', closePhotoModal));
+
+    setPreview('', '');
+    requestAnimationFrame(() => { scrim.classList.add('is-open'); urlInput.focus(); });
   }
 
   /* Simulate reading a label photo: fills what it can, flags the rest. */
@@ -1253,35 +1965,63 @@
   }
 
   /* ─────────────────────────── pack / size formats ─────────────────────────── */
-  /* Adding a pack is the same flow as adding a product — one shows up right
-     away (below Product Images), then it captures its own photo, UPC and
-     Nutrition Facts. Only the pack-level values differ (e.g. servings per
-     container), so a new pack is seeded from the base product and adjusted. */
+  /* Adding a size is the same flow as adding a product — one shows up right
+     away (under Product sizes), then it captures its own photo, UPC and
+     Nutrition Facts. Only the size-level values differ (e.g. servings per
+     container), so a new size is seeded from the base product and adjusted. */
   function createPack() {
-    const n = state.packs.length + 1;
-    const label = n === 1 ? 'Single' : (n <= 4 ? n * 3 : n) + '-pack';
+    /* Seed the pack's Nutrition Facts nutrient rows from the base product, but
+       DON'T assume the pack's size, count or label — the user specifies those.
+       Servings-per-container is a pack-level count, so it's left blank to fill
+       too (never guessed from the pack index). */
+    const nf = cloneNf(state.nf);
+    nf.servingsPer = '';
     const pack = {
-      label,
-      size: n === 1 ? '1 ct' : (n * 3) + ' ct',
+      label: '',
+      size: '',
       image: state.image || null,
       upc: '',
-      servingSize: state.nf.servingSize || '',
-      servingsPer: n === 1 ? (state.nf.servingsPer || '1') : String(n * 3),
-      calories: state.nf.calories || '',
+      servingSize: nf.servingSize,
+      servingsPer: '',
+      calories: nf.calories,
+      nf,
     };
     state.packs.push(pack);
     state.activePack = state.packs.length - 1;
+    state.view = 'pack';
     renderNFP(); renderProgress();
     return pack;
   }
   function startAddPack() {
     addUser('Add a pack format');
-    const pack = createPack();
-    addWISEcodeAI(`Added a <strong>${esc(pack.label)}</strong> format below <strong>Product Images</strong>. Adding a pack works just like adding a product — capture its own photo, UPC and Nutrition Facts. Only the pack-level values differ (like <strong>servings per container</strong>), so I seeded it from the base product. How do you want to set up this pack?`,
+    createPack();
+    /* The pack has no assumed size/count — ask for it FIRST and capture the next
+       typed message as the pack's size. Streamed like every other answer. */
+    state.awaiting = 'packSize';
+    if (inputEl) inputEl.placeholder = 'Type the pack size / count (e.g. 12-pack, 12 oz)…';
+    wiseSay(`Added a new size under <strong>Product sizes</strong>. First — what <strong>size or count</strong> is this quantity? Type it in (e.g. <strong>12-pack</strong>, <strong>6 × 14 oz</strong>, or <strong>1 muffin (57g)</strong>). I don't set that by default. Its Nutrition Facts are seeded from the base product, so you'll only adjust the size-level values afterward.`,
       [
         { label: 'Upload pack photo', icon: 'add_photo_alternate', action: 'packPhoto' },
         { label: 'Scan pack UPC', icon: 'qr_code_scanner', action: 'packUpc' },
-        { label: 'Set size / count', icon: 'edit', action: 'packSize' },
+      ]);
+    if (inputEl) setTimeout(() => inputEl.focus(), 60);
+  }
+
+  /* Scroll the (just-added or selected) pack's Nutrition Facts panel into view
+     and drop the caret in its first field so it can be filled out in-page. */
+  function focusPackNf() {
+    if (!state.packs.length) { startAddPack(); return; }
+    state.view = 'pack';
+    renderNFP();
+    const sec = nfpBody.querySelector('#pack-nf');
+    if (sec) {
+      sec.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const first = sec.querySelector('[data-field]');
+      if (first) setTimeout(() => placeCaret(first), 320);
+    }
+    const p = state.packs[Math.min(state.activePack, state.packs.length - 1)];
+    addWISEcodeAI(`Fill in the <strong>Nutrition Facts</strong> for the <strong>${esc((p && p.label) || 'pack')}</strong> format on the right — I seeded it from the base product, so just adjust the pack-level values (like <strong>servings per container</strong>). Every field saves as you type.`,
+      [
         { label: 'Add another pack', icon: 'add', action: 'addPack' },
         { label: 'Done with packs', icon: 'check', action: 'packsDone', primary: true },
       ]);
@@ -1317,7 +2057,7 @@
     if (action.startsWith('goto:')) { goStep(action.slice(5)); return; }
     if (action.startsWith('skip:')) { skipStep(action.slice(5)); return; }
     switch (action) {
-      case 'mainUpload': addUser('Upload a photo'); openPicker('main'); break;
+      case 'mainUpload': openPhotoModal(); break;
       case 'scanUpc': addUser('Scan the barcode'); openPicker('upc'); break;
       case 'labelUpload': addUser('Upload the label'); openPicker('label'); break;
       case 'photosUpload': openPicker('photos'); break;
@@ -1333,7 +2073,9 @@
       case 'packPhoto': addUser('Upload a pack photo'); openPicker('pack'); break;
       case 'packUpc': addUser('Scan the pack barcode'); openPicker('packUpc'); break;
       case 'packSize': addUser('Set the size / count'); promptFor('packSize', 'What size or count is this pack? (e.g. 12-pack, 12 oz)'); break;
+      case 'packNf': addUser('Fill the pack Nutrition Facts'); focusPackNf(); break;
       case 'packsDone': addUser('Done with pack formats'); addSysNote('Pack formats saved.', 'inventory_2'); break;
+      case 'askHelp': startWhatCanIAsk(); break;
       case 'save': doSave(); break;
       case 'restart': restart(); break;
       case 'exit': window.location.href = 'product-portfolio.html'; break;
@@ -1374,13 +2116,39 @@
       const p = state.packs[state.activePack];
       if (p) { p.size = v; p.label = v; }
       renderNFP(); renderProgress();
-      addSysNote('Pack format set to “' + v + '”.', 'inventory_2');
+      wiseSay(`Set this pack to <strong>${esc(v)}</strong>. Now add its photo and UPC, or fill its pack-level Nutrition Facts — the nutrient rows are seeded from the base product, so you only adjust what differs (like <strong>servings per container</strong>).`,
+        [
+          { label: 'Upload pack photo', icon: 'add_photo_alternate', action: 'packPhoto' },
+          { label: 'Scan pack UPC', icon: 'qr_code_scanner', action: 'packUpc' },
+          { label: 'Fill Nutrition Facts', icon: 'nutrition', action: 'packNf' },
+          { label: 'Add another pack', icon: 'add', action: 'addPack' },
+          { label: 'Done with packs', icon: 'check', action: 'packsDone', primary: true },
+        ]);
       return;
     }
     if (awaiting === 'allergens') {
       addUser(v);
       v.split(/[,;]+/).map((s) => s.trim()).filter(Boolean).forEach(addAllergen);
       addSysNote('Allergens updated.', 'edit');
+      maybeAdvanceAfter();
+      return;
+    }
+    if (awaiting === 'upc') {
+      addUser(v);
+      const digits = v.replace(/[^0-9]/g, '');
+      if (digits.length < 8) {
+        state.awaiting = 'upc';
+        wiseSay('That doesn\u2019t look like a full <strong>UPC</strong> yet — a UPC-A is 12 digits (EAN-13 is 13). Type the number again, or scan a barcode photo instead.',
+          [
+            { label: 'Scan barcode photo', icon: 'qr_code_scanner', action: 'scanUpc' },
+            { label: 'No UPC — skip', icon: 'skip_next', action: 'skip:upc' },
+          ]);
+        if (inputEl) { inputEl.placeholder = 'Type the 12-digit UPC…'; inputEl.focus(); }
+        return;
+      }
+      commitField('upc', v, { silent: true });
+      addSysNote('UPC captured.', 'edit');
+      wiseSay('Got it — I rendered a clean barcode for <strong>' + esc(formatUpc(digits)) + '</strong> on the panel.');
       maybeAdvanceAfter();
       return;
     }
@@ -1402,7 +2170,7 @@
     if (/^https?:\/\//i.test(text) || /www\./i.test(text)) { simulateUrlParse(text); return; }
     if (/^\d[\d\s-]{6,}$/.test(text)) { commitField('upc', text, { silent: true }); addSysNote('UPC captured.', 'edit'); wiseSay('Got the UPC — rendered it on the panel.'); maybeAdvanceAfter(); return; }
     if (/(help|how|what|stuck|confus)/.test(t)) {
-      wiseSay('No problem. This flow collects, in order: a <strong>photo</strong>, <strong>category</strong>, <strong>ingredients</strong>, <strong>Nutrition Facts</strong>, <strong>allergens</strong>, and a <strong>UPC</strong>. You can upload a label and I\'ll read most of it at once, edit anything live in <strong>Product Details</strong>, and nothing saves until you press <strong>Save to Portfolio</strong>. Where do you want to start?',
+      wiseSay('No problem. This flow collects, in order: a <strong>photo</strong>, <strong>category</strong>, a <strong>UPC</strong>, <strong>Nutrition Facts</strong>, <strong>ingredients</strong>, and <strong>allergens</strong>. You can upload a label and I\'ll read most of it at once, edit anything live in <strong>Product Details</strong>, and nothing saves until you press <strong>Save to Portfolio</strong>. Where do you want to start?',
         [
           { label: 'Upload a label', icon: 'document_scanner', action: 'labelUpload' },
           { label: 'Paste a URL', icon: 'link', action: 'url' },
@@ -1423,21 +2191,73 @@
       [{ label: 'Next step', icon: 'arrow_forward', action: 'goto:' + nextStep() }]);
   }
 
+  /* "What can I ask?" — the standing gold affordance (below-input link + welcome
+     chip). Opens the in-chat side panel (break-out-able as a sticky module) AND
+     starts a real chat turn enumerating what THIS surface can do, the same way
+     the shared mount's askHelpReplyHtml() does on every other page. */
+  function ensureAskPanel() {
+    if (window.__wiseChatAsk) return window.__wiseChatAsk;
+    if (!window.WiseChatAsk) return null;
+    window.__wiseChatAsk = window.WiseChatAsk.mount({
+      host: document.querySelector('.ap-chat-body'),
+      container: '#modules-row',
+      anchor: document.querySelector('.ap-chat'),
+      label: 'What can I ask?',
+      inputEl: inputEl,
+      getSuggestions: () => [{
+        title: 'What you can ask',
+        icon: 'lightbulb',
+        cards: WELCOME_CHIPS.map((c) => ({
+          icon: c.icon || 'chat_bubble',
+          title: c.label,
+          desc: '',
+          ask: c.label,
+          intent: c.action,
+        })),
+      }],
+      onAsk: (text, intent) => {
+        if (intent) dispatch(intent);
+        else { addUser(text); interpret(text); }
+      },
+    });
+    return window.__wiseChatAsk;
+  }
+  function startWhatCanIAsk() {
+    try { ensureAskPanel()?.open(); } catch (_) {}
+    addUser('What can I ask?');
+    wiseSay(
+      'You\'re on <strong>Add Product</strong>, so everything here drives one product build. Here\'s what you can ask or do:'
+      + '<ul class="sc-askhelp-list">'
+      + '<li><strong>Upload a label</strong> — attach a photo of the package and I\'ll read the name, ingredients, Nutrition Facts, allergens and UPC in one pass.</li>'
+      + '<li><strong>Paste a URL</strong> — a product or retailer page works too; I\'ll pull in everything I can from it.</li>'
+      + '<li><strong>Type any value</strong> — the product name, a 12-digit UPC, or a field like \u201cSodium is 135mg\u201d lands straight on the panel.</li>'
+      + '<li><strong>Go step by step</strong> — I\'ll prompt for each field in order: photo, category, UPC, Nutrition Facts, ingredients, allergens.</li>'
+      + '<li><strong>Edit on the panel</strong> — click any field in Product Details to change it; the chat keeps up.</li>'
+      + '<li><strong>Say \u201csave\u201d</strong> — when it looks right, I\'ll save the draft to your portfolio.</li>'
+      + '</ul>Nothing is stored until you press <strong>Save to Portfolio</strong>.',
+      [
+        { label: 'Upload a label', icon: 'document_scanner', action: 'labelUpload' },
+        { label: 'Paste a URL', icon: 'link', action: 'url' },
+        { label: 'Go step by step', icon: 'list', action: 'manual' },
+      ]);
+  }
+
   /* ─────────────────────────── entry points ─────────────────────────── */
   function beginManual() {
     addUser('Enter details manually');
     wiseSay('Great — we\'ll go step by step. You can jump around using the progress list on the right anytime.', undefined, 380);
     setTimeout(() => promptStep('photo'), 900);
   }
-  /* Seed the sample product's real-world size / pack formats so the Pack Formats
-     section renders below Product Images (it stays hidden until a product has
-     more than one size). Mirrors the Flax4Life Chocolate Chip Muffin lineup. */
+  /* Seed the sample product's additional quantities for the Product sizes
+     section. The default single unit is the base product itself, so these are
+     just the larger multipacks it also ships in (Flax4Life Chocolate Chip
+     Muffin lineup). */
   function seedSamplePacks() {
     state.packs = [
       { label: '4 ct', size: '4-count box', image: state.image, upc: '065776631520', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '4', calories: state.nf.calories || '190' },
-      { label: '6-pack', size: '6 × 14 oz', image: state.image, upc: '461272475918', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '6', calories: state.nf.calories || '190' },
-      { label: 'Single serve', size: '1 muffin (57g)', image: state.image, upc: '857287004128', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '1', calories: state.nf.calories || '190' },
+      { label: '6 ct', size: '6-count box', image: state.image, upc: '461272475918', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '6', calories: state.nf.calories || '190' },
     ];
+    state.view = 'product';
     state.activePack = 0;
   }
   function loadSample() {
@@ -1487,12 +2307,12 @@
     if (params.get('packs') === '1' || params.get('focus') === 'packs') {
       const tag = document.querySelector('.ap-topbar-tag');
       if (tag && tag.firstChild && tag.firstChild.nodeType === 3) {
-        tag.firstChild.textContent = 'Pack Formats · ';
+        tag.firstChild.textContent = 'Product sizes · ';
       }
-      addWISEcodeAI(`Let\u2019s add another size or pack format for <strong>${esc(state.productName)}</strong>. Its current formats are listed under <strong>Pack Formats</strong> on the right — add each additional size or multipack it ships in.`);
+      addWISEcodeAI(`Let\u2019s add another size for <strong>${esc(state.productName)}</strong>. Its current sizes are listed under <strong>Product sizes</strong> on the right — starting with a single unit, add each additional multipack or larger quantity it ships in.`);
       startAddPack();
       setTimeout(() => {
-        document.querySelector('.nfp-fi--packs')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.querySelector('.nfp-fi-group--packs')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 200);
       return;
     }
@@ -1526,7 +2346,7 @@
   function restart() {
     Object.assign(state, {
       step: null, productName: '', image: null, images: [], activeImage: 0,
-      packs: [], activePack: 0,
+      packs: [], activePack: 0, view: 'product',
       category: '', ingredients: '', allergens: [], contains: '', upc: '',
       nf: blankNf(), errors: {}, done: {}, skipped: {}, awaiting: null, saved: false,
     });
@@ -1545,6 +2365,93 @@
     { label: 'Show me an example', icon: 'auto_awesome', action: 'sample' },
   ];
 
+  /* Below-input meta row — wires the two canonical affordances the page's
+     markup docks under the composer (mirroring what mountWISEcodeAIChat builds
+     on every shared-mount surface):
+       • the gold "What can I ask?" link (left) — shimmer letters, left edge
+         aligned to the composer's placeholder text, click starts the ask turn;
+       • the live-activity dots (center) — pulse while a typing line is on
+         screen and, on hover, show a believable per-turn telemetry read-out. */
+  function wireBelowInput() {
+    const askBtn = $('ap-ask-help');
+    if (askBtn) {
+      askBtn.innerHTML = `<span aria-hidden="true">${shimmerLetters('What can I ask?')}</span>`;
+      askBtn.addEventListener('click', (e) => { e.stopPropagation(); startWhatCanIAsk(); });
+      /* Keep the label's text left-aligned with the input's placeholder text —
+         measured at runtime since the "+" button / input padding shift with
+         layout (same as alignAskHelp in js/wiseai-chat.js). */
+      const row = askBtn.closest('.sc-belowinput');
+      const align = () => {
+        if (!inputEl || !row) return;
+        const inRect = inputEl.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        if (!inRect.width || !rowRect.width) return;
+        const inPadL = parseFloat(getComputedStyle(inputEl).paddingLeft) || 0;
+        const btnPadL = parseFloat(getComputedStyle(askBtn).paddingLeft) || 0;
+        askBtn.style.margin = '7px 0 1px';
+        askBtn.style.marginLeft = `${Math.max(0, Math.round((inRect.left + inPadL) - rowRect.left - btnPadL))}px`;
+      };
+      align();
+      setTimeout(align, 200);
+      window.addEventListener('resize', align);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(align).catch(() => {});
+    }
+
+    const activityEl = $('ap-activity');
+    const actTurnEl = $('ap-activity-turn');
+    const actConvEl = $('ap-activity-conv');
+    if (!activityEl || !messagesEl) return;
+    const telemetry = { turns: 0, ops: 0, tools: 0, tokIn: 0, tokOut: 0, cached: 0, cost: 0, turnStart: 0, last: null };
+    const fmtTok = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(Math.round(n)));
+    const fmtDur = (ms) => { const s = Math.max(1, Math.round(ms / 1000)); return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`; };
+    function renderActivity() {
+      if (telemetry.last) {
+        const t = telemetry.last;
+        const pct = t.tokIn ? Math.round((t.cached / t.tokIn) * 100) : 0;
+        if (actTurnEl) actTurnEl.innerHTML =
+          `${fmtTok(t.tokIn)} in / ${fmtTok(t.tokOut)} out · <em>${fmtTok(t.cached)} cached (${pct}%)</em> · `
+          + `<b>$${t.cost.toFixed(4)}</b> · ${fmtDur(t.dur)} · ${t.ops} ops · ${t.tools} tools`;
+      } else if (actTurnEl) {
+        actTurnEl.innerHTML = 'Idle — <span class="sc-activity-muted">nothing running</span>';
+      }
+      if (actConvEl) {
+        if (telemetry.turns === 0) { actConvEl.innerHTML = 'No turns yet'; }
+        else {
+          const pct = telemetry.tokIn ? Math.round((telemetry.cached / telemetry.tokIn) * 100) : 0;
+          actConvEl.innerHTML =
+            `${fmtTok(telemetry.tokIn)} in / ${fmtTok(telemetry.tokOut)} out · <em>${fmtTok(telemetry.cached)} cached (${pct}%)</em> · `
+            + `<b>$${telemetry.cost.toFixed(2)}</b> · ${telemetry.turns} turn${telemetry.turns === 1 ? '' : 's'}`;
+        }
+      }
+    }
+    /* Fold a finished turn into the running totals — synthesized (with jitter)
+       so the read-out reads like a real meter, same as the shared mount. */
+    function accrueTurn() {
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const tokIn = Math.round(rnd(6000, 22000));
+      const tokOut = Math.round(rnd(400, 2600));
+      const cached = Math.round(tokIn * rnd(0.7, 0.9));
+      const cost = +(tokIn / 1e6 * 0.9 + tokOut / 1e6 * 4.5).toFixed(4);
+      const dur = telemetry.turnStart ? (Date.now() - telemetry.turnStart) : Math.round(rnd(2000, 9000));
+      telemetry.turns += 1;
+      telemetry.tokIn += tokIn; telemetry.tokOut += tokOut; telemetry.cached += cached; telemetry.cost += cost;
+      const ops = Math.round(rnd(1, 4)); const tools = Math.round(rnd(0, 3));
+      telemetry.ops += ops; telemetry.tools += tools;
+      telemetry.last = { tokIn, tokOut, cached, cost, ops, tools, dur };
+      renderActivity();
+    }
+    /* Watch the transcript for a typing line and mirror it onto the dots —
+       decoupled from every showTyping call site. */
+    const observer = new MutationObserver(() => {
+      const typing = !!messagesEl.querySelector('.sc-line-typing');
+      activityEl.classList.toggle('is-thinking', typing);
+      if (typing && !telemetry.turnStart) telemetry.turnStart = Date.now();
+      if (!typing && telemetry.turnStart) { accrueTurn(); telemetry.turnStart = 0; }
+    });
+    observer.observe(messagesEl, { childList: true, subtree: true });
+    renderActivity();
+  }
+
   function init() {
     messagesEl = $('chat-messages');
     welcomeEl = $('welcome-screen');
@@ -1555,10 +2462,20 @@
     fileInput = $('ap-file');
     if (!messagesEl || !nfpBody || !progressEl) return;
 
-    // Welcome chips
+    /* Width for this module is driven only by the ⋯-menu width changer, so opt
+       it out of the shared drag-to-resize splitter (js/pane-resize.js). This
+       also fixes collapsing: a leftover dragged/pinned width was overriding the
+       collapsed rail — clear any stored/inline width so the rail can shrink. */
+    progressEl.setAttribute('data-pr-lock', '');
+    try { window.WisePaneResize && window.WisePaneResize.release(progressEl); } catch (_) {}
+
+    // Welcome chips — plus the gold "What can I ask?" chip that always rides at
+    // the end of the set whenever the below-input link is shown (the standing
+    // affordance every WISEcodeAI surface carries).
     if (chipsStartEl) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
-        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
+        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('')
+        + `<button type="button" class="chip ws-intent-chip ws-intent-chip--askhelp" data-action="askHelp" aria-label="What can I ask?"><span class="material-symbols-outlined">help</span><span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters('What can I ask?')}</span></button>`;
     }
 
     // Play the welcome in: heading + sub type in word-by-word, then the intent
@@ -1568,6 +2485,8 @@
     // First paint
     renderNFP();
     renderProgress();
+    /* Add the width changer to this module's ⋯ menu (once it's built). */
+    installProgressWidthMenu();
 
     // Chip clicks (welcome + inline reply chips)
     document.addEventListener('click', (e) => {
@@ -1609,9 +2528,42 @@
       if (path === 'upc' ? val.replace(/\D/g, '') === cur : val === cur) return; // unchanged
       /* Nutrition cells update in place (keeps caret while fixing flagged rows);
          other fields (name, UPC, ingredients, contains) rebuild the card. */
-      commitField(path, val, { fromPanel: true, inPlace: path.startsWith('nf.') });
+      commitField(path, val, { fromPanel: true, inPlace: path.startsWith('nf.') || /^packs\.\d+\.nf\./.test(path) });
+    });
+    /* Segmented UPC entry (product + pack) — one digit per box, auto-advancing
+       to the next box and auto-committing once all 12 are filled. */
+    nfpBody.addEventListener('input', (e) => {
+      const cell = e.target.closest('[data-nfp-upc-cell]');
+      if (!cell) return;
+      handleUpcCellInput(cell);
+    });
+    /* Pasting a full number into any box distributes it across the boxes. */
+    nfpBody.addEventListener('paste', (e) => {
+      const cell = e.target.closest('[data-nfp-upc-cell]');
+      if (!cell) return;
+      const raw = (e.clipboardData || window.clipboardData).getData('text') || '';
+      const digits = raw.replace(/\D/g, '');
+      if (!digits) return;
+      e.preventDefault();
+      fillUpcCellsFrom(cell, digits);
     });
     nfpBody.addEventListener('keydown', (e) => {
+      /* Inline empty-hero URL box — apply the pasted image URL on Enter. */
+      const urlInp = e.target.closest('[data-nfp-photo-url]');
+      if (urlInp) { if (e.key === 'Enter') { e.preventDefault(); applyMainPhotoUrl(urlInp.value); } return; }
+      const packUrlInp = e.target.closest('[data-nfp-pack-photo-url]');
+      if (packUrlInp) { if (e.key === 'Enter') { e.preventDefault(); applyPackPhotoUrl(Number(packUrlInp.dataset.arg), packUrlInp.value); } return; }
+      const upcCell = e.target.closest('[data-nfp-upc-cell]');
+      if (upcCell) {
+        const entry = upcCell.closest('[data-nfp-upc-entry]');
+        const cells = upcCellsOf(entry);
+        const i = cells.indexOf(upcCell);
+        if (e.key === 'Backspace' && !upcCell.value && i > 0) { e.preventDefault(); cells[i - 1].value = ''; cells[i - 1].focus(); return; }
+        if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); cells[i - 1].focus(); return; }
+        if (e.key === 'ArrowRight' && i < cells.length - 1) { e.preventDefault(); cells[i + 1].focus(); return; }
+        if (e.key === 'Enter') { e.preventDefault(); commitUpcCells(entry); return; }
+        return;
+      }
       const ed = e.target.closest('[data-field]');
       if (!ed) return;
       if (e.key === 'Enter') { e.preventDefault(); ed.blur(); }
@@ -1619,6 +2571,10 @@
     nfpBody.addEventListener('focusin', (e) => {
       const ed = e.target.closest('.nfp-edit-empty[data-field]');
       if (ed) { ed.textContent = ''; ed.classList.remove('nfp-edit-empty'); }
+      /* A pre-filled UPC digit: select it on focus so typing replaces it in one
+         keystroke (edit any single number in place). */
+      const cell = e.target.closest('[data-nfp-upc-cell]');
+      if (cell && cell.value) { try { cell.select(); } catch (_) {} }
     });
 
     // Category dropdown — commit the picked category (rebuilds the card).
@@ -1629,9 +2585,19 @@
       if (val && val !== state.category) commitField('category', val, { fromPanel: true });
     });
 
+    /* Drag & drop an image straight onto the product-photo hero — the empty
+       hero is styled as a dropzone, so honor it here (and on an existing photo,
+       and the wide right column) without having to open the photo modal. In a
+       pack view the hero carries an `upload-pack` control, so the drop targets
+       that size's photo instead of the base product. */
+    wireHeroDrop();
+
     // Input send
     $('ap-send')?.addEventListener('click', onSubmit);
     inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit(); } });
+
+    // Below-input meta row — the gold "What can I ask?" link + activity dots.
+    wireBelowInput();
     /* Attach lives inside the input on the left and opens a grouped file-type
        popover (photos, docs, spreadsheets, data/specs, link). */
     const attachBtn = $('ap-attach');
@@ -1693,6 +2659,12 @@
       nfpWidthBtn.title = state.nfpWide ? 'Back to single pane' : 'Widen to two panes';
       renderNFP();
     });
+
+    // "Compare formats side by side" toggle — injected into the Product Details
+    // ⋯ menu that sticky-modules.js builds for this module (the same menu that
+    // hosts Share / Copy link / Export). We watch for that menu to appear (it's
+    // created asynchronously) and add our row once.
+    installCompareMenuItem();
 
     // Save button
     $('nfp-save-btn')?.addEventListener('click', doSave);
@@ -1764,20 +2736,163 @@
     try { navigator.clipboard.writeText(text); } catch (_) {}
   }
 
+  /* Apply a pasted/typed remote image URL as the product photo, straight from
+     the inline empty-hero input (no modal). */
+  function applyMainPhotoUrl(url) {
+    url = String(url || '').trim();
+    if (!url) return;
+    applyMainPhoto(url, 'Product photo');
+  }
+  /* Segmented UPC entry helpers — the entry is a row of single-digit boxes
+     grouped 1·5·5·1 (UPC-A), sitting under an empty barcode slot. */
+  function upcCellsOf(entry) {
+    return entry ? Array.prototype.slice.call(entry.querySelectorAll('[data-nfp-upc-cell]')) : [];
+  }
+  /* Keep one digit per box; advance to the next box as you type. */
+  function handleUpcCellInput(cell) {
+    const v = String(cell.value || '').replace(/\D/g, '');
+    if (v.length > 1) { fillUpcCellsFrom(cell, v); return; }
+    cell.value = v;
+    const entry = cell.closest('[data-nfp-upc-entry]');
+    const cells = upcCellsOf(entry);
+    const i = cells.indexOf(cell);
+    if (v && i < cells.length - 1) cells[i + 1].focus();
+    if (cells.length && cells.every((c) => c.value)) commitUpcCells(entry);
+  }
+  /* Spread a string of digits across the boxes starting at `cell` (typed or
+     pasted), then focus the next empty box and commit when full. */
+  function fillUpcCellsFrom(cell, digits) {
+    const entry = cell.closest('[data-nfp-upc-entry]');
+    const cells = upcCellsOf(entry);
+    let i = cells.indexOf(cell);
+    for (let k = 0; k < digits.length && i < cells.length; k++, i++) cells[i].value = digits[k];
+    cells[Math.min(i, cells.length - 1)].focus();
+    if (cells.length && cells.every((c) => c.value)) commitUpcCells(entry);
+  }
+  /* Commit a UPC (12-digit UPC-A) from a segmented entry — product or a pack.
+     Only fires once all 12 digits are present, then the barcode renders. */
+  function commitUpcCells(entry) {
+    const cells = upcCellsOf(entry);
+    const digits = cells.map((c) => String(c.value || '').replace(/\D/g, '')).join('').slice(0, 12);
+    if (digits.length !== 12) return;
+    if (entry.hasAttribute('data-pack')) {
+      const i = Number(entry.dataset.pack);
+      if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; commitField('packs.' + i + '.upc', digits, { fromPanel: true }); }
+    } else {
+      commitField('upc', digits, { fromPanel: true });
+    }
+  }
+
+  /* Commit a chosen image (upload data URL or pasted URL) as a size's photo —
+     shared by the size photo modal and the file picker. */
+  function applyPackPhoto(i, src, name) {
+    if (!src || isNaN(i)) return;
+    const p = state.packs[i];
+    if (!p) return;
+    state.view = 'pack'; state.activePack = i;
+    p.image = src;
+    addUserImage(src, name || 'Size photo');
+    renderNFP(); renderProgress();
+    wiseSay('Added that photo to the <strong>' + esc(p.label || 'size') + '</strong> format.',
+      [{ label: 'Done with sizes', icon: 'check', action: 'packsDone', primary: true }]);
+  }
+  /* Same, for a size's photo entered as a URL (legacy inline field). */
+  function applyPackPhotoUrl(i, url) {
+    applyPackPhoto(i, String(url || '').trim(), 'Size photo');
+  }
+
+  /* ── Drag & drop an image onto the product-photo hero ──────────────────
+     The hero (single-pane, its empty state, or the wide right column) reads as
+     a dropzone, so accept a dragged image file straight onto it. Delegated on
+     nfpBody since the hero markup is re-rendered on every state change. */
+  function heroDropTarget(el) {
+    return el && el.closest ? el.closest('.nfp-hero, .nfp-rcol, .nfp-rcol-empty') : null;
+  }
+  function dragHasImageFile(dt) {
+    if (!dt) return false;
+    const types = dt.types;
+    if (!types) return false;
+    return Array.prototype.indexOf.call(types, 'Files') !== -1;
+  }
+  function firstImageFile(dt) {
+    const files = dt && dt.files;
+    if (!files || !files.length) return null;
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (f && f.type && f.type.startsWith('image/')) return f;
+    }
+    return null;
+  }
+  function wireHeroDrop() {
+    let activeHero = null;
+    const clear = () => { if (activeHero) { activeHero.classList.remove('nfp-hero-drag'); activeHero = null; } };
+    nfpBody.addEventListener('dragover', (e) => {
+      const hero = heroDropTarget(e.target);
+      if (!hero || !dragHasImageFile(e.dataTransfer)) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {}
+      if (activeHero !== hero) { clear(); activeHero = hero; }
+      hero.classList.add('nfp-hero-drag');
+    });
+    nfpBody.addEventListener('dragleave', (e) => {
+      const hero = heroDropTarget(e.target);
+      if (hero && !hero.contains(e.relatedTarget)) hero.classList.remove('nfp-hero-drag');
+    });
+    nfpBody.addEventListener('drop', (e) => {
+      const hero = heroDropTarget(e.target);
+      if (!hero) return;
+      e.preventDefault();
+      clear();
+      hero.classList.remove('nfp-hero-drag');
+      const file = firstImageFile(e.dataTransfer);
+      if (!file) return;
+      const packBtn = hero.querySelector('[data-nfp="upload-pack"]');
+      const reader = new FileReader();
+      reader.onload = () => {
+        const src = reader.result;
+        if (packBtn) {
+          const i = Number(packBtn.dataset.arg);
+          if (!isNaN(i)) applyPackPhoto(i, src, file.name);
+        } else {
+          applyMainPhoto(src, file.name);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function handleNfpClick(action, arg) {
     switch (action) {
-      case 'upload-main': openPicker('main'); break;
+      case 'upload-main': openPhotoModal(); break;
+      /* Inline empty-hero photo field: "Upload" opens the picker (offers camera
+         on device); the URL box + arrow apply a pasted image URL right away. */
+      case 'photo-upload': openPicker('main', { accept: 'image/*' }); break;
+      case 'photo-url-go': { const inp = nfpBody.querySelector('[data-nfp-photo-url]'); if (inp) applyMainPhotoUrl(inp.value); break; }
+      case 'pack-photo-url-go': { const i = Number(arg); const inp = nfpBody.querySelector('[data-nfp-pack-photo-url]'); if (inp) applyPackPhotoUrl(i, inp.value); break; }
       case 'add-image': openPicker('photos'); break;
-      case 'cat-edit': promptFor('category', 'What category should this be?'); break;
+      case 'cat-edit': promptCategory(); break;
       case 'upc-edit': promptUpc(); break;
       case 'add-allergen': promptFor('allergens', 'Which allergens? List them comma-separated.'); break;
       case 'remove-allergen': {
-        const i = Number(arg); if (!isNaN(i)) { state.allergens.splice(i, 1); renderNFP(); renderProgress(); }
+        const i = Number(arg);
+        if (!isNaN(i) && state.allergens[i] != null) {
+          const removed = state.allergens[i];
+          state.allergens.splice(i, 1);
+          renderNFP(); renderProgress();
+          /* Removing an allergen on the panel is a real user action — mirror it
+             as their own turn and answer it, same as a typed message. */
+          addUser(`Remove the ${removed} allergen.`);
+          wiseSay(state.allergens.length
+            ? `Removed <strong>${esc(removed)}</strong>. Still declaring: <strong>${esc(state.allergens.join(', '))}</strong>.`
+            : `Removed <strong>${esc(removed)}</strong> — no allergens are declared now.`);
+        }
         break;
       }
-      case 'pick-image': { const i = Number(arg); if (!isNaN(i)) { state.activeImage = i; renderNFP(); } break; }
+      case 'pick-image': { const i = Number(arg); if (!isNaN(i)) { state.view = 'product'; state.activeImage = i; renderNFP(); } break; }
       case 'add-pack': startAddPack(); break;
-      case 'pick-pack': { const i = Number(arg); if (!isNaN(i)) { state.activePack = i; renderNFP(); } break; }
+      case 'pick-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); } break; }
+      case 'upload-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); openPhotoModal(i); } break; }
+      case 'pack-upc-edit': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; } openPicker('packUpc'); break; }
       default: break;
     }
   }

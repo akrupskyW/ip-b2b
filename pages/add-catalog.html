@@ -452,6 +452,14 @@
           return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));
         },
       },
+      /* History & Projects — the shared sticky History drawer docks on the
+         chat's left; a "History & Projects" row is added to the three-dot menu
+         to reveal / tuck it (parity with pages/wiseai.html). */
+      history: {
+        chatEl: '.ap-chat',
+        messagesEl: '#chat-messages',
+        storageKey: 'wise-chat-history:add-catalog',
+      },
     });
 
     restoreActivityStrip();

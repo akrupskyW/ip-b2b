@@ -18,7 +18,7 @@
         var raw = localStorage.getItem('wise-auth');
         if (!isPreview && raw) {
           var u = JSON.parse(raw);
-          if (u && u.loggedIn) { location.replace('pages/overview.html'); }
+          if (u && u.loggedIn) { location.replace('pages/wiseai.html'); }
         }
       } catch (e) { /* stay on the marketing home on any storage/parse error */ }
     })();

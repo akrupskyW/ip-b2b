@@ -284,11 +284,45 @@
     .nfp-barcode-svg { display: block; margin: 2px auto 0; }
     .nfp-barcode-num { font-family: 'Courier New', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
 
+    /* ── Segmented UPC-A entry — one white card holding a faded example barcode
+       above one box per digit, grouped 1 · 5 · 5 · 1 (number-system ·
+       manufacturer · product · check digit). The faded barcode is swapped for
+       the real one once all 12 digits are entered. ── */
+    .nfp-upc-entry {
+      display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
+    }
+    .nfp-upc-preview {
+      height: 42px; opacity: 0.16;
+      background-image: repeating-linear-gradient(90deg,
+        #1A2339 0 2px, transparent 2px 5px,
+        #1A2339 5px 6px, transparent 6px 9px,
+        #1A2339 9px 12px, transparent 12px 14px);
+      background-repeat: repeat-x; background-position: center; background-size: auto 100%;
+    }
+    .nfp-upc-cells { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; }
+    .nfp-upc-group { display: flex; gap: 8px; flex-basis: 0; flex-shrink: 1; min-width: 0; }
+    .nfp-upc-gap { flex: 0 0 12px; }
+    .nfp-upc-cell {
+      flex: 1 1 0; min-width: 0; width: 100%; height: 26px; box-sizing: border-box;
+      font-family: inherit; font-size: 0.95rem; font-weight: 700; text-align: center; padding: 0 0 2px;
+      color: var(--text); background: transparent;
+      border: none; border-bottom: 2px solid var(--border-strong); border-radius: 0; outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .nfp-upc-cell:focus { border-bottom-color: var(--primary); }
+    .nfp-upc-entry--onphoto { border-color: transparent; box-shadow: 0 4px 16px rgba(7,12,26,0.28); }
+
     /* Food Identity thumbs (multiple product images) */
     .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
     .nfp-fi-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 7px; }
     .nfp-fi-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
-    .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary-ink, var(--primary)); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
+    /* Combined Product Images + Pack Formats — the two thumb groups share one
+       section, braided side by side by a vertical bar. */
+    .nfp-fi-row { display: flex; align-items: stretch; justify-content: center; gap: 12px; }
+    .nfp-fi-group { flex: 1 1 0; min-width: 0; }
+    .nfp-fi-vr { flex: 0 0 1px; align-self: stretch; background: var(--border); }
     .nfp-fi-thumbs { display: flex; justify-content: center; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
     .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
     .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
@@ -747,6 +781,14 @@
           return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));
         },
       },
+      /* History & Projects — the shared sticky History drawer docks on the
+         chat's left; a "History & Projects" row is added to the three-dot menu
+         to reveal / tuck it (parity with pages/wiseai.html). */
+      history: {
+        chatEl: '.ap-chat',
+        messagesEl: '#chat-messages',
+        storageKey: 'wise-chat-history:view-product',
+      },
     });
 
     /* Activity strip — mount the landmark rail on this page's chat and wire
@@ -891,6 +933,7 @@
   </script>
 
   <script src="../js/chat-history.js"></script>
+  <script src="../js/chat-ask.js"></script>
   <script>window.WISE_HERO_BRAND = true;</script>
   <script src="../js/add-product-flow.js"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->

@@ -2595,6 +2595,7 @@ html.dark .menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not
     0 6px 16px rgba(37, 80, 124, 0.16);
 }
 .menu-nav-upgrade-icon {
+  position: relative;
   width: 36px;
   height: 36px;
   flex-shrink: 0;
@@ -2602,20 +2603,58 @@ html.dark .menu-nav-app .menu-nav-group[data-open="true"] > .menu-nav-toggle:not
   align-items: center;
   justify-content: center;
   /* A proper circle whose ring reads as carved/inset into the nav panel:
-     a soft inner shadow up top + a 1px light edge below sells the debossed look. */
+     a soft inner shadow up top + a 1px light edge below sells the debossed look.
+     The visible stroke itself is drawn by the rotating conic ring in ::before. */
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  border: 0;
   background: transparent;
   box-shadow:
     inset 0 1.5px 3px rgba(37, 80, 124, 0.28),
     inset 0 -1px 1px rgba(37, 80, 124, 0.08),
     0 1px 0 rgba(255, 255, 255, 0.55);
 }
+/* Living inset ring — a brand-blue gradient masked to just the ~1px stroke that
+   slowly rotates around the circle (reuses the shared --wise-sheen-angle sweep).
+   The sweep dips near-transparent across a wide arc, so the ring melts into the
+   nav panel here and there rather than reading as a hard, static circle. */
+.menu-nav-upgrade-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary) 6%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 12%, transparent) 60deg,
+    color-mix(in srgb, var(--primary) 34%, transparent) 120deg,
+    color-mix(in srgb, var(--primary) 52%, transparent) 168deg,
+    color-mix(in srgb, var(--primary) 30%, transparent) 224deg,
+    color-mix(in srgb, var(--primary) 10%, transparent) 300deg,
+    color-mix(in srgb, var(--primary) 6%, transparent) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: wise-sheen-rotate 9s linear infinite;
+}
 html.dark .menu-nav-upgrade-icon {
-  border-color: color-mix(in srgb, var(--primary-bright) 45%, transparent);
   box-shadow:
     inset 0 1.5px 3px rgba(0, 0, 0, 0.4),
     0 1px 0 rgba(255, 255, 255, 0.06);
+}
+html.dark .menu-nav-upgrade-icon::before {
+  background: conic-gradient(from var(--wise-sheen-angle),
+    color-mix(in srgb, var(--primary-bright) 10%, transparent) 0deg,
+    color-mix(in srgb, var(--primary-bright) 18%, transparent) 60deg,
+    color-mix(in srgb, var(--primary-bright) 42%, transparent) 120deg,
+    color-mix(in srgb, var(--primary-bright) 64%, transparent) 168deg,
+    color-mix(in srgb, var(--primary-bright) 38%, transparent) 224deg,
+    color-mix(in srgb, var(--primary-bright) 14%, transparent) 300deg,
+    color-mix(in srgb, var(--primary-bright) 10%, transparent) 360deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-nav-upgrade-icon::before { animation: none; }
 }
 .menu-nav-upgrade-stars {
   width: 21px;
@@ -4120,7 +4159,7 @@ html.dark .ag-sheet {
 .ag-sheet.is-open { transform: translate(-50%, 0); }
 .ag-sheet-handle { width: 38px; height: 4px; border-radius: 999px; margin: 9px auto 2px; background: var(--text-subtle); opacity: 0.4; }
 .ag-sheet-head { display: flex; align-items: center; gap: 12px; padding: 8px 18px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.ag-sheet-icon { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary-ink, var(--primary)); }
+.ag-sheet-icon { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary-ink, var(--primary)); }
 .ag-sheet-icon .material-symbols-outlined { font-size: 20px !important; }
 .ag-sheet-titles { min-width: 0; flex: 1; }
 .ag-sheet-eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-subtle); }
@@ -4160,7 +4199,7 @@ html.dark .ag-flow-bar { background: rgba(255,255,255,0.08); }
 .ag-flow-step.is-done .material-symbols-outlined { color: var(--sec-green, #32A966); }
 @keyframes agSpin { to { transform: rotate(360deg); } }
 .ag-flow-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 6px 0; }
-.ag-flow-done-icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px; background: color-mix(in srgb, var(--sec-green, #32A966) 16%, transparent); color: var(--sec-green, #32A966); }
+.ag-flow-done-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 4px; background: color-mix(in srgb, var(--sec-green, #32A966) 16%, transparent); color: var(--sec-green, #32A966); }
 .ag-flow-done-icon .material-symbols-outlined { font-size: 30px !important; }
 .ag-flow-done-title { font-size: 1rem; font-weight: 800; color: var(--text); }
 .ag-flow-done-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0; max-width: 420px; }
@@ -5084,6 +5123,39 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
 .fl-input-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .fl-input-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .fl-input-wrap--stacked .fl-input { padding: 3px 0; }
+
+/* Inline "locked" glyph that reads as part of the placeholder: it renders
+   just left of the placeholder text while the composer is empty, and vanishes
+   the instant the reader starts typing so it never crowds real input. */
+.fl-input-lock { display: none; }
+/* A locked composer is visually present but inert: the field can't be focused
+   or typed into (it stays on its placeholder), yet the lock glyph beside it
+   still accepts hover/focus so its tooltip can explain why. */
+.fl-input--locked { pointer-events: none; cursor: default; }
+.fl-input-line--locked .fl-input-lock { pointer-events: auto; }
+.sc-send--locked { opacity: .7; cursor: default; pointer-events: none; }
+.fl-input-line--locked .fl-input:placeholder-shown ~ .fl-input-lock {
+  order: -1; flex: 0 0 auto; display: inline-flex; align-items: center;
+  position: relative; color: var(--text-subtle); cursor: default;
+}
+.fl-input-lock .material-symbols-outlined {
+  font-size: 16px; line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+/* Hover / focus tooltip built from data-tip — no boxed backdrop behind the
+   icon itself, only a floating label bubble above it. */
+.fl-input-lock[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; left: 0; bottom: calc(100% + 8px);
+  white-space: nowrap; padding: 5px 9px; border-radius: 8px;
+  background: var(--text, #1c2530); color: #fff; font-size: 11.5px;
+  font-weight: 500; line-height: 1.2; letter-spacing: .1px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  opacity: 0; transform: translateY(3px); pointer-events: none;
+  transition: opacity .14s ease, transform .14s ease; z-index: 20;
+}
+.fl-input-lock[data-tip]:hover::after,
+.fl-input-lock[data-tip]:focus-visible::after { opacity: 1; transform: translateY(0); }
 .fl-model-wrap--lead { align-self: flex-start; }
 
 /* The database label itself: a muted, pill-on-hover text button with a caret. */
@@ -5529,6 +5601,11 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
 }
 .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
 html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+/* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the far
+   LEFT of the row while the grounding source chip floats to the far RIGHT. */
+.sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
+.sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
+.sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
 /* "Source of this output" caption — pinned to the very end of a chart / table /
    report so the artifact always closes by naming the data source it was built
@@ -5633,28 +5710,34 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   /* Light blue — the milestone key + its glob read as their own soft-blue
      "thinking" voice rather than full-strength transcript text. */
   color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff);
-  /* Shimmer palette — while a section loads the title rests on WISE gold, with
-     shades of brand blue drifting across it. */
-  --sc-shimmer-base: var(--ter-amber, #FFC434);
-  --sc-shimmer-glow: var(--primary, #25507C);
+  /* Shimmer palette — all WISE gold, no blue. The label rests on a deep
+     bronze-gold and the sweep shades DOWN through an even deeper amber and UP
+     to a bright gold, so the band travels through several rich gold tones. */
+  --sc-shimmer-base: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, #5a3400);
+  --sc-shimmer-deep: color-mix(in srgb, var(--ter-amber, #FFC434) 60%, #3a2100);
+  --sc-shimmer-glow: color-mix(in srgb, var(--ter-amber, #FFC434) 86%, #ffffff);
 }
 /* While a primary section is still loading (its glob lines are streaming in and
-   the block hasn't been marked .is-done yet) the title gently shimmers: a WISE
-   gold highlight drifts through the resting brand blue, gradient-clipped to the
-   text so it reads as a soft gold↔blue glow sweeping left across the label. */
+   the block hasn't been marked .is-done yet) the title slowly shimmers: an
+   all-gold gradient, gradient-clipped to the text, that shades through deep
+   amber → bronze-gold → bright gold → bronze-gold → deep amber as it sweeps
+   left across the label. No blue anywhere. */
 .sc-trace-live:not(.is-done) .sc-trace-now-key {
-  /* A tiling gradient (gold at both ends so the seam is invisible) with a band
-     of brand blue drifting through the middle. It REPEATS and the sweep shifts
-     by exactly one tile, so the text is always fully covered — no transparent
-     gap, no disappear/reappear flicker as new content streams in below. */
+  /* A tiling gradient (matching gold at both ends so the seam is invisible)
+     built entirely from gold tones. It REPEATS and the sweep shifts by exactly
+     one tile, so the text is always fully covered — no transparent gap, no
+     flicker as new content streams in below. The extra deep-amber stops give
+     the sweep more depth as it shades through. */
   background-image: linear-gradient(
     100deg,
     var(--sc-shimmer-base) 0%,
-    var(--sc-shimmer-base) 40%,
-    color-mix(in srgb, var(--sc-shimmer-glow) 60%, var(--sc-shimmer-base)) 47%,
+    var(--sc-shimmer-deep) 16%,
+    var(--sc-shimmer-base) 34%,
+    color-mix(in srgb, var(--sc-shimmer-glow) 55%, var(--sc-shimmer-base)) 45%,
     var(--sc-shimmer-glow) 50%,
-    color-mix(in srgb, var(--sc-shimmer-glow) 60%, var(--sc-shimmer-base)) 53%,
-    var(--sc-shimmer-base) 60%,
+    color-mix(in srgb, var(--sc-shimmer-glow) 55%, var(--sc-shimmer-base)) 55%,
+    var(--sc-shimmer-base) 66%,
+    var(--sc-shimmer-deep) 84%,
     var(--sc-shimmer-base) 100%
   );
   background-size: 200% 100%;
@@ -5664,7 +5747,7 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   -webkit-text-fill-color: transparent;
   color: transparent;
   will-change: background-position;
-  animation: scTraceShimmer 2.8s linear infinite;
+  animation: scTraceShimmer 5.4s linear infinite;
 }
 @keyframes scTraceShimmer {
   from { background-position: 200% 0; }
@@ -5673,17 +5756,19 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 .sc-trace-story { display: block; max-width: 54ch; }
 .sc-trace-story-line {
   display: block; margin-bottom: 2px;
-  font-size: 0.75rem; line-height: 1.55;
+  font-size: 0.625rem; line-height: 1.55;
   color: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff);
   opacity: 0; transform: translateY(3px);
   transition: opacity .32s ease, transform .32s ease;
 }
 html.dark .sc-trace-now-key {
   color: #AEC8ED;
-  /* On navy: a warm gold resting tone with a soft ice-blue sweep, both lifted
-     lighter so the shimmer stays legible in dark mode. */
-  --sc-shimmer-base: color-mix(in srgb, var(--ter-amber, #FFC434) 90%, #ffffff);
-  --sc-shimmer-glow: #AEC8ED;
+  /* On navy: still all gold, lifted a touch brighter so it stays legible. The
+     deep tone holds a saturated amber (rather than going near-black) so the
+     depth reads against the dark surface. */
+  --sc-shimmer-base: var(--ter-amber, #FFC434);
+  --sc-shimmer-deep: color-mix(in srgb, var(--ter-amber, #FFC434) 78%, #7a4d00);
+  --sc-shimmer-glow: color-mix(in srgb, var(--ter-amber, #FFF3C0) 66%, #ffffff);
 }
 html.dark .sc-trace-story-line { color: #93B2DC; }
 /* Reduced motion: no sweep — the title rests on its solid brand-blue tone. */
@@ -5783,7 +5868,7 @@ html.dark .sc-settings .ss-body { background: transparent; }
   border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2);
 }
 .sc-settings .ss-info-icon {
-  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--primary-soft); color: var(--primary-ink, var(--primary));
 }
@@ -5808,7 +5893,7 @@ html.dark .sc-settings .ss-body { background: transparent; }
   background: var(--primary-soft);
 }
 .sc-settings .ss-agent-icon {
-  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-3);
 }
@@ -6640,7 +6725,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
   width: 34px;
   height: 34px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 50%;
   background: var(--surface-2);
   color: var(--text-subtle);
 }
@@ -11654,4 +11739,216 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
 .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not([data-rlabel]) {
   display: block;
   justify-self: stretch;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE PRIMARY NAVIGATION (≤ 768px)
+
+   Responsive model:
+     • The primary navigation floats as its own compact container pinned to the
+       TOP-LEFT — just the owl bug + an "expand" icon. It sits ABOVE the content
+       (out of the shell grid) so the chat module stays primary and centred.
+     • Tapping "expand" slides the FULL navigation in from the left as its own
+       drawer pane (`.wise-mnav-open`) over a dimming scrim.
+     • The History module is left in its collapsed state (untouched here).
+   Driven by js/mobile-nav.js (toggles `.wise-mnav-open` on #menu-panel).
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Neutralise the pivot (horizontal top-bar) layout on phones. */
+  #agent-shell-wrap.menu-brand-integrated.menu-pivoted,
+  #chat-shell-wrap.menu-brand-integrated.menu-pivoted {
+    grid-template-columns: auto 1fr !important;
+    grid-template-rows: 1fr !important;
+    grid-template-areas: "menu modules" !important;
+    row-gap: 0 !important;
+  }
+
+  /* ── Collapsed: floating owl + expand container, top-left ──────────────── */
+  #menu-panel.mp-open:not(.wise-mnav-open) {
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    z-index: 200 !important;
+    display: flex !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-inner {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: center;
+    /* Its own floating container background. */
+    background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-card, 0 8px 24px rgba(4, 8, 18, 0.18)) !important;
+    padding: 8px 6px !important;
+    overflow: visible !important;
+    animation: none !important;
+  }
+  html.dark #menu-panel:not(.wise-mnav-open) .menu-inner {
+    background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%) !important;
+    border-color: rgba(37, 80, 124, 0.28) !important;
+  }
+  /* Hide the full nav list + footer while floating. */
+  #menu-panel:not(.wise-mnav-open) .menu-panel-body,
+  #menu-panel:not(.wise-mnav-open) .menu-footer {
+    display: none !important;
+  }
+
+  /* Brand strip → vertical stack (owl on top, expand beneath). */
+  #menu-panel:not(.wise-mnav-open) .menu-brand-bar {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-brand-logo {
+    width: auto !important;
+    justify-content: center !important;
+    height: auto !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-brand-logo a {
+    align-items: center !important;
+    margin: 0 !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-brand-logo svg.tl-full,
+  #menu-panel:not(.wise-mnav-open) .menu-brand-logo .topbar-tagline {
+    display: none !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-brand-logo svg.tl-bug {
+    display: block !important;
+    width: 30px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    transform: none !important;
+  }
+  #menu-panel:not(.wise-mnav-open) .menu-brand-bar .topbar-menu-toggle {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 0 auto !important;
+    width: 36px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+  }
+  #menu-panel .menu-brand-bar .topbar-menu-toggle .lir-label { display: none !important; }
+
+  /* ── Dimming scrim behind the open drawer ──────────────────────────────── */
+  #mnav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 3999;
+    background: rgba(4, 8, 18, 0.48);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  #mnav-scrim.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ── Expanded drawer: the nav slides in from the left as its own pane ───── */
+  #menu-panel.wise-mnav-open {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    right: auto !important;
+    width: min(320px, 86vw) !important;
+    min-width: min(320px, 86vw) !important;
+    max-width: 86vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    z-index: 4000 !important;
+    display: flex !important;
+    padding: 0 !important;
+  }
+  #menu-panel.wise-mnav-open .menu-inner {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 16px 16px 0 !important;
+    box-shadow: 16px 0 44px rgba(4, 8, 18, 0.34) !important;
+    background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%) !important;
+    animation: wiseMnavDrawerIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  html.dark #menu-panel.wise-mnav-open .menu-inner {
+    background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%) !important;
+  }
+  #menu-panel.wise-mnav-open .menu-brand-bar {
+    flex-direction: row !important;
+    align-items: center !important;
+    height: auto !important;
+    min-height: var(--shell-topbar-h) !important;
+    padding: 0 10px 0 20px !important;
+  }
+  #menu-panel.wise-mnav-open .menu-brand-logo svg.tl-full { display: block !important; }
+  #menu-panel.wise-mnav-open .menu-brand-logo svg.tl-bug { display: none !important; }
+  #menu-panel.wise-mnav-open .menu-brand-bar .topbar-menu-toggle {
+    position: relative !important;
+    margin-left: auto !important;
+    width: 40px !important;
+  }
+  #menu-panel.wise-mnav-open .menu-panel-body {
+    display: block !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 9px 8px 12px !important;
+  }
+  #menu-panel.wise-mnav-open .menu-footer { display: block !important; }
+  /* Fully-expanded nav (labels visible) regardless of any persisted collapse. */
+  #menu-panel.wise-mnav-open .menu-nav-label,
+  #menu-panel.wise-mnav-open .menu-nav-chevron-btn,
+  #menu-panel.wise-mnav-open .menu-nav-section-label { display: revert !important; }
+  #menu-panel.wise-mnav-open .menu-nav-item,
+  #menu-panel.wise-mnav-open .menu-nav-subitem {
+    justify-content: flex-start !important;
+    gap: 10px !important;
+  }
+
+  @keyframes wiseMnavDrawerIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  /* ── Chat is primary; right-of-chat modules fold into the floating
+        Outputs / Sources component ──────────────────────────────────────────
+     On phones the chat module takes center stage. Any module docked to the
+     RIGHT of the chat (e.g. the "Turns" sidebar) is lifted out of the row so
+     the chat isn't crowded; its produced content stays reachable through the
+     floating Outputs / Sources manifest pinned to the chat's top-right, which
+     we force ON here (the History module, docked LEFT, is left collapsed). */
+  #modules-row .wch-sidebar.wch-docked.wch-right {
+    display: none !important;
+  }
+  /* Turn the floating Outputs / Sources component ON (overrides the chat's
+     "Hide outputs & sources" default) so it's the access point for right-side
+     output. Hidden only while genuinely empty. */
+  .wa-manifest.is-off:not(.is-empty) {
+    display: grid !important;
+  }
 }

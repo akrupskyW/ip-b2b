@@ -299,12 +299,17 @@
       '#modules-row > .wch-chat-anchor:not(.wiseai-dock){position:relative;z-index:3;}',
       '#modules-row.modules-sticky{position:relative;}',
       '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:2;}',
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked{z-index:1;background:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
+      /* `.wch-unsticky` (set from a docked module\'s ⋯ "Sticky module" switch —
+         Turns, the "What can I ask?" module, or sticky-modules.js) opts that
+         one module OUT of the tuck: it keeps the free-standing card look, so
+         every :not(.wch-unsticky) below is what actually performs the tuck.
+         Mirrors the same guards in pages/wiseai.html\'s own copy. */
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
       /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right{margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
         'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:wchStickySlideR .42s cubic-bezier(.34,1.45,.64,1) both;}',
       '@keyframes wchStickySlideL{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
       '@keyframes wchStickySlideR{from{transform:translateX(-26px);opacity:.35}to{transform:none;opacity:1}}',

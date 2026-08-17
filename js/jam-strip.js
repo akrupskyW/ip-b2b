@@ -24,8 +24,6 @@
  *   - "Megalovania"      Undertale
  *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
  *   - "Take On Me"       a-ha · the synth hook
- *   - "Jump Around"      House of Pain · the horn-squeal hook
- *   - "Sabotage"         Beastie Boys · the fuzz-bass riff
  *   - "Never Gonna…"     Rick Astley · Never Gonna Give You Up
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
@@ -206,28 +204,6 @@ const SONGS = {
       [null, 0.5],
     ],
   },
-  jumparound: {
-    label: 'Jump Around',
-    bpm: 107,
-    type: 'square',
-    notes: [
-      // House of Pain — Jump Around, the squealing horn-sample hook, up high.
-      ['E5', 0.5], ['G5', 0.25], ['E5', 0.25], ['D5', 0.5], ['E5', 0.5], ['G5', 0.5], ['A5', 0.5], ['G5', 0.5], ['E5', 0.5],
-      ['D5', 0.5], ['E5', 0.25], ['D5', 0.25], ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 1.0],
-      [null, 0.5],
-    ],
-  },
-  sabotage: {
-    label: 'Sabotage',
-    bpm: 116,
-    type: 'sawtooth',
-    notes: [
-      // Beastie Boys — Sabotage, the fuzzed-out driving bass riff, key Em.
-      ['E3', 0.5], ['E3', 0.25], ['E3', 0.25], ['G3', 0.5], ['E3', 0.5], ['A3', 0.5], ['G3', 0.5], ['E3', 0.5], ['D3', 0.5],
-      ['E3', 0.5], ['E3', 0.25], ['G3', 0.25], ['A3', 0.5], ['B3', 0.5], ['A3', 0.5], ['G3', 0.5], ['E3', 1.0],
-      [null, 0.5],
-    ],
-  },
   rickroll: {
     label: 'Never Gonna…',
     bpm: 113,
@@ -245,8 +221,89 @@ const SONGS = {
 const SONG_ORDER = [
   'money', 'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
   'imperial', 'seven', 'smoke', 'megalovania', 'pirates', 'takeonme',
-  'jumparound', 'sabotage', 'rickroll',
+  'rickroll',
 ];
+
+/* ---- Iconic click stabs ---------------------------------------------- */
+/* Hand-picked micro-phrases — the instantly recognizable hook of each track,
+   boiled down to 3–5 notes. While the Jam strip is on, every button click in
+   the app plays one of these (see the global click listener at the bottom of
+   this file) instead of the whole tune. Each button hashes to one stab so a
+   given button always makes the same sound. Format matches SONGS.notes:
+   [name|null, beats], played at the parent song's bpm and timbre. */
+
+const STABS = {
+  money: [
+    [['A4', 0.5], ['A4', 0.5], ['A4', 0.75], ['C5', 0.25]],          // "money, money, mo-ney"
+    [['C5', 0.5], ['B4', 0.5], ['A4', 0.75]],
+    [['A4', 0.25], ['A4', 0.25], ['C5', 0.5], ['B4', 0.5]],
+  ],
+  pump: [
+    [['C5', 0.5], ['Eb5', 0.5], ['F5', 0.5]],                        // the rising "pump up"
+    [['G5', 0.5], ['Ab5', 0.5], ['G5', 0.5]],
+    [['C5', 0.25], ['C5', 0.25], ['Eb5', 0.5], ['F5', 0.5]],
+  ],
+  axelf: [
+    [['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25]],                      // the opening lick
+    [['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5]],
+    [['F4', 0.5], ['C5', 0.5], ['F5', 0.5]],
+  ],
+  ode: [
+    [['E4', 0.5], ['E4', 0.5], ['F4', 0.5], ['G4', 0.5]],
+    [['G4', 0.5], ['F4', 0.5], ['E4', 0.5], ['D4', 0.5]],
+    [['E4', 0.75], ['D4', 0.25], ['D4', 0.75]],
+  ],
+  sonic: [
+    [['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5]],            // Green Hill opener
+    [['G4', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5]],
+    [['B4', 0.25], ['C5', 0.25], ['E5', 0.75]],                      // spring-jump flick
+  ],
+  mario: [
+    [['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5]],            // the overworld intro
+    [['B5', 0.3], ['E6', 1.0]],                                      // the coin
+    [['C5', 0.25], ['E5', 0.25], ['G5', 0.75]],                      // power-up run
+  ],
+  tetris: [
+    [['E5', 0.5], ['B4', 0.25], ['C5', 0.25], ['D5', 0.5]],          // Korobeiniki opener
+    [['A4', 0.5], ['A4', 0.25], ['C5', 0.25], ['E5', 0.5]],
+    [['B4', 0.5], ['C5', 0.25], ['D5', 0.5]],
+  ],
+  imperial: [
+    [['G4', 0.5], ['G4', 0.5], ['G4', 0.5]],                         // the march tread
+    [['Eb4', 0.5], ['Bb4', 0.25], ['G4', 0.75]],
+    [['D5', 0.5], ['D5', 0.5], ['D5', 0.5]],
+  ],
+  seven: [
+    [['E4', 0.75], ['E4', 0.25], ['G4', 0.25], ['E4', 0.25]],        // the stadium riff head
+    [['D4', 0.5], ['C4', 0.75], ['B3', 0.75]],
+    [['E4', 0.5], ['G4', 0.25], ['E4', 0.25], ['D4', 0.5]],
+  ],
+  smoke: [
+    [['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75]],                       // duh, duh, duuh
+    [['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 0.75]],
+    [['C5', 0.5], ['Bb4', 0.5], ['G4', 0.75]],
+  ],
+  megalovania: [
+    [['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5]],          // the intro riff head
+    [['Ab4', 0.375], ['G4', 0.375], ['F4', 0.375]],
+    [['F4', 0.25], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5]],
+  ],
+  pirates: [
+    [['A4', 0.25], ['C5', 0.25], ['D5', 0.5], ['D5', 0.25]],         // the galloping climb
+    [['D5', 0.25], ['E5', 0.25], ['F5', 0.5], ['F5', 0.25]],
+    [['E5', 0.25], ['D5', 0.25], ['C5', 0.25], ['B4', 0.25], ['A4', 0.5]],
+  ],
+  takeonme: [
+    [['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5]],          // the synth hook head
+    [['E5', 0.5], ['E5', 0.5], ['G#5', 0.5], ['G#5', 0.5]],
+    [['A5', 0.5], ['B5', 0.5], ['A5', 0.5]],                         // the "taaake ooon" leap
+  ],
+  rickroll: [
+    [['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['E5', 0.5]], // "never gonna give"
+    [['E5', 0.5], ['E5', 0.5], ['D5', 0.75]],
+    [['C5', 0.25], ['D5', 0.25], ['B4', 0.25], ['A4', 0.5]],
+  ],
+};
 
 /* ---- Tiny synth ----------------------------------------------------- */
 
@@ -285,15 +342,16 @@ function ensureContext() {
   return player.ctx;
 }
 
-/** Schedule a single note (lead square + soft sine body) with an envelope. */
-function playNote(freq, t0, durSec, type) {
+/** Schedule a single note (lead square + soft sine body) with an envelope.
+    `vel` (0..1) scales loudness — click stabs play softer than the full mix. */
+function playNote(freq, t0, durSec, type, vel = 1) {
   if (!freq) return;
   const ctx = player.ctx;
   const gain = ctx.createGain();
   gain.connect(player.master);
 
-  const peak = 0.22;
-  const sustain = 0.15;
+  const peak = 0.22 * vel;
+  const sustain = 0.15 * vel;
   const playFor = Math.max(0.05, durSec * 0.92);
   gain.gain.setValueAtTime(0.0001, t0);
   gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
@@ -433,6 +491,7 @@ function play(songId) {
   clearTimeout(player.loopTimer);
 
   player.songId = songId;
+  try { localStorage.setItem(JAM_SONG_KEY, songId); } catch (_) {}
   player.playing = true;
   player.onState?.(true, songId);
   emitJamState();
@@ -554,6 +613,21 @@ function wireStrip(strip) {
    defaulted on), so a fresh key guarantees the off-by-default actually sticks. */
 const JAM_KEY = 'wise-jam-strip-v2';
 
+/* Last track the user picked — persisted so the button click stabs keep the
+   chosen flavour across pages and reloads, even when nothing is playing. */
+const JAM_SONG_KEY = 'wise-jam-song-v1';
+
+function storedSongId() {
+  try {
+    const id = localStorage.getItem(JAM_SONG_KEY);
+    return id && SONGS[id] ? id : null;
+  } catch (_) { return null; }
+}
+
+// Seed the in-memory choice from the last visit so "resume" and the click
+// stabs use the user's track straight away on a fresh page.
+player.songId = storedSongId();
+
 /** True only when the user explicitly turned the jam strip on (default off). */
 export function isJamStripOn() {
   try { return localStorage.getItem(JAM_KEY) === '1'; } catch { return false; }
@@ -606,3 +680,77 @@ export function mountJamStrip() {
    popover (see js/appearance-menu.js → jamPlayerSection), so there's nothing to
    inject into #menu-panel. mountJamStrip()/buildStrip() are kept only for the
    legacy Minimal-UI pivot bar should a shell opt back into an inline strip. */
+
+/* ---- App-wide button click stabs ------------------------------------ */
+/* While the Jam strip is switched on, EVERY button click in the app plays a
+   short, iconic riff snippet from the chosen track (see STABS above) — not
+   the whole tune. Each button hashes to one of the track's stabs, so a given
+   button always answers with the same sound. This module is imported by
+   js/topbar.js on every page, so wiring the listener here makes it global.
+
+   Rules:
+   - Jam strip off → silent (and no AudioContext is ever created).
+   - Full track already playing → stabs stay out of the way (no clashing).
+   - The jam player's own transport/chips are excluded — clicking them starts
+     or stops real playback, which is feedback enough. */
+
+const STAB_SELECTOR =
+  'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary';
+const STAB_SKIP =
+  '[data-jam-play], [data-jam-song], [data-jam], .jam-strip, .jam-pop';
+
+/** Play stab #`which` (mod the track's stab count) of a song, softly. */
+function playStab(songId, which) {
+  const song = SONGS[songId];
+  const stabs = STABS[songId];
+  if (!song || !stabs || !stabs.length) return;
+  const ctx = ensureContext();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const notes = stabs[Math.abs(which) % stabs.length];
+  // A touch quicker than the source tune so it reads as UI feedback.
+  const beat = (60 / song.bpm) / 1.15;
+  let t = ctx.currentTime + 0.02;
+  for (const [name, beats] of notes) {
+    const dur = beats * beat;
+    if (name) playNote(noteFreq(name), t, dur, song.type, 0.65);
+    t += dur;
+  }
+}
+
+/** Stable per-button hash so each button keeps its own signature stab. */
+function stabHash(el) {
+  const s = [
+    el.id || '',
+    el.getAttribute('aria-label') || '',
+    typeof el.className === 'string' ? el.className : '',
+    (el.textContent || '').trim().slice(0, 40),
+  ].join('|');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+let lastStabAt = 0;
+
+function onGlobalButtonClick(ev) {
+  if (!isJamStripOn()) return;
+  if (player.playing) return;
+  const target = ev.target instanceof Element ? ev.target : null;
+  const el = target ? target.closest(STAB_SELECTOR) : null;
+  if (!el || el.closest(STAB_SKIP)) return;
+
+  // Debounce rapid double-fires (e.g. label+input both dispatching).
+  const now = performance.now();
+  if (now - lastStabAt < 120) return;
+  lastStabAt = now;
+
+  playStab(player.songId || storedSongId() || SONG_ORDER[0], stabHash(el));
+}
+
+// Capture phase so stopPropagation() in feature code can't mute the fun.
+if (!window.__wiseJamClickStabs) {
+  window.__wiseJamClickStabs = true;
+  document.addEventListener('click', onGlobalButtonClick, true);
+}

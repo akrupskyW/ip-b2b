@@ -168,8 +168,39 @@
     .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-brand-logo-mono { font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary); }
 
-    /* Scrollable body — white background (faithful label). */
-    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--surface); }
+    /* Scrollable body — white background (faithful label). Also the query
+       container the single-pane split (.nfp-sp) responds to, so the two-column
+       layout tracks the module's own width rather than the viewport. */
+    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--surface); padding-bottom: 56px; container-type: inline-size; container-name: nfp-body; }
+
+    /* ── Single-pane responsive split ──────────────────────────────────────
+       The default (non-toggled) Product Details body lays the product identity
+       — size picker, photo, category and UPC barcode — in a LEFT column and the
+       Nutrition Facts + ingredients in a RIGHT column once the module is wide
+       enough. Below the breakpoint (mobile / narrow module) the two blocks fall
+       back to a single stacked column. */
+    .nfp-sp > .nfp-sp-strip, .nfp-sp > .nfp-sp-media, .nfp-sp > .nfp-sp-facts { min-width: 0; }
+    @container nfp-body (min-width: 640px) {
+      .nfp-sp { display: grid; grid-template-columns: minmax(300px, 44%) 1fr; }
+      /* The Product sizes strip spans both columns across the top. */
+      .nfp-sp-strip { grid-column: 1 / -1; }
+      /* Media column fills the full height of the (taller) facts column, and the
+         product photo stretches to fill it so the image background runs the whole
+         height rather than stopping at its fixed hero size. */
+      .nfp-sp-media { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+      .nfp-sp-media .nfp-hero--rich { flex: 1 1 auto; height: auto; min-height: 260px; }
+      /* With the tall photo, float the name / category / UPC group up into the
+         top half of the column instead of pinning it to the very bottom (leave
+         46px clear at the top for the "Product image" control). */
+      .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) .nfp-hero-stack {
+        top: 0; bottom: auto; padding-top: 46px;
+      }
+      /* Re-weight the scrim so the darkening sits under that top group and fades
+         out toward the bottom, keeping the white name legible up top. */
+      .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) .nfp-hero-scrim {
+        background: linear-gradient(180deg, rgba(7,12,26,0.72) 0%, rgba(7,12,26,0.30) 42%, rgba(7,12,26,0) 72%);
+      }
+    }
 
     /* Hero image / uploader */
     .nfp-hero { position: relative; overflow: hidden; height: 156px; background: #1A2339; }
@@ -193,13 +224,19 @@
     .nfp-hero-empty .neh-t { font-size: 0.76rem; font-weight: 700; color: var(--text); }
     .nfp-hero-empty .neh-d { font-size: 0.68rem; color: var(--text-subtle); }
     .nfp-hero-empty:hover { border-color: var(--primary); color: var(--text); }
+    /* Active drag-over state — any hero variant accepting a dropped image. */
+    .nfp-hero.nfp-hero-drag, .nfp-rcol.nfp-hero-drag, .nfp-rcol-empty.nfp-hero-drag {
+      outline: 2px dashed var(--primary); outline-offset: -4px;
+      box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    .nfp-hero-drag .nfp-hero-empty { border-color: var(--primary); color: var(--text); }
 
     /* ── Combined hero — the product photo with the name, category and UPC all
        stacked in one container on top of the image (single-pane). Before a
        photo exists the same stack sits on a light panel below the dropzone so
        every field stays visible and editable. ── */
     .nfp-hero--rich { position: relative; overflow: hidden; height: 260px; background: #1A2339; border-bottom: 1px solid var(--border); }
-    .nfp-hero--rich.nfp-hero--empty { height: auto; background: var(--surface); }
+    .nfp-hero--rich.nfp-hero--empty { height: auto; background: var(--surface-2); }
     .nfp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-hero-scrim { position: absolute; inset: 0; pointer-events: none;
       background: linear-gradient(180deg, rgba(7,12,26,0.45) 0%, rgba(7,12,26,0) 26%, rgba(7,12,26,0) 40%, rgba(7,12,26,0.92) 100%); }
@@ -211,9 +248,37 @@
     .nfp-hero-name .nfp-edit:focus, .nfp-rcol-name .nfp-edit:focus { color: #111; }
     .nfp-hero-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -4px; }
     .nfp-hero-stack--light .nfp-hero-brand { color: var(--text-muted); }
-    .nfp-hero-cat { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
-    .nfp-hero-upc { align-self: center; max-width: 100%; }
-    .nfp-hero-upc.nfp-rupc { padding: 7px 10px 6px; }
+    .nfp-hero-cat { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; width: 100%; }
+    /* Category sits ABOVE the UPC — the two affordances stack vertically beneath
+       the product name and share one matched pill style so they read as a pair. */
+    .nfp-hero-actionrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+    .nfp-hero-cat, .nfp-hero-upc { width: 100%; max-width: 240px; align-self: center; }
+    /* Keep the on-photo UPC pill compact — the shared `.nfp-rupc { max-width:100% }`
+       (defined later) would otherwise out-order the 240px cap above and let the
+       barcode strip stretch across the whole hero. This 2-class selector wins. */
+    .nfp-hero-upc.nfp-rupc { padding: 7px 10px 6px; max-width: 240px; }
+
+    /* Matched pill — the category <select> and the "Add a UPC" button share the
+       exact same shell (grey pill, centered label, left icon). The category also
+       carries a dropdown caret since it's a native select. */
+    .nfp-hero-cat .nfp-cat-select { display: flex; width: 100%; }
+    .nfp-hero-cat .nfp-cat-native { width: 100%; max-width: none; text-align: center; text-align-last: center; }
+    .nfp-hero-upc .nfp-mini-btn {
+      width: 100%; justify-content: center; gap: 5px;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
+      line-height: 1.1; padding: 6px 30px; border-radius: 999px;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+      transition: box-shadow 0.15s, background 0.15s;
+    }
+    .nfp-hero-upc .nfp-mini-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .nfp-hero-upc .nfp-mini-btn .material-symbols-outlined { font-size: 15px !important; color: var(--text-muted); }
+    /* On-photo (over the product image): both become white pills with brand-blue. */
+    .nfp-hero-upc .nfp-mini-btn--onphoto {
+      background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent;
+      box-shadow: 0 2px 10px rgba(7,12,26,0.20);
+    }
+    .nfp-hero-upc .nfp-mini-btn--onphoto:hover { background: #fff; color: var(--primary); }
+    .nfp-hero-upc .nfp-mini-btn--onphoto .material-symbols-outlined { color: var(--primary); }
     /* Compound selector so this outranks the base .nfp-cat-chip fill below. */
     .nfp-cat-chip.nfp-cat-chip--onphoto { background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent; }
     .nfp-hero-field-note { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--sec-red); }
@@ -249,6 +314,168 @@
     }
     .nfp-hero-claimed .material-symbols-outlined { font-size: 15px !important; color: var(--primary); }
 
+    /* Category dropdown — a single pill-shaped <select> component (replaces the
+       old chip + separate "Change" button). Native select so its menu escapes
+       the hero's overflow:hidden. The tag icon + caret overlay the control. */
+    .nfp-cat-select { position: relative; display: inline-flex; align-items: center; max-width: 100%; }
+    .nfp-cat-native {
+      -webkit-appearance: none; appearance: none; color-scheme: light;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
+      line-height: 1.1; cursor: pointer; max-width: 260px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding: 6px 30px 6px 30px; border-radius: 999px;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+      transition: box-shadow 0.15s, background 0.15s;
+    }
+    .nfp-cat-native:hover { background: var(--surface); }
+    .nfp-cat-native:focus { outline: none; box-shadow: 0 0 0 2px var(--primary); }
+    .nfp-cat-native option { color: #111; background: #fff; font-weight: 600; }
+    .nfp-cat-select-ic { position: absolute; left: 9px; font-size: 15px !important; color: var(--text-muted); pointer-events: none; }
+    .nfp-cat-select-caret { position: absolute; right: 7px; font-size: 18px !important; color: var(--text-muted); pointer-events: none; }
+    /* On-photo variant — white pill with brand-blue text/icons, matching the
+       other overlaid affordances. */
+    .nfp-cat-select--onphoto .nfp-cat-native {
+      background: rgba(255,255,255,0.94); color: var(--primary); border-color: transparent;
+      box-shadow: 0 2px 10px rgba(7,12,26,0.20);
+    }
+    .nfp-cat-select--onphoto .nfp-cat-native:hover { background: #fff; }
+    .nfp-cat-select--onphoto .nfp-cat-select-ic,
+    .nfp-cat-select--onphoto .nfp-cat-select-caret { color: var(--primary); }
+    .nfp-cat-select--err .nfp-cat-native { box-shadow: 0 0 0 2px var(--sec-red); }
+
+    /* ── Empty hero (no photo yet) — the product name, category and UPC read as
+       a set of matched "blue ghost" input pills: soft-blue fill, primary
+       text/icon and a primary-tinted border (the same ghost treatment as the
+       category chip), centered and equal-width. The product name itself becomes
+       a pill input whose placeholder is "Product name". ── */
+    .nfp-hero-stack--light .nfp-hero-name { width: 100%; max-width: 240px; margin: 0 auto; }
+    /* Product name is a regular text input — the same treatment as every input
+       app-wide (.auth-input / .fl-input family): neutral surface, strong border,
+       pill radius, regular weight, muted italic placeholder + primary focus ring.
+       NOT a blue ghost button (the category/UPC controls below are the buttons). */
+    .nfp-hero-stack--light .nfp-hero-name .nfp-edit {
+      display: block; width: 100%; box-sizing: border-box;
+      text-transform: none; letter-spacing: normal;
+      font-size: 0.8125rem; font-weight: 400; line-height: 1.4; text-align: left;
+      padding: 7px 14px; border-radius: 999px;
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border-strong);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .nfp-hero-stack--light .nfp-hero-name .nfp-edit.nfp-edit-empty {
+      font-style: italic; color: color-mix(in srgb, var(--text-subtle) 55%, transparent);
+    }
+    .nfp-hero-stack--light .nfp-hero-name .nfp-edit:hover {
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+    }
+    .nfp-hero-stack--light .nfp-hero-name .nfp-edit:focus {
+      background: var(--surface); color: var(--text);
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    /* Category <select> pill + "Add a UPC" button → the same blue ghost fill. */
+    .nfp-hero-stack--light .nfp-cat-native,
+    .nfp-hero-stack--light .nfp-hero-upc .nfp-mini-btn {
+      background: var(--primary-soft);
+      color: var(--primary-ink, var(--primary));
+      border-color: color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .nfp-hero-stack--light .nfp-cat-native:hover,
+    .nfp-hero-stack--light .nfp-hero-upc .nfp-mini-btn:hover {
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 32%, transparent);
+      color: var(--primary-ink, var(--primary));
+    }
+    .nfp-hero-stack--light .nfp-cat-select-ic,
+    .nfp-hero-stack--light .nfp-cat-select-caret,
+    .nfp-hero-stack--light .nfp-hero-upc .nfp-mini-btn .material-symbols-outlined {
+      color: var(--primary-ink, var(--primary));
+    }
+    /* Keep the name / category / UPC INSIDE the image container even when empty:
+       the whole empty hero is one droppable container (surface-2) holding the
+       upload prompt on top and the fields beneath — not a separate white panel
+       hanging below the drop area. */
+    .nfp-hero--rich.nfp-hero--empty .nfp-hero-empty {
+      height: auto; min-height: 90px; background: transparent; border-bottom: none;
+      /* Extra top padding clears the top-right "Product image" control so the
+         centered name headline sits below it (same spot as the filled hero). */
+      padding: 50px 12px 6px;
+    }
+    .nfp-hero--rich.nfp-hero--empty .nfp-hero-stack--light { background: transparent; padding: 4px 12px 16px; }
+    /* The name input stays white so it reads as an input on the beige container. */
+    .nfp-hero--rich.nfp-hero--empty .nfp-hero-name .nfp-edit,
+    .nfp-hero--rich.nfp-hero--empty .nfp-hero-name .nfp-edit:focus { background: var(--surface); }
+
+    /* Empty-photo prompt is an input field: an "Upload" button (opens the file
+       picker / camera) joined to a URL text box you can paste straight into. */
+    .nfp-hero-photo-input { cursor: default; gap: 9px; }
+    .nfp-hero-photo-input:hover { border-color: transparent; color: var(--text-muted); }
+    /* The product name IS the headline — one editable field that reads as the CTA
+       ("Add product details") until a name is typed, then shows the product name.
+       It's our standard pill input at the normal size (sans-serif). */
+    .nfp-hero-name--head { width: 100%; max-width: 340px; margin: 0 auto; text-shadow: none; }
+    .nfp-hero-name--head .nfp-edit {
+      display: block; width: 100%; box-sizing: border-box;
+      font-family: inherit;
+      font-size: 0.72rem; font-weight: 400; letter-spacing: normal; line-height: 1.4;
+      text-transform: none; text-align: left; text-shadow: none;
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--border-strong); border-radius: 999px; padding: 7px 16px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .nfp-hero-name--head .nfp-edit.nfp-edit-empty {
+      font-style: italic; font-weight: 400; color: color-mix(in srgb, var(--text-subtle) 55%, transparent);
+    }
+    .nfp-hero-name--head .nfp-edit:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); }
+    .nfp-hero-name--head .nfp-edit:focus {
+      background: var(--surface); color: var(--text);
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    .nfp-photo-input-group {
+      display: flex; align-items: stretch; width: 100%; max-width: 340px; margin-top: 2px;
+      background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .nfp-photo-input-group:focus-within {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    /* Upload affordance — icon only (camera), tooltip via title; a bare ghost
+       icon inside the pill (no boxed backdrop), divided from the URL box. */
+    .nfp-photo-upload-btn {
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 42px; padding: 7px 0; border: none; border-right: 1px solid var(--border);
+      cursor: pointer; background: transparent; color: var(--primary-ink, var(--primary));
+      transition: color 0.15s, filter 0.15s;
+    }
+    .nfp-photo-upload-btn:hover { filter: brightness(1.12); }
+    .nfp-photo-upload-btn .material-symbols-outlined { font-size: 19px !important; }
+    .nfp-photo-url-input {
+      flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+      font-family: inherit; font-size: 0.72rem; color: var(--text); padding: 0 4px 0 12px;
+    }
+    .nfp-photo-url-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .nfp-photo-url-go {
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 34px; border: none; cursor: pointer; background: transparent; color: var(--text-muted);
+      transition: color 0.15s;
+    }
+    .nfp-photo-url-go:hover { color: var(--primary-ink, var(--primary)); }
+    .nfp-photo-url-go .material-symbols-outlined { font-size: 18px !important; }
+
+    /* Labelled edit affordance — the top-right circular edit button with a
+       "Product image" pill beside it. Shared by the finished photo AND the empty
+       hero (so the control sits in the same top-right spot either way), opening
+       the full photo modal (upload / drag-drop / paste URL). */
+    .nfp-hero-edit-tag { position: absolute; top: 8px; right: 8px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; }
+    .nfp-hero-edit-tag .nfp-hero-edit { position: static; top: auto; right: auto; }
+    .nfp-hero-edit-tag-label {
+      font-size: 11px; font-weight: 600; line-height: 1; color: #fff;
+      background: rgba(0,0,0,0.5); border-radius: 999px; padding: 5px 9px;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+
     /* Category block */
     .nfp-cat { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
     .nfp-cat-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 5px; }
@@ -270,15 +497,85 @@
     /* UPC chip */
     .nfp-upc-chip { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 12px 10px; }
     .nfp-upc-label { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 4px; }
-    .nfp-barcode-svg { display: block; margin: 2px auto 0; }
+    .nfp-barcode-svg { display: block; margin: 2px auto 0; max-width: 100%; height: auto; }
     .nfp-barcode-num { font-family: 'Courier New', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
 
+    /* ── Segmented UPC-A entry — one white card holding a faded example barcode
+       above one box per digit (SSN / verification-code style), grouped the way
+       the number physically breaks down: 1 · 5 · 5 · 1 (number-system ·
+       manufacturer · product · check digit). The faded barcode is swapped for
+       the real one once all 12 digits are entered. ── */
+    .nfp-upc-entry {
+      display: flex; flex-direction: column; gap: 12px; width: 100%; box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border); border-radius: 14px;
+      padding: 16px 10px 14px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
+    }
+    /* Barcode slot — a large, full-width barcode across the top of the card.
+       Holds either the real bars (when 12 digits are known) or the faded
+       placeholder below, always in the same tall footprint so nothing shifts. */
+    .nfp-upc-barcode { width: 100%; height: 62px; }
+    .nfp-upc-bc { display: block; width: 100%; height: 100%; fill: #111; }
+    /* Faded example barcode — a placeholder look, not a real code, held light
+       until the actual barcode renders in its place. */
+    .nfp-upc-preview {
+      width: 100%; height: 100%; opacity: 0.2;
+      background-image: repeating-linear-gradient(90deg,
+        #1A2339 0 2px, transparent 2px 6px,
+        #1A2339 6px 8px, transparent 8px 12px,
+        #1A2339 12px 15px, transparent 15px 18px);
+      background-repeat: repeat-x; background-position: center; background-size: auto 100%;
+    }
+    /* Digit slots: plain underlines (no boxes), evenly sized, spaced out in the
+       1 · 5 · 5 · 1 sections the way digits sit beneath a real UPC barcode. Mono
+       font so every digit is the same width and reads like a printed code. */
+    .nfp-upc-cells { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; }
+    .nfp-upc-cell {
+      flex: 1 1 0; min-width: 0; width: 100%; height: 32px; box-sizing: border-box;
+      font-family: 'Courier New', ui-monospace, monospace; font-size: 1.1rem; font-weight: 700;
+      letter-spacing: 0; text-align: center; padding: 0 0 3px;
+      color: #111; background: transparent;
+      border: none; border-bottom: 2px solid var(--border-strong); border-radius: 0; outline: none;
+      transition: border-color 0.15s ease;
+    }
+    /* Wider gap before a UPC-A section start (digits 2, 7, 12). A fixed margin,
+       so it never steals from the cells' equal shared width. */
+    .nfp-upc-cell--sep { margin-left: 13px; }
+    .nfp-upc-cell::placeholder { color: var(--text-subtle); }
+    .nfp-upc-cell:hover { border-bottom-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+    .nfp-upc-cell:focus { border-bottom-color: var(--primary); }
+    /* Once all 12 digits are in, drop the underlines so it reads like a printed
+       code. They return the moment the field is edited again — hovering a cell
+       shows that slot's rule, and clicking into any cell (focus) brings the
+       whole set back so you can see every slot while changing a number. */
+    .nfp-upc-entry--filled .nfp-upc-cell { border-bottom-color: transparent; }
+    .nfp-upc-entry--filled .nfp-upc-cell:hover { border-bottom-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
+    .nfp-upc-entry--filled:focus-within .nfp-upc-cell { border-bottom-color: var(--border-strong); }
+    .nfp-upc-entry--filled:focus-within .nfp-upc-cell:focus { border-bottom-color: var(--primary); }
+    /* On-photo — same white card, just lifted with a stronger shadow. */
+    .nfp-upc-entry--onphoto { border-color: transparent; box-shadow: 0 4px 16px rgba(7,12,26,0.28); }
+    /* Let the segmented card breathe wider than the 240px cat/UPC cap so 12 mono
+       digits never clip; center it under the name. */
+    .nfp-hero-upc--seg { max-width: 320px; }
+    .nfp-rcol-upc { width: 100%; max-width: 340px; align-self: center; }
+
+    /* Small centered note above a size's barcode when it reuses the single
+       count's UPC (shown until the size is given a code of its own). */
+    .nfp-pack-upc-note {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      font-size: 0.62rem; font-weight: 600; color: var(--text-muted);
+      text-align: center; margin-bottom: 6px;
+    }
+
     /* Food Identity thumbs (multiple product images) */
-    .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 9px 12px 10px; }
-    .nfp-fi-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 7px; }
-    .nfp-fi-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
-    .nfp-fi-badge { font-size: 0.58rem; font-weight: 600; color: var(--primary-ink, var(--primary)); background: var(--primary-soft); border-radius: 4px; padding: 1px 5px; }
-    .nfp-fi-thumbs { display: flex; justify-content: center; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+    .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 14px 14px; }
+    .nfp-fi-header { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 4px; }
+    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); }
+    /* Combined Product Images + Pack Formats — the two thumb groups share one
+       section, braided side by side by a vertical bar. */
+    .nfp-fi-row { display: flex; align-items: stretch; justify-content: center; gap: 12px; }
+    .nfp-fi-group { flex: 1 1 0; min-width: 0; }
+    .nfp-fi-vr { flex: 0 0 1px; align-self: stretch; background: var(--border); }
+    .nfp-fi-thumbs { display: flex; justify-content: flex-start; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
     .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
     .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
     .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); transform: scale(1.08); }
@@ -298,10 +595,21 @@
     .nfp-fi-thumb-icon { display: flex; align-items: center; justify-content: center; color: var(--text-subtle); }
     .nfp-fi-thumb-icon .material-symbols-outlined { font-size: 20px !important; }
     .nfp-pack-caption {
-      display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap;
-      margin-top: 7px; font-size: 0.62rem; color: var(--text-muted); text-align: center;
+      display: flex; align-items: center; justify-content: flex-start; gap: 5px; flex-wrap: wrap;
+      margin: 0 0 12px; font-size: 0.8125rem; line-height: 1.45; color: var(--text-muted); text-align: left;
     }
     .nfp-pack-caption .material-symbols-outlined { font-size: 13px !important; color: var(--primary-ink, var(--primary)); }
+
+    /* ── Pack Nutrition Facts ──
+       A per-pack, editable Nutrition Facts panel (seeded from the base product)
+       that appears for the currently-selected pack format. Reuses the label's
+       .nfp-nf-* styling; the header names which pack is being edited. */
+    .nfp-pack-nf { background: var(--surface); border-top: 1px solid var(--border); padding: 4px 0 2px; }
+    .nfp-pack-nf-head { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px 2px; }
+    .nfp-pack-nf-head > .material-symbols-outlined { font-size: 18px !important; color: var(--primary-ink, var(--primary)); margin-top: 1px; }
+    .nfp-pack-nf-titles { min-width: 0; }
+    .nfp-pack-nf-title { font-size: 0.72rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+    .nfp-pack-nf-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; }
 
     /* ── NFP width toggle + double-pane (wide) layout ─────────────────────
        The header toggle widens the module and splits it into two panes:
@@ -317,6 +625,59 @@
     }
     .nfp-width-toggle:hover, .nfp-width-toggle.is-on { opacity: 1; background: rgba(255, 255, 255, 0.24); }
     .nfp-width-toggle .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+
+    /* ── Compare view (⋯ menu → "Compare formats side by side") ─────────────
+       Replaces the one-at-a-time Product Images / Pack Formats tab strip with a
+       product-comparison-style matrix: a left rail of field labels + one column
+       per format (base product + each pack), so every format's Nutrition Facts
+       line up for a side-by-side read (mirrors pages/product-comparison.html). */
+    .nfp-cmp { padding: 16px 14px 18px; background: var(--surface); }
+    /* Headline — proper serif header (matches .nfp-fi-title), no leading icon. */
+    .nfp-cmp-intro { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); margin-bottom: 14px; }
+    .nfp-cmp-note { display: flex; align-items: flex-start; gap: 6px; font-size: 0.66rem; line-height: 1.4; color: var(--text-muted); background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent); border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; }
+    .nfp-cmp-note .material-symbols-outlined { font-size: 15px !important; color: var(--primary-ink, var(--primary)); flex-shrink: 0; margin-top: 1px; }
+    /* Table shell — mirrors product-comparison's .cmp-grid-wrap (rounded 14px,
+       hairline border, surface-2 backdrop) so the two boards read identically. */
+    .nfp-cmp-scroll { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+    .nfp-cmp-grid { display: grid; width: 100%; min-width: 0; }
+    .nfp-cmp-cell { padding: 11px 12px; border-bottom: 1px solid var(--border); min-width: 0; font-size: 0.72rem; color: var(--text); display: flex; align-items: center; }
+    .nfp-cmp-ent { border-left: 1px solid var(--border); }
+    /* Left rail — sticky field-label column, matching .cmp-cell--rail. */
+    .nfp-cmp-rail { position: sticky; left: 0; z-index: 2; background: color-mix(in srgb, var(--text-subtle) 5%, var(--surface)); border-right: 1px solid var(--border); font-size: 0.72rem; font-weight: 700; color: var(--text); }
+    html.dark .nfp-cmp-rail { background: color-mix(in srgb, #ffffff 4%, transparent); }
+    /* Base (anchor) column gets the primary wash, like the YOU column. */
+    .nfp-cmp-ent.is-base-col { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    /* Column headers — full-bleed product photo tile with a legibility scrim and
+       the format name / role overlaid on top, exactly like .cmp-tile. */
+    .nfp-cmp-head { padding: 0; align-items: stretch; }
+    .nfp-cmp-tile { position: relative; width: 100%; height: 150px; overflow: hidden; background: var(--surface-3, var(--surface-2)); }
+    .nfp-cmp-tile-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
+    .nfp-cmp-tile-ph { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; background: linear-gradient(155deg, #3A4C61 0%, #253546 55%, #1B2836 100%); }
+    .nfp-cmp-tile-ph .material-symbols-outlined { font-size: 64px !important; color: rgba(255,255,255,0.30); }
+    .nfp-cmp-tile-overlay { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 12px 10px; display: flex; flex-direction: column; gap: 2px; background: linear-gradient(to top, rgba(8,12,20,0.82) 0%, rgba(8,12,20,0.55) 45%, rgba(8,12,20,0) 100%); }
+    .nfp-cmp-tile-name { font-size: 0.9rem; font-weight: 800; color: #fff; line-height: 1.2; overflow-wrap: anywhere; }
+    .nfp-cmp-tile-sub { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.86); }
+    /* Base column badge — a small pill pinned to the tile's top-right corner. */
+    .nfp-cmp-tile-badge { position: absolute; top: 10px; right: 10px; z-index: 3; padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: 0.03em; background: var(--primary); color: #fff; box-shadow: 0 1px 6px rgba(8,12,20,0.35); }
+    /* Value cells. */
+    .nfp-cmp-val { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .nfp-cmp-amt { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+    .nfp-cmp-dv { font-size: 0.58rem; color: var(--text-muted); }
+    .nfp-cmp-empty { color: var(--text-subtle); font-style: italic; }
+    .nfp-cmp-cell--mono .nfp-cmp-amt { font-family: 'Courier New', monospace; font-size: 0.66rem; letter-spacing: 0.02em; }
+    /* Barcode row — each column carries the same white barcode card used on the
+       single product view, so the UPC reads as a real scannable code here too. */
+    .nfp-cmp-bc-cell { align-items: stretch; padding: 12px; }
+    .nfp-cmp-bc-card { width: 100%; background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; box-shadow: 0 1px 2px rgba(7,12,26,0.06); display: flex; flex-direction: column; gap: 6px; }
+    .nfp-cmp-bc { width: 100%; height: 44px; }
+    .nfp-cmp-bc .nfp-upc-bc { display: block; width: 100%; height: 100%; fill: #111; }
+    .nfp-cmp-bc-num { font-family: 'Courier New', ui-monospace, monospace; font-size: 0.64rem; letter-spacing: 0.12em; color: #111; text-align: center; }
+    /* A pack value that differs from the base product is tinted so the real
+       format-to-format differences stand out at a glance. */
+    .nfp-cmp-diff { background: color-mix(in srgb, var(--primary) 11%, transparent); }
+    /* Compare replaces the whole body — let it scroll even while the two-pane
+       (wide) width is toggled on (which otherwise locks the body's overflow). */
+    .nfp-wide .nfp-scroll-body:has(.nfp-cmp) { overflow-y: auto; }
 
     /* In wide mode the body itself stops scrolling; each pane manages its own
        height (left scrolls internally, right is a fixed full-height image). */
@@ -430,6 +791,79 @@
     .nfp-field-note .material-symbols-outlined { font-size: 13px !important; }
     .nfp-req { color: var(--sec-red); font-weight: 700; }
 
+    /* ── Product Insights row ──────────────────────────────────────────────
+       A summary strip appended below the product image + Nutrition Facts
+       columns — the same idea as the Key Takeaways row at the bottom of
+       pages/product-comparison.html, and reusing the debossed circular stamp
+       scorecards from pages/analytics-types.html (.dash-stamp-icon). Content
+       only from the reference; the styling is our own. */
+    .nfp-ins { background: var(--surface); border-top: 8px solid var(--border); padding: 16px 14px 22px; display: flex; flex-direction: column; gap: 14px; }
+    .nfp-ins-label { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.01em; color: var(--text); padding-left: 2px; }
+
+    /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero): an
+       eyebrow, title, one-line rationale, a filled CTA and two quiet quick
+       actions. The lead glyph sits in a fully circular disc (never a rounded
+       square, per the icon rule). */
+    .nfp-ins-next {
+      position: relative; display: flex; flex-wrap: wrap; align-items: center;
+      gap: 12px 16px; padding: 16px 18px; border-radius: 16px;
+      background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+    }
+    .nfp-ins-next-ic {
+      align-self: flex-start; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(7,12,26,0.22);
+    }
+    .nfp-ins-next-ic .material-symbols-outlined { font-size: 24px !important; }
+    .nfp-ins-next-body { flex: 1 1 240px; min-width: 0; }
+    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: 52ch; }
+    .nfp-ins-next-btn {
+      flex: 0 0 auto; margin-left: auto; align-self: center; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+      border: none; border-radius: 999px; padding: 10px 18px;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
+    }
+    .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
+    .nfp-ins-next-btn .material-symbols-outlined { font-size: 18px !important; }
+
+    /* Scorecards — three stat cards in a row. Debossed circular stamp disc in
+       the brand ink (mirrors .dash-stamp-icon / .cmp-takeaway-ic). */
+    .nfp-ins-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 10px; align-items: stretch; }
+    .nfp-ins-card {
+      display: flex; flex-direction: column; gap: 0; padding: 13px 15px;
+      border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
+    }
+    .nfp-ins-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .nfp-ins-ic {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center; background: transparent;
+      border: 1.5px solid color-mix(in srgb, var(--primary) 14%, var(--surface-3));
+      color: color-mix(in srgb, var(--primary) 26%, var(--surface-3));
+      box-shadow: inset 0 1px 1px rgba(17,24,39,0.07), inset 0 -1px 0 rgba(255,255,255,0.55), 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .nfp-ins-ic .material-symbols-outlined { font-size: 17px !important; line-height: 1; color: inherit !important; font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20; }
+    html.dark .nfp-ins-ic {
+      border-color: color-mix(in srgb, #fff 9%, transparent);
+      color: color-mix(in srgb, var(--primary-bright) 58%, var(--surface-3));
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.09), 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .nfp-ins-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+    .nfp-ins-val { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); line-height: 1.12; margin-top: 10px; }
+    .nfp-ins-val--pos { color: var(--sec-green-text, var(--sec-green)); }
+    .nfp-ins-val small { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); }
+    .nfp-ins-sub { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top: 8px; }
+    .nfp-ins-link {
+      margin-top: auto; padding-top: 12px; align-self: flex-end;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.78rem; font-weight: 700; color: var(--primary-ink, var(--primary));
+      text-decoration: none; cursor: pointer;
+    }
+    .nfp-ins-link:hover { text-decoration: underline; }
+    .nfp-ins-link .material-symbols-outlined { font-size: 16px !important; }
+
     /* Save footer */
     .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 45%, transparent); padding: 10px 12px 12px; }
     .nfp-foot-status { display: flex; align-items: flex-start; gap: 6px; font-size: 0.68rem; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px; }
@@ -454,8 +888,17 @@
        steps render as an invisible (transparent) circle with a white glyph. */
     #ap-progress { --vf-fill: var(--primary); --vf-ink: var(--primary); }
     html.dark #ap-progress { --vf-ink: #93C5FD; }
+    /* Width changer (lives in the ⋯ menu — see add-product-flow.js). The
+       expanded module rests at one of four tiers; `panel-fill` is the universal
+       grow rule injected by pane-width.js. These only apply while EXPANDED —
+       the collapsed rail rule below (:has(.is-min)) and the collapse handler
+       (which strips these classes) always win. */
+    #ap-progress.panel-wide { flex: 0 0 360px; width: 360px; }
+    #ap-progress.panel-triple { flex: 0 0 440px; width: 440px; }
     /* Collapsed: shrink to a slim rail showing just the % ring + step numbers
-       (the shared .vf-progress-pane:has() rule is outranked by the #id above). */
+       (the shared .vf-progress-pane:has() rule is outranked by the #id above).
+       Also wins over the width-tier classes above (same specificity, declared
+       later) so a widened module still collapses to the rail. */
     #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
     #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
     .vfp-step-done-icon { color: var(--vf-ink); }
@@ -645,6 +1088,32 @@
               </button>
             </div>
           </div>
+          <!-- Below-input meta row — the canonical WISEcodeAI affordances every
+               chat carries: the gold "What can I ask?" link (left) and the
+               live-activity dots (center). Styles are injected app-wide by
+               injectChatExtras() (run from wireStandardChatMenu); the wiring —
+               shimmer letters, alignment, the ask turn, and the dots' thinking
+               pulse + telemetry — lives in js/add-product-flow.js. -->
+          <div class="sc-belowinput sc-belowinput--ask">
+            <button type="button" class="sc-ask-help" id="ap-ask-help" data-sc="ask-help" aria-label="What can I ask?"></button>
+            <div class="sc-activity" id="ap-activity" aria-hidden="true">
+              <div class="sc-activity-wrap">
+                <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="sc-activity-pop" role="tooltip">
+                  <div class="sc-activity-row">
+                    <span class="sc-activity-key">This turn</span>
+                    <span class="sc-activity-val" id="ap-activity-turn">Idle — nothing running</span>
+                  </div>
+                  <div class="sc-activity-row">
+                    <span class="sc-activity-key">Conversation</span>
+                    <span class="sc-activity-val" id="ap-activity-conv">No turns yet</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -710,6 +1179,14 @@
           const c = document.querySelector('.ap-chat');
           return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));
         },
+      },
+      /* History & Projects — the shared sticky History drawer docks on the
+         chat's left; a "History & Projects" row is added to the three-dot menu
+         to reveal / tuck it (parity with pages/wiseai.html). */
+      history: {
+        chatEl: '.ap-chat',
+        messagesEl: '#chat-messages',
+        storageKey: 'wise-chat-history:add-product',
       },
     });
 
@@ -855,6 +1332,7 @@
   </script>
 
   <script src="../js/chat-history.js"></script>
+  <script src="../js/chat-ask.js"></script>
   <!-- Opt this page into the branded hero: icon-only replace button, a small
        brand-logo badge + Brand-Claimed chip floated on the photo, and the Pack
        Formats section for multi-size products. -->

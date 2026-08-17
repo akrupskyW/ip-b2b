@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "test -f .cursor/hooks/no-icon-tile.py && python3 .cursor/hooks/no-icon-tile.py || true",
+        "matcher": "Write|StrReplace|Edit|MultiEdit|create_file|edit_file|search_replace",
+        "timeout": 15
+      }
+    ]
+  }
+}

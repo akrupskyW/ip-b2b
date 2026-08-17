@@ -20,6 +20,11 @@
    import so it auto-mounts on every page that loads the shared top bar. */
 import './jam-strip.js';
 
+/* Mobile primary navigation (≤768px): collapses the nav to an owl + expand
+   rail and opens the full nav / History as full-screen pop-overs. Side-effect
+   import so it runs on every page that mounts the shared shell. */
+import './mobile-nav.js';
+
 /* Shared user-avatar store — lets the nav chips render the member's uploaded
    profile picture (set on the Organization Profile page) instead of initials. */
 import { userAvatarImg } from './user-avatar.js';
@@ -257,8 +262,25 @@ export function isMenuFooterAnchor(anchor) {
   return !!anchor?.closest?.('.menu-footer');
 }
 
+/* The Appearance popover only becomes its wide, multi-column (and therefore
+   short) layout once wireAppearancePopover() tags it with
+   `.wise-popover--appearance`. But shells call the positioning helpers BEFORE
+   wiring, so without this the popover is still measured as a narrow ~320px
+   SINGLE column — tall enough to overflow the viewport, which made the
+   above-the-icon placement clamp all the way to the top-left corner. Detect the
+   appearance body by its group cards and add the class up front so its height is
+   measured at the real (multi-column) size. The avatar/user menu has no
+   `.wise-appearance-group`, so it is never affected. */
+function ensureAppearanceClass(pop) {
+  if (pop && !pop.classList.contains('wise-popover--appearance') &&
+      pop.querySelector?.('.wise-appearance-group')) {
+    pop.classList.add('wise-popover--appearance');
+  }
+}
+
 /** Position a .wise-popover beside / above a menu-footer row (inside the nav module). */
 export function positionPopoverInMenuPanel(pop, anchor) {
+  ensureAppearanceClass(pop);
   /* Pivoted into the horizontal top bar, the "panel" spans the full screen
      width — sizing the popover to it would make it huge. Fall back to the
      compact top-bar placement (fit-to-content, dropped below the anchor). */
@@ -294,6 +316,7 @@ export function positionPopoverInMenuPanel(pop, anchor) {
 
 /** Position a .wise-popover for a top-bar anchor (below the trigger). */
 export function positionPopoverForTopbar(pop, anchor) {
+  ensureAppearanceClass(pop);
   pop.classList.remove('menu-footer-popover');
   const rect = anchor.getBoundingClientRect();
   const pw = pop.offsetWidth || 240;

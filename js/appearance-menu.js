@@ -77,8 +77,6 @@ import { getStoredFontSize, setTextSize } from './text-size.js';
 import {
   isActivityStripOn,
   applyActivityStrip,
-  getActivityStripSide,
-  setActivityStripSide,
 } from './chat-activity-strip.js';
 
 /**
@@ -164,32 +162,6 @@ function syncJamPop(root) {
     chip.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   return true;
-}
-
-/** "Activity strip side" segmented control — only revealed once the Activity
-    strip is switched on, so the picker never clutters the menu when unused. Each
-    button carries a `data-actside` id that wireAppearancePopover() turns into the
-    matching edge (left = default, right = opt-in) via setActivityStripSide().
-    Wears the same admin-only pink outline + "Admin" badge as Module spacing, so
-    it reads as an admin capability: a two-position toggle (Left on / Right off). */
-function activityStripSideSection() {
-  if (!isActivityStripOn()) return '';
-  const active = getActivityStripSide();
-  const opts = [
-    { id: 'left', label: 'Left' },
-    { id: 'right', label: 'Right' },
-  ];
-  const btns = opts
-    .map(
-      (o) =>
-        `<button type="button" class="mg-seg-btn${o.id === active ? ' is-active' : ''}" data-actside="${o.id}" aria-label="Activity strip on ${o.label.toLowerCase()}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
-    )
-    .join('');
-  return `
-    <div class="mg-size act-side-row">
-      <span class="mg-size-label">Activity strip side<span class="wise-popover-badge">Admin</span></span>
-      <div class="mg-seg" role="group" aria-label="Activity strip side">${btns}</div>
-    </div>`;
 }
 
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
@@ -457,7 +429,6 @@ export function buildAppearanceBody({
       ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
       ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
       ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
-      ${activityStripSideSection()}
     `)}
     ${apGroup('Sound', `
       ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
@@ -576,8 +547,6 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-composer2]'))   { ev.stopPropagation(); applyComposerV2(!isComposerV2On());  render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
-    const actSide = within('[data-actside]');
-    if (actSide) { ev.stopPropagation(); setActivityStripSide(actSide.dataset.actside); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }

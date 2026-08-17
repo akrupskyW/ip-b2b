@@ -26,8 +26,8 @@
  * `data-activity="<type>"` attribute onto each landmark element as it lands, and
  * this module just scans `.chat-messages-area` for those and (re)places ticks
  * whenever the transcript grows, reflows, or the module resizes. ON by default;
- * toggled from the chat's three-dot menu ("Activity strip") and from the shared
- * Appearance popover, which also picks the edge. The strip's CSS is injected
+ * toggled from the chat's three-dot menu ("Activity strip"), which also picks
+ * the edge, and from the shared Appearance popover. The strip's CSS is injected
  * from here (ensureActivityStripStyles) so it renders on EVERY page that mounts
  * a chat — no per-page stylesheet block is needed.
  *
@@ -99,6 +99,11 @@ export function setActivityStripSide(side) {
     localStorage.setItem(LS_SIDE_KEY, val);
   } catch (_) { /* storage blocked — session-only */ }
   applySideClass(val);
+  /* Tell every open chat menu so their Left/Right segments track the one
+     shared setting (same event the on/off toggle broadcasts). */
+  try {
+    document.dispatchEvent(new CustomEvent('wise:activity-strip', { detail: { on: isActivityStripOn(), side: val } }));
+  } catch (_) { /* CustomEvent unavailable — menus resync on next open */ }
 }
 
 /** Turn the strip on/off. Persists the choice, flags <html>, and (if the chat
@@ -271,6 +276,26 @@ function ensureActivityStripStyles() {
       right: 100%;
       margin-left: 0;
       margin-right: 4px;
+    }
+    /* Popovers inside the chat must always layer ABOVE the rail. They can't do
+       it with their own z-index: the chat module is deliberately pinned LOW
+       (e.g. wiseai.html keeps #wa-chat at z-index 2–3 so the pane-resize
+       handles stay grabbable), which traps every popover inside its stacking
+       context beneath this body-level rail (z-index 70). So instead, while ANY
+       popover inside a chat is open, the rail tucks beneath the module
+       (z-index -1) and pops back the moment it closes. Each popover kind has
+       its own open marker: the three-dot .topbar-popover drops .hidden, the
+       composer's attach/model popovers gain .open, and a turn's feedback menus
+       clear [hidden]. (A bare [role=menu] test would misfire — the composer
+       popovers carry role=menu permanently and hide via display:none; static
+       demo popovers are excluded via data-popover-static, matching
+       pane-resize.js.) */
+    body:has(.topbar-popover:not(.hidden):not([data-popover-static])) .wa-activity-strip,
+    body:has(.fl-more-popover.open) .wa-activity-strip,
+    body:has(.fl-model-popover.open) .wa-activity-strip,
+    body:has(.sc-fb-menu:not([hidden])) .wa-activity-strip,
+    body:has(.sc-fb-reasons:not([hidden])) .wa-activity-strip {
+      z-index: -1;
     }
     /* Distinct hues per landmark type (retunable per theme/palette). */
     .wa-activity-tick--output   { background-color: var(--act-output, var(--ter-amber, #FFC434)); }
@@ -461,8 +486,9 @@ function refresh(state) {
     });
     /* Stamp the landmark's turn ID beside the tick in tiny type (to the right on
        the left rail, mirrored to the left on the right rail — pure CSS off the
-       side class). Only turns that carry an ID (WISEcodeAI answers) get a label;
-       standalone event lines like a database switch have none, so we skip them. */
+       side class). Every landmark that carries an ID gets a label — WISEcodeAI
+       answers and database-switch event lines alike (both stamp a `.sc-fb-id`);
+       the rare line with no ID returns '' and gets no label. */
     const turnId = turnIdFor(el);
     if (turnId) {
       const tag = document.createElement('span');
@@ -480,8 +506,8 @@ function refresh(state) {
    A landmark (an output surface card, a source add) lives inside its answer's
    `.sc-line`; that line's meta row carries the turn handle in `.sc-fb-id`. We
    read it verbatim (leading '#' and all) so the tick's label matches the ID the
-   user sees on the answer. Lines without an ID (e.g. a database-switch event)
-   return '' and get no label. */
+   user sees on the answer (and now on database-switch event lines, which stamp
+   their own `.sc-fb-id`). Lines without an ID return '' and get no label. */
 function turnIdFor(el) {
   const line = el.closest && el.closest('.sc-line');
   if (!line) return '';

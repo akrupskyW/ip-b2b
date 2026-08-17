@@ -18,10 +18,12 @@
 
   var AUTH_KEY = 'wise-auth';
   var REG_KEY  = 'wc_registration';
-  /* After sign-in / sign-up the user lands here (per project request). */
-  var LANDING  = 'product-comparison.html';
-  /* "Dive right into the product" during signup lands on the workspace overview. */
-  var OVERVIEW = 'overview.html';
+  /* After sign-in / sign-up the user lands here (per project request).
+     Temporarily set to the WISEcodeAI chat as the default landing for everything. */
+  var LANDING  = 'wiseai.html';
+  /* "Dive right into the product" during signup lands on the workspace overview.
+     Temporarily routed to the WISEcodeAI chat alongside LANDING. */
+  var OVERVIEW = 'wiseai.html';
   /* Public marketing home for logged-out visitors (lives at the repo root). */
   var HOME     = 'index.html';
   var AUTH_PAGES = ['login.html', 'create-account.html', 'forgot-password.html'];

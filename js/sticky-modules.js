@@ -1,12 +1,15 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   sticky-modules.js — app-wide "Sticky module" toggle
+   sticky-modules.js — app-wide sticky modules + module ⋯ menu
    ──────────────────────────────────────────────────────────────────────────
-   Brings pages/wiseai.html's per-pane "Sticky module" admin toggle to EVERY
-   page: any module that sits to the RIGHT of the chat inside #modules-row gets
-   a pink Admin "Sticky module" switch in its three-dot (⋯) menu — and a menu is
-   created for it if it doesn't already have one. ON (the default) tucks the
-   module in behind its left neighbour like a drawer (see the generic
-   `.sticky-mod.is-sticky` rules in pages/wise.css).
+   Sticky is now the ONLY module style: any module that sits to the RIGHT of the
+   chat inside #modules-row is permanently tucked in behind its left neighbour
+   like a drawer (see the generic `.sticky-mod.is-sticky` rules in wise.css).
+   There is no longer a "Sticky module" toggle — it's always on.
+
+   Each such module still gets a three-dot (⋯) menu (created if it lacks one),
+   but the menu now hosts USEFUL module actions instead of the old toggle:
+   Share, Copy link and Export. Modules that already ship their own ⋯ menu
+   (wiseai panes, the Turns / "What can I ask?" modules) keep it as-is.
 
    Two module families are handled separately so nothing double-applies:
      • Generic content modules  → toggles `.sticky-mod` + `.is-sticky` (wise.css)
@@ -32,9 +35,11 @@
      agent-overview dock. */
   var CHAT_SEL = '#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel';
 
-  /* A module that already owns one of these is left untouched (wiseai panes +
-     wiseai-chat.js Turns). */
-  var NATIVE_STICKY_SEL = '[data-pane-act="sticky"],[data-turns-act="sticky"]';
+  /* A module that already owns its OWN ⋯ menu is left untouched (wiseai panes,
+     the wiseai-chat.js Turns module, and its "What can I ask?" module). Detected
+     by the stable action attributes those menus always carry (export / share /
+     close / breakout …) — NOT by the old sticky toggle, which no longer exists. */
+  var SELF_MANAGED_SEL = '[data-pane-act],[data-turns-act],[data-ask-act]';
 
   /* Chrome that lives in the row but is not a module. */
   var EXCLUDE_RE = /scrim|resize|handle|backdrop|drag|grip|overlay/i;
@@ -83,30 +88,82 @@
     '[class*="head-controls"]', '[class*="top-actions"]', '.agent-main-header'
   ];
 
-  var STICKY_TOGGLE_ATTR = 'data-sticky-toggle';
+  var ACTION_ATTR = 'data-sticky-act';
 
-  function stickyItemHTML(on, pf) {
-    /* product-portfolio / product-comparison use a bespoke `.pf-module-menu`
-       whose rows are styled as `.pf-module-menu-item`; match that markup so the
-       injected toggle reads identically to the module's own menu rows. */
-    if (pf) {
-      return '<button type="button" class="pf-module-menu-item pf-mi-sticky' +
-        (on ? ' is-on' : '') + '" ' + STICKY_TOGGLE_ATTR + ' role="menuitemcheckbox" aria-checked="' +
-        (on ? 'true' : 'false') + '">' +
-        '<span class="material-symbols-outlined">dock_to_right</span>' +
-        '<span class="pf-mi-label">Sticky module</span>' +
-        '<span class="pf-mi-badge">Admin</span>' +
-        '<span class="pf-mi-switch"><span class="pf-mi-knob"></span></span>' +
-        '</button>';
-    }
-    return '<button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle' +
-      (on ? ' is-on' : '') + '" ' + STICKY_TOGGLE_ATTR + ' role="menuitemcheckbox" aria-checked="' +
-      (on ? 'true' : 'false') + '">' +
-      '<span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span>' +
-      '<span>Sticky module</span>' +
-      '<span class="topbar-menu-badge">Admin</span>' +
-      '<span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span>' +
-      '</button>';
+  /* Useful module actions for a created ⋯ menu — Share, Copy link, Export. */
+  function menuActionsHTML() {
+    return '<button type="button" class="topbar-menu-item" ' + ACTION_ATTR + '="share" role="menuitem">' +
+        '<span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>' +
+      '<button type="button" class="topbar-menu-item" ' + ACTION_ATTR + '="copy" role="menuitem">' +
+        '<span class="material-symbols-outlined topbar-menu-icon">link</span><span>Copy link</span></button>' +
+      '<div class="topbar-menu-divider"></div>' +
+      '<button type="button" class="topbar-menu-item" ' + ACTION_ATTR + '="export" role="menuitem">' +
+        '<span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>';
+  }
+
+  /* Briefly swap a menu item's label to give click feedback (e.g. "Copied!"). */
+  function flashLabel(item, msg) {
+    var span = item.querySelector('span:not(.material-symbols-outlined)');
+    if (!span || span.dataset.flashing) return;
+    span.dataset.flashing = '1';
+    var prev = span.textContent;
+    span.textContent = msg;
+    setTimeout(function () { span.textContent = prev; delete span.dataset.flashing; }, 1200);
+  }
+
+  function copyLink(item) {
+    var url = location.href;
+    var done = function () { flashLabel(item, 'Copied!'); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, done);
+        return;
+      }
+    } catch (_) {}
+    done();
+  }
+
+  function exportModule(mod) {
+    var name = (mod.id || 'module').replace(/[^a-z0-9_-]+/gi, '-');
+    try {
+      var blob = new Blob(['WISE export placeholder — ' + name + '\n'], { type: 'text/plain' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'wise-' + name + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    } catch (_) {}
+  }
+
+  /* Delegate clicks on the injected action rows. Share hands off to the app's
+     own share panel when present, otherwise falls back to copying the link. */
+  function wireActions(pop, mod) {
+    pop.addEventListener('click', function (e) {
+      var it = e.target.closest('[' + ACTION_ATTR + ']');
+      if (!it) return;
+      e.stopPropagation();
+      var act = it.getAttribute(ACTION_ATTR);
+      if (act === 'share') {
+        if (typeof window.openShareModal === 'function') {
+          try { window.openShareModal(); closeMenu(pop); return; } catch (_) {}
+        }
+        copyLink(it);
+      } else if (act === 'copy') {
+        copyLink(it);
+      } else if (act === 'export') {
+        exportModule(mod);
+        closeMenu(pop);
+      }
+    });
+  }
+
+  function closeMenu(pop) {
+    pop.classList.add('hidden');
+    var wrap = pop.closest('.panel-more-wrap');
+    var btn = wrap && wrap.querySelector('.panel-more-btn');
+    if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
   }
 
   /* "Remove panel" row — progress modules only. Bespoke `.pf-module-menu`
@@ -293,16 +350,10 @@
     return wrap.querySelector('.topbar-popover');
   }
 
-  function syncToggleItem(item, on) {
-    item.classList.toggle('is-on', on);
-    item.setAttribute('aria-checked', on ? 'true' : 'false');
-  }
-
-  /* GENERIC content module: drive `.sticky-mod` + `.is-sticky`. The user's
-     choice is kept in data-sticky-pref (survives innerHTML re-renders AND lets
-     the tuck be suppressed while the module sits LEFT of the chat — e.g. after
-     the WISEcodeAI dock's Appearance side-mode moves panes across — without
-     forgetting the preference). The menu switch always reflects the pref. */
+  /* GENERIC content module: drive `.sticky-mod` + `.is-sticky`. Sticky is now
+     permanent, but the tuck is still suppressed while the module sits LEFT of
+     the chat — e.g. after the WISEcodeAI dock's Appearance side-mode moves panes
+     across — via the isRightOfChat guard. */
   function setGenericSticky(mod, on, chat) {
     mod.dataset.stickyPref = on ? 'on' : 'off';
     mod.classList.add('sticky-mod');
@@ -311,8 +362,6 @@
       chat = row ? row.querySelector(CHAT_SEL) : null;
     }
     mod.classList.toggle('is-sticky', on && isRightOfChat(mod, chat));
-    var item = mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
-    if (item) syncToggleItem(item, on);
   }
 
   /* Re-apply the pref against the module's CURRENT side of the chat. Called on
@@ -321,7 +370,7 @@
   function syncSide(mod, chat) {
     if (isWchSidebar(mod)) return;
     if (!mod.dataset.stickyPref) return;
-    if (mod.querySelector(NATIVE_STICKY_SEL)) return;
+    if (mod.querySelector(SELF_MANAGED_SEL)) return;
     var want = mod.dataset.stickyPref === 'on' && isRightOfChat(mod, chat);
     if (mod.classList.contains('is-sticky') !== want) mod.classList.toggle('is-sticky', want);
   }
@@ -332,8 +381,6 @@
     var row = getRow();
     if (row) row.classList.add('modules-sticky');
     mod.classList.toggle('wch-unsticky', !on);
-    var item = mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
-    if (item) syncToggleItem(item, on);
   }
 
   /* ── Remove / restore a progress panel ──────────────────────────────────
@@ -377,61 +424,56 @@
     row.appendChild(tab);
   }
 
-  /* Idempotently give a module its sticky toggle + wire it. Safe to re-call as
-     the DOM changes (waits for async-built menus). `chat` is used only for the
-     right-of-chat test, evaluated lazily so wired modules stay cheap. */
+  /* Idempotently make a module permanently sticky and give it a ⋯ menu of
+     useful actions. Safe to re-call as the DOM changes (waits for async-built
+     menus). `chat` is used only for the right-of-chat test, evaluated lazily so
+     already-wired modules stay cheap. */
   function ensureToggle(mod, chat) {
     /* Progress panel the user removed → keep it hidden (survives re-renders and
        reloads) and leave the restore tab in place. */
     if (isProgressPane(mod) && isPanelRemoved(mod)) { applyRemoved(mod); return; }
     if (isWchSidebar(mod) && !isWchRight(mod)) return; /* History (left) */
-    if (mod.querySelector(NATIVE_STICKY_SEL)) return;  /* native toggle → leave */
-    if (mod.querySelector('[' + STICKY_TOGGLE_ATTR + ']')) { syncSide(mod, chat); return; }
+    if (mod.querySelector(SELF_MANAGED_SEL)) return;   /* owns its own ⋯ menu → leave */
+
+    var wch = isWchRight(mod);
+
+    /* Menu WE injected is already present → just keep the tuck in sync with the
+       module's current side of the chat and bail. (Progress panes re-render and
+       wipe the menu; this test goes false then, so we re-inject below.) */
+    if (mod.querySelector('[' + ACTION_ATTR + ']')) { if (!wch) syncSide(mod, chat); return; }
+
+    /* Reused native menu we can't inject into (e.g. the portfolio/comparison
+       pf-menu) — already forced sticky once; keep the side in sync and bail. */
+    if (mod.dataset.stickyForced === '1' && !isProgressPane(mod)) { if (!wch) syncSide(mod, chat); return; }
+
     if (!isRightOfChat(mod, chat)) return; /* left of the chat (for now) → skip;
       the attribute-aware observer re-scans if it ever moves right of it. */
 
-    var wch = isWchRight(mod);
+    /* Force sticky ON — the only module style now. */
+    if (wch) setWchSticky(mod, true); else setGenericSticky(mod, true, chat);
+    mod.dataset.stickyForced = '1';
+
     var pop = ensureMenu(mod);
     if (!pop) return; /* native menu not built yet — retry on next mutation */
 
-    /* Default ON (matches wiseai.html), but preserve any prior state — some
-       modules (e.g. progress panes) re-render their innerHTML, which wipes the
-       toggle button while the module's own data-sticky-pref attribute /
-       `.wch-unsticky` class survives; re-derive so a user's choice isn't reset.
-       Progress panes ALWAYS default sticky ON (tucked drawer) — they carry no
-       stored preference of their own, so the fallback to `true` already covers
-       that, but keep it explicit so the intent survives future edits. */
-    var on = wch
-      ? !mod.classList.contains('wch-unsticky')
-      : (mod.dataset.stickyPref
-          ? mod.dataset.stickyPref === 'on'
-          : (isProgressPane(mod) ? true
-              : (mod.classList.contains('sticky-mod') ? mod.classList.contains('is-sticky') : true)));
-    var isPf = pop.classList.contains('pf-module-menu-pop');
-    pop.insertAdjacentHTML('afterbegin', stickyItemHTML(on, isPf) +
-      (isPf ? '<div class="pf-module-menu-sep"></div>' : '<div class="topbar-menu-divider"></div>'));
-    var item = pop.querySelector('[' + STICKY_TOGGLE_ATTR + ']');
+    /* Only enrich menus WE created (marked data-sticky-menu). Reused native
+       menus — the pf-menu on portfolio/comparison — keep their own rows. */
+    var created = pop.closest('.panel-more-wrap[data-sticky-menu]');
+    if (!created) return;
 
-    item.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var nowOn = !item.classList.contains('is-on');
-      if (wch) setWchSticky(mod, nowOn); else setGenericSticky(mod, nowOn);
-    });
+    pop.insertAdjacentHTML('afterbegin', menuActionsHTML());
+    wireActions(pop, mod);
 
     /* Progress modules only: append a "Remove panel" row that hides the tracker
-       outright (leaving a restore tab behind). The Sticky insert above already
-       leaves a trailing divider, so this row just follows it. */
+       outright (leaving a restore tab behind). */
     if (isProgressPane(mod)) {
-      pop.insertAdjacentHTML('beforeend', removeItemHTML());
+      pop.insertAdjacentHTML('beforeend', '<div class="topbar-menu-divider"></div>' + removeItemHTML());
       var rm = pop.querySelector('[' + REMOVE_TOGGLE_ATTR + ']');
       if (rm) rm.addEventListener('click', function (e) {
         e.stopPropagation();
         removePanel(mod);
       });
     }
-
-    /* Apply the default. */
-    if (wch) setWchSticky(mod, on); else setGenericSticky(mod, on, chat);
   }
 
   function scan() {

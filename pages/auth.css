@@ -638,6 +638,11 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+/* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the far
+   LEFT of the row while the grounding source chip floats to the far RIGHT. */
+.sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
+.sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
+.sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
 /* Typing indicator + status label. */
 .sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
@@ -857,7 +862,7 @@ html.dark .sp-header {
   border-bottom-color: rgba(37,80,124,0.20);
 }
 .sp-header-icon {
-  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--primary-soft); color: var(--primary);
 }

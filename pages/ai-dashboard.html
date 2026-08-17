@@ -677,18 +677,46 @@
         stickyModulesDefault: true,
         stickyModulesMenu: false,
         intents: [
-          { label: 'Why did spend rise this period?', icon: 'payments' },
-          { label: 'Which model drives the most tokens?', icon: 'network_intelligence' },
-          { label: 'Show guardrail activity', icon: 'gavel' },
-          { label: 'Top users by consumption', icon: 'group' },
-          { label: 'Any stale data sources?', icon: 'cloud_sync' },
+          { intent: 'spend_rise',    label: 'Why did spend rise this period?', icon: 'payments' },
+          { intent: 'top_model',     label: 'Which model drives the most tokens?', icon: 'network_intelligence' },
+          { intent: 'guardrails',    label: 'Show guardrail activity', icon: 'gavel' },
+          { intent: 'top_users',     label: 'Top users by consumption', icon: 'group' },
+          { intent: 'stale_sources', label: 'Any stale data sources?', icon: 'cloud_sync' },
         ],
+        /* Every chip carries its own scripted transcript (keyed by intent id) so a
+           click always narrates something specific about the dashboard beside it,
+           rather than falling through to the generic keyword answer below. */
+        intentReplies: {
+          spend_rise:    'Estimated spend is up <strong>~9%</strong> this period, tracking a <strong>~12% rise in token consumption</strong>. The growth is concentrated in chat/assistant workloads — the largest share of usage — while requests only rose ~5%, so each request is doing more work. The spend trend and its driver breakdown are on the right.',
+          top_model:     'The <strong>chat/assistant</strong> workload drives the most tokens by a wide margin, followed by summarization and extraction jobs. Longer context windows on the assistant traffic are what push its token share ahead of everything else — see the model/workload split in the panel beside us.',
+          guardrails:    'Guardrails are <strong>on</strong>: <strong>57 rules</strong> are active across the platform, catching policy and safety violations before they reach users. Recent activity is dominated by input-validation and PII redaction rules. Open the Rules panel on the right for the full guardrail log.',
+          top_users:     'You have <strong>342 active users</strong> this period (up ~8%). A small group of power users accounts for the bulk of consumption — the Top Users table on the right ranks them by tokens and requests so you can spot anyone approaching a quota.',
+          stale_sources: 'Yes — <strong>2 of your 38 data sources are flagged stale</strong> and haven\u2019t synced recently, plus <strong>2 API keys are near their limit</strong>. Everything else is healthy. The Sources panel on the right highlights the two that need a re-sync.',
+        },
         reply: (text) =>
           'Here\u2019s what the dashboard is showing for **' + (text || 'your platform') + '**: ' +
           'token consumption is trending up ~12% over the selected range, with chat/assistant workloads the largest share. ' +
           'Watch the two data sources flagged stale and the two API keys near their limit. ' +
           '(This is illustrative demo data — the panel on the right has the full breakdown.)',
       });
+
+      /* History & Projects entry in the three-dot menu (shared module wires
+         data-sc="history" to its in-module History sidebar, but leaves the menu
+         row for the host to inject — mirroring pages/wiseai.html + studio-ai). */
+      const morePop = host.querySelector('.topbar-popover');
+      if (morePop && !morePop.querySelector('[data-sc="history"]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'topbar-menu-item sc-mcp-item';
+        btn.setAttribute('data-sc', 'history');
+        btn.setAttribute('role', 'menuitemcheckbox');
+        btn.setAttribute('aria-checked', 'false');
+        btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+        const div = document.createElement('div');
+        div.className = 'topbar-menu-divider';
+        morePop.insertBefore(div, morePop.firstChild);
+        morePop.insertBefore(btn, div);
+      }
     })();
   </script>
 

@@ -3013,6 +3013,20 @@
     .cmp-hcell { gap: 8px; padding-top: 13px; }
     .cmp-cell--rail.cmp-hcell { justify-content: center; padding-top: 12px; padding-bottom: 12px; }
     .cmp-cell--entity.cmp-hcell { gap: 0; padding: 0; }
+    /* Hovering a race runner lifts its matching header card: a ~20% enlargement
+       plus elevation, so the eye jumps straight from the dot to the product. */
+    .cmp-cell--entity.cmp-hcell {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .cmp-cell--entity.cmp-hcell.is-race-hl {
+      transform: scale(1.2);
+      z-index: 30;
+      box-shadow: 0 20px 44px -14px rgba(8, 12, 20, 0.5), 0 8px 18px -8px rgba(8, 12, 20, 0.38);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cmp-cell--entity.cmp-hcell { transition: none; }
+      .cmp-cell--entity.cmp-hcell.is-race-hl { transform: none; }
+    }
     .cmp-rail-title { font-size: 9px; letter-spacing: 0.08em; }
     .cmp-rail-h { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; }
     /* Full-bleed image tile — taller, no drop shadow. The product photo / brand
@@ -3651,7 +3665,7 @@
     @media (prefers-reduced-motion: reduce) { .vf-section { animation: none; } }
     .vf-sec-head { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
     .vf-sec-icon {
-      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--primary-10); color: var(--primary-ink, var(--primary));
     }
@@ -4963,6 +4977,11 @@
     }
     .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
     html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+    /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
+       far LEFT of the row while the grounding source chip floats to the far RIGHT. */
+    .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
+    .sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
+    .sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
     /* ── Answer feedback (thumbs up/down) ─────────────────────────────────
        Shown under compare-board chat replies. Thumbs-down opens a small
@@ -4993,6 +5012,30 @@
       font-size: var(--fs-label); font-weight: 500; color: var(--primary-ink, var(--primary));
     }
     .sc-fb-thanks .material-symbols-outlined { font-size: 14px !important; }
+    /* Per-answer "More" menu — the three-dot control that spills the re-run /
+       edit / fork turn actions and the turn ID into a floating pill, matching
+       the shared chat engine (js/wiseai-chat.js) so this hand-built transcript
+       carries the same turn controls everywhere. */
+    .sc-fb-more-wrap { position: relative; display: inline-flex; }
+    .sc-fb-more.is-on, .sc-fb-more[aria-expanded="true"] { background: var(--surface-3); color: var(--text); }
+    .sc-fb-menu {
+      position: absolute; top: calc(100% + 8px); right: -4px; z-index: 80;
+      display: inline-flex; align-items: center; gap: 2px; width: max-content;
+      padding: 4px 7px; background: var(--surface-1, #fff);
+      border: 1px solid var(--border-strong); border-radius: var(--radius-pill, 999px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    }
+    .sc-fb-menu[hidden] { display: none; }
+    .sc-fb-menu-time {
+      font-size: 11px; color: var(--text-muted); white-space: nowrap;
+      margin-right: 4px; padding-right: 6px; border-right: 1px solid var(--border, var(--border-strong));
+    }
+    .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    .sc-fb-id {
+      margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--text-muted); cursor: pointer; font-variant-numeric: tabular-nums;
+    }
+    .sc-fb-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
     /* Popover: opens ABOVE the bar, anchored to its right edge by default
        (top-right). The flip modifiers below are toggled by JS when there isn't
        room above (open down) or when it would clip the left edge (anchor left). */
@@ -10586,8 +10629,19 @@
     /* Thumbs up/down feedback affordance shown beneath a WISEcodeAI reply
        (opt in with { feedback: true }). Thumbs-down opens a mini popover of
        quick reasons so the member can flag *what* was off in one tap. */
+    /* Short turn handle (digit-letter-digit-letter, e.g. "7f3h") — same shape as
+       the shared engine's makeTurnId so IDs read identically across transcripts.
+       Doubling as the fork ID the standalone Turns module reads from replies. */
+    function wiseaiMakeTurnId() {
+      var d = function () { return String(Math.floor(Math.random() * 10)); };
+      var l = function () { return 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; };
+      return d() + l() + d() + l();
+    }
+
     function wiseaiFeedbackBar() {
-      return '<div class="sc-feedback" role="group" aria-label="Was this answer helpful?">' +
+      var tid = wiseaiMakeTurnId();
+      var time = wiseaiNowLabel();
+      return '<div class="sc-feedback" role="group" aria-label="Answer actions">' +
         '<span class="sc-fb-label">Was this helpful?</span>' +
         '<button type="button" class="sc-fb-btn sc-fb-up" onclick="wiseaiFeedbackVote(this,\'up\')" title="Helpful" aria-label="Helpful"><span class="material-symbols-outlined">thumb_up</span></button>' +
         '<button type="button" class="sc-fb-btn sc-fb-down" onclick="wiseaiFeedbackVote(this,\'down\')" title="Not helpful" aria-label="Not helpful"><span class="material-symbols-outlined">thumb_down</span></button>' +
@@ -10600,6 +10654,18 @@
             '<button type="button" class="sc-fb-reason" role="menuitem" onclick="wiseaiFeedbackReason(this,\'Missing detail\')">Missing detail</button>' +
           '</div>' +
         '</div>' +
+        '<span class="sc-fb-more-wrap">' +
+          '<button type="button" class="sc-fb-btn sc-fb-more" data-fb-more aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>' +
+          '<div class="sc-fb-menu" role="menu" hidden>' +
+            '<span class="sc-line-time sc-fb-menu-time">' + time + '</span>' +
+            '<span class="sc-fb-menu-actions">' +
+              '<button type="button" class="sc-fb-btn" data-turnact="replay" title="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="edit" title="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="turn" title="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>' +
+              '<span class="sc-fb-id" title="Turn ID" tabindex="0">#' + tid + '</span>' +
+            '</span>' +
+          '</div>' +
+        '</span>' +
       '</div>';
     }
 
@@ -10642,8 +10708,13 @@
 
     function wiseaiFeedbackThanks(bar, msg) {
       bar.classList.add('sc-fb-done');
+      /* Keep the turn controls (re-run / edit / fork + ID) alive after a vote —
+         they belong to the turn, not the thumbs, so voting collapses only the
+         "helpful?" prompt and the more-menu rides along. */
+      var more = bar.querySelector('.sc-fb-more-wrap');
       bar.innerHTML = '<span class="sc-fb-thanks"><span class="material-symbols-outlined">check</span>' +
         String(msg).replace(/</g, '&lt;') + '</span>';
+      if (more) bar.appendChild(more);
     }
 
     /* Dismiss any open thumbs-down popover when clicking elsewhere. */
@@ -10652,6 +10723,158 @@
         const bar = pop.closest('.sc-feedback');
         if (bar && !bar.contains(e.target)) pop.classList.add('hidden');
       });
+    });
+
+    /* ── Per-answer turn controls (re-run / edit / fork + copy turn ID) ───────
+       The three-dot menu on every reply carries the same actions the shared chat
+       engine (js/wiseai-chat.js) exposes, wired here so this hand-built
+       transcript is functional everywhere it appears. */
+    function wiseaiCloseMoreMenus() {
+      document.querySelectorAll('.sc-fb-menu:not([hidden])').forEach(function (m) {
+        m.hidden = true;
+        var b = m.closest('.sc-fb-more-wrap');
+        b = b && b.querySelector('.sc-fb-more');
+        if (b) { b.setAttribute('aria-expanded', 'false'); b.classList.remove('is-on'); }
+      });
+    }
+    function wiseaiCopyText(text, anchor) {
+      if (!text) return;
+      var flash = function () {
+        if (!anchor) return;
+        var prev = anchor.getAttribute('title');
+        anchor.setAttribute('title', 'Copied!');
+        setTimeout(function () { if (prev != null) anchor.setAttribute('title', prev); }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(flash, flash);
+      else flash();
+    }
+    /* Plain text of a transcript line's body (drops meta / feedback / icons). */
+    function wiseaiLineText(el) {
+      if (!el) return '';
+      var body = el.querySelector('.sc-line-body') || el;
+      var clone = body.cloneNode(true);
+      clone.querySelectorAll('.sc-line-meta,.sc-feedback,.sc-inline-chips,.sc-reply-chips,.material-symbols-outlined,svg')
+        .forEach(function (n) { n.remove(); });
+      return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    /* The user prompt that opened the turn a reply belongs to — walk back to the
+       nearest non-event "you" line. */
+    function wiseaiPromptForLine(line) {
+      var n = line;
+      while (n) {
+        if (n.classList && n.classList.contains('sc-line-you') && !n.classList.contains('sc-line-event')) {
+          return wiseaiLineText(n);
+        }
+        n = n.previousElementSibling;
+      }
+      return '';
+    }
+    /* Re-run (autoRun) or edit (drop into composer) this turn's prompt in a fresh
+       conversation. The current thread is filed to History first, mirroring the
+       shared engine's "in new chat" behaviour. */
+    function wiseaiRerunFromLine(line, autoRun) {
+      var text = wiseaiPromptForLine(line);
+      if (!text) return;
+      wiseaiCloseMoreMenus();
+      var hist = window.__wiseChatHistory;
+      if (hist && hist.startNew) hist.startNew();
+      else if (typeof window.restartConversation === 'function') window.restartConversation();
+      if (autoRun) {
+        hideWelcomeScreen(function () { addUserMessage(text); wiseaiRespond(text); });
+      } else {
+        var input = document.getElementById('chat-input');
+        if (input) { input.value = text; input.focus(); try { input.setSelectionRange(text.length, text.length); } catch (_) {} }
+      }
+    }
+    /* Fork the conversation at a line: copy every line up to and including this
+       turn's last reply into a new History thread with a "Forked from …" banner,
+       then load the fork as the active chat (History saves the source first). */
+    function wiseaiForkFromLine(line) {
+      var box = document.getElementById('chat-messages');
+      if (!box || !line) return;
+      wiseaiCloseMoreMenus();
+      /* Extend to the end of this turn: any consecutive replies after the line. */
+      var endNode = line;
+      var s = line.nextElementSibling;
+      while (s) {
+        if (s.classList && s.classList.contains('sc-line') && !s.classList.contains('sc-line-you')) { endNode = s; s = s.nextElementSibling; }
+        else break;
+      }
+      var allNodes = Array.prototype.slice.call(box.children);
+      var endIdx = allNodes.indexOf(endNode);
+      if (endIdx < 0) return;
+      var container = document.createElement('div');
+      for (var k = 0; k <= endIdx; k++) {
+        var nn = allNodes[k];
+        if (nn.classList && (nn.classList.contains('sc-line-typing') || nn.classList.contains('sc-inline-chips') || nn.classList.contains('sc-fork-banner'))) continue;
+        container.appendChild(nn.cloneNode(true));
+      }
+      var hist = window.__wiseChatHistory;
+      var sourceTitle = (hist && hist.currentTitle) ? hist.currentTitle() : 'this conversation';
+      var esc = function (str) { return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+      var banner = '<div class="sc-fork-banner" role="note"><span class="sc-fork-banner-ic material-symbols-outlined">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>' + esc(sourceTitle) + '</strong></span></div>';
+      var forkHtml = banner + container.innerHTML;
+      var count = container.querySelectorAll('.sc-line').length;
+      if (hist && hist.add && hist.restore) {
+        var item = hist.add({ title: sourceTitle, html: forkHtml, count: count, fork: { from: sourceTitle } });
+        hist.restore(item.id);
+      } else {
+        box.innerHTML = forkHtml;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+    document.addEventListener('click', function (e) {
+      var moreBtn = e.target.closest('.sc-fb-more');
+      if (moreBtn) {
+        var wrap = moreBtn.closest('.sc-fb-more-wrap');
+        var menu = wrap && wrap.querySelector('.sc-fb-menu');
+        var willOpen = !!menu && menu.hidden;
+        wiseaiCloseMoreMenus();
+        if (menu) {
+          menu.hidden = !willOpen;
+          moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          moreBtn.classList.toggle('is-on', willOpen);
+        }
+        return;
+      }
+      var idEl = e.target.closest('.sc-fb-id');
+      if (idEl) { wiseaiCopyText((idEl.textContent || '').trim(), idEl); return; }
+      var act = e.target.closest('[data-turnact]');
+      if (act) {
+        var line = act.closest('.sc-line');
+        var kind = act.getAttribute('data-turnact');
+        if (kind === 'turn') wiseaiForkFromLine(line);
+        else if (kind === 'replay') wiseaiRerunFromLine(line, true);
+        else if (kind === 'edit') wiseaiRerunFromLine(line, false);
+        return;
+      }
+      /* Outside click closes any open more-menu. */
+      if (!e.target.closest('.sc-fb-more-wrap')) wiseaiCloseMoreMenus();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') wiseaiCloseMoreMenus(); });
+
+    /* Hover-reveal for the three-dot menu — the timestamp + turn controls open
+       as soon as the pointer lands on the "more" control (no tooltip, no click).
+       A short close delay bridges the gap to the floating menu so it never
+       flickers shut while moving into it. */
+    var wiseaiMoreCloseTimer = null;
+    document.addEventListener('mouseover', function (e) {
+      var wrap = e.target.closest('.sc-fb-more-wrap');
+      if (!wrap) return;
+      clearTimeout(wiseaiMoreCloseTimer);
+      var menu = wrap.querySelector('.sc-fb-menu');
+      if (menu && menu.hidden) {
+        wiseaiCloseMoreMenus();
+        menu.hidden = false;
+        var b = wrap.querySelector('.sc-fb-more');
+        if (b) { b.setAttribute('aria-expanded', 'true'); b.classList.add('is-on'); }
+      }
+    });
+    document.addEventListener('mouseout', function (e) {
+      var wrap = e.target.closest('.sc-fb-more-wrap');
+      if (!wrap || wrap.contains(e.relatedTarget)) return;
+      clearTimeout(wiseaiMoreCloseTimer);
+      wiseaiMoreCloseTimer = setTimeout(wiseaiCloseMoreMenus, 180);
     });
 
     function showWISEcodeAITyping(statusLabel) {
@@ -13204,7 +13427,7 @@
           const kind = ent.kind || (ent.isCategory ? 'category' : 'product');
           const catCls = kind === 'category' ? ' cmp-race-bug--cat' : '';
           const pc = ent.primary ? ' is-primary' : '';
-          return `<div class="cmp-race-runner${pc}" style="--pos:${pos}%;--rc:${color};--delay:${ei * 110}ms;z-index:${ent.primary ? 6 : ei + 1}" aria-label="${ent.name}: ${pos}">` +
+          return `<div class="cmp-race-runner${pc}" data-eid="${ent.id}" style="--pos:${pos}%;--rc:${color};--delay:${ei * 110}ms;z-index:${ent.primary ? 6 : ei + 1}" aria-label="${ent.name}: ${pos}">` +
             `<span class="cmp-race-bug${catCls}">${cmpBugInner(ent)}</span>` +
             `<span class="cmp-race-num">${pos}</span>` +
             `<span class="cmp-race-pop"><span class="cmp-race-pop-dot" style="background:${color}"></span>` +
@@ -13241,6 +13464,36 @@
         r.style.animation = '';
       });
     }
+
+    /* Hovering any runner circle in the race chart lifts that entity's header
+       card (enlarge + elevate). Delegated on #cmp-body so it survives every
+       re-render; the runner and its matching header cell share data-eid. */
+    (function cmpWireRaceHoverHighlight() {
+      const body = document.getElementById('cmp-body');
+      if (!body || body.dataset.raceHlWired) return;
+      body.dataset.raceHlWired = '1';
+      function clearHl() {
+        body.querySelectorAll('.cmp-cell--entity.cmp-hcell.is-race-hl')
+          .forEach(c => c.classList.remove('is-race-hl'));
+      }
+      body.addEventListener('mouseover', e => {
+        const runner = e.target.closest && e.target.closest('.cmp-race-runner');
+        if (!runner) return;
+        const eid = runner.getAttribute('data-eid');
+        if (!eid) return;
+        const card = body.querySelector('.cmp-cell--entity.cmp-hcell[data-eid="' + (window.CSS && CSS.escape ? CSS.escape(eid) : eid) + '"]');
+        if (!card || card.classList.contains('is-race-hl')) return;
+        clearHl();
+        card.classList.add('is-race-hl');
+      });
+      body.addEventListener('mouseout', e => {
+        const runner = e.target.closest && e.target.closest('.cmp-race-runner');
+        if (!runner) return;
+        /* Ignore moves that stay inside the same runner. */
+        if (e.relatedTarget && runner.contains(e.relatedTarget)) return;
+        clearHl();
+      });
+    })();
 
     /* ── Guiding Stars ──────────────────────────────────────────────────
        The pink header toggle flips the board into a Guiding Stars-style
@@ -13731,7 +13984,7 @@
            name and label are layered on top over a legibility scrim (no drop
            shadows anywhere). */
         cells.push(
-          '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" style="position:relative">' + rm + kindChip +
+          '<div class="cmp-cell cmp-cell--entity cmp-hcell' + pc + '" data-eid="' + ent.id + '" style="position:relative">' + rm + kindChip +
           `<div class="cmp-tile"${tileStyle}>${img}${catIc}${badge}${youFloat}${gauge}` +
             `<div class="cmp-tile-overlay"><div class="cmp-ent-name" title="${ent.name}">${ent.name}${you}</div>${sub}</div>` +
           `</div>` +
@@ -15821,11 +16074,15 @@
       const btn = document.getElementById('cmp-ask-help');
       if (!btn) return;
       const label = 'What can I ask?';
+      /* Spaces are emitted as real .sc-ask-sp elements (not bare text nodes):
+         the button is inline-flex, and flex layout drops whitespace-only text
+         nodes between children — which would scrunch the label together. */
       btn.innerHTML = '<span aria-hidden="true">' + label.split('').map((ch, i) =>
-        ch === ' ' ? ' ' : `<span class="sc-ask-ch" style="--ch-i:${i}">${ch}</span>`
+        ch === ' ' ? '<span class="sc-ask-sp"> </span>' : `<span class="sc-ask-ch" style="--ch-i:${i}">${ch}</span>`
       ).join('') + '</span>';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        try { window.__wiseChatAsk?.open(); } catch (_) {}
         hideWelcomeScreen(() => { addUserMessage(label); wiseaiRespond(label); });
       });
       const input = document.getElementById('chat-input');
@@ -16692,6 +16949,7 @@
   <!-- Shared in-module chat history sidebar + standalone Turns module. -->
   <script src="../js/chat-history.js"></script>
   <script src="../js/chat-turns.js"></script>
+  <script src="../js/chat-ask.js"></script>
   <script>
     (function () {
       if (!window.WiseChatHistory) return;
@@ -16748,6 +17006,41 @@
             onVisibility: function () { syncWISEcodeAIModuleSwitches(); }
           })
         : null;
+
+      /* "What can I ask?" in-chat overlay — same panel the shared chat mounts,
+         break-out-able as a sticky module to the right of the chat. Opened by
+         the gold link (which also still posts the transcript listing). */
+      if (window.WiseChatAsk) {
+        var msgsParent = msgs && msgs.parentElement;
+        window.__wiseChatAsk = window.WiseChatAsk.mount({
+          host: msgsParent || shell,
+          container: '#modules-row',
+          anchor: '#chat-shell',
+          label: 'What can I ask?',
+          inputEl: '#chat-input',
+          getSuggestions: function () {
+            return [{
+              title: 'What you can ask',
+              icon: 'lightbulb',
+              cards: [
+                { icon: 'compare_arrows', title: 'Compare against competitors', ask: 'Compare my products against competitors', intent: 'startComparisonWorkflow' },
+                { icon: 'insights', title: 'Show the comparison board', ask: 'Show me a side-by-side comparison of these products', intent: 'startComparisonWorkflow' },
+                { icon: 'science', title: 'Build a reformulation plan', ask: 'Build a reformulation plan from this comparison', intent: 'startReformulationWorkflow' },
+                { icon: 'verified', title: 'Run a live verification', ask: 'Run a live verification on the weakest product', intent: 'startVerificationWorkflow' }
+              ]
+            }];
+          },
+          onAsk: function (text, intent) {
+            if (intent && typeof window[intent] === 'function') { window[intent](); return; }
+            if (typeof hideWelcomeScreen === 'function') {
+              hideWelcomeScreen(function () {
+                if (typeof addUserMessage === 'function') addUserMessage(text);
+                if (typeof wiseaiRespond === 'function') wiseaiRespond(text);
+              });
+            }
+          }
+        });
+      }
 
       /* Menu switch rows: flip the module, keep the popover open so the switch
          state reads back immediately (matching the shared chat's menu). */

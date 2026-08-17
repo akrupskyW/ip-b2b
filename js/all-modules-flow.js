@@ -291,6 +291,11 @@ function moduleMoreItems(moduleId) {
       { action: 'tbl-clear', icon: 'restart_alt', label: 'Clear search' },
     ];
   }
+  if (moduleId === 'mi-trace') {
+    return [
+      { action: 'trace-replay', icon: 'replay', label: 'Replay trace' },
+    ];
+  }
   return [
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -1862,21 +1867,27 @@ function componentCategoryScorecards() {
 /* ------------------------------------------------------------------ */
 /* Intent Chip Audit module                                            */
 /*                                                                     */
-/* Every WISEcodeAI dock across the app ships "intent chips" — the      */
-/* one-tap suggestions on the welcome screen. For a chip to be fully    */
-/* wired it needs BOTH halves:                                          */
+/* Every WISEcodeAI surface across the app ships "intent chips" — the    */
+/* one-tap suggestions on the welcome screen. This covers both the       */
+/* shared dock (mounted on every logged-in page) AND the standalone      */
+/* flagship WISEcodeAI pages (wiseai.html, ai-dashboard.html). For a     */
+/* chip to be fully wired it needs BOTH halves:                          */
 /*   • a transcript — its own scripted reply (an `intentReplies[intent]`*/
 /*     entry, or a page-supplied reply hook), so a click narrates       */
 /*     something specific instead of falling through to the generic     */
 /*     keyword fallback; and                                            */
-/*   • logic — an `onIntent` side-effect that drives the real page      */
-/*     (filter a table, open a report, run a job, navigate…).           */
+/*   • logic — an `onIntent`/`onReply` side-effect that drives the real  */
+/*     page (filter a table, open a report/pane, run a job, navigate…).  */
+/*     Pure Q&A / explainer chips are transcript-only by design — they   */
+/*     answer a question rather than move the page — and are flagged     */
+/*     l:false so the audit reports them honestly as "answer-only".      */
 /*                                                                      */
 /* This map is hand-verified against each surface's WISEcodeAI config    */
-/* (the `*_WISEAI` exports in js/*-flow.js and the inline dock configs   */
-/* in js/agent-overview.js, cross-checked against each page's on-page    */
-/* intent bridge — window.__ibIntent / __wiseLibraryIntent /            */
-/* __wiseMarketingIntent). Keep it in lock-step with those when chips   */
+/* (the `*_WISEAI` exports in js/*-flow.js, the inline dock configs in   */
+/* js/agent-overview.js, and the inline configs + surface(intent) on the */
+/* flagship pages), cross-checked against each page's on-page intent     */
+/* bridge — window.__ibIntent / __wiseLibraryIntent /                    */
+/* __wiseMarketingIntent). Keep it in lock-step with those when chips    */
 /* are added or rewired. Per chip: t = has its own transcript, l = has  */
 /* its own page logic. A chip missing either half is called out below.  */
 /* ------------------------------------------------------------------ */
@@ -2126,14 +2137,44 @@ const INTENT_AUDIT = [
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The four “Jump to…” chips scroll to a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page.',
     chips: [
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true },
+      { i: 'tables',     label: 'Show every table',             t: true, l: true },
+      { i: 'intents',    label: 'Which intent chips work?',      t: true, l: true },
       { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true },
       { i: 'design',     label: 'Jump to the Design System',     t: true, l: true },
-      { i: 'components',  label: 'Jump to the Component Library', t: true, l: true },
+      { i: 'components', label: 'Jump to the Component Library', t: true, l: true },
       { i: 'counts',     label: 'How many icons are there?',     t: true, l: false },
+    ],
+  },
+  {
+    label: 'WISEcodeAI (flagship)', icon: 'auto_awesome', href: 'wiseai.html', src: 'wiseai.html',
+    note: 'The standalone WISEcodeAI conversation. Every chip posts its own scripted transcript (INTENT_REPLIES) and opens its result/visual panes via surface(intent) — including the deadpan “Cat food.” easter egg, which now opens a cat-food card, and “Is this list ultra-processed?”, which opens the WISEcode UPF framework pane.',
+    chips: [
+      { i: 'brisket',      label: 'Gut-healthy brisket recipe',    t: true, l: true },
+      { i: 'redochart',    label: 'Redo the gut-health chart',     t: true, l: true },
+      { i: 'upf',          label: 'Is this list ultra-processed?', t: true, l: true },
+      { i: 'worst',        label: 'Worst food in our database?',   t: true, l: true },
+      { i: 'spider',       label: 'Spider-chart the 10 worst foods', t: true, l: true },
+      { i: 'cupcake',      label: 'Tell me about the worst cupcake', t: true, l: true },
+      { i: 'cookie',       label: 'Best cookie, least chocolate',  t: true, l: true },
+      { i: 'compare',      label: 'Compare products side by side',  t: true, l: true },
+      { i: 'report',       label: 'Show me a pretty report',       t: true, l: true },
+      { i: 'cat',          label: 'If I identified as a cat…',     t: true, l: true },
+      { i: 'catnutrients', label: 'What nutrients do cats require?', t: true, l: true },
+    ],
+  },
+  {
+    label: 'AI Platform Dashboard', icon: 'monitoring', href: 'ai-dashboard.html', src: 'ai-dashboard.html',
+    note: 'Ask-about-your-platform chips. Each now carries its own scripted transcript (intentReplies keyed by intent id) narrating the metric it answers; the dashboard beside the chat is a static read-out, so these are answer-only (no page side-effect).',
+    chips: [
+      { i: 'spend_rise',    label: 'Why did spend rise this period?',    t: true, l: false },
+      { i: 'top_model',     label: 'Which model drives the most tokens?', t: true, l: false },
+      { i: 'guardrails',    label: 'Show guardrail activity',            t: true, l: false },
+      { i: 'top_users',     label: 'Top users by consumption',           t: true, l: false },
+      { i: 'stale_sources', label: 'Any stale data sources?',           t: true, l: false },
     ],
   },
 ];
@@ -2326,6 +2367,223 @@ function wireIntentAudit(root) {
     });
   }
   apply('all');
+}
+
+/* ------------------------------------------------------------------ */
+/* Reasoning Trace — the anatomy of a WISEcodeAI "thinking" trace.      */
+/*                                                                     */
+/* Every WISEcodeAI turn streams a live trace while it works. It has two  */
+/* moving parts, named here:                                            */
+/*   • MAIN SECTIONS — the milestone keys the trace walks through, one   */
+/*     on screen at a time (Reading → Gathering → Cross-checking →       */
+/*     Composing). Each lands into the summary with the m:ss it took.    */
+/*   • the GLOB — the subdued narration that streams in line by line     */
+/*     beneath the active section. On THIS page the glob is always a     */
+/*     HAIKU (5·7·5), so the anatomy reads at a glance.                  */
+/* Rendered live with the real .sc-trace* classes from pages/wise.css   */
+/* (loaded on this page), so the demo looks exactly like the live chat. */
+/* ------------------------------------------------------------------ */
+
+/* Each entry is a MAIN SECTION: a pool of interchangeable 1–3 word `keys`
+   (so the label varies on replay) and a pool of `haiku` globs, each a strict
+   5·7·5 triplet. Per replay we materialize one key + one haiku per section,
+   so no two runs read the same while the arc stays coherent. */
+const TRACE_MILESTONES = [
+  {
+    keys: ['Reading', 'Parsing intent', 'Framing the ask'],
+    haiku: [
+      ['Your words, read them twice', 'once for sense, once for the want', 'beneath the asking'],
+      ['The thread pulled back through', 'the chat; nothing left adrift', 'scope drawn gently tight'],
+    ],
+  },
+  {
+    keys: ['Gathering', 'Sourcing', 'Foraging'],
+    haiku: [
+      ['Row by patient row', 'the registry walked; stale things', 'quietly let go'],
+      ['Barcodes that agree', 'kept close; the quarrelers flagged', 'freshness weighed with care'],
+    ],
+  },
+  {
+    keys: ['Cross-checking', 'Stress-testing', 'Second-guessing'],
+    haiku: [
+      ['The tidy answer', 'poked at, to see if it holds', 'edges invited in'],
+      ['What I had assumed', 'held against what the data', 'plainly says is true'],
+    ],
+  },
+  {
+    keys: ['Composing', 'Distilling', 'Writing it plain'],
+    haiku: [
+      ['Facts folded to words', 'the number that matters, first', 'caveats tucked in'],
+      ['Every posturing', 'sentence, cut; read back to you', 'short where short is fair'],
+    ],
+  },
+];
+
+const TRACE_STRAND = '<div class="sc-trace-strand" aria-hidden="true"></div>';
+
+function renderReasoningTrace() {
+  const sections = TRACE_MILESTONES.length;
+  return `
+    <section class="mi-module" id="mi-trace">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Reasoning Trace</h2>
+          <p class="mi-module-lede">The "thinking" trace every WISEcodeAI turn streams while it works, shown here with its two moving
+            parts named. The <strong>main sections</strong> are the ${sections} milestones the trace walks through —
+            <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the <strong>glob</strong> of
+            subdued narration streams in line by line. On this page the glob is <strong>always a haiku</strong> (5·7·5).
+            Rendered live with the same <code>.sc-trace</code> classes the chat uses.</p>
+        </div>
+        ${moduleControlsHTML('mi-trace')}
+      </header>
+
+      <div class="mi-trace">
+        <div class="mi-trace-card">
+          <div class="sc-trace" data-open="1" id="mi-trace-live">
+            <button type="button" class="sc-trace-head" aria-expanded="true">
+              <span class="sc-trace-title">Thinking</span>
+              <span class="sc-trace-timer" aria-hidden="true">0:00</span>
+              <span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>
+            </button>
+            <div class="sc-trace-body">${TRACE_STRAND}</div>
+          </div>
+        </div>
+
+        <div class="mi-trace-side">
+          <button type="button" class="mi-trace-run" data-trace-run>
+            <span class="material-symbols-outlined">replay</span><span data-trace-run-label>Replay trace</span>
+          </button>
+          <ul class="mi-trace-legend">
+            <li class="mi-trace-leg">
+              <span class="mi-trace-leg-swatch mi-trace-leg-swatch--key" aria-hidden="true"></span>
+              <span><strong>Main section</strong> — the milestone the trace is on. One shows at a time, then lands into
+                the summary with the m:ss it took.</span>
+            </li>
+            <li class="mi-trace-leg">
+              <span class="mi-trace-leg-swatch mi-trace-leg-swatch--glob" aria-hidden="true"></span>
+              <span><strong>Glob</strong> — the narration under each section. Always a <strong>haiku</strong>: three
+                lines, 5·7·5.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>`;
+}
+
+function wireReasoningTrace(root) {
+  const mod = root.querySelector('#mi-trace');
+  if (!mod) return;
+  const trace = mod.querySelector('#mi-trace-live');
+  const head = trace.querySelector('.sc-trace-head');
+  const titleEl = trace.querySelector('.sc-trace-title');
+  const timerEl = trace.querySelector('.sc-trace-timer');
+  const bodyEl = trace.querySelector('.sc-trace-body');
+  const runBtn = mod.querySelector('[data-trace-run]');
+  const runLabel = mod.querySelector('[data-trace-run-label]');
+
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const fmtClock = (ms) => {
+    const s = Math.max(0, Math.round(ms / 1000));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  };
+
+  /* A run token — bumping it cancels any timers still queued from a prior run,
+     so hammering Replay never leaves two traces streaming over each other. */
+  let token = 0;
+
+  /* The header collapses the whole trace (live glob or final summary) and back,
+     exactly like the real one. */
+  head.addEventListener('click', () => {
+    const open = trace.getAttribute('data-open') === '1';
+    trace.setAttribute('data-open', open ? '0' : '1');
+    head.setAttribute('aria-expanded', open ? 'false' : 'true');
+  });
+
+  const finish = (landmarks, elapsed, myToken) => {
+    if (myToken !== token) return;
+    const total = landmarks.length ? landmarks[landmarks.length - 1].time : fmtClock(elapsed);
+    bodyEl.innerHTML = TRACE_STRAND + `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step is-revealed"><span class="sc-trace-step-key">${esc(l.key)}</span>`
+      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
+    titleEl.textContent = `Worked for ${total}`;
+    timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
+    trace.classList.add('is-complete');
+    runBtn.disabled = false;
+    if (runLabel) runLabel.textContent = 'Replay trace';
+  };
+
+  const run = () => {
+    const myToken = ++token;
+    const steps = TRACE_MILESTONES.map((m) => ({ key: pick(m.keys), haiku: pick(m.haiku) }));
+    trace.classList.remove('is-complete');
+    trace.setAttribute('data-open', '1');
+    head.setAttribute('aria-expanded', 'true');
+    titleEl.textContent = 'Thinking';
+    timerEl.textContent = '0:00';
+    bodyEl.innerHTML = TRACE_STRAND;
+    runBtn.disabled = true;
+    if (runLabel) runLabel.textContent = 'Thinking…';
+
+    const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const now = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - start;
+    const landmarks = [];
+
+    /* Reduced motion: skip the streaming and show the finished summary at once
+       with plausible stamps. */
+    if (reduced) {
+      let acc = 0;
+      steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtClock(acc) }); });
+      finish(landmarks, acc, myToken);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      if (myToken !== token) { clearInterval(timer); return; }
+      timerEl.textContent = fmtClock(now());
+    }, 200);
+
+    let mi = 0;
+    const runMilestone = () => {
+      if (myToken !== token) { clearInterval(timer); return; }
+      if (mi >= steps.length) { clearInterval(timer); finish(landmarks, now(), myToken); return; }
+      const m = steps[mi];
+      /* Append a NEW section block below the previous ones — the haiku globs
+         build on each other into one growing narrative, never wiping the last. */
+      const block = document.createElement('div');
+      block.className = 'sc-trace-live';
+      block.innerHTML = '<div class="sc-trace-now"><span class="sc-trace-now-key"></span></div>'
+        + '<div class="sc-trace-story"></div>';
+      block.querySelector('.sc-trace-now-key').textContent = m.key;
+      bodyEl.appendChild(block);
+      const storyEl = block.querySelector('.sc-trace-story');
+      const lines = m.haiku.slice();
+      let si = 0;
+      const streamLine = () => {
+        if (myToken !== token) { clearInterval(timer); return; }
+        if (si >= lines.length) {
+          block.classList.add('is-done');
+          landmarks.push({ key: m.key, time: fmtClock(now()) });
+          mi += 1;
+          setTimeout(runMilestone, rnd(240, 480));
+          return;
+        }
+        const sp = document.createElement('span');
+        sp.className = 'sc-trace-story-line';
+        sp.textContent = lines[si];
+        storyEl.appendChild(sp);
+        requestAnimationFrame(() => sp.classList.add('is-in'));
+        si += 1;
+        setTimeout(streamLine, rnd(360, 720));
+      };
+      setTimeout(streamLine, rnd(160, 340));
+    };
+    setTimeout(runMilestone, rnd(240, 520));
+  };
+
+  runBtn.addEventListener('click', run);
+  run();
 }
 
 /* ------------------------------------------------------------------ */
@@ -2572,18 +2830,18 @@ function moduleStyles() {
     }
 
     /* ---- Accordion: every module section collapses from its own header ---- */
-    /* Expand / collapse-all control row under the section quick-nav. */
-    .mi-acc-controls {
-      display: flex; align-items: center; gap: 8px; margin-top: 14px;
-    }
-    .mi-acc-allbtn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-strong);
-      background: var(--surface); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    /* Single expand/collapse-all toggle — lives to the right of the hero lede. */
+    .mi-acc-toggle {
+      flex: 0 0 auto; align-self: center;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
+      cursor: pointer;
       transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
     }
-    .mi-acc-allbtn:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
-    .mi-acc-allbtn .material-symbols-outlined { font-size: 18px !important; }
+    .mi-acc-toggle:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+    .mi-acc-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-acc-toggle .material-symbols-outlined { font-size: 20px !important; }
 
     /* Turn the module header into a toggle bar. The whole header is clickable
        except its trailing ⋯ controls cluster. */
@@ -3062,11 +3320,11 @@ function moduleStyles() {
 
     /* ---- Section quick-nav (scorecards at the very top) ---- */
     .dsc-jump {
-      display: grid; gap: 12px; margin: 4px 0 26px;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      display: grid; gap: clamp(8px, 1.2vw, 12px); margin: 4px 0 26px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
     }
     .dsc-jump-tile {
-      display: flex; align-items: center; gap: 13px; text-align: left;
+      display: flex; align-items: center; gap: 12px; text-align: left; min-width: 0;
       padding: 15px 16px; border: 1px solid var(--border); border-radius: 16px;
       background: var(--surface); box-shadow: var(--shadow-1); cursor: pointer; font: inherit;
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -3075,19 +3333,23 @@ function moduleStyles() {
     .dsc-jump-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
     .dsc-jump-tile:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .dsc-jump-ic {
-      flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px;
-      display: grid; place-items: center; color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      flex: 0 0 auto; display: grid; place-items: center; color: var(--primary);
     }
     html.dark .dsc-jump-ic { color: var(--primary-bright, #93C5FD); }
-    .dsc-jump-ic .material-symbols-outlined { font-size: 22px !important; }
+    .dsc-jump-ic .material-symbols-outlined { font-size: 26px !important; }
     .dsc-jump-body { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
     .dsc-jump-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.4rem; font-weight: 800; color: var(--text); }
-    .dsc-jump-label { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-top: 1px; }
+    .dsc-jump-label { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dsc-jump-sub { font-size: 0.68rem; color: var(--text-subtle); margin-top: 2px; }
     .dsc-jump-go { margin-left: auto; flex: 0 0 auto; font-size: 18px !important; color: var(--text-subtle); transition: transform 0.15s ease, color 0.15s ease; }
     .dsc-jump-tile:hover .dsc-jump-go { transform: translateY(2px); color: var(--primary); }
     html.dark .dsc-jump-tile:hover .dsc-jump-go { color: var(--primary-bright, #93C5FD); }
+    @media (max-width: 600px) {
+      .dsc-jump { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
+      .dsc-jump-tile { padding: 12px 13px; gap: 10px; }
+      .dsc-jump-ic .material-symbols-outlined { font-size: 22px !important; }
+      .dsc-jump-num { font-size: 1.2rem; }
+    }
 
     .ds-pill {
       display: inline-flex; align-items: center; gap: 5px;
@@ -3284,6 +3546,44 @@ function moduleStyles() {
     .mi-int-badge.is-no { color: #B91C1C; background: rgba(239,68,68,0.10); border-color: transparent; }
     html.dark .mi-int-badge.is-no { color: #F87171; }
     .mi-int-empty { grid-column: 1 / -1; padding: 26px; text-align: center; color: var(--text-subtle); font-size: 0.85rem; }
+
+    /* ---- Reasoning Trace anatomy ---- */
+    .mi-trace { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 20px; align-items: start; }
+    @media (max-width: 720px) { .mi-trace { grid-template-columns: 1fr; } }
+    .mi-trace-card {
+      min-width: 0; padding: 18px 20px;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2);
+    }
+    html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
+    /* The .sc-trace body reserves a 30px left gutter for the live DNA helix the
+       chat draws. That helix is a chat-only widget, so here we fill the gutter
+       with a quiet vertical strand instead of leaving it blank. */
+    .mi-trace .sc-trace-strand { left: 11px; width: 2px; border-radius: 2px; opacity: 0.55;
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 42%, transparent), color-mix(in srgb, var(--primary) 8%, transparent)); }
+    .mi-trace .sc-trace.is-complete .sc-trace-strand {
+      background: linear-gradient(to bottom, color-mix(in srgb, #22C55E 55%, transparent), color-mix(in srgb, #22C55E 12%, transparent)); }
+
+    .mi-trace-side { display: flex; flex-direction: column; gap: 14px; }
+    .mi-trace-run {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 9px 15px; height: 40px; box-sizing: border-box; align-self: flex-start;
+      border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface);
+      font: inherit; font-size: 0.8125rem; font-weight: 700; color: var(--text); cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    html.dark .mi-trace-run { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .mi-trace-run .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; color: var(--primary); }
+    .mi-trace-run:hover:not([disabled]) { border-color: var(--primary); color: var(--primary); box-shadow: var(--shadow-1); }
+    .mi-trace-run:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-trace-run[disabled] { opacity: 0.6; cursor: default; }
+
+    .mi-trace-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    .mi-trace-leg { display: flex; gap: 9px; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted); }
+    .mi-trace-leg strong { color: var(--text); font-weight: 700; }
+    .mi-trace-leg-swatch { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 3px; margin-top: 3px; }
+    .mi-trace-leg-swatch--key { background: var(--ter-amber, #FFC434); }
+    .mi-trace-leg-swatch--glob { background: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff); }
+    html.dark .mi-trace-leg-swatch--glob { background: #93B2DC; }
   </style>`;
 }
 
@@ -3303,16 +3603,16 @@ export function renderAllModules(mainEl) {
           <h1 class="mi-hero-title">All Modules</h1>
           <p class="mi-hero-lede">Every module, component, icon and design token in the WISE app — indexed, rendered live, and one tap away.</p>
         </div>
+        <button type="button" class="mi-acc-toggle" data-acc-toggle data-state="expand" aria-label="Expand all sections" title="Expand all sections">
+          <span class="material-symbols-outlined">unfold_more</span>
+        </button>
       </header>
       ${renderSectionNav()}
-      <div class="mi-acc-controls" role="group" aria-label="Expand or collapse all sections">
-        <button type="button" class="mi-acc-allbtn" data-acc-all="expand"><span class="material-symbols-outlined">unfold_more</span>Expand all</button>
-        <button type="button" class="mi-acc-allbtn" data-acc-all="collapse"><span class="material-symbols-outlined">unfold_less</span>Collapse all</button>
-      </div>
       ${renderCodebase()}
       ${renderDirectory()}
       ${renderTableGallery()}
       ${renderIntentAudit()}
+      ${renderReasoningTrace()}
       ${renderIconInventory()}
       ${renderDesignSystem()}
       ${renderComponentLibrary()}
@@ -3327,6 +3627,7 @@ export function renderAllModules(mainEl) {
   wireTableGallery(mainEl);
   wireRailFrames(mainEl);
   wireIntentAudit(mainEl);
+  wireReasoningTrace(mainEl);
   wireIconInventory(mainEl);
   wireDesignSystem(mainEl);
   wireComponentLibrary(mainEl);
@@ -3345,7 +3646,7 @@ export function renderAllModules(mainEl) {
 /* State is per-section and remembered across visits; the very first   */
 /* load opens collapsed so the page reads as a high-level index.       */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-icons', 'mi-design', 'mi-components'];
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-trace', 'mi-icons', 'mi-design', 'mi-components'];
 const ACC_STATE_KEY = 'mi-acc-collapsed';
 
 function readAccState() {
@@ -3366,6 +3667,21 @@ function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   writeAccState(root);
+  syncAccToggle(root);
+}
+
+/* Keep the single hero toggle in step with the sections: if anything is
+   collapsed the next tap expands all, otherwise it collapses all. */
+function syncAccToggle(root) {
+  const btn = (root || document).querySelector('[data-acc-toggle]');
+  if (!btn) return;
+  const anyCollapsed = ACC_SECTION_IDS.some((id) => (root || document).querySelector('#' + id)?.classList.contains('is-collapsed'));
+  const label = anyCollapsed ? 'Expand all sections' : 'Collapse all sections';
+  btn.dataset.state = anyCollapsed ? 'expand' : 'collapse';
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
+  const ic = btn.querySelector('.material-symbols-outlined');
+  if (ic) ic.textContent = anyCollapsed ? 'unfold_more' : 'unfold_less';
 }
 
 /* Open a section (used when the quick-nav or a WISEcodeAI chip jumps to it). */
@@ -3375,6 +3691,7 @@ function expandAccordionSection(root, id) {
   sec.classList.remove('is-collapsed');
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', 'true');
   writeAccState(root || document);
+  syncAccToggle(root || document);
 }
 
 function setupAccordion(root) {
@@ -3416,15 +3733,17 @@ function setupAccordion(root) {
     });
   });
 
-  root.querySelectorAll('[data-acc-all]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const collapse = btn.dataset.accAll === 'collapse';
+  const toggleBtn = root.querySelector('[data-acc-toggle]');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const collapse = toggleBtn.dataset.state === 'collapse';
       ACC_SECTION_IDS.forEach((id) => {
         const sec = root.querySelector('#' + id);
         if (sec) setSectionCollapsed(root, sec, collapse);
       });
     });
-  });
+  }
+  syncAccToggle(root);
 }
 
 /* ------------------------------------------------------------------ */
@@ -3448,6 +3767,7 @@ function renderSectionNav() {
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chips', sub: 'Transcript + logic audit' },
+    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Reasoning glob, in haiku' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || 0, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
     { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
@@ -3512,6 +3832,7 @@ function runModuleAction(root, action) {
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
     case 'tbl-clear': clearInput('#mi-tbl-search'); break;
     case 'tbl-start': root.querySelector('#mi-tbl-track')?.scrollTo({ left: 0, behavior: 'smooth' }); break;
+    case 'trace-replay': expandAccordionSection(root, 'mi-trace'); click('#mi-trace [data-trace-run]'); break;
   }
 }
 

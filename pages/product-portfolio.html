@@ -3489,7 +3489,7 @@
     @media (prefers-reduced-motion: reduce) { .vf-section { animation: none; } }
     .vf-sec-head { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
     .vf-sec-icon {
-      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--primary-10); color: var(--primary-ink, var(--primary));
     }
@@ -4450,7 +4450,8 @@
        per cycle while each letter bubbles up ~1.5px; per-letter delay staggers
        the phase. Both keyframe extremes show only flat gold, so the loop seam
        is invisible. */
-    .sc-ask-help .sc-ask-ch {
+    .sc-ask-help .sc-ask-ch,
+    .chip.ws-intent-chip--askhelp .sc-ask-ch {
       display: inline-block;
       background: linear-gradient(105deg,
         color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
@@ -4465,13 +4466,17 @@
       animation: sc-ask-shimmer 7.5s ease-in-out infinite;
       animation-delay: calc(var(--ch-i, 0) * 90ms);
     }
+    /* Word gaps in the shimmer label are real elements; white-space:pre keeps
+       the lone space from collapsing away inside the flex button. */
+    .sc-ask-sp { white-space: pre; }
     @keyframes sc-ask-shimmer {
       0%, 8%    { background-position: 100% 0; transform: translateY(0); }
       20%       { transform: translateY(-1.5px); }
       34%, 100% { background-position: 0% 0; transform: translateY(0); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .sc-ask-help .sc-ask-ch { animation: none; }
+      .sc-ask-help .sc-ask-ch,
+      .chip.ws-intent-chip--askhelp .sc-ask-ch { animation: none; }
     }
 
     /* The gold-bordered intent chip — the twin of the link above. Doubled .chip
@@ -4481,7 +4486,10 @@
       color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
       background: color-mix(in srgb, var(--ter-amber, #FFC434) 9%, #fff);
     }
-    .chip.ws-intent-chip--askhelp .material-symbols-outlined { color: inherit; }
+    /* Gold icon too — child combinator + dark twin so the glyph outranks the
+       dark-mode base rule and inherits the chip's gold in both themes. */
+    .chip.ws-intent-chip--askhelp > .material-symbols-outlined,
+    html.dark .chip.ws-intent-chip--askhelp > .material-symbols-outlined { color: inherit; }
     .chip.ws-intent-chip--askhelp:hover {
       background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, #fff);
       border-color: var(--ter-amber, #FFC434);
@@ -4892,6 +4900,11 @@
     }
     .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
     html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+    /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
+       far LEFT of the row while the grounding source chip floats to the far RIGHT. */
+    .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
+    .sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
+    .sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
     /* ── Answer feedback (thumbs up/down) ─────────────────────────────────
        Shown under compare-board chat replies. Thumbs-down opens a small
@@ -4922,6 +4935,30 @@
       font-size: var(--fs-label); font-weight: 500; color: var(--primary-ink, var(--primary));
     }
     .sc-fb-thanks .material-symbols-outlined { font-size: 14px !important; }
+    /* Per-answer "More" menu — the three-dot control that spills the re-run /
+       edit / fork turn actions and the turn ID into a floating pill, matching
+       the shared chat engine (js/wiseai-chat.js) so this hand-built transcript
+       carries the same turn controls everywhere. */
+    .sc-fb-more-wrap { position: relative; display: inline-flex; }
+    .sc-fb-more.is-on, .sc-fb-more[aria-expanded="true"] { background: var(--surface-3); color: var(--text); }
+    .sc-fb-menu {
+      position: absolute; top: calc(100% + 8px); right: -4px; z-index: 80;
+      display: inline-flex; align-items: center; gap: 2px; width: max-content;
+      padding: 4px 7px; background: var(--surface-1, #fff);
+      border: 1px solid var(--border-strong); border-radius: var(--radius-pill, 999px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    }
+    .sc-fb-menu[hidden] { display: none; }
+    .sc-fb-menu-time {
+      font-size: 11px; color: var(--text-muted); white-space: nowrap;
+      margin-right: 4px; padding-right: 6px; border-right: 1px solid var(--border, var(--border-strong));
+    }
+    .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    .sc-fb-id {
+      margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--text-muted); cursor: pointer; font-variant-numeric: tabular-nums;
+    }
+    .sc-fb-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
     /* Popover: opens ABOVE the bar, anchored to its right edge by default
        (top-right). The flip modifiers below are toggled by JS when there isn't
        room above (open down) or when it would clip the left edge (anchor left). */
@@ -9006,8 +9043,8 @@
                 <!-- Gold "What can I ask?" chip — the standing affordance every
                      other WISEcodeAI surface carries; always rides at the end of
                      the set and starts a page-specific "here's what you can ask" turn. -->
-                <button class="chip ws-intent-chip ws-intent-chip--askhelp" onclick="startWhatCanIAsk()">
-                    <span class="material-symbols-outlined" style="font-size:16px">help</span>What can I ask?
+                <button class="chip ws-intent-chip ws-intent-chip--askhelp" onclick="startWhatCanIAsk()" aria-label="What can I ask?">
+                    <span class="material-symbols-outlined" style="font-size:16px">help</span><span class="sc-ask-shimmer" aria-hidden="true"><span class="sc-ask-ch" style="--ch-i:0">W</span><span class="sc-ask-ch" style="--ch-i:1">h</span><span class="sc-ask-ch" style="--ch-i:2">a</span><span class="sc-ask-ch" style="--ch-i:3">t</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:5">c</span><span class="sc-ask-ch" style="--ch-i:6">a</span><span class="sc-ask-ch" style="--ch-i:7">n</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:9">I</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:11">a</span><span class="sc-ask-ch" style="--ch-i:12">s</span><span class="sc-ask-ch" style="--ch-i:13">k</span><span class="sc-ask-ch" style="--ch-i:14">?</span></span>
                 </button>
             </div>
                 <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-chips-prev" aria-label="Scroll to previous actions" onclick="scrollChips(-1)" hidden><span class="material-symbols-outlined">chevron_left</span></button>
@@ -9368,7 +9405,13 @@
              surface. Letters are split into per-glyph spans so CSS can run the
              staggered gold shimmer across the label. -->
         <div class="sc-belowinput sc-belowinput--ask">
-          <button type="button" class="sc-ask-help" onclick="startWhatCanIAsk()" aria-label="What can I ask?"><span class="sc-ask-ch" style="--ch-i:0">W</span><span class="sc-ask-ch" style="--ch-i:1">h</span><span class="sc-ask-ch" style="--ch-i:2">a</span><span class="sc-ask-ch" style="--ch-i:3">t</span> <span class="sc-ask-ch" style="--ch-i:5">c</span><span class="sc-ask-ch" style="--ch-i:6">a</span><span class="sc-ask-ch" style="--ch-i:7">n</span> <span class="sc-ask-ch" style="--ch-i:9">I</span> <span class="sc-ask-ch" style="--ch-i:11">a</span><span class="sc-ask-ch" style="--ch-i:12">s</span><span class="sc-ask-ch" style="--ch-i:13">k</span><span class="sc-ask-ch" style="--ch-i:14">?</span></button>
+          <!-- The letter glyphs live inside an aria-hidden wrapper span (the
+               button's aria-label carries the readable text). The wrapper also
+               matters for layout: .sc-ask-help is inline-flex, and flex
+               containers DROP bare whitespace between children — which is what
+               scrunched this label into "WhatcanIask?". Word gaps are real
+               .sc-ask-sp elements for the same reason. -->
+          <button type="button" class="sc-ask-help" onclick="startWhatCanIAsk()" aria-label="What can I ask?"><span aria-hidden="true"><span class="sc-ask-ch" style="--ch-i:0">W</span><span class="sc-ask-ch" style="--ch-i:1">h</span><span class="sc-ask-ch" style="--ch-i:2">a</span><span class="sc-ask-ch" style="--ch-i:3">t</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:5">c</span><span class="sc-ask-ch" style="--ch-i:6">a</span><span class="sc-ask-ch" style="--ch-i:7">n</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:9">I</span><span class="sc-ask-sp"> </span><span class="sc-ask-ch" style="--ch-i:11">a</span><span class="sc-ask-ch" style="--ch-i:12">s</span><span class="sc-ask-ch" style="--ch-i:13">k</span><span class="sc-ask-ch" style="--ch-i:14">?</span></span></button>
         </div>
       </div>
     </div>
@@ -11835,8 +11878,19 @@
     /* Thumbs up/down feedback affordance shown beneath a WISEcodeAI reply
        (opt in with { feedback: true }). Thumbs-down opens a mini popover of
        quick reasons so the member can flag *what* was off in one tap. */
+    /* Short turn handle (digit-letter-digit-letter, e.g. "7f3h") — same shape as
+       the shared engine's makeTurnId so IDs read identically across transcripts.
+       Doubling as the fork ID the standalone Turns module reads from replies. */
+    function wiseaiMakeTurnId() {
+      var d = function () { return String(Math.floor(Math.random() * 10)); };
+      var l = function () { return 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; };
+      return d() + l() + d() + l();
+    }
+
     function wiseaiFeedbackBar() {
-      return '<div class="sc-feedback" role="group" aria-label="Was this answer helpful?">' +
+      var tid = wiseaiMakeTurnId();
+      var time = wiseaiNowLabel();
+      return '<div class="sc-feedback" role="group" aria-label="Answer actions">' +
         '<span class="sc-fb-label">Was this helpful?</span>' +
         '<button type="button" class="sc-fb-btn sc-fb-up" onclick="wiseaiFeedbackVote(this,\'up\')" title="Helpful" aria-label="Helpful"><span class="material-symbols-outlined">thumb_up</span></button>' +
         '<button type="button" class="sc-fb-btn sc-fb-down" onclick="wiseaiFeedbackVote(this,\'down\')" title="Not helpful" aria-label="Not helpful"><span class="material-symbols-outlined">thumb_down</span></button>' +
@@ -11849,6 +11903,18 @@
             '<button type="button" class="sc-fb-reason" role="menuitem" onclick="wiseaiFeedbackReason(this,\'Missing detail\')">Missing detail</button>' +
           '</div>' +
         '</div>' +
+        '<span class="sc-fb-more-wrap">' +
+          '<button type="button" class="sc-fb-btn sc-fb-more" data-fb-more aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>' +
+          '<div class="sc-fb-menu" role="menu" hidden>' +
+            '<span class="sc-line-time sc-fb-menu-time">' + time + '</span>' +
+            '<span class="sc-fb-menu-actions">' +
+              '<button type="button" class="sc-fb-btn" data-turnact="replay" title="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="edit" title="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="turn" title="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>' +
+              '<span class="sc-fb-id" title="Turn ID" tabindex="0">#' + tid + '</span>' +
+            '</span>' +
+          '</div>' +
+        '</span>' +
       '</div>';
     }
 
@@ -11891,8 +11957,13 @@
 
     function wiseaiFeedbackThanks(bar, msg) {
       bar.classList.add('sc-fb-done');
+      /* Keep the turn controls (re-run / edit / fork + ID) alive after a vote —
+         they belong to the turn, not the thumbs, so voting collapses only the
+         "helpful?" prompt and the more-menu rides along. */
+      var more = bar.querySelector('.sc-fb-more-wrap');
       bar.innerHTML = '<span class="sc-fb-thanks"><span class="material-symbols-outlined">check</span>' +
         String(msg).replace(/</g, '&lt;') + '</span>';
+      if (more) bar.appendChild(more);
     }
 
     /* Dismiss any open thumbs-down popover when clicking elsewhere. */
@@ -11901,6 +11972,158 @@
         const bar = pop.closest('.sc-feedback');
         if (bar && !bar.contains(e.target)) pop.classList.add('hidden');
       });
+    });
+
+    /* ── Per-answer turn controls (re-run / edit / fork + copy turn ID) ───────
+       The three-dot menu on every reply carries the same actions the shared chat
+       engine (js/wiseai-chat.js) exposes, wired here so this hand-built
+       transcript is functional everywhere it appears. */
+    function wiseaiCloseMoreMenus() {
+      document.querySelectorAll('.sc-fb-menu:not([hidden])').forEach(function (m) {
+        m.hidden = true;
+        var b = m.closest('.sc-fb-more-wrap');
+        b = b && b.querySelector('.sc-fb-more');
+        if (b) { b.setAttribute('aria-expanded', 'false'); b.classList.remove('is-on'); }
+      });
+    }
+    function wiseaiCopyText(text, anchor) {
+      if (!text) return;
+      var flash = function () {
+        if (!anchor) return;
+        var prev = anchor.getAttribute('title');
+        anchor.setAttribute('title', 'Copied!');
+        setTimeout(function () { if (prev != null) anchor.setAttribute('title', prev); }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(flash, flash);
+      else flash();
+    }
+    /* Plain text of a transcript line's body (drops meta / feedback / icons). */
+    function wiseaiLineText(el) {
+      if (!el) return '';
+      var body = el.querySelector('.sc-line-body') || el;
+      var clone = body.cloneNode(true);
+      clone.querySelectorAll('.sc-line-meta,.sc-feedback,.sc-inline-chips,.sc-reply-chips,.material-symbols-outlined,svg')
+        .forEach(function (n) { n.remove(); });
+      return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    /* The user prompt that opened the turn a reply belongs to — walk back to the
+       nearest non-event "you" line. */
+    function wiseaiPromptForLine(line) {
+      var n = line;
+      while (n) {
+        if (n.classList && n.classList.contains('sc-line-you') && !n.classList.contains('sc-line-event')) {
+          return wiseaiLineText(n);
+        }
+        n = n.previousElementSibling;
+      }
+      return '';
+    }
+    /* Re-run (autoRun) or edit (drop into composer) this turn's prompt in a fresh
+       conversation. The current thread is filed to History first, mirroring the
+       shared engine's "in new chat" behaviour. */
+    function wiseaiRerunFromLine(line, autoRun) {
+      var text = wiseaiPromptForLine(line);
+      if (!text) return;
+      wiseaiCloseMoreMenus();
+      var hist = window.__wiseChatHistory;
+      if (hist && hist.startNew) hist.startNew();
+      else if (typeof window.restartConversation === 'function') window.restartConversation();
+      if (autoRun) {
+        hideWelcomeScreen(function () { addUserMessage(text); wiseaiRespond(text); });
+      } else {
+        var input = document.getElementById('chat-input');
+        if (input) { input.value = text; input.focus(); try { input.setSelectionRange(text.length, text.length); } catch (_) {} }
+      }
+    }
+    /* Fork the conversation at a line: copy every line up to and including this
+       turn's last reply into a new History thread with a "Forked from …" banner,
+       then load the fork as the active chat (History saves the source first). */
+    function wiseaiForkFromLine(line) {
+      var box = document.getElementById('chat-messages');
+      if (!box || !line) return;
+      wiseaiCloseMoreMenus();
+      /* Extend to the end of this turn: any consecutive replies after the line. */
+      var endNode = line;
+      var s = line.nextElementSibling;
+      while (s) {
+        if (s.classList && s.classList.contains('sc-line') && !s.classList.contains('sc-line-you')) { endNode = s; s = s.nextElementSibling; }
+        else break;
+      }
+      var allNodes = Array.prototype.slice.call(box.children);
+      var endIdx = allNodes.indexOf(endNode);
+      if (endIdx < 0) return;
+      var container = document.createElement('div');
+      for (var k = 0; k <= endIdx; k++) {
+        var nn = allNodes[k];
+        if (nn.classList && (nn.classList.contains('sc-line-typing') || nn.classList.contains('sc-inline-chips') || nn.classList.contains('sc-fork-banner'))) continue;
+        container.appendChild(nn.cloneNode(true));
+      }
+      var hist = window.__wiseChatHistory;
+      var sourceTitle = (hist && hist.currentTitle) ? hist.currentTitle() : 'this conversation';
+      var esc = function (str) { return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+      var banner = '<div class="sc-fork-banner" role="note"><span class="sc-fork-banner-ic material-symbols-outlined">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>' + esc(sourceTitle) + '</strong></span></div>';
+      var forkHtml = banner + container.innerHTML;
+      var count = container.querySelectorAll('.sc-line').length;
+      if (hist && hist.add && hist.restore) {
+        var item = hist.add({ title: sourceTitle, html: forkHtml, count: count, fork: { from: sourceTitle } });
+        hist.restore(item.id);
+      } else {
+        box.innerHTML = forkHtml;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+    document.addEventListener('click', function (e) {
+      var moreBtn = e.target.closest('.sc-fb-more');
+      if (moreBtn) {
+        var wrap = moreBtn.closest('.sc-fb-more-wrap');
+        var menu = wrap && wrap.querySelector('.sc-fb-menu');
+        var willOpen = !!menu && menu.hidden;
+        wiseaiCloseMoreMenus();
+        if (menu) {
+          menu.hidden = !willOpen;
+          moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          moreBtn.classList.toggle('is-on', willOpen);
+        }
+        return;
+      }
+      var idEl = e.target.closest('.sc-fb-id');
+      if (idEl) { wiseaiCopyText((idEl.textContent || '').trim(), idEl); return; }
+      var act = e.target.closest('[data-turnact]');
+      if (act) {
+        var line = act.closest('.sc-line');
+        var kind = act.getAttribute('data-turnact');
+        if (kind === 'turn') wiseaiForkFromLine(line);
+        else if (kind === 'replay') wiseaiRerunFromLine(line, true);
+        else if (kind === 'edit') wiseaiRerunFromLine(line, false);
+        return;
+      }
+      /* Outside click closes any open more-menu. */
+      if (!e.target.closest('.sc-fb-more-wrap')) wiseaiCloseMoreMenus();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') wiseaiCloseMoreMenus(); });
+
+    /* Hover-reveal for the three-dot menu — the timestamp + turn controls open
+       as soon as the pointer lands on the "more" control (no tooltip, no click).
+       A short close delay bridges the gap to the floating menu so it never
+       flickers shut while moving into it. */
+    var wiseaiMoreCloseTimer = null;
+    document.addEventListener('mouseover', function (e) {
+      var wrap = e.target.closest('.sc-fb-more-wrap');
+      if (!wrap) return;
+      clearTimeout(wiseaiMoreCloseTimer);
+      var menu = wrap.querySelector('.sc-fb-menu');
+      if (menu && menu.hidden) {
+        wiseaiCloseMoreMenus();
+        menu.hidden = false;
+        var b = wrap.querySelector('.sc-fb-more');
+        if (b) { b.setAttribute('aria-expanded', 'true'); b.classList.add('is-on'); }
+      }
+    });
+    document.addEventListener('mouseout', function (e) {
+      var wrap = e.target.closest('.sc-fb-more-wrap');
+      if (!wrap || wrap.contains(e.relatedTarget)) return;
+      clearTimeout(wiseaiMoreCloseTimer);
+      wiseaiMoreCloseTimer = setTimeout(wiseaiCloseMoreMenus, 180);
     });
 
     function showWISEcodeAITyping(statusLabel) {
@@ -13473,11 +13696,16 @@
     /* The actual pack sizes a product is sold in, keyed by its UPC (digits
        only). Only about half the portfolio comes in more than one size; the
        rest are single-size and get no size line. Placeholder demo data until
-       the Add Product flow captures each product's real set of sizes. */
+       the Add Product flow captures each product's real set of sizes.
+
+       The FIRST size is the original single-pack, single-unit product (the SKU
+       the row is named after); the remaining sizes are the multi-packs added on
+       top of it. pfPopulateSizes also enforces this at render time by floating
+       the size named in the product title to the front. */
     const PF_PRODUCT_SIZES = {
-      '857287004203': ['4 ct', '12 ct'],            /* Toasted Coconut Brownies */
+      '857287004203': ['12 ct', '4 ct'],            /* Toasted Coconut Brownies */
       '065776631520': ['4 ct', '6 ct', '12 ct'],    /* Chocolate Chip Muffins */
-      '065776635504': ['4 ct', '12 ct'],            /* Chocolate Brownies */
+      '065776635504': ['12 ct', '4 ct'],            /* Chocolate Brownies */
       '857287004272': ['11 oz', '20 oz'],           /* Chunky Chocolate Granola */
       '857287004562': ['5 ct', '10 ct'],            /* Oatmeal Raisin Cookies */
     };
@@ -13486,6 +13714,27 @@
     }
     function pfSizesFor(row) {
       return PF_PRODUCT_SIZES[pfUpcDigits(row)] || null;
+    }
+
+    /* Extract the pack size baked into the product's own name, e.g.
+       "Chocolate Brownies-12 ct" → "12 ct". Returns null when the name
+       carries no count / ounce token. */
+    function pfNameSize(row) {
+      const name = ((row.querySelector('.pf-pname') || {}).textContent || '');
+      const m = name.match(/(\d+(?:\.\d+)?)\s*(ct|oz)\b/i);
+      return m ? (m[1] + ' ' + m[2].toLowerCase()) : null;
+    }
+
+    /* Order a size list so the original single-pack, single-unit product — the
+       one the row is named after — leads, followed by the added packs. Falls
+       back to the given order when the name carries no size. */
+    function pfOrderSizes(row, sizes) {
+      const nameSize = pfNameSize(row);
+      if (!nameSize) return sizes.slice();
+      const ordered = sizes.slice();
+      const idx = ordered.findIndex((s) => s.replace(/\s+/g, ' ').trim().toLowerCase() === nameSize);
+      if (idx > 0) { const [orig] = ordered.splice(idx, 1); ordered.unshift(orig); }
+      return ordered;
     }
 
     /* Render the pack-size chip row beneath a product's UPC, but only for
@@ -13498,7 +13747,7 @@
       const existing = cellText.querySelector('.pf-sizes');
       const sizes = pfSizesFor(row);
       if (!sizes || sizes.length < 2) { if (existing) existing.remove(); return; }
-      const html = sizes.map((s) => '<a class="pf-size-link" role="link" tabindex="0">' + s + '</a>')
+      const html = pfOrderSizes(row, sizes).map((s) => '<a class="pf-size-link" role="link" tabindex="0">' + s + '</a>')
         .join('<span class="pf-size-sep" aria-hidden="true">|</span>');
       let line = existing;
       if (!line) {
@@ -14876,6 +15125,7 @@
        in the portfolio's own quick actions. Mirrors the shared chat's
        askHelpReplyHtml so the affordance behaves the same everywhere. */
     function startWhatCanIAsk() {
+      try { window.__wiseChatAsk?.open(); } catch (_) {}
       hideWelcomeScreen(() => {
         addUserMessage('What can I ask you here?');
         const typing = showWISEcodeAITyping('WISEcodeAI is gathering what you can ask');
@@ -19093,6 +19343,7 @@
   <!-- Shared in-module chat history sidebar + standalone Turns module. -->
   <script src="../js/chat-history.js"></script>
   <script src="../js/chat-turns.js"></script>
+  <script src="../js/chat-ask.js"></script>
   <script>
     (function () {
       if (!window.WiseChatHistory) return;
@@ -19149,6 +19400,48 @@
             onVisibility: function () { syncWISEcodeAIModuleSwitches(); }
           })
         : null;
+
+      /* "What can I ask?" in-chat overlay — same panel the shared chat mounts,
+         break-out-able as a sticky module to the right of the chat. Opened by
+         the gold link + chip (which also still post the transcript listing). */
+      if (window.WiseChatAsk) {
+        var msgsParent = msgs && msgs.parentElement;
+        window.__wiseChatAsk = window.WiseChatAsk.mount({
+          host: msgsParent || shell,
+          container: '#modules-row',
+          anchor: '#chat-shell',
+          label: 'What can I ask?',
+          inputEl: '#chat-input',
+          getSuggestions: function () {
+            return [{
+              title: 'What you can ask',
+              icon: 'lightbulb',
+              cards: [
+                { icon: 'travel_explore', title: 'Review discovered matches', ask: 'Review the products you discovered for me', intent: 'startReviewDiscovered' },
+                { icon: 'fact_check', title: 'Verify ingredients', ask: 'Batch-verify ingredients across my claimed products', intent: 'startVerifyIngredients' },
+                { icon: 'verified_user', title: 'Activate Non-UPF Shields', ask: 'Activate the Non-UPF Shields I\u2019m eligible for', intent: 'startActivateShields' },
+                { icon: 'pending_actions', title: 'Complete Needs Info products', ask: 'Help me complete my Needs Info products', intent: 'startCompleteNeedsInfo' },
+                { icon: 'inventory_2', title: 'View claimed portfolio', ask: 'Show me my claimed portfolio', intent: 'startViewClaimed' },
+                { icon: 'bookmark_add', title: 'Claim a product', ask: 'I want to claim a product', intent: 'startClaimProducts' },
+                { icon: 'gpp_maybe', title: 'Resolve ineligible product', ask: 'Why can\u2019t this product earn a Non-UPF Shield yet?', intent: 'startResolveIneligible' },
+                { icon: 'add_box', title: 'Add a product', ask: 'Add a product manually', intent: 'startAddProduct' },
+                { icon: 'search', title: 'Search the portfolio', ask: 'Search my portfolio by name or UPC', intent: 'startSearchPortfolio' },
+                { icon: 'star', title: 'Guiding Stars ratings', ask: 'Show my Guiding Stars ratings', intent: 'startGuidingStars' },
+                { icon: 'explore', title: 'Tour my portfolio', ask: 'Give me a quick tour of my portfolio', intent: 'portfolioTour' }
+              ]
+            }];
+          },
+          onAsk: function (text, intent) {
+            if (intent && typeof window[intent] === 'function') { window[intent](); return; }
+            if (typeof hideWelcomeScreen === 'function') {
+              hideWelcomeScreen(function () {
+                if (typeof addUserMessage === 'function') addUserMessage(text);
+                if (typeof wiseaiRespond === 'function') wiseaiRespond(text);
+              });
+            }
+          }
+        });
+      }
 
       /* Menu switch rows: flip the module, keep the popover open so the switch
          state reads back immediately (matching the shared chat's menu). */

@@ -1061,6 +1061,39 @@
     .wa-radar-svg { overflow: visible; }
     .wa-nd-tag { display: inline-block; padding: 1px 7px; border-radius: 9999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--ter-amber-10); color: var(--ter-amber-text); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); }
 
+    /* ── Chart entrance + tap-to-replay ──
+       Every surfaced chart animates in and can be REPLAYED by tapping it, just
+       like the analytics dashboards. Bars grow from the left, SVG plots pop in,
+       and the code-eval gauge sweeps its arc. Replaying just restarts these
+       stylesheet animations from JS (see the waReplay* helpers), so the elements
+       hold their final static state whenever motion is reduced. */
+    @keyframes waBarGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes waSvgPop  { from { opacity: 0; transform: scale(0.72); } to { opacity: 1; transform: scale(1); } }
+    @keyframes waGaugeSweep { from { stroke-dashoffset: var(--wa-gauge-c, 251); } to { stroke-dashoffset: var(--wa-off, 0); } }
+    /* A carded chart is clickable as a whole; the code-eval gauge and the ported
+       comparison spider / parallel plots carry their own hit surface. */
+    .wa-pane-body > .wa-block:has(> .wa-chart-card) { cursor: pointer; }
+    .wa-ce-gauge { cursor: pointer; }
+    .wa-pane-body .cmp-radar-canvas,
+    .wa-pane-body .cmp-par-canvas { cursor: pointer; }
+    .wa-chart-card .wa-bar-fill {
+      transform-origin: left center;
+      animation: waBarGrow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: calc(var(--i, 0) * 55ms);
+    }
+    .wa-chart-card svg {
+      transform-origin: center;
+      animation: waSvgPop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .wa-ce-gauge-arc { animation: waGaugeSweep 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .wa-ce-plbar-fill { transform-origin: left center; animation: waBarGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-chart-card .wa-bar-fill,
+      .wa-chart-card svg,
+      .wa-ce-gauge-arc,
+      .wa-ce-plbar-fill { animation: none !important; }
+    }
+
     /* ═══════════ Code Evaluation module ═══════════
        A distinct OUTPUT TYPE (beyond result tables, detail cards, reports &
        charts): the WISEcode "code evaluation" run for a recipe / ingredient
@@ -3019,8 +3052,6 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
-                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
-                  <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
                   <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
@@ -3054,8 +3085,6 @@
                 <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
-                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
-                  <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
                   <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
@@ -3093,7 +3122,6 @@
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
-                  <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="sticky" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">dock_to_right</span><span>Sticky module</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider"></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="split" hidden><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
                   <div class="topbar-menu-divider" data-pane-split-div hidden></div>
@@ -3309,6 +3337,56 @@
     /* Result panes ------------------------------------------------------------ */
     const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals'), unified: document.getElementById('wa-unified') };
     const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body'), unified: document.getElementById('wa-unified-body') };
+
+    /* ── Tap-to-replay for every output chart ─────────────────────────────────
+       Mirrors the analytics dashboards: clicking any surfaced chart restarts its
+       entrance animation. Native charts (SVG plots + grow-in bars) and the
+       code-eval gauge restart their stylesheet animations; the ported comparison
+       spider / parallel plots restart theirs too. Real controls (buttons, links)
+       are left alone so only the chart surface itself replays. Everything is
+       scoped to the output panes so the transcript's preview chips still open the
+       module instead of replaying. */
+    function waCountUp(el, to, dur) {
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min(1, (now - start) / dur);
+        el.textContent = Math.round(to * (1 - Math.pow(1 - t, 3)));   /* easeOutCubic */
+        if (t < 1) requestAnimationFrame(tick); else el.textContent = to;
+      }
+      requestAnimationFrame(tick);
+    }
+    /* Clearing the animation, forcing a reflow, then restoring it re-triggers the
+       stylesheet @keyframes; per-element --i / --delay stagger reinstates itself. */
+    function waRestart(el) {
+      if (!el) return;
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    }
+    function waReplayChartCard(block) {
+      block.querySelectorAll('.wa-chart-card svg, .wa-chart-card .wa-bar-fill').forEach(waRestart);
+    }
+    function waReplayCeGauge(gauge) {
+      waRestart(gauge.querySelector('.wa-ce-gauge-arc'));
+      const num = gauge.querySelector('.wa-ce-gauge-val[data-count]');
+      if (num) waCountUp(num, parseInt(num.dataset.count, 10) || 0, 850);
+      const block = gauge.closest('.wa-block');
+      if (block) block.querySelectorAll('.wa-ce-plbar-fill').forEach(waRestart);
+    }
+    function waReplayCmpPlot(canvas) {
+      canvas.querySelectorAll('.cmp-radar-area, .cmp-radar-series circle, .cmp-par-series, .cmp-par-series-g circle, .cmp-par-bug').forEach(waRestart);
+    }
+    document.addEventListener('click', (e) => {
+      const gauge = e.target.closest('.wa-pane-body .wa-ce-gauge');
+      if (gauge) { waReplayCeGauge(gauge); return; }
+      /* Below here the whole chart surface is the hit target, so keep real
+         interactive controls (and the clickable preview chips) working. */
+      if (e.target.closest('a, button, [role="button"], input, select, textarea')) return;
+      const cardBlock = e.target.closest('.wa-pane-body .wa-block');
+      if (cardBlock && cardBlock.querySelector('.wa-chart-card')) { waReplayChartCard(cardBlock); return; }
+      const cmpPlot = e.target.closest('.wa-pane-body .cmp-radar-canvas, .wa-pane-body .cmp-par-canvas');
+      if (cmpPlot) waReplayCmpPlot(cmpPlot);
+    });
     const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title'), unified: document.getElementById('wa-unified-title') };
     const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta'), unified: document.getElementById('wa-unified-meta') };
     const paneVer = { results: document.getElementById('wa-results-ver'), visuals: document.getElementById('wa-visuals-ver'), unified: document.getElementById('wa-unified-ver') };
@@ -4003,22 +4081,15 @@
        Sync the pane class, title affordances & menu-item state to the flag. */
     setUnifiedTitleDrop(unifiedTitleDrop);
 
-    /* ── Admin: per-pane "Sticky module" mode ──
-       Toggled from a pane's ⋯ menu (pink Admin switch), ON by default on EVERY
-       pane. While ON the pane tucks in behind the chat (and any pane to its
-       left) off its right edge, exactly like the docked Turns module (see the
-       .is-sticky CSS). */
+    /* ── Per-pane sticky mode (permanent) ──
+       Sticky is now the ONLY module style: every pane tucks in behind the chat
+       (and any pane to its left) off its right edge, exactly like the docked
+       Turns module (see the .is-sticky CSS). There is no longer a toggle — it's
+       applied once here and never turned off. */
     const paneSticky = { results: true, visuals: true, unified: true };
-    function syncStickyItem(which) {
-      const item = paneEl[which]?.querySelector('[data-pane-act="sticky"]');
-      if (!item) return;
-      item.classList.toggle('is-on', paneSticky[which]);
-      item.setAttribute('aria-checked', paneSticky[which] ? 'true' : 'false');
-    }
     function setPaneSticky(which, on) {
       paneSticky[which] = !!on;
       paneEl[which]?.classList.toggle('is-sticky', paneSticky[which]);
-      syncStickyItem(which);
     }
     ['results', 'visuals', 'unified'].forEach((w) => setPaneSticky(w, paneSticky[w]));
 
@@ -4035,7 +4106,6 @@
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
           syncPaneGsItem(wrap.dataset.paneMore);
-          syncStickyItem(wrap.dataset.paneMore);
           if (wrap.dataset.paneMore === 'unified') { syncTitledropItem(); }
         }
       });
@@ -4056,12 +4126,6 @@
         if (act === 'titledrop') {
           e.stopPropagation();
           setUnifiedTitleDrop(!unifiedTitleDrop);
-          return;
-        }
-        /* "Sticky module" is a settings switch too — flip + keep menu open. */
-        if (act === 'sticky') {
-          e.stopPropagation();
-          setPaneSticky(which, !paneSticky[which]);
           return;
         }
         pop.classList.add('hidden'); btn.classList.remove('is-open');
@@ -4871,6 +4935,57 @@
         </div>`;
     }
 
+    /* "Is this list ultra-processed?" — the reply asks the user to paste a list;
+       this pane shows the framework that evaluation uses (the NOVA scale + the
+       WISEcode UPF markers) so the chip always opens something actionable. */
+    function upfEvalView() {
+      const tiers = [
+        { n: 1, tone: 'var(--sec-green)',        name: 'Unprocessed / minimally processed', desc: 'Whole foods \u2014 the edible parts of plants and animals, with nothing or almost nothing added.' },
+        { n: 2, tone: 'var(--ter-amber)',        name: 'Processed culinary ingredients',     desc: 'Oils, butter, sugar and salt pressed or refined from Group 1 foods.' },
+        { n: 3, tone: 'var(--sec-orange, #D27326)', name: 'Processed foods',                   desc: 'Group 1 foods with Group 2 ingredients added \u2014 canned vegetables, cured meats, fresh bread.' },
+        { n: 4, tone: 'var(--sec-red)',          name: 'Ultra-processed (UPF)',              desc: 'Industrial formulations built mostly from extracted substances plus cosmetic additives.' },
+      ];
+      const markers = ['Added & free sugars', 'Refined / interesterified oils', 'Protein isolates', 'Emulsifiers', 'Artificial colors', 'Non-caloric sweeteners', 'Flavor enhancers', 'Thickeners & stabilizers', 'Bulking & anti-caking agents', 'Glazing & firming agents'];
+      return `
+        <div class="wa-block">
+          <div class="wa-notice"><span class="material-symbols-outlined">science</span><span>Paste an ingredient list into the chat and I\u2019ll classify it live. Here\u2019s the framework I use \u2014 <strong>WISEcode UPF</strong>, built on the NOVA scale.</span></div>
+          <p class="wa-detail-sub" style="margin-top:16px">The four NOVA groups</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            ${tiers.map((t) => `
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-left:3px solid ${t.tone};border-radius:8px">
+                <span style="font-weight:800;color:${t.tone};font-size:13px;min-width:16px">${t.n}</span>
+                <div><div style="font-weight:700;font-size:12.5px;color:var(--text)">${esc(t.name)}</div><div style="font-size:11.5px;line-height:1.5;color:var(--text-muted);margin-top:2px">${esc(t.desc)}</div></div>
+              </div>`).join('')}
+          </div>
+          <p class="wa-detail-sub" style="margin-top:16px">UPF markers I scan for (Group 4 signals)</p>
+          <div class="wa-chiplist">${markers.map((m) => `<span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">flag</span>${esc(m)}</span>`).join('')}</div>
+          <div class="wa-table-foot"><span class="material-symbols-outlined">info</span>A single Group 4 marker is usually enough to classify a product as ultra-processed. Paste a list and I\u2019ll show exactly which markers it trips.</div>
+        </div>`;
+    }
+
+    /* "If I identified as a cat\u2026" \u2014 the deadpan reply is just \u201cCat food.\u201d, and
+       this pane lands the joke visually: an actual cat-food product card, noting
+       that WISEcode scores human foods (so it isn\u2019t rated on the WISEscale) and
+       pointing at the feline-nutrition references chip. */
+    function catFoodView() {
+      const formulated = ['Taurine', 'Animal protein & essential amino acids', 'Preformed vitamin A', 'Arachidonic acid', 'Niacin'];
+      return `
+        <div class="wa-block">
+          <div class="wa-dhero">
+            <span class="wa-dhero-thumb"><img class="wa-thumb-img" src="${IMG}portfolio/cat-food.png" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="wa-thumb-fallback"><span class="material-symbols-outlined">pets</span></span></span>
+            <div class="wa-dhero-info">
+              <div class="wa-dhero-name">Feline Formula \u00b7 Chicken &amp; Salmon Recipe</div>
+              <div class="wa-dhero-brand">Complete &amp; balanced for obligate carnivores</div>
+            </div>
+            <div class="wa-dhero-score"><div class="wa-dhero-score-n">\u2014</div><div class="wa-dhero-score-l">WISEscore</div></div>
+          </div>
+          <div class="wa-notice"><span class="material-symbols-outlined">pets</span><span>You\u2019d want food <strong>formulated for feline requirements</strong> \u2014 WISEcode scores foods for humans, so this one isn\u2019t rated on the human WISEscale.</span></div>
+          <p class="wa-detail-sub" style="margin-top:16px">What a cat\u2019s food has to deliver</p>
+          <div class="wa-chiplist">${formulated.map((t) => `<span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">check</span>${esc(t)}</span>`).join('')}</div>
+          <p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:14px 0 0">Want the evidence? Ask <strong>\u201cWhat nutrients do cats require?\u201d</strong> and I\u2019ll pull the peer-reviewed references.</p>
+        </div>`;
+    }
+
     /* ── Compare board ───────────────────────────────────────────────────
        The board is rendered by the full product-comparison engine ported
        verbatim into this page (see the "PORTED COMPARE ENGINE" scripts). */
@@ -4953,12 +5068,12 @@
       });
       svg += `</svg>`;
 
-      const scoreBars = WORST_FOODS.slice(0, 10).map((r) => {
+      const scoreBars = WORST_FOODS.slice(0, 10).map((r, i) => {
         const w = (norm(r[2]) * 100).toFixed(0);
         return `<div class="wa-scorebar">
             <div class="wa-scorebar-name">${esc(r[0])}</div>
             <div class="wa-scorebar-line">
-              <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${w}%"></div></div>
+              <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${w}%;--i:${i}"></div></div>
               <div class="wa-bar-val">${fmtScore(r[2])}</div>
             </div>
           </div>`;
@@ -5014,9 +5129,9 @@
         ['90–100', 612], ['70–89', 548], ['50–69', 806], ['30–49', 574], ['0–29', 470],
       ];
       const mx = Math.max(...buckets.map((b) => b[1]));
-      const bars = buckets.map(([lbl, v]) => `<div class="wa-bar-row">
+      const bars = buckets.map(([lbl, v], i) => `<div class="wa-bar-row">
           <div class="wa-bar-label">${lbl}</div>
-          <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%"></div></div>
+          <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%;--i:${i}"></div></div>
           <div class="wa-bar-val">${v.toLocaleString()}</div>
         </div>`).join('');
       return `
@@ -5107,13 +5222,17 @@
     ];
 
     function ceGauge(score, band, color) {
-      const r = 40, c = 2 * Math.PI * r, on = (score / 100) * c, off = c - on;
-      return `<div class="wa-ce-gauge">
-          <svg viewBox="0 0 100 100" role="img" aria-label="Gut Health score ${score} of 100 — ${esc(band)}">
+      const r = 40, c = 2 * Math.PI * r;
+      // Sweepable arc: a full-circumference dash whose offset reveals `score%` of
+      // the ring. It starts at the final offset (rendered filled) and the
+      // waGaugeSweep keyframes run it in on surface / on tap-to-replay.
+      const off = c * (1 - Math.max(0, Math.min(100, score)) / 100);
+      return `<div class="wa-ce-gauge" title="Tap to replay" aria-label="Gut Health score ${score} of 100 — ${esc(band)}, tap to replay">
+          <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
             <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--surface-3)" stroke-width="9"/>
-            <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${on.toFixed(1)} ${off.toFixed(1)}"/>
+            <circle class="wa-ce-gauge-arc" cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" style="--wa-gauge-c:${c.toFixed(1)};--wa-off:${off.toFixed(1)}"/>
           </svg>
-          <div class="wa-ce-gauge-num"><span class="wa-ce-gauge-val">${score}</span><span class="wa-ce-gauge-band">${esc(band)}</span></div>
+          <div class="wa-ce-gauge-num"><span class="wa-ce-gauge-val" data-count="${score}">${score}</span><span class="wa-ce-gauge-band">${esc(band)}</span></div>
         </div>`;
     }
 
@@ -5225,24 +5344,15 @@
         const col = isFerment ? (v >= 2 ? 'var(--sec-green)' : 'var(--ter-amber)') : (i < 4 ? 'var(--sec-green)' : 'var(--primary)');
         return `<div class="wa-bar-row">
             <div class="wa-bar-label">${esc(lbl)}</div>
-            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((val / mx) * 100).toFixed(0)}%;background:${col}"></div></div>
+            <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((val / mx) * 100).toFixed(0)}%;background:${col};--i:${i}"></div></div>
             <div class="wa-bar-val">+${val}</div>
           </div>`;
       }).join('');
-      const cmpBars = spec.cmp.map(([lbl, val, col]) => `<div class="wa-scorebar">
-          <div class="wa-scorebar-name">${esc(lbl)}</div>
-          <div class="wa-scorebar-line"><div class="wa-bar-track"><div class="wa-bar-fill" style="width:${val}%;background:${col}"></div></div><div class="wa-bar-val">${val}</div></div>
-        </div>`).join('');
       return `
         <div class="wa-block">
           <h3 class="wa-report-title wa-chart-title">Where the Gut Health score comes from</h3>
           <div class="wa-chart-card"><div class="wa-bars">${bars}</div></div>
           <p class="wa-caption" style="margin:10px 0 0">${spec.caption}</p>
-        </div>
-        <div class="wa-block">
-          <h3 class="wa-report-title wa-chart-title">Headroom · move sauerkraut higher</h3>
-          <div class="wa-chart-card"><div class="wa-scorebars">${cmpBars}</div></div>
-          <p class="wa-caption" style="margin:10px 0 0">${spec.headroom}</p>
         </div>`;
     }
 
@@ -5912,7 +6022,7 @@
           surfaceBlock('visuals', {
             icon: 'stacked_bar_chart',
             title: 'Gut Health score drivers · brisket',
-            meta: 'Modeled contribution of each ingredient group + headroom if sauerkraut moves higher',
+            meta: 'Modeled contribution of each ingredient group to the returned Gut Health score',
             html: brisketChartView(1),
             versionKey: 'gut-drivers',
             versionReset: true,
@@ -6016,6 +6126,20 @@
             title: 'References · feline nutrition',
             meta: `${CAT_REFS.length} peer-reviewed sources · WISEcodeAI literature consensus`,
             html: catRefsView(),
+          });
+        } else if (intent === 'upf') {
+          surfaceBlock('results', {
+            icon: 'science',
+            title: 'WISEcode UPF · how classification works',
+            meta: 'NOVA-based ultra-processing framework · paste a list to evaluate it live',
+            html: upfEvalView(),
+          });
+        } else if (intent === 'cat') {
+          surfaceBlock('results', {
+            icon: 'pets',
+            title: 'Cat food',
+            meta: 'Formulated for obligate carnivores \u2014 not scored on the human WISEscale',
+            html: catFoodView(),
           });
         }
       }, 660);
@@ -6466,6 +6590,7 @@
         sub: 'Search 989,342 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
         subCounter: true,
         placeholder: 'Ask WISEcodeAI about any food\u2026',
+        placeholderLock: 'Not accessible at this moment',
         chipsFlow: 'wrap',
         inlineChips: true,
         persistChips: false,
@@ -6580,6 +6705,12 @@
            shadow & serif masthead via the #modules-row .wch-docked rules). */
         turnsBreakout: true,
         turnsBreakoutWidth: 380,
+        /* Dock Turns at the FAR RIGHT of the modules row — to the right of any
+           output modules (Results & Details / Visuals panes) that are already
+           open — so flipping Turns on slides it out behind the last open pane as
+           the next layered-down drawer, sized like every other module (rather
+           than wedging in immediately beside the chat). */
+        turnsBreakoutFarRight: true,
         /* Turns is OFF by default — the module is pre-built and docked to the
            right of the chat but starts hidden. Flipping the "Turns" switch in
            the chat's three-dot menu reveals it (it animates out from behind the
@@ -6588,9 +6719,8 @@
         /* Dress the broken-out Turns header like the result panes (serif
            masthead + three-dot menu + width changer). */
         turnsDockedControls: true,
-        /* Pink "Sticky module" admin toggle in the docked Turns module's ⋯ menu,
-           ON by default (tucked behind the chat) — matches every result pane's
-           own sticky switch so all right-of-chat modules carry it. */
+        /* Sticky is the only module style now: the docked Turns module is
+           permanently tucked behind the chat (no toggle — see setTurnsSticky). */
         turnsStickyToggle: true,
         /* Search box pinned above the turn list to filter turns by question,
            answer text or artifact. */

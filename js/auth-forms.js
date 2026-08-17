@@ -261,7 +261,7 @@
     var demo = $('#demo-btn');
     if (demo) demo.addEventListener('click', function () {
       Auth.login({ email: (Auth && Auth.DEMO_EMAIL) || 'demo@wisealliance.com', name: 'Demo User' });
-      window.location.href = 'overview.html';
+      window.location.href = 'wiseai.html';
     });
 
     /* SSO buttons — prototype: open a session under the provider identity. */

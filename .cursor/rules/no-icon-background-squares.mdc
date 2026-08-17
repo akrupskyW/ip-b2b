@@ -1,0 +1,49 @@
+---
+description: Icons must never sit on a rounded-corner square/badge background
+alwaysApply: true
+---
+
+# No Rounded-Corner Squares Behind Icons
+
+Icons in this app must **NEVER** be placed on top of a rounded-corner square
+(or any square/rectangular badge/tile/chip) background. Render the icon on its
+own, with no boxed backdrop behind it. This is a permanent, non-negotiable design rule.
+
+This applies to all icons everywhere: nav items, buttons, list rows, cards,
+feature callouts, status indicators, empty states, etc.
+
+## What is banned
+
+- A `<div>`/`<span>` wrapper around an icon that has both a background
+  (`background`, `background-color`, gradient, etc.) AND `border-radius`.
+- Utility combos like `rounded-*` + `bg-*` on an icon container.
+- "Icon tile" / "icon badge" / "icon chip" patterns.
+
+## Examples
+
+```html
+<!-- ❌ BAD: icon sits on a rounded-corner square -->
+<div style="width:40px;height:40px;border-radius:12px;background:#eef;">
+  <svg class="icon">...</svg>
+</div>
+
+<!-- ❌ BAD: same thing with utility classes -->
+<span class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+  <i class="icon"></i>
+</span>
+
+<!-- ✅ GOOD: bare icon, no boxed backdrop -->
+<svg class="icon">...</svg>
+
+<!-- ✅ GOOD: icon in a fully round container (circle) is allowed -->
+<span class="icon-avatar" style="border-radius:50%;">
+  <svg class="icon">...</svg>
+</span>
+```
+
+## Rules for the agent
+
+- Never generate a rounded-square/tile/badge background behind an icon.
+- When editing or copying existing markup, strip any such wrapper you touch.
+- If a container is needed, use a fully circular container (`border-radius: 50%`)
+  or no background at all — never a rounded rectangle.

@@ -1115,7 +1115,7 @@ function setupMenuRailTooltip() {
     document.body.appendChild(tip);
   }
 
-  const ROW_SELECTOR = '.menu-nav-item, .menu-nav-subitem';
+  const ROW_SELECTOR = '.menu-nav-item, .menu-nav-subitem, .menu-nav-upgrade';
   let current = null;
 
   /* Read a row's label as plain text. The `.tagline-tm` <sup> carries the
@@ -1134,7 +1134,9 @@ function setupMenuRailTooltip() {
   const show = (row) => {
     const panel = row.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot');
     if (!panel) return;
-    const labelEl = row.querySelector('.menu-nav-label');
+    /* Most rows carry their text in `.menu-nav-label`; the upgrade card labels
+       it as `.menu-nav-upgrade-title` instead, so fall back to that. */
+    const labelEl = row.querySelector('.menu-nav-label') || row.querySelector('.menu-nav-upgrade-title');
     const label = labelText(labelEl);
     if (!label) return;
     current = row;
