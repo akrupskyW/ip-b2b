@@ -18,6 +18,15 @@
    "start new conversation" behaviour. */
 import './chat-history.js';
 import './chat-ask.js';
+/* Side-effect import: registers window.WISE_ASK_CATALOG (the shared "What can I
+   ask?" catalog) so every WISEcodeAI chat surface shows the SAME rich panel that
+   wiseai.html does, unless a mount overrides it with its own askCatalog. */
+import './ask-catalog.js';
+
+/* Side-effect import: upgrades the welcome-owl's pulse/orbit rings into an
+   interconnected node constellation (nodes linked to each other AND to the owl
+   core), echoing the helix background. Auto-enhances every `.ws-logo-wrap`. */
+import './welcome-orbit.js';
 
 /* Shared user-avatar store — the "you" bubbles render the member's uploaded
    profile picture (set on the Organization Profile page) when present, and fall
@@ -2592,6 +2601,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const placeholderLockTip = typeof opts.placeholderLock === 'string'
     ? opts.placeholderLock
     : 'Not accessible at this moment';
+  /* Optional second line under the lock tooltip (e.g. "WISEcodeAI is coming
+     soon"). Shown as a muted subtitle beneath the primary lock copy. */
+  const placeholderLockSub = typeof opts.placeholderLockSub === 'string' ? opts.placeholderLockSub : '';
   /* The "You" avatar mirrors the top-bar profile chip (Arthur Krupsky → "AK").
      When the topbar avatar becomes an image, pass opts.userAvatar with an <img>. */
   const userInitials = opts.userInitials || 'AK';
@@ -2942,26 +2954,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      acts (submits a
      prompt, taps an intent chip or scorecard) the transcript advances via
      hideWelcome(), which stops it.
-     OFF by default; a stored '1' restores it. The choice is shared APP-WIDE (one
+     ON by default; a stored '0' turns it off. The choice is shared APP-WIDE (one
      key, broadcast on wise:chat-bg-anim) so every mounted chat's switch follows. */
   const BGANIM_PREF_KEY = 'wise:chat-bg-anim';
-  let bgAnimOn = false;
-  try { if (localStorage.getItem(BGANIM_PREF_KEY) === '1') bgAnimOn = true; } catch (_) {}
+  let bgAnimOn = true;
+  try { if (localStorage.getItem(BGANIM_PREF_KEY) === '0') bgAnimOn = false; } catch (_) {}
   /* Opacity of the background animation (0.1–1). Shared APP-WIDE (one key, broadcast
      on wise:chat-bg-anim-opacity), adjustable from the slider below the toggle. */
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
-  /* Default opacity keys on how many panes the chat occupies: a single- or
-     double-pane (single/double width) chat gets a subtle 30% field, while any
-     wider layout (triple/fill) opens it up to a bolder 65%. This default holds
-     until the member drags the opacity slider, at which point their explicit
-     choice (`bgAnimOpacityUserSet`) takes over app-wide. */
-  let bgAnimOpacity = 0.3;
+  /* Default opacity is a subtle 20% everywhere, regardless of how many panes the
+     chat occupies. This default holds until the member drags the opacity slider,
+     at which point their explicit choice (`bgAnimOpacityUserSet`) takes over
+     app-wide. */
+  let bgAnimOpacity = 0.2;
   let bgAnimOpacityUserSet = false;
   try { const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
-  /* Pane-count default: single/double-pane → 0.30, anything wider → 0.65. */
+  /* Default background-animation opacity: 20% on every layout. */
   function paneDefaultBgAnimOpacity() {
-    const wide = rootEl.classList.contains('panel-triple') || rootEl.classList.contains('panel-fill');
-    return wide ? 0.65 : 0.30;
+    return 0.20;
   }
   /* The opacity actually applied: the member's explicit slider choice when set,
      otherwise the pane-count default (recomputed live so a width change re-tunes
@@ -3063,11 +3073,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-sheen-item" data-sc="sheen" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span><span>Input glow</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
-          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <div class="sc-bganim-detail">
             <span class="sc-bganim-detail-label">Opacity</span>
-            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="90" aria-label="Background animation opacity">
-            <span class="sc-bganim-opacity-val">90%</span>
+            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
+            <span class="sc-bganim-opacity-val">20%</span>
           </div>
           <div class="sc-bganim-playback">
             <span class="sc-bganim-playback-label">Playback</span>
@@ -3140,7 +3150,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             </div>
             <div class="fl-input-line${placeholderLock ? ' fl-input-line--locked' : ''}">
               <textarea class="fl-input${placeholderLock ? ' fl-input--locked' : ''}" id="${id}-input" placeholder="${esc(placeholder)}" rows="1" autocomplete="off"${placeholderLock ? ' readonly aria-disabled="true" tabindex="-1"' : ''}></textarea>
-              ${placeholderLock ? `<span class="fl-input-lock" tabindex="0" role="img" aria-label="${esc(placeholderLockTip)}" data-tip="${esc(placeholderLockTip)}"><span class="material-symbols-outlined">lock</span></span>` : ''}
+              ${placeholderLock ? `<span class="fl-input-lock" tabindex="0" role="img" aria-label="${esc(placeholderLockTip)}${placeholderLockSub ? ' \u2014 ' + esc(placeholderLockSub) : ''}"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">${esc(placeholderLockTip)}</span>${placeholderLockSub ? `<span class="fl-input-lock-tip-sub">${esc(placeholderLockSub)}</span>` : ''}</span></span>` : ''}
             </div>
             <div class="fl-attachments" id="${id}-fl-attach" aria-label="Pending attachments"></div>
           </div>
@@ -3811,6 +3821,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const blueRGB = dark ? '150,178,220' : '37,80,124';
     const dotBlue = dark ? '#AEC8ED' : '#25507C';
     const dotGreen = dark ? '#3DD68C' : '#12b76a';
+    /* Dark mode only: scatter WISE gold through the still-pending dots so the
+       spinning rail reads as gold + blue circles orbiting together (echoing the
+       welcome-owl constellation's tier mix). Light mode stays a single calm blue.
+       Done dots always stay green — that's the completion signal. */
+    const dotGold = '#FFC434';
+    const pendCol = (i, slot) => (dark && (((i + slot) % 3) === 1)) ? dotGold : dotBlue;
     /* The helix's DIAMETER (not just its on-screen width, which the twist already
        pinches to zero at each crossover) is the star of the show: it swells and
        contracts as a wave that TRAVELS DOWN the rail. To keep it from ever looking
@@ -3904,12 +3920,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     let rungs = '', dots = '';
     (rungsY || []).forEach((ry, i) => {
       const ax = xA(ry), bx = xB(ry);
-      const col = i < (greenCount || 0) ? dotGreen : dotBlue;
+      const done = i < (greenCount || 0);
       rungs += `<line x1="${bx.toFixed(2)}" y1="${ry.toFixed(1)}" x2="${ax.toFixed(2)}" y2="${ry.toFixed(1)}"/>`;
       const dA = depthA(ry), dB = -dA;
-      const dot = (x, d) => `<circle cx="${x.toFixed(2)}" cy="${ry.toFixed(1)}" r="${(1.55 + 0.9 * d).toFixed(2)}"`
-        + ` fill="${col}" fill-opacity="${(0.58 + 0.42 * d).toFixed(2)}"/>`;
-      dots += dA >= dB ? (dot(bx, dB) + dot(ax, dA)) : (dot(ax, dA) + dot(bx, dB));
+      /* Each base-pair end (slot 0 = A strand, 1 = B strand) picks its own pending
+         tint, so gold and blue circles intermix as the rope turns. */
+      const dot = (x, d, slot) => {
+        const col = done ? dotGreen : pendCol(i, slot);
+        return `<circle cx="${x.toFixed(2)}" cy="${ry.toFixed(1)}" r="${(1.55 + 0.9 * d).toFixed(2)}"`
+          + ` fill="${col}" fill-opacity="${(0.58 + 0.42 * d).toFixed(2)}"/>`;
+      };
+      dots += dA >= dB ? (dot(bx, dB, 1) + dot(ax, dA, 0)) : (dot(ax, dA, 0) + dot(bx, dB, 1));
     });
 
     const rungCol = `rgba(${blueRGB},0.28)`;
@@ -4500,15 +4521,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      the shared window.WiseChatAsk controller (js/chat-ask.js). */
   const askBreakoutWidth = opts.askBreakoutWidth || 360;
 
-  /* Optional rich catalog — a structured, page-authored library of everything
-     the surface can do, grouped into sections, each capability carrying several
-     example prompts and a "behind the scenes" tool list. When supplied it fully
-     replaces the auto-derived (scorecards + chips) suggestions below. Shape:
+  /* Rich catalog — a structured library of everything the surface can do,
+     grouped into sections, each capability carrying several example prompts and
+     a "behind the scenes" tool list. When present it fully replaces the
+     auto-derived (scorecards + chips) suggestions below. Shape:
        { intro, searchPlaceholder,
          sections: [ { id, title, icon, desc,
-           items: [ { title, icon, desc, prompts:[...], tools:[...] } ] } ] } */
-  const askCatalog = opts.askCatalog && Array.isArray(opts.askCatalog.sections) && opts.askCatalog.sections.length
-    ? opts.askCatalog : null;
+           items: [ { title, icon, desc, prompts:[...], tools:[...] } ] } ] }
+     Defaults to the shared window.WISE_ASK_CATALOG so EVERY WISEcodeAI chat
+     shows the identical "What can I ask?" panel wiseai.html does; a mount can
+     still pass its own opts.askCatalog to override, or askCatalog:false to fall
+     back to the auto-derived suggestions. */
+  const askCatalogSrc = opts.askCatalog === false
+    ? null
+    : (opts.askCatalog || (typeof window !== 'undefined' ? window.WISE_ASK_CATALOG : null));
+  const askCatalog = askCatalogSrc && Array.isArray(askCatalogSrc.sections) && askCatalogSrc.sections.length
+    ? askCatalogSrc : null;
 
   /* Compose the surface's suggestions from the two sources that already drive
      the welcome screen: the rich "at a glance" scorecards and the intent chips.
@@ -7055,25 +7083,24 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:chat-sheen', syncSheen);
   syncSheen();
 
-  /* ── Background animation (+ opacity) — OFF by default, stored '1'
-     restores; opacity is user-set via the slider or falls back to the
-     pane-count default (0.30 narrow / 0.65 wide). The LIVE field mounts
-     only when the page provides cfg.bgAnim; either way the switch drives
-     the one shared app-wide preference. ── */
+  /* ── Background animation (+ opacity) — ON by default, stored '0'
+     turns it off; opacity is user-set via the slider or falls back to the
+     20% default on every layout. The LIVE field mounts only when the page
+     provides cfg.bgAnim; either way the switch drives the one shared
+     app-wide preference. ── */
   const BGANIM_KEY = 'wise:chat-bg-anim';
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
-  let bgOn = false;
-  try { if (localStorage.getItem(BGANIM_KEY) === '1') bgOn = true; } catch (_) {}
-  let bgOpacity = 0.3, bgUserSet = false;
+  let bgOn = true;
+  try { if (localStorage.getItem(BGANIM_KEY) === '0') bgOn = false; } catch (_) {}
+  let bgOpacity = 0.2, bgUserSet = false;
   try {
     const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
-  const isWide = (cfg.bgAnim && typeof cfg.bgAnim.isWide === 'function') ? cfg.bgAnim.isWide : () => false;
-  const effOpacity = () => (bgUserSet ? bgOpacity : (isWide() ? 0.65 : 0.30));
+  const effOpacity = () => (bgUserSet ? bgOpacity : 0.20);
   let engine = null;
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl

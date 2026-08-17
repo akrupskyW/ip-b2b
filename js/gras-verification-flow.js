@@ -220,6 +220,8 @@ const state = {
   lastResult: null,
   lastSubmissionId: '',
   search: '',
+  filterOpen: false,
+  filters: { status: [], kind: [], rec: [] },
 };
 
 /* ------------------------------------------------------------------ */
@@ -256,6 +258,35 @@ function matchesSearch(ing) {
   const q = state.search.trim().toLowerCase();
   if (!q) return true;
   return ing.name.toLowerCase().includes(q) || ing.kind.toLowerCase().includes(q);
+}
+
+/* Popover filters — each dimension is an OR within itself, AND across
+   dimensions (an ingredient must match every non-empty dimension). */
+function matchesFilters(ing) {
+  const f = state.filters;
+  if (f.status.length && !f.status.includes(statusOf(ing.id))) return false;
+  if (f.kind.length && !f.kind.includes(ing.kind)) return false;
+  if (f.rec.length && !f.rec.includes(ing.rec)) return false;
+  return true;
+}
+
+function activeFilterCount() {
+  const f = state.filters;
+  return f.status.length + f.kind.length + f.rec.length;
+}
+
+function toggleFilter(dim, val) {
+  const arr = state.filters[dim] || [];
+  state.filters = {
+    ...state.filters,
+    [dim]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val],
+  };
+  render();
+}
+
+function clearFilters() {
+  state.filters = { status: [], kind: [], rec: [] };
+  render();
 }
 
 /* Prefill the wizard's document fields with plausible values for the
@@ -392,18 +423,18 @@ function scrollTop() {
 function headerHTML() {
   let back = '';
   let title = 'GRAS Verification';
-  let meta = 'Nutrient Survival · Ingredient-level GRAS basis';
+  let meta = '';
   let action = '';
 
   if (state.screen === 'wizard') {
     const ing = ingredientById(state.activeIngredientId);
     back = `<button class="gv-back" type="button" data-gv="wizard-back" aria-label="Back" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>`;
     title = `Verify · ${esc(ing ? ing.name : '')}`;
-    meta = `Nutrient Survival · ${esc(ing ? ing.kind : 'Ingredient')} · ${ing ? ing.products : 0} products affected`;
+    meta = `${esc(ing ? ing.kind : 'Ingredient')} · ${ing ? ing.products : 0} products affected`;
   } else if (state.screen === 'submissions') {
     back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-symbols-outlined">arrow_back</span></button>`;
     title = 'GRAS Submissions';
-    meta = 'Nutrient Survival · Review queue';
+    meta = 'Review queue';
   } else if (state.screen === 'confirm' || state.screen === 'result') {
     back = `<button class="gv-back" type="button" data-gv="go-report" aria-label="Back to GRAS Verification" title="Back to GRAS Verification"><span class="material-symbols-outlined">arrow_back</span></button>`;
   } else {
@@ -417,7 +448,7 @@ function headerHTML() {
       ${back}
       <div class="gv-head-main">
         <h1 class="gv-head-title">${esc(title)}</h1>
-        <p class="gv-head-meta">${meta}</p>
+        ${meta ? `<p class="gv-head-meta">${meta}</p>` : ''}
       </div>
       ${action}
     </header>`;
@@ -431,21 +462,72 @@ function headActionHTML() {
     : `<button class="gv-cta gv-cta--ghost gv-head-action" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>Submissions</button>`;
 }
 
-/* Report toolbar — now just the search pill, spanning the full width (the
-   Submissions action moved up onto the headline row). */
+/* Report toolbar — the search pill spans the full width, with a filter control
+   tucked inside its trailing edge that pops a panel to slice the flagged list by
+   the same facets shown on the page (status, ingredient type, pathway). */
 function toolbarHTML() {
+  const count = activeFilterCount();
   return `
     <div class="gv-toolbar">
       <div class="gv-search-inline">
         <span class="material-symbols-outlined">search</span>
-        <input id="gv-search" class="gv-search" type="text" placeholder="Search ingredients or type" value="${esc(state.search)}" data-gv="search" autocomplete="off" aria-label="Search ingredients" />
+        <input id="gv-search" class="gv-search gv-search--hasfilter" type="text" placeholder="Search ingredients or type" value="${esc(state.search)}" data-gv="search" autocomplete="off" aria-label="Search ingredients" />
+        <button type="button" class="gv-filter-btn${count ? ' is-active' : ''}${state.filterOpen ? ' is-open' : ''}" data-gv="filter-open" aria-haspopup="dialog" aria-expanded="${state.filterOpen}" aria-label="Filter ingredients" title="Filter ingredients">
+          <span class="material-symbols-outlined">tune</span>
+          ${count ? `<span class="gv-filter-count">${count}</span>` : ''}
+        </button>
+        ${state.filterOpen ? filterPopoverHTML() : ''}
+      </div>
+    </div>`;
+}
+
+/* A single toggle row inside the filter popover. */
+function filterOptionRow(dim, val, label, icon) {
+  const on = (state.filters[dim] || []).includes(val);
+  return `
+    <button type="button" class="gv-fopt${on ? ' is-on' : ''}" data-gv="filter-toggle" data-dim="${esc(dim)}" data-val="${esc(val)}" role="checkbox" aria-checked="${on}">
+      <span class="gv-fopt-check material-symbols-outlined">${on ? 'check_box' : 'check_box_outline_blank'}</span>
+      ${icon ? `<span class="gv-fopt-ic material-symbols-outlined">${esc(icon)}</span>` : ''}
+      <span class="gv-fopt-label">${esc(label)}</span>
+    </button>`;
+}
+
+/* The filter popover — one section per facet the report already exposes:
+   GRAS status, ingredient type, and recommended documentation pathway. */
+function filterPopoverHTML() {
+  const kinds = [...new Set(INGREDIENTS.map((i) => i.kind))];
+  const count = activeFilterCount();
+  const statusOrder = ['unclear', 'pending', 'verified'];
+  return `
+    <div class="gv-filter-pop" role="dialog" aria-label="Filter ingredients">
+      <div class="gv-filter-pop-head">
+        <span class="gv-filter-pop-title">Filter</span>
+        ${count ? `<button type="button" class="gv-filter-clear" data-gv="filter-clear">Clear all</button>` : ''}
+      </div>
+      <div class="gv-filter-sec">
+        <div class="gv-filter-sec-label">GRAS status</div>
+        <div class="gv-filter-opts">
+          ${statusOrder.map((s) => filterOptionRow('status', s, STATUS_META[s].label, STATUS_META[s].icon)).join('')}
+        </div>
+      </div>
+      <div class="gv-filter-sec">
+        <div class="gv-filter-sec-label">Ingredient type</div>
+        <div class="gv-filter-opts">
+          ${kinds.map((k) => filterOptionRow('kind', k, k, KIND_ICON[k])).join('')}
+        </div>
+      </div>
+      <div class="gv-filter-sec">
+        <div class="gv-filter-sec-label">Recommended pathway</div>
+        <div class="gv-filter-opts">
+          ${DOC_TYPES.map((d) => filterOptionRow('rec', d.id, d.name, d.icon)).join('')}
+        </div>
       </div>
     </div>`;
 }
 
 /* Scorecards — one tile per portfolio-level GRAS metric, mirroring the Non-UPF
    glance strip. */
-function glanceHTML(label) {
+function glanceHTML() {
   const m = metrics();
   const tile = (num, cap, mod, icon) =>
     `<div class="gv-stat${mod ? ' ' + mod : ''}">` +
@@ -453,7 +535,6 @@ function glanceHTML(label) {
     `<span class="gv-stat-label">${icon ? `<span class="material-symbols-outlined">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
     `</div>`;
   return `
-    <div class="gv-stats-bar"><span class="gv-stats-label">${esc(label)}</span></div>
     <div class="gv-stats">
       ${tile(`${m.grasPct}%`, 'GRAS coverage', 'gv-stat--verified', 'verified_user')}
       ${tile(String(m.flaggedRemaining), 'Flagged ingredients', 'gv-stat--warn')}
@@ -492,7 +573,7 @@ function ingredientGlyph(ing) {
 /* ------------------------------------------------------------------ */
 
 function reportHTML() {
-  const rows = INGREDIENTS.filter(matchesSearch);
+  const rows = INGREDIENTS.filter((ing) => matchesSearch(ing) && matchesFilters(ing));
   const bodyRows = rows.map((ing) => {
     const status = statusOf(ing.id);
     const rec = docTypeById(ing.rec);
@@ -526,7 +607,7 @@ function reportHTML() {
   return `
     ${toolbarHTML()}
     <div class="gv-board">
-      ${glanceHTML('GRAS status across your portfolio')}
+      ${glanceHTML()}
       <div class="gv-board-divider"></div>
       <p class="gv-board-lead">These ingredients have <strong>no established GRAS basis</strong> in WISEcode, so every product containing them is flagged. Document an ingredient once and the status applies portfolio-wide.</p>
       <table class="gv-table">
@@ -539,7 +620,7 @@ function reportHTML() {
           </tr>
         </thead>
         <tbody>
-          ${bodyRows || '<tr><td colspan="4" class="gv-empty">No ingredients match your search.</td></tr>'}
+          ${bodyRows || `<tr><td colspan="4" class="gv-empty">No ingredients match your ${activeFilterCount() ? 'filters' : 'search'}.</td></tr>`}
         </tbody>
       </table>
     </div>`;
@@ -955,6 +1036,8 @@ function progressWizardHTML() {
 
 let rootEl = null;
 let progressEl = null;
+/* Guards the one-time document listeners that dismiss the filter popover. */
+let filterDismissBound = false;
 /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
 let progressMin = true;
 /* The entrance "pop" animation should only play when the step/screen actually
@@ -1026,6 +1109,9 @@ function mountProgressPane() {
 function onAction(action, el) {
   switch (action) {
     case 'verify': startVerify(el.dataset.ing); break;
+    case 'filter-open': state.filterOpen = !state.filterOpen; render(); break;
+    case 'filter-toggle': toggleFilter(el.dataset.dim, el.dataset.val); break;
+    case 'filter-clear': clearFilters(); break;
     case 'next': nextStep(); break;
     case 'wizard-back': backStep(); break;
     case 'pick-doc': pickDoc(el.dataset.doc); break;
@@ -1073,6 +1159,22 @@ export function renderGrasVerificationFlow(mainEl) {
     const fieldEl = e.target.closest('[data-gv-field]');
     if (fieldEl) setField(fieldEl.dataset.gvField, fieldEl.value);
   });
+
+  /* Dismiss the filter popover on an outside click or Escape. The re-render on
+     each toggle detaches the clicked node, but its old ancestors still carry the
+     popover/button markers, so closest() keeps those interactions from closing. */
+  if (!filterDismissBound) {
+    filterDismissBound = true;
+    document.addEventListener('click', (e) => {
+      if (!state.filterOpen) return;
+      if (e.target.closest('.gv-filter-pop') || e.target.closest('[data-gv="filter-open"]')) return;
+      state.filterOpen = false;
+      render();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.filterOpen) { state.filterOpen = false; render(); }
+    });
+  }
 
   /* Progress pane — jump back to a completed step (wizard) or open an
      ingredient (portfolio summary). */
@@ -1254,11 +1356,11 @@ export const GRAS_WISEAI = {
   scorecards: {
     label: 'Your GRAS verification at a glance',
     cards: [
-      { intent: 'verify_top', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'Verify your top ingredient', desc: 'Clear the biggest blocker first — documenting one ingredient clears every product that contains it.', action: 'Verify top ingredient', ask: 'Verify my top ingredient' },
-      { intent: 'view_submissions', icon: 'assignment_turned_in', iconTone: 'brand', pill: { tone: 'up', icon: 'rule', text: 'Review' }, title: 'Open the review queue', desc: 'Track everything you\u2019ve submitted for WISEcode review in one place.', action: 'Open the review queue', ask: 'Open the review queue' },
-      { intent: 'autofill_docs', icon: 'upload_file', iconTone: 'brand', pill: { tone: 'up', icon: 'upload_file', text: 'Docs' }, title: 'Attach & fill the documents', desc: 'Auto-fill the GRAS documentation for your ingredient in one pass.', action: 'Attach & fill the documents', ask: 'Attach & fill the documents' },
-      { intent: 'sign_attestation', icon: 'verified_user', iconTone: 'brand', pill: { tone: 'up', icon: 'verified_user', text: 'Sign' }, title: 'Sign the attestation', desc: 'Confirm your GRAS attestation to submit for WISEcode review.', action: 'Sign the attestation', ask: 'Sign the attestation' },
-      { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEcodeAI' }, title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
+      { intent: 'verify_top', icon: 'verified', iconTone: 'brand', title: 'Verify your top ingredient', desc: 'Clear the biggest blocker first — documenting one ingredient clears every product that contains it.', action: 'Verify top ingredient', ask: 'Verify my top ingredient' },
+      { intent: 'view_submissions', icon: 'assignment_turned_in', iconTone: 'brand', title: 'Open the review queue', desc: 'Track everything you\u2019ve submitted for WISEcode review in one place.', action: 'Open the review queue', ask: 'Open the review queue' },
+      { intent: 'autofill_docs', icon: 'upload_file', iconTone: 'brand', title: 'Attach & fill the documents', desc: 'Auto-fill the GRAS documentation for your ingredient in one pass.', action: 'Attach & fill the documents', ask: 'Attach & fill the documents' },
+      { intent: 'sign_attestation', icon: 'verified_user', iconTone: 'brand', title: 'Sign the attestation', desc: 'Confirm your GRAS attestation to submit for WISEcode review.', action: 'Sign the attestation', ask: 'Sign the attestation' },
+      { variant: 'wiseai', intent: 'explain_gras', icon: 'smart_toy', title: 'What is GRAS verification?', desc: 'Impact \u2192 Docs \u2192 Attest \u2192 Review — I can run any step for you.', action: 'Explain GRAS', ask: 'What is GRAS verification?' },
     ],
   },
   intents: [

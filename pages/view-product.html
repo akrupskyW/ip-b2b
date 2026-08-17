@@ -707,11 +707,12 @@
                 <div class="fl-model-row">
                   <div class="fl-attachments"></div>
                 </div>
-                <div class="fl-input-line">
-                  <textarea id="chat-input" placeholder="Type a value, paste a URL, or ask me anything…" class="fl-input" rows="1" autocomplete="off"></textarea>
+                <div class="fl-input-line fl-input-line--locked">
+                  <textarea id="chat-input" placeholder="Type a value, paste a URL, or ask me anything…" class="fl-input fl-input--locked" rows="1" autocomplete="off" readonly aria-disabled="true" tabindex="-1"></textarea>
+                  <span class="fl-input-lock" tabindex="0" role="img" aria-label="Not accessible at this moment — WISEcodeAI is coming soon"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">Not accessible at this moment</span><span class="fl-input-lock-tip-sub">WISEcodeAI is coming soon</span></span></span>
                 </div>
               </div>
-              <button type="button" id="ap-send" class="sc-send" title="Send">
+              <button type="button" id="ap-send" class="sc-send sc-send--locked" title="Send" disabled aria-disabled="true">
                 <span class="material-symbols-outlined">send</span>
               </button>
             </div>
@@ -934,9 +935,13 @@
 
   <script src="../js/chat-history.js"></script>
   <script src="../js/chat-ask.js"></script>
+  <!-- Shared "What can I ask?" catalog (window.WISE_ASK_CATALOG) so this page's
+       ask panel is IDENTICAL to wiseai.html's. Must load before add-product-flow.js. -->
+  <script src="../js/ask-catalog.js"></script>
   <script>window.WISE_HERO_BRAND = true;</script>
   <script src="../js/add-product-flow.js"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
+  <script defer src="../js/count-up-all.js"></script>
 </body>
 </html>

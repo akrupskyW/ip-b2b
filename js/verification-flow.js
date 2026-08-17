@@ -928,11 +928,11 @@ export const VERIFICATION_WISEAI = {
   scorecards: {
     label: 'Your verification at a glance',
     cards: [
-      { intent: 'select_all', icon: 'library_add_check', iconTone: 'brand', pill: { tone: 'up', icon: 'playlist_add_check', text: 'Do next' }, title: 'Select every pre-qualified food', desc: 'Add all pre-qualified SKUs to this verification in one tap — ready to attest.', action: 'Select all foods', ask: 'Select all foods' },
-      { intent: 'go_payment', icon: 'payments', iconTone: 'brand', pill: { tone: 'up', icon: 'payments', text: 'Pay' }, title: 'Review & pay', desc: 'Choose a method, review your total, accept the VSA, and finalize.', action: 'Go to payment', ask: 'Go to payment' },
-      { intent: 'go_attest', icon: 'fact_check', iconTone: 'brand', pill: { tone: 'up', icon: 'fact_check', text: 'Attest' }, title: 'Continue to attestation', desc: 'Move your selected foods into attestation, ready to sign.', action: 'Continue to attestation', ask: 'Continue to attestation' },
-      { intent: 'do_attest', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Sign' }, title: 'Sign the attestation', desc: 'Confirm your Non-UPF attestation to lock in the claim.', action: 'Sign the attestation', ask: 'Sign the attestation' },
-      { variant: 'wiseai', intent: 'explain_flow', icon: 'smart_toy', pill: { tone: 'wiseai', icon: 'bolt', text: 'WISEcodeAI' }, title: 'Let WISEcodeAI run verification', desc: 'Select \u2192 Attest \u2192 Pay — I can drive every step for you.', action: 'How does verification work?', ask: 'How does verification work?' },
+      { intent: 'select_all', icon: 'library_add_check', iconTone: 'brand', title: 'Select every pre-qualified food', desc: 'Add all pre-qualified SKUs to this verification in one tap — ready to attest.', action: 'Select all foods', ask: 'Select all foods' },
+      { intent: 'go_payment', icon: 'payments', iconTone: 'brand', title: 'Review & pay', desc: 'Choose a method, review your total, accept the VSA, and finalize.', action: 'Go to payment', ask: 'Go to payment' },
+      { intent: 'go_attest', icon: 'fact_check', iconTone: 'brand', title: 'Continue to attestation', desc: 'Move your selected foods into attestation, ready to sign.', action: 'Continue to attestation', ask: 'Continue to attestation' },
+      { intent: 'do_attest', icon: 'verified', iconTone: 'brand', title: 'Sign the attestation', desc: 'Confirm your Non-UPF attestation to lock in the claim.', action: 'Sign the attestation', ask: 'Sign the attestation' },
+      { variant: 'wiseai', intent: 'explain_flow', icon: 'smart_toy', title: 'Let WISEcodeAI run verification', desc: 'Select \u2192 Attest \u2192 Pay — I can drive every step for you.', action: 'How does verification work?', ask: 'How does verification work?' },
     ],
   },
   intents: [

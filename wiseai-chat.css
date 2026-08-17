@@ -580,6 +580,29 @@ html.dark .sc-welcome { background: transparent; }
   .ws-logo { animation: none; transform: none; }
   .ws-logo::after { animation: none; opacity: 0.3; }
 }
+/* ── Orbital tracks (no-JS fallback) ────────────────────────────────────
+   Reuses the welcome markup: .ws-logo-wrap > 3×.ws-pulse-ring + .ws-logo.
+   Each ring is a single gradient arc that travels around the circle and fades
+   into the page (the transparent gap shows the background) — in light and dark.
+   Scoped under .ws-logo-wrap so the marketing galaxy core (which reuses
+   .ws-pulse-ring WITHOUT .ws-logo-wrap) keeps its bloom. The JS constellation
+   (welcome-orbit.js) hides these and renders its own tracks + node web. */
+.ws-logo-wrap { width: 176px; height: 176px; }
+.ws-logo-wrap .ws-pulse-ring {
+  width: 176px; height: 176px; margin: 0; border: 0; box-shadow: none;
+  --ws-tw: 1.4px; --ws-track: rgba(37, 80, 124, 0.5);
+  background: conic-gradient(from 0deg, transparent 20deg, var(--ws-track) 95deg, transparent 175deg, transparent 360deg);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+  mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+  transform: translate(-50%, -50%); animation: wsTrackSpin linear infinite;
+}
+.ws-logo-wrap .ws-pulse-ring::before, .ws-logo-wrap .ws-pulse-ring::after { display: none; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(1) { width: 176px; height: 176px; animation-duration: 26s; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(2) { width: 132px; height: 132px; animation-duration: 34s; animation-direction: reverse; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(3) { width: 96px; height: 96px; animation-duration: 44s; }
+html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); }
+@keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it

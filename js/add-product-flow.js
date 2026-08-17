@@ -935,7 +935,6 @@
      add-product.html, reusing the analytics-types debossed stamp discs). */
   function insightsHTML() {
     return `<div class="nfp-ins">
-      <div class="nfp-ins-label">Product Insights</div>
       <div class="nfp-ins-next">
         <span class="nfp-ins-next-ic" aria-hidden="true"><span class="material-symbols-outlined">gpp_good</span></span>
         <div class="nfp-ins-next-body">
@@ -2204,17 +2203,9 @@
       anchor: document.querySelector('.ap-chat'),
       label: 'What can I ask?',
       inputEl: inputEl,
-      getSuggestions: () => [{
-        title: 'What you can ask',
-        icon: 'lightbulb',
-        cards: WELCOME_CHIPS.map((c) => ({
-          icon: c.icon || 'chat_bubble',
-          title: c.label,
-          desc: '',
-          ask: c.label,
-          intent: c.action,
-        })),
-      }],
+      /* Shared rich catalog — identical to wiseai.html's panel (single source
+         of truth in js/ask-catalog.js), so every chat surface stays in sync. */
+      catalog: (typeof window !== 'undefined' ? window.WISE_ASK_CATALOG : null),
       onAsk: (text, intent) => {
         if (intent) dispatch(intent);
         else { addUser(text); interpret(text); }

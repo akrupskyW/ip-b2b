@@ -546,6 +546,8 @@ function boot() {
       heading: 'What can WISEcodeAI™ help with?',
       sub: 'Your food-truth assistant — scan, learn, decide',
       placeholder: 'Ask about any food…',
+      placeholderLock: 'Not accessible at this moment',
+      placeholderLockSub: 'WISEcodeAI is coming soon',
       intents: ROUTES[initialRoute].intents,
       intentReplies: INTENT_REPLIES,
       /* Large "start here" tiles for the full-page focus surface. Mounted once

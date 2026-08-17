@@ -51,8 +51,6 @@ import {
   applyColorblind,
   getColorblindMode,
   COLORBLIND_MODES,
-  isComposerV2On,
-  applyComposerV2,
   isChatTintOn,
   applyChatTint,
   getModuleGap,
@@ -421,12 +419,13 @@ export function buildAppearanceBody({
       ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
       ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
       ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
-      ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
-      ${fullBleedOptionsSection()}
       ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
     `)}
+    ${apGroup('Full bleed', `
+      ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
+      ${fullBleedOptionsSection()}
+    `)}
     ${apGroup('Chat', `
-      ${toggleRow('data-composer2="1"', isComposerV2On(), 'New chat input', true)}
       ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
       ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
     `)}
@@ -438,12 +437,12 @@ export function buildAppearanceBody({
       ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
       ${colorblindTypeSection()}
       ${textSizeSection()}
+      ${themeSection(isDark)}
+      ${brandingSection()}
     `)}
     ${apGroup('Experience', `
-      ${themeSection(isDark)}
       ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
     `)}
-    ${apGroup('Surfaces', brandingSection())}
     ${apGroup('Admin', `
       ${accessibilityReviewSection()}
       ${allModulesSection()}
@@ -527,7 +526,17 @@ export function wireAppearancePopover(pop, ctx = {}) {
   if (!pop || pop.dataset.appearanceWired === '1') return;
   pop.dataset.appearanceWired = '1';
   pop.classList.add('wise-popover--appearance');
-  const render = () => { try { ctx.render?.(); } catch (_) {} };
+  /* Re-render the body, then re-place the popover. Toggling a row can reveal
+     (or hide) extra content — the Jam player under "Jam strip", the surface
+     pickers under "Full bleed", the CVD-type buttons under "Accessible colors"
+     — which changes the popover's height. Without re-placing, a taller popover
+     keeps its old top/left and spills off its anchor or out of the viewport, so
+     we call the reposition closure the positioning helpers stashed on the node
+     (topbar.js positionPopover*), guarded for shells that place it themselves. */
+  const render = () => {
+    try { ctx.render?.(); } catch (_) {}
+    try { pop.__reposition?.(); } catch (_) {}
+  };
 
   pop.addEventListener('click', (ev) => {
     const within = (sel) => {
@@ -544,7 +553,6 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-headerfloat]')) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); applyFullBleed(!isFullBleedOn());   render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
-    if (within('[data-composer2]'))   { ev.stopPropagation(); applyComposerV2(!isComposerV2On());  render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }

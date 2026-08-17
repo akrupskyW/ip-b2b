@@ -624,9 +624,17 @@ function storedSongId() {
   } catch (_) { return null; }
 }
 
-// Seed the in-memory choice from the last visit so "resume" and the click
-// stabs use the user's track straight away on a fresh page.
-player.songId = storedSongId();
+/** Pick a random track from the library. Used to seed a fresh visit so the jam
+    strip doesn't always default to the same tune on load. */
+function randomSongId() {
+  return SONG_ORDER[Math.floor(Math.random() * SONG_ORDER.length)];
+}
+
+// Seed the in-memory choice: honour the user's last explicit pick if there is
+// one, otherwise start from a RANDOM track so a fresh load isn't always the
+// same tune. This seed is NOT persisted — only an actual play() writes the
+// choice — so an un-played visit re-randomizes on the next load.
+player.songId = storedSongId() || randomSongId();
 
 /** True only when the user explicitly turned the jam strip on (default off). */
 export function isJamStripOn() {

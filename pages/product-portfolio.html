@@ -4388,6 +4388,25 @@
         transform: scale(1.04);
       }
     }
+    /* Orbital tracks (no-JS fallback): each ring is a single gradient arc that
+       travels around the circle and fades into the page (light + dark). The JS
+       constellation (welcome-orbit.js) hides these and draws its own web. */
+    .ws-logo-wrap { width: 176px; height: 176px; }
+    .ws-logo-wrap .ws-pulse-ring {
+      width: 176px; height: 176px; margin: 0; border: 0; box-shadow: none;
+      --ws-tw: 1.4px; --ws-track: rgba(37, 80, 124, 0.5);
+      background: conic-gradient(from 0deg, transparent 20deg, var(--ws-track) 95deg, transparent 175deg, transparent 360deg);
+      -webkit-mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+      mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+      transform: translate(-50%, -50%); animation: wsTrackSpin linear infinite;
+    }
+    .ws-logo-wrap .ws-pulse-ring::before, .ws-logo-wrap .ws-pulse-ring::after { display: none; }
+    .ws-logo-wrap .ws-pulse-ring:nth-child(1) { width: 176px; height: 176px; animation-duration: 26s; }
+    .ws-logo-wrap .ws-pulse-ring:nth-child(2) { width: 132px; height: 132px; animation-duration: 34s; animation-direction: reverse; }
+    .ws-logo-wrap .ws-pulse-ring:nth-child(3) { width: 96px; height: 96px; animation-duration: 44s; }
+    html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); }
+    @keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
     .ws-chips {
       display: flex;
       flex-wrap: wrap;
@@ -8821,11 +8840,11 @@
                  shared preference per control. -->
             <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
             <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
-            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
             <div class="sc-bganim-detail">
               <span class="sc-bganim-detail-label">Opacity</span>
-              <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
-              <span class="sc-bganim-opacity-val">30%</span>
+              <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
+              <span class="sc-bganim-opacity-val">20%</span>
             </div>
             <div class="sc-bganim-playback">
               <span class="sc-bganim-playback-label">Playback</span>
@@ -9391,11 +9410,12 @@
               <div class="fl-model-row">
                 <div class="fl-attachments"></div>
               </div>
-              <div class="fl-input-line">
-                <textarea id="chat-input" placeholder="Type your message" class="fl-input" rows="1" autocomplete="off"></textarea>
+              <div class="fl-input-line fl-input-line--locked">
+                <textarea id="chat-input" placeholder="Type your message" class="fl-input fl-input--locked" rows="1" autocomplete="off" readonly aria-disabled="true" tabindex="-1"></textarea>
+                <span class="fl-input-lock" tabindex="0" role="img" aria-label="Not accessible at this moment — WISEcodeAI is coming soon"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">Not accessible at this moment</span><span class="fl-input-lock-tip-sub">WISEcodeAI is coming soon</span></span></span>
               </div>
             </div>
-            <button type="button" id="send-btn" class="sc-send">
+            <button type="button" id="send-btn" class="sc-send sc-send--locked" disabled aria-disabled="true">
               <span class="material-symbols-outlined">send</span>
             </button>
           </div>
@@ -19344,6 +19364,9 @@
   <script src="../js/chat-history.js"></script>
   <script src="../js/chat-turns.js"></script>
   <script src="../js/chat-ask.js"></script>
+  <!-- Shared "What can I ask?" catalog (window.WISE_ASK_CATALOG) so this page's
+       ask panel is IDENTICAL to wiseai.html's. Must load before the mount below. -->
+  <script src="../js/ask-catalog.js"></script>
   <script>
     (function () {
       if (!window.WiseChatHistory) return;
@@ -19412,25 +19435,9 @@
           anchor: '#chat-shell',
           label: 'What can I ask?',
           inputEl: '#chat-input',
-          getSuggestions: function () {
-            return [{
-              title: 'What you can ask',
-              icon: 'lightbulb',
-              cards: [
-                { icon: 'travel_explore', title: 'Review discovered matches', ask: 'Review the products you discovered for me', intent: 'startReviewDiscovered' },
-                { icon: 'fact_check', title: 'Verify ingredients', ask: 'Batch-verify ingredients across my claimed products', intent: 'startVerifyIngredients' },
-                { icon: 'verified_user', title: 'Activate Non-UPF Shields', ask: 'Activate the Non-UPF Shields I\u2019m eligible for', intent: 'startActivateShields' },
-                { icon: 'pending_actions', title: 'Complete Needs Info products', ask: 'Help me complete my Needs Info products', intent: 'startCompleteNeedsInfo' },
-                { icon: 'inventory_2', title: 'View claimed portfolio', ask: 'Show me my claimed portfolio', intent: 'startViewClaimed' },
-                { icon: 'bookmark_add', title: 'Claim a product', ask: 'I want to claim a product', intent: 'startClaimProducts' },
-                { icon: 'gpp_maybe', title: 'Resolve ineligible product', ask: 'Why can\u2019t this product earn a Non-UPF Shield yet?', intent: 'startResolveIneligible' },
-                { icon: 'add_box', title: 'Add a product', ask: 'Add a product manually', intent: 'startAddProduct' },
-                { icon: 'search', title: 'Search the portfolio', ask: 'Search my portfolio by name or UPC', intent: 'startSearchPortfolio' },
-                { icon: 'star', title: 'Guiding Stars ratings', ask: 'Show my Guiding Stars ratings', intent: 'startGuidingStars' },
-                { icon: 'explore', title: 'Tour my portfolio', ask: 'Give me a quick tour of my portfolio', intent: 'portfolioTour' }
-              ]
-            }];
-          },
+          /* Shared rich catalog — identical to wiseai.html's panel (single
+             source of truth in js/ask-catalog.js). */
+          catalog: window.WISE_ASK_CATALOG,
           onAsk: function (text, intent) {
             if (intent && typeof window[intent] === 'function') { window[intent](); return; }
             if (typeof hideWelcomeScreen === 'function') {
@@ -19507,5 +19514,6 @@
   </script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
+  <script defer src="../js/count-up-all.js"></script>
 </body>
 </html>

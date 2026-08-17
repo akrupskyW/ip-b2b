@@ -312,6 +312,10 @@ export function positionPopoverInMenuPanel(pop, anchor) {
   if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
   pop.style.left = Math.max(8, left) + 'px';
   pop.style.top = Math.max(8, Math.min(top, window.innerHeight - ph - 8)) + 'px';
+  /* Remember how to re-place this popover so a later re-render (e.g. turning on
+     the Jam strip or Full bleed reveals extra rows and makes it taller) can snap
+     it back inside the viewport instead of overflowing off its old anchor. */
+  pop.__reposition = () => positionPopoverInMenuPanel(pop, anchor);
 }
 
 /** Position a .wise-popover for a top-bar anchor (below the trigger). */
@@ -323,6 +327,8 @@ export function positionPopoverForTopbar(pop, anchor) {
   const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
   pop.style.left = left + 'px';
   pop.style.top = (rect.bottom + 8) + 'px';
+  /* Same as above — keep a way to re-place after the body grows/shrinks. */
+  pop.__reposition = () => positionPopoverForTopbar(pop, anchor);
 }
 
 /* Minimal UI — collapse the navigation to just the logo, the crossword
@@ -642,29 +648,29 @@ export function restoreFullBleedSurfaces() {
 /* Composer v2 — the redesigned chat-module input: one pill row with "+" far
    left, the growing text field beside it, and the database selector docked
    bottom-right just left of send. The text field grows upward as you type
-   while the controls hold the bottom line. Admin-only toggle in the
-   Appearance popover; driven by a `composer-v2` class on <html> so every
-   chat module on every page picks it up; persisted across navigation. */
-const COMPOSER_V2_KEY = 'wise-composer-v2';
+   while the controls hold the bottom line. This is now the ONE chat input
+   everywhere — it's always on (driven by a permanent `composer-v2` class on
+   <html>) and the old input has been retired, so the Appearance popover no
+   longer carries a toggle for it. */
 
-/** True when the redesigned chat input was last left on. */
+/** The new chat input is the default everywhere now — always on. */
 export function isComposerV2On() {
-  try { return localStorage.getItem(COMPOSER_V2_KEY) === '1'; } catch { return false; }
+  return true;
 }
 
-/** Toggle the composer-v2 class on <html> and persist it. Composers listen for
-    the `wise:composer-v2` event to re-sync their grown text field height. */
-export function applyComposerV2(on) {
-  document.documentElement.classList.toggle('composer-v2', !!on);
-  try { localStorage.setItem(COMPOSER_V2_KEY, on ? '1' : '0'); } catch {}
+/** Apply the composer-v2 class to <html>. Kept exported for any legacy caller,
+    but it now always turns the redesigned input ON. Composers listen for the
+    `wise:composer-v2` event to re-sync their grown text field height. */
+export function applyComposerV2() {
+  document.documentElement.classList.add('composer-v2');
   try {
-    document.dispatchEvent(new CustomEvent('wise:composer-v2', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:composer-v2', { detail: { on: true } }));
   } catch {}
 }
 
-/** Restore the persisted composer-v2 state onto the document. */
+/** Force the new chat input on. Runs on every page (see the restore batch). */
 export function restoreComposerV2() {
-  applyComposerV2(isComposerV2On());
+  document.documentElement.classList.add('composer-v2');
 }
 
 /* Chat tint — washes every chat module's surface (the card, messages area and

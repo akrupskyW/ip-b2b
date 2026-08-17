@@ -4670,6 +4670,29 @@ html.dark .sc-welcome { background: transparent; }
   .ws-logo { animation: none; transform: none; }
   .ws-logo::after { animation: none; opacity: 0.3; }
 }
+/* ── Orbital tracks (no-JS fallback) ────────────────────────────────────
+   Reuses the welcome markup: .ws-logo-wrap > 3×.ws-pulse-ring + .ws-logo.
+   Each ring is a single gradient arc that travels around the circle and fades
+   into the page (the transparent gap shows the background) — in light and dark.
+   Scoped under .ws-logo-wrap so the marketing galaxy core (which reuses
+   .ws-pulse-ring WITHOUT .ws-logo-wrap) keeps its bloom. The JS constellation
+   (welcome-orbit.js) hides these and renders its own tracks + node web. */
+.ws-logo-wrap { width: 176px; height: 176px; }
+.ws-logo-wrap .ws-pulse-ring {
+  width: 176px; height: 176px; margin: 0; border: 0; box-shadow: none;
+  --ws-tw: 1.4px; --ws-track: rgba(37, 80, 124, 0.5);
+  background: conic-gradient(from 0deg, transparent 20deg, var(--ws-track) 95deg, transparent 175deg, transparent 360deg);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+  mask: radial-gradient(closest-side, transparent calc(100% - var(--ws-tw)), #000 calc(100% - var(--ws-tw)));
+  transform: translate(-50%, -50%); animation: wsTrackSpin linear infinite;
+}
+.ws-logo-wrap .ws-pulse-ring::before, .ws-logo-wrap .ws-pulse-ring::after { display: none; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(1) { width: 176px; height: 176px; animation-duration: 26s; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(2) { width: 132px; height: 132px; animation-duration: 34s; animation-direction: reverse; }
+.ws-logo-wrap .ws-pulse-ring:nth-child(3) { width: 96px; height: 96px; animation-duration: 44s; }
+html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); }
+@keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
@@ -5142,20 +5165,24 @@ html.dark .fl-model-popover { background: linear-gradient(155deg, #1A2339 0%, #1
   font-size: 16px; line-height: 1;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 }
-/* Hover / focus tooltip built from data-tip — no boxed backdrop behind the
-   icon itself, only a floating label bubble above it. */
-.fl-input-lock[data-tip]::after {
-  content: attr(data-tip);
+/* Floating label bubble above the lock — no boxed backdrop behind the icon
+   itself. Supports a primary line plus an optional muted subtitle, and appears
+   both on the lock's own hover/focus and when the reader hovers anywhere over
+   the (inert) placeholder input line. */
+.fl-input-lock-tip {
   position: absolute; left: 0; bottom: calc(100% + 8px);
-  white-space: nowrap; padding: 5px 9px; border-radius: 8px;
-  background: var(--text, #1c2530); color: #fff; font-size: 11.5px;
-  font-weight: 500; line-height: 1.2; letter-spacing: .1px;
+  display: flex; flex-direction: column; gap: 2px;
+  white-space: nowrap; padding: 6px 10px; border-radius: 8px;
+  background: var(--text, #1c2530); color: var(--surface, #fff);
   box-shadow: 0 6px 18px rgba(0,0,0,.18);
   opacity: 0; transform: translateY(3px); pointer-events: none;
   transition: opacity .14s ease, transform .14s ease; z-index: 20;
 }
-.fl-input-lock[data-tip]:hover::after,
-.fl-input-lock[data-tip]:focus-visible::after { opacity: 1; transform: translateY(0); }
+.fl-input-lock-tip-main { font-size: 11.5px; font-weight: 600; line-height: 1.2; letter-spacing: .1px; }
+.fl-input-lock-tip-sub { font-size: 11px; font-weight: 500; line-height: 1.2; opacity: .78; }
+.fl-input-lock:hover .fl-input-lock-tip,
+.fl-input-lock:focus-visible .fl-input-lock-tip,
+.fl-input-line--locked:hover .fl-input-lock-tip { opacity: 1; transform: translateY(0); }
 .fl-model-wrap--lead { align-self: flex-start; }
 
 /* The database label itself: a muted, pill-on-hover text button with a caret. */
@@ -9461,6 +9488,11 @@ body[data-nav-id="verification"] .agent-main-scroll { padding: 0; }
 body[data-nav-id="verification"] #modules-row {
   margin-top: 0;
 }
+/* Left page inset — the shared body rule zeroes horizontal padding, which lets
+   the collapsed nav rail's -10px hug margin fall off the left edge. Mirror the
+   inset other pages carry (overview.html / product-portfolio) so the primary
+   nav is framed on-screen with proper breathing room. */
+body[data-nav-id="verification"] { padding-left: 12px; }
 
 .vf-root {
   font-family: 'WISE Digits', var(--font-sans, 'DM Sans', system-ui, sans-serif);
@@ -10300,6 +10332,11 @@ body[data-nav-id="gras-verification"] .agent-main-scroll { padding: 0; }
    rule above; keeps the module flush with the nav height while letting its
    drop-shadow bleed into the body's bottom gap. */
 body[data-nav-id="gras-verification"] #modules-row { margin-top: 0; }
+/* Left page inset — the shared body rule zeroes horizontal padding, which lets
+   the collapsed nav rail's -10px hug margin fall off the left edge. Mirror the
+   inset other pages carry (overview.html / product-portfolio) so the primary
+   nav is framed on-screen with proper breathing room. */
+body[data-nav-id="gras-verification"] { padding-left: 12px; }
 
 .gv-root {
   font-family: 'WISE Digits', var(--font-sans, 'DM Sans', system-ui, sans-serif);
@@ -10352,6 +10389,64 @@ html.dark .gv-search { background: rgba(255,255,255,0.05); border-color: rgba(25
   border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
+/* Room for the trailing filter control inside the pill. */
+.gv-search--hasfilter { padding-right: 46px; }
+
+/* ---------- Filter control + popover ---------- */
+.gv-filter-btn {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle);
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+}
+.gv-filter-btn .material-symbols-outlined { font-size: 18px; }
+.gv-filter-btn:hover { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
+html.dark .gv-filter-btn:hover { background: rgba(255,255,255,0.08); }
+.gv-filter-btn.is-open, .gv-filter-btn.is-active { color: var(--primary); }
+.gv-filter-btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.gv-filter-count {
+  position: absolute; top: -1px; right: -1px; min-width: 15px; height: 15px; padding: 0 3px;
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  border-radius: 999px; background: var(--primary); color: #fff;
+  font-size: 0.5625rem; font-weight: 800; line-height: 1;
+}
+
+.gv-filter-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 600;
+  width: 300px; max-width: min(340px, calc(100vw - 40px));
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); box-shadow: var(--shadow-3, 0 14px 34px rgba(0,0,0,0.24));
+  padding: 12px; box-sizing: border-box; text-align: left;
+  animation: gvFilterPop 0.16s ease;
+}
+@keyframes gvFilterPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.gv-filter-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.gv-filter-pop-title { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+.gv-filter-clear {
+  border: 0; background: transparent; color: var(--primary);
+  font-family: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer;
+  padding: 2px 4px; border-radius: 6px;
+}
+.gv-filter-clear:hover { text-decoration: underline; }
+.gv-filter-sec { padding: 9px 0; border-top: 1px solid var(--border); }
+.gv-filter-sec:first-of-type { border-top: 0; padding-top: 2px; }
+.gv-filter-sec-label { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 6px; }
+.gv-filter-opts { display: flex; flex-direction: column; gap: 2px; }
+.gv-fopt {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 7px 8px; border: 0; border-radius: var(--r-sm); background: transparent;
+  color: var(--text); font-family: inherit; font-size: 0.8125rem; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.gv-fopt:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+html.dark .gv-fopt:hover { background: rgba(255,255,255,0.05); }
+.gv-fopt.is-on { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.gv-fopt-check { font-size: 19px; color: var(--text-subtle); }
+.gv-fopt.is-on .gv-fopt-check { color: var(--primary); }
+.gv-fopt-ic { font-size: 17px; color: var(--text-subtle); }
+.gv-fopt.is-on .gv-fopt-ic { color: var(--text-muted); }
+.gv-fopt-label { flex: 1 1 auto; }
 
 .gv-cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
