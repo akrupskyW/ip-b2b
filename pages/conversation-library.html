@@ -8,7 +8,7 @@
   docked to the left of the content module, and the shared design tokens from
   wise.css. Everything bespoke here is prefixed `lib-`.
 -->
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
@@ -22,11 +22,11 @@
       try {
         var t = localStorage.getItem('wise-theme');
         if (t !== 'light' && t !== 'dark') {
-          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
         }
         document.documentElement.classList.toggle('dark', t === 'dark');
       } catch (e) {
-        document.documentElement.classList.add('dark');
+        /* no saved theme: default light */
       }
     })();
   </script>

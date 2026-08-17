@@ -10,7 +10,7 @@
   funnel filter popover inside it, the score cards, and the grid table — copied
   here and prefixed `ib-` so nothing collides with shell/module styles.
 -->
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
@@ -24,11 +24,11 @@
       try {
         var t = localStorage.getItem('wise-theme');
         if (t !== 'light' && t !== 'dark') {
-          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
         }
         document.documentElement.classList.toggle('dark', t === 'dark');
       } catch (e) {
-        document.documentElement.classList.add('dark');
+        /* no saved theme: default light */
       }
     })();
   </script>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19143,7 +19143,7 @@
     (function initChatTheme() {
       let theme = localStorage.getItem('wise-theme');
       if (theme !== 'light' && theme !== 'dark') {
-        theme = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+        theme = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
       }
       applyChatTheme(theme);
     })();

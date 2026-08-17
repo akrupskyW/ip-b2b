@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,10 +10,10 @@
       try {
         var t = localStorage.getItem('wise-theme');
         if (t !== 'light' && t !== 'dark') {
-          t = localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark';
+          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
         }
         document.documentElement.classList.toggle('dark', t === 'dark');
-      } catch (e) { document.documentElement.classList.add('dark'); }
+      } catch (e) { /* no saved theme: default light */ }
     })();
   </script>
   <script src="../js/text-size-fouc.js"></script>
@@ -561,9 +561,9 @@
         applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
       };
       (function bootTheme() {
-        let theme = 'dark';
-        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'light' ? 'light' : 'dark'); } catch (_) {}
-        applyChatTheme(theme === 'light' ? 'light' : 'dark');
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
       })();
 
       let activePopover = null, activeAnchor = null;

@@ -403,35 +403,30 @@ export function pageAppearanceDefault(dataKey) {
   } catch { return null; }
 }
 
-/* Header float — drop every module/panel header strip entirely (no space kept)
-   and pin its right-floated icons/actions (.panel-controls) absolutely over the
-   top-right of the module content. Driven by a `header-float` class on <html> so
-   it reaches every module on every page; persisted so it survives navigation. */
-const HEADER_FLOAT_KEY = 'wise-header-float';
+/* Header float — module/panel header strips are permanently removed app-wide.
+   The `header-float` class on <html> drops every header strip entirely (no space
+   kept) and pins its right-floated icons/actions (.panel-controls) absolutely
+   over the top-right of the module content. There is no longer a user toggle for
+   this: the class is always applied. The functions below are kept (as no-ops that
+   force the class on) so existing callers/imports keep working. */
 
-/** True when header-float (headerless modules) is on. Defaults to ON app-wide
-    so module/panel headers are hidden out of the box; an explicit user choice
-    (stored '0') is still respected. */
+/** Header-float is permanently on — module headers are always hidden. */
 export function isHeaderFloatOn() {
-  try {
-    const v = localStorage.getItem(HEADER_FLOAT_KEY);
-    return v === null ? true : v === '1';
-  } catch { return true; }
+  return true;
 }
 
-/** Toggle the header-float class on <html> and persist it. Each Appearance
-    popover reads isHeaderFloatOn() to render its own toggle state. */
-export function applyHeaderFloat(on) {
-  document.documentElement.classList.toggle('header-float', !!on);
-  try { localStorage.setItem(HEADER_FLOAT_KEY, on ? '1' : '0'); } catch {}
+/** Force the header-float class on <html>. The `on` argument is ignored:
+    headers are permanently removed app-wide. */
+export function applyHeaderFloat(_on) {
+  document.documentElement.classList.add('header-float');
   try {
-    document.dispatchEvent(new CustomEvent('wise:header-float', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:header-float', { detail: { on: true } }));
   } catch {}
 }
 
-/** Restore the persisted header-float state onto the document (no popover needed). */
+/** Apply the (always-on) header-float state onto the document. */
 export function restoreHeaderFloat() {
-  applyHeaderFloat(isHeaderFloatOn());
+  applyHeaderFloat();
 }
 
 /* Full bleed — open EVERY module top-to-bottom (drop its top/bottom borders,

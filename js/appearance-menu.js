@@ -20,7 +20,7 @@
  * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-pivot / data-minimal / data-headerfloat / data-fullbleed /
+ * attribute (data-pivot / data-minimal / data-fullbleed /
  * data-jam / data-colorblind / data-fz / data-pop-action), so the existing
  * per-shell listeners keep working unchanged.
  */
@@ -30,8 +30,6 @@ import {
   applyMinimalUi,
   isIconRailOn,
   applyIconRail,
-  isHeaderFloatOn,
-  applyHeaderFloat,
   isFullBleedOn,
   applyFullBleed,
   getNavBg,
@@ -418,7 +416,6 @@ export function buildAppearanceBody({
       ${pivotSection(showPivot, isPivoted)}
       ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
       ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
-      ${toggleRow('data-headerfloat="1"', !isHeaderFloatOn(), 'Header', true)}
       ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
     `)}
     ${apGroup('Full bleed', `
@@ -550,7 +547,6 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Universal on/off toggles — handled here so no shell can miss one. */
     if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
     if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
-    if (within('[data-headerfloat]')) { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); applyFullBleed(!isFullBleedOn());   render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
