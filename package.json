@@ -1,0 +1,34 @@
+{
+  "name": "wise_ip3",
+  "version": "1.0.0",
+  "description": "A front-end prototype for the WISE brand/food-intelligence platform: an interactive dashboard, WISEcodeAI AI chat surfaces, analytics views, and report prototypes built as static HTML/CSS/JS.",
+  "main": "_inject_countup.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npm run lint:js && npm run lint:html && npm run lint:css",
+    "lint:js": "eslint \"js/**/*.js\"",
+    "lint:js:fix": "eslint \"js/**/*.js\" --fix",
+    "lint:html": "htmlhint --ignore \"node_modules/**\" \"**/*.html\"",
+    "lint:css": "stylelint \"**/*.css\"",
+    "lint:css:fix": "stylelint \"**/*.css\" --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akrupskyW/ip-b2b.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/akrupskyW/ip-b2b/issues"
+  },
+  "homepage": "https://github.com/akrupskyW/ip-b2b#readme",
+  "devDependencies": {
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
+    "htmlhint": "^1.9.2",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0"
+  }
+}

@@ -520,12 +520,14 @@
     .rf-board-divider { height: 1px; background: var(--border); margin: 0 0 2px; }
 
     /* ── Grid "table" — one grid per row, so head and body columns line up ── */
-    .rf-table { width: 100%; }
+    .rf-table { width: 100%; background: #fff; }
+    html.dark .rf-table { background: #1A2339; }
     .rf-thead,
     .rf-trow { display: grid; grid-template-columns: minmax(0, 1.9fr) 132px minmax(0, 1.4fr) 132px; align-items: center; gap: 10px; padding: 10px 12px; }
     /* Sticky header — the head pins to the top of the scrolling dashboard body
        (.rf-body) so the columns stay labelled while the list scrolls. */
-    .rf-thead { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); }
+    .rf-thead { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: #fff; }
+    html.dark .rf-thead { background: #1A2339; }
     .rf-th { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
     .rf-th--end { justify-content: flex-end; text-align: right; }
     /* Click-to-sort headers — same faint chevron that flips for asc/desc as the

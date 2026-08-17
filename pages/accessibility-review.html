@@ -363,7 +363,8 @@ html.dark .swatch { background: rgba(255,255,255,0.025); border-color: rgba(255,
 .swatch-hex { font-size: 0.6875rem; color: var(--text-muted); font-family: 'Courier New', monospace; margin-top: 1px; text-transform: uppercase; }
 
 /* ===== Tables ===== */
-.table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-1); }
+.table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-1); background: #fff; }
+html.dark .table-wrap { background: #1A2339; }
 table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; min-width: 540px; }
 thead th {
   text-align: left; padding: 11px 14px; font-size: 0.625rem; font-weight: 700;
@@ -1328,7 +1329,6 @@ function renderFindings() {
 const PAGES = [
   // ----- Root-level entry & marketing site (one level up from pages/) -----
   { title: 'Home (index)',             path: '../index.html' },
-  { title: 'IP3 Home',                 path: '../wise_ip3.html' },
   { title: 'Marketing · WISEcode App', path: '../marketing-app.html' },
   { title: 'Marketing · WISEcodeAI',       path: '../marketing-wiseai.html' },
   { title: 'Marketing · WISEcoach',    path: '../marketing-coach.html' },

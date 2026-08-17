@@ -170,7 +170,6 @@ const MODULE_SECTIONS = [
       { label: 'GRAS', icon: 'verified', href: '../marketing-gras.html' },
       { label: 'Non-UPF', icon: 'eco', href: '../marketing-nonupf.html' },
       { label: 'Alliance', icon: 'handshake', href: '../marketing-alliance.html' },
-      { label: 'IP Vision', icon: 'flag', href: '../wise_ip3.html' },
     ],
   },
 ];
@@ -1731,15 +1730,48 @@ const COMPONENTS = [
   },
 ];
 
-function componentCard(c) {
+/* Persist Dev Ready flags per component name. Missing keys default to off. */
+const DSC_READY_KEY = 'wise-dsc-dev-ready';
+
+function loadDscReadyMap() {
+  try {
+    const raw = localStorage.getItem(DSC_READY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveDscReadyMap(map) {
+  try {
+    localStorage.setItem(DSC_READY_KEY, JSON.stringify(map));
+  } catch (e) { /* quota / private mode — ignore */ }
+}
+
+function isDscReady(name, map) {
+  return map[name] === true;
+}
+
+function componentCard(c, readyMap) {
   const cat = catOf(c);
   const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat}`.toLowerCase();
   const cardCls = `dsc-card${c.wide ? ' dsc-card--wide' : ''}`;
+  const ready = isDscReady(c.name, readyMap || {});
   const note = c.note
     ? `<div class="dsc-note"><span class="material-symbols-outlined">${esc(c.noteIcon || 'aspect_ratio')}</span><span>${c.note}</span></div>`
     : '';
   return `
-    <div class="${cardCls}" data-ds-comp data-cat="${esc(cat)}" data-search="${esc(search)}">
+    <div class="${cardCls}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
+      <div class="dsc-ready">
+        <button type="button" class="dash-brand-toggle${ready ? ' is-on' : ''}" role="switch"
+          aria-checked="${ready ? 'true' : 'false'}" aria-label="Dev Ready for ${esc(c.name)}"
+          data-dsc-ready data-comp-name="${esc(c.name)}">
+          <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
+          <span class="dash-brand-toggle-text">Dev Ready</span>
+        </button>
+      </div>
       <div class="dsc-head">
         <span class="dsc-name">${esc(c.name)}</span>
         <code class="dsc-class">${esc(c.cls)}</code>
@@ -1839,7 +1871,7 @@ function renderComponentLibrary() {
 
       <div class="mi-dir-empty" id="dsc-empty" hidden>No components match your filter.</div>
       <div class="dsc-grid" id="dsc-grid">
-        ${COMPONENTS.map(componentCard).join('')}
+        ${COMPONENTS.map((c) => componentCard(c, loadDscReadyMap())).join('')}
       </div>
     </section>`;
 }
@@ -3197,7 +3229,35 @@ function moduleStyles() {
       transition: border-color 0.16s ease, box-shadow 0.16s ease;
     }
     .dsc-card:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: var(--shadow-2); }
-    .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; flex-wrap: wrap; }
+    /* Thin top bar — Dev Ready toggle, right-aligned above each component.
+       OFF keeps the shared pink brand-toggle look; ON uses --sec-green. */
+    .dsc-ready {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 10px 12px 0; flex-shrink: 0;
+    }
+    .dsc-ready .dash-brand-toggle { font-size: 11px; }
+    .dsc-ready .dash-brand-toggle.is-on,
+    .dsc-ready .dash-brand-toggle[aria-checked="true"] {
+      background: var(--sec-green, #32A966);
+      border-color: color-mix(in srgb, var(--sec-green, #32A966) 78%, #000);
+      color: #fff;
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
+    }
+    .dsc-ready .dash-brand-toggle.is-on:hover,
+    .dsc-ready .dash-brand-toggle[aria-checked="true"]:hover {
+      background: color-mix(in srgb, var(--sec-green, #32A966) 88%, #000);
+      border-color: color-mix(in srgb, var(--sec-green, #32A966) 70%, #000);
+      box-shadow: 0 2px 14px color-mix(in srgb, var(--sec-green, #32A966) 50%, transparent);
+    }
+    .dsc-ready .dash-brand-toggle.is-on .dash-brand-toggle-track,
+    .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-track {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .dsc-ready .dash-brand-toggle.is-on .dash-brand-toggle-thumb,
+    .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
+      background: #fff;
+    }
+    .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
     .dsc-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
     .dsc-class { font-size: 0.625rem; color: var(--text-muted); word-break: break-word; }
     .dsc-demo {
@@ -4889,6 +4949,21 @@ function wireComponentLibrary(root) {
     btn.addEventListener('click', () => {
       const on = btn.getAttribute('aria-checked') === 'true';
       btn.setAttribute('aria-checked', on ? 'false' : 'true');
+    });
+  });
+
+  /* Dev Ready — per-component status, persisted in localStorage. Off by default. */
+  root.querySelectorAll('[data-dsc-ready]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.compName;
+      if (!name) return;
+      const next = btn.getAttribute('aria-checked') !== 'true';
+      btn.setAttribute('aria-checked', next ? 'true' : 'false');
+      btn.classList.toggle('is-on', next);
+      const map = loadDscReadyMap();
+      if (next) map[name] = true;
+      else delete map[name];
+      saveDscReadyMap(map);
     });
   });
 }

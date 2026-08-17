@@ -221,7 +221,8 @@
     /* ── Data table ── */
     /* overflow is left visible so the .gs-thead can stick to the scrolling
        .gs-body; the head + last row carry the rounded corners instead. */
-    .gs-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; }
+    .gs-table { width: 100%; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+    html.dark .gs-table { background: #1A2339; }
     .gs-thead, .gs-trow {
       display: grid; align-items: center; gap: 12px; padding: 11px 16px;
       grid-template-columns: 104px minmax(0, 2.2fr) 78px minmax(0, 2.5fr) 132px;

@@ -796,10 +796,18 @@
 
     /* ── Sortable results table (real column headers, click-to-sort) ── */
     /* overflow visible so .wa-tbl-head can stick to the scrolling .wa-pane-body;
-       the head + last row carry the rounded corners instead. */
-    .wa-tbl { border: 1px solid var(--border); border-radius: 12px; }
+       the head + last row carry the rounded corners instead.
+       White fill in light mode so the grid doesn't show the cream sticky-pane
+       (--surface-2) through the rows. Dark mode uses the same card surface as
+       the chart blocks on this pane. */
+    .wa-tbl {
+      --wa-tbl-bg: #fff;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--wa-tbl-bg);
+    }
+    html.dark .wa-tbl { --wa-tbl-bg: #1A2339; }
     .wa-tbl-head, .wa-trow { display: grid; align-items: center; gap: 12px; padding: 10px 14px; }
-    .wa-tbl-head { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); border-radius: 12px 12px 0 0; }
+    .wa-tbl-head { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--wa-tbl-bg, #fff); border-radius: 12px 12px 0 0; }
     .wa-tbl-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; white-space: nowrap; }
     button.wa-tbl-th { cursor: pointer; transition: color .14s; }
     button.wa-tbl-th:hover { color: var(--text); }
