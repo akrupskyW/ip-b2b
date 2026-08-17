@@ -501,7 +501,8 @@ body {
 .lir-label { display: none !important; }
 
 /* Floating tooltip shared by every top-bar icon. Fixed-positioned by JS so it
-   escapes the rail's horizontal-scroll clipping, centered under the button. */
+   escapes the rail's horizontal-scroll clipping, centered under the button
+   (default) or pinned to the right for the left-nav collapse toggle. */
 #lir-tooltip {
   position: fixed;
   z-index: 10000;
@@ -524,6 +525,13 @@ body {
 #lir-tooltip.lir-tip-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+/* Left-nav collapse toggle — same right-side placement as #menu-rail-tip. */
+#lir-tooltip.lir-tip-right {
+  transform: translateY(-50%) translateX(-4px);
+}
+#lir-tooltip.lir-tip-right.lir-tip-visible {
+  transform: translateY(-50%) translateX(0);
 }
 
 .sc-topbar-titles .topbar-title {

@@ -1,10 +1,12 @@
-/* Top-bar icon tooltip.
+/* Top-bar / rail icon tooltip.
  *
  * The rail buttons (Menu, the section/agent icons, Alerts, More, layout
  * toggles, …) no longer carry a text caption under the glyph. Instead, hovering
- * / focusing / tapping an icon shows a single floating tooltip centered just
- * below it. We position it `fixed` via JS so it can escape the rail's
- * horizontal-scroll overflow, which would clip a CSS-only tooltip.
+ * / focusing / tapping an icon shows a single floating tooltip. Most top-bar
+ * icons get it centered just below; the left-nav collapse toggle
+ * (`.topbar-menu-toggle` in the vertical menu) pins it to the right — same
+ * placement as `#menu-rail-tip` on collapsed nav rows. We position it `fixed`
+ * via JS so it can escape overflow clipping that would clip a CSS-only tip.
  *
  * The label text is read from `data-tip`, falling back to the (now hidden)
  * `.lir-label` caption, then `aria-label` / `title`. Listeners are delegated on
@@ -63,8 +65,19 @@ export function initLirTooltip() {
     }
     tip.textContent = label;
     const r = btn.getBoundingClientRect();
-    tip.style.top = `${Math.round(r.bottom + 8)}px`;
-    tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
+    /* Vertical left-nav collapse chevron — float the label to the right of the
+       icon, matching the other collapsed-rail row tooltips. Pivot (horizontal)
+       bar keeps the default below placement. */
+    const tipRight = btn.classList.contains('topbar-menu-toggle') &&
+      !btn.closest('.mp-pivot');
+    tip.classList.toggle('lir-tip-right', tipRight);
+    if (tipRight) {
+      tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
+      tip.style.left = `${Math.round(r.right + 10)}px`;
+    } else {
+      tip.style.top = `${Math.round(r.bottom + 8)}px`;
+      tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
+    }
     /* reflow so the enter transition always plays */
     tip.offsetWidth;
     tip.classList.add('lir-tip-visible');
@@ -76,7 +89,7 @@ export function initLirTooltip() {
       current.removeAttribute('data-lir-title');
     }
     current = null;
-    tip.classList.remove('lir-tip-visible');
+    tip.classList.remove('lir-tip-visible', 'lir-tip-right');
   }
 
   document.addEventListener('mouseover', (e) => {
