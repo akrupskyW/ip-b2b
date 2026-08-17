@@ -282,6 +282,31 @@ const DEFAULT_ACCURATE_REASONS = [
   { reason: 'other-good', label: 'Something else' },
 ];
 
+/* When a user submits thumbs feedback we don't just flash a lone "thanks" —
+   WISEcodeAI answers it in-thread with a reply keyed to WHY they flagged (or
+   praised) the answer, so the exchange reads like a real chat turn. Keyed by
+   verdict → reason value, with a `_default` fallback per verdict. */
+const FEEDBACK_REPLIES = {
+  down: {
+    inaccurate: 'Thanks for flagging that — accuracy is the whole point here. Which figure or claim looked off? I\u2019ll re-check it against the source record and correct the answer.',
+    incomplete: 'Got it — sounds like I left something out. What were you expecting to see? I\u2019ll pull the missing piece and round out the answer.',
+    'wrong-food': 'Understood — it looks like I matched the wrong item. If you share the exact product (or its code), I\u2019ll re-run against the right record.',
+    outdated: 'Thanks — stale figures are a real problem. I\u2019ll re-pull from the latest snapshot; if you know roughly when the data should be from, that helps me verify.',
+    unclear: 'Fair — I can tighten that up. Want the short version or a step-by-step breakdown? I\u2019ll rewrite it to be easier to follow.',
+    other: 'Thanks for the note. Tell me a bit more about what missed and I\u2019ll take another pass at it.',
+    _default: 'Thanks for letting me know this missed the mark. Share a little more about what was off and I\u2019ll take another pass.',
+  },
+  up: {
+    trustworthy: 'Glad the sourcing held up — every figure here traces back to a cited record, so you can always click through to verify.',
+    clear: 'Great — clarity is something I really try to get right. Happy to go deeper on any part if that helps.',
+    thorough: 'Good to hear it covered what you needed. Want me to package this up or take it a step further?',
+    'right-food': 'Perfect — glad I matched the right item. I\u2019ll keep anchoring to that record for any follow-ups.',
+    actionable: 'Love that it was useful. Want me to turn this into next steps or an export?',
+    'other-good': 'Thanks — glad this hit the mark. Anything you\u2019d like me to build on?',
+    _default: 'Thanks — glad this hit the mark. Anything you\u2019d like me to build on?',
+  },
+};
+
 /* Database / environment roster shown in the in-input selector (the button on
    the right edge of the input). Databases are grouped by category; each group
    carries an access mode (read-only / read/write). Exactly one database is
@@ -5933,6 +5958,30 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     note.innerHTML = `<span class="material-symbols-outlined">${esc(icon || 'check')}</span>${esc(text)}`;
     note.hidden = false;
   }
+  /* Commit a thumbs verdict INTO the transcript rather than flashing a floating
+     "thanks": echo the user's pick (verdict + any reason chips + free-form note)
+     as a user line, then have WISEcodeAI reply in-thread with a message tailored
+     to WHY they flagged (or praised) it — so the whole thing reads like a real
+     chat turn that closes with the acknowledgement. */
+  function commitFeedback(kind, labels, reasonKeys, note) {
+    const verdict = kind === 'up'
+      ? 'This answer was helpful.'
+      : 'This answer wasn\u2019t quite right.';
+    let summary = verdict;
+    if (labels.length) summary += ` (${labels.join(', ')})`;
+    if (note) summary += ` \u2014 \u201c${note}\u201d`;
+    addUser(summary);
+    const replies = FEEDBACK_REPLIES[kind] || {};
+    const hitKey = (reasonKeys || []).find((k) => replies[k]);
+    let reply = replies[hitKey] || replies._default || '';
+    if (note) reply += ' Thanks for the extra detail — it makes the next pass sharper.';
+    const typing = showTyping('Reviewing your feedback');
+    const wait = prefersReducedMotion ? 260 : 620 + Math.random() * 520;
+    setTimeout(() => {
+      if (typing) typing.remove();
+      addWISEcodeAI(reply, { source: '', feedback: false });
+    }, wait);
+  }
   function copyAnswer(line, btn) {
     const body = line.querySelector('.sc-line-body');
     if (!body) return;
@@ -6030,27 +6079,29 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const kind = sendBtn.getAttribute('data-fb-send');
       const input = pop.querySelector('.sc-fb-input');
       const text = input ? input.value.trim() : '';
+      const chosen = Array.from(pop.querySelectorAll('.sc-fb-reason.is-on'));
+      const labels = chosen.map((c) => (c.textContent || '').trim()).filter(Boolean);
+      const reasonKeys = chosen.map((c) => c.getAttribute('data-reason'));
       if (input) input.value = '';
+      chosen.forEach((c) => c.classList.remove('is-on'));
       pop.hidden = true;
       const btn = wrap.querySelector(`[data-fb="${kind}"]`);
       if (btn) btn.setAttribute('aria-expanded', 'false');
-      fbNote(wrap, 'Thanks — your feedback helps WISEcodeAI\u2122 improve.', kind === 'up' ? 'thumb_up' : 'favorite');
-      if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, { note: text });
+      /* Any lingering inline note is cleared — the acknowledgement now lands as
+         a proper WISEcodeAI reply in the transcript instead. */
+      fbNote(wrap, '', '');
+      commitFeedback(kind, labels, reasonKeys, text);
+      if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, { note: text, reasons: reasonKeys });
       return;
     }
     const reason = e.target.closest('.sc-fb-reason');
     if (reason) {
-      const wrap = reason.closest('.sc-fb-wrap');
       const pop = reason.closest('.sc-fb-reasons');
-      if (!wrap || !pop) return;
-      const kind = pop.classList.contains('sc-fb-reasons--up') ? 'up' : 'down';
+      if (!pop) return;
+      /* Selection only — the transcript entry and WISEcodeAI's tailored reply
+         are posted when the user hits Send, so it reads like a real chat turn
+         instead of a lone "thanks" popping in the moment a chip is tapped. */
       reason.classList.toggle('is-on');
-      const anyOn = pop.querySelector('.sc-fb-reason.is-on');
-      const msg = kind === 'up'
-        ? 'Thanks — glad this hit the mark.'
-        : 'Thanks — your feedback helps WISEcodeAI\u2122 improve.';
-      fbNote(wrap, anyOn ? msg : '', kind === 'up' ? 'thumb_up' : 'favorite');
-      if (typeof opts.onFeedback === 'function') opts.onFeedback(kind, reason.getAttribute('data-reason'));
     }
   });
 
