@@ -1,0 +1,24 @@
+---
+description: wiseai.html is the canonical layout; all pages must match its nav, spacing, padding, and module structure
+alwaysApply: true
+---
+
+# Canonical Page Structure
+
+`pages/wiseai.html` is the single source of truth for primary navigation,
+spacing, padding, and module structure across the entire app. It is the only
+page guaranteed to have the correct shell. Every other page must match it.
+
+## Rules for the agent
+
+- When creating or editing any page, copy the primary navigation and shell
+  structure from `pages/wiseai.html`. Never hand-roll a variant.
+- Match module container markup, padding, and margins exactly to wiseai.html.
+- If `wiseai.html` and another page disagree on nav/spacing/module layout,
+  `wiseai.html` wins — bring the other page into line, not the reverse.
+- Preserve the shared injected nav/footer behavior (`js/marketing-shell.js`,
+  `js/agent-menu.js`, `js/topbar.js`) rather than duplicating markup.
+
+## When in doubt
+
+Open `pages/wiseai.html`, find the equivalent structure, and mirror it.

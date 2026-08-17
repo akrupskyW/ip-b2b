@@ -1,0 +1,25 @@
+---
+description: Every page and component must render correctly in dark mode; theme is global
+alwaysApply: true
+---
+
+# Dark Mode Parity
+
+All new and edited UI must work correctly in **both** light and dark mode.
+
+## What must work in dark mode
+
+- Nutrition Facts panels, the content below them, and barcodes
+  (e.g. `pages/add-product.html`).
+- Popovers and their text (including the locked-input hover popover).
+- Chat inputs, streaming, and chart/streaming accent colors.
+
+## Rules for the agent
+
+- Theme is **global**, controlled via the `wise-theme` / `chat-theme`
+  localStorage keys and the `dark` class on `<html>`. Do not add per-page theme
+  toggles, and do not force a page to load dark first.
+- Before considering any visual change done, verify it in dark mode as well as
+  light (use the `visual-verify` skill to capture both).
+- When adding colors, define the dark-mode counterpart at the same time — never
+  ship a light-only value.

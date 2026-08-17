@@ -839,16 +839,16 @@ export function injectChatExtras() {
        js/chat-activity-strip.js), so the rail/ticks can never paint over the
        popover — the chat's own low z-index means no in-module z-index could
        beat the rail directly. */
-    .sc-fb-menu { position: absolute; top: calc(100% + 8px); right: -4px; z-index: 80;
+    .sc-fb-menu { position: absolute; bottom: calc(100% + 8px); right: -4px; z-index: 80;
       display: inline-flex; align-items: center; gap: 2px; width: max-content;
       padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 10px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
-    .sc-fb-menu::before { content: ''; position: absolute; bottom: 100%; right: 11px;
-      border: 6px solid transparent; border-bottom-color: var(--border-strong); }
-    .sc-fb-menu::after { content: ''; position: absolute; bottom: 100%; right: 12px; transform: translateY(1px);
-      border: 5px solid transparent; border-bottom-color: var(--surface); }
+    .sc-fb-menu::before { content: ''; position: absolute; top: 100%; right: 11px;
+      border: 6px solid transparent; border-top-color: var(--border-strong); }
+    .sc-fb-menu::after { content: ''; position: absolute; top: 100%; right: 12px; transform: translateY(-1px);
+      border: 5px solid transparent; border-top-color: var(--surface); }
     html.dark .sc-fb-menu { background: #1A2339; border-color: rgba(37,80,124,0.22); }
-    html.dark .sc-fb-menu::after { border-bottom-color: #1A2339; }
+    html.dark .sc-fb-menu::after { border-top-color: #1A2339; }
     .sc-fb-menu[hidden] { display: none; }
     .sc-fb-menu-time { margin-right: 4px; padding-right: 6px; white-space: nowrap;
       border-right: 1px solid var(--border); }

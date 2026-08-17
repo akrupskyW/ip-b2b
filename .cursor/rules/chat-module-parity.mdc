@@ -1,0 +1,37 @@
+---
+description: All chat modules must have identical features and behavior, matching wiseai.html
+alwaysApply: true
+---
+
+# Chat Module Parity
+
+Every chat module in the app shares the same code and must look and behave
+identically. `pages/wiseai.html` is the reference chat module. When you touch
+any chat surface, all others must still match.
+
+## Required in every chat module
+
+- **Three-dot menu** with the ability to open/view the sticky history module,
+  plus the standard options. Sticky modules are the only mode — do not add a
+  toggle to switch sticky on/off.
+- **"What can I ask?"** panel that opens inside the chat window and can break
+  out. Its headline uses the brand **serif** font. It must actually open (not
+  just render content behind the scenes).
+- **Intent chips** that are clickable, actionable, and each open a real
+  transcript. The chip icon is **gold**, and the right-side text label animates
+  like the reference.
+- **Streaming** word-by-word output. Do not regress to the old pulsating
+  three-dot loader as the primary style.
+- **Helix animation** toggled ON by default at **20% opacity**.
+- **Lock icon** to the left of the input placeholder (e.g. "Type your
+  message" / "Ask WISEcode AI about any food"), with a hover popover whose text
+  is visible in both light and dark mode.
+- Anything that happens in a related right-hand module (e.g. the Nutrition
+  Facts panel on `add-product.html`) must be reflected in the chat as if the
+  assistant did it.
+
+## Rules for the agent
+
+- After editing one chat module, verify the others still satisfy this list.
+- Never let a chat module drift into a bespoke variant — fix it to match
+  wiseai.html.

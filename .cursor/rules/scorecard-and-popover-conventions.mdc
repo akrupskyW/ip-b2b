@@ -1,0 +1,22 @@
+---
+description: Scorecard and popover conventions (no eyebrow; popovers anchor above/right of the trigger)
+alwaysApply: true
+---
+
+# Scorecards & Popovers
+
+## Scorecards
+
+- Scorecards have **no eyebrow**, even when there is no status or count for the
+  item (e.g. GRAS / UPF verification cards).
+- Numeric values animate a count-up (see the count-up rule).
+
+## Popovers
+
+- Popovers anchor **above** or **to the right** of their trigger icon — never
+  directly below it — matching the existing icon popovers (e.g. the appearance
+  popover in the primary navigation sits above its icon).
+- When a toggle expands and adds content (e.g. the jam strip toggling on in the
+  primary nav), the popover must **reposition** so it stays correctly attached
+  to its trigger.
+- Popover text must be legible in both light and dark mode.

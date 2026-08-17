@@ -1,0 +1,19 @@
+---
+description: All headlines and page/module titles use the brand serif font
+alwaysApply: true
+---
+
+# Serif Headlines
+
+Section titles, module headlines, page titles, and pop-out headlines (e.g.
+"What can I ask?", "Add Product Sizes", "Comparing formats side by side") must
+use the brand **serif** font, matching the headline style in
+`pages/wiseai.html`.
+
+## Rules for the agent
+
+- Never leave a headline in the default sans stack.
+- When adding or editing any headline, apply the same serif headline class/
+  style used by wiseai.html headlines.
+- This is a recurring, non-negotiable requirement — check headlines every time
+  you add or move a title.

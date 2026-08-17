@@ -1,0 +1,24 @@
+---
+description: Every numeric scorecard value animates a count-up; charts re-animate on click
+alwaysApply: true
+---
+
+# Count-Up Animations
+
+Any numeric value in a scorecard — and anything that visibly moves from 0 to a
+number — must animate a count-up.
+
+## Rules for the agent
+
+- Every scorecard number animates a count-up on load.
+- Where charts are re-animatable (see `pages/analytics-types.html`), clicking a
+  chart must re-run its animation, including the count-up.
+- Reuse the shared count-up implementation (`js/count-up-all.js` /
+  `js/count-up.js`). Do not add ad-hoc one-off counters.
+- Large "hero" numbers (e.g. the food count on wiseai.html) should ramp quickly
+  and settle, not crawl.
+
+## Verify
+
+When testing, allow real wall-clock time for count-ups to settle before
+screenshotting (see the `visual-verify` skill).

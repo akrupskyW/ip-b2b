@@ -5150,7 +5150,7 @@
       ];
       const y = (v) => padT + (1 - v / 100) * (H - padT - padB);
       const xL = padX, xR = W - padX;
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Trend-style slope of cookie clusters by WISEscore">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:70%;display:block;margin:0 auto" role="img" aria-label="Trend-style slope of cookie clusters by WISEscore">`;
       svg += `<line x1="${xL}" y1="${padT}" x2="${xL}" y2="${H - padB}" stroke="var(--border)" stroke-width="1"/>`;
       svg += `<line x1="${xR}" y1="${padT}" x2="${xR}" y2="${H - padB}" stroke="var(--border)" stroke-width="1"/>`;
       svg += `<text x="${xL}" y="${H - 12}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">Ingredient rank</text>`;
