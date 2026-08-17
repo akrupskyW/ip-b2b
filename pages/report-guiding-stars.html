@@ -52,13 +52,14 @@
       gap: 8px;
       min-width: 0;
       min-height: 0;
-      /* visible (not hidden) so the carded modules' drop-shadow renders into
-         the body's bottom/side padding instead of being clipped flush at the
-         card edge — matches the nav panel, which sits outside this row. Narrow
-         viewports switch to overflow-x:auto below for horizontal scrolling. */
-      overflow: visible;
-      margin: 0;
-      padding: 0;
+      /* Scroll horizontally whenever the modules total wider than the row, so
+         nothing is stranded off-screen; overflow-y must be hidden alongside a
+         scrolling x-axis (matches wiseai.html). */
+      overflow-x: auto;
+      overflow-y: hidden;
+      /* Match the nav module's height exactly (cancels wise.css margin-top: 8px). */
+      margin-top: 0;
+      padding: 0 2px;
     }
 
     /* ── Nav brand strip height (matches every other WISE page) ── */
@@ -66,7 +67,9 @@
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
-    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(7px); }
+    /* Drop the owl lower than the shared 7px nudge so it lines up horizontally
+       with the headlines of the modules to the right (matches wiseai.html). */
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
 
     /* ── Shared carded module frame ── */
     .gs-card {
@@ -344,16 +347,9 @@
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
     html.full-bleed body { padding-top: 0; padding-bottom: 0; }
+    /* Narrow viewports: the base #modules-row already scrolls horizontally
+       (matches wiseai.html); just keep the report pane readable. */
     @media (max-width: 1180px) {
-      /* overflow-x:auto forces overflow-y to compute non-visible, which would
-         clip the module cards' drop-shadow at the row edge; keep a bottom shadow
-         gutter inside the row and pull it back with a negative margin so the
-         shadow still renders and the panes keep full height. */
-      #chat-shell-wrap.menu-brand-integrated #modules-row {
-        overflow-x: auto;
-        padding-bottom: var(--modules-bottom-pad);
-        margin-bottom: calc(-1 * var(--modules-bottom-pad));
-      }
       .gs-report { min-width: 620px; }
     }
   </style>

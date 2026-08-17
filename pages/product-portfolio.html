@@ -175,7 +175,9 @@
       grid-template-columns: auto 1fr;
       grid-template-rows: 1fr;
       grid-template-areas: "menu modules";
-      column-gap: 8px;
+      /* Nav↔content gap matches the body's side inset (canonical shell — same
+         as wise.css / wiseai.html) so the nav breathes evenly on both sides. */
+      column-gap: var(--modules-bottom-pad, 12px);
       row-gap: 0;
       align-items: stretch;
     }
@@ -214,11 +216,11 @@
       grid-area: modules;
       flex: unset;
       min-height: 0;
-      /* The body now supplies the outer left/right inset (12px, matching top and
-         bottom), so the modules row itself adds no horizontal padding — otherwise
-         the right edge would be 12 + 16 = 28px and break the even frame. */
-      padding-left: 0;
-      padding-right: 0;
+      /* The body supplies the outer left/right inset (12px, matching top and
+         bottom); the row keeps only the canonical 2px shadow gutter so card
+         shadows aren't clipped hard at the box edge (matches wiseai.html). */
+      padding-left: 2px;
+      padding-right: 2px;
       /* No top margin: the modules column must start at the SAME y as the nav
          column so every module header lines up exactly with the nav's brand
          bar. An 8px top margin here used to push all modules down 8px, leaving
@@ -881,10 +883,10 @@
       align-items: center;
       justify-content: center;
     }
-    /* The owl bug glyph is top-heavy in its box, so it reads a few px high of
-       the neighbouring panel-header icons; nudge it onto their centre line. */
+    /* Drop the owl lower than the shared 7px nudge so it lines up horizontally
+       with the headlines of the modules to the right (matches wiseai.html). */
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
-      transform: translateY(7px);
+      transform: translateY(16px);
     }
 
     #history-panel {

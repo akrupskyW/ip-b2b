@@ -71,39 +71,33 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Shared app shell (mirrors reformulation.html / product-portfolio.html):
+    /* ── Shared app shell (mirrors pages/wiseai.html — the canonical chat shell):
        a full-height left nav column + a "modules" row that holds the WISEcodeAI
-       chat card and the AI dashboard card side-by-side. ── */
+       chat card and the AI dashboard card side-by-side. The nav grid itself
+       (columns, areas, nav↔content gap) comes from wise.css — no local override. */
     #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
-    #chat-shell-wrap.menu-brand-integrated {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      grid-template-rows: 1fr;
-      grid-template-areas: "menu modules";
-      column-gap: 8px;
-      align-items: stretch;
-    }
-    .menu-brand-integrated > #menu-panel {
-      grid-area: menu;
-      position: relative;
-      align-self: stretch;
-      min-height: 0;
-      z-index: 5;
-    }
-    .menu-brand-integrated > #menu-panel:not(.mp-pivot) .menu-inner { height: 100%; min-height: 100%; }
-    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
-    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
-
     #chat-shell-wrap.menu-brand-integrated #modules-row {
       grid-area: modules;
       display: flex;
       gap: 8px;
       min-width: 0;
       min-height: 0;
-      overflow: visible;
-      margin: 0;
-      padding: 0;
+      /* Scroll horizontally whenever the modules total wider than the row, so
+         nothing is stranded off-screen; overflow-y must be hidden alongside a
+         scrolling x-axis (matches wiseai.html). */
+      overflow-x: auto;
+      overflow-y: hidden;
+      /* Match the nav module's height exactly (cancels wise.css margin-top: 8px). */
+      margin-top: 0;
+      padding: 0 2px;
     }
+
+    /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
 
     /* ── Carded module frame (matches .rf-card) ── */
     .aid-module {
