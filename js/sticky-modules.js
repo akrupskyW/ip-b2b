@@ -33,7 +33,7 @@
      chat host across the app: wiseai, reformulation, studio-ai, ai-dashboard,
      add/view-product, report-guiding-stars, portfolio/comparison, and the
      agent-overview dock. */
-  var CHAT_SEL = '#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel';
+  var CHAT_SEL = '#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel';
 
   /* A module that already owns its OWN ⋯ menu is left untouched (wiseai panes,
      the wiseai-chat.js Turns module, and its "What can I ask?" module). Detected

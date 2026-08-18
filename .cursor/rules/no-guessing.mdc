@@ -1,0 +1,37 @@
+---
+description: Never guess — verify from the codebase, canonical sources, or the user before acting
+alwaysApply: true
+---
+
+# No Guessing
+
+Never guess in the process of doing anything. When a fact is unknown —
+a file's contents, a value, a selector, a class name, how a shared
+module behaves, where something lives, or what the user intends — you
+must **verify it**, not assume it. Guessing is a non-negotiable
+violation of how work is done in this app.
+
+## What counts as guessing (banned)
+
+- Inventing file paths, class names, selectors, function names, or
+  values instead of reading them from the actual source.
+- Assuming how a shared module behaves (`js/marketing-shell.js`,
+  `js/agent-menu.js`, `js/topbar.js`, `js/count-up-all.js`, etc.)
+  without opening it.
+- Copying nav/shell/module structure "from memory" instead of from the
+  canonical source (`pages/wiseai.html`).
+- Reporting a visual change as done without actually verifying it
+  (see the `visual-verify` skill), in both light and dark mode.
+- Filling ambiguity in the user's request with an assumption when the
+  answer materially changes the outcome.
+
+## Rules for the agent
+
+- **Verify before you act.** Read the relevant file, run the search, or
+  check the canonical page before making a change that depends on it.
+- If you cannot verify something and it materially affects the result,
+  **ask the user** rather than proceeding on a guess.
+- Prefer sensible, stated defaults only for trivial choices (naming,
+  formatting) — never for facts you can look up.
+- If you are unsure whether something is true, say so explicitly and
+  confirm it before relying on it. Do not present an assumption as fact.

@@ -10,11 +10,17 @@ Pages are the real navigable flows (js/agent-menu.js WISE_APP_NAV /
 WISE_ACCOUNT_NAV + the portfolio/verification/reformulation flows). Standalone
 and dev-only pages are intentionally excluded.
 """
+import os
 import sys
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8099"
 OUT = "/Users/aeykay/Desktop/_WISE/WISE_ip3/screenshots"
+
+# Theme is driven by the WISE_THEME env var ("light" default, or "dark"). Dark
+# captures are suffixed with "__dark" so they sit beside the light ones.
+THEME = os.environ.get("WISE_THEME", "light").lower()
+DARK = THEME == "dark"
 
 W = 1440
 H0 = 1000
@@ -55,6 +61,7 @@ PAGES = [
     "pages/admin-utils.html",
     "pages/studio-ai.html",
     "pages/all-modules.html",
+    "pages/progress-log.html",
     # Account / support
     "pages/profile.html",
     "pages/invoices.html",
@@ -77,10 +84,10 @@ try {
     name: 'Demo User', email: 'demo@wisealliance.com',
     title: 'Product Intelligence Lead', orgname: 'WISE Foods'
   }));
-  localStorage.setItem('wise-theme', 'light');
-  localStorage.setItem('chat-theme', 'light');
+  localStorage.setItem('wise-theme', %(theme)r);
+  localStorage.setItem('chat-theme', %(theme)r);
 } catch (e) {}
-"""
+""" % {"theme": THEME}
 
 # Trigger lazy / IntersectionObserver content by scrolling every scroll pane.
 TRIGGER = """async () => {
@@ -108,6 +115,13 @@ FORCE_LIGHT = """() => {
   document.documentElement.classList.remove('dark');
 }"""
 
+FORCE_DARK = """() => {
+  try { localStorage.setItem('wise-theme','dark'); localStorage.setItem('chat-theme','dark'); } catch (e) {}
+  document.documentElement.classList.add('dark');
+}"""
+
+FORCE_THEME = FORCE_DARK if DARK else FORCE_LIGHT
+
 FORCE_REVEAL = """() => {
   document.querySelectorAll('[class*="reveal"],[data-reveal]').forEach(el => {
     el.style.setProperty('opacity', '1', 'important');
@@ -118,7 +132,7 @@ FORCE_REVEAL = """() => {
 # Chat hosts — same set as js/sticky-modules.js CHAT_SEL. After the page has
 # loaded at the initial viewport, pin the left chat to that height so growing
 # the viewport (to reveal the full right-hand module) does not stretch it.
-CHAT_HOST = "#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat"
+CHAT_HOST = "#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat"
 
 PIN_CHAT = f"""() => {{
   document.querySelectorAll({CHAT_HOST!r}).forEach(el => {{
@@ -242,11 +256,12 @@ WAIT_FULL_LOAD = """async () => {
 }"""
 
 def _norm_page(entry):
+    suffix = "__dark" if DARK else ""
     if isinstance(entry, tuple):
-        return entry[0], entry[1] + ".png"
+        return entry[0], entry[1] + suffix + ".png"
     rel = entry
     stem = rel.split("?", 1)[0].replace("/", "__").rsplit(".", 1)[0]
-    return rel, stem + ".png"
+    return rel, stem + suffix + ".png"
 
 
 def shoot(page, rel, out_name):
@@ -261,7 +276,7 @@ def shoot(page, rel, out_name):
     except Exception:
         pass
     page.wait_for_timeout(1800)
-    page.evaluate(FORCE_LIGHT)
+    page.evaluate(FORCE_THEME)
     page.wait_for_timeout(300)
 
     path_key = rel.split("?", 1)[0]

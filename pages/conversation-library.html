@@ -365,6 +365,21 @@
       border-color: var(--lib-folder-color, var(--primary));
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--lib-folder-color, var(--primary)) 26%, transparent);
     }
+
+    /* Reordering — grab a folder tile and drag it to a new slot among the
+       other folders. The tile in flight fades; a colored insertion bar shows
+       in the gap where it will drop (before/after the hovered tile). */
+    .lib-fstat[data-folder-id] { cursor: grab; }
+    .lib-fstat.lib-folder-dragging { opacity: .4; cursor: grabbing; }
+    .lib-fstat.lib-reorder-before::after,
+    .lib-fstat.lib-reorder-after::after {
+      content: ""; position: absolute; top: 2px; bottom: 2px; width: 3px;
+      border-radius: 2px; background: var(--primary); z-index: 2;
+    }
+    html.dark .lib-fstat.lib-reorder-before::after,
+    html.dark .lib-fstat.lib-reorder-after::after { background: var(--primary-bright, #8B9FAF); }
+    .lib-fstat.lib-reorder-before::after { left: -6px; }
+    .lib-fstat.lib-reorder-after::after { right: -6px; }
     /* Hover ⋯ menu, pinned top-right of the tile. */
     .lib-fstat-menu {
       position: absolute; top: 5px; right: 5px;
@@ -975,7 +990,9 @@
       let creatingFolder = false; /* the "new folder" inline editor row is shown */
       let pendingColor = null;    /* swatch picked while editing (applied on save) */
       let dragId = null;          /* card id currently being dragged */
+      let dragFolderId = null;    /* folder id currently being dragged (reorder) */
       let suppressClick = false;  /* swallow the click that trails a drag */
+      let suppressFolderClick = false; /* swallow the click that trails a folder reorder drag */
 
       function saveFolders() { try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folders)); } catch (_) {} }
       function findFolder(id) { return folders.find((f) => f.id === id) || null; }
@@ -1226,7 +1243,7 @@
             return;
           }
           const n = f.items.length;
-          html += '<button type="button" class="lib-stat lib-fstat' + (state.openFolder === f.id ? ' is-active' : '') +
+          html += '<button type="button" draggable="true" class="lib-stat lib-fstat' + (state.openFolder === f.id ? ' is-active' : '') +
               '" data-folder-id="' + f.id + '" style="--lib-folder-color:' + f.color + '" aria-pressed="' + (state.openFolder === f.id ? 'true' : 'false') + '">' +
             '<span class="lib-fstat-menu" data-frow-menu="' + f.id + '" role="button" tabindex="0" title="Folder options" aria-label="Folder options"><span class="material-symbols-outlined">more_horiz</span></span>' +
             '<span class="lib-stat-num">' + n + '</span>' +
@@ -1411,6 +1428,7 @@
 
       /* ---- Folders-row clicks: open folder, +, ⋯ ---- */
       foldersRowEl.addEventListener('click', (e) => {
+        if (suppressFolderClick) { e.preventDefault(); e.stopPropagation(); return; }
         if (e.target.closest('.lib-fstat-edit')) return;
         if (e.target.closest('#lib-folders-add')) {
           creatingFolder = true;
@@ -1534,6 +1552,70 @@
         clearDropHints();
         if (t.id === 'lib-folders-unfile') unfileCard(id);
         else addToFolder(id, t.dataset.folderId);
+      });
+
+      /* ---- Folder reordering — grab a folder tile and drop it in a new slot
+         among the other folders. Uses its own drag channel (dragFolderId) so it
+         never collides with the card-filing drag above (which uses dragId). ---- */
+      function clearReorderHints() {
+        foldersRowEl.querySelectorAll('.lib-reorder-before, .lib-reorder-after')
+          .forEach((el) => el.classList.remove('lib-reorder-before', 'lib-reorder-after'));
+      }
+      function folderReorderTarget(e) {
+        const tile = e.target.closest('.lib-fstat[data-folder-id]');
+        if (!tile || tile.dataset.folderId === dragFolderId) return null;
+        return tile;
+      }
+      function moveFolder(srcId, targetId, before) {
+        const from = folders.findIndex((f) => f.id === srcId);
+        if (from === -1) return;
+        const [moved] = folders.splice(from, 1);
+        const to = folders.findIndex((f) => f.id === targetId);
+        if (to === -1) folders.push(moved);
+        else folders.splice(before ? to : to + 1, 0, moved);
+        saveFolders();
+        apply();
+      }
+      foldersRowEl.addEventListener('dragstart', (e) => {
+        const tile = e.target.closest('.lib-fstat[data-folder-id]');
+        if (!tile) return;
+        dragFolderId = tile.dataset.folderId;
+        tile.classList.add('lib-folder-dragging');
+        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'folder:' + dragFolderId); } catch (_) {}
+      });
+      foldersRowEl.addEventListener('dragover', (e) => {
+        if (!dragFolderId) return;
+        clearReorderHints();
+        const tile = folderReorderTarget(e);
+        if (!tile) return;
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+        const r = tile.getBoundingClientRect();
+        const before = e.clientX < r.left + r.width / 2;
+        tile.classList.add(before ? 'lib-reorder-before' : 'lib-reorder-after');
+      });
+      foldersRowEl.addEventListener('drop', (e) => {
+        if (!dragFolderId) return;
+        const tile = folderReorderTarget(e);
+        const src = dragFolderId;
+        dragFolderId = null;
+        clearReorderHints();
+        suppressFolderClick = true;
+        setTimeout(() => { suppressFolderClick = false; }, 250);
+        if (!tile) return;
+        e.preventDefault();
+        const r = tile.getBoundingClientRect();
+        const before = e.clientX < r.left + r.width / 2;
+        moveFolder(src, tile.dataset.folderId, before);
+      });
+      foldersRowEl.addEventListener('dragend', () => {
+        if (!dragFolderId && !foldersRowEl.querySelector('.lib-folder-dragging')) return;
+        dragFolderId = null;
+        clearReorderHints();
+        foldersRowEl.querySelectorAll('.lib-folder-dragging')
+          .forEach((el) => el.classList.remove('lib-folder-dragging'));
+        suppressFolderClick = true;
+        setTimeout(() => { suppressFolderClick = false; }, 250);
       });
 
       apply();

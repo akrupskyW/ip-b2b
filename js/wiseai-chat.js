@@ -1474,8 +1474,8 @@ export function injectChatExtras() {
        groupifyChatMenu() (js/wiseai-chat.js) reorganizes the flat rows into these
        cards and tags the popover with .sc-menu-grouped. */
     .topbar-popover.sc-menu-grouped {
-      width: 448px; min-width: 0; max-width: calc(100vw - 24px);
-      padding: 8px; column-width: 206px; column-gap: 8px;
+      width: 470px; min-width: 0; max-width: calc(100vw - 24px);
+      padding: 8px; column-width: 216px; column-gap: 8px;
       max-height: min(82vh, 640px); overflow: hidden auto;
     }
     .sc-menu-group {
@@ -1490,18 +1490,20 @@ export function injectChatExtras() {
       text-transform: uppercase; color: var(--text-subtle);
     }
     /* Rows sit flush within their card; the card border replaces the old dividers. */
-    .sc-menu-grouped .topbar-menu-item { margin: 0 4px; width: calc(100% - 8px); border-radius: 9px; padding: 7px 8px; gap: 7px; align-items: center; }
+    .sc-menu-grouped .topbar-menu-item { margin: 0 4px; width: calc(100% - 8px); border-radius: 9px; padding: 6px 7px; gap: 6px; align-items: center; }
+    .sc-menu-grouped .topbar-menu-icon { font-size: 17px !important; }
     .sc-menu-grouped .topbar-menu-divider { display: none; }
     /* In the ~206px column the label must flex + wrap so the Admin badge and the
        switch never overlap it (they stay pinned right, vertically centered). */
     .sc-menu-grouped .topbar-menu-item > span:not(.topbar-menu-icon):not(.topbar-menu-badge):not(.sc-switch) {
       flex: 1 1 auto; min-width: 0; line-height: 1.2;
+      white-space: normal; overflow-wrap: anywhere;
     }
-    .sc-menu-grouped .topbar-menu-badge { margin-left: 4px; padding: 1px 4px; font-size: 8px; }
+    .sc-menu-grouped .topbar-menu-badge { margin-left: 3px; margin-right: 2px; padding: 1px 3px; font-size: 7px; letter-spacing: 0.02em; }
     /* Trim the toggle switch to reclaim row width for the label. */
-    .sc-menu-grouped .sc-switch { width: 30px; height: 17px; }
-    .sc-menu-grouped .sc-switch::after { width: 13px; height: 13px; }
-    .sc-menu-grouped .sc-mcp-item.is-on .sc-switch::after { transform: translateX(13px); }
+    .sc-menu-grouped .sc-switch { width: 28px; height: 16px; }
+    .sc-menu-grouped .sc-switch::after { width: 12px; height: 12px; }
+    .sc-menu-grouped .sc-mcp-item.is-on .sc-switch::after { transform: translateX(12px); }
     /* Sub-control rows (opacity / style / playback / streaming detail / strip side)
        lose the deep 42px indent — inside a ~206px column they align to the card. */
     .sc-menu-grouped .sc-bganim-detail { margin: 2px 12px 6px 14px; }
@@ -2316,6 +2318,25 @@ export function createStampBgAnim(cfg) {
   return { start, stop, pause, resume, redraw: applyOpacity };
 }
 
+/* Third ambient style: the owl "orbit" constellation. Unlike helix/stamp this
+   engine paints nothing itself — the owl-centered node web is the welcome
+   screen's own decoration (js/welcome-orbit.js auto-enhances every
+   `.ws-logo-wrap`). That web is only ever HIDDEN by the helix/stamp live classes
+   (which set `.ws-logo-wrap { display:none }`); so "running" the orbit just means
+   leaving the owl visible — i.e. adding NEITHER of those classes. We still tag
+   the host with `sc-orbit-live` so the choice reads back and any future styling
+   can hook it. start() is effectively a no-op beyond that; the facade's stop()
+   (which tears down the helix/stamp engines) is what reveals the owl again. */
+export function createOrbitBgAnim(cfg) {
+  const host = cfg.host;
+  const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
+  function start() { if (!isOn() || typeof document === 'undefined') return; host.classList.add('sc-orbit-live'); }
+  function stop() { host.classList.remove('sc-orbit-live'); }
+  function pause() {}
+  function resume() {}
+  return { start, stop, pause, resume, redraw() {} };
+}
+
 /* ------------------------------------------------------------------ */
 /* Grouped two-column three-dot menu (shared)                          */
 /* ------------------------------------------------------------------ */
@@ -2344,6 +2365,21 @@ const CHAT_MENU_GROUP_OF = {
   'activity-strip': 'motion', 'stream-toggle': 'motion',
   close: 'danger',
 };
+/* Resolve which group a menu ROW belongs to. Prefers the stable data-sc id used
+   by the shared template, then falls back to secondary hints so hand-rolled
+   surfaces (which key some rows off data-ap / ids / onclick instead) still bucket
+   correctly. Returns null for a row we don't recognize — the caller then keeps it
+   with the current group so nothing is orphaned. */
+function chatMenuGroupKey(el) {
+  const sc = el.getAttribute && el.getAttribute('data-sc');
+  if (sc && CHAT_MENU_GROUP_OF[sc]) return CHAT_MENU_GROUP_OF[sc];
+  try {
+    if (el.matches('.topbar-menu-item--danger, [data-ap="close"], [data-sc="close"]')) return 'danger';
+    if (el.matches('[data-ap="restart"], [data-ap="export"], [data-ap="share"]')) return 'conversation';
+    if (el.matches('.sc-actstrip-item, [id*="actstrip"], [onclick*="ActivityStrip"], [onclick*="activityStrip"]')) return 'motion';
+  } catch (_) {}
+  return null;
+}
 export function groupifyChatMenu(pop) {
   if (!pop || pop.dataset.scGrouped === '1') return;
   const kids = Array.from(pop.children);
@@ -2359,9 +2395,11 @@ export function groupifyChatMenu(pop) {
     if (el.classList.contains('topbar-menu-label') || el.hasAttribute('data-menulink')) {
       current = 'navigate'; push('navigate', el); return;
     }
-    const sc = el.getAttribute && el.getAttribute('data-sc');
-    if (sc && CHAT_MENU_GROUP_OF[sc]) { current = CHAT_MENU_GROUP_OF[sc]; push(current, el); return; }
-    if (sc) { current = 'more'; push('more', el); return; } // unknown toggle → More
+    if (el.classList.contains('topbar-menu-item')) {
+      const key = chatMenuGroupKey(el);
+      if (key) { current = key; push(key, el); } else { push(current, el); }
+      return;
+    }
     push(current, el); // sub-control block → the group of the toggle above it
   });
 
@@ -3279,7 +3317,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      wise:chat-bg-anim-style) so every mounted chat's segment + live field follow
      the one shared choice. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'stamp'];
+  const BGANIM_STYLES = ['helix', 'stamp', 'orbit'];
   let bgAnimStyle = 'helix';
   try { const s = localStorage.getItem(BGANIM_STYLE_KEY); if (BGANIM_STYLES.includes(s)) bgAnimStyle = s; } catch (_) {}
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
@@ -3380,6 +3418,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">
               <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="true" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="stamp" role="radio" aria-checked="false" title="Embossed logo stamp" aria-label="Embossed logo stamp">Stamp</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
             </div>
           </div>
           <div class="sc-bganim-playback">
@@ -5471,7 +5510,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!bgAnimEngines[style]) {
       bgAnimEngines[style] = style === 'stamp'
         ? createStampBgAnim(bgAnimCommon)
-        : createHelixBgAnim(bgAnimCommon);
+        : style === 'orbit'
+          ? createOrbitBgAnim(bgAnimCommon)
+          : createHelixBgAnim(bgAnimCommon);
     }
     return bgAnimEngines[style];
   };
@@ -5485,7 +5526,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        and the field is on) start the newly-chosen style in its place. */
     setStyle(style) {
       if (!BGANIM_STYLES.includes(style) || style === bgAnimStyle) return;
-      const live = rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-stamp-live');
+      const live = rootEl.classList.contains('sc-bganim-live')
+        || rootEl.classList.contains('sc-stamp-live')
+        || rootEl.classList.contains('sc-orbit-live');
       this.stop();
       bgAnimStyle = style;
       if (bgAnimOn && live) bgAnimEngine(bgAnimStyle).start();
@@ -5504,10 +5547,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* The opacity slider (below the toggle) dims + locks while the animation is off. */
     const detail = rootEl.querySelector('.sc-bganim-detail');
     if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
-    /* The style segment (Helix / Stamp) reflects the shared choice and dims +
-       locks with the toggle, exactly like the opacity + playback rows. */
+    /* The style segment (Helix / Stamp) reflects the shared choice and stays
+       ALWAYS interactive — even when the field is off — so it reads as a real,
+       discoverable choice (picking a style turns the animation on, below). */
     const styleRow = rootEl.querySelector('.sc-bganim-style');
-    if (styleRow) styleRow.classList.toggle('is-disabled', !bgAnimOn);
+    if (styleRow) styleRow.classList.remove('is-disabled');
     rootEl.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
       const on = btn.dataset.style === bgAnimStyle;
       btn.classList.toggle('is-on', on);
@@ -6452,10 +6496,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      the shared .topbar-popover / .panel-more-btn behavior in the app). */
   const moreBtn = rootEl.querySelector(`#${id}-more`);
   const morePop = rootEl.querySelector(`#${id}-more-pop`);
-  /* Reflow the flat menu into titled group cards + two columns (like the
-     Appearance popover). Moves the existing nodes, so all wiring below — which
-     queries them via rootEl / delegates on morePop — keeps working unchanged. */
-  groupifyChatMenu(morePop);
   function closeMore() {
     morePop?.classList.add('hidden');
     moreBtn?.classList.remove('is-open');
@@ -6464,6 +6504,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   moreBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     const open = morePop.classList.contains('hidden');
+    /* Reflow the flat menu into titled group cards + two columns (like the
+       Appearance popover) on first open — deferred to here so every row that
+       other mount code injects (history, connectors, intent toggles) already
+       exists and is bucketed. Moves the existing nodes, so all wiring keeps
+       working; idempotent, so subsequent opens are a no-op. */
+    if (open) groupifyChatMenu(morePop);
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -6933,9 +6979,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          wise:chat-bg-anim-style listener swaps the live field here and on every
          sibling chat. */
       const s = item.dataset.style;
-      if (BGANIM_STYLES.includes(s) && s !== bgAnimStyle) {
-        try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
-        try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
+      if (BGANIM_STYLES.includes(s)) {
+        if (s !== bgAnimStyle) {
+          try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
+          try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
+        }
+        /* Picking a style is also the one-tap way to SEE it: if the field was
+           off, turn it on now so choosing "Stamp" (or "Helix") isn't a dead
+           control. Broadcast so every sibling chat + this menu's switch follow. */
+        if (!bgAnimOn) {
+          bgAnimOn = true;
+          try { localStorage.setItem(BGANIM_PREF_KEY, '1'); } catch (_) {}
+          try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: true } })); } catch (_) {}
+        }
       }
     }
     else if (action === 'stream-toggle') {
@@ -7291,13 +7347,19 @@ export function wireStandardChatMenu(cfg = {}) {
   /* Background-animation STYLE (helix · stamp) — shared app-wide, same key/event
      as the mounted module so every surface swaps in lockstep. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'stamp'];
+  const BGANIM_STYLES = ['helix', 'stamp', 'orbit'];
   let bgStyle = 'helix';
   try { const s = localStorage.getItem(BGANIM_STYLE_KEY); if (BGANIM_STYLES.includes(s)) bgStyle = s; } catch (_) {}
   /* Inline chats copied the menu markup before the Style row existed; inject it
      (before the playback row) so every hand-rolled surface gains the segment too,
-     keeping the whole app's chat menus identical. */
-  if (!q('.sc-bganim-style')) {
+     keeping the whole app's chat menus identical. All THREE ambient styles ship
+     here: helix · stamp · orbit. */
+  const bgStyleSegHtml = ''
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="stamp" role="radio" aria-checked="false" title="Embossed logo stamp" aria-label="Embossed logo stamp">Stamp</button>'
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>';
+  const existingStyleRow = q('.sc-bganim-style');
+  if (!existingStyleRow) {
     const playbackRow = q('.sc-bganim-playback');
     const detailRow = q('.sc-bganim-detail');
     const anchor = playbackRow || detailRow;
@@ -7305,11 +7367,16 @@ export function wireStandardChatMenu(cfg = {}) {
       const styleHtml = '<div class="sc-bganim-style">'
         + '<span class="sc-bganim-style-label">Style</span>'
         + '<div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">'
-        + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
-        + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="stamp" role="radio" aria-checked="false" title="Embossed logo stamp" aria-label="Embossed logo stamp">Stamp</button>'
+        + bgStyleSegHtml
         + '</div></div>';
       anchor.insertAdjacentHTML(playbackRow ? 'beforebegin' : 'afterend', styleHtml);
     }
+  } else if (!existingStyleRow.querySelector('[data-style="orbit"]')) {
+    /* Older markup with only helix/stamp — add the Orbit segment so every
+       surface offers all three. */
+    const seg = existingStyleRow.querySelector('.sc-stream-seg');
+    if (seg) seg.insertAdjacentHTML('beforeend',
+      '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>');
   }
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl
@@ -7330,7 +7397,11 @@ export function wireStandardChatMenu(cfg = {}) {
         isOn: () => bgOn,
         isPaused: () => bgPaused,
       };
-      bgEngines[style] = style === 'stamp' ? createStampBgAnim(common) : createHelixBgAnim(common);
+      bgEngines[style] = style === 'stamp'
+        ? createStampBgAnim(common)
+        : style === 'orbit'
+          ? createOrbitBgAnim(common)
+          : createHelixBgAnim(common);
     }
     return bgEngines[style];
   };
@@ -7362,7 +7433,7 @@ export function wireStandardChatMenu(cfg = {}) {
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
     const styleRow = q('.sc-bganim-style');
-    if (styleRow) styleRow.classList.toggle('is-disabled', !bgOn);
+    if (styleRow) styleRow.classList.remove('is-disabled');
     pop.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
       const on = btn.dataset.style === bgStyle;
       btn.classList.toggle('is-on', on);
@@ -7429,9 +7500,18 @@ export function wireStandardChatMenu(cfg = {}) {
   pop.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const s = btn.dataset.style;
-      if (BGANIM_STYLES.includes(s) && s !== bgStyle) {
-        try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
-        try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
+      if (BGANIM_STYLES.includes(s)) {
+        if (s !== bgStyle) {
+          try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
+          try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
+        }
+        /* Picking a style is also the one-tap way to SEE it: turn the field on
+           if it was off so "Stamp" (or "Helix") isn't a dead control. */
+        if (!bgOn) {
+          bgOn = true;
+          try { localStorage.setItem(BGANIM_KEY, '1'); } catch (_) {}
+          try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: true } })); } catch (_) {}
+        }
       }
       syncBg();
     });

@@ -24,65 +24,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
-    /* Alerts inbox — rendered by js/alerts-flow.js. */
+    /* Alerts — a running stream of agent events, rendered by js/alerts-flow.js.
+       All styling comes from the canonical `wmod-` module set in wise.css. */
     body[data-nav-id="alerts"] #agent-main-header { display: none; }
     body[data-nav-id="alerts"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="alerts"] #modules-row { margin-top: 0; }
+    body[data-nav-id="alerts"] .wmod-wrap { max-width: 1000px; }
 
-    .al-wrap { padding: 26px 40px 56px; max-width: 860px; }
-    .al-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; }
-    .al-breadcrumb .material-symbols-outlined { font-size: 16px; opacity: 0.6; }
-    .al-breadcrumb-here { color: var(--text); }
-    .al-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .al-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
-    .al-lede { font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 0; }
-
-    .al-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 20px; }
-    .al-filter { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; height: 34px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
-    .al-filter:hover:not(.is-active) { color: var(--text); border-color: var(--border-strong); }
-    .al-filter.is-active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .al-filter-count { font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-subtle); }
-    html.dark .al-filter-count { background: rgba(255,255,255,0.08); }
-    .al-filter.is-active .al-filter-count { background: rgba(255,255,255,0.24); color: #fff; }
-
-    .al-group { margin-bottom: 26px; }
-    .al-group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 10px; }
-    .al-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md, 14px); box-shadow: var(--shadow-1); overflow: hidden; }
-    .al-item { display: flex; align-items: center; gap: 14px; padding: 15px 16px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s ease; position: relative; }
-    .al-item:first-child { border-top: 0; }
-    .al-item:hover { background: var(--surface-2); }
-    html.dark .al-item:hover { background: rgba(255,255,255,0.04); }
-    .al-item.is-unread { background: color-mix(in srgb, var(--primary) 5%, transparent); }
-    .al-item-ic { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--ic, var(--primary)); background: color-mix(in srgb, var(--ic, var(--primary)) 14%, transparent); }
-    .al-item-ic .material-symbols-outlined { font-size: 21px; }
-    .al-item-body { flex: 1; min-width: 0; }
-    .al-item-title { font-size: 0.9rem; font-weight: 600; color: var(--text); }
-    .al-item.is-unread .al-item-title { font-weight: 700; }
-    .al-item-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
-    .al-unread-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
-    .al-item-x { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--text-subtle); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease, background 0.15s ease; flex-shrink: 0; }
-    .al-item:hover .al-item-x { opacity: 1; }
-    .al-item-x:hover { background: var(--surface-3, var(--surface-2)); color: var(--text); }
-    .al-item-x .material-symbols-outlined { font-size: 17px; }
-
-    /* Buttons */
-    .al-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
-    .al-btn .material-symbols-outlined { font-size: 18px; }
-    .al-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
-    .al-btn--ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
-    html.dark .al-btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
-    .al-btn:disabled { opacity: 0.45; cursor: default; }
-
-    .al-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
-    .al-empty .material-symbols-outlined { font-size: 44px; color: var(--text-subtle); }
-
-    #al-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-    .al-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
-    .al-toast.is-in { opacity: 1; transform: none; }
-    .al-toast .material-symbols-outlined { font-size: 17px; }
+    /* Event-stream columns: type glyph · event (title + source) · time · dismiss. */
+    body[data-nav-id="alerts"] .al-table .wmod-thead,
+    body[data-nav-id="alerts"] .al-table .wmod-trow {
+      grid-template-columns: 40px minmax(0, 1fr) 190px 40px;
+    }
+    body[data-nav-id="alerts"] .al-row.is-unread { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    body[data-nav-id="alerts"] .al-row.is-unread .wmod-td-primary { font-weight: 700; }
+    body[data-nav-id="alerts"] .al-when { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+    body[data-nav-id="alerts"] .al-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+    body[data-nav-id="alerts"] .al-x { opacity: 0; transition: opacity 0.15s ease; }
+    body[data-nav-id="alerts"] .al-row:hover .al-x { opacity: 1; }
 
     @media (max-width: 720px) {
-      .al-wrap { padding: 20px 20px 48px; }
+      body[data-nav-id="alerts"] .wmod-wrap { padding: 20px 20px 48px; }
+      body[data-nav-id="alerts"] .al-table .wmod-thead,
+      body[data-nav-id="alerts"] .al-table .wmod-trow { grid-template-columns: 34px minmax(0, 1fr) 40px; }
+      body[data-nav-id="alerts"] .al-when { display: none; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

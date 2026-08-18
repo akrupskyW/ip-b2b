@@ -1,858 +1,885 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WISE · Progress Log</title>
-  <meta name="description" content="An internal, day-by-day log of what shipped across the WISE platform — components, features, logic, UX/UI, changes, improvements, updates and deletions, grouped by page." />
-  <script>
-    /* FOUC guard — apply the persisted theme before first paint, matching the
-       rest of the app pages so the shell never flashes the wrong theme. */
-    (function () {
-      try {
-        var t = localStorage.getItem('wise-theme');
-        if (t !== 'light' && t !== 'dark') {
-          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
-        }
-        document.documentElement.classList.toggle('dark', t === 'dark');
-      } catch (e) { /* no saved theme: default light */ }
-    })();
-  </script>
-
+  <!-- Auth: redirect to sign-in if there is no session, then load the auth API. -->
+  <script src="../js/auth-guard.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
   <style>
-  /* ── App-wide mono numerals (mirrors the other admin pages) ─────────────── */
-  @font-face {
-    font-family: 'WISE Digits';
-    src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
-    unicode-range: U+0030-0039;
-    font-weight: 100 900;
-  }
+    /* ═══════════ Progress Log — internal build journal ═══════════
+       Reuses the shared WISE app shell (nav + brand strip + topbar controls) and
+       the ONE shared WISEcodeAI chat module, exactly like reformulation.html /
+       product-portfolio.html. Two modules share the shell's "modules" grid area:
+       the WISEcodeAI chat (left) and the Progress Log board (right). Everything
+       bespoke here is prefixed pl-. */
 
-  /* =============================================================
-     Progress Log — standalone internal changelog. Self-contained:
-     it reuses the WISE design tokens but depends on no app shell.
-  ============================================================= */
-  :root {
-    --bg: #F9F8F3;
-    --surface: #FFFFFF;
-    --surface-2: #F4F2EA;
-    --surface-3: #EFEDE2;
-    --text: #111827;
-    --text-muted: #444B55;
-    --text-subtle: #474E58;
-    --border: rgba(37, 80, 124, 0.16);
-    --border-strong: rgba(37, 80, 124, 0.28);
+    /* Semantic tints (wise.css ships the base inks + AAA text, not these tints). */
+    :root {
+      --sec-green-10: rgba(50, 169, 102, 0.12);
+      --sec-red-10: rgba(220, 48, 56, 0.12);
+      --ter-amber-10: rgba(255, 196, 52, 0.14);
+    }
 
-    --primary: #25507C;
-    --primary-soft: rgba(37, 80, 124, 0.08);
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin-top: 0;
+      padding: 0 2px;
+    }
 
-    --r-sm: 10px;
-    --r-md: 16px;
-    --r-lg: 24px;
-    --r-xl: 32px;
-    --radius-pill: 9999px;
+    /* ── Nav brand strip height (chat-shell), matches every other WISE page ── */
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
 
-    --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
-    --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+    /* ── Shared carded module frame (mirrors .rf-card) ── */
+    .pl-card {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    /* Left chat column — fixed width, carded, canonical widen tiers. */
+    .pl-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); background: var(--bg); }
+    .pl-chat.panel-wide { flex-basis: 580px; width: 580px; }
+    .pl-chat.panel-triple { flex-basis: 760px; width: 760px; }
+    /* Progress log board — the flexible filler beside the chat. */
+    .pl-log { flex: 1 1 auto; min-width: 520px; }
+    .pl-log.panel-wide { min-width: 720px; }
+    .pl-log.panel-triple { min-width: 900px; }
 
-    /* Category accents (mid-tones that read on both light tints and dark tints) */
-    --cat-components: #2F6DB0;
-    --cat-features:   #8A5CD1;
-    --cat-logic:      #178A8A;
-    --cat-ux:         #C0468A;
-    --cat-changes:    #B0791F;
-    --cat-improvements:#2E9E63;
-    --cat-updates:    #2585A6;
-    --cat-deletions:  #C0454C;
-  }
-  html.dark {
-    --bg: #05141C;
-    --surface: #0D1B24;
-    --surface-2: #112633;
-    --surface-3: #15303F;
-    --text: #F3F4F6;
-    --text-muted: #BCC6D3;
-    --text-subtle: #B1BAC7;
-    --border: rgba(139, 159, 175, 0.18);
-    --border-strong: rgba(139, 159, 175, 0.30);
-    --primary-soft: rgba(37, 80, 124, 0.20);
-    --primary-bright: #8B9FAF;
+    /* ── Module header — serif headline + meta, controls to the right (mirrors .rf-head) ── */
+    .pl-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
+    .pl-head-titles { min-width: 0; }
+    .pl-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
+    .pl-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
+    .pl-head-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
-    --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+    /* ── Scrolling body ── */
+    .pl-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 26px 22px; }
 
-    --cat-components: #6FA6E0;
-    --cat-features:   #B48CF0;
-    --cat-logic:      #56C4C4;
-    --cat-ux:         #E88CBE;
-    --cat-changes:    #E4B65C;
-    --cat-improvements:#6FC996;
-    --cat-updates:    #6FBEDC;
-    --cat-deletions:  #E88289;
-  }
+    /* ── Toolbar + canonical search (mirrors reformulation's .rf-search) ── */
+    .pl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0 2px; }
+    .pl-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
+    .pl-search-inline > .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+    .pl-search {
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
+      font-family: inherit; font-size: 0.8125rem; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill, 9999px); outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    html.dark .pl-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pl-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .pl-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .pl-search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%; display: none;
+      align-items: center; justify-content: center;
+      border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    .pl-search-inline.has-query .pl-search-clear { display: inline-flex; }
+    .pl-search-clear:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .pl-search-clear:hover { background: rgba(255,255,255,0.08); }
+    .pl-search-clear .material-symbols-outlined { font-size: 17px; }
+    /* Page picker — the toolbar's trailing action (mirrors .rf-change-btn chrome). */
+    .pl-select {
+      flex: 0 0 auto; height: 38px; box-sizing: border-box; padding: 0 34px 0 15px;
+      font-family: inherit; font-weight: 700; font-size: 12px; color: var(--text-muted);
+      appearance: none; border-radius: 9999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background-color: var(--surface-2);
+      background-image: linear-gradient(45deg, transparent 50%, var(--text-subtle) 50%), linear-gradient(135deg, var(--text-subtle) 50%, transparent 50%);
+      background-position: right 16px center, right 11px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+      transition: background .16s, color .16s, border-color .16s;
+    }
+    html.dark .pl-select { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pl-select:hover { color: var(--text); border-color: var(--primary); }
 
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    transition: background-color 0.35s ease, color 0.25s ease;
-  }
-  a { color: var(--primary); }
-  html.dark a { color: var(--primary-bright); }
+    /* ── Scorecards — the canonical clickable stat card (mirrors .rf-stat).
+       Summary cards are read-outs; category cards double as list filters.
+       Brand palette ONLY (navy / green / amber / red) — no invented colours. ── */
+    .pl-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
+    .pl-stats + .pl-stats { margin-top: 10px; }
+    .pl-stat {
+      flex: 1 1 120px; min-width: 108px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px; border-radius: 6px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: var(--shadow-1);
+      font-family: inherit; text-align: center; cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    }
+    html.dark .pl-stat { background: #1A2339; }
+    .pl-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
+    .pl-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .pl-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    html.dark .pl-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    .pl-stat:disabled { cursor: default; }
+    .pl-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
+    .pl-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+    .pl-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .pl-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .pl-stat-sub { font-size: 10px; color: var(--text-subtle); margin-top: 1px; }
+    .pl-stat--good .pl-stat-num { color: var(--sec-green); }
+    .pl-stat--alert .pl-stat-num { color: var(--sec-red); }
 
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
-  @media (max-width: 640px) { .wrap { padding: 0 16px 72px; } }
+    .pl-filter-note { font-size: 11px; color: var(--text-subtle); margin: 14px 0 0; }
 
-  /* ===== Top bar ===== */
-  .topbar {
-    position: sticky; top: 0; z-index: 50;
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 24px;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: saturate(160%) blur(12px);
-    border-bottom: 1px solid var(--border);
-  }
-  @media (max-width: 640px) { .topbar { padding: 12px 16px; } }
-  .topbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  /* Bare brand icon — no boxed backdrop (per the app-wide icon rule). */
-  .topbar-mark { color: var(--primary); display: grid; place-items: center; flex-shrink: 0; }
-  html.dark .topbar-mark { color: var(--primary-bright); }
-  .topbar-mark .material-symbols-outlined { font-size: 28px; }
-  .topbar-titles { min-width: 0; }
-  .topbar-kicker { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); }
-  html.dark .topbar-kicker { color: var(--primary-bright); }
-  .topbar-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
-  .topbar-spacer { flex: 1; }
+    /* ── Timeline ── */
+    .pl-day { margin-top: 24px; scroll-margin-top: 12px; }
+    .pl-day:first-child { margin-top: 0; }
+    .pl-day-head {
+      display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+      padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    /* Fully circular day marker (allowed by the icon rule) around a glyph. */
+    .pl-day-dot {
+      width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+      display: grid; place-items: center; color: var(--primary-ink, var(--primary));
+      background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    html.dark .pl-day-dot { color: var(--primary-bright, #8B9FAF); }
+    .pl-day-dot .material-symbols-outlined { font-size: 19px; }
+    .pl-day-titles { min-width: 0; flex: 1; }
+    .pl-day-date { font-size: 1.02rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
+    .pl-day-rel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+    .pl-day-summary { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .pl-day-tally { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pl-tally-pill {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 9999px;
+      font-size: 10.5px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .pl-tally-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    .pl-tally-pill .material-symbols-outlined { font-size: 13px; }
+    .pl-collapse-ic { transition: transform .2s; color: var(--text-subtle); }
+    .pl-day.is-collapsed .pl-collapse-ic { transform: rotate(-90deg); }
+    .pl-day.is-collapsed .pl-day-body { display: none; }
 
-  .back-btn, .theme-toggle {
-    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    padding: 9px 14px; border-radius: var(--radius-pill);
-    border: 1px solid var(--border-strong); background: var(--surface);
-    color: var(--text); font-family: inherit; font-size: 0.8125rem; font-weight: 600;
-    text-decoration: none; cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, transform 0.15s;
-  }
-  .back-btn { padding-left: 11px; }
-  .back-btn:hover, .theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
-  html.dark .back-btn:hover, html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
-  .back-btn:hover .material-symbols-outlined { transform: translateX(-2px); }
-  .back-btn .material-symbols-outlined, .theme-toggle .material-symbols-outlined { font-size: 18px; transition: transform 0.15s; }
-  @media (max-width: 640px) {
-    .back-btn span:not(.material-symbols-outlined),
-    .theme-toggle span:not(.material-symbols-outlined) { display: none; }
-    .back-btn, .theme-toggle { padding: 9px 11px; }
-  }
+    .pl-day-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
 
-  /* ===== Hero ===== */
-  .hero {
-    margin-top: 32px; padding: 36px 32px;
-    border-radius: var(--r-lg);
-    background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
-    border: 1px solid var(--border);
-  }
-  html.dark .hero {
-    background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
-    border-color: rgba(37, 80, 124, 0.18);
-  }
-  @media (max-width: 640px) { .hero { padding: 26px 20px; margin-top: 22px; } }
-  .hero-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); }
-  html.dark .hero-eyebrow { color: var(--primary-bright); }
-  .hero h1 { font-family: 'Noto Serif', Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; margin: 10px 0 12px; }
-  .hero p { font-size: 1rem; color: var(--text-muted); max-width: 780px; margin: 0; line-height: 1.65; }
+    /* ── Page card ── */
+    .pl-pcard { padding: 16px 16px 6px; border-radius: var(--r-md, 16px); background: var(--surface-2); border: 1px solid var(--border); }
+    html.dark .pl-pcard { background: rgba(255,255,255,0.03); }
+    .pl-pcard.is-new { border-color: color-mix(in srgb, var(--sec-green) 55%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green) 12%, transparent); }
+    .pl-pcard-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 11px; }
+    .pl-pcard-mark { color: var(--primary-ink, var(--primary)); flex-shrink: 0; margin-top: 1px; }
+    html.dark .pl-pcard-mark { color: var(--primary-bright, #8B9FAF); }
+    .pl-pcard-mark .material-symbols-outlined { font-size: 19px; }
+    .pl-pcard-meta { min-width: 0; flex: 1; }
+    .pl-pcard-name { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
+    .pl-pcard-path { font-size: 10.5px; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
+    .pl-pcard-new { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
+    .pl-pcard-new .material-symbols-outlined { font-size: 13px; }
 
-  /* ===== Scorecard ===== */
-  .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 24px; }
-  .score { padding: 18px 18px 16px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); }
-  html.dark .score { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
-  .score-num { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--primary); }
-  html.dark .score-num { color: var(--primary-bright); }
-  .score-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 8px; }
-  .score-meta { font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px; }
+    /* ── Category block (brand primary accent only) ── */
+    .pl-cat-block { margin-bottom: 12px; }
+    .pl-cat-block-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .pl-cat-block-head .material-symbols-outlined { font-size: 15px; color: var(--primary-ink, var(--primary)); }
+    html.dark .pl-cat-block-head .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .pl-cat-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); }
+    .pl-cat-block-count { font-size: 10px; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+    .pl-cat-list li { position: relative; padding-left: 15px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+    .pl-cat-list li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); }
+    .pl-cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
 
-  /* ===== Controls ===== */
-  .controls { margin-top: 28px; display: flex; flex-direction: column; gap: 14px; }
-  .controls-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .search-box { position: relative; flex: 1; min-width: 220px; }
-  .search-box .material-symbols-outlined { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
-  .search-box input {
-    width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-pill);
-    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
-    font-family: inherit; font-size: 0.875rem;
-  }
-  .search-box input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-  html.dark .search-box input:focus-visible { outline-color: var(--primary-bright); }
+    /* ── Empty state ── */
+    .pl-empty { margin-top: 26px; padding: 40px 22px; text-align: center; border-radius: var(--r-md, 16px); border: 1px dashed var(--border-strong); color: var(--text-muted); }
+    .pl-empty .material-symbols-outlined { font-size: 32px; color: var(--text-subtle); }
+    .pl-empty-title { font-size: 14px; font-weight: 700; margin-top: 8px; color: var(--text); }
+    .pl-empty-note { font-size: 12px; margin-top: 3px; }
 
-  .select-wrap { display: inline-flex; align-items: center; }
-  .select-wrap select {
-    appearance: none; padding: 10px 34px 10px 14px; border-radius: var(--radius-pill);
-    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
-    font-family: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
-    background-image: linear-gradient(45deg, transparent 50%, var(--text-subtle) 50%), linear-gradient(135deg, var(--text-subtle) 50%, transparent 50%);
-    background-position: right 15px center, right 10px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
-  }
+    /* Module three-dot menu reuses the shared .topbar-popover / .panel-more-* chrome. */
+    .pl-log .panel-more-wrap { position: relative; }
 
-  .cat-filters { display: flex; flex-wrap: wrap; gap: 8px; }
-  .cat-chip {
-    display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px;
-    border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 700; cursor: pointer;
-    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
-    transition: border-color 0.15s, color 0.15s, background 0.15s, opacity 0.15s;
-    user-select: none;
-  }
-  html.dark .cat-chip { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
-  .cat-chip .material-symbols-outlined { font-size: 16px; color: var(--cat); }
-  .cat-chip .cat-chip-count {
-    font-size: 0.6875rem; font-weight: 800; font-variant-numeric: tabular-nums;
-    padding: 1px 7px; border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--cat) 16%, transparent); color: var(--cat);
-  }
-  .cat-chip.is-off { opacity: 0.4; }
-  .cat-chip.is-off .material-symbols-outlined { color: var(--text-subtle); }
-  .cat-chip:not(.is-off) { border-color: color-mix(in srgb, var(--cat) 40%, var(--border)); color: var(--text); }
-  .cat-chip:hover { border-color: color-mix(in srgb, var(--cat) 55%, var(--border)); }
-
-  .controls-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .tool-btn {
-    display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: var(--radius-pill);
-    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
-    font-family: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .tool-btn:hover { border-color: var(--primary); color: var(--primary); }
-  html.dark .tool-btn:hover { border-color: var(--primary-bright); color: var(--primary-bright); }
-  .tool-btn .material-symbols-outlined { font-size: 16px; }
-
-  .filter-note { font-size: 0.75rem; color: var(--text-subtle); }
-
-  /* ===== Timeline ===== */
-  .timeline { margin-top: 34px; position: relative; }
-
-  .day { margin-top: 30px; scroll-margin-top: 80px; }
-  .day:first-child { margin-top: 0; }
-  .day-head {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-  /* Fully circular day marker (allowed by the icon rule); holds an icon glyph. */
-  .day-dot {
-    width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
-    display: grid; place-items: center; color: var(--primary);
-    background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
-  }
-  html.dark .day-dot { color: var(--primary-bright); }
-  .day-dot .material-symbols-outlined { font-size: 20px; }
-  .day-titles { min-width: 0; flex: 1; }
-  .day-date { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
-  .day-rel { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
-  .day-summary { font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px; }
-  .day-tally { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .day-tally-pill {
-    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--radius-pill);
-    font-size: 0.6875rem; font-weight: 700; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
-  }
-  html.dark .day-tally-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
-  .day-tally-pill .material-symbols-outlined { font-size: 14px; }
-  .day-collapse-ic { transition: transform 0.2s; color: var(--text-subtle); }
-  .day.is-collapsed .day-collapse-ic { transform: rotate(-90deg); }
-  .day.is-collapsed .day-body { display: none; }
-
-  .day-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-
-  /* ===== Page card ===== */
-  .pcard {
-    padding: 18px 18px 8px; border-radius: var(--r-md);
-    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
-  }
-  html.dark .pcard { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
-  .pcard.is-new { border-color: color-mix(in srgb, var(--cat-improvements) 55%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-improvements) 14%, transparent); }
-  .pcard-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
-  .pcard-mark { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
-  html.dark .pcard-mark { color: var(--primary-bright); }
-  .pcard-mark .material-symbols-outlined { font-size: 20px; }
-  .pcard-meta { min-width: 0; flex: 1; }
-  .pcard-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
-  .pcard-path { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
-  .pcard-new-tag {
-    display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0;
-    font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--cat-improvements);
-  }
-  .pcard-new-tag .material-symbols-outlined { font-size: 13px; }
-
-  /* ===== Category block ===== */
-  .cat-block { margin-bottom: 14px; }
-  .cat-block-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
-  .cat-block-head .material-symbols-outlined { font-size: 16px; color: var(--cat); }
-  .cat-block-label { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--cat); }
-  .cat-block-count { font-size: 0.625rem; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-  .cat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  .cat-list li {
-    position: relative; padding-left: 16px; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5;
-  }
-  .cat-list li::before {
-    content: ""; position: absolute; left: 3px; top: 8px;
-    width: 5px; height: 5px; border-radius: 50%; background: var(--cat);
-  }
-  .cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
-
-  /* ===== Empty state ===== */
-  .empty {
-    margin-top: 30px; padding: 42px 24px; text-align: center; border-radius: var(--r-md);
-    border: 1px dashed var(--border-strong); color: var(--text-muted);
-  }
-  .empty .material-symbols-outlined { font-size: 34px; color: var(--text-subtle); }
-  .empty-title { font-size: 0.9375rem; font-weight: 700; margin-top: 8px; color: var(--text); }
-  .empty-note { font-size: 0.8125rem; margin-top: 3px; }
-
-  footer {
-    margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
-    font-size: 0.8125rem; color: var(--text-subtle); line-height: 1.6;
-  }
-
-  .skip-link {
-    position: absolute; left: 12px; top: -48px; z-index: 100;
-    padding: 10px 16px; border-radius: 10px; background: var(--primary); color: #fff;
-    font-weight: 700; text-decoration: none; transition: top 0.18s ease;
-  }
-  .skip-link:focus { top: 12px; }
+    @media (max-width: 620px) {
+      .pl-head { padding: 18px 18px 12px; }
+      .pl-body { padding: 4px 18px 18px; }
+    }
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-
-<header class="topbar">
-  <a class="back-btn" id="backBtn" href="overview.html" title="Back to the app">
-    <span class="material-symbols-outlined">arrow_back</span><span>Back</span>
-  </a>
-  <div class="topbar-brand">
-    <span class="topbar-mark" aria-hidden="true"><span class="material-symbols-outlined">timeline</span></span>
-    <div class="topbar-titles">
-      <div class="topbar-kicker">WISE · Internal</div>
-      <div class="topbar-name">Progress Log</div>
-    </div>
-  </div>
-  <div class="topbar-spacer"></div>
-  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
-    <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
-    <span id="themeLabel">Dark theme</span>
-  </button>
-</header>
-
-<main class="wrap" id="main">
-  <div class="hero">
-    <div class="hero-eyebrow">Build journal · day by day</div>
-    <h1>What shipped, and when</h1>
-    <p>
-      A running, internal record of everything built across the WISE platform — broken down
-      <strong>by day</strong> and then <strong>by page</strong>, and sorted into components, features,
-      logic, UX&nbsp;&amp;&nbsp;UI, changes, improvements, updates and deletions. Use the filters to
-      focus on a single page or category, or search for anything specific.
-    </p>
+  <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
 
-  <div class="scorecard" id="scorecard"><!-- injected --></div>
-
-  <section class="controls" aria-label="Filters">
-    <div class="controls-row">
-      <label class="search-box">
-        <span class="material-symbols-outlined" aria-hidden="true">search</span>
-        <input type="text" id="search" placeholder="Search entries, pages, components…" aria-label="Search the progress log" />
-      </label>
-      <span class="select-wrap">
-        <select id="pageFilter" aria-label="Filter by page"><!-- injected --></select>
-      </span>
-      <div class="controls-tools">
-        <button class="tool-btn" id="expandAll" type="button"><span class="material-symbols-outlined">unfold_more</span>Expand all</button>
-        <button class="tool-btn" id="collapseAll" type="button"><span class="material-symbols-outlined">unfold_less</span>Collapse all</button>
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <!-- Left navigation module (shared WISE app nav) -->
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
       </div>
     </div>
-    <div class="cat-filters" id="catFilters" role="group" aria-label="Filter by category"><!-- injected --></div>
-    <div class="filter-note" id="filterNote"><!-- injected --></div>
-  </section>
 
-  <div class="timeline" id="timeline"><!-- injected --></div>
+    <!-- Chat + Progress Log board share the shell's "modules" grid area. -->
+    <div id="modules-row">
 
-  <footer>
-    Internal engineering log for the WISE platform. Entries are grouped by day (most recent first)
-    and by the page they touched. This page is an Admin-only surface, reachable from the Appearance
-    menu alongside the Accessibility review and All modules index.
-  </footer>
-</main>
+      <!-- ═══════════ 1 · WISEcodeAI chat — the ONE shared chat module ═══════════ -->
+      <main class="pl-card pl-chat" id="pl-chat"></main>
 
-<script>
-/* =====================================================================
-   Category taxonomy
-===================================================================== */
-const CATS = [
-  { id: 'components',   label: 'Components',   icon: 'widgets' },
-  { id: 'features',     label: 'Features',     icon: 'bolt' },
-  { id: 'logic',        label: 'Logic',        icon: 'code' },
-  { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
-  { id: 'changes',      label: 'Changes',      icon: 'edit' },
-  { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
-  { id: 'updates',      label: 'Updates',      icon: 'update' },
-  { id: 'deletions',    label: 'Deletions',    icon: 'delete' },
-];
-const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
-
-/* =====================================================================
-   The log. Newest day first. Each entry is a page touched that day, with
-   items sorted into the categories above. Keep entries short + factual.
-===================================================================== */
-const LOG = [
-  {
-    date: '2026-08-17', rel: 'Monday',
-    summary: 'Dev-handoff catalog on All Modules, deeper View Product, and project-wide conventions + lint tooling.',
-    entries: [
-      {
-        page: 'All Modules', path: 'all-modules.html',
-        components: [
-          'Dev-ready component catalog: buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, composer',
-          'Typography + design-token specimens',
-          'Icon inventory browser',
-          'Motion catalog + streaming-trace demo',
-        ],
-        features: [
-          'Per-component dev-ready toggles so engineering can claim components one by one',
-          'Parent/child readiness rollups showing handoff progress at a glance',
-          'Jump-to-source links from each catalog entry to the page it lives on',
-          'Downloadable chart & report design rules (.md)',
-        ],
-        logic: [
-          'Dev-ready tree builder with persisted ready-state',
-          'Deduplication grouping repeated components into canonical entries',
-          'Automated icon scanning keeping the inventory in sync',
-        ],
-      },
-      {
-        page: 'View Product', path: 'view-product.html',
-        components: ['Deeper detail layout with dedicated score, ingredient, and imagery sections'],
-        ux: ['Refined ingredient & score tooltips'],
-        improvements: ['Wired into the real product photo library'],
-      },
-      {
-        page: 'WISEcodeAI', path: 'wiseai.html',
-        improvements: ['Refined chat behavior and response pacing'],
-      },
-      {
-        page: 'Platform-wide', path: '(all pages)',
-        logic: [
-          'Normalized topbar + appearance controls so every page renders identical header/theme controls',
-          'Lint tooling for JavaScript, CSS, and HTML',
-        ],
-        components: [
-          'Cursor rules: canonical page structure, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines',
-        ],
-        features: [
-          'Skills: chat-module audit, new-page-from-canonical, propagate-across-pages, visual-verify',
-        ],
-        deletions: ['Removed the legacy wise_ip3 landing page and its dead links'],
-      },
-    ],
-  },
-  {
-    date: '2026-08-16', rel: 'Sunday',
-    summary: 'Add Product reworked into a conversational flow; site-wide count-up, welcome orbit, and mobile nav.',
-    entries: [
-      {
-        page: 'Add Product', path: 'add-product.html',
-        components: [
-          'Nutrition facts entry panels (multiple pack formats + sizes)',
-          'Photo capture modal',
-          'Assistant side panel with inline field editors and a live activity log',
-        ],
-        features: [
-          'Conversational, assistant-guided product entry',
-          '“What can I ask” guide with example prompts that animate in letter by letter',
-        ],
-        logic: [
-          'Streaming + shimmer states while the AI processes',
-          'Field-level capture tracking that feeds the activity log',
-        ],
-      },
-      {
-        page: 'Platform-wide', path: '(all pages)',
-        components: [
-          'count-up-all.js — universal scorecard count-up',
-          'chat-ask.js — shared ask-suggestions component',
-          'mobile-nav.js — small-screen nav with an animated slide-in drawer',
-        ],
-        features: [
-          'welcome-orbit.js — animated capability orbit on the chat welcome',
-          'ask-catalog.js — catalog-specific ask suggestions',
-        ],
-        ux: ['Layout refinements across product, dashboard, and studio pages'],
-        logic: ['no-icon-tile hook + rule enforcing no rounded-square icon backdrops'],
-      },
-    ],
-  },
-  {
-    date: '2026-08-15', rel: 'Saturday',
-    summary: 'New Add Catalog bulk-import page, 100+ real product photos, and responsive tables.',
-    entries: [
-      {
-        page: 'Add Catalog', path: 'add-catalog.html', isNew: true,
-        components: ['New guided, multi-step bulk catalog import page'],
-        features: ['End-to-end import demoed with a real brand catalog'],
-      },
-      {
-        page: 'Platform-wide', path: '(all pages)',
-        components: ['100+ real product photos (Helix set) + a fetch script'],
-        features: ['responsive-tables.js — data tables reflow for phones and tablets'],
-        improvements: ['WISEcodeAI chat + all-modules overhaul; extended appearance & topbar'],
-      },
-    ],
-  },
-  {
-    date: '2026-08-14', rel: 'Friday',
-    summary: 'Conversation Library folders and expanded chat activity + sticky audit tooling.',
-    entries: [
-      {
-        page: 'Conversation Library', path: 'conversation-library.html',
-        features: [
-          'Color-coded folders: drag cards in, or drop one card on another to create a folder',
-          'Rename, recolor, and dissolve folders',
-        ],
-        logic: ['Filter counts reconciled so numbers always match the visible cards'],
-      },
-      {
-        page: 'All Modules', path: 'all-modules.html',
-        components: ['Expanded chat activity strip'],
-        logic: ['Sticky-module audit tooling (audit script + corner-case repro)'],
-      },
-    ],
-  },
-  {
-    date: '2026-08-13', rel: 'Thursday',
-    summary: 'Sticky modules and user avatars roll out platform-wide; AI Dashboard and Profile expand.',
-    entries: [
-      {
-        page: 'Platform-wide', path: '(all pages)',
-        components: [
-          'sticky-modules.js — tuck any side panel behind the chat like a drawer',
-          'user-avatar.js — the avatar follows the user into every chat',
-        ],
-        features: ['code-stats tooling + dataset'],
-      },
-      {
-        page: 'AI Dashboard', path: 'ai-dashboard.html',
-        improvements: ['Rebuilt into the standard product shell with brand-palette charts + an embedded assistant'],
-      },
-      {
-        page: 'Profile', path: 'profile.html',
-        features: ['Upload a profile photo or pick from ready-made avatar patterns'],
-      },
-      {
-        page: 'WISEcodeAI', path: 'wiseai.html',
-        features: ['Expanded chat interactions + shared styles'],
-        deletions: ['Removed the dev-only seed harness (__seed.html)'],
-      },
-    ],
-  },
-  {
-    date: '2026-08-12', rel: 'Wednesday',
-    summary: 'Crawl · Walk · Run toggle, a major All Modules expansion, and a site-wide polish pass.',
-    entries: [
-      {
-        page: 'Platform-wide', path: '(all pages)',
-        components: ['cwr-toggle.js — Crawl · Walk · Run experience toggle'],
-        ux: ['Site-wide visual polish across nearly every page'],
-      },
-      {
-        page: 'All Modules', path: 'all-modules.html',
-        features: ['Major expansion of the module directory (component / typography / token / icon / motion catalogs)'],
-      },
-      {
-        page: 'App Vision Deck', path: 'app-vision-deck.html',
-        improvements: ['Reworked slides, including the dev-handoff “release blocks” story'],
-      },
-    ],
-  },
-];
-
-/* =====================================================================
-   Derived helpers
-===================================================================== */
-function entryItems(entry) {
-  // Flatten an entry's category arrays into [{cat, text}] in taxonomy order.
-  const out = [];
-  for (const c of CATS) {
-    const arr = entry[c.id];
-    if (Array.isArray(arr)) for (const text of arr) out.push({ cat: c.id, text });
-  }
-  return out;
-}
-
-function fmtDate(iso) {
-  const [y, m, d] = iso.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-}
-
-/* =====================================================================
-   State
-===================================================================== */
-const activeCats = new Set(CATS.map(c => c.id));   // all on by default
-let pageFilter = '__all';
-let searchTerm = '';
-const collapsed = new Set();                        // day iso keys
-
-/* =====================================================================
-   Renderers
-===================================================================== */
-function renderScorecard() {
-  const days = LOG.length;
-  const pages = new Set();
-  const catTotals = Object.fromEntries(CATS.map(c => [c.id, 0]));
-  let total = 0;
-  LOG.forEach(day => day.entries.forEach(e => {
-    pages.add(e.page);
-    entryItems(e).forEach(it => { catTotals[it.cat]++; total++; });
-  }));
-
-  const topCat = CATS.map(c => ({ c, n: catTotals[c.id] })).sort((a, b) => b.n - a.n)[0];
-
-  document.getElementById('scorecard').innerHTML = `
-    <div class="score"><div class="score-num" data-countup>${days}</div><div class="score-label">Days logged</div><div class="score-meta">${fmtDate(LOG[LOG.length-1].date)} → ${fmtDate(LOG[0].date)}</div></div>
-    <div class="score"><div class="score-num" data-countup>${pages.size}</div><div class="score-label">Surfaces touched</div><div class="score-meta">Pages &amp; platform-wide areas</div></div>
-    <div class="score"><div class="score-num" data-countup>${total}</div><div class="score-label">Logged entries</div><div class="score-meta">Across ${CATS.length} categories</div></div>
-    <div class="score"><div class="score-num" data-countup>${topCat.n}</div><div class="score-label">${topCat.c.label}</div><div class="score-meta">Most active category</div></div>
-  `;
-  return { catTotals };
-}
-
-function renderPageFilter() {
-  const pages = [];
-  const seen = new Set();
-  LOG.forEach(day => day.entries.forEach(e => {
-    if (!seen.has(e.page)) { seen.add(e.page); pages.push(e.page); }
-  }));
-  pages.sort((a, b) => a.localeCompare(b));
-  const sel = document.getElementById('pageFilter');
-  sel.innerHTML = `<option value="__all">All pages</option>` +
-    pages.map(p => `<option value="${p.replace(/"/g, '&quot;')}">${p}</option>`).join('');
-}
-
-function renderCatFilters(catTotals) {
-  document.getElementById('catFilters').innerHTML = CATS.map(c => `
-    <button type="button" class="cat-chip${activeCats.has(c.id) ? '' : ' is-off'}" data-cat="${c.id}"
-      style="--cat: var(--cat-${c.id});" aria-pressed="${activeCats.has(c.id)}">
-      <span class="material-symbols-outlined">${c.icon}</span>${c.label}
-      <span class="cat-chip-count">${catTotals[c.id]}</span>
-    </button>`).join('');
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-function highlight(text) {
-  const safe = escapeHtml(text);
-  if (!searchTerm) return safe;
-  const re = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
-  return safe.replace(re, '<mark>$1</mark>');
-}
-
-function matchesSearch(entry) {
-  if (!searchTerm) return true;
-  const hay = (entry.page + ' ' + entry.path + ' ' +
-    entryItems(entry).map(i => i.text).join(' ')).toLowerCase();
-  return hay.includes(searchTerm);
-}
-
-function renderCatBlock(cat, items) {
-  const c = CAT_BY_ID[cat];
-  return `
-    <div class="cat-block" style="--cat: var(--cat-${cat});">
-      <div class="cat-block-head">
-        <span class="material-symbols-outlined" aria-hidden="true">${c.icon}</span>
-        <span class="cat-block-label">${c.label}</span>
-        <span class="cat-block-count">${items.length}</span>
-      </div>
-      <ul class="cat-list">${items.map(t => `<li>${highlight(t)}</li>`).join('')}</ul>
-    </div>`;
-}
-
-function renderPageCard(entry) {
-  // Only categories that are active AND have items.
-  const blocks = CATS
-    .filter(c => activeCats.has(c.id) && Array.isArray(entry[c.id]) && entry[c.id].length)
-    .map(c => renderCatBlock(c.id, entry[c.id]))
-    .join('');
-  if (!blocks) return '';
-  return `
-    <article class="pcard${entry.isNew ? ' is-new' : ''}">
-      <div class="pcard-head">
-        <span class="pcard-mark" aria-hidden="true"><span class="material-symbols-outlined">${entry.isNew ? 'note_add' : 'description'}</span></span>
-        <div class="pcard-meta">
-          <div class="pcard-name">${escapeHtml(entry.page)}</div>
-          <div class="pcard-path">${escapeHtml(entry.path)}</div>
-        </div>
-        ${entry.isNew ? '<span class="pcard-new-tag"><span class="material-symbols-outlined">fiber_new</span>New page</span>' : ''}
-      </div>
-      ${blocks}
-    </article>`;
-}
-
-function renderTimeline() {
-  const root = document.getElementById('timeline');
-  let html = '';
-  let visibleEntries = 0;
-
-  LOG.forEach(day => {
-    const entries = day.entries.filter(e =>
-      (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
-
-    const cards = entries.map(renderPageCard).filter(Boolean);
-    if (!cards.length) return;
-    visibleEntries += cards.length;
-
-    // Per-day category tally (respecting active categories).
-    const tally = {};
-    entries.forEach(e => entryItems(e).forEach(it => {
-      if (activeCats.has(it.cat)) tally[it.cat] = (tally[it.cat] || 0) + 1;
-    }));
-    const tallyPills = CATS.filter(c => tally[c.id]).map(c => `
-      <span class="day-tally-pill" style="color: var(--cat-${c.id});" title="${c.label}">
-        <span class="material-symbols-outlined">${c.icon}</span>${tally[c.id]}
-      </span>`).join('');
-
-    const isCollapsed = collapsed.has(day.date);
-    html += `
-      <section class="day${isCollapsed ? ' is-collapsed' : ''}" id="day-${day.date}">
-        <div class="day-head" data-day="${day.date}" role="button" tabindex="0" aria-expanded="${!isCollapsed}">
-          <span class="day-dot" aria-hidden="true"><span class="material-symbols-outlined">event</span></span>
-          <div class="day-titles">
-            <div class="day-date">${fmtDate(day.date)} <span class="day-rel">${day.rel}</span></div>
-            <div class="day-summary">${escapeHtml(day.summary)}</div>
+      <!-- ═══════════ 2 · Progress Log board ═══════════ -->
+      <section class="pl-card pl-log" id="pl-log">
+        <header class="pl-head">
+          <div class="pl-head-titles">
+            <h2 class="pl-head-title">Progress Log</h2>
+            <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · by page, by category</p>
           </div>
-          <div class="day-tally">${tallyPills}
-            <span class="material-symbols-outlined day-collapse-ic" aria-hidden="true">expand_more</span>
+          <div class="pl-head-controls">
+            <div class="panel-more-wrap" id="pl-menu-wrap">
+              <button type="button" id="pl-menu-btn" class="panel-more-btn" onclick="plToggleModuleMenu(event)" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="pl-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+              <div id="pl-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plExpandAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_more</span><span>Expand all days</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plCollapseAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_less</span><span>Collapse all days</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plResetFilters(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset filters</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" id="pl-width" aria-pressed="false" title="Widen board" aria-label="Board width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
+        </header>
+        <div class="pl-body">
+          <div class="pl-toolbar">
+            <div class="pl-search-inline" id="pl-search-wrap">
+              <span class="material-symbols-outlined" aria-hidden="true">search</span>
+              <input type="text" class="pl-search" id="pl-search-input" placeholder="Search entries, pages, components…" aria-label="Search the progress log" autocomplete="off" />
+              <button type="button" class="pl-search-clear" id="pl-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <select class="pl-select" id="pl-page-filter" aria-label="Filter by page"></select>
+          </div>
+          <!-- Read-out summary scorecards -->
+          <div class="pl-stats" id="pl-summary" aria-label="Summary"></div>
+          <!-- Category scorecards — double as list filters (single-select, like .rf-stat) -->
+          <div class="pl-stats" id="pl-cat-stats" role="group" aria-label="Filter by category"></div>
+          <div class="pl-filter-note" id="pl-filter-note"></div>
+          <div id="pl-timeline"></div>
         </div>
-        <div class="day-body">${cards.join('')}</div>
-      </section>`;
-  });
+      </section>
 
-  if (!visibleEntries) {
-    root.innerHTML = `
-      <div class="empty">
-        <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
-        <div class="empty-title">Nothing matches those filters</div>
-        <div class="empty-note">Try clearing the search, re-enabling categories, or picking a different page.</div>
-      </div>`;
-  } else {
-    root.innerHTML = html;
-  }
+    </div><!-- /#modules-row -->
+  </div>
 
-  const note = document.getElementById('filterNote');
-  const catCount = activeCats.size;
-  const parts = [];
-  parts.push(`${visibleEntries} page ${visibleEntries === 1 ? 'entry' : 'entries'} shown`);
-  if (catCount < CATS.length) parts.push(`${catCount} of ${CATS.length} categories`);
-  if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
-  if (searchTerm) parts.push(`search: “${searchTerm}”`);
-  note.textContent = parts.join(' · ');
-}
+  <!-- Shared WISE navigation + brand strip (same pattern as reformulation.html). -->
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
 
-/* =====================================================================
-   Wiring
-===================================================================== */
-function boot() {
-  const { catTotals } = renderScorecard();
-  renderPageFilter();
-  renderCatFilters(catTotals);
-  renderTimeline();
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
+    });
 
-  document.getElementById('catFilters').addEventListener('click', (e) => {
-    const chip = e.target.closest('[data-cat]');
-    if (!chip) return;
-    const id = chip.dataset.cat;
-    if (activeCats.has(id)) activeCats.delete(id); else activeCats.add(id);
-    if (!activeCats.size) activeCats.add(id); // never allow zero categories
-    renderCatFilters(catTotals);
-    renderTimeline();
-  });
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
 
-  document.getElementById('pageFilter').addEventListener('change', (e) => {
-    pageFilter = e.target.value;
-    renderTimeline();
-  });
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
 
-  let searchDebounce;
-  document.getElementById('search').addEventListener('input', (e) => {
-    clearTimeout(searchDebounce);
-    const v = e.target.value.trim().toLowerCase();
-    searchDebounce = setTimeout(() => { searchTerm = v; renderTimeline(); }, 120);
-  });
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      /* activeNavId is intentionally an id that is NOT in the primary nav — this
+         page is an Admin-only surface reached from the Appearance menu, so it
+         must never appear as a nav item and nothing highlights. */
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'progress-log' });
+    }
 
-  document.getElementById('expandAll').addEventListener('click', () => {
-    collapsed.clear(); renderTimeline();
-  });
-  document.getElementById('collapseAll').addEventListener('click', () => {
-    LOG.forEach(d => collapsed.add(d.date)); renderTimeline();
-  });
+    applyStoredTextSize();
+  </script>
 
-  // Collapse / expand a day (click or keyboard on the header).
-  document.getElementById('timeline').addEventListener('click', (e) => {
-    const head = e.target.closest('[data-day]');
-    if (!head) return;
-    const key = head.dataset.day;
-    if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
-    renderTimeline();
-  });
-  document.getElementById('timeline').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const head = e.target.closest('[data-day]');
-    if (!head) return;
-    e.preventDefault();
-    const key = head.dataset.day;
-    if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
-    renderTimeline();
-  });
-}
+  <!-- Appearance + profile popovers for the nav footer (mirrors reformulation.html). -->
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
 
-/* =====================================================================
-   Theme toggle (persists to the same key the app + FOUC guard use)
-===================================================================== */
-function syncThemeButton() {
-  const dark = document.documentElement.classList.contains('dark');
-  document.getElementById('themeIcon').textContent = dark ? 'light_mode' : 'dark_mode';
-  document.getElementById('themeLabel').textContent = dark ? 'Light theme' : 'Dark theme';
-  document.getElementById('themeToggle').setAttribute('aria-pressed', String(dark));
-}
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const dark = !document.documentElement.classList.contains('dark');
-  document.documentElement.classList.toggle('dark', dark);
-  try { localStorage.setItem('wise-theme', dark ? 'dark' : 'light'); } catch (e) {}
-  syncThemeButton();
-});
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEcodeAIDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => window.toggleChatTheme?.(),
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const invoices = ev.target.closest('[data-pop-action="invoices"]');
+          if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
 
-/* Step back to whichever page opened the log; fall back to the href. */
-document.getElementById('backBtn').addEventListener('click', (e) => {
-  let fromApp = false;
-  try { fromApp = !!document.referrer && new URL(document.referrer).origin === location.origin; }
-  catch (_) {}
-  if (fromApp && history.length > 1) { e.preventDefault(); history.back(); }
-});
+  <!-- ═══════════ Progress Log board + shared WISEcodeAI chat ═══════════ -->
+  <script type="module">
+    import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    (function () {
+      let chat = null;
+      const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
-syncThemeButton();
-boot();
-</script>
-<script defer src="../js/count-up-all.js"></script>
+      /* ── Category taxonomy ── */
+      const CATS = [
+        { id: 'components',   label: 'Components',   icon: 'widgets' },
+        { id: 'features',     label: 'Features',     icon: 'bolt' },
+        { id: 'logic',        label: 'Logic',        icon: 'code' },
+        { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
+        { id: 'changes',      label: 'Changes',      icon: 'edit' },
+        { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
+        { id: 'updates',      label: 'Updates',      icon: 'update' },
+        { id: 'deletions',    label: 'Deletions',    icon: 'delete' },
+      ];
+      const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
+
+      /* ── The log. Newest day first. Each entry is a page touched that day. ── */
+      const LOG = [
+        {
+          date: '2026-08-17', rel: 'Monday',
+          summary: 'Dev-handoff catalog on All Modules, deeper View Product, and project-wide conventions + lint tooling.',
+          entries: [
+            { page: 'All Modules', path: 'all-modules.html',
+              components: ['Dev-ready component catalog: buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, composer', 'Typography + design-token specimens', 'Icon inventory browser', 'Motion catalog + streaming-trace demo'],
+              features: ['Per-component dev-ready toggles so engineering can claim components one by one', 'Parent/child readiness rollups showing handoff progress at a glance', 'Jump-to-source links from each catalog entry', 'Downloadable chart & report design rules (.md)'],
+              logic: ['Dev-ready tree builder with persisted ready-state', 'Deduplication grouping repeated components into canonical entries', 'Automated icon scanning keeping the inventory in sync'] },
+            { page: 'View Product', path: 'view-product.html',
+              components: ['Deeper detail layout with dedicated score, ingredient, and imagery sections'],
+              ux: ['Refined ingredient & score tooltips'],
+              improvements: ['Wired into the real product photo library'] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              improvements: ['Refined chat behavior and response pacing'] },
+            { page: 'Platform-wide', path: '(all pages)',
+              logic: ['Normalized topbar + appearance controls so every page renders identical header/theme controls', 'Lint tooling for JavaScript, CSS, and HTML'],
+              components: ['Cursor rules: canonical page structure, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines'],
+              features: ['Skills: chat-module audit, new-page-from-canonical, propagate-across-pages, visual-verify'],
+              deletions: ['Removed the legacy wise_ip3 landing page and its dead links'] },
+          ],
+        },
+        {
+          date: '2026-08-16', rel: 'Sunday',
+          summary: 'Add Product reworked into a conversational flow; site-wide count-up, welcome orbit, and mobile nav.',
+          entries: [
+            { page: 'Add Product', path: 'add-product.html',
+              components: ['Nutrition facts entry panels (multiple pack formats + sizes)', 'Photo capture modal', 'Assistant side panel with inline field editors and a live activity log'],
+              features: ['Conversational, assistant-guided product entry', '“What can I ask” guide with example prompts that animate in letter by letter'],
+              logic: ['Streaming + shimmer states while the AI processes', 'Field-level capture tracking that feeds the activity log'] },
+            { page: 'Platform-wide', path: '(all pages)',
+              components: ['count-up-all.js — universal scorecard count-up', 'chat-ask.js — shared ask-suggestions component', 'mobile-nav.js — small-screen nav with an animated slide-in drawer'],
+              features: ['welcome-orbit.js — animated capability orbit on the chat welcome', 'ask-catalog.js — catalog-specific ask suggestions'],
+              ux: ['Layout refinements across product, dashboard, and studio pages'],
+              logic: ['no-icon-tile hook + rule enforcing no rounded-square icon backdrops'] },
+          ],
+        },
+        {
+          date: '2026-08-15', rel: 'Saturday',
+          summary: 'New Add Catalog bulk-import page, 100+ real product photos, and responsive tables.',
+          entries: [
+            { page: 'Add Catalog', path: 'add-catalog.html', isNew: true,
+              components: ['New guided, multi-step bulk catalog import page'],
+              features: ['End-to-end import demoed with a real brand catalog'] },
+            { page: 'Platform-wide', path: '(all pages)',
+              components: ['100+ real product photos (Helix set) + a fetch script'],
+              features: ['responsive-tables.js — data tables reflow for phones and tablets'],
+              improvements: ['WISEcodeAI chat + all-modules overhaul; extended appearance & topbar'] },
+          ],
+        },
+        {
+          date: '2026-08-14', rel: 'Friday',
+          summary: 'Conversation Library folders and expanded chat activity + sticky audit tooling.',
+          entries: [
+            { page: 'Conversation Library', path: 'conversation-library.html',
+              features: ['Color-coded folders: drag cards in, or drop one card on another to create a folder', 'Rename, recolor, and dissolve folders'],
+              logic: ['Filter counts reconciled so numbers always match the visible cards'] },
+            { page: 'All Modules', path: 'all-modules.html',
+              components: ['Expanded chat activity strip'],
+              logic: ['Sticky-module audit tooling (audit script + corner-case repro)'] },
+          ],
+        },
+        {
+          date: '2026-08-13', rel: 'Thursday',
+          summary: 'Sticky modules and user avatars roll out platform-wide; AI Dashboard and Profile expand.',
+          entries: [
+            { page: 'Platform-wide', path: '(all pages)',
+              components: ['sticky-modules.js — tuck any side panel behind the chat like a drawer', 'user-avatar.js — the avatar follows the user into every chat'],
+              features: ['code-stats tooling + dataset'] },
+            { page: 'AI Dashboard', path: 'ai-dashboard.html',
+              improvements: ['Rebuilt into the standard product shell with brand-palette charts + an embedded assistant'] },
+            { page: 'Profile', path: 'profile.html',
+              features: ['Upload a profile photo or pick from ready-made avatar patterns'] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: ['Expanded chat interactions + shared styles'],
+              deletions: ['Removed the dev-only seed harness (__seed.html)'] },
+          ],
+        },
+        {
+          date: '2026-08-12', rel: 'Wednesday',
+          summary: 'Crawl · Walk · Run toggle, a major All Modules expansion, and a site-wide polish pass.',
+          entries: [
+            { page: 'Platform-wide', path: '(all pages)',
+              components: ['cwr-toggle.js — Crawl · Walk · Run experience toggle'],
+              ux: ['Site-wide visual polish across nearly every page'] },
+            { page: 'All Modules', path: 'all-modules.html',
+              features: ['Major expansion of the module directory (component / typography / token / icon / motion catalogs)'] },
+            { page: 'App Vision Deck', path: 'app-vision-deck.html',
+              improvements: ['Reworked slides, including the dev-handoff “release blocks” story'] },
+          ],
+        },
+      ];
+
+      /* ── Derived helpers ── */
+      function entryItems(entry) {
+        const out = [];
+        for (const c of CATS) { const arr = entry[c.id]; if (Array.isArray(arr)) for (const text of arr) out.push({ cat: c.id, text }); }
+        return out;
+      }
+      function fmtDate(iso) {
+        const [y, m, d] = iso.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      }
+
+      /* ── State ──
+         catFilter is single-select (null = all categories), so the category
+         scorecards read like the app's other .rf-stat filter cards. */
+      let catFilter = null;
+      let pageFilter = '__all';
+      let searchTerm = '';
+      const collapsed = new Set();
+
+      /* ── Renderers ── */
+      let catTotals = {};
+      /* One canonical scorecard (mirrors reformulation's statHtml). A card with a
+         `cat` doubles as a filter; without one it's a read-out (disabled). Tones
+         use ONLY the brand palette via .pl-stat--good / --alert. */
+      function statHtml(o) {
+        const cls = ['pl-stat', o.tone ? 'pl-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
+        const attrs = o.cat ? ` data-cat="${o.cat}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
+        const icon = o.icon ? `<span class="material-symbols-outlined" aria-hidden="true">${o.icon}</span>` : '';
+        const sub = o.sub ? `<span class="pl-stat-sub">${o.sub}</span>` : '';
+        return `<button type="button" class="${cls}"${attrs}><span class="pl-stat-num" data-countup>${o.num}</span><span class="pl-stat-label">${icon}${o.label}</span>${sub}</button>`;
+      }
+
+      function computeTotals() {
+        const pages = new Set();
+        catTotals = Object.fromEntries(CATS.map((c) => [c.id, 0]));
+        let total = 0;
+        LOG.forEach((day) => day.entries.forEach((e) => { pages.add(e.page); entryItems(e).forEach((it) => { catTotals[it.cat]++; total++; }); }));
+        return { pages: pages.size, total };
+      }
+      function renderSummary() {
+        const { pages, total } = computeTotals();
+        document.getElementById('pl-summary').innerHTML = [
+          statHtml({ num: LOG.length, label: 'Days logged', sub: `${LOG[LOG.length - 1].rel} → ${LOG[0].rel}` }),
+          statHtml({ num: pages, label: 'Surfaces', sub: 'pages &amp; platform' }),
+          statHtml({ num: total, label: 'Entries', sub: `${CATS.length} categories` }),
+        ].join('');
+      }
+      /* Brand-only tones: Improvements reads as the brand green, Deletions as the
+         brand red. Everything else stays neutral — no invented colours. */
+      const CAT_TONE = { improvements: 'good', deletions: 'alert' };
+      function renderCatStats() {
+        document.getElementById('pl-cat-stats').innerHTML = CATS.map((c) => statHtml({
+          num: catTotals[c.id], label: c.label, icon: c.icon, cat: c.id,
+          tone: CAT_TONE[c.id], active: catFilter === c.id,
+        })).join('');
+      }
+
+      function renderPageFilter() {
+        const pages = [];
+        const seen = new Set();
+        LOG.forEach((day) => day.entries.forEach((e) => { if (!seen.has(e.page)) { seen.add(e.page); pages.push(e.page); } }));
+        pages.sort((a, b) => a.localeCompare(b));
+        document.getElementById('pl-page-filter').innerHTML = `<option value="__all">All pages</option>` +
+          pages.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+      }
+
+      function highlight(text) {
+        const safe = esc(text);
+        if (!searchTerm) return safe;
+        const re = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+        return safe.replace(re, '<mark>$1</mark>');
+      }
+      function matchesSearch(entry) {
+        if (!searchTerm) return true;
+        const hay = (entry.page + ' ' + entry.path + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
+        return hay.includes(searchTerm);
+      }
+
+      function renderCatBlock(cat, items) {
+        const c = CAT_BY_ID[cat];
+        return `
+          <div class="pl-cat-block">
+            <div class="pl-cat-block-head">
+              <span class="material-symbols-outlined" aria-hidden="true">${c.icon}</span>
+              <span class="pl-cat-block-label">${c.label}</span>
+              <span class="pl-cat-block-count">${items.length}</span>
+            </div>
+            <ul class="pl-cat-list">${items.map((t) => `<li>${highlight(t)}</li>`).join('')}</ul>
+          </div>`;
+      }
+      function renderPageCard(entry) {
+        const blocks = CATS
+          .filter((c) => (!catFilter || c.id === catFilter) && Array.isArray(entry[c.id]) && entry[c.id].length)
+          .map((c) => renderCatBlock(c.id, entry[c.id])).join('');
+        if (!blocks) return '';
+        return `
+          <article class="pl-pcard${entry.isNew ? ' is-new' : ''}">
+            <div class="pl-pcard-head">
+              <span class="pl-pcard-mark" aria-hidden="true"><span class="material-symbols-outlined">${entry.isNew ? 'note_add' : 'description'}</span></span>
+              <div class="pl-pcard-meta">
+                <div class="pl-pcard-name">${esc(entry.page)}</div>
+                <div class="pl-pcard-path">${esc(entry.path)}</div>
+              </div>
+              ${entry.isNew ? '<span class="pl-pcard-new"><span class="material-symbols-outlined">fiber_new</span>New</span>' : ''}
+            </div>
+            ${blocks}
+          </article>`;
+      }
+
+      function renderTimeline() {
+        const root = document.getElementById('pl-timeline');
+        let html = '';
+        let visible = 0;
+        LOG.forEach((day) => {
+          const entries = day.entries.filter((e) => (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
+          const cards = entries.map(renderPageCard).filter(Boolean);
+          if (!cards.length) return;
+          visible += cards.length;
+          const tally = {};
+          entries.forEach((e) => entryItems(e).forEach((it) => { if (!catFilter || it.cat === catFilter) tally[it.cat] = (tally[it.cat] || 0) + 1; }));
+          const tallyPills = CATS.filter((c) => tally[c.id]).map((c) => `<span class="pl-tally-pill" title="${c.label}"><span class="material-symbols-outlined">${c.icon}</span>${tally[c.id]}</span>`).join('');
+          const isCollapsed = collapsed.has(day.date);
+          html += `
+            <section class="pl-day${isCollapsed ? ' is-collapsed' : ''}" id="pl-day-${day.date}">
+              <div class="pl-day-head" data-day="${day.date}" role="button" tabindex="0" aria-expanded="${!isCollapsed}">
+                <span class="pl-day-dot" aria-hidden="true"><span class="material-symbols-outlined">event</span></span>
+                <div class="pl-day-titles">
+                  <div class="pl-day-date">${fmtDate(day.date)} <span class="pl-day-rel">${day.rel}</span></div>
+                  <div class="pl-day-summary">${esc(day.summary)}</div>
+                </div>
+                <div class="pl-day-tally">${tallyPills}<span class="material-symbols-outlined pl-collapse-ic" aria-hidden="true">expand_more</span></div>
+              </div>
+              <div class="pl-day-body">${cards.join('')}</div>
+            </section>`;
+        });
+        root.innerHTML = visible ? html : `
+          <div class="pl-empty">
+            <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+            <div class="pl-empty-title">Nothing matches those filters</div>
+            <div class="pl-empty-note">Clear the search, deselect the category scorecard, or pick a different page.</div>
+          </div>`;
+
+        const note = document.getElementById('pl-filter-note');
+        const parts = [`${visible} page ${visible === 1 ? 'entry' : 'entries'} shown`];
+        if (catFilter) parts.push(`category: ${CAT_BY_ID[catFilter].label}`);
+        if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
+        if (searchTerm) parts.push(`search: “${searchTerm}”`);
+        note.textContent = parts.join(' · ');
+      }
+
+      function renderAll() { renderSummary(); renderCatStats(); renderPageFilter(); renderTimeline(); }
+
+      /* ── Filter API (also driven by the chat) ── */
+      function syncSearchWrap() {
+        const wrap = document.getElementById('pl-search-wrap');
+        if (wrap) wrap.classList.toggle('has-query', !!searchTerm);
+      }
+      function setSearch(v) { searchTerm = String(v || '').trim().toLowerCase(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = v || ''; syncSearchWrap(); renderTimeline(); }
+      function setPage(p) { pageFilter = p || '__all'; const sel = document.getElementById('pl-page-filter'); if (sel) sel.value = pageFilter; renderTimeline(); }
+      function setCatOnly(catId) { catFilter = catId; renderCatStats(); renderTimeline(); }
+      function focusDay(iso) { collapsed.clear(); LOG.forEach((d) => { if (d.date !== iso) collapsed.add(d.date); }); renderTimeline(); const el = document.getElementById('pl-day-' + iso); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      window.plExpandAll = () => { collapsed.clear(); renderTimeline(); };
+      window.plCollapseAll = () => { LOG.forEach((d) => collapsed.add(d.date)); renderTimeline(); };
+      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapsed.clear(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; const sel = document.getElementById('pl-page-filter'); if (sel) sel.value = '__all'; syncSearchWrap(); renderCatStats(); renderTimeline(); };
+
+      /* ── Module three-dot menu ── */
+      window.plCloseModuleMenu = function () {
+        const m = document.getElementById('pl-menu');
+        if (!m) return;
+        m.classList.add('hidden');
+        document.getElementById('pl-menu-btn')?.setAttribute('aria-expanded', 'false');
+      };
+      window.plToggleModuleMenu = function (e) {
+        if (e) e.stopPropagation();
+        const m = document.getElementById('pl-menu');
+        if (!m) return;
+        const willOpen = m.classList.contains('hidden');
+        window.plCloseModuleMenu();
+        if (willOpen) { m.classList.remove('hidden'); document.getElementById('pl-menu-btn')?.setAttribute('aria-expanded', 'true'); }
+      };
+      document.addEventListener('click', (e) => { if (!e.target.closest('#pl-menu-wrap')) window.plCloseModuleMenu(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.plCloseModuleMenu(); });
+
+      /* ── Board interactions ── */
+      let searchDebounce;
+      const searchInput = document.getElementById('pl-search-input');
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchDebounce);
+        const v = e.target.value.trim().toLowerCase();
+        searchDebounce = setTimeout(() => { searchTerm = v; syncSearchWrap(); renderTimeline(); }, 120);
+      });
+      document.getElementById('pl-search-clear').addEventListener('click', () => { setSearch(''); searchInput.focus(); });
+      document.getElementById('pl-page-filter').addEventListener('change', (e) => { pageFilter = e.target.value; renderTimeline(); });
+      /* Category scorecards are single-select filters: tap to isolate, tap the
+         active one again to clear back to all. */
+      document.getElementById('pl-cat-stats').addEventListener('click', (e) => {
+        const card = e.target.closest('[data-cat]');
+        if (!card) return;
+        const id = card.dataset.cat;
+        catFilter = (catFilter === id) ? null : id;
+        renderCatStats(); renderTimeline();
+      });
+      const timelineEl = document.getElementById('pl-timeline');
+      function toggleDay(head) { const key = head.dataset.day; if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key); renderTimeline(); }
+      timelineEl.addEventListener('click', (e) => { const head = e.target.closest('[data-day]'); if (head) toggleDay(head); });
+      timelineEl.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const head = e.target.closest('[data-day]'); if (!head) return; e.preventDefault(); toggleDay(head); });
+
+      /* ── Width toggle — canonical four-step cycle via the shared pane-width helper ── */
+      const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+      const CANON_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
+      (function wireWidth() {
+        const wBtn = document.getElementById('pl-width');
+        const moduleEl = document.getElementById('pl-log');
+        if (!wBtn || !moduleEl) return;
+        const W = window.WPaneWidth;
+        const applyTier = (t) => {
+          if (W) { W.applyClasses(moduleEl, t, 'panel'); W.syncButton(wBtn, t); return; }
+          moduleEl.classList.toggle('panel-wide', t >= 1);
+          moduleEl.classList.toggle('panel-triple', t >= 2);
+          moduleEl.classList.toggle('panel-fill', t >= 3);
+          const ic = wBtn.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = CANON_ICONS[t];
+          wBtn.classList.toggle('is-on', t >= 1);
+          wBtn.setAttribute('aria-pressed', t >= 1 ? 'true' : 'false');
+          wBtn.title = CANON_TITLES[t];
+        };
+        let tier = W ? W.tierOfEl(moduleEl) : 0;
+        applyTier(tier);
+        wBtn.addEventListener('click', () => { tier = W ? W.next(tier) : (tier + 1) % 4; applyTier(tier); });
+      })();
+
+      /* ═══════════ Chat intent chips + replies ═══════════
+         The chips drive the board: each summarizes a slice of the log AND applies
+         the matching filter so the board and the conversation stay in lockstep —
+         the same pattern reformulation.html uses for its move chips. */
+      function countCat(catId) { let n = 0; LOG.forEach((d) => d.entries.forEach((e) => { if (Array.isArray(e[catId])) n += e[catId].length; })); return n; }
+      function catItemsHtml(catId, max = 8) {
+        const rows = [];
+        LOG.forEach((d) => d.entries.forEach((e) => { (e[catId] || []).forEach((t) => rows.push({ page: e.page, t })); }));
+        const shown = rows.slice(0, max).map((r) => `<li><b>${esc(r.page)}</b> — ${esc(r.t)}</li>`).join('');
+        const more = rows.length > max ? `<li>+ ${rows.length - max} more…</li>` : '';
+        return `<ul class="sc-reply-list">${shown}${more}</ul>`;
+      }
+      function dayReplyHtml(day) {
+        const items = day.entries.map((e) => {
+          const cats = CATS.filter((c) => Array.isArray(e[c.id]) && e[c.id].length).map((c) => `${e[c.id].length} ${c.label.toLowerCase()}`);
+          return `<li><b>${esc(e.page)}</b> — ${esc(cats.join(', '))}</li>`;
+        }).join('');
+        return `<b>${fmtDate(day.date)}</b> — ${esc(day.summary)}<ul class="sc-reply-list">${items}</ul>`;
+      }
+
+      const INTENTS = [
+        { intent: 'pl:today', label: 'What shipped today?', icon: 'today' },
+        { intent: 'pl:components', label: 'New components', icon: 'widgets' },
+        { intent: 'pl:features', label: 'New features', icon: 'bolt' },
+        { intent: 'pl:newpages', label: 'New pages', icon: 'note_add' },
+        { intent: 'pl:busiest', label: 'Busiest day', icon: 'trending_up' },
+        { intent: 'pl:deletions', label: 'What was removed?', icon: 'delete' },
+      ];
+      const INTENT_REPLIES = {
+        'pl:today': () => { const d = LOG[0]; focusDay(d.date); return `Here's the latest — ${dayReplyHtml(d)}`; },
+        'pl:components': () => { setCatOnly('components'); return `<b>${countCat('components')}</b> components were built. I've filtered the board to just components.${catItemsHtml('components')}`; },
+        'pl:features': () => { setCatOnly('features'); return `<b>${countCat('features')}</b> features shipped. Filtered the board to features.${catItemsHtml('features')}`; },
+        'pl:newpages': () => {
+          const news = [];
+          LOG.forEach((d) => d.entries.forEach((e) => { if (e.isNew) news.push({ page: e.page, path: e.path, date: d.date }); }));
+          if (!news.length) return 'No brand-new pages were added in this window — the work was on existing pages.';
+          setSearch('');
+          return `<b>${news.length}</b> new page${news.length === 1 ? '' : 's'} in this window:<ul class="sc-reply-list">${news.map((n) => `<li><b>${esc(n.page)}</b> <span style="opacity:.7">(${esc(n.path)})</span> — ${fmtDate(n.date)}</li>`).join('')}</ul>`;
+        },
+        'pl:busiest': () => {
+          let best = null, bestN = -1;
+          LOG.forEach((d) => { let n = 0; d.entries.forEach((e) => { n += entryItems(e).length; }); if (n > bestN) { bestN = n; best = d; } });
+          focusDay(best.date);
+          return `The busiest day was <b>${fmtDate(best.date)}</b> with <b>${bestN}</b> logged entries. ${dayReplyHtml(best)}`;
+        },
+        'pl:deletions': () => { setCatOnly('deletions'); return `Removals in this window:${catItemsHtml('deletions')}`; },
+      };
+
+      /* Free-text: route to a page, a category, or an overview. */
+      function reply(text) {
+        const t = String(text || '').toLowerCase();
+        const pageHit = [...new Set(LOG.flatMap((d) => d.entries.map((e) => e.page)))].find((p) => t.includes(p.toLowerCase()));
+        if (pageHit) {
+          setPage(pageHit);
+          const items = [];
+          LOG.forEach((d) => d.entries.filter((e) => e.page === pageHit).forEach((e) => entryItems(e).forEach((it) => items.push({ d, it }))));
+          return `Filtered the board to <b>${esc(pageHit)}</b> — <b>${items.length}</b> logged ${items.length === 1 ? 'entry' : 'entries'}.<ul class="sc-reply-list">${items.slice(0, 10).map((x) => `<li><b>${CAT_BY_ID[x.it.cat].label}</b> · ${esc(x.it.text)}</li>`).join('')}</ul>`;
+        }
+        const catHit = CATS.find((c) => t.includes(c.label.toLowerCase()) || t.includes(c.id));
+        if (catHit) { setCatOnly(catHit.id); return `Filtered to <b>${catHit.label}</b> — <b>${countCat(catHit.id)}</b> entries.${catItemsHtml(catHit.id)}`; }
+        if (/today|latest|recent/.test(t)) return INTENT_REPLIES['pl:today']();
+        if (/delete|remove|deletion/.test(t)) return INTENT_REPLIES['pl:deletions']();
+        if (/new page/.test(t)) return INTENT_REPLIES['pl:newpages']();
+        const days = LOG.length, pages = new Set(); let total = 0;
+        LOG.forEach((d) => d.entries.forEach((e) => { pages.add(e.page); total += entryItems(e).length; }));
+        return `This log covers <b>${days} days</b>, <b>${pages.size} surfaces</b> and <b>${total} entries</b>. Ask about a page (e.g. “Add Product”), a category (components, features, logic, UX, changes, improvements, updates, deletions), or tap a chip below.`;
+      }
+
+      /* ═══════════ Boot — mount the ONE shared WISEcodeAI chat ═══════════ */
+      renderAll();
+
+      chat = mountWISEcodeAIChat(document.getElementById('pl-chat'), {
+        title: 'WISEcodeAI\u2122',
+        heading: 'What shipped, and when?',
+        sub: 'Ask about the build log — by day, by page, or by category. Tap a chip to jump in.',
+        placeholder: 'Ask about the progress log\u2026',
+        userInitials: 'AK',
+        sourceLabel: '',
+        statusLabel: 'WISEcodeAI is checking the log',
+        chipsFlow: 'wrap',
+        inlineChips: true,
+        historyKey: 'wise-chat-history:progress-log',
+        activity: true,
+        turns: true,
+        turnsSearch: true,
+        turnsBreakout: true,
+        turnsDockedControls: true,
+        turnsBreakoutDefault: false,
+        historyBreakout: true,
+        historyBreakoutDefault: true,
+        historyDockedControls: true,
+        historyBreakoutHidden: true,
+        stickyModules: true,
+        stickyModulesDefault: true,
+        stickyModulesMenu: false,
+        intents: INTENTS,
+        intentReplies: INTENT_REPLIES,
+        reply: (text) => reply(text),
+      });
+    })();
+  </script>
+  <script src="../js/table-pagination.js" defer></script>
+  <script src="../js/responsive-tables.js" defer></script>
+  <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
+  <script defer src="../js/sticky-modules.js"></script>
+  <script defer src="../js/count-up-all.js"></script>
 </body>
 </html>

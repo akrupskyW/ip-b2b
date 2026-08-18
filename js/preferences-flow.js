@@ -75,9 +75,9 @@ function setTextSize(pct) {
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('prefs-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'prefs-toast-wrap'; document.body.appendChild(wrap); }
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'prefs-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
-  t.className = 'prefs-toast';
+  t.className = 'wmod-toast';
   t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
@@ -86,24 +86,24 @@ function toast(msg, icon = 'check') {
 
 function toggleRow({ key, label, sub, on }) {
   return `
-    <div class="prefs-row">
-      <div class="prefs-row-body">
-        <div class="prefs-row-label">${esc(label)}</div>
-        <div class="prefs-row-sub">${esc(sub)}</div>
+    <div class="wmod-row">
+      <div class="wmod-row-body">
+        <div class="wmod-row-label">${esc(label)}</div>
+        <div class="wmod-row-sub">${esc(sub)}</div>
       </div>
-      <button type="button" class="prefs-switch${on ? ' is-on' : ''}" role="switch" aria-checked="${on}" data-prefs-toggle="${key}"><span class="prefs-knob"></span></button>
+      <button type="button" class="wmod-switch${on ? ' is-on' : ''}" role="switch" aria-checked="${on}" data-prefs-toggle="${key}"><span class="wmod-knob"></span></button>
     </div>`;
 }
 
 function segRow({ key, label, sub, options, value }) {
   return `
-    <div class="prefs-row">
-      <div class="prefs-row-body">
-        <div class="prefs-row-label">${esc(label)}</div>
-        <div class="prefs-row-sub">${esc(sub)}</div>
+    <div class="wmod-row">
+      <div class="wmod-row-body">
+        <div class="wmod-row-label">${esc(label)}</div>
+        <div class="wmod-row-sub">${esc(sub)}</div>
       </div>
-      <div class="prefs-seg" role="group">
-        ${options.map((o) => `<button type="button" class="prefs-seg-btn${o.v === value ? ' is-active' : ''}" data-prefs-seg="${key}" data-v="${esc(o.v)}">${esc(o.label)}</button>`).join('')}
+      <div class="wmod-seg" role="group">
+        ${options.map((o) => `<button type="button" class="wmod-seg-btn${o.v === value ? ' is-active' : ''}" data-prefs-seg="${key}" data-v="${esc(o.v)}">${esc(o.label)}</button>`).join('')}
       </div>
     </div>`;
 }
@@ -114,32 +114,35 @@ function paint() {
   const dark = isDark();
   const ts = textSize();
   hostEl.innerHTML = `
-    <div class="prefs-wrap">
-      <div class="prefs-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="prefs-breadcrumb-here">Preferences</span></div>
-      <h1 class="prefs-title">Preferences</h1>
-      <p class="prefs-lede">Tune how WISE looks, notifies you, and behaves across your workspace.</p>
+    <div class="wmod-wrap">
+      <div class="wmod-masthead">
+        <div class="wmod-masthead-main">
+          <h1 class="wmod-title">Preferences</h1>
+          <p class="wmod-sub">Tune how WISE looks, notifies you, and behaves across your workspace.</p>
+        </div>
+      </div>
 
-      <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-symbols-outlined">palette</span>Appearance</h2>
-        <div class="prefs-card">
+      <section class="wmod-group">
+        <h2 class="wmod-group-title"><span class="material-symbols-outlined">palette</span>Appearance</h2>
+        <div class="wmod-card">
           ${segRow({ key: 'theme', label: 'Theme', sub: 'Light or dark across the whole app', options: [{ v: 'light', label: 'Light' }, { v: 'dark', label: 'Dark' }], value: dark ? 'dark' : 'light' })}
-          <div class="prefs-row">
-            <div class="prefs-row-body">
-              <div class="prefs-row-label">Text size</div>
-              <div class="prefs-row-sub">Scale all interface text · <strong data-prefs-ts>${ts}%</strong></div>
+          <div class="wmod-row">
+            <div class="wmod-row-body">
+              <div class="wmod-row-label">Text size</div>
+              <div class="wmod-row-sub">Scale all interface text · <strong data-prefs-ts>${ts}%</strong></div>
             </div>
-            <div class="prefs-stepper">
-              <button type="button" class="prefs-step" data-prefs-ts-step="-5" aria-label="Smaller"><span class="material-symbols-outlined">remove</span></button>
-              <button type="button" class="prefs-step" data-prefs-ts-step="5" aria-label="Larger"><span class="material-symbols-outlined">add</span></button>
+            <div class="wmod-stepper">
+              <button type="button" class="wmod-step" data-prefs-ts-step="-5" aria-label="Smaller"><span class="material-symbols-outlined">remove</span></button>
+              <button type="button" class="wmod-step" data-prefs-ts-step="5" aria-label="Larger"><span class="material-symbols-outlined">add</span></button>
             </div>
           </div>
           ${segRow({ key: 'density', label: 'Density', sub: 'Spacing of lists and tables', options: [{ v: 'comfortable', label: 'Comfortable' }, { v: 'compact', label: 'Compact' }], value: p.density })}
         </div>
       </section>
 
-      <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-symbols-outlined">notifications</span>Notifications</h2>
-        <div class="prefs-card" data-prefs-anchor="notifications">
+      <section class="wmod-group">
+        <h2 class="wmod-group-title"><span class="material-symbols-outlined">notifications</span>Notifications</h2>
+        <div class="wmod-card" data-prefs-anchor="notifications">
           ${toggleRow({ key: 'notif_alerts', label: 'In-app alerts', sub: 'Agent activity, verifications, and flags', on: p.notif_alerts })}
           ${toggleRow({ key: 'notif_email', label: 'Email notifications', sub: 'A summary when something needs you', on: p.notif_email })}
           ${toggleRow({ key: 'notif_product', label: 'Product updates', sub: 'New features and improvements', on: p.notif_product })}
@@ -147,34 +150,34 @@ function paint() {
         </div>
       </section>
 
-      <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-symbols-outlined">tune</span>Workspace</h2>
-        <div class="prefs-card">
+      <section class="wmod-group">
+        <h2 class="wmod-group-title"><span class="material-symbols-outlined">tune</span>Workspace</h2>
+        <div class="wmod-card">
           ${segRow({ key: 'dock', label: 'WISEcodeAI chat position', sub: 'Where the assistant docks', options: [{ v: 'left', label: 'Left' }, { v: 'center', label: 'Center' }, { v: 'right', label: 'Right' }], value: p.dock })}
-          <div class="prefs-row">
-            <div class="prefs-row-body">
-              <div class="prefs-row-label">Language</div>
-              <div class="prefs-row-sub">Interface language</div>
+          <div class="wmod-row">
+            <div class="wmod-row-body">
+              <div class="wmod-row-label">Language</div>
+              <div class="wmod-row-sub">Interface language</div>
             </div>
-            <select class="prefs-select" data-prefs-select="language">
+            <select class="wmod-select" data-prefs-select="language">
               ${['en-US', 'en-GB', 'es-ES', 'fr-FR', 'de-DE'].map((l) => `<option value="${l}"${l === p.language ? ' selected' : ''}>${l}</option>`).join('')}
             </select>
           </div>
-          <div class="prefs-row">
-            <div class="prefs-row-body">
-              <div class="prefs-row-label">Region</div>
-              <div class="prefs-row-sub">Regulatory defaults and units</div>
+          <div class="wmod-row">
+            <div class="wmod-row-body">
+              <div class="wmod-row-label">Region</div>
+              <div class="wmod-row-sub">Regulatory defaults and units</div>
             </div>
-            <select class="prefs-select" data-prefs-select="region">
+            <select class="wmod-select" data-prefs-select="region">
               ${['United States', 'European Union', 'United Kingdom', 'Canada', 'Australia'].map((r) => `<option value="${esc(r)}"${r === p.region ? ' selected' : ''}>${esc(r)}</option>`).join('')}
             </select>
           </div>
         </div>
       </section>
 
-      <section class="prefs-group">
-        <h2 class="prefs-group-title"><span class="material-symbols-outlined">accessibility_new</span>Accessibility</h2>
-        <div class="prefs-card">
+      <section class="wmod-group">
+        <h2 class="wmod-group-title"><span class="material-symbols-outlined">accessibility_new</span>Accessibility</h2>
+        <div class="wmod-card">
           ${toggleRow({ key: 'reduce_motion', label: 'Reduce motion', sub: 'Minimize animations and transitions', on: p.reduce_motion })}
           ${toggleRow({ key: 'high_contrast', label: 'Increase contrast', sub: 'Stronger borders and text contrast', on: p.high_contrast })}
         </div>

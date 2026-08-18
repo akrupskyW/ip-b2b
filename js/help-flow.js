@@ -30,7 +30,7 @@ const FAQS = [
   { topic: 'verification', q: 'What\u2019s the difference between Non-UPF and GRAS verification?', a: 'Non-UPF verification classifies finished products against the NOVA scale. GRAS verification works at the ingredient level, documenting Generally Recognized As Safe status for each additive.' },
   { topic: 'reports', q: 'How is my portfolio UPF score calculated?', a: 'Each product is classified against the NOVA scale; your score is the share of your line-up that lands as Non-UPF. Open any report to see the per-product and per-ingredient breakdown.' },
   { topic: 'billing', q: 'How do I download an invoice?', a: 'Invoices live under Organization → Invoices & Downloads. Each is available as a PDF the moment it\u2019s issued.' },
-  { topic: 'api', q: 'Where do I find my API keys?', a: 'Open API keys from your profile menu or the Account section of the nav. You can create, reveal, and revoke keys there, and view your usage and rate limits.' },
+  { topic: 'api', q: 'Where do I find my API keys?', a: 'Open API keys from your profile menu or the Account section of the nav. You can create and revoke keys there, and view your usage and rate limits. A key\u2019s full value is shown only once, when you create it \u2014 copy it right away, because it can\u2019t be revealed again.' },
   { topic: 'account', q: 'How do I enable two-factor authentication?', a: 'Go to My profile → Security → Manage 2FA. We recommend an authenticator app over SMS.' },
   { topic: 'getting-started', q: 'How do I add products to my portfolio?', a: 'The Data Ingestion Agent accepts files, URLs, ERP exports, and product images. Start from Product Portfolio and choose Add products.' },
 ];
@@ -38,11 +38,26 @@ const FAQS = [
 let hostEl = null;
 let openFaqs = new Set();
 let query = '';
+let topicFilter = 'all';
 
 function faqMatches(f) {
+  if (topicFilter !== 'all' && f.topic !== topicFilter) return false;
   if (!query) return true;
   const q = query.toLowerCase();
   return f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q) || f.topic.includes(q);
+}
+
+function topicCount(id) {
+  if (id === 'all') return FAQS.length;
+  return FAQS.filter((f) => f.topic === id).length;
+}
+
+/* Pick a scorecard column count that never leaves a lone orphan card. */
+function statCols(n) {
+  if (n <= 1) return 1;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c === 0) return c;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c !== 1) return c;
+  return 2;
 }
 
 function highlight(text) {
@@ -56,31 +71,35 @@ function highlight(text) {
 function paint() {
   if (!hostEl) return;
   const faqs = FAQS.filter(faqMatches);
+  const cards = [{ id: 'all', title: 'All', icon: 'help' }, ...TOPICS];
   hostEl.innerHTML = `
-    <div class="hc-wrap">
-      <section class="hc-hero">
-        <h1 class="hc-title">How can we help?</h1>
-        <div class="hc-search">
-          <span class="material-symbols-outlined">search</span>
-          <input class="hc-search-input" type="text" placeholder="Search help articles…" value="${esc(query)}" data-hc-search />
-          ${query ? '<button type="button" class="hc-search-clear" data-hc-action="clear_search"><span class="material-symbols-outlined">close</span></button>' : ''}
+    <div class="wmod-wrap">
+      <div class="wmod-masthead">
+        <div class="wmod-masthead-main">
+          <h1 class="wmod-title">Help center</h1>
+          <p class="wmod-sub">Search the help articles, browse by topic, or reach our support team.</p>
+          <p class="wmod-desc">Answers to the most common questions about getting started, verification, reports, billing, the API, and your account. Can\u2019t find it? The WISEcodeAI assistant on the right can answer directly.</p>
         </div>
-      </section>
+      </div>
 
-      ${query ? '' : `
-      <h2 class="hc-section-title">Browse by topic</h2>
-      <div class="hc-topics">
-        ${TOPICS.map((t) => `
-          <button type="button" class="hc-topic" data-hc-topic="${t.id}">
-            <span class="hc-topic-ic"><span class="material-symbols-outlined">${esc(t.icon)}</span></span>
-            <span class="hc-topic-body"><span class="hc-topic-title">${esc(t.title)}</span><span class="hc-topic-sub">${esc(t.sub)}</span></span>
-            <span class="material-symbols-outlined hc-topic-arrow">chevron_right</span>
+      <div class="wmod-toolbar">
+        <div class="wmod-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="wmod-search-input" placeholder="Search help articles" aria-label="Search help articles" value="${esc(query)}" data-hc-search />
+        </div>
+      </div>
+
+      <div class="wmod-stats-wrap">
+        <div class="wmod-stats" style="--wmod-cols:${statCols(cards.length)}" role="group" aria-label="Filter help by topic">
+          ${cards.map((t) => `<button type="button" class="wmod-stat${t.id === topicFilter ? ' is-active' : ''}" data-hc-topic="${t.id}" aria-pressed="${t.id === topicFilter}">
+            <span class="wmod-stat-num">${topicCount(t.id)}</span>
+            <span class="wmod-stat-label"><span class="material-symbols-outlined">${esc(t.icon)}</span>${esc(t.title)}</span>
           </button>`).join('')}
-      </div>`}
+        </div>
+      </div>
 
-      <h2 class="hc-section-title">${query ? `Results for “${esc(query)}”` : 'Popular questions'}</h2>
-      <div class="hc-faqs">
-        ${faqs.length ? faqs.map((f, i) => {
+      <div class="wmod-table-card">
+        ${faqs.length ? faqs.map((f) => {
           const idx = FAQS.indexOf(f);
           const open = openFaqs.has(idx);
           return `
@@ -91,29 +110,26 @@ function paint() {
             </button>
             <div class="hc-faq-a">${highlight(f.a)}</div>
           </div>`;
-        }).join('') : `<div class="hc-empty">No articles match “${esc(query)}”. Try the assistant on the right — it can answer directly.</div>`}
+        }).join('') : `<div class="wmod-empty"><span class="material-symbols-outlined">search_off</span><div>No articles match your search. Try the assistant on the right \u2014 it can answer directly.</div></div>`}
       </div>
 
-      <section class="hc-support" data-hc-anchor="support">
-        <div class="hc-support-head">
-          <h2 class="hc-section-title" style="margin:0">Still need help?</h2>
-          <p class="hc-support-sub">Our team typically replies within a few hours.</p>
-        </div>
-        <div class="hc-support-cards">
-          <button type="button" class="hc-support-card" data-hc-action="chat">
+      <section class="wmod-group" data-hc-anchor="support">
+        <h2 class="wmod-group-title"><span class="material-symbols-outlined">support_agent</span>Still need help?</h2>
+        <div class="wmod-card">
+          <button type="button" class="hc-support-row" data-hc-action="chat">
             <span class="hc-support-ic"><span class="material-symbols-outlined">forum</span></span>
-            <span class="hc-support-title">Chat with WISEcodeAI</span>
-            <span class="hc-support-desc">Instant answers from the assistant</span>
+            <span class="hc-support-body"><span class="hc-support-title">Chat with WISEcodeAI</span><span class="hc-support-desc">Instant answers from the assistant</span></span>
+            <span class="material-symbols-outlined hc-support-arrow">chevron_right</span>
           </button>
-          <button type="button" class="hc-support-card" data-hc-action="email">
+          <button type="button" class="hc-support-row" data-hc-action="email">
             <span class="hc-support-ic"><span class="material-symbols-outlined">mail</span></span>
-            <span class="hc-support-title">Email support</span>
-            <span class="hc-support-desc">support@wisecode.ai</span>
+            <span class="hc-support-body"><span class="hc-support-title">Email support</span><span class="hc-support-desc">support@wisecode.ai \u00b7 typically replies within a few hours</span></span>
+            <span class="material-symbols-outlined hc-support-arrow">chevron_right</span>
           </button>
-          <button type="button" class="hc-support-card" data-hc-action="docs">
+          <button type="button" class="hc-support-row" data-hc-action="docs">
             <span class="hc-support-ic"><span class="material-symbols-outlined">menu_book</span></span>
-            <span class="hc-support-title">Read the docs</span>
-            <span class="hc-support-desc">Guides and API reference</span>
+            <span class="hc-support-body"><span class="hc-support-title">Read the docs</span><span class="hc-support-desc">Guides and API reference</span></span>
+            <span class="material-symbols-outlined hc-support-arrow">chevron_right</span>
           </button>
         </div>
       </section>
@@ -124,13 +140,14 @@ export function renderHelp(mainEl) {
   hostEl = mainEl;
   openFaqs = new Set();
   query = '';
+  topicFilter = 'all';
   paint();
 
   mainEl.addEventListener('click', (e) => {
     const faq = e.target.closest('[data-hc-faq]');
     if (faq) { const i = +faq.dataset.hcFaq; openFaqs.has(i) ? openFaqs.delete(i) : openFaqs.add(i); paint(); return; }
     const topic = e.target.closest('[data-hc-topic]');
-    if (topic) { setQuery(topic.dataset.hcTopic.replace(/-/g, ' ')); return; }
+    if (topic) { const v = topic.dataset.hcTopic; topicFilter = (topicFilter === v && v !== 'all') ? 'all' : v; paint(); return; }
     const act = e.target.closest('[data-hc-action]');
     if (act) { runHelpIntent(act.dataset.hcAction); }
   });
@@ -152,11 +169,17 @@ function setQuery(q) {
   paint();
 }
 
+function setTopic(t) {
+  topicFilter = t;
+  query = '';
+  paint();
+}
+
 /* ---- WISEcodeAI bridge -------------------------------------------------- */
 
 export function runHelpIntent(action) {
   switch (action) {
-    case 'clear_search': setQuery(''); break;
+    case 'clear_search': query = ''; topicFilter = 'all'; paint(); break;
     case 'chat': document.getElementById('wiseai-dock-panel')?.querySelector('textarea, input')?.focus(); break;
     case 'email': window.location.href = 'mailto:support@wisecode.ai'; break;
     case 'docs': window.location.href = 'docs.html'; break;
@@ -193,9 +216,9 @@ export const HELP_WISEAI = {
     contact: 'You can chat with me here for instant answers, email <strong>support@wisecode.ai</strong>, or read the docs. Scrolled you to the contact options.',
   },
   onIntent: (intent) => {
-    if (intent === 'getting_started') { setQuery('getting started'); return false; }
-    if (intent === 'verification_help') { setQuery('verification'); return false; }
-    if (intent === 'billing_help') { setQuery('billing'); return false; }
+    if (intent === 'getting_started') { setTopic('getting-started'); return false; }
+    if (intent === 'verification_help') { setTopic('verification'); return false; }
+    if (intent === 'billing_help') { setTopic('billing'); return false; }
     if (intent === 'contact') { runHelpIntent('support'); return false; }
     return false;
   },

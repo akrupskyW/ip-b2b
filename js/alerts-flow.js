@@ -1,11 +1,12 @@
 /**
  * Alerts module.
  *
- * A full-page alerts inbox rendered into #agent-main-scroll on alerts.html (the
- * side-panel bell stays available elsewhere; this is the roomy, filterable
- * view). Alerts group by day, can be filtered by category, marked read, or
- * cleared. The persistent WISEcodeAI dock drives it — intent chips filter to
- * unread, mark everything read, or jump to a category — and each on-page action
+ * A full-page alerts view rendered into #agent-main-scroll on alerts.html, built
+ * on the canonical `wmod-` module: a serif headline + subtext + description, a
+ * search field with an inline funnel filter, a row of scorecard filters, and —
+ * below them — a running stream of agent events in the standard table, newest at
+ * the top. The persistent WISEcodeAI dock drives it: intent chips filter to
+ * unread, mark everything read, or jump to a category, and each on-page action
  * narrates back into the conversation.
  */
 
@@ -18,33 +19,35 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
-/* Alert feed (demo). `cat` groups filtering; `href` (optional) makes an alert
-   jump to the relevant page. */
+/* The event stream (demo). `ts` orders the stream newest-first; `cat` drives the
+   scorecard filters; `href` (optional) makes an event jump to a relevant page. */
 const ALERTS = [
-  { id: 'a1', cat: 'verification', icon: 'verified', tone: 'green', title: 'Verification ready: Sample Co.', sub: 'Portfolio Agent', when: 'today', time: '2m ago', read: false, href: 'verification.html' },
-  { id: 'a2', cat: 'ingredient', icon: 'science', tone: 'amber', title: '3 ingredient flags need review', sub: 'Ingredient Parsing Agent', when: 'today', time: '14m ago', read: false, href: 'product-portfolio.html' },
-  { id: 'a3', cat: 'trends', icon: 'trending_up', tone: 'cyan', title: 'New trend signal: low-FODMAP snacking', sub: 'Trends Agent', when: 'today', time: '1h ago', read: false, href: '' },
-  { id: 'a4', cat: 'reformulation', icon: 'fact_check', tone: 'blue', title: 'Reformulation simulation complete', sub: 'Audit & Reformulation Agent', when: 'today', time: '3h ago', read: true, href: 'reformulation.html' },
-  { id: 'a5', cat: 'reports', icon: 'description', tone: 'blue', title: '“Q3 Portfolio UPF Report” published', sub: 'Reports', when: 'yesterday', time: 'Yesterday · 4:11 PM', read: true, href: '' },
-  { id: 'a6', cat: 'verification', icon: 'workspace_premium', tone: 'green', title: '12 Non-UPF shields minted', sub: 'Verification Lifecycle Agent', when: 'yesterday', time: 'Yesterday · 9:24 AM', read: true, href: 'verification.html' },
-  { id: 'a7', cat: 'ingredient', icon: 'inventory_2', tone: 'amber', title: 'Data ingestion finished: 48 SKUs', sub: 'Data Ingestion Agent', when: 'earlier', time: 'Mon · 2:03 PM', read: true, href: 'product-portfolio.html' },
-  { id: 'a8', cat: 'account', icon: 'key', tone: 'blue', title: 'Production API key rotated', sub: 'API keys', when: 'earlier', time: 'Mon · 11:40 AM', read: true, href: 'api-keys.html' },
+  { id: 'a1', cat: 'verification', icon: 'verified', tone: 'green', title: 'Verification ready: Sample Co.', sub: 'Portfolio Agent', time: '2m ago', ts: 200, read: false, href: 'verification.html' },
+  { id: 'a2', cat: 'ingredient', icon: 'science', tone: 'amber', title: '3 ingredient flags need review', sub: 'Ingredient Parsing Agent', time: '14m ago', ts: 186, read: false, href: 'product-portfolio.html' },
+  { id: 'a3', cat: 'trends', icon: 'trending_up', tone: 'cyan', title: 'New trend signal: low-FODMAP snacking', sub: 'Trends Agent', time: '1h ago', ts: 140, read: false, href: '' },
+  { id: 'a4', cat: 'reformulation', icon: 'fact_check', tone: 'blue', title: 'Reformulation simulation complete', sub: 'Audit & Reformulation Agent', time: '3h ago', ts: 120, read: true, href: 'reformulation.html' },
+  { id: 'a9', cat: 'ingredient', icon: 'science', tone: 'amber', title: 'Ingredient normalization run finished', sub: 'Ingredient Parsing Agent', time: '5h ago', ts: 100, read: true, href: 'product-portfolio.html' },
+  { id: 'a5', cat: 'reports', icon: 'description', tone: 'blue', title: '\u201cQ3 Portfolio UPF Report\u201d published', sub: 'Reports', time: 'Yesterday \u00b7 4:11 PM', ts: 80, read: true, href: '' },
+  { id: 'a6', cat: 'verification', icon: 'workspace_premium', tone: 'green', title: '12 Non-UPF shields minted', sub: 'Verification Lifecycle Agent', time: 'Yesterday \u00b7 9:24 AM', ts: 70, read: true, href: 'verification.html' },
+  { id: 'a10', cat: 'trends', icon: 'insights', tone: 'cyan', title: 'Weekly trend digest generated', sub: 'Trends Agent', time: 'Mon \u00b7 6:00 PM', ts: 55, read: true, href: '' },
+  { id: 'a7', cat: 'ingredient', icon: 'inventory_2', tone: 'amber', title: 'Data ingestion finished: 48 SKUs', sub: 'Data Ingestion Agent', time: 'Mon \u00b7 2:03 PM', ts: 40, read: true, href: 'product-portfolio.html' },
+  { id: 'a8', cat: 'account', icon: 'key', tone: 'blue', title: 'Production API key rotated', sub: 'API keys', time: 'Mon \u00b7 11:40 AM', ts: 30, read: true, href: 'api-keys.html' },
 ];
 
+/* Scorecard filters — the old chip row, now the canonical scorecards. */
 const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'unread', label: 'Unread' },
-  { id: 'verification', label: 'Verification' },
-  { id: 'ingredient', label: 'Ingredients' },
-  { id: 'reports', label: 'Reports' },
-  { id: 'trends', label: 'Trends' },
-  { id: 'account', label: 'Account' },
+  { id: 'all', label: 'All', icon: 'inbox' },
+  { id: 'unread', label: 'Unread', icon: 'mark_email_unread' },
+  { id: 'verification', label: 'Verification', icon: 'verified' },
+  { id: 'ingredient', label: 'Ingredients', icon: 'science' },
+  { id: 'reports', label: 'Reports', icon: 'description' },
+  { id: 'trends', label: 'Trends', icon: 'trending_up' },
+  { id: 'account', label: 'Account', icon: 'key' },
 ];
-
-const DAY_LABEL = { today: 'Today', yesterday: 'Yesterday', earlier: 'Earlier this week' };
 
 let hostEl = null;
 let filter = 'all';
+let query = '';
 
 function toneColor(tone) {
   const map = { green: 'var(--sec-green, #2e7d32)', amber: 'var(--ter-amber, #e0a800)', cyan: 'var(--sec-cyan, #22b8cf)', blue: 'var(--primary)' };
@@ -52,16 +55,34 @@ function toneColor(tone) {
 }
 
 function matches(a) {
-  if (filter === 'all') return true;
-  if (filter === 'unread') return !a.read;
-  return a.cat === filter;
+  if (filter === 'unread') { if (a.read) return false; }
+  else if (filter !== 'all' && a.cat !== filter) return false;
+  if (query) {
+    const hay = (a.title + ' ' + a.sub + ' ' + a.cat).toLowerCase();
+    if (!hay.includes(query)) return false;
+  }
+  return true;
+}
+
+function catCount(id) {
+  if (id === 'all') return ALERTS.length;
+  if (id === 'unread') return ALERTS.filter((a) => !a.read).length;
+  return ALERTS.filter((a) => a.cat === id).length;
+}
+
+/* Pick a scorecard column count that never leaves a lone orphan card. */
+function statCols(n) {
+  if (n <= 1) return 1;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c === 0) return c;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c !== 1) return c;
+  return 2;
 }
 
 function toast(msg, icon = 'check') {
   let wrap = document.getElementById('al-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'al-toast-wrap'; document.body.appendChild(wrap); }
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'al-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
-  t.className = 'al-toast';
+  t.className = 'wmod-toast';
   t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
   wrap.appendChild(t);
   requestAnimationFrame(() => t.classList.add('is-in'));
@@ -70,62 +91,77 @@ function toast(msg, icon = 'check') {
 
 function paint() {
   if (!hostEl) return;
-  const shown = ALERTS.filter(matches);
   const unread = ALERTS.filter((a) => !a.read).length;
-  const groups = ['today', 'yesterday', 'earlier']
-    .map((d) => ({ day: d, items: shown.filter((a) => a.when === d) }))
-    .filter((g) => g.items.length);
+  const shown = ALERTS.filter(matches).slice().sort((a, b) => b.ts - a.ts);
 
   hostEl.innerHTML = `
-    <div class="al-wrap">
-      <div class="al-breadcrumb"><span>Account</span><span class="material-symbols-outlined">chevron_right</span><span class="al-breadcrumb-here">Alerts</span></div>
-      <div class="al-head-row">
-        <div>
-          <h1 class="al-title">Alerts</h1>
-          <p class="al-lede">${unread ? `You have <strong>${unread}</strong> unread alert${unread === 1 ? '' : 's'} across your agents.` : 'You\u2019re all caught up.'}</p>
+    <div class="wmod-wrap">
+      <div class="wmod-masthead">
+        <div class="wmod-masthead-main">
+          <h1 class="wmod-title">Alerts</h1>
+          <p class="wmod-sub">${unread ? `You have <strong>${unread}</strong> unread alert${unread === 1 ? '' : 's'} across your agents.` : 'You\u2019re all caught up.'}</p>
+          <p class="wmod-desc">A live stream of everything your agents do \u2014 verifications, ingredient flags, reports, trend signals and account activity \u2014 newest first. Filter by category, search the stream, or mark it all read.</p>
         </div>
-        <button type="button" class="al-btn al-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-symbols-outlined">done_all</span>Mark all read</button>
+        <div class="wmod-head-actions">
+          <button type="button" class="wmod-btn wmod-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-symbols-outlined">done_all</span>Mark all read</button>
+        </div>
       </div>
 
-      <div class="al-filters" role="tablist">
-        ${CATEGORIES.map((c) => {
-          const count = c.id === 'all' ? ALERTS.length : c.id === 'unread' ? unread : ALERTS.filter((a) => a.cat === c.id).length;
-          if (count === 0 && c.id !== 'all' && c.id !== 'unread') return '';
-          return `<button type="button" class="al-filter${c.id === filter ? ' is-active' : ''}" data-al-filter="${c.id}">${esc(c.label)}<span class="al-filter-count">${count}</span></button>`;
-        }).join('')}
+      <div class="wmod-toolbar">
+        <div class="wmod-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="wmod-search-input" placeholder="Search the alert stream" aria-label="Search alerts" value="${esc(query)}" data-al-search />
+        </div>
       </div>
 
-      ${groups.length ? groups.map((g) => `
-        <div class="al-group">
-          <div class="al-group-title">${esc(DAY_LABEL[g.day])}</div>
-          <div class="al-list">
-            ${g.items.map((a) => `
-              <div class="al-item${a.read ? '' : ' is-unread'}" data-al-id="${a.id}"${a.href ? ` data-al-href="${esc(a.href)}"` : ''}>
-                <span class="al-item-ic" style="--ic:${toneColor(a.tone)}"><span class="material-symbols-outlined">${esc(a.icon)}</span></span>
-                <div class="al-item-body">
-                  <div class="al-item-title">${esc(a.title)}</div>
-                  <div class="al-item-sub">${esc(a.sub)} · ${esc(a.time)}</div>
-                </div>
-                ${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}
-                <button type="button" class="al-item-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-symbols-outlined">close</span></button>
-              </div>`).join('')}
+      ${(() => {
+        const cats = CATEGORIES.filter((c) => catCount(c.id) > 0 || c.id === 'all' || c.id === 'unread');
+        return `<div class="wmod-stats-wrap">
+        <div class="wmod-stats" style="--wmod-cols:${statCols(cats.length)}" role="group" aria-label="Filter alerts">
+          ${cats.map((c) => {
+            const n = catCount(c.id);
+            const tone = c.id === 'unread' ? ' wmod-stat--verified' : '';
+            return `<button type="button" class="wmod-stat${tone}${c.id === filter ? ' is-active' : ''}" data-al-filter="${c.id}" aria-pressed="${c.id === filter}">
+              <span class="wmod-stat-num">${n}</span>
+              <span class="wmod-stat-label"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>`; })()}
+
+      <div class="wmod-table-card al-table">
+        <div class="wmod-table">
+          <div class="wmod-thead">
+            <div class="wmod-th"></div>
+            <div class="wmod-th">Event</div>
+            <div class="wmod-th">When</div>
+            <div class="wmod-th"></div>
           </div>
-        </div>`).join('') : `
-        <div class="al-empty">
-          <span class="material-symbols-outlined">notifications_off</span>
-          <div>No ${filter === 'unread' ? 'unread ' : ''}alerts${filter !== 'all' && filter !== 'unread' ? ` in ${esc(filter)}` : ''}.</div>
-        </div>`}
+          ${shown.length ? shown.map((a) => `
+            <div class="wmod-trow is-clickable al-row${a.read ? '' : ' is-unread'}" data-al-id="${a.id}"${a.href ? ` data-al-href="${esc(a.href)}"` : ''}>
+              <div class="wmod-td"><span class="wmod-row-ic" style="--ic:${toneColor(a.tone)}"><span class="material-symbols-outlined">${esc(a.icon)}</span></span></div>
+              <div class="wmod-td"><div class="wmod-td-primary">${esc(a.title)}</div><div class="wmod-td-meta">${esc(a.sub)}</div></div>
+              <div class="wmod-td al-when">${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}<span>${esc(a.time)}</span></div>
+              <div class="wmod-td"><button type="button" class="wmod-icon-btn al-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-symbols-outlined">close</span></button></div>
+            </div>`).join('') : `
+            <div class="wmod-empty">
+              <span class="material-symbols-outlined">notifications_off</span>
+              <div>No ${filter === 'unread' ? 'unread ' : ''}alerts${filter !== 'all' && filter !== 'unread' ? ` in ${esc(filter)}` : ''}.</div>
+            </div>`}
+        </div>
+      </div>
     </div>`;
 }
 
 export function renderAlerts(mainEl) {
   hostEl = mainEl;
   filter = 'all';
+  query = '';
   paint();
 
   mainEl.addEventListener('click', (e) => {
     const f = e.target.closest('[data-al-filter]');
-    if (f) { filter = f.dataset.alFilter; paint(); return; }
+    if (f) { const v = f.dataset.alFilter; filter = (filter === v && v !== 'all') ? 'all' : v; paint(); return; }
 
     const x = e.target.closest('[data-al-action="dismiss"]');
     if (x) { e.stopPropagation(); dismiss(x.dataset.id); return; }
@@ -135,6 +171,16 @@ export function renderAlerts(mainEl) {
 
     const item = e.target.closest('[data-al-id]');
     if (item) { openAlert(item.dataset.alId); }
+  });
+
+  mainEl.addEventListener('input', (e) => {
+    const s = e.target.closest('[data-al-search]');
+    if (!s) return;
+    query = s.value.trim().toLowerCase();
+    const pos = s.selectionStart;
+    paint();
+    const again = hostEl.querySelector('[data-al-search]');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
   });
 }
 
@@ -151,7 +197,7 @@ function dismiss(id) {
   if (i < 0) return;
   const [a] = ALERTS.splice(i, 1);
   paint();
-  toast(`Dismissed “${a.title}”`, 'delete_outline');
+  toast(`Dismissed \u201c${a.title}\u201d`, 'delete_outline');
 }
 
 function markAllRead() {
@@ -173,18 +219,16 @@ export function runAlertsIntent(action) {
 }
 
 export const ALERTS_WISEAI = {
-  sub: 'Triage your alerts — filter, read, or clear them for you.',
+  sub: 'Triage your alerts \u2014 filter, read, or clear them for you.',
   chipsFlow: 'wrap',
   sourceLabel: '',
-  /* Large "at a glance" cards shown alongside the small chips on the welcome
-     screen — each reuses an existing intent so a click drives the same flow. */
   scorecards: {
     label: 'Your alerts at a glance',
     cards: [
-      { intent: 'flags', icon: 'flag', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What needs my review?', desc: '3 ingredient flags need review — I\u2019ll filter to them so you can jump to the products.', action: 'Show what needs review', ask: 'What needs my review?' },
-      { intent: 'show_unread', icon: 'mark_email_unread', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Triage' }, title: 'Show only unread', desc: 'Filter your inbox down to just the alerts you haven\u2019t seen yet.', action: 'Show unread', ask: 'Show only unread' },
+      { intent: 'flags', icon: 'flag', iconTone: 'brand', pill: { tone: 'up', icon: 'priority_high', text: 'Do next' }, title: 'What needs my review?', desc: '3 ingredient flags need review \u2014 I\u2019ll filter to them so you can jump to the products.', action: 'Show what needs review', ask: 'What needs my review?' },
+      { intent: 'show_unread', icon: 'mark_email_unread', iconTone: 'brand', pill: { tone: 'up', icon: 'filter_alt', text: 'Triage' }, title: 'Show only unread', desc: 'Filter the stream down to just the alerts you haven\u2019t seen yet.', action: 'Show unread', ask: 'Show only unread' },
       { intent: 'verification', icon: 'verified', iconTone: 'brand', pill: { tone: 'up', icon: 'verified', text: 'Verify' }, title: 'Verification alerts', desc: 'A Sample Co. verification is ready and 12 shields were minted yesterday.', action: 'Show verification alerts', ask: 'Verification alerts' },
-      { intent: 'mark_all', icon: 'done_all', iconTone: 'brand', pill: { tone: 'up', icon: 'done_all', text: 'Clear' }, title: 'Mark everything read', desc: 'Clear your inbox — mark every alert as read in one tap.', action: 'Mark all read', ask: 'Mark everything read' },
+      { intent: 'mark_all', icon: 'done_all', iconTone: 'brand', pill: { tone: 'up', icon: 'done_all', text: 'Clear' }, title: 'Mark everything read', desc: 'Clear the stream \u2014 mark every alert as read in one tap.', action: 'Mark all read', ask: 'Mark everything read' },
     ],
   },
   intents: [
@@ -195,9 +239,9 @@ export const ALERTS_WISEAI = {
   ],
   intentReplies: {
     show_unread: () => { const u = ALERTS.filter((a) => !a.read).length; return `Filtered to your <strong>${u}</strong> unread alert${u === 1 ? '' : 's'}.`; },
-    mark_all: 'Marked <strong>every alert</strong> as read — your inbox is clear.',
-    flags: 'The one that needs you most is <strong>“3 ingredient flags need review”</strong> from the Ingredient Parsing Agent. I\u2019ve filtered to ingredient alerts — open it to jump to the products.',
-    verification: 'Filtered to <strong>verification</strong> alerts — a Sample Co. verification is ready and 12 shields were minted yesterday.',
+    mark_all: 'Marked <strong>every alert</strong> as read \u2014 your stream is clear.',
+    flags: 'The one that needs you most is <strong>\u201c3 ingredient flags need review\u201d</strong> from the Ingredient Parsing Agent. I\u2019ve filtered to ingredient alerts \u2014 open it to jump to the products.',
+    verification: 'Filtered to <strong>verification</strong> alerts \u2014 a Sample Co. verification is ready and 12 shields were minted yesterday.',
   },
   onIntent: (intent) => {
     if (intent === 'show_unread') { runAlertsIntent('unread'); return false; }

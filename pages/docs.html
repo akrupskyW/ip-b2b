@@ -24,28 +24,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
-    /* Docs browser — rendered by js/docs-flow.js. */
+    /* Docs module — rendered by js/docs-flow.js. Built on the canonical `wmod-`
+       module (search + scorecards) with a conversation-library-style card grid,
+       plus an in-module article reader. */
     body[data-nav-id="docs"] #agent-main-header { display: none; }
     body[data-nav-id="docs"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="docs"] #modules-row { margin-top: 0; }
+    body[data-nav-id="docs"] .wmod-wrap { max-width: 1080px; }
 
-    .dc-wrap { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 0; min-height: 100%; }
-    .dc-sidebar { border-right: 1px solid var(--border); padding: 24px 16px 40px; }
-    .dc-side-title { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 18px; }
-    .dc-side-title .material-symbols-outlined { font-size: 18px; color: var(--primary-ink, var(--primary)); }
-    .dc-side-group { margin-bottom: 18px; }
-    .dc-side-group-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); margin: 0 8px 6px; }
-    .dc-side-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.84rem; font-weight: 500; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
-    .dc-side-item:hover { background: var(--surface-2); color: var(--text); }
-    html.dark .dc-side-item:hover { background: rgba(255,255,255,0.05); }
-    .dc-side-item.is-active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary-ink, var(--primary)); font-weight: 700; }
-    .dc-side-read { font-size: 0.68rem; color: var(--text-subtle); font-weight: 500; }
-    .dc-side-item.is-active .dc-side-read { color: var(--primary-ink, var(--primary)); }
+    /* Card grid — mirrors the conversation-library shelf. */
+    .dc-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin-top: 18px; }
+    .dc-card { display: flex; flex-direction: column; gap: 10px; text-align: left; padding: 18px; border-radius: 16px; cursor: pointer; text-decoration: none; color: inherit; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-1); font-family: inherit; transition: transform 0.18s cubic-bezier(.2,.7,.3,1), box-shadow 0.18s ease, border-color 0.18s ease; }
+    .dc-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); border-color: color-mix(in srgb, var(--primary) 32%, var(--border)); }
+    .dc-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .dc-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .dc-card-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary-ink, var(--primary)); }
+    html.dark .dc-card-badge { color: var(--primary-bright, #93C5FD); }
+    .dc-card-badge .material-symbols-outlined { font-size: 15px; }
+    .dc-card-read { font-size: 0.72rem; color: var(--text-subtle); font-weight: 600; }
+    .dc-card-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 700; color: var(--text); line-height: 1.25; }
+    .dc-card-excerpt { font-size: 0.82rem; line-height: 1.5; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
-    .dc-article { padding: 30px 44px 60px; max-width: 760px; }
-    .dc-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; }
-    .dc-breadcrumb .material-symbols-outlined { font-size: 16px; opacity: 0.6; }
-    .dc-breadcrumb-here { color: var(--text); }
+    /* In-module article reader. */
+    .dc-reader { max-width: 760px; margin-top: 8px; }
+    .dc-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; border: 0; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 6px 10px 6px 6px; border-radius: 999px; }
+    .dc-back:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .dc-back:hover { background: rgba(255,255,255,0.05); }
+    .dc-back .material-symbols-outlined { font-size: 18px; }
+    .dc-article-eyebrow { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--primary-ink, var(--primary)); margin-bottom: 8px; }
+    html.dark .dc-article-eyebrow { color: var(--primary-bright, #93C5FD); }
+    .dc-article-eyebrow .material-symbols-outlined { font-size: 15px; }
     .dc-article-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2rem; font-weight: 800; color: var(--text); margin: 0 0 20px; letter-spacing: -0.01em; }
     .dc-article-body { font-size: 0.92rem; line-height: 1.7; color: var(--text); }
     .dc-article-body p { margin: 0 0 16px; color: var(--text-muted); }
@@ -64,10 +72,8 @@
     .dc-log-date { flex-shrink: 0; width: 74px; font-weight: 700; color: var(--text-subtle); font-size: 0.78rem; padding-top: 1px; }
     .dc-log strong { color: var(--text); }
 
-    @media (max-width: 820px) {
-      .dc-wrap { grid-template-columns: 1fr; }
-      .dc-sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
-      .dc-article { padding: 24px 20px 48px; }
+    @media (max-width: 760px) {
+      body[data-nav-id="docs"] .wmod-wrap { padding: 20px 20px 48px; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

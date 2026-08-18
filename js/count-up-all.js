@@ -36,6 +36,7 @@
     ['.gs-stat-num', '.gs-stat'],
     ['.ib-stat-num', '.ib-stat'],
     ['.lib-stat-num', '.lib-stat'],
+    ['.wmod-stat-num', '.wmod-stat'],
     ['.mi-stat-num', '.mi-stat'],
     ['.mi-int-stat-num', '.mi-int-stat'],
     ['.ak-stat-num', '.ak-stat'],

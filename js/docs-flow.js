@@ -135,43 +135,141 @@ const products = await wise.products.list();</code></pre>
   },
 };
 
-let hostEl = null;
-let currentId = 'quickstart';
+/* Group icon + membership, derived from NAV so each doc card carries its
+   category badge and the scorecards can filter by group. */
+const GROUP_ICON = { 'Get started': 'rocket_launch', 'Guides': 'menu_book', 'Developers': 'code', 'Reference': 'bookmark' };
+const GROUP_OF = {};
+const READ_OF = {};
+NAV.forEach((grp) => grp.items.forEach((it) => { GROUP_OF[it.id] = grp.group; READ_OF[it.id] = it.read; }));
 
-function articleTitle(id) { return ARTICLES[id]?.title || id; }
+/* Pick a scorecard column count that never leaves a lone orphan card. */
+function statCols(n) {
+  if (n <= 1) return 1;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c === 0) return c;
+  for (let c = Math.min(n, 6); c >= 2; c--) if (n % c !== 1) return c;
+  return 2;
+}
+
+/* A one-line excerpt = the first paragraph of the article body, stripped and
+   entity-decoded (so `&amp;` reads as `&` once the template re-escapes it). */
+function excerptOf(id) {
+  const body = ARTICLES[id]?.body || '';
+  const m = body.match(/<p>([\s\S]*?)<\/p>/i);
+  return (m ? m[1] : body)
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ').trim();
+}
+
+let hostEl = null;
+let currentId = null;       /* null = browse (card grid); else the reader */
+let query = '';
+let groupFilter = 'all';
+
+function docMatches(id, title) {
+  if (groupFilter !== 'all' && GROUP_OF[id] !== groupFilter) return false;
+  if (query) {
+    const hay = (title + ' ' + excerptOf(id)).toLowerCase();
+    if (!hay.includes(query)) return false;
+  }
+  return true;
+}
+
+function groupCount(name) {
+  const ids = Object.keys(ARTICLES);
+  if (name === 'all') return ids.length;
+  return ids.filter((id) => GROUP_OF[id] === name).length;
+}
 
 function paint() {
   if (!hostEl) return;
-  const art = ARTICLES[currentId] || ARTICLES.quickstart;
+  if (currentId) { paintReader(); return; }
+
+  const cards = [{ id: 'all', label: 'All', icon: 'menu_book' },
+    ...NAV.map((g) => ({ id: g.group, label: g.group, icon: GROUP_ICON[g.group] || 'article' }))];
+  const docs = NAV.flatMap((g) => g.items).filter((it) => docMatches(it.id, it.title));
+
   hostEl.innerHTML = `
-    <div class="dc-wrap">
-      <aside class="dc-sidebar" aria-label="Documentation">
-        <div class="dc-side-title"><span class="material-symbols-outlined">menu_book</span>Documentation</div>
-        ${NAV.map((grp) => `
-          <div class="dc-side-group">
-            <div class="dc-side-group-title">${esc(grp.group)}</div>
-            ${grp.items.map((it) => `
-              <button type="button" class="dc-side-item${it.id === currentId ? ' is-active' : ''}" data-dc-article="${it.id}">
-                <span>${esc(it.title)}</span><span class="dc-side-read">${esc(it.read)}</span>
-              </button>`).join('')}
-          </div>`).join('')}
-      </aside>
-      <article class="dc-article">
-        <div class="dc-breadcrumb"><span>Docs</span><span class="material-symbols-outlined">chevron_right</span><span class="dc-breadcrumb-here">${esc(art.title)}</span></div>
+    <div class="wmod-wrap">
+      <div class="wmod-masthead">
+        <div class="wmod-masthead-main">
+          <h1 class="wmod-title">Documentation</h1>
+          <p class="wmod-sub">Everything you need to get the most out of WISE.</p>
+          <p class="wmod-desc">Guides, references and release notes \u2014 from a ten-minute quickstart to the full API reference. Search across every article, or filter by section, then open one to read it right here.</p>
+        </div>
+      </div>
+
+      <div class="wmod-toolbar">
+        <div class="wmod-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="wmod-search-input" placeholder="Search the documentation" aria-label="Search docs" value="${esc(query)}" data-dc-search />
+        </div>
+      </div>
+
+      <div class="wmod-stats-wrap">
+        <div class="wmod-stats" style="--wmod-cols:${statCols(cards.length)}" role="group" aria-label="Filter docs by section">
+          ${cards.map((c) => `<button type="button" class="wmod-stat${c.id === groupFilter ? ' is-active' : ''}" data-dc-group="${esc(c.id)}" aria-pressed="${c.id === groupFilter}">
+            <span class="wmod-stat-num">${groupCount(c.id)}</span>
+            <span class="wmod-stat-label"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span>
+          </button>`).join('')}
+        </div>
+      </div>
+
+      ${docs.length ? `
+      <div class="dc-grid">
+        ${docs.map((it) => `
+          <button type="button" class="dc-card" data-dc-article="${it.id}">
+            <div class="dc-card-top">
+              <span class="dc-card-badge"><span class="material-symbols-outlined">${esc(GROUP_ICON[GROUP_OF[it.id]] || 'article')}</span>${esc(GROUP_OF[it.id])}</span>
+              <span class="dc-card-read">${esc(it.read)}</span>
+            </div>
+            <div class="dc-card-title">${esc(it.title)}</div>
+            <div class="dc-card-excerpt">${esc(excerptOf(it.id))}</div>
+          </button>`).join('')}
+      </div>` : `
+      <div class="wmod-table-card"><div class="wmod-empty"><span class="material-symbols-outlined">search_off</span><div>No documentation matches your search.</div></div></div>`}
+    </div>`;
+}
+
+function paintReader() {
+  const art = ARTICLES[currentId] || ARTICLES.quickstart;
+  const group = GROUP_OF[currentId] || 'Docs';
+  hostEl.innerHTML = `
+    <div class="wmod-wrap">
+      <article class="dc-reader">
+        <button type="button" class="dc-back" data-dc-back><span class="material-symbols-outlined">arrow_back</span>All documentation</button>
+        <div class="dc-article-eyebrow"><span class="material-symbols-outlined">${esc(GROUP_ICON[group] || 'article')}</span>${esc(group)} \u00b7 ${esc(READ_OF[currentId] || '')}</div>
         <h1 class="dc-article-title">${esc(art.title)}</h1>
         <div class="dc-article-body">${art.body}</div>
       </article>
     </div>`;
+  hostEl.querySelector('.dc-reader')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export function renderDocs(mainEl) {
   hostEl = mainEl;
-  currentId = 'quickstart';
+  currentId = null;
+  query = '';
+  groupFilter = 'all';
   paint();
+
   mainEl.addEventListener('click', (e) => {
+    if (e.target.closest('[data-dc-back]')) { currentId = null; paint(); return; }
+    const g = e.target.closest('[data-dc-group]');
+    if (g) { const v = g.dataset.dcGroup; groupFilter = (groupFilter === v && v !== 'all') ? 'all' : v; paint(); return; }
     const item = e.target.closest('[data-dc-article]');
-    if (!item) return;
-    openArticle(item.dataset.dcArticle);
+    if (item) { openArticle(item.dataset.dcArticle); }
+  });
+
+  mainEl.addEventListener('input', (e) => {
+    const s = e.target.closest('[data-dc-search]');
+    if (!s) return;
+    query = s.value.trim().toLowerCase();
+    const pos = s.selectionStart;
+    paint();
+    const again = hostEl.querySelector('[data-dc-search]');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
   });
 }
 
@@ -179,7 +277,6 @@ function openArticle(id) {
   if (!ARTICLES[id]) return;
   currentId = id;
   paint();
-  hostEl?.querySelector('.dc-article')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ---- WISEcodeAI bridge -------------------------------------------------- */
