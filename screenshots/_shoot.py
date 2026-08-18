@@ -21,18 +21,26 @@ H0 = 1000
 MAX_H = 32000
 
 # The real logged-in experience — nav destinations + the flows reached from them.
+# Each entry is a URL path (query string allowed) or (path, output_stem) when the
+# filename should differ from the default pages__foo conversion.
 PAGES = [
     # Core
     "pages/overview.html",
     # Portfolio flow
     "pages/product-portfolio.html",
     "pages/add-product.html",
+    ("pages/view-product.html", "pages__view-product"),
+    ("pages/view-product.html?compare=1", "pages__view-product-compare"),
     "pages/product-comparison.html",
     "pages/marketing-assets.html",
+    "pages/add-catalog.html",
+    "pages/ai-dashboard.html",
     # Studio flow
     "pages/wiseai.html",
-    "pages/ai-chat.html",
+    "pages/conversation-library.html",
+    "pages/ingredient-browser.html",
     "pages/reports.html",
+    "pages/analytics-types.html",
     "pages/reformulation.html",
     "pages/report-guiding-stars.html",
     # Verification flows
@@ -46,6 +54,7 @@ PAGES = [
     "pages/user-management.html",
     "pages/admin-utils.html",
     "pages/studio-ai.html",
+    "pages/all-modules.html",
     # Account / support
     "pages/profile.html",
     "pages/invoices.html",
@@ -106,44 +115,172 @@ FORCE_REVEAL = """() => {
   });
 }"""
 
-# Largest vertical overflow across any scroll pane (and the document). This is
-# how much taller the viewport must get so nothing needs to scroll vertically.
-MAX_DELTA = """() => {
+# Chat hosts — same set as js/sticky-modules.js CHAT_SEL. After the page has
+# loaded at the initial viewport, pin the left chat to that height so growing
+# the viewport (to reveal the full right-hand module) does not stretch it.
+CHAT_HOST = "#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat"
+
+PIN_CHAT = f"""() => {{
+  document.querySelectorAll({CHAT_HOST!r}).forEach(el => {{
+    const h = Math.round(el.getBoundingClientRect().height);
+    if (h < 80) return;
+    el.style.setProperty('height', h + 'px', 'important');
+    el.style.setProperty('max-height', h + 'px', 'important');
+    el.style.setProperty('min-height', h + 'px', 'important');
+    el.style.setProperty('align-self', 'flex-start', 'important');
+    el.style.setProperty('flex-shrink', '0', 'important');
+  }});
+}}"""
+
+# Largest vertical overflow across any non-chat scroll pane (and the document).
+# The left chat is pinned; the right-hand module drives viewport growth.
+MAX_DELTA = f"""() => {{
+  const chatHost = el => el.closest && el.closest({CHAT_HOST!r});
   let max = 0;
-  document.querySelectorAll('*').forEach(el => {
+  document.querySelectorAll('*').forEach(el => {{
+    if (chatHost(el)) return;
     const cs = getComputedStyle(el);
-    if (/(auto|scroll)/.test(cs.overflowY)) {
+    if (/(auto|scroll)/.test(cs.overflowY)) {{
       const d = el.scrollHeight - el.clientHeight;
       if (d > max) max = d;
-    }
-  });
+    }}
+  }});
   const de = document.scrollingElement || document.documentElement;
   const dd = de.scrollHeight - de.clientHeight;
   if (dd > max) max = dd;
   return Math.round(max);
+}}"""
+
+# Per-page hooks run after the first load settle, before scroll/reveal.
+PAGE_AFTER_LOAD = {
+    "pages/all-modules.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('#mi-components');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 20000);
+      });
+      await new Promise(r => setTimeout(r, 1200));
+    }""",
+    "pages/view-product.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('.nfp-sp-strip, .nfp-cmp-grid');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 15000);
+      });
+      await new Promise(r => setTimeout(r, 800));
+    }""",
+    "pages/ai-dashboard.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('#aid-kpis') && document.querySelector('#aid-kpis').children.length;
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 20000);
+      });
+      await new Promise(r => setTimeout(r, 1500));
+    }""",
+    "pages/conversation-library.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('.lib-card');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 15000);
+      });
+      await new Promise(r => setTimeout(r, 800));
+    }""",
+    "pages/ingredient-browser.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('#ib-rows') && document.querySelector('#ib-rows').children.length;
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 20000);
+      });
+      await new Promise(r => setTimeout(r, 800));
+    }""",
+    "pages/analytics-types.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('#upf-table-wrap, .dash-section-title, .dash-hero-title');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 20000);
+      });
+      await new Promise(r => setTimeout(r, 2500));
+    }""",
+    "pages/add-catalog.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('#cat-body') && document.querySelector('#cat-body').children.length;
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 15000);
+      });
+      await new Promise(r => setTimeout(r, 800));
+    }""",
+}
+
+WAIT_FULL_LOAD = """async () => {
+  if (document.readyState !== 'complete') {
+    await new Promise(r => window.addEventListener('load', r, { once: true }));
+  }
+  const imgs = [...document.images];
+  await Promise.all(imgs.map(img => {
+    if (img.complete && img.naturalWidth) return;
+    return new Promise(res => {
+      img.addEventListener('load', res, { once: true });
+      img.addEventListener('error', res, { once: true });
+      setTimeout(res, 10000);
+    });
+  }));
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
 }"""
 
-def shoot(page, rel):
-    name = rel.replace("/", "__").rsplit(".", 1)[0] + ".png"
+def _norm_page(entry):
+    if isinstance(entry, tuple):
+        return entry[0], entry[1] + ".png"
+    rel = entry
+    stem = rel.split("?", 1)[0].replace("/", "__").rsplit(".", 1)[0]
+    return rel, stem + ".png"
+
+
+def shoot(page, rel, out_name):
     page.set_viewport_size({"width": W, "height": H0})
     page.goto(f"{BASE}/{rel}", wait_until="load", timeout=60000)
     try:
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.wait_for_load_state("networkidle", timeout=20000)
     except Exception:
         pass
-    page.wait_for_timeout(1200)
     try:
-        page.evaluate("() => document.fonts && document.fonts.ready")
+        page.evaluate(WAIT_FULL_LOAD)
     except Exception:
         pass
+    page.wait_for_timeout(1800)
     page.evaluate(FORCE_LIGHT)
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(300)
+
+    path_key = rel.split("?", 1)[0]
+    hook = PAGE_AFTER_LOAD.get(path_key)
+    if hook:
+        try:
+            page.evaluate(hook)
+        except Exception:
+            pass
 
     # Present all content (trigger observers), then let animations settle.
     page.evaluate(TRIGGER)
     page.wait_for_timeout(1800)
     page.evaluate(FORCE_REVEAL)
     page.evaluate(KILL_TRANSITIONS)
+
+    # Pin the left chat at the loaded viewport height so it does not stretch
+    # when the viewport grows to reveal the full right-hand module.
+    page.evaluate(PIN_CHAT)
 
     # Grow the viewport until no pane overflows — layout stays intact.
     h = H0
@@ -155,7 +292,9 @@ def shoot(page, rel):
         if last_delta is not None and delta >= last_delta - 4:
             # Not shrinking (a fixed-height pane) — one targeted expand, then stop.
             page.evaluate("""() => {
+              const chatHost = el => el.closest && el.closest('#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat');
               document.querySelectorAll('*').forEach(el => {
+                if (chatHost(el)) return;
                 const cs = getComputedStyle(el);
                 if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 4) {
                   el.style.setProperty('max-height','none','important');
@@ -175,21 +314,25 @@ def shoot(page, rel):
 
     page.wait_for_timeout(400)
     dims = page.evaluate("() => ({w: innerWidth, h: innerHeight, dh: document.documentElement.scrollHeight})")
-    page.screenshot(path=f"{OUT}/{name}", full_page=True)
-    print(f"OK  {rel:40s} -> {name}  (vp {dims['w']}x{dims['h']}, doc {dims['dh']})", flush=True)
+    page.screenshot(path=f"{OUT}/{out_name}", full_page=True)
+    print(f"OK  {rel:40s} -> {out_name}  (vp {dims['w']}x{dims['h']}, doc {dims['dh']})", flush=True)
 
 def main():
     only = sys.argv[1:]
-    targets = [p for p in PAGES if not only or any(o in p for o in only)]
+    targets = []
+    for entry in PAGES:
+        rel, out_name = _norm_page(entry)
+        if not only or any(o in rel for o in only):
+            targets.append((rel, out_name))
     with sync_playwright() as pw:
         browser = pw.chromium.launch(channel="chrome", headless=True)
         ctx = browser.new_context(viewport={"width": W, "height": H0},
                                   device_scale_factor=2)
         ctx.add_init_script(AUTH_INIT)
         page = ctx.new_page()
-        for rel in targets:
+        for rel, out_name in targets:
             try:
-                shoot(page, rel)
+                shoot(page, rel, out_name)
             except Exception as e:
                 print(f"ERR {rel}: {e}", flush=True)
         browser.close()

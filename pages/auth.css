@@ -846,15 +846,18 @@ html.chat-sheen-off .fl-input-wrap::before { display: none; }
 
 /* Base chip pill (the .sc-reply-chips / chip-primary rules below extend this). */
 .chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-  /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
-     chips and the input field share one surface color, light and dark. */
+  display: inline-flex; align-items: center; gap: 6px;
+  box-sizing: border-box; height: 28px; padding: 0 11px;
+  /* One size app-wide: the 28px in-conversation reply chip. Same blue tint as
+     the composer (.fl-input-wrap, 10% primary) so chips and the input share
+     one surface color, light and dark. */
   background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
-  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  font-size: var(--fs-label); font-weight: 500; line-height: 1; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-.chip .material-symbols-outlined { font-size: 14px !important; }
+.chip .material-symbols-outlined { font-size: 13px !important; }
 html.dark .chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 
 .auth-setup-pane {
@@ -1016,8 +1019,8 @@ html.dark .sp-pct-ring::before { background: #1A2339; }
 /* In-chat reply chips — the product-comparison .sc-reply-chips spec (own row after the
    wiseai line, indented past the 30px avatar + 12px gap). */
 .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px 42px; }
-.sc-reply-chips .chip { font-weight: 500; padding: 5px 11px; font-size: var(--fs-label); line-height: 1.25; text-align: left; max-width: 100%; }
-.sc-reply-chips .chip .material-symbols-outlined { font-size: 13px !important; align-self: center; flex-shrink: 0; }
+.sc-reply-chips .chip { text-align: left; max-width: 100%; }
+.sc-reply-chips .chip .material-symbols-outlined { align-self: center; flex-shrink: 0; }
 .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
 .chip.chip-primary:hover { filter: brightness(1.05); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; }

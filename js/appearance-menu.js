@@ -265,6 +265,25 @@ function allModulesSection() {
     </a>`;
 }
 
+/** Link out to the "Progress log" admin page — the internal, day-by-day record
+    of what shipped across the platform (components, features, logic, UX/UI,
+    changes, improvements, updates, deletions), grouped by page. Sits beneath the
+    All modules row and, like it, is an Admin-only destination. Path resolves the
+    same way — the page lives in pages/, so app shells (already in pages/) link to
+    it directly while a root shell reaches it through pages/. */
+function progressLogSection() {
+  let href = 'pages/progress-log.html';
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) href = 'progress-log.html';
+  } catch (e) { /* non-browser context — keep the default */ }
+  return `
+    <a class="wise-popover-item" href="${href}" data-pop-action="progress-log">
+      <span class="material-symbols-outlined">timeline</span>Progress log
+      <span class="wise-popover-badge">Admin</span>
+      <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+    </a>`;
+}
+
 /** "Surfaces" section — the segmented control that switches the app's surface
     treatment between the flat default and "Style 1", a refined skin that gives
     the module panels, chat panes, cards and popovers a crisper on-brand hairline
@@ -443,6 +462,7 @@ export function buildAppearanceBody({
     ${apGroup('Admin', `
       ${accessibilityReviewSection()}
       ${allModulesSection()}
+      ${progressLogSection()}
     `)}
   `;
 }
@@ -599,9 +619,11 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Light / dark theme. */
     if (within('[data-pop-action="theme"]')) { ev.stopPropagation(); ctx.toggleTheme?.(); render(); return; }
 
-    /* The accessibility-review and all-modules rows are real links — navigate. */
+    /* The accessibility-review, all-modules and progress-log rows are real
+       links — let the click navigate. */
     if (within('[data-pop-action="a11y-review"]')) return;
     if (within('[data-pop-action="all-modules"]')) return;
+    if (within('[data-pop-action="progress-log"]')) return;
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */

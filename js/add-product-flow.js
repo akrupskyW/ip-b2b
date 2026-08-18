@@ -2290,6 +2290,14 @@
     if (img) state.image = img;
     state.errors = {};
     seedSamplePacks();
+    /* Deep-link ?compare=1 — open the side-by-side matrix of every format
+       (base product + each pack) for screenshots / portfolio review. */
+    if (params.get('compare') === '1') {
+      state.nfpCompare = true;
+      progressWidthTier = 2;
+      try { localStorage.setItem('wise-ap-progress-width', '2'); } catch (_) {}
+      applyProgressWidth();
+    }
     hideWelcome();
     renderNFP(); renderProgress();
     // Deep-linked from the portfolio's ⋮ menu → "Add pack formats / sizes":

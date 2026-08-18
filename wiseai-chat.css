@@ -792,15 +792,18 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary-ink, var(--primary)); }
 
 .chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-  /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
-     chips and the input field share one surface color, light and dark. */
+  display: inline-flex; align-items: center; gap: 6px;
+  box-sizing: border-box; height: 28px; padding: 0 11px;
+  /* One size app-wide: the 28px in-conversation reply chip. Same blue tint as
+     the composer (.fl-input-wrap, 10% primary) so chips and the input share
+     one surface color, light and dark. */
   background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
-  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  font-size: var(--fs-label); font-weight: 500; line-height: 1; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-.chip .material-symbols-outlined { font-size: 14px !important; }
+.chip .material-symbols-outlined { font-size: 13px !important; }
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
    primary choice among the reply chips. Reuses the app-wide `chip-primary`
@@ -812,11 +815,11 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-/* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
-   navigation icons (#left-icon-rail .lir-btn = 20px). */
-.ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px;
-  white-space: normal; overflow-wrap: anywhere; text-align: left; }
-.ws-intent-chip .material-symbols-outlined { font-size: 16px !important; flex: 0 0 auto; }
+/* Welcome / shortcut intent chips share the same 28px .chip size. Gold
+   leading glyph; the trailing .ws-lock badge keeps its own colours. */
+.ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500;
+  overflow-wrap: anywhere; text-align: left; }
+.ws-intent-chip .material-symbols-outlined { flex: 0 0 auto; }
 /* Leading intent glyph always reads in brand blue (the trailing .ws-lock badge
    keeps its own resting/hover colours; the amber ask-help variant overrides via
    higher specificity). */

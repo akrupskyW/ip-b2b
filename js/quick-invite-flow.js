@@ -255,7 +255,7 @@ function suggestOrgs(text) {
   const hits = known.filter((n) => n.toLowerCase().includes(t)).slice(0, 4);
   box.hidden = false;
   box.innerHTML = hits.length
-    ? hits.map((n) => `<button type="button" class="adm-qi-suggest-row" data-adm-action="pick-org" data-adm-org="${esc(n)}"><span class="adm-avatar" style="width:26px;height:26px;font-size:0.62rem">${esc(initials(n))}</span><span>${esc(n)}</span><span class="adm-idcell-sub" style="margin-left:auto">Send invite</span></button>`).join('')
+    ? hits.map((n) => `<button type="button" class="adm-qi-suggest-row" data-adm-action="pick-org" data-adm-org="${esc(n)}"><span class="adm-avatar">${esc(initials(n))}</span><span>${esc(n)}</span><span class="adm-idcell-sub" style="margin-left:auto">Send invite</span></button>`).join('')
     : `<button type="button" class="adm-qi-suggest-row" data-adm-action="create-org" data-adm-org="${esc(text.trim())}"><span class="material-symbols-outlined" style="color:var(--primary-ink, var(--primary))">add_business</span><span>Create <strong>${esc(text.trim())}</strong></span><span class="adm-idcell-sub" style="margin-left:auto">New org</span></button>`;
 }
 

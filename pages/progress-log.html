@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Progress Log</title>
+  <meta name="description" content="An internal, day-by-day log of what shipped across the WISE platform — components, features, logic, UX/UI, changes, improvements, updates and deletions, grouped by page." />
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint, matching the
+       rest of the app pages so the shell never flashes the wrong theme. */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) { /* no saved theme: default light */ }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <style>
+  /* ── App-wide mono numerals (mirrors the other admin pages) ─────────────── */
+  @font-face {
+    font-family: 'WISE Digits';
+    src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+    unicode-range: U+0030-0039;
+    font-weight: 100 900;
+  }
+
+  /* =============================================================
+     Progress Log — standalone internal changelog. Self-contained:
+     it reuses the WISE design tokens but depends on no app shell.
+  ============================================================= */
+  :root {
+    --bg: #F9F8F3;
+    --surface: #FFFFFF;
+    --surface-2: #F4F2EA;
+    --surface-3: #EFEDE2;
+    --text: #111827;
+    --text-muted: #444B55;
+    --text-subtle: #474E58;
+    --border: rgba(37, 80, 124, 0.16);
+    --border-strong: rgba(37, 80, 124, 0.28);
+
+    --primary: #25507C;
+    --primary-soft: rgba(37, 80, 124, 0.08);
+
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 24px;
+    --r-xl: 32px;
+    --radius-pill: 9999px;
+
+    --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
+    --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+
+    /* Category accents (mid-tones that read on both light tints and dark tints) */
+    --cat-components: #2F6DB0;
+    --cat-features:   #8A5CD1;
+    --cat-logic:      #178A8A;
+    --cat-ux:         #C0468A;
+    --cat-changes:    #B0791F;
+    --cat-improvements:#2E9E63;
+    --cat-updates:    #2585A6;
+    --cat-deletions:  #C0454C;
+  }
+  html.dark {
+    --bg: #05141C;
+    --surface: #0D1B24;
+    --surface-2: #112633;
+    --surface-3: #15303F;
+    --text: #F3F4F6;
+    --text-muted: #BCC6D3;
+    --text-subtle: #B1BAC7;
+    --border: rgba(139, 159, 175, 0.18);
+    --border-strong: rgba(139, 159, 175, 0.30);
+    --primary-soft: rgba(37, 80, 124, 0.20);
+    --primary-bright: #8B9FAF;
+
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+
+    --cat-components: #6FA6E0;
+    --cat-features:   #B48CF0;
+    --cat-logic:      #56C4C4;
+    --cat-ux:         #E88CBE;
+    --cat-changes:    #E4B65C;
+    --cat-improvements:#6FC996;
+    --cat-updates:    #6FBEDC;
+    --cat-deletions:  #E88289;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.35s ease, color 0.25s ease;
+  }
+  a { color: var(--primary); }
+  html.dark a { color: var(--primary-bright); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+  @media (max-width: 640px) { .wrap { padding: 0 16px 72px; } }
+
+  /* ===== Top bar ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 24px;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  @media (max-width: 640px) { .topbar { padding: 12px 16px; } }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  /* Bare brand icon — no boxed backdrop (per the app-wide icon rule). */
+  .topbar-mark { color: var(--primary); display: grid; place-items: center; flex-shrink: 0; }
+  html.dark .topbar-mark { color: var(--primary-bright); }
+  .topbar-mark .material-symbols-outlined { font-size: 28px; }
+  .topbar-titles { min-width: 0; }
+  .topbar-kicker { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); }
+  html.dark .topbar-kicker { color: var(--primary-bright); }
+  .topbar-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+  .topbar-spacer { flex: 1; }
+
+  .back-btn, .theme-toggle {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 9px 14px; border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong); background: var(--surface);
+    color: var(--text); font-family: inherit; font-size: 0.8125rem; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, transform 0.15s;
+  }
+  .back-btn { padding-left: 11px; }
+  .back-btn:hover, .theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
+  html.dark .back-btn:hover, html.dark .theme-toggle:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
+  .back-btn:hover .material-symbols-outlined { transform: translateX(-2px); }
+  .back-btn .material-symbols-outlined, .theme-toggle .material-symbols-outlined { font-size: 18px; transition: transform 0.15s; }
+  @media (max-width: 640px) {
+    .back-btn span:not(.material-symbols-outlined),
+    .theme-toggle span:not(.material-symbols-outlined) { display: none; }
+    .back-btn, .theme-toggle { padding: 9px 11px; }
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    margin-top: 32px; padding: 36px 32px;
+    border-radius: var(--r-lg);
+    background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
+    border: 1px solid var(--border);
+  }
+  html.dark .hero {
+    background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
+    border-color: rgba(37, 80, 124, 0.18);
+  }
+  @media (max-width: 640px) { .hero { padding: 26px 20px; margin-top: 22px; } }
+  .hero-eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); }
+  html.dark .hero-eyebrow { color: var(--primary-bright); }
+  .hero h1 { font-family: 'Noto Serif', Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; margin: 10px 0 12px; }
+  .hero p { font-size: 1rem; color: var(--text-muted); max-width: 780px; margin: 0; line-height: 1.65; }
+
+  /* ===== Scorecard ===== */
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 24px; }
+  .score { padding: 18px 18px 16px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); }
+  html.dark .score { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+  .score-num { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--primary); }
+  html.dark .score-num { color: var(--primary-bright); }
+  .score-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 8px; }
+  .score-meta { font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px; }
+
+  /* ===== Controls ===== */
+  .controls { margin-top: 28px; display: flex; flex-direction: column; gap: 14px; }
+  .controls-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .search-box { position: relative; flex: 1; min-width: 220px; }
+  .search-box .material-symbols-outlined { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
+  .search-box input {
+    width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 0.875rem;
+  }
+  .search-box input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  html.dark .search-box input:focus-visible { outline-color: var(--primary-bright); }
+
+  .select-wrap { display: inline-flex; align-items: center; }
+  .select-wrap select {
+    appearance: none; padding: 10px 34px 10px 14px; border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-subtle) 50%), linear-gradient(135deg, var(--text-subtle) 50%, transparent 50%);
+    background-position: right 15px center, right 10px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+  }
+
+  .cat-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px;
+    border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    transition: border-color 0.15s, color 0.15s, background 0.15s, opacity 0.15s;
+    user-select: none;
+  }
+  html.dark .cat-chip { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+  .cat-chip .material-symbols-outlined { font-size: 16px; color: var(--cat); }
+  .cat-chip .cat-chip-count {
+    font-size: 0.6875rem; font-weight: 800; font-variant-numeric: tabular-nums;
+    padding: 1px 7px; border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--cat) 16%, transparent); color: var(--cat);
+  }
+  .cat-chip.is-off { opacity: 0.4; }
+  .cat-chip.is-off .material-symbols-outlined { color: var(--text-subtle); }
+  .cat-chip:not(.is-off) { border-color: color-mix(in srgb, var(--cat) 40%, var(--border)); color: var(--text); }
+  .cat-chip:hover { border-color: color-mix(in srgb, var(--cat) 55%, var(--border)); }
+
+  .controls-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .tool-btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
+    font-family: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+  html.dark .tool-btn:hover { border-color: var(--primary-bright); color: var(--primary-bright); }
+  .tool-btn .material-symbols-outlined { font-size: 16px; }
+
+  .filter-note { font-size: 0.75rem; color: var(--text-subtle); }
+
+  /* ===== Timeline ===== */
+  .timeline { margin-top: 34px; position: relative; }
+
+  .day { margin-top: 30px; scroll-margin-top: 80px; }
+  .day:first-child { margin-top: 0; }
+  .day-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  /* Fully circular day marker (allowed by the icon rule); holds an icon glyph. */
+  .day-dot {
+    width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+    display: grid; place-items: center; color: var(--primary);
+    background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  html.dark .day-dot { color: var(--primary-bright); }
+  .day-dot .material-symbols-outlined { font-size: 20px; }
+  .day-titles { min-width: 0; flex: 1; }
+  .day-date { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+  .day-rel { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+  .day-summary { font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px; }
+  .day-tally { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .day-tally-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--radius-pill);
+    font-size: 0.6875rem; font-weight: 700; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
+  }
+  html.dark .day-tally-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+  .day-tally-pill .material-symbols-outlined { font-size: 14px; }
+  .day-collapse-ic { transition: transform 0.2s; color: var(--text-subtle); }
+  .day.is-collapsed .day-collapse-ic { transform: rotate(-90deg); }
+  .day.is-collapsed .day-body { display: none; }
+
+  .day-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+
+  /* ===== Page card ===== */
+  .pcard {
+    padding: 18px 18px 8px; border-radius: var(--r-md);
+    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+  }
+  html.dark .pcard { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+  .pcard.is-new { border-color: color-mix(in srgb, var(--cat-improvements) 55%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-improvements) 14%, transparent); }
+  .pcard-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .pcard-mark { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+  html.dark .pcard-mark { color: var(--primary-bright); }
+  .pcard-mark .material-symbols-outlined { font-size: 20px; }
+  .pcard-meta { min-width: 0; flex: 1; }
+  .pcard-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
+  .pcard-path { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
+  .pcard-new-tag {
+    display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0;
+    font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--cat-improvements);
+  }
+  .pcard-new-tag .material-symbols-outlined { font-size: 13px; }
+
+  /* ===== Category block ===== */
+  .cat-block { margin-bottom: 14px; }
+  .cat-block-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+  .cat-block-head .material-symbols-outlined { font-size: 16px; color: var(--cat); }
+  .cat-block-label { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--cat); }
+  .cat-block-count { font-size: 0.625rem; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+  .cat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .cat-list li {
+    position: relative; padding-left: 16px; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5;
+  }
+  .cat-list li::before {
+    content: ""; position: absolute; left: 3px; top: 8px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--cat);
+  }
+  .cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+
+  /* ===== Empty state ===== */
+  .empty {
+    margin-top: 30px; padding: 42px 24px; text-align: center; border-radius: var(--r-md);
+    border: 1px dashed var(--border-strong); color: var(--text-muted);
+  }
+  .empty .material-symbols-outlined { font-size: 34px; color: var(--text-subtle); }
+  .empty-title { font-size: 0.9375rem; font-weight: 700; margin-top: 8px; color: var(--text); }
+  .empty-note { font-size: 0.8125rem; margin-top: 3px; }
+
+  footer {
+    margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 0.8125rem; color: var(--text-subtle); line-height: 1.6;
+  }
+
+  .skip-link {
+    position: absolute; left: 12px; top: -48px; z-index: 100;
+    padding: 10px 16px; border-radius: 10px; background: var(--primary); color: #fff;
+    font-weight: 700; text-decoration: none; transition: top 0.18s ease;
+  }
+  .skip-link:focus { top: 12px; }
+  </style>
+  <script src="../js/cwr-toggle.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="back-btn" id="backBtn" href="overview.html" title="Back to the app">
+    <span class="material-symbols-outlined">arrow_back</span><span>Back</span>
+  </a>
+  <div class="topbar-brand">
+    <span class="topbar-mark" aria-hidden="true"><span class="material-symbols-outlined">timeline</span></span>
+    <div class="topbar-titles">
+      <div class="topbar-kicker">WISE · Internal</div>
+      <div class="topbar-name">Progress Log</div>
+    </div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+    <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+    <span id="themeLabel">Dark theme</span>
+  </button>
+</header>
+
+<main class="wrap" id="main">
+  <div class="hero">
+    <div class="hero-eyebrow">Build journal · day by day</div>
+    <h1>What shipped, and when</h1>
+    <p>
+      A running, internal record of everything built across the WISE platform — broken down
+      <strong>by day</strong> and then <strong>by page</strong>, and sorted into components, features,
+      logic, UX&nbsp;&amp;&nbsp;UI, changes, improvements, updates and deletions. Use the filters to
+      focus on a single page or category, or search for anything specific.
+    </p>
+  </div>
+
+  <div class="scorecard" id="scorecard"><!-- injected --></div>
+
+  <section class="controls" aria-label="Filters">
+    <div class="controls-row">
+      <label class="search-box">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input type="text" id="search" placeholder="Search entries, pages, components…" aria-label="Search the progress log" />
+      </label>
+      <span class="select-wrap">
+        <select id="pageFilter" aria-label="Filter by page"><!-- injected --></select>
+      </span>
+      <div class="controls-tools">
+        <button class="tool-btn" id="expandAll" type="button"><span class="material-symbols-outlined">unfold_more</span>Expand all</button>
+        <button class="tool-btn" id="collapseAll" type="button"><span class="material-symbols-outlined">unfold_less</span>Collapse all</button>
+      </div>
+    </div>
+    <div class="cat-filters" id="catFilters" role="group" aria-label="Filter by category"><!-- injected --></div>
+    <div class="filter-note" id="filterNote"><!-- injected --></div>
+  </section>
+
+  <div class="timeline" id="timeline"><!-- injected --></div>
+
+  <footer>
+    Internal engineering log for the WISE platform. Entries are grouped by day (most recent first)
+    and by the page they touched. This page is an Admin-only surface, reachable from the Appearance
+    menu alongside the Accessibility review and All modules index.
+  </footer>
+</main>
+
+<script>
+/* =====================================================================
+   Category taxonomy
+===================================================================== */
+const CATS = [
+  { id: 'components',   label: 'Components',   icon: 'widgets' },
+  { id: 'features',     label: 'Features',     icon: 'bolt' },
+  { id: 'logic',        label: 'Logic',        icon: 'code' },
+  { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
+  { id: 'changes',      label: 'Changes',      icon: 'edit' },
+  { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
+  { id: 'updates',      label: 'Updates',      icon: 'update' },
+  { id: 'deletions',    label: 'Deletions',    icon: 'delete' },
+];
+const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
+
+/* =====================================================================
+   The log. Newest day first. Each entry is a page touched that day, with
+   items sorted into the categories above. Keep entries short + factual.
+===================================================================== */
+const LOG = [
+  {
+    date: '2026-08-17', rel: 'Monday',
+    summary: 'Dev-handoff catalog on All Modules, deeper View Product, and project-wide conventions + lint tooling.',
+    entries: [
+      {
+        page: 'All Modules', path: 'all-modules.html',
+        components: [
+          'Dev-ready component catalog: buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, composer',
+          'Typography + design-token specimens',
+          'Icon inventory browser',
+          'Motion catalog + streaming-trace demo',
+        ],
+        features: [
+          'Per-component dev-ready toggles so engineering can claim components one by one',
+          'Parent/child readiness rollups showing handoff progress at a glance',
+          'Jump-to-source links from each catalog entry to the page it lives on',
+          'Downloadable chart & report design rules (.md)',
+        ],
+        logic: [
+          'Dev-ready tree builder with persisted ready-state',
+          'Deduplication grouping repeated components into canonical entries',
+          'Automated icon scanning keeping the inventory in sync',
+        ],
+      },
+      {
+        page: 'View Product', path: 'view-product.html',
+        components: ['Deeper detail layout with dedicated score, ingredient, and imagery sections'],
+        ux: ['Refined ingredient & score tooltips'],
+        improvements: ['Wired into the real product photo library'],
+      },
+      {
+        page: 'WISEcodeAI', path: 'wiseai.html',
+        improvements: ['Refined chat behavior and response pacing'],
+      },
+      {
+        page: 'Platform-wide', path: '(all pages)',
+        logic: [
+          'Normalized topbar + appearance controls so every page renders identical header/theme controls',
+          'Lint tooling for JavaScript, CSS, and HTML',
+        ],
+        components: [
+          'Cursor rules: canonical page structure, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines',
+        ],
+        features: [
+          'Skills: chat-module audit, new-page-from-canonical, propagate-across-pages, visual-verify',
+        ],
+        deletions: ['Removed the legacy wise_ip3 landing page and its dead links'],
+      },
+    ],
+  },
+  {
+    date: '2026-08-16', rel: 'Sunday',
+    summary: 'Add Product reworked into a conversational flow; site-wide count-up, welcome orbit, and mobile nav.',
+    entries: [
+      {
+        page: 'Add Product', path: 'add-product.html',
+        components: [
+          'Nutrition facts entry panels (multiple pack formats + sizes)',
+          'Photo capture modal',
+          'Assistant side panel with inline field editors and a live activity log',
+        ],
+        features: [
+          'Conversational, assistant-guided product entry',
+          '“What can I ask” guide with example prompts that animate in letter by letter',
+        ],
+        logic: [
+          'Streaming + shimmer states while the AI processes',
+          'Field-level capture tracking that feeds the activity log',
+        ],
+      },
+      {
+        page: 'Platform-wide', path: '(all pages)',
+        components: [
+          'count-up-all.js — universal scorecard count-up',
+          'chat-ask.js — shared ask-suggestions component',
+          'mobile-nav.js — small-screen nav with an animated slide-in drawer',
+        ],
+        features: [
+          'welcome-orbit.js — animated capability orbit on the chat welcome',
+          'ask-catalog.js — catalog-specific ask suggestions',
+        ],
+        ux: ['Layout refinements across product, dashboard, and studio pages'],
+        logic: ['no-icon-tile hook + rule enforcing no rounded-square icon backdrops'],
+      },
+    ],
+  },
+  {
+    date: '2026-08-15', rel: 'Saturday',
+    summary: 'New Add Catalog bulk-import page, 100+ real product photos, and responsive tables.',
+    entries: [
+      {
+        page: 'Add Catalog', path: 'add-catalog.html', isNew: true,
+        components: ['New guided, multi-step bulk catalog import page'],
+        features: ['End-to-end import demoed with a real brand catalog'],
+      },
+      {
+        page: 'Platform-wide', path: '(all pages)',
+        components: ['100+ real product photos (Helix set) + a fetch script'],
+        features: ['responsive-tables.js — data tables reflow for phones and tablets'],
+        improvements: ['WISEcodeAI chat + all-modules overhaul; extended appearance & topbar'],
+      },
+    ],
+  },
+  {
+    date: '2026-08-14', rel: 'Friday',
+    summary: 'Conversation Library folders and expanded chat activity + sticky audit tooling.',
+    entries: [
+      {
+        page: 'Conversation Library', path: 'conversation-library.html',
+        features: [
+          'Color-coded folders: drag cards in, or drop one card on another to create a folder',
+          'Rename, recolor, and dissolve folders',
+        ],
+        logic: ['Filter counts reconciled so numbers always match the visible cards'],
+      },
+      {
+        page: 'All Modules', path: 'all-modules.html',
+        components: ['Expanded chat activity strip'],
+        logic: ['Sticky-module audit tooling (audit script + corner-case repro)'],
+      },
+    ],
+  },
+  {
+    date: '2026-08-13', rel: 'Thursday',
+    summary: 'Sticky modules and user avatars roll out platform-wide; AI Dashboard and Profile expand.',
+    entries: [
+      {
+        page: 'Platform-wide', path: '(all pages)',
+        components: [
+          'sticky-modules.js — tuck any side panel behind the chat like a drawer',
+          'user-avatar.js — the avatar follows the user into every chat',
+        ],
+        features: ['code-stats tooling + dataset'],
+      },
+      {
+        page: 'AI Dashboard', path: 'ai-dashboard.html',
+        improvements: ['Rebuilt into the standard product shell with brand-palette charts + an embedded assistant'],
+      },
+      {
+        page: 'Profile', path: 'profile.html',
+        features: ['Upload a profile photo or pick from ready-made avatar patterns'],
+      },
+      {
+        page: 'WISEcodeAI', path: 'wiseai.html',
+        features: ['Expanded chat interactions + shared styles'],
+        deletions: ['Removed the dev-only seed harness (__seed.html)'],
+      },
+    ],
+  },
+  {
+    date: '2026-08-12', rel: 'Wednesday',
+    summary: 'Crawl · Walk · Run toggle, a major All Modules expansion, and a site-wide polish pass.',
+    entries: [
+      {
+        page: 'Platform-wide', path: '(all pages)',
+        components: ['cwr-toggle.js — Crawl · Walk · Run experience toggle'],
+        ux: ['Site-wide visual polish across nearly every page'],
+      },
+      {
+        page: 'All Modules', path: 'all-modules.html',
+        features: ['Major expansion of the module directory (component / typography / token / icon / motion catalogs)'],
+      },
+      {
+        page: 'App Vision Deck', path: 'app-vision-deck.html',
+        improvements: ['Reworked slides, including the dev-handoff “release blocks” story'],
+      },
+    ],
+  },
+];
+
+/* =====================================================================
+   Derived helpers
+===================================================================== */
+function entryItems(entry) {
+  // Flatten an entry's category arrays into [{cat, text}] in taxonomy order.
+  const out = [];
+  for (const c of CATS) {
+    const arr = entry[c.id];
+    if (Array.isArray(arr)) for (const text of arr) out.push({ cat: c.id, text });
+  }
+  return out;
+}
+
+function fmtDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+/* =====================================================================
+   State
+===================================================================== */
+const activeCats = new Set(CATS.map(c => c.id));   // all on by default
+let pageFilter = '__all';
+let searchTerm = '';
+const collapsed = new Set();                        // day iso keys
+
+/* =====================================================================
+   Renderers
+===================================================================== */
+function renderScorecard() {
+  const days = LOG.length;
+  const pages = new Set();
+  const catTotals = Object.fromEntries(CATS.map(c => [c.id, 0]));
+  let total = 0;
+  LOG.forEach(day => day.entries.forEach(e => {
+    pages.add(e.page);
+    entryItems(e).forEach(it => { catTotals[it.cat]++; total++; });
+  }));
+
+  const topCat = CATS.map(c => ({ c, n: catTotals[c.id] })).sort((a, b) => b.n - a.n)[0];
+
+  document.getElementById('scorecard').innerHTML = `
+    <div class="score"><div class="score-num" data-countup>${days}</div><div class="score-label">Days logged</div><div class="score-meta">${fmtDate(LOG[LOG.length-1].date)} → ${fmtDate(LOG[0].date)}</div></div>
+    <div class="score"><div class="score-num" data-countup>${pages.size}</div><div class="score-label">Surfaces touched</div><div class="score-meta">Pages &amp; platform-wide areas</div></div>
+    <div class="score"><div class="score-num" data-countup>${total}</div><div class="score-label">Logged entries</div><div class="score-meta">Across ${CATS.length} categories</div></div>
+    <div class="score"><div class="score-num" data-countup>${topCat.n}</div><div class="score-label">${topCat.c.label}</div><div class="score-meta">Most active category</div></div>
+  `;
+  return { catTotals };
+}
+
+function renderPageFilter() {
+  const pages = [];
+  const seen = new Set();
+  LOG.forEach(day => day.entries.forEach(e => {
+    if (!seen.has(e.page)) { seen.add(e.page); pages.push(e.page); }
+  }));
+  pages.sort((a, b) => a.localeCompare(b));
+  const sel = document.getElementById('pageFilter');
+  sel.innerHTML = `<option value="__all">All pages</option>` +
+    pages.map(p => `<option value="${p.replace(/"/g, '&quot;')}">${p}</option>`).join('');
+}
+
+function renderCatFilters(catTotals) {
+  document.getElementById('catFilters').innerHTML = CATS.map(c => `
+    <button type="button" class="cat-chip${activeCats.has(c.id) ? '' : ' is-off'}" data-cat="${c.id}"
+      style="--cat: var(--cat-${c.id});" aria-pressed="${activeCats.has(c.id)}">
+      <span class="material-symbols-outlined">${c.icon}</span>${c.label}
+      <span class="cat-chip-count">${catTotals[c.id]}</span>
+    </button>`).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function highlight(text) {
+  const safe = escapeHtml(text);
+  if (!searchTerm) return safe;
+  const re = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+  return safe.replace(re, '<mark>$1</mark>');
+}
+
+function matchesSearch(entry) {
+  if (!searchTerm) return true;
+  const hay = (entry.page + ' ' + entry.path + ' ' +
+    entryItems(entry).map(i => i.text).join(' ')).toLowerCase();
+  return hay.includes(searchTerm);
+}
+
+function renderCatBlock(cat, items) {
+  const c = CAT_BY_ID[cat];
+  return `
+    <div class="cat-block" style="--cat: var(--cat-${cat});">
+      <div class="cat-block-head">
+        <span class="material-symbols-outlined" aria-hidden="true">${c.icon}</span>
+        <span class="cat-block-label">${c.label}</span>
+        <span class="cat-block-count">${items.length}</span>
+      </div>
+      <ul class="cat-list">${items.map(t => `<li>${highlight(t)}</li>`).join('')}</ul>
+    </div>`;
+}
+
+function renderPageCard(entry) {
+  // Only categories that are active AND have items.
+  const blocks = CATS
+    .filter(c => activeCats.has(c.id) && Array.isArray(entry[c.id]) && entry[c.id].length)
+    .map(c => renderCatBlock(c.id, entry[c.id]))
+    .join('');
+  if (!blocks) return '';
+  return `
+    <article class="pcard${entry.isNew ? ' is-new' : ''}">
+      <div class="pcard-head">
+        <span class="pcard-mark" aria-hidden="true"><span class="material-symbols-outlined">${entry.isNew ? 'note_add' : 'description'}</span></span>
+        <div class="pcard-meta">
+          <div class="pcard-name">${escapeHtml(entry.page)}</div>
+          <div class="pcard-path">${escapeHtml(entry.path)}</div>
+        </div>
+        ${entry.isNew ? '<span class="pcard-new-tag"><span class="material-symbols-outlined">fiber_new</span>New page</span>' : ''}
+      </div>
+      ${blocks}
+    </article>`;
+}
+
+function renderTimeline() {
+  const root = document.getElementById('timeline');
+  let html = '';
+  let visibleEntries = 0;
+
+  LOG.forEach(day => {
+    const entries = day.entries.filter(e =>
+      (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
+
+    const cards = entries.map(renderPageCard).filter(Boolean);
+    if (!cards.length) return;
+    visibleEntries += cards.length;
+
+    // Per-day category tally (respecting active categories).
+    const tally = {};
+    entries.forEach(e => entryItems(e).forEach(it => {
+      if (activeCats.has(it.cat)) tally[it.cat] = (tally[it.cat] || 0) + 1;
+    }));
+    const tallyPills = CATS.filter(c => tally[c.id]).map(c => `
+      <span class="day-tally-pill" style="color: var(--cat-${c.id});" title="${c.label}">
+        <span class="material-symbols-outlined">${c.icon}</span>${tally[c.id]}
+      </span>`).join('');
+
+    const isCollapsed = collapsed.has(day.date);
+    html += `
+      <section class="day${isCollapsed ? ' is-collapsed' : ''}" id="day-${day.date}">
+        <div class="day-head" data-day="${day.date}" role="button" tabindex="0" aria-expanded="${!isCollapsed}">
+          <span class="day-dot" aria-hidden="true"><span class="material-symbols-outlined">event</span></span>
+          <div class="day-titles">
+            <div class="day-date">${fmtDate(day.date)} <span class="day-rel">${day.rel}</span></div>
+            <div class="day-summary">${escapeHtml(day.summary)}</div>
+          </div>
+          <div class="day-tally">${tallyPills}
+            <span class="material-symbols-outlined day-collapse-ic" aria-hidden="true">expand_more</span>
+          </div>
+        </div>
+        <div class="day-body">${cards.join('')}</div>
+      </section>`;
+  });
+
+  if (!visibleEntries) {
+    root.innerHTML = `
+      <div class="empty">
+        <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+        <div class="empty-title">Nothing matches those filters</div>
+        <div class="empty-note">Try clearing the search, re-enabling categories, or picking a different page.</div>
+      </div>`;
+  } else {
+    root.innerHTML = html;
+  }
+
+  const note = document.getElementById('filterNote');
+  const catCount = activeCats.size;
+  const parts = [];
+  parts.push(`${visibleEntries} page ${visibleEntries === 1 ? 'entry' : 'entries'} shown`);
+  if (catCount < CATS.length) parts.push(`${catCount} of ${CATS.length} categories`);
+  if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
+  if (searchTerm) parts.push(`search: “${searchTerm}”`);
+  note.textContent = parts.join(' · ');
+}
+
+/* =====================================================================
+   Wiring
+===================================================================== */
+function boot() {
+  const { catTotals } = renderScorecard();
+  renderPageFilter();
+  renderCatFilters(catTotals);
+  renderTimeline();
+
+  document.getElementById('catFilters').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-cat]');
+    if (!chip) return;
+    const id = chip.dataset.cat;
+    if (activeCats.has(id)) activeCats.delete(id); else activeCats.add(id);
+    if (!activeCats.size) activeCats.add(id); // never allow zero categories
+    renderCatFilters(catTotals);
+    renderTimeline();
+  });
+
+  document.getElementById('pageFilter').addEventListener('change', (e) => {
+    pageFilter = e.target.value;
+    renderTimeline();
+  });
+
+  let searchDebounce;
+  document.getElementById('search').addEventListener('input', (e) => {
+    clearTimeout(searchDebounce);
+    const v = e.target.value.trim().toLowerCase();
+    searchDebounce = setTimeout(() => { searchTerm = v; renderTimeline(); }, 120);
+  });
+
+  document.getElementById('expandAll').addEventListener('click', () => {
+    collapsed.clear(); renderTimeline();
+  });
+  document.getElementById('collapseAll').addEventListener('click', () => {
+    LOG.forEach(d => collapsed.add(d.date)); renderTimeline();
+  });
+
+  // Collapse / expand a day (click or keyboard on the header).
+  document.getElementById('timeline').addEventListener('click', (e) => {
+    const head = e.target.closest('[data-day]');
+    if (!head) return;
+    const key = head.dataset.day;
+    if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
+    renderTimeline();
+  });
+  document.getElementById('timeline').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const head = e.target.closest('[data-day]');
+    if (!head) return;
+    e.preventDefault();
+    const key = head.dataset.day;
+    if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
+    renderTimeline();
+  });
+}
+
+/* =====================================================================
+   Theme toggle (persists to the same key the app + FOUC guard use)
+===================================================================== */
+function syncThemeButton() {
+  const dark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeIcon').textContent = dark ? 'light_mode' : 'dark_mode';
+  document.getElementById('themeLabel').textContent = dark ? 'Light theme' : 'Dark theme';
+  document.getElementById('themeToggle').setAttribute('aria-pressed', String(dark));
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const dark = !document.documentElement.classList.contains('dark');
+  document.documentElement.classList.toggle('dark', dark);
+  try { localStorage.setItem('wise-theme', dark ? 'dark' : 'light'); } catch (e) {}
+  syncThemeButton();
+});
+
+/* Step back to whichever page opened the log; fall back to the href. */
+document.getElementById('backBtn').addEventListener('click', (e) => {
+  let fromApp = false;
+  try { fromApp = !!document.referrer && new URL(document.referrer).origin === location.origin; }
+  catch (_) {}
+  if (fromApp && history.length > 1) { e.preventDefault(); history.back(); }
+});
+
+syncThemeButton();
+boot();
+</script>
+<script defer src="../js/count-up-all.js"></script>
+</body>
+</html>

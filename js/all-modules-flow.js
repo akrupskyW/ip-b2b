@@ -13,9 +13,9 @@
  *      Chat / History / Data Sources / Turns, and Reformulation's Studio +
  *      Dashboard) each get their own card, with a final de-dup pass so nothing
  *      appears twice.
- *   2. Icon Inventory — every Material Icons / Symbols glyph used anywhere in the
- *      codebase, with its family, usage count, a representative label, and the
- *      exact placements (file + line). The data is scanned by
+ *   2. Icon Inventory — every Material Icons / Symbols glyph used in the live
+ *      app (this page excluded), grouped by surface (chat, primary nav, …),
+ *      with family, usage count, label, and placements. Scanned by
  *      scripts/scan_icons.py into js/icon-inventory-data.js.
  *   3. Design System — the app's typography (families, live type scale, usage)
  *      and every color/radius/shadow token from pages/wise.css, rendered as
@@ -28,10 +28,16 @@
  *      by file type with an up/down trend (one git snapshot per day) and the
  *      HTML page count. The data is scanned by scripts/scan_code_stats.py
  *      into js/code-stats-data.js.
+ *   6. Motion & Resize — every animation (count-up, chart replay, streaming,
+ *      chip shimmer / fly-in, welcome helix, thinking helix, accordion) and
+ *      every drag/resize interaction (module splitter, width tiers, reorder,
+ *      drag-to-file), explained and rendered live.
  */
 
 import { ICON_INVENTORY } from './icon-inventory-data.js';
 import { CODE_STATS } from './code-stats-data.js';
+import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
+import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim } from './wiseai-chat.js';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -105,11 +111,12 @@ const MODULE_SECTIONS = [
   {
     title: 'Reports & Analytics',
     tone: 'report',
+    /* app-vision-deck.html is a standalone pitch deck and is intentionally
+       omitted from this index (directory, rail preview, and screenshot export). */
     modules: [
       { label: 'Reports', icon: 'description', href: 'reports.html' },
       { label: 'Guiding Stars Report', icon: 'star', href: 'report-guiding-stars.html' },
       { label: 'Analytics Types', icon: 'insights', href: 'analytics-types.html' },
-      { label: 'App Vision Deck', icon: 'slideshow', href: 'app-vision-deck.html' },
     ],
   },
   {
@@ -282,6 +289,7 @@ function moduleMoreItems(moduleId) {
       { action: 'int-all', icon: 'apps', label: 'Show all chips' },
       { action: 'int-talk', icon: 'bolt', label: 'Show chips needing logic' },
       { action: 'int-act', icon: 'chat_bubble', label: 'Show chips needing transcript' },
+      { action: 'int-clear', icon: 'restart_alt', label: 'Clear search' },
     ];
   }
   if (moduleId === 'mi-tables') {
@@ -293,6 +301,13 @@ function moduleMoreItems(moduleId) {
   if (moduleId === 'mi-trace') {
     return [
       { action: 'trace-replay', icon: 'replay', label: 'Replay trace' },
+    ];
+  }
+  if (moduleId === 'mi-motion') {
+    return [
+      { action: 'motion-replay', icon: 'replay', label: 'Replay all motion' },
+      { action: 'motion-anim', icon: 'animation', label: 'Show animations' },
+      { action: 'motion-drag', icon: 'drag_indicator', label: 'Show drag & resize' },
     ];
   }
   return [
@@ -339,6 +354,7 @@ function directorySection(sec) {
       <div class="mi-dir-head">
         <h3 class="mi-dir-title">${esc(title)}</h3>
         <span class="mi-dir-count">${modules.length}</span>
+        ${readyToggleHTML('dir:' + tone, title, { level: 'item', parent: 'mi-directory' })}
       </div>
       <div class="mi-card-grid">${modules.map(moduleCard).join('')}</div>
     </section>`;
@@ -349,17 +365,7 @@ function renderDirectory() {
      letting two modules that live on the same page but at different anchors —
      e.g. Chat vs wiseai.html#history, or the Reformulation Studio vs
      Dashboard — each keep their own card. First occurrence wins. */
-  const seen = new Set();
-  const sections = MODULE_SECTIONS
-    .map((s) => ({
-      ...s,
-      modules: s.modules.filter((m) => {
-        if (seen.has(m.href)) return false;
-        seen.add(m.href);
-        return true;
-      }),
-    }))
-    .filter((s) => s.modules.length);
+  const sections = dedupedDirSections();
   const total = sections.reduce((n, s) => n + s.modules.length, 0);
 
   const scorecards = [
@@ -380,7 +386,7 @@ function renderDirectory() {
   sections.forEach((s) => s.modules.forEach((m) => flat.push({ ...m, area: s.tone, areaTitle: s.title })));
 
   return `
-    <section class="mi-module" id="mi-directory">
+    <section class="mi-module is-collapsed" id="mi-directory">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Module Directory</h2>
@@ -388,6 +394,7 @@ function renderDirectory() {
             than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns) and Reformulation
             (Studio + Dashboard) — are broken out so each module appears exactly once.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-directory', 'Module Directory')}
         ${moduleControlsHTML('mi-directory')}
       </header>
 
@@ -437,20 +444,20 @@ function renderDirectory() {
 /* never shows an empty card. `selector` is resolved inside the frame. */
 const TABLE_CATALOG = [
   /* Portfolio */
-  { label: 'Portfolio · Claimed', href: 'product-portfolio.html', selector: '.pf-table--claimed', icon: 'inventory_2', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Claimed SKUs with compliance and ingredient health.' },
-  { label: 'Portfolio · Discovered', href: 'product-portfolio.html', selector: '.pf-table--discovered', icon: 'travel_explore', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Auto-discovered UPCs waiting to be claimed.' },
-  { label: 'Portfolio · Needs info', href: 'product-portfolio.html', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products missing data before they can be verified.' },
-  { label: 'Product Comparison', href: 'product-comparison.html', selector: '.cmp-grid', icon: 'compare', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Side-by-side attribute matrix for two products.' },
+  { label: 'Portfolio · Claimed', href: 'product-portfolio.html', hash: 'pf-view-claimed', selector: '.pf-table--claimed', icon: 'inventory_2', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Claimed SKUs with compliance and ingredient health.' },
+  { label: 'Portfolio · Discovered', href: 'product-portfolio.html', hash: 'pf-view-discovered', selector: '.pf-table--discovered', icon: 'travel_explore', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Auto-discovered UPCs waiting to be claimed.' },
+  { label: 'Portfolio · Needs info', href: 'product-portfolio.html', hash: 'pf-view-needsinfo', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products missing data before they can be verified.' },
+  { label: 'Product Comparison', href: 'product-comparison.html', page: 'Product Comparison', selector: '.cmp-grid', icon: 'compare', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Side-by-side attribute matrix for two products.' },
   { label: 'Marketing Assets tree', href: 'marketing-assets.html', selector: '#ma-root-table', icon: 'photo_library', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Nested file tree of the co-branding toolkit.' },
 
   /* WISEcodeAI Studio */
   { label: 'AI Dashboard · Users', href: 'ai-dashboard.html', selector: '#aid-user-table', icon: 'group', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'Per-user AI activity and usage.' },
   { label: 'Ingredient Browser', href: 'ingredient-browser.html', selector: '#ib-table', icon: 'science', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The full ingredient registry with GRAS status.' },
-  { label: 'Chat · Ingredient table', href: 'wiseai.html', selector: '.wa-tbl', icon: 'forum', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The sortable ingredient table rendered inside a chat answer.' },
+  { label: 'Chat · Ingredient table', href: 'wiseai.html', page: 'WISEcodeAI Chat', selector: '.wa-tbl', icon: 'forum', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The sortable ingredient table rendered inside a chat answer.' },
 
   /* Reformulation */
-  { label: 'Reformulation · Picks', href: 'reformulation.html', selector: '.rf-table:not(.rf-table--moves)', icon: 'auto_fix_high', area: 'reform', areaTitle: 'Reformulation', desc: 'Products you can pick to reformulate.' },
-  { label: 'Reformulation · Moves', href: 'reformulation.html', selector: '#rf-moves-table', icon: 'route', area: 'reform', areaTitle: 'Reformulation', desc: 'Recommended ingredient moves with impact and effort.' },
+  { label: 'Reformulation · Picks', href: 'reformulation.html', hash: 'rf-dash-pick', page: 'Reformulation Dashboard', selector: '.rf-table:not(.rf-table--moves)', icon: 'auto_fix_high', area: 'reform', areaTitle: 'Reformulation', desc: 'Products you can pick to reformulate.' },
+  { label: 'Reformulation · Moves', href: 'reformulation.html', page: 'Reformulation Dashboard', selector: '#rf-moves-table', icon: 'route', area: 'reform', areaTitle: 'Reformulation', desc: 'Recommended ingredient moves with impact and effort.' },
 
   /* Reports & Analytics */
   { label: 'Guiding Stars', href: 'report-guiding-stars.html', selector: '#gs-table', icon: 'star', area: 'report', areaTitle: 'Reports', desc: 'Every product scored on the Guiding Stars scale.' },
@@ -477,38 +484,78 @@ const TABLE_CATALOG = [
   { label: 'API Keys', href: 'api-keys.html', selector: '.ak-table', icon: 'key', area: 'account', areaTitle: 'Account', desc: 'Created keys with scope, usage and revoke.' },
 ];
 
+/* Page path only — used for iframe previews + link-validation probes. */
+function tablePagePath(t) {
+  return String(t.href || '').split('#')[0];
+}
+
+/* Real navigation target: prefer an explicit hash, then an #id selector, so
+   opening a pane lands on the table (or the tab that hosts it), not just the
+   top of the host page. */
+function tableOpenHref(t) {
+  const path = tablePagePath(t);
+  const existing = String(t.href || '');
+  if (existing.includes('#')) return existing;
+  if (t.hash) return `${path}#${t.hash}`;
+  const id = String(t.selector || '').match(/^#([A-Za-z][\w-]*)/);
+  if (id) return `${path}#${id[1]}`;
+  return path;
+}
+
+function tablePageLabel(t) {
+  if (t.page) return t.page;
+  const path = tablePagePath(t);
+  for (const s of MODULE_SECTIONS) {
+    const hit = s.modules.find((m) => String(m.href).split('#')[0] === path);
+    if (hit) return hit.label;
+  }
+  return path.replace(/\.html$/i, '').replace(/[-_]+/g, ' ');
+}
+
 /* One rail pane per table — the real page in a scaled iframe, isolated to just
    the table via `data-focus` (resolved on load by focusFrameTable). Same
    data-search / data-area hooks as the module panes so the search filter works,
-   and the same data-pane / data-href so link validation flags dead pages. */
+   and the same data-pane / data-href so link validation flags dead pages.
+   Title, preview overlay, and "Used on" caption all navigate to the host page
+   (with a hash when the table has one) so a click always jumps to the source. */
 function tablePane(t) {
-  const search = `${t.label} ${t.href} ${t.areaTitle} ${t.desc || ''}`.toLowerCase();
+  const path = tablePagePath(t);
+  const open = tableOpenHref(t);
+  const page = tablePageLabel(t);
+  const search = `${t.label} ${path} ${page} ${t.areaTitle} ${t.desc || ''}`.toLowerCase();
   return `
-    <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(t.href)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
-      <div class="mi-pane-head">
+    <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(path)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
+      <a class="mi-pane-head" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}">
         <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'table_chart')}</span>
         <span class="mi-pane-name">${esc(t.label)}</span>
         <span class="mi-pane-area">${esc(t.areaTitle)}</span>
-      </div>
-      <a class="mi-pane-viewport" href="${esc(t.href)}" aria-label="Open ${esc(t.label)}">
-        <iframe class="mi-pane-frame" src="${esc(previewSrc(t.href))}" data-focus="${esc(t.selector)}" title="${esc(t.label)} table preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-        <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
       </a>
+      <div class="mi-pane-viewport">
+        <iframe class="mi-pane-frame" src="${esc(previewSrc(path))}" data-focus="${esc(t.selector)}" title="${esc(t.label)} table preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <a class="mi-pane-hit" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}"></a>
+        <span class="mi-pane-open material-symbols-outlined" aria-hidden="true">open_in_new</span>
+      </div>
       ${t.desc ? `<p class="mi-tpane-desc">${esc(t.desc)}</p>` : ''}
+      <a class="mi-tpane-src" href="${esc(open)}">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+        Used on ${esc(page)}
+      </a>
     </div>`;
 }
 
 function renderTableGallery() {
   const total = TABLE_CATALOG.length;
   return `
-    <section class="mi-module" id="mi-tables">
+    <section class="mi-module is-collapsed" id="mi-tables">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Table Gallery</h2>
           <p class="mi-module-lede">Every data table in the app — portfolio grids, verification and analytics tables,
             admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane
-            isolates the real table from its page; hover and open it to jump to the source.</p>
+            isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to
+            where it lives.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-tables', 'Table Gallery')}
         ${moduleControlsHTML('mi-tables')}
       </header>
 
@@ -589,7 +636,7 @@ function renderCodebase() {
       <div class="mi-code-sub">${esc(m.sub)}</div>
     </article>`).join('');
   return `
-    <section class="mi-module" id="mi-code">
+    <section class="mi-module is-collapsed" id="mi-code">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Codebase</h2>
@@ -597,6 +644,7 @@ function renderCodebase() {
             Python (generated data blobs excluded) with an up/down trend from one git snapshot per day, plus the
             HTML page count. Generated by <code>scripts/scan_code_stats.py</code>.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-code', 'Codebase')}
         ${moduleControlsHTML('mi-code')}
       </header>
 
@@ -710,7 +758,7 @@ function placementRows(placements) {
     .map(
       (p) => `<li class="ii-place">
         <span class="ii-place-file">${esc(p.file)}<span class="ii-place-line">:${esc(p.line)}</span></span>
-        ${p.label ? `<span class="ii-place-label">${esc(p.label)}</span>` : '<span class="ii-place-label ii-place-empty">—</span>'}
+        <span class="ii-place-label">${p.label ? esc(p.label) : '<span class="ii-place-empty">—</span>'}${p.group ? `<span class="ii-place-group">${esc(p.group)}</span>` : ''}</span>
       </li>`
     )
     .join('');
@@ -724,19 +772,29 @@ function variantKeys(families) {
   ))).join(' ');
 }
 
-function iconCard(ic) {
+function groupTags(groups, catalog) {
+  if (!groups || !groups.length) return '';
+  const byId = Object.fromEntries((catalog || []).map((g) => [g.id, g]));
+  return groups.map((id) => {
+    const g = byId[id];
+    return `<span class="ii-tag is-group">${esc(g ? g.label : id)}</span>`;
+  }).join('');
+}
+
+function iconCard(ic, catalog) {
   const dcls = displayClassFor(ic.families);
   const label = ic.label ? esc(ic.label) : '';
-  const search = `${ic.name} ${ic.label || ''} ${ic.placements.map((p) => p.file).join(' ')}`.toLowerCase();
+  const groups = ic.groups || [];
+  const search = `${ic.name} ${ic.label || ''} ${groups.join(' ')} ${ic.placements.map((p) => `${p.file} ${p.label || ''}`).join(' ')}`.toLowerCase();
   const famKey = variantKeys(ic.families);
   return `
-    <div class="ii-card" data-icon-card data-name="${esc(ic.name)}" data-count="${esc(ic.count)}" data-fam="${esc(famKey)}" data-search="${esc(search)}">
+    <div class="ii-card" data-icon-card data-name="${esc(ic.name)}" data-count="${esc(ic.count)}" data-fam="${esc(famKey)}" data-groups="${esc(groups.join(' '))}" data-search="${esc(search)}">
       <button type="button" class="ii-card-main" data-ii-toggle aria-expanded="false">
         <span class="ii-glyph"><span class="${dcls}">${esc(ic.name)}</span></span>
         <span class="ii-meta">
           <span class="ii-name">${esc(ic.name)}</span>
           ${label ? `<span class="ii-label">${label}</span>` : '<span class="ii-label ii-label-none">no nearby label</span>'}
-          <span class="ii-tagrow">${familyTags(ic.families)}<span class="ii-count" title="${esc(ic.count)} uses across the app"><span class="material-symbols-outlined">tag</span>${esc(ic.count)}</span></span>
+          <span class="ii-tagrow">${familyTags(ic.families)}${groupTags(groups, catalog)}<span class="ii-count" title="${esc(ic.count)} uses across the app"><span class="material-symbols-outlined">tag</span>${esc(ic.count)}</span></span>
         </span>
         <span class="ii-chev material-symbols-outlined" aria-hidden="true">expand_more</span>
       </button>
@@ -748,46 +806,53 @@ function iconCard(ic) {
 }
 
 function renderIconInventory() {
-  const data = ICON_INVENTORY || { icons: [], totalUniqueIcons: 0, totalUses: 0 };
+  const data = ICON_INVENTORY || { icons: [], totalUniqueIcons: 0, totalUses: 0, groups: [] };
   const icons = (data.icons || []).slice();
+  const groups = data.groups || [];
   const outlinedCount = icons.filter((i) => i.families.some((f) => f.includes('outlined'))).length;
   const roundedCount = icons.filter((i) => i.families.some((f) => f.includes('rounded'))).length;
+  const groupCards = groups.map((g) => `
+        <button type="button" class="mi-stat" data-ii-group="${esc(g.id)}" aria-pressed="false">
+          <span class="mi-stat-num">${g.count}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">${esc(g.label)}</span><span class="material-symbols-outlined">${esc(g.icon)}</span></span>
+        </button>`).join('');
   return `
-    <section class="mi-module" id="mi-icons">
+    <section class="mi-module is-collapsed" id="mi-icons">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Icon Inventory</h2>
-          <p class="mi-module-lede">Every Material Symbols glyph used anywhere in the app —
-            its variant, how many times it appears, a representative label, and the exact placements (file and
-            line). Generated by <code>scripts/scan_icons.py</code>.</p>
+          <p class="mi-module-lede">Every Material Symbols glyph used in the live app — its variant, how
+            many times it appears, a representative label, and the exact placements (file and line).
+            This page is excluded from the scan so the catalog is not polluted by its own chrome.
+            Toggle a group to see just the chat module, primary nav, and so on. Generated by
+            <code>scripts/scan_icons.py</code>.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-icons', 'Icon Inventory')}
         ${moduleControlsHTML('mi-icons')}
       </header>
 
       <div class="mi-toolbar">
         <div class="mi-search-inline">
           <span class="material-symbols-outlined">search</span>
-          <input type="search" id="ii-search-input" class="mi-search" placeholder="Filter by icon name, label, or file…" aria-label="Search icons" autocomplete="off" />
+          <input type="search" id="ii-search-input" class="mi-search" placeholder="Filter by icon name, label, group or file…" aria-label="Search icons" autocomplete="off" />
         </div>
         <div class="ii-sort" role="group" aria-label="Sort">
           <button type="button" class="ii-filter is-active" data-ii-sort="name">A–Z</button>
           <button type="button" class="ii-filter" data-ii-sort="count">Most used</button>
         </div>
+        <div class="ii-sort" role="group" aria-label="Variant">
+          <button type="button" class="ii-filter is-active" data-ii-fam="all" aria-pressed="true">All variants</button>
+          <button type="button" class="ii-filter" data-ii-fam="outlined" aria-pressed="false">Outlined · ${outlinedCount}</button>
+          <button type="button" class="ii-filter" data-ii-fam="rounded" aria-pressed="false">Rounded · ${roundedCount}</button>
+        </div>
       </div>
 
-      <div class="mi-stats" role="group" aria-label="Filter icons by variant">
-        <button type="button" class="mi-stat is-active" data-ii-fam="all" aria-pressed="true">
+      <div class="mi-stats" id="ii-group-stats" role="group" aria-label="Filter icons by group">
+        <button type="button" class="mi-stat is-active" data-ii-group="all" aria-pressed="true">
           <span class="mi-stat-num">${data.totalUniqueIcons}</span>
           <span class="mi-stat-label"><span class="mi-stat-text">All icons</span><span class="material-symbols-outlined">emoji_symbols</span></span>
         </button>
-        <button type="button" class="mi-stat" data-ii-fam="outlined" aria-pressed="false">
-          <span class="mi-stat-num">${outlinedCount}</span>
-          <span class="mi-stat-label"><span class="mi-stat-text">Outlined</span><span class="material-symbols-outlined">interests</span></span>
-        </button>
-        <button type="button" class="mi-stat" data-ii-fam="rounded" aria-pressed="false">
-          <span class="mi-stat-num">${roundedCount}</span>
-          <span class="mi-stat-label"><span class="mi-stat-text">Rounded</span><span class="material-symbols-outlined">blur_on</span></span>
-        </button>
+        ${groupCards}
         <button type="button" class="mi-stat" disabled>
           <span class="mi-stat-num">${data.totalUses}</span>
           <span class="mi-stat-label"><span class="mi-stat-text">Total uses</span><span class="material-symbols-outlined">tag</span></span>
@@ -796,7 +861,7 @@ function renderIconInventory() {
 
       <div class="ii-empty" id="ii-empty" hidden>No icons match your filter.</div>
       <div class="ii-grid" id="ii-grid">
-        ${icons.map(iconCard).join('')}
+        ${icons.map((ic) => iconCard(ic, groups)).join('')}
       </div>
     </section>`;
 }
@@ -842,8 +907,8 @@ const FONT_FAMILIES = [
    live at its exact size/weight/face. px values assume the 16px root. */
 const TYPE_SCALE = [
   { name: 'Micro badge', size: '0.5625rem', px: '9px', weight: '800', family: 'DM Sans', style: 'font-size:0.5625rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;', use: 'Pill badges (ADMIN, 404), pane area tags, chip tag rows.' },
-  { name: 'Eyebrow / label', size: '0.6875rem', px: '11px', weight: '700–800', family: 'DM Sans', token: '--fs-label', style: 'font-size:0.6875rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;', use: 'Section eyebrows (.dash-eyebrow), group titles, table headers, form labels.' },
-  { name: 'UI base', size: '0.75rem', px: '12px', weight: '500–700', family: 'DM Sans', token: '--fs-ui', style: 'font-size:0.75rem;font-weight:500;', use: 'The app-wide control size — the body default. Nav items, menu rows, chips, popover items, buttons.' },
+  { name: 'Eyebrow / label', size: '0.6875rem', px: '11px', weight: '700–800', family: 'DM Sans', token: '--fs-label', style: 'font-size:0.6875rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;', use: 'Section eyebrows (.dash-eyebrow), group titles, table headers, form labels, 28px intent chips.' },
+  { name: 'UI base', size: '0.75rem', px: '12px', weight: '500–700', family: 'DM Sans', token: '--fs-ui', style: 'font-size:0.75rem;font-weight:500;', use: 'The app-wide control size — the body default. Nav items, menu rows, popover items, buttons.' },
   { name: 'Body small', size: '0.875rem', px: '14px', weight: '400', family: 'DM Sans', style: 'font-size:0.875rem;font-weight:400;', use: 'Module ledes, search inputs, empty states, card copy.' },
   { name: 'Body large / lede', size: '0.95rem', px: '15.2px', weight: '400', family: 'DM Sans', style: 'font-size:0.95rem;font-weight:400;', use: 'Hero ledes and long-form copy (docs, help).' },
   { name: 'Module title', size: '1.2rem', px: '19.2px', weight: '800', family: 'Noto Serif', token: '--module-title-size', style: "font-family:var(--module-title-family);font-size:1.2rem;font-weight:800;letter-spacing:-0.01em;", use: 'The canonical headline of every docked module — identical on every page (via --module-title-*).' },
@@ -999,13 +1064,14 @@ function renderDesignSystem() {
     <div class="ds-color-group">
       <div class="ds-group-head">
         <h4 class="ds-group-title">${esc(g.title)}</h4>
+        ${readyToggleHTML('ds:' + g.title, g.title, { level: 'item', parent: 'mi-design' })}
       </div>
       <p class="ds-group-note">${esc(g.note)}</p>
       <div class="ds-swatch-grid">${g.swatches.map(swatchHTML).join('')}</div>
     </div>`).join('');
 
   return `
-    <section class="mi-module" id="mi-design">
+    <section class="mi-module is-collapsed" id="mi-design">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Design System</h2>
@@ -1013,12 +1079,14 @@ function renderDesignSystem() {
             <code>pages/wise.css</code>. Swatches render live off the real CSS variables, so they
             always show the current theme — flip light/dark and watch them re-resolve.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-design', 'Design System')}
         ${moduleControlsHTML('mi-design')}
       </header>
 
       <div class="ds-block" id="ds-typography">
         <div class="ds-block-head">
           <span class="mi-dir-title">Typography — families</span>
+          ${readyToggleHTML('ds:typography', 'Typography', { level: 'item', parent: 'mi-design' })}
         </div>
         <div class="ds-font-grid">${familyCards}</div>
 
@@ -1049,7 +1117,12 @@ function renderDesignSystem() {
    curated list of surfaces the component actually appears on. An optional
    `note` documents the shared rule/convention behind the component (e.g. how
    it stays responsive); `wide` makes the card span the full grid row for
-   components that need the room (tables, charts, modals). */
+   components that need the room (tables, charts, modals).
+
+   Do NOT catalog a component whose live instance already appears on
+   all-modules.html itself (Directory search/stats, Grid⇄Rail, module ⋯
+   menus, Dev Ready toggles, directory badges, empty filters, jump tiles,
+   codebase cards). Point at those in situ instead of duplicating them here. */
 
 /* Sort caret used inside table headers app-wide (mirrors ARROW_SVG in the
    admin flows) so the Data table demo shows the real sortable affordance. */
@@ -1060,6 +1133,7 @@ const ARROW_SVG_DEMO = '<span class="adm-sort-arrow"><svg viewBox="0 0 12 12" fi
    here is the order the tiles render in. */
 const COMPONENT_CATS = [
   { key: 'Tables & data', icon: 'table_rows' },
+  { key: 'Library & reports', icon: 'auto_stories' },
   { key: 'Filters', icon: 'filter_alt' },
   { key: 'Overlays', icon: 'layers' },
   { key: 'Inputs & forms', icon: 'edit_note' },
@@ -1074,28 +1148,25 @@ const COMPONENT_CATS = [
 const CAT_BY_NAME = {
   'Buttons': 'Actions',
   'Admin buttons': 'Actions',
-  'Module control cluster': 'Actions',
   'Top-bar icon button': 'Actions',
   'Intent chips': 'Chips & badges',
+  'Large intent cards': 'Chips & badges',
   'Status pills': 'Chips & badges',
   'Status chips (domain)': 'Chips & badges',
-  'Badges': 'Chips & badges',
   'Chat composer': 'Inputs & forms',
-  'Search pill': 'Inputs & forms',
   'Form fields': 'Inputs & forms',
-  'Brand toggle': 'Inputs & forms',
   'Data table': 'Tables & data',
   'Charts & graphs': 'Tables & data',
   'Distribution bar': 'Tables & data',
   'Dashboard card': 'Tables & data',
-  'Empty state': 'Tables & data',
   'Pagination footer': 'Tables & data',
-  'Scorecard stat tile': 'Filters',
-  'Stat filter board': 'Filters',
+  'History conversation': 'Library & reports',
+  'History project': 'Library & reports',
+  'Library cards': 'Library & reports',
+  'Library folders': 'Library & reports',
+  'Report posters': 'Library & reports',
+  'Scorecards': 'Filters',
   'Filter toolbar': 'Filters',
-  'View toggle': 'Filters',
-  'Tabs & segmented': 'Navigation',
-  'Popover menu': 'Overlays',
   'Menu popover': 'Overlays',
   'Row action menu': 'Overlays',
   'Modal dialog': 'Overlays',
@@ -1119,101 +1190,99 @@ const COMPONENTS = [
       <div class="dash-btn-row">
         <button type="button" class="dash-btn dash-btn--primary"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
         <button type="button" class="dash-btn dash-btn--ghost">Ghost action</button>
-      </div>
-      <button type="button" class="dash-text-link">View full report<span class="material-symbols-outlined" style="font-size:14px">arrow_forward</span></button>`,
+        <button type="button" class="dash-text-link">View full report<span class="material-symbols-outlined">north_east</span></button>
+      </div>`,
   },
   {
     name: 'Intent chips',
     wide: true,
-    cls: 'Large: .chip · .ws-intent-chip — Small: .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
-    used: 'Large: WISEcodeAI dock & Studio welcome, module shortcuts · Small: in-conversation reply chips (Auth signup, Comparison, chat turns)',
-    note: 'Two sizes of one chip. <strong>Large</strong> welcome/shortcut chips use the base <code>.chip</code> size; <strong>small</strong> reply chips shrink inside <code>.sc-reply-chips</code> (tighter padding + <code>--fs-label</code>) for in-line answers. Both share the composer\u2019s blue tint so chips and input read as one family.',
+    cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
+    used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type, so they read as one family with the composer. Its large-format sibling — the tap-through <em>Large intent cards</em> (<code>.ws-scorecard</code>) — sits right beside it here.',
     noteIcon: 'straighten',
     demo: `
-      <div style="display:flex;flex-direction:column;gap:14px;width:100%">
-        <div class="dsc-sub">
-          <span class="dsc-sub-label">Large · welcome &amp; module shortcuts</span>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
-            <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
-            <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Done</button>
+      <div class="sc-reply-chips" style="margin:0">
+        <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+        <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+        <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
+        <button type="button" class="chip">Compare two products</button>
+        <button type="button" class="chip ms-chip is-selected">High sugar</button>
+        <button type="button" class="chip chip-dive"><span class="material-symbols-outlined">arrow_forward</span>Dive in</button>
+        <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+      </div>`,
+  },
+  {
+    name: 'Large intent cards',
+    cat: 'Chips & badges',
+    wide: true,
+    cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, locked)',
+    used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. (The click-to-filter <em>Scorecards</em> that sit above tables are a separate component.)',
+    noteIcon: 'bolt',
+    demo: `
+      <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
+        <button type="button" class="ws-scorecard" role="listitem">
+          <div class="ws-sc-top">
+            <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-symbols-outlined">fact_check</span></span>
+            <span class="ws-sc-pill ws-sc-pill--up"><span class="material-symbols-outlined">priority_high</span>Do next</span>
           </div>
-        </div>
-        <div class="dsc-sub">
-          <span class="dsc-sub-label">Small · in-conversation reply chips</span>
-          <div class="sc-reply-chips" style="margin:0">
-            <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
-            <button type="button" class="chip">Compare two products</button>
-            <button type="button" class="chip ms-chip is-selected">High sugar</button>
-            <button type="button" class="chip chip-dive"><span class="material-symbols-outlined">arrow_forward</span>Dive in</button>
-            <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+          <div class="ws-sc-metric">10<span class="ws-sc-metric-unit"> claimed</span></div>
+          <div class="ws-sc-title">Verify ingredients</div>
+          <div class="ws-sc-desc">All 10 claimed products still need ingredients verified before their reports unlock.</div>
+          <div class="ws-sc-action">Verify ingredients<span class="material-symbols-outlined">arrow_outward</span></div>
+        </button>
+        <button type="button" class="ws-scorecard ws-scorecard--intro ws-scorecard--wiseai" role="listitem">
+          <div class="ws-sc-top">
+            <span class="ws-sc-icon ws-sc-icon--wiseai"><span class="material-symbols-outlined">smart_toy</span></span>
+            <span class="ws-sc-pill ws-sc-pill--wiseai"><span class="material-symbols-outlined">bolt</span>WISEcodeAI</span>
           </div>
-        </div>
+          <div class="ws-sc-intro-title">Let WISEcodeAI do the heavy lifting</div>
+          <div class="ws-sc-desc">Claim, verify, or complete products — WISEcodeAI tees it up, you decide.</div>
+          <div class="ws-sc-action">Ask WISEcodeAI anything<span class="material-symbols-outlined">arrow_outward</span></div>
+        </button>
+        <button type="button" class="ws-scorecard ws-scorecard--locked" role="listitem" aria-disabled="true" data-locked="1">
+          <div class="ws-sc-top">
+            <span class="ws-sc-icon ws-sc-icon--intro"><span class="material-symbols-outlined">explore</span></span>
+            <span class="ws-sc-lock material-symbols-outlined" title="Coming soon" aria-hidden="true">lock</span>
+          </div>
+          <div class="ws-sc-intro-title">Take a tour</div>
+          <div class="ws-sc-desc">A quick guided walkthrough of WISEcodeAI — the panes, prompts and reports.</div>
+          <div class="ws-sc-action ws-sc-action--locked">Coming soon</div>
+        </button>
       </div>`,
   },
   {
     name: 'Chat composer',
-    cls: '.fl-input-wrap · .fl-input · .fl-icon-btn · .sc-send',
+    wide: true,
+    cls: '.fl-input-wrap--stacked · .fl-more-btn · .fl-db-trigger · .fl-input · .sc-send',
     used: 'WISEcodeAI dock (every page) · Studio Chat · Reformulation / Add Product / Studio&AI panes',
+    note: 'The stacked composer from the chat module — not a one-line pill. <code>+</code> attach on the left (Voice lives in that menu), database selector left of send, lock beside the placeholder, send uses the <code>send</code> glyph. Same markup <code>mountWISEcodeAIChat</code> builds in <code>js/wiseai-chat.js</code>.',
+    noteIcon: 'chat',
     demo: `
-      <div class="fl-input-wrap" style="max-width:440px">
-        <button type="button" class="fl-icon-btn" aria-label="Attach"><span class="material-symbols-outlined">add</span></button>
-        <textarea class="fl-input" rows="1" wrap="off" placeholder="Ask WISEcodeAI…"></textarea>
-        <button type="button" class="fl-icon-btn" aria-label="Dictate"><span class="material-symbols-outlined">mic</span></button>
-        <button type="button" class="sc-send" aria-label="Send"><span class="material-symbols-outlined">arrow_upward</span></button>
-      </div>`,
-  },
-  {
-    name: 'Search pill',
-    cls: '.mi-search-inline (= .pf-search-inline)',
-    used: 'Product Portfolio · Module Directory & Icon Inventory (this page) · User Management · Docs',
-    demo: `
-      <div class="mi-search-inline" style="max-width:360px">
-        <span class="material-symbols-outlined">search</span>
-        <input type="search" class="mi-search" placeholder="Search products…" aria-label="Demo search" />
-      </div>`,
-  },
-  {
-    name: 'Scorecard stat tile',
-    cls: '.mi-stat (= .pf-stat) · .is-active',
-    used: 'Product Portfolio filters · Module Directory & Icon Inventory (this page) · Audit Queue',
-    demo: `
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button type="button" class="mi-stat" style="flex:0 1 150px">
-          <span class="mi-stat-num">128</span>
-          <span class="mi-stat-label"><span class="mi-stat-text">All products</span><span class="material-symbols-outlined">apps</span></span>
-        </button>
-        <button type="button" class="mi-stat is-active" style="flex:0 1 150px">
-          <span class="mi-stat-num">62</span>
-          <span class="mi-stat-label"><span class="mi-stat-text">Verified</span><span class="material-symbols-outlined">verified</span></span>
-        </button>
-      </div>`,
-  },
-  {
-    name: 'Popover menu',
-    cls: '.topbar-popover · .topbar-menu-item (+ --danger, --admin, badge, switch)',
-    used: 'Top bar (avatar + ⋯ menus, every page) · every module\u2019s three-dot menu · Appearance menu',
-    demo: `
-      <div class="topbar-popover" data-popover-static style="max-width:260px">
-        <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">tune</span><span>Preferences</span></button>
-        <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">help</span><span>Help &amp; docs</span></button>
-        <div class="topbar-menu-divider"></div>
-        <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="true" data-demo-switch>
-          <span class="material-symbols-outlined topbar-menu-icon">science</span><span>Beta view</span>
-          <span class="topbar-menu-badge">ADMIN</span>
-          <span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span>
-        </button>
-        <button type="button" class="topbar-menu-item topbar-menu-item--danger"><span class="material-symbols-outlined topbar-menu-icon">logout</span><span>Sign out</span></button>
-      </div>`,
-  },
-  {
-    name: 'Module control cluster',
-    cls: '.panel-more-btn · .panel-width-toggle-btn',
-    used: 'Every module header app-wide (dashboards, portfolio, studio panes, this page)',
-    demo: `
-      <div style="display:inline-flex;align-items:center;gap:2px">
-        <button type="button" class="panel-more-btn" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
-        <button type="button" class="panel-width-toggle-btn" aria-label="Module width"><span class="material-symbols-outlined">width_full</span></button>
+      <div class="sc-input-row" data-wise-composer>
+        <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
+          <div class="fl-more-wrap">
+            <button type="button" class="fl-icon-btn fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" aria-label="Attach"><span class="material-symbols-outlined">add</span></button>
+            <div class="fl-more-popover fl-more-popover--left" role="menu" data-popover-static>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
+              <div class="fl-more-divider" role="separator"></div>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
+            </div>
+          </div>
+          <div class="fl-input-col">
+            <div class="fl-model-row">
+              ${composerDbSelectorHtml().replace('role="menu"', 'role="menu" data-popover-static')}
+            </div>
+            <div class="fl-input-line fl-input-line--locked">
+              <textarea class="fl-input fl-input--locked" rows="1" autocomplete="off" readonly aria-disabled="true" tabindex="-1" placeholder="Ask WISEcodeAI about any food\u2026"></textarea>
+              <span class="fl-input-lock" tabindex="0" role="img" aria-label="Not accessible at this moment \u2014 WISEcodeAI is coming soon"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">Not accessible at this moment</span><span class="fl-input-lock-tip-sub">WISEcodeAI is coming soon</span></span></span>
+            </div>
+            <div class="fl-attachments" aria-label="Pending attachments"></div>
+          </div>
+          <button type="button" class="sc-send sc-send--locked" title="Send" disabled aria-disabled="true"><span class="material-symbols-outlined">send</span></button>
+        </div>
       </div>`,
   },
   {
@@ -1262,22 +1331,6 @@ const COMPONENTS = [
       </div>`,
   },
   {
-    name: 'Brand toggle',
-    cls: '.dash-brand-toggle (+ track / thumb, .is-on)',
-    used: 'Dashboard hero (Guiding Stars swap) · admin view toggles — click to flip',
-    demo: `
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button type="button" class="dash-brand-toggle" role="switch" aria-checked="false" data-demo-switch>
-          <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
-          <span class="dash-brand-toggle-text">Guiding Stars</span>
-        </button>
-        <button type="button" class="dash-brand-toggle" role="switch" aria-checked="true" data-demo-switch>
-          <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
-          <span class="dash-brand-toggle-text">Guiding Stars</span>
-        </button>
-      </div>`,
-  },
-  {
     name: 'Status pills',
     cls: 'token-built · var(--sec-*-10) fill + var(--sec-*-text) ink',
     used: 'Portfolio table · Verification & GRAS statuses · Audit Queue · Invoices',
@@ -1306,78 +1359,68 @@ const COMPONENTS = [
         </div>
       </div>`,
   },
-  {
-    name: 'View toggle',
-    cls: '.mi-view · .mi-view-btn (pill segment)',
-    used: 'This page (Grid ⇄ Rail) · Icon Inventory sort (.ii-sort/.ii-filter) · Portfolio view switches',
-    demo: `
-      <div class="mi-view">
-        <button type="button" class="mi-view-btn is-active"><span class="material-symbols-outlined">grid_view</span>Grid</button>
-        <button type="button" class="mi-view-btn"><span class="material-symbols-outlined">view_column</span>Rail</button>
-      </div>`,
-  },
-  {
-    name: 'Badges',
-    cls: '.topbar-menu-badge · .mi-card-badge',
-    used: 'Admin rows in popovers · module cards (this page) · nav flags',
-    demo: `
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="topbar-menu-badge" style="margin-left:0">ADMIN</span>
-        <span class="mi-card-badge">Admin</span>
-      </div>`,
-  },
 
   /* ---- Data table — the ONE shared grid "table", fully loaded ----- */
   {
     name: 'Data table',
     cat: 'Tables & data',
     wide: true,
-    cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-chip · .adm-rowmenu · .wtp-foot (= .pf-table · .inv-table · .rf-table · .gs-table · .ib-table)',
+    cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-avatar · .adm-chip · .adm-rowmenu · .wtp-foot',
     used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Quick Invite · Invoices · Portfolio · Ingredient Browser · Guiding Stars · Reformulation — every admin & module list',
-    note: 'The real shared table, exactly as it renders app-wide: the <strong>Actions</strong> column comes <strong>first (left)</strong> as a single per-row <strong>⋯ kebab menu</strong> (no separate edit button, no select-all checkbox), then a <strong>sortable</strong> header with the active sort lit, a plain <strong>identity cell</strong> (name + sub — no avatar chrome), token <strong>status chips</strong>, tabular numeric columns with a "hot" highlight for non-zero values, and the shared "load more" <strong>pagination footer</strong>. One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by a single <code>--adm-cols</code> variable; sort (<code>sortable-tables.js</code>) + paging (<code>table-pagination.js</code>) attach app-wide.',
+    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>date</strong> (value, empty dash, or date + via), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
     noteIcon: 'table_rows',
     demo: `
       <div class="adm-table-card adm-card" style="width:100%">
-        <div class="adm-table" style="--adm-cols: 72px minmax(200px, 2.2fr) 132px 140px 84px 100px">
+        <div class="adm-table" data-wtp-skip data-no-paginate style="--adm-cols: 36px minmax(150px, 1.5fr) 108px 96px 52px 56px 78px 64px">
           <div class="adm-thead">
-            <span class="adm-th">Actions</span>
-            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Company + Type ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th" title="Actions"> </span>
+            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Identity ${ARROW_SVG_DEMO}</span>
             <span class="adm-th adm-th--sortable">Status ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--sortable">Joined ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--num adm-th--sortable">Users ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--num adm-th--sortable">Products ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable">Date ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Count ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Score ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th">Stars</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Amount ${ARROW_SVG_DEMO}</span>
           </div>
           <div class="adm-trow">
             <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">AB</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
             <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
-            <span class="adm-td" style="font-size:0.8rem">Jun 26, 2026</span>
-            <span class="adm-td adm-td--num is-hot">1</span>
+            <span class="adm-td"><span class="adm-idcell-body"><span style="font-weight:600">Jun 26, 2026</span><span class="adm-idcell-sub">Invitation</span></span></span>
             <span class="adm-td adm-td--num is-hot">6</span>
+            <span class="adm-td adm-td--num dsc-score">82</span>
+            <span class="adm-td"><span class="dsc-gs" aria-label="3 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$1,284</span>
           </div>
           <div class="adm-trow">
             <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Flax4Life</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round">MC</span><span class="adm-idcell-body"><span class="adm-idcell-name">maya.chen</span><span class="adm-idcell-sub">maya@flax4life.com</span><span class="adm-idcell-sub">ID: 10482</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span></span>
             <span class="adm-td" style="font-size:0.8rem">Apr 18, 2026</span>
             <span class="adm-td adm-td--num is-hot">3</span>
-            <span class="adm-td adm-td--num is-hot">9</span>
+            <span class="adm-td adm-td--num dsc-score">64</span>
+            <span class="adm-td"><span class="dsc-gs" aria-label="2 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$420</span>
           </div>
           <div class="adm-trow">
             <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Goodles</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name">Toasted Coconut Brownies</span><span class="adm-idcell-sub dsc-mono">UPC · 8 57287 00420 3</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
             <span class="adm-td" style="font-size:0.8rem">May 2, 2026</span>
-            <span class="adm-td adm-td--num is-hot">2</span>
-            <span class="adm-td adm-td--num is-hot">4</span>
+            <span class="adm-td adm-td--num is-hot">12</span>
+            <span class="adm-td adm-td--num dsc-score">71</span>
+            <span class="adm-td"><span class="dsc-gs" aria-label="1 Guiding Star"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$86</span>
           </div>
           <div class="adm-trow">
             <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Brave Foods</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">mail</span>Invited</span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">BF</span><span class="adm-idcell-body"><span class="adm-idcell-name">Brave Foods</span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--outline">Invited</span></span>
             <span class="adm-td" style="font-size:0.8rem"><span style="color:var(--text-subtle)">—</span></span>
             <span class="adm-td adm-td--num">0</span>
-            <span class="adm-td adm-td--num">0</span>
+            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
+            <span class="adm-td"><span class="dsc-gs" aria-label="0 Guiding Stars"><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
           </div>
         </div>
         <div class="wtp-foot">
@@ -1418,32 +1461,125 @@ const COMPONENTS = [
       </div>`,
   },
 
-  /* ---- Segmented stat board — click-to-filter scorecards ---------- */
+  /* ---- Scorecards — every variant in one card -------------------- */
   {
-    name: 'Stat filter board',
+    name: 'Scorecards',
     wide: true,
-    cls: '.adm-stats · .adm-stat (+ .is-active, --green/--red/--amber/--blue) · .adm-metrics · .adm-metric',
-    used: 'Organizations · User Management · Audit Queue · Verification (.adm-vf-stats) · Portfolio (.pf-stats)',
-    note: 'The stat tiles double as filters — click one to scope the table, <code>.is-active</code> marks the current facet. The grid is <code>repeat(auto-fit, minmax(140px, 1fr))</code>, so tiles wrap from 4-up to 1-up with the container.',
+    cls: '.adm-stat · .adm-vf-stat (+ .adm-btn) · .adm-metric · .dash-score-card · .dash-claim-col (+ .dash-btn-row)',
+    used: 'Organizations · User Management · Audit Queue · Portfolio (.pf-stats) · Non-UPF Dashboard (.adm-vf-stat) · Analytics Types / Overview (.dash-score-card, .dash-claim-col) — every scorecard surface',
+    note: 'Every scorecard variant lives here. Filter tiles sit above tables and scope the list (<code>.is-active</code>). Action scorecards (Non-UPF Dashboard) add a status chip, a caption, and a ghost button pinned to the bottom. Compact metrics are the at-a-glance row. KPI cards are the dashboard score band. Claim columns are the big-numeral dashboard row with a button underneath. The large-format welcome cards (<code>.ws-scorecard</code>) are cataloged separately as <em>Large intent cards</em>. No eyebrows on any of these.',
     noteIcon: 'space_dashboard',
     demo: `
-      <div class="adm-stats" style="width:100%">
-        <button type="button" class="adm-stat is-active">
-          <span class="adm-stat-num">128</span>
-          <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
-        </button>
-        <button type="button" class="adm-stat adm-stat--green">
-          <span class="adm-stat-num">62</span>
-          <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
-        </button>
-        <button type="button" class="adm-stat adm-stat--amber">
-          <span class="adm-stat-num">41</span>
-          <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
-        </button>
-        <button type="button" class="adm-stat adm-stat--red">
-          <span class="adm-stat-num">25</span>
-          <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
-        </button>
+      <div class="dsc-sub">
+        <div class="dsc-sub-label">Filter tiles</div>
+        <div class="adm-stats" style="width:100%">
+          <button type="button" class="adm-stat is-active">
+            <span class="adm-stat-num">128</span>
+            <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
+          </button>
+          <button type="button" class="adm-stat adm-stat--green">
+            <span class="adm-stat-num">62</span>
+            <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
+          </button>
+          <button type="button" class="adm-stat adm-stat--amber">
+            <span class="adm-stat-num">41</span>
+            <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
+          </button>
+          <button type="button" class="adm-stat adm-stat--red">
+            <span class="adm-stat-num">25</span>
+            <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
+          </button>
+        </div>
+      </div>
+      <div class="dsc-sub">
+        <div class="dsc-sub-label">Action scorecards</div>
+        <div class="adm-vf-stats" style="width:100%">
+          <div class="adm-vf-stat is-active" role="button" tabindex="0">
+            <span class="adm-vf-stat-num">90</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">inventory_2</span>Products</span></span>
+            <span class="adm-vf-stat-sub">Items in Registry</span>
+          </div>
+          <div class="adm-vf-stat adm-stat--red" role="button" tabindex="0">
+            <span class="adm-vf-stat-num" style="color:var(--sec-red)">10</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
+            <span class="adm-vf-stat-sub">Missing mandatory data</span>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
+          </div>
+          <div class="adm-vf-stat" role="button" tabindex="0">
+            <span class="adm-vf-stat-num" style="color:var(--primary-ink, var(--primary))">19</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
+            <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
+          </div>
+          <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
+            <span class="adm-vf-stat-num" style="color:var(--sec-green)">8</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
+            <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub">
+        <div class="dsc-sub-label">Compact metrics</div>
+        <div class="adm-metrics" style="width:100%">
+          <div class="adm-metric adm-metric--accent">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">verified</span>Verified</span>
+            <span class="adm-metric-num">62</span>
+            <span class="adm-metric-sub">Ready to publish</span>
+          </div>
+          <div class="adm-metric">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">pending</span>Pending</span>
+            <span class="adm-metric-num">41</span>
+            <span class="adm-metric-sub">Awaiting review</span>
+          </div>
+          <div class="adm-metric">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">error</span>At risk</span>
+            <span class="adm-metric-num">25</span>
+            <span class="adm-metric-sub">Needs a fix</span>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub">
+        <div class="dsc-sub-label">KPI scorecards</div>
+        <div class="dash-score-band">
+          <article class="dash-card dash-score-card">
+            <div class="dash-score-top">
+              <div class="dash-score-num"><span class="n">62<span class="dash-pct">%</span></span><span class="d">Non-UPF</span></div>
+            </div>
+            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+            <p class="dash-score-note"><strong>9 of 12</strong> analyzed products are Non&#8209;UPF.</p>
+          </article>
+          <article class="dash-card dash-score-card">
+            <div class="dash-score-top">
+              <div class="dash-score-num"><span class="n">79</span><span class="d">/100</span></div>
+            </div>
+            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+            <p class="dash-score-note">Average WISEscore&#8482; across all <strong>discovered products</strong></p>
+          </article>
+        </div>
+      </div>
+      <div class="dsc-sub">
+        <div class="dsc-sub-label">Claim scorecards</div>
+        <section class="dash-claim dsc-claim-demo">
+          <div class="dash-claim-col">
+            <div class="dash-bignum-row">
+              <span class="dash-bignum">47</span>
+              <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
+            </div>
+            <div class="dash-btn-row">
+              <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
+            </div>
+          </div>
+          <div class="dash-claim-divider"></div>
+          <div class="dash-claim-col">
+            <div class="dash-bignum-row">
+              <span class="dash-bignum">9</span>
+              <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
+            </div>
+            <div class="dash-btn-row">
+              <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
+            </div>
+          </div>
+        </section>
       </div>`,
   },
 
@@ -1455,6 +1591,11 @@ const COMPONENTS = [
     used: 'Non-UPF Dashboard · Overview · Analytics Types · Reports — every data-viz surface',
     note: 'Each chart card is its OWN size container (<code>container-type: inline-size</code>), so bars and labels shrink to stay legible three-up, two-up, or docked beside the chat — never a viewport media query. Bars/rings animate in on load and respect <code>prefers-reduced-motion</code>.',
     noteIcon: 'bar_chart',
+    download: {
+      href: '../assets/chart-and-report-design.md',
+      file: 'chart-and-report-design.md',
+      label: 'Download chart & report design rules (.md)',
+    },
     demo: `
       <div style="display:flex;flex-wrap:wrap;gap:14px;width:100%">
         <div class="adm-chart-card" style="flex:1 1 240px">
@@ -1539,13 +1680,19 @@ const COMPONENTS = [
   /* ---- Form fields ----------------------------------------------- */
   {
     name: 'Form fields',
-    cls: '.adm-field · .adm-field-label · .adm-input · .adm-select (auth surfaces use .auth-field / .auth-input)',
-    used: 'Filter popovers · Quick Invite · Admin Utils · Audit Queue filter card · admin modals',
-    note: 'Inputs and selects share one 42px pill/rounded shape, token surfaces, and the same focus ring across every form. Fields stack in a fluid grid that collapses to one column on narrow containers.',
+    cls: '.adm-field · .adm-field-label · .adm-input · .adm-select (auth surfaces mirror it with .auth-field / .auth-input)',
+    used: 'Auth (sign in / sign up) · Filter popovers · Quick Invite · Admin Utils · Audit Queue filter card · admin modals',
+    note: 'Inputs and selects are <strong>pill-shaped</strong> (<code>border-radius: var(--radius-pill)</code>) — never rounded-square. They share one 42px height, token surfaces, and the same focus ring across every form, matching the auth inputs. Fields stack in a fluid grid that collapses to one column on narrow containers.',
     noteIcon: 'edit_note',
     demo: `
-      <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px">
-        <div class="adm-field"><span class="adm-field-label">Full name</span><input class="adm-input" placeholder="Jordan Rivera" /></div>
+      <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px">
+        <div class="adm-field"><span class="adm-field-label">Email address</span><input class="adm-input" type="email" placeholder="you@company.com" /></div>
+        <div class="adm-field"><span class="adm-field-label">Password</span>
+          <div style="position:relative;display:flex;align-items:center">
+            <input class="adm-input" type="password" value="supersecret" style="width:100%;padding-right:44px" aria-label="Password" />
+            <button type="button" aria-label="Show password" style="position:absolute;right:14px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--text-muted);cursor:pointer;padding:0"><span class="material-symbols-outlined" style="font-size:20px">visibility</span></button>
+          </div>
+        </div>
         <div class="adm-field"><span class="adm-field-label">Role</span><select class="adm-select"><option>Admin</option><option>Editor</option><option>Viewer</option></select></div>
       </div>`,
   },
@@ -1589,22 +1736,6 @@ const COMPONENTS = [
             <button type="button" class="adm-btn adm-btn--ghost">Cancel</button>
             <button type="button" class="adm-btn adm-btn--primary">Create</button>
           </div>
-        </div>
-      </div>`,
-  },
-
-  /* ---- Empty state ----------------------------------------------- */
-  {
-    name: 'Empty state',
-    cls: '.adm-empty (· .ib-empty · .mi-dir-empty · .pf-empty)',
-    used: 'Every filtered list when nothing matches — admin tables, Ingredient Browser, Module Directory, Portfolio',
-    note: 'The consistent "nothing here" fallback shown inside a table/list card when a filter or search returns no rows.',
-    noteIcon: 'inbox',
-    demo: `
-      <div class="adm-card" style="width:100%">
-        <div class="adm-empty">
-          <div style="font-size:32px;line-height:1;margin-bottom:6px"><span class="material-symbols-outlined" style="font-size:32px;color:var(--text-subtle)">search_off</span></div>
-          No organizations match your filters.
         </div>
       </div>`,
   },
@@ -1693,38 +1824,226 @@ const COMPONENTS = [
   /* ---- Avatars ---------------------------------------------------- */
   {
     name: 'Avatars',
-    cls: '.adm-avatar (+ --round, --photo, --lg) · .topbar-profile',
-    used: 'Table identity cells · owner columns · brand pickers · top-bar profile',
-    note: 'One avatar primitive: token-tinted initials by default, with round, photo, and large variants. Falls back to initials when there is no image.',
+    cls: '.adm-avatar (+ --photo) · .topbar-profile',
+    used: 'Table identity cells · owner columns · brand pickers · top-bar profile · chat “you” chip',
+    note: 'One avatar primitive, one circle size (34px) — token-tinted initials by default, photo optional. <strong>Every avatar is a circle</strong> — no square, no rounded-square, no second size, anywhere in the app. Falls back to initials when there is no image.',
     noteIcon: 'account_circle',
     demo: `
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <span class="adm-avatar">AF</span>
-        <span class="adm-avatar adm-avatar--round">MC</span>
-        <span class="adm-avatar adm-avatar--lg">GP</span>
-        <span class="adm-avatar adm-avatar--round adm-avatar--lg adm-avatar--photo"><img src="https://i.pravatar.cc/80?img=12" alt="" /></span>
+        <span class="adm-avatar">MC</span>
+        <span class="adm-avatar">GP</span>
+        <span class="adm-avatar adm-avatar--photo"><img src="https://i.pravatar.cc/80?img=12" alt="" /></span>
         <button type="button" class="topbar-profile" aria-label="Profile" style="position:static;transform:none">JR</button>
       </div>`,
   },
 
-  /* ---- Tabs / segmented control ---------------------------------- */
+  /* ---- History / Library / Reports — missing from the first pass ---- */
   {
-    name: 'Tabs & segmented',
-    cls: '.mi-view / .mi-view-btn · .cmp-scopebar / .cmp-scope-btn · .segmented (scope & view switchers)',
-    used: 'This page (Grid ⇄ Rail) · Comparison scope bar · Portfolio & WISEai view switches',
-    note: 'A pill-segmented control for switching scope or view without leaving the surface; the active segment lifts onto the surface color. One shape, whether it toggles two options or several.',
-    noteIcon: 'tab',
+    name: 'History conversation',
+    wide: true,
+    cls: '.wch-item · .wch-item-title · .wch-item-meta · .wch-item-actions · .wch-drag-handle',
+    used: 'WISEcodeAI History module (wiseai.html#history) — every conversation row',
+    note: 'A History row is the whole conversation: title, timestamp, and hover actions (drag handle, move to project, delete). The row itself is draggable — drop it on a <em>History project</em> to file it. The drag handle is the discoverable grip; grabbing anywhere on the row also works.',
+    noteIcon: 'history',
     demo: `
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div class="mi-view">
-          <button type="button" class="mi-view-btn is-active"><span class="material-symbols-outlined">grid_view</span>Grid</button>
-          <button type="button" class="mi-view-btn"><span class="material-symbols-outlined">view_column</span>Rail</button>
+      <div class="dsc-wch">
+        <div class="wch-item wch-active" role="listitem" tabindex="0" draggable="true">
+          <div class="wch-item-title">Compare oat milk vs almond milk</div>
+          <div class="wch-item-meta">Today · 8 messages</div>
+          <div class="wch-item-actions">
+            <button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project"><span class="material-symbols-outlined">drag_indicator</span></button>
+            <button type="button" class="wch-iact" title="Move to project" aria-label="Move to project"><span class="material-symbols-outlined">drive_file_move</span></button>
+            <button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation"><span class="material-symbols-outlined">delete_outline</span></button>
+          </div>
         </div>
-        <div class="mi-view">
-          <button type="button" class="mi-view-btn is-active">All</button>
-          <button type="button" class="mi-view-btn">Verified</button>
-          <button type="button" class="mi-view-btn">At risk</button>
-          <button type="button" class="mi-view-btn">Drafts</button>
+        <div class="wch-item" role="listitem" tabindex="0" draggable="true">
+          <div class="wch-item-title"><span class="wch-fork-badge" title="Forked"><span class="material-symbols-outlined">alt_route</span></span>UPF report for granola</div>
+          <div class="wch-item-meta">Yesterday · 3 messages</div>
+          <div class="wch-item-actions">
+            <button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project"><span class="material-symbols-outlined">drag_indicator</span></button>
+            <button type="button" class="wch-iact" title="Move to project" aria-label="Move to project"><span class="material-symbols-outlined">drive_file_move</span></button>
+            <button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation"><span class="material-symbols-outlined">delete_outline</span></button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'History project',
+    wide: true,
+    cls: '.wch-project · .wch-proj-dot · .wch-proj-add · .wch-proj-edit · .wch-drop-on',
+    used: 'WISEcodeAI History — Projects section. Create with the folder button, or file a chat by dropping it on a project (or back on Ungrouped).',
+    note: 'History groups chats into <strong>projects</strong> (the History equivalent of Library folders). New project opens an inline name + color editor. Drop a conversation on a project to file it; drop on the ungrouped zone to unfile. Card-on-card folder founding lives in the Library — see <em>Drag to found a folder</em> in Motion &amp; Resize.',
+    noteIcon: 'create_new_folder',
+    demo: `
+      <div class="dsc-wch">
+        <div class="wch-projects-head">
+          <span class="wch-projects-title">Projects</span>
+          <button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>
+        </div>
+        <div class="wch-project">
+          <div class="wch-project-head">
+            <button type="button" class="wch-proj-toggle" aria-label="Collapse"><span class="material-symbols-outlined">expand_more</span></button>
+            <span class="wch-proj-dot" style="color:#25507C"></span>
+            <span class="wch-proj-name">Q3 verification</span>
+            <span class="wch-proj-count">2</span>
+          </div>
+          <div class="wch-project-body">
+            <div class="wch-item" role="listitem">
+              <div class="wch-item-title">Non-UPF attestation for oat bars</div>
+              <div class="wch-item-meta">Mon · 5 messages</div>
+            </div>
+          </div>
+        </div>
+        <div class="wch-project wch-drop-on">
+          <div class="wch-project-head">
+            <button type="button" class="wch-proj-toggle" aria-label="Collapse"><span class="material-symbols-outlined">expand_more</span></button>
+            <span class="wch-proj-dot" style="color:#32A966"></span>
+            <span class="wch-proj-name">Reports</span>
+            <span class="wch-proj-count">4</span>
+          </div>
+          <div class="wch-project-empty">Drop a chat here to file it</div>
+        </div>
+        <div class="wch-proj-edit">
+          <span class="wch-proj-dot" style="color:#D27326"></span>
+          <input type="text" class="wch-proj-edit-input" maxlength="60" placeholder="Project name…" value="New project">
+          <div class="wch-proj-swatches">
+            <button type="button" class="wch-proj-swatch is-sel" style="color:#25507C" aria-label="Navy"></button>
+            <button type="button" class="wch-proj-swatch" style="color:#32A966" aria-label="Green"></button>
+            <button type="button" class="wch-proj-swatch" style="color:#D27326" aria-label="Amber"></button>
+            <button type="button" class="wch-proj-swatch" style="color:#DC3038" aria-label="Red"></button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Library cards',
+    wide: true,
+    cls: '.lib-card · .lib-thumb · .lib-cname · .lib-thumb-badge',
+    used: 'WISEcodeAI Library (conversation-library.html) — every saved report, dashboard, chat, and reference',
+    note: 'The Library shelf card: a preview thumb (chart mock, chat bubbles, or report art), a type badge, a serif-adjacent title, and a date/count footer. Cards are draggable — drop on a folder to file, or on another card to found a new folder. Shared items show a “Shared by” line.',
+    noteIcon: 'auto_stories',
+    demo: `
+      <div class="dsc-lib-grid">
+        <a class="lib-card" href="#" onclick="return false">
+          <div class="lib-thumb pad">
+            <span class="lib-thumb-badge"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>
+            <div class="lib-bars"><i class="g" style="height:38%"></i><i class="g" style="height:64%"></i><i class="b" style="height:88%"></i><i class="g" style="height:52%"></i><i class="b" style="height:30%"></i><i class="g" style="height:70%"></i></div>
+          </div>
+          <div class="lib-cbody">
+            <div class="lib-cname">Foods one point from moderately processed</div>
+            <div class="lib-cfoot"><span class="lib-date">Aug 10, 2026</span></div>
+          </div>
+        </a>
+        <a class="lib-card" href="#" onclick="return false">
+          <div class="lib-thumb pad">
+            <div class="lib-chatprev">
+              <div class="lib-bubble me lib-clip">Compare oat milk and almond milk on UPF.</div>
+              <div class="lib-bubble ai lib-clip">Oat milk scores higher on processing; almond milk wins on additives…</div>
+            </div>
+          </div>
+          <div class="lib-cbody">
+            <div class="lib-cname">Compare oat milk vs almond milk</div>
+            <div class="lib-cfoot">
+              <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span></span>
+              <span class="lib-date">Aug 10, 2026</span>
+            </div>
+          </div>
+        </a>
+        <a class="lib-card" href="#" onclick="return false">
+          <div class="lib-thumb pad">
+            <span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>
+            <div class="lib-bars"><i class="p" style="height:70%"></i><i class="g" style="height:44%"></i><i class="b" style="height:58%"></i><i class="p" style="height:32%"></i><i class="g" style="height:80%"></i></div>
+          </div>
+          <div class="lib-cbody">
+            <div class="lib-cname">Portfolio UPF</div>
+            <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai</div>
+            <div class="lib-cfoot"><span class="lib-date">Aug 6, 2026</span></div>
+          </div>
+        </a>
+      </div>`,
+  },
+  {
+    name: 'Library folders',
+    wide: true,
+    cls: '.lib-fstat · .lib-fstat-add · .lib-fstat-unfile · .lib-folder-swatch · .lib-fdot',
+    used: 'WISEcodeAI Library — folder row under the type/scope scorecards',
+    note: 'A folder is a scorecard dressed as a manila file: colored tab, count, and name. Click opens it. Hover ⋯ for Rename / Ungroup. <strong>New folder</strong> is the dashed tile on the left (inline name + color swatches). <strong>Remove from folder</strong> only appears while a filed card is dragging. Dropping one library card on another founds a folder — see Motion &amp; Resize.',
+    noteIcon: 'folder',
+    demo: `
+      <div class="dsc-lib-folders">
+        <button type="button" class="lib-stat lib-fstat lib-fstat-add" title="New folder" aria-label="New folder">
+          <span class="material-symbols-outlined">create_new_folder</span>
+          <span class="lib-stat-label">New folder</span>
+        </button>
+        <button type="button" class="lib-stat lib-fstat is-active" data-folder-id="demo-q3" style="--lib-folder-color:#25507C" aria-pressed="true">
+          <span class="lib-stat-num">3</span>
+          <span class="lib-stat-label"><span class="lib-fdot"></span><span class="lib-fstat-name">Q3 verification</span></span>
+        </button>
+        <button type="button" class="lib-stat lib-fstat" data-folder-id="demo-rep" style="--lib-folder-color:#32A966">
+          <span class="lib-stat-num">5</span>
+          <span class="lib-stat-label"><span class="lib-fdot"></span><span class="lib-fstat-name">Reports</span></span>
+        </button>
+        <div class="lib-stat lib-fstat is-editing" style="--lib-folder-color:#D27326">
+          <div class="lib-fstat-edit">
+            <input type="text" class="lib-folder-edit-input" maxlength="60" placeholder="Folder name…" value="Reformulation">
+            <div class="lib-folder-swatches">
+              <button type="button" class="lib-folder-swatch is-sel" style="color:#25507C" aria-label="Navy"></button>
+              <button type="button" class="lib-folder-swatch" style="color:#32A966" aria-label="Green"></button>
+              <button type="button" class="lib-folder-swatch" style="color:#D27326" aria-label="Amber"></button>
+              <button type="button" class="lib-folder-swatch" style="color:#DC3038" aria-label="Red"></button>
+            </div>
+          </div>
+        </div>
+        <div class="lib-stat lib-fstat lib-fstat-unfile dsc-lib-unfile-show" aria-label="Remove from folder">
+          <span class="material-symbols-outlined">folder_off</span>
+          <span class="lib-stat-label">Remove from folder</span>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Report posters',
+    wide: true,
+    cls: '.rp-card · .rp-poster · .rp-name · .rp-badge · .rp-view (+ .is-locked)',
+    used: 'Reports (reports.html) — the studio shelf of standardized reports',
+    note: 'Reports read as a shelf of posters: cinematic header (genre tone + icon, no plate behind the glyph), serif title, short desc, and a View Report affordance. Live cards glow in their genre color; locked ones sit greyed with a lock badge. Saved into the Library they become <em>Library cards</em>.',
+    noteIcon: 'description',
+    demo: `
+      <div class="dsc-rp-row">
+        <a class="rp-card" href="#" onclick="return false">
+          <div class="rp-poster tone-action">
+            <span class="rp-poster-icon"><span class="material-symbols-outlined">star</span></span>
+            <span class="rp-badge"><span class="material-symbols-outlined">bolt</span>Action Plan</span>
+            <span class="rp-poster-open"><span class="material-symbols-outlined">north_east</span></span>
+          </div>
+          <div class="rp-body">
+            <div class="rp-name">Guiding Stars Action Plan</div>
+            <p class="rp-desc">Your prioritized path to more stars — quick wins, near-misses, and the competitive gap.</p>
+            <div class="rp-foot"><span class="rp-view">View Report<span class="material-symbols-outlined">north_east</span></span></div>
+          </div>
+        </a>
+        <a class="rp-card" href="#" onclick="return false">
+          <div class="rp-poster tone-upf">
+            <span class="rp-poster-icon"><span class="material-symbols-outlined">description</span></span>
+            <span class="rp-badge">Portfolio</span>
+            <span class="rp-poster-open"><span class="material-symbols-outlined">north_east</span></span>
+          </div>
+          <div class="rp-body">
+            <div class="rp-name">Portfolio UPF</div>
+            <p class="rp-desc">Ultra-processed food classification across every product in your portfolio.</p>
+            <div class="rp-foot"><span class="rp-view">View Report<span class="material-symbols-outlined">north_east</span></span></div>
+          </div>
+        </a>
+        <div class="rp-card is-locked">
+          <div class="rp-poster tone-locked">
+            <span class="rp-poster-icon"><span class="material-symbols-outlined">verified_user</span></span>
+            <span class="rp-badge"><span class="material-symbols-outlined">lock</span>Portfolio</span>
+          </div>
+          <div class="rp-body">
+            <div class="rp-name">Portfolio GRAS</div>
+            <p class="rp-desc">Generally-recognized-as-safe assessment across your portfolio.</p>
+            <div class="rp-foot"><span class="rp-waitlist"><span class="material-symbols-outlined">lock</span>Coming soon</span></div>
+          </div>
         </div>
       </div>`,
   },
@@ -1754,30 +2073,135 @@ function isDscReady(name, map) {
   return map[name] === true;
 }
 
+/* ------------------------------------------------------------------ */
+/* Dev Ready hierarchy                                                 */
+/*                                                                     */
+/* A higher-level module ("Dev Ready" at the top level) can only be    */
+/* marked ready once every lower-level part it owns is ready too. The  */
+/* parent→child tree is built at render time from the very same data   */
+/* arrays the modules render from, so a parent and its children can    */
+/* never drift out of sync. Modules with no lower-level parts are      */
+/* leaves and toggle freely.                                           */
+/* ------------------------------------------------------------------ */
+let DEV_READY_CHILDREN = {}; /* moduleId -> [{ id, label }] */
+let DEV_READY_PARENT = {};   /* childId  -> moduleId        */
+
+function registerReadyChildren(moduleId, children) {
+  DEV_READY_CHILDREN[moduleId] = children;
+  children.forEach((c) => { DEV_READY_PARENT[c.id] = moduleId; });
+}
+
+/* How many of a module's children are Dev Ready right now. */
+function readyChildStats(moduleId, map) {
+  const kids = DEV_READY_CHILDREN[moduleId] || [];
+  let ready = 0;
+  kids.forEach((c) => { if (map[c.id] === true) ready++; });
+  return { ready, total: kids.length };
+}
+
+/* Stable child ids — MUST match the ids the child toggles render with. */
+function motionReadyId(item) { return 'motion:' + item.title; }
+
+/* De-duped directory sections — shared by the directory render and the tree so
+   the area children always match the areas actually shown. */
+function dedupedDirSections() {
+  const seen = new Set();
+  return MODULE_SECTIONS
+    .map((s) => ({
+      ...s,
+      modules: s.modules.filter((m) => {
+        if (seen.has(m.href)) return false;
+        seen.add(m.href);
+        return true;
+      }),
+    }))
+    .filter((s) => s.modules.length);
+}
+
+/* Design System groups that each carry a Dev Ready child toggle. */
+function designReadyGroups() {
+  return [
+    { id: 'ds:typography', label: 'Typography' },
+    ...COLOR_GROUPS.map((g) => ({ id: 'ds:' + g.title, label: g.title })),
+  ];
+}
+
+/* Build the parent→child map. Call once before rendering. */
+function buildDevReadyTree() {
+  DEV_READY_CHILDREN = {};
+  DEV_READY_PARENT = {};
+  registerReadyChildren('mi-components', COMPONENTS.map((c) => ({ id: c.name, label: c.name })));
+  registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
+  registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
+  registerReadyChildren('mi-design', designReadyGroups());
+}
+
+/* One Dev Ready switch. `level` is 'module' (a higher-level component — gated by
+   its children) or 'item' (a lower-level part). A module that owns children
+   renders a live "k/n ready" progress pill and can only be switched on once
+   every child is ready. */
+function readyToggleHTML(id, label, opts) {
+  opts = opts || {};
+  const level = opts.level || 'item';
+  const parent = opts.parent || '';
+  const map = loadDscReadyMap();
+  const kids = level === 'module' ? (DEV_READY_CHILDREN[id] || []) : [];
+  const hasKids = kids.length > 0;
+  const stats = hasKids ? readyChildStats(id, map) : null;
+  const gated = hasKids && stats.ready < stats.total;
+  const ready = isDscReady(id, map) && !gated;
+  const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '') + (gated ? ' is-gated' : '');
+  const title = gated
+    ? `All ${stats.total} parts must be Dev Ready first — ${stats.ready}/${stats.total} done`
+    : `Mark ${label} ready for dev`;
+  const progress = hasKids
+    ? `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(id)}" title="${stats.ready} of ${stats.total} parts Dev Ready">
+        <span class="material-symbols-outlined" aria-hidden="true">${gated ? 'radio_button_unchecked' : 'task_alt'}</span>
+        <span class="dsc-ready-count">${stats.ready}/${stats.total}</span>
+      </span>`
+    : '';
+  return `
+    <div class="dsc-ready dsc-ready--${level}" data-ready-wrap>
+      ${progress}
+      <button type="button" class="${cls}" role="switch"
+        aria-checked="${ready ? 'true' : 'false'}"${gated ? ' aria-disabled="true"' : ''}
+        aria-label="Dev Ready for ${esc(label)}" title="${esc(title)}"
+        data-dsc-ready data-ready-id="${esc(id)}" data-ready-level="${esc(level)}"${parent ? ` data-ready-parent="${esc(parent)}"` : ''}>
+        <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
+        <span class="dash-brand-toggle-text">Dev Ready</span>
+      </button>
+    </div>`;
+}
+
+/* A higher-level module toggle — gated by its children when it owns any. */
+function moduleReadyToggleHTML(moduleId, label) {
+  return readyToggleHTML(moduleId, label, { level: 'module' });
+}
+
 function componentCard(c, readyMap) {
   const cat = catOf(c);
   const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat}`.toLowerCase();
   const cardCls = `dsc-card${c.wide ? ' dsc-card--wide' : ''}`;
-  const ready = isDscReady(c.name, readyMap || {});
   const note = c.note
     ? `<div class="dsc-note"><span class="material-symbols-outlined">${esc(c.noteIcon || 'aspect_ratio')}</span><span>${c.note}</span></div>`
     : '';
+  const download = c.download
+    ? `<div class="dsc-download-row">
+        <a class="dash-btn dash-btn--ghost dsc-download" href="${esc(c.download.href)}" download="${esc(c.download.file)}">
+          <span class="material-symbols-outlined">download</span>${esc(c.download.label)}
+        </a>
+      </div>`
+    : '';
   return `
     <div class="${cardCls}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
-      <div class="dsc-ready">
-        <button type="button" class="dash-brand-toggle${ready ? ' is-on' : ''}" role="switch"
-          aria-checked="${ready ? 'true' : 'false'}" aria-label="Dev Ready for ${esc(c.name)}"
-          data-dsc-ready data-comp-name="${esc(c.name)}">
-          <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
-          <span class="dash-brand-toggle-text">Dev Ready</span>
-        </button>
-      </div>
+      ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
       <div class="dsc-head">
         <span class="dsc-name">${esc(c.name)}</span>
         <code class="dsc-class">${esc(c.cls)}</code>
       </div>
       <div class="dsc-demo">${c.demo}</div>
       ${note}
+      ${download}
       <div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list">${esc(c.used)}</span></div>
     </div>`;
 }
@@ -1844,15 +2268,17 @@ function renderConventions() {
 
 function renderComponentLibrary() {
   return `
-    <section class="mi-module" id="mi-components">
+    <section class="mi-module is-collapsed" id="mi-components">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Component Library</h2>
-          <p class="mi-module-lede">Every reusable component in its default state, rendered live with the
-            real global classes from <code>pages/wise.css</code> — so what you see here is exactly what
-            ships, in the current theme. Variations sit beside their default, and each card lists the
-            surfaces where the component is used and the shared rule behind it.</p>
+          <p class="mi-module-lede">Reusable components that are <em>not</em> already on this page,
+            rendered live with the real global classes from <code>pages/wise.css</code>. Search pills,
+            filter tiles, Grid⇄Rail, module ⋯ menus, badges, and Dev Ready toggles live in the
+            modules above — they are omitted here so the library does not duplicate them.
+            Each card lists the surfaces where the component is used and the shared rule behind it.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-components', 'Component Library')}
         ${moduleControlsHTML('mi-components')}
       </header>
 
@@ -1921,292 +2347,294 @@ function componentCategoryScorecards() {
 /* bridge — window.__ibIntent / __wiseLibraryIntent /                    */
 /* __wiseMarketingIntent). Keep it in lock-step with those when chips    */
 /* are added or rewired. Per chip: t = has its own transcript, l = has  */
-/* its own page logic. A chip missing either half is called out below.  */
+/* its own page logic, does = the actual onIntent / onReply side-effect */
+/* (or “answer-only” when there is none). Rendered as one sortable table. */
 /* ------------------------------------------------------------------ */
 const INTENT_AUDIT = [
   {
     label: 'Dashboard', icon: 'space_dashboard', href: 'overview.html', src: 'agent-overview.js',
     note: 'Every chip posts its own scripted transcript (DASHBOARD_WISEAI_REPLIES) first, then fires its matching on-page control — so the narration always lands in the thread before the chip navigates or opens the logo editor.',
     chips: [
-      { i: 'claim_products',   label: 'Claim your products',          t: true, l: true },
-      { i: 'review_portfolio', label: 'Review your food portfolio',   t: true, l: true },
-      { i: 'add_food',         label: 'Add a food',                   t: true, l: true },
-      { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: true, l: true },
-      { i: 'verify_gras',      label: 'Verify your GRAS products',    t: true, l: true },
-      { i: 'update_logo',      label: 'Update your brand logo',       t: true, l: true },
+      { i: 'claim_products',   label: 'Claim your products',          t: true, l: true, does: 'After the transcript lands, clicks the dashboard Claim control and opens the claim-products flow.' },
+      { i: 'review_portfolio', label: 'Review your food portfolio',   t: true, l: true, does: 'After the transcript lands, clicks through to Product Portfolio.' },
+      { i: 'add_food',         label: 'Add a food',                   t: true, l: true, does: 'After the transcript lands, opens Add Product.' },
+      { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: true, l: true, does: 'After the transcript lands, starts Non-UPF verification.' },
+      { i: 'verify_gras',      label: 'Verify your GRAS products',    t: true, l: true, does: 'After the transcript lands, starts GRAS verification.' },
+      { i: 'update_logo',      label: 'Update your brand logo',       t: true, l: true, does: 'After the transcript lands, opens the brand logo editor on the dashboard.' },
     ],
   },
   {
     label: 'Reports', icon: 'insights', href: 'reports.html', src: 'agent-overview.js',
     chips: [
-      { i: 'open_upf_report',      label: 'Open the UPF report',      t: true,  l: true },
-      { i: 'open_gras_report',     label: 'Open the GRAS report',     t: true,  l: true },
-      { i: 'open_insights_report', label: 'Open the insights report', t: true,  l: true },
-      { i: 'explain_score',        label: 'Explain my UPF score',     t: true,  l: false },
-      { i: 'improve_score',        label: 'How do I improve it?',     t: true,  l: false },
-      { i: 'ingredient_quality',   label: 'Ingredient quality',       t: true,  l: false },
-      { i: 'compare_products',     label: 'Compare two products',     t: true,  l: false },
-      { i: 'unlock_studio',        label: 'Unlock the full Studio',   t: true,  l: false },
+      { i: 'open_upf_report',      label: 'Open the UPF report',      t: true,  l: true, does: 'Opens the UPF report inline on the Reports surface (right of chat). Back restores the report list.' },
+      { i: 'open_gras_report',     label: 'Open the GRAS report',     t: true,  l: true, does: 'Opens the GRAS report inline on the Reports surface.' },
+      { i: 'open_insights_report', label: 'Open the insights report', t: true,  l: true, does: 'Opens the insights report inline on the Reports surface.' },
+      { i: 'explain_score',        label: 'Explain my UPF score',     t: true,  l: false, does: 'Answer-only — narrates how the UPF score is calculated. Does not move the page.' },
+      { i: 'improve_score',        label: 'How do I improve it?',     t: true,  l: false, does: 'Answer-only — narrates the fastest ingredient swaps to flip products Non-UPF. No page action.' },
+      { i: 'ingredient_quality',   label: 'Ingredient quality',       t: true,  l: false, does: 'Answer-only — narrates additives, clean-label share and seed-oil scoring. No page action.' },
+      { i: 'compare_products',     label: 'Compare two products',     t: true,  l: false, does: 'Answer-only — explains how to line up two SKUs. Does not open Comparison.' },
+      { i: 'unlock_studio',        label: 'Unlock the full Studio',   t: true,  l: false, does: 'Answer-only — describes the locked Studio reports (GRAS, Insights, Nutrient-Quality, Health-Outcomes).' },
     ],
   },
   {
     label: 'Library', icon: 'auto_stories', href: 'conversation-library.html', src: 'agent-overview.js',
     chips: [
-      { i: 'lib_reports',    label: 'Show reports',     t: true, l: true },
-      { i: 'lib_dashboards', label: 'Show dashboards',  t: true, l: true },
-      { i: 'lib_chats',      label: 'Show chats',       t: true, l: true },
-      { i: 'lib_mcp',        label: 'Show MCP results', t: true, l: true },
-      { i: 'lib_references', label: 'Show references',  t: true, l: true },
-      { i: 'lib_shared',     label: 'Shared with me',   t: true, l: true },
+      { i: 'lib_reports',    label: 'Show reports',     t: true, l: true, does: 'Applies the Reports filter on the Library grid and syncs the scorecards + funnel.' },
+      { i: 'lib_dashboards', label: 'Show dashboards',  t: true, l: true, does: 'Applies the Dashboards filter on the Library grid.' },
+      { i: 'lib_chats',      label: 'Show chats',       t: true, l: true, does: 'Applies the Chats filter on the Library grid.' },
+      { i: 'lib_mcp',        label: 'Show MCP results', t: true, l: true, does: 'Applies the MCP-results filter on the Library grid.' },
+      { i: 'lib_references', label: 'Show references',  t: true, l: true, does: 'Applies the References filter on the Library grid.' },
+      { i: 'lib_shared',     label: 'Shared with me',   t: true, l: true, does: 'Applies the Shared-with-me filter on the Library grid.' },
     ],
   },
   {
     label: 'Ingredient Browser', icon: 'science', href: 'ingredient-browser.html', src: 'agent-overview.js',
     chips: [
-      { i: 'search_ingredient', label: 'Search an ingredient',       t: true, l: true },
-      { i: 'filter_gras',       label: 'Filter by GRAS status',      t: true, l: true },
-      { i: 'browse_category',   label: 'Browse by category',         t: true, l: true },
-      { i: 'filter_processing', label: 'Filter by processing level', t: true, l: true },
-      { i: 'check_allergens',   label: 'Check allergens',            t: true, l: true },
-      { i: 'filter_flags',      label: 'Additives & flags',          t: true, l: true },
-      { i: 'explain_gras',      label: 'What is GRAS?',              t: true, l: false },
+      { i: 'search_ingredient', label: 'Search an ingredient',       t: true, l: true, does: 'Focuses the ingredient search and drives the registry via __ibIntent.' },
+      { i: 'filter_gras',       label: 'Filter by GRAS status',      t: true, l: true, does: 'Filters the registry to GRAS status via the page intent bridge.' },
+      { i: 'browse_category',   label: 'Browse by category',         t: true, l: true, does: 'Slices the registry by category.' },
+      { i: 'filter_processing', label: 'Filter by processing level', t: true, l: true, does: 'Filters the registry by processing level (NOVA / UPF class).' },
+      { i: 'check_allergens',   label: 'Check allergens',            t: true, l: true, does: 'Filters the registry to allergen flags.' },
+      { i: 'filter_flags',      label: 'Additives & flags',          t: true, l: true, does: 'Filters the registry to additives & warning flags.' },
+      { i: 'explain_gras',      label: 'What is GRAS?',              t: true, l: false, does: 'Answer-only — explains what GRAS means. Does not change the filter.' },
     ],
   },
   {
     label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html', src: 'agent-overview.js',
     chips: [
-      { i: 'onesheet',        label: 'Open the co-branded one-sheets',   t: true, l: true },
-      { i: 'shield',          label: 'Get the Non-UPF Verified™ shield', t: true, l: true },
-      { i: 'brand_standards', label: 'Download the brand standards guide', t: true, l: true },
-      { i: 'social',          label: 'Grab the social media toolkit',    t: true, l: true },
-      { i: 'email_sms',       label: 'Get email & SMS assets',           t: true, l: true },
-      { i: 'packaging',       label: 'Packaging resources',              t: true, l: true },
-      { i: 'expand_all',      label: 'Expand all folders',               t: true, l: true },
+      { i: 'onesheet',        label: 'Open the co-branded one-sheets',   t: true, l: true, does: 'Opens the co-branded one-sheets folder on the assets page.' },
+      { i: 'shield',          label: 'Get the Non-UPF Verified™ shield', t: true, l: true, does: 'Opens the Non-UPF Verified™ shield download assets.' },
+      { i: 'brand_standards', label: 'Download the brand standards guide', t: true, l: true, does: 'Opens the brand-standards guide download.' },
+      { i: 'social',          label: 'Grab the social media toolkit',    t: true, l: true, does: 'Opens the social-media toolkit folder.' },
+      { i: 'email_sms',       label: 'Get email & SMS assets',           t: true, l: true, does: 'Opens the email & SMS asset folder.' },
+      { i: 'packaging',       label: 'Packaging resources',              t: true, l: true, does: 'Opens the packaging-resources folder.' },
+      { i: 'expand_all',      label: 'Expand all folders',               t: true, l: true, does: 'Expands every folder on the Marketing Assets page.' },
     ],
   },
   {
     label: 'Non-UPF Verification', icon: 'verified', href: 'verification.html', src: 'verification-flow.js',
     chips: [
-      { i: 'select_all',    label: 'Select all foods',          t: true, l: true },
-      { i: 'go_attest',     label: 'Continue to attestation',   t: true, l: true },
-      { i: 'do_attest',     label: 'Sign the attestation',      t: true, l: true },
-      { i: 'go_payment',    label: 'Go to payment',             t: true, l: true },
-      { i: 'pay_now',       label: 'Pay & mint my shields',     t: true, l: true },
-      { i: 'explain_flow',  label: 'How does verification work?', t: true, l: false },
-      { i: 'pricing',       label: 'How is pricing calculated?', t: true, l: false },
-      { i: 'what_you_get',  label: 'What do I get after?',      t: true, l: false },
-      { i: 'other_types',   label: 'Other verification types',  t: true, l: false },
+      { i: 'select_all',    label: 'Select all foods',          t: true, l: true, does: 'Selects every food on the Select step (jumps there if you are on a later step).' },
+      { i: 'go_attest',     label: 'Continue to attestation',   t: true, l: true, does: 'Advances to the Attestation step if at least one food is selected.' },
+      { i: 'do_attest',     label: 'Sign the attestation',      t: true, l: true, does: 'Jumps to Attestation if needed and marks the attestation signed.' },
+      { i: 'go_payment',    label: 'Go to payment',             t: true, l: true, does: 'Advances to Payment once the attestation is signed and foods are selected.' },
+      { i: 'pay_now',       label: 'Pay & mint my shields',     t: true, l: true, does: 'Jumps to Payment, checks the VSA, and runs process-payment to mint shields.' },
+      { i: 'explain_flow',  label: 'How does verification work?', t: true, l: false, does: 'Answer-only — narrates Confirm → Attest → Activate. No step change.' },
+      { i: 'pricing',       label: 'How is pricing calculated?', t: true, l: false, does: 'Answer-only — explains how verification pricing is calculated.' },
+      { i: 'what_you_get',  label: 'What do I get after?',      t: true, l: false, does: 'Answer-only — describes shields and assets you get after payment.' },
+      { i: 'other_types',   label: 'Other verification types',  t: true, l: false, does: 'Answer-only — lists the other verification types (GRAS, etc.).' },
     ],
   },
   {
     label: 'GRAS Verification', icon: 'shield', href: 'gras-verification.html', src: 'gras-verification-flow.js',
     chips: [
-      { i: 'verify_top',       label: 'Verify my top ingredient',   t: true, l: true },
-      { i: 'use_recommended',  label: 'Use the recommended pathway', t: true, l: true },
-      { i: 'autofill_docs',    label: 'Attach & fill the documents', t: true, l: true },
-      { i: 'next_step',        label: 'Continue to the next step',  t: true, l: true },
-      { i: 'sign_attestation', label: 'Sign the attestation',       t: true, l: true },
-      { i: 'submit_gras',      label: 'Submit for review',          t: true, l: true },
-      { i: 'run_review',       label: 'Run the WISEcode review',    t: true, l: true },
-      { i: 'view_submissions', label: 'Open the review queue',      t: true, l: true },
-      { i: 'verify_another',   label: 'Verify another ingredient',  t: true, l: true },
-      { i: 'explain_gras',     label: 'What is GRAS verification?', t: true, l: false },
-      { i: 'doc_pathways',     label: 'Which pathway do I need?',   t: true, l: false },
-      { i: 'what_clears',      label: 'What will this clear?',      t: true, l: false },
+      { i: 'verify_top',       label: 'Verify my top ingredient',   t: true, l: true, does: 'Starts verification on the recommended top ingredient.' },
+      { i: 'use_recommended',  label: 'Use the recommended pathway', t: true, l: true, does: 'Selects the recommended documentation pathway.' },
+      { i: 'autofill_docs',    label: 'Attach & fill the documents', t: true, l: true, does: 'Attaches and auto-fills the required pathway documents.' },
+      { i: 'next_step',        label: 'Continue to the next step',  t: true, l: true, does: 'Advances the GRAS wizard to the next incomplete step.' },
+      { i: 'sign_attestation', label: 'Sign the attestation',       t: true, l: true, does: 'Signs the GRAS attestation on the current submission.' },
+      { i: 'submit_gras',      label: 'Submit for review',          t: true, l: true, does: 'Submits the current ingredient for WISEcode review.' },
+      { i: 'run_review',       label: 'Run the WISEcode review',    t: true, l: true, does: 'Runs the WISEcode review against the submitted packet.' },
+      { i: 'view_submissions', label: 'Open the review queue',      t: true, l: true, does: 'Opens the GRAS review queue.' },
+      { i: 'verify_another',   label: 'Verify another ingredient',  t: true, l: true, does: 'Resets the wizard to start a new ingredient.' },
+      { i: 'explain_gras',     label: 'What is GRAS verification?', t: true, l: false, does: 'Answer-only — explains what GRAS verification covers.' },
+      { i: 'doc_pathways',     label: 'Which pathway do I need?',   t: true, l: false, does: 'Answer-only — describes which documentation pathway you need.' },
+      { i: 'what_clears',      label: 'What will this clear?',      t: true, l: false, does: 'Answer-only — lists what a cleared GRAS review unlocks.' },
     ],
   },
   {
     label: 'Organization Profile', icon: 'account_circle', href: 'profile.html', src: 'profile-flow.js',
     chips: [
-      { i: 'rename_org',     label: 'Rename organization',      t: true, l: true },
-      { i: 'org_type',       label: 'Change organization type', t: true, l: true },
-      { i: 'contact_person', label: 'Update contact person',    t: true, l: true },
-      { i: 'email',          label: 'Change contact email',     t: true, l: true },
-      { i: 'phone',          label: 'Update phone number',      t: true, l: true },
-      { i: 'address',        label: 'Edit mailing address',     t: true, l: true },
-      { i: 'website',        label: 'Set website URL',          t: true, l: true },
-      { i: 'ein',            label: 'Add EIN',                  t: true, l: true },
-      { i: 'logo',           label: 'Upload brand logo',        t: true, l: true },
-      { i: 'banner',         label: 'Set brand banner',         t: true, l: true },
-      { i: 'avatar',         label: 'Set avatar picture',       t: true, l: true },
-      { i: 'save',           label: 'Save changes',             t: true, l: true },
+      { i: 'rename_org',     label: 'Rename organization',      t: true, l: true, does: 'Focuses and drives the organization-name field via runIntent.' },
+      { i: 'org_type',       label: 'Change organization type', t: true, l: true, does: 'Opens the organization-type control.' },
+      { i: 'contact_person', label: 'Update contact person',    t: true, l: true, does: 'Focuses the contact-person field.' },
+      { i: 'email',          label: 'Change contact email',     t: true, l: true, does: 'Focuses the contact-email field.' },
+      { i: 'phone',          label: 'Update phone number',      t: true, l: true, does: 'Focuses the phone-number field.' },
+      { i: 'address',        label: 'Edit mailing address',     t: true, l: true, does: 'Opens the mailing-address editor.' },
+      { i: 'website',        label: 'Set website URL',          t: true, l: true, does: 'Focuses the website URL field.' },
+      { i: 'ein',            label: 'Add EIN',                  t: true, l: true, does: 'Focuses the EIN field.' },
+      { i: 'logo',           label: 'Upload brand logo',        t: true, l: true, does: 'Opens the brand-logo uploader.' },
+      { i: 'banner',         label: 'Set brand banner',         t: true, l: true, does: 'Opens the brand-banner uploader.' },
+      { i: 'avatar',         label: 'Set avatar picture',       t: true, l: true, does: 'Opens the avatar-picture picker.' },
+      { i: 'save',           label: 'Save changes',             t: true, l: true, does: 'Saves the profile — the transcript itself performs and narrates the save.' },
     ],
   },
   {
     label: 'Preferences', icon: 'tune', href: 'preferences.html', src: 'preferences-flow.js',
     chips: [
-      { i: 'toggle_theme',  label: 'Switch light / dark',        t: true, l: true },
-      { i: 'bigger_text',   label: 'Make text bigger',           t: true, l: true },
-      { i: 'mute_email',    label: 'Mute email notifications',   t: true, l: true },
-      { i: 'dock_right',    label: 'Move chat to the right',     t: true, l: true },
-      { i: 'reduce_motion', label: 'Reduce motion',              t: true, l: true },
+      { i: 'toggle_theme',  label: 'Switch light / dark',        t: true, l: true, does: 'Flips light/dark, persists it, and repaints the page.' },
+      { i: 'bigger_text',   label: 'Make text bigger',           t: true, l: true, does: 'Bumps interface text +10% and persists the size.' },
+      { i: 'mute_email',    label: 'Mute email notifications',   t: true, l: true, does: 'Turns email notifications off (in-app alerts stay on).' },
+      { i: 'dock_right',    label: 'Move chat to the right',     t: true, l: true, does: 'Sets the WISEcodeAI dock side to right, app-wide.' },
+      { i: 'reduce_motion', label: 'Reduce motion',              t: true, l: true, does: 'Turns Reduce motion on so animations and transitions minimize.' },
     ],
   },
   {
     label: 'API Keys', icon: 'key', href: 'api-keys.html', src: 'api-keys-flow.js',
     chips: [
-      { i: 'create_key',  label: 'Create a new API key',     t: true, l: true },
-      { i: 'reveal_keys', label: 'Reveal my keys',           t: true, l: true },
-      { i: 'usage',       label: 'Show my usage',            t: true, l: true },
-      { i: 'rotate',      label: 'Which key should I rotate?', t: true, l: true },
-      { i: 'docs',        label: 'Open the API reference',   t: true, l: true },
+      { i: 'create_key',  label: 'Create a new API key',     t: true, l: true, does: 'Opens the create-key flow on the API Keys page.' },
+      { i: 'reveal_keys', label: 'Reveal my keys',           t: true, l: true, does: 'Reveals the hidden key values in the table.' },
+      { i: 'usage',       label: 'Show my usage',            t: true, l: true, does: 'Scrolls to / filters the usage readout.' },
+      { i: 'rotate',      label: 'Which key should I rotate?', t: true, l: true, does: 'Highlights the key that should be rotated next.' },
+      { i: 'docs',        label: 'Open the API reference',   t: true, l: true, does: 'Navigates to the API reference in Docs.' },
     ],
   },
   {
     label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html', src: 'invoices-flow.js',
     chips: [
-      { i: 'outstanding',    label: 'What’s outstanding?',    t: true, l: true },
-      { i: 'show_paid',      label: 'Show paid invoices',     t: true, l: true },
-      { i: 'show_failed',    label: 'Show failed payments',   t: true, l: true },
-      { i: 'show_cancelled', label: 'Show cancelled',         t: true, l: true },
-      { i: 'show_all',       label: 'Show all invoices',      t: true, l: true },
-      { i: 'download_all',   label: 'Download all',           t: true, l: true },
+      { i: 'outstanding',    label: 'What’s outstanding?',    t: true, l: true, does: 'Clears the invoice filter so outstanding items are in view.' },
+      { i: 'show_paid',      label: 'Show paid invoices',     t: true, l: true, does: 'Filters the invoice table to paid.' },
+      { i: 'show_failed',    label: 'Show failed payments',   t: true, l: true, does: 'Filters the invoice table to failed payments.' },
+      { i: 'show_cancelled', label: 'Show cancelled',         t: true, l: true, does: 'Filters the invoice table to cancelled.' },
+      { i: 'show_all',       label: 'Show all invoices',      t: true, l: true, does: 'Clears the invoice filter and shows every invoice.' },
+      { i: 'download_all',   label: 'Download all',           t: true, l: true, does: 'Triggers a download-all toast / export of every invoice.' },
     ],
   },
   {
     label: 'Help', icon: 'help', href: 'help.html', src: 'help-flow.js',
     chips: [
-      { i: 'getting_started',   label: 'How do I get started?', t: true, l: true },
-      { i: 'verification_help', label: 'Explain verification',  t: true, l: true },
-      { i: 'billing_help',      label: 'Billing & invoices',    t: true, l: true },
-      { i: 'contact',           label: 'Contact support',       t: true, l: true },
+      { i: 'getting_started',   label: 'How do I get started?', t: true, l: true, does: 'Opens the Getting started article on Help.' },
+      { i: 'verification_help', label: 'Explain verification',  t: true, l: true, does: 'Opens the verification explainer article.' },
+      { i: 'billing_help',      label: 'Billing & invoices',    t: true, l: true, does: 'Opens the billing & invoices article.' },
+      { i: 'contact',           label: 'Contact support',       t: true, l: true, does: 'Opens the contact-support path.' },
     ],
   },
   {
     label: 'Docs', icon: 'menu_book', href: 'docs.html', src: 'docs-flow.js',
     chips: [
-      { i: 'quickstart', label: 'Show me the quickstart',  t: true, l: true },
-      { i: 'api',        label: 'Open the API reference',  t: true, l: true },
-      { i: 'sdk',        label: 'How do I use the SDK?',   t: true, l: true },
-      { i: 'webhooks',   label: 'Set up webhooks',         t: true, l: true },
-      { i: 'changelog',  label: 'What’s new?',             t: true, l: true },
+      { i: 'quickstart', label: 'Show me the quickstart',  t: true, l: true, does: 'Opens the quickstart doc.' },
+      { i: 'api',        label: 'Open the API reference',  t: true, l: true, does: 'Opens the API reference doc.' },
+      { i: 'sdk',        label: 'How do I use the SDK?',   t: true, l: true, does: 'Opens the SDK guide.' },
+      { i: 'webhooks',   label: 'Set up webhooks',         t: true, l: true, does: 'Opens the webhooks setup doc.' },
+      { i: 'changelog',  label: 'What’s new?',             t: true, l: true, does: 'Opens the changelog / what’s-new doc.' },
     ],
   },
   {
     label: 'Agents', icon: 'smart_toy', href: 'agents.html', src: 'agents-flow.js',
     chips: [
-      { i: 'enable_all', label: 'Enable all agents',        t: true, l: true },
-      { i: 'pause_all',  label: 'Pause all agents',         t: true, l: true },
-      { i: 'portfolio',  label: 'Open the Portfolio Agent', t: true, l: true },
-      { i: 'autonomy',   label: 'What does autonomy mean?', t: true, l: false },
+      { i: 'enable_all', label: 'Enable all agents',        t: true, l: true, does: 'Enables every agent on the Agents board.' },
+      { i: 'pause_all',  label: 'Pause all agents',         t: true, l: true, does: 'Pauses every agent on the Agents board.' },
+      { i: 'portfolio',  label: 'Open the Portfolio Agent', t: true, l: true, does: 'Opens the Portfolio Agent detail.' },
+      { i: 'autonomy',   label: 'What does autonomy mean?', t: true, l: false, does: 'Answer-only — explains what agent autonomy means. No toggle change.' },
     ],
   },
   {
     label: 'Alerts', icon: 'notifications', href: 'alerts.html', src: 'alerts-flow.js',
     chips: [
-      { i: 'show_unread',  label: 'Show only unread',      t: true, l: true },
-      { i: 'mark_all',     label: 'Mark everything read',  t: true, l: true },
-      { i: 'flags',        label: 'What needs my review?', t: true, l: true },
-      { i: 'verification', label: 'Verification alerts',   t: true, l: true },
+      { i: 'show_unread',  label: 'Show only unread',      t: true, l: true, does: 'Filters the alert list to unread only.' },
+      { i: 'mark_all',     label: 'Mark everything read',  t: true, l: true, does: 'Marks every alert read.' },
+      { i: 'flags',        label: 'What needs my review?', t: true, l: true, does: 'Filters to alerts that need review.' },
+      { i: 'verification', label: 'Verification alerts',   t: true, l: true, does: 'Filters to verification alerts.' },
     ],
   },
   {
     label: 'Organizations', icon: 'apartment', href: 'organizations.html', src: 'organizations-flow.js',
     chips: [
-      { i: 'show_active',   label: 'Show active orgs',    t: true, l: true },
-      { i: 'show_invited',  label: 'Show invited orgs',   t: true, l: true },
-      { i: 'show_inactive', label: 'Show inactive orgs',  t: true, l: true },
-      { i: 'show_all',      label: 'Show all',            t: true, l: true },
-      { i: 'add_org',       label: 'Add an organization', t: true, l: true },
-      { i: 'quick_invite',  label: 'Quick invite',        t: true, l: true },
-      { i: 'export',        label: 'Export CSV',          t: true, l: true },
+      { i: 'show_active',   label: 'Show active orgs',    t: true, l: true, does: 'Filters the org table to active.' },
+      { i: 'show_invited',  label: 'Show invited orgs',   t: true, l: true, does: 'Filters the org table to invited.' },
+      { i: 'show_inactive', label: 'Show inactive orgs',  t: true, l: true, does: 'Filters the org table to inactive.' },
+      { i: 'show_all',      label: 'Show all',            t: true, l: true, does: 'Clears the org status filter.' },
+      { i: 'add_org',       label: 'Add an organization', t: true, l: true, does: 'Runs the Add organization action.' },
+      { i: 'quick_invite',  label: 'Quick invite',        t: true, l: true, does: 'Navigates to Quick Invite.' },
+      { i: 'export',        label: 'Export CSV',          t: true, l: true, does: 'Exports the organizations table as CSV.' },
     ],
   },
   {
     label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html', src: 'quick-invite-flow.js',
     chips: [
-      { i: 'need_attention', label: 'What needs attention?', t: true, l: true },
-      { i: 'show_pending',   label: 'Show pending invites',  t: true, l: true },
-      { i: 'show_accepted',  label: 'Show accepted',         t: true, l: true },
-      { i: 'show_cancelled', label: 'Show cancelled',        t: true, l: true },
-      { i: 'show_all',       label: 'Show all invites',      t: true, l: true },
-      { i: 'export',         label: 'Export CSV',            t: true, l: true },
+      { i: 'need_attention', label: 'What needs attention?', t: true, l: true, does: 'Filters invites to items that need attention.' },
+      { i: 'show_pending',   label: 'Show pending invites',  t: true, l: true, does: 'Filters the invite table to pending.' },
+      { i: 'show_accepted',  label: 'Show accepted',         t: true, l: true, does: 'Filters the invite table to accepted.' },
+      { i: 'show_cancelled', label: 'Show cancelled',        t: true, l: true, does: 'Filters the invite table to cancelled.' },
+      { i: 'show_all',       label: 'Show all invites',      t: true, l: true, does: 'Clears the invite filter.' },
+      { i: 'export',         label: 'Export CSV',            t: true, l: true, does: 'Exports the invite table as CSV.' },
     ],
   },
   {
     label: 'User Management', icon: 'group', href: 'user-management.html', src: 'user-management-flow.js',
     chips: [
-      { i: 'show_admins',   label: 'Show admins',      t: true, l: true },
-      { i: 'show_pending',  label: 'Pending email',    t: true, l: true },
-      { i: 'show_locked',   label: 'Locked out',       t: true, l: true },
-      { i: 'show_waitlist', label: 'Waiting for beta', t: true, l: true },
-      { i: 'show_all',      label: 'Show all users',   t: true, l: true },
-      { i: 'new_user',      label: 'Add a user',       t: true, l: true },
+      { i: 'show_admins',   label: 'Show admins',      t: true, l: true, does: 'Filters the user table to admins.' },
+      { i: 'show_pending',  label: 'Pending email',    t: true, l: true, does: 'Filters to users with pending email.' },
+      { i: 'show_locked',   label: 'Locked out',       t: true, l: true, does: 'Filters to locked-out users.' },
+      { i: 'show_waitlist', label: 'Waiting for beta', t: true, l: true, does: 'Filters to users waiting for beta.' },
+      { i: 'show_all',      label: 'Show all users',   t: true, l: true, does: 'Clears the user filter.' },
+      { i: 'new_user',      label: 'Add a user',       t: true, l: true, does: 'Opens the Add a user flow.' },
     ],
   },
   {
     label: 'Non-UPF Dashboard', icon: 'dashboard', href: 'non-upf-dashboard.html', src: 'non-upf-dashboard-flow.js',
     chips: [
-      { i: 'portfolio_split', label: 'What’s my UPF split?',        t: true, l: false },
-      { i: 'action_required', label: 'What needs attention?',       t: true, l: true },
-      { i: 'ready_to_attest', label: 'What’s ready to attest?',     t: true, l: true },
-      { i: 'verified',        label: 'Show verified products',      t: true, l: true },
-      { i: 'ineligible',      label: 'Why are products ineligible?', t: true, l: true },
-      { i: 'export',          label: 'Export the dashboard',        t: true, l: true },
+      { i: 'portfolio_split', label: 'What’s my UPF split?',        t: true, l: false, does: 'Answer-only — narrates the current UPF / Non-UPF split. No filter change.' },
+      { i: 'action_required', label: 'What needs attention?',       t: true, l: true, does: 'Filters the dashboard to products that need attention.' },
+      { i: 'ready_to_attest', label: 'What’s ready to attest?',     t: true, l: true, does: 'Filters to products ready to attest.' },
+      { i: 'verified',        label: 'Show verified products',      t: true, l: true, does: 'Filters to verified products.' },
+      { i: 'ineligible',      label: 'Why are products ineligible?', t: true, l: true, does: 'Filters to ineligible products and narrates why.' },
+      { i: 'export',          label: 'Export the dashboard',        t: true, l: true, does: 'Exports the dashboard as a download.' },
     ],
   },
   {
     label: 'Audit Queue', icon: 'rule', href: 'audit-queue.html', src: 'audit-queue-flow.js',
     chips: [
-      { i: 'show_open',     label: 'Show open audits',      t: true, l: true },
-      { i: 'show_accepted', label: 'Show accepted',         t: true, l: true },
-      { i: 'new_canon',     label: 'New canon suggestions', t: true, l: true },
-      { i: 'show_canceled', label: 'Show canceled',         t: true, l: true },
-      { i: 'show_all',      label: 'Show all audits',       t: true, l: true },
-      { i: 'refresh',       label: 'Refresh the queue',     t: true, l: true },
+      { i: 'show_open',     label: 'Show open audits',      t: true, l: true, does: 'Filters the queue to open audits.' },
+      { i: 'show_accepted', label: 'Show accepted',         t: true, l: true, does: 'Filters the queue to accepted audits.' },
+      { i: 'new_canon',     label: 'New canon suggestions', t: true, l: true, does: 'Filters to new canon suggestions.' },
+      { i: 'show_canceled', label: 'Show canceled',         t: true, l: true, does: 'Filters the queue to canceled audits.' },
+      { i: 'show_all',      label: 'Show all audits',       t: true, l: true, does: 'Clears the audit filter.' },
+      { i: 'refresh',       label: 'Refresh the queue',     t: true, l: true, does: 'Refreshes the audit queue.' },
     ],
   },
   {
     label: 'Admin Utilities', icon: 'build', href: 'admin-utils.html', src: 'admin-utils-flow.js',
     chips: [
-      { i: 'seed',          label: 'Seed the platform',          t: true, l: true },
-      { i: 'refresh_verif', label: 'Refresh verifications',      t: true, l: true },
-      { i: 'refresh_attr',  label: 'Refresh attribute insights', t: true, l: true },
-      { i: 'fix_account',   label: 'Fix an account status',      t: true, l: true },
-      { i: 'backplane',     label: 'Backplane diagnostics',      t: true, l: true },
-      { i: 'db_info',       label: 'What DB am I on?',           t: true, l: false },
+      { i: 'seed',          label: 'Seed the platform',          t: true, l: true, does: 'Runs Seed the platform.' },
+      { i: 'refresh_verif', label: 'Refresh verifications',      t: true, l: true, does: 'Runs Refresh verifications.' },
+      { i: 'refresh_attr',  label: 'Refresh attribute insights', t: true, l: true, does: 'Runs Refresh attribute insights.' },
+      { i: 'fix_account',   label: 'Fix an account status',      t: true, l: true, does: 'Opens the fix-account-status utility.' },
+      { i: 'backplane',     label: 'Backplane diagnostics',      t: true, l: true, does: 'Opens backplane diagnostics.' },
+      { i: 'db_info',       label: 'What DB am I on?',           t: true, l: false, does: 'Answer-only — narrates which database this session is on.' },
     ],
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog.',
     chips: [
-      { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true },
-      { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true },
-      { i: 'tables',     label: 'Show every table',             t: true, l: true },
-      { i: 'intents',    label: 'Which intent chips work?',      t: true, l: true },
-      { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true },
-      { i: 'design',     label: 'Jump to the Design System',     t: true, l: true },
-      { i: 'components', label: 'Jump to the Component Library', t: true, l: true },
-      { i: 'counts',     label: 'How many icons are there?',     t: true, l: false },
+      { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true, does: 'Expands and scrolls to the Codebase scorecards, then posts the sizing answer.' },
+      { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true, does: 'Expands and scrolls to the Module Directory (suppresses the reply on success).' },
+      { i: 'tables',     label: 'Show every table',             t: true, l: true, does: 'Expands and scrolls to the Table Gallery.' },
+      { i: 'intents',    label: 'Which intent chips work?',      t: true, l: true, does: 'Expands and scrolls to Intent Chip Logic, then posts the audit answer.' },
+      { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true, does: 'Expands and scrolls to the Icon Inventory.' },
+      { i: 'design',     label: 'Jump to the Design System',     t: true, l: true, does: 'Expands and scrolls to the Design System.' },
+      { i: 'components', label: 'Jump to the Component Library', t: true, l: true, does: 'Expands and scrolls to the Component Library.' },
+      { i: 'motion',     label: 'Show animations & resize',      t: true, l: true, does: 'Expands and scrolls to Motion & Resize.' },
+      { i: 'counts',     label: 'How many icons are there?',     t: true, l: false, does: 'Answer-only — narrates the unique-icon and placement counts. Does not scroll.' },
     ],
   },
   {
     label: 'WISEcodeAI (flagship)', icon: 'auto_awesome', href: 'wiseai.html', src: 'wiseai.html',
     note: 'The standalone WISEcodeAI conversation. Every chip posts its own scripted transcript (INTENT_REPLIES) and opens its result/visual panes via surface(intent) — including the deadpan “Cat food.” easter egg, which now opens a cat-food card, and “Is this list ultra-processed?”, which opens the WISEcode UPF framework pane.',
     chips: [
-      { i: 'brisket',      label: 'Gut-healthy brisket recipe',    t: true, l: true },
-      { i: 'redochart',    label: 'Redo the gut-health chart',     t: true, l: true },
-      { i: 'upf',          label: 'Is this list ultra-processed?', t: true, l: true },
-      { i: 'worst',        label: 'Worst food in our database?',   t: true, l: true },
-      { i: 'spider',       label: 'Spider-chart the 10 worst foods', t: true, l: true },
-      { i: 'cupcake',      label: 'Tell me about the worst cupcake', t: true, l: true },
-      { i: 'cookie',       label: 'Best cookie, least chocolate',  t: true, l: true },
-      { i: 'compare',      label: 'Compare products side by side',  t: true, l: true },
-      { i: 'report',       label: 'Show me a pretty report',       t: true, l: true },
-      { i: 'cat',          label: 'If I identified as a cat…',     t: true, l: true },
-      { i: 'catnutrients', label: 'What nutrients do cats require?', t: true, l: true },
+      { i: 'brisket',      label: 'Gut-healthy brisket recipe',    t: true, l: true, does: 'Posts the brisket recipe transcript and opens its result / recipe pane via surface(intent).' },
+      { i: 'redochart',    label: 'Redo the gut-health chart',     t: true, l: true, does: 'Re-runs the gut-health chart and opens the chart pane.' },
+      { i: 'upf',          label: 'Is this list ultra-processed?', t: true, l: true, does: 'Opens the WISEcode UPF framework pane and narrates whether the list is ultra-processed.' },
+      { i: 'worst',        label: 'Worst food in our database?',   t: true, l: true, does: 'Opens the worst-food result card from the registry.' },
+      { i: 'spider',       label: 'Spider-chart the 10 worst foods', t: true, l: true, does: 'Opens a spider chart of the 10 worst foods.' },
+      { i: 'cupcake',      label: 'Tell me about the worst cupcake', t: true, l: true, does: 'Opens the worst-cupcake product card.' },
+      { i: 'cookie',       label: 'Best cookie, least chocolate',  t: true, l: true, does: 'Opens the best-cookie / least-chocolate comparison card.' },
+      { i: 'compare',      label: 'Compare products side by side',  t: true, l: true, does: 'Opens the side-by-side product comparison pane.' },
+      { i: 'report',       label: 'Show me a pretty report',       t: true, l: true, does: 'Opens a formatted report pane in the studio.' },
+      { i: 'cat',          label: 'If I identified as a cat…',     t: true, l: true, does: 'Easter egg — opens the cat-food card and posts the deadpan reply.' },
+      { i: 'catnutrients', label: 'What nutrients do cats require?', t: true, l: true, does: 'Opens the cat-nutrient explainer card.' },
     ],
   },
   {
     label: 'AI Platform Dashboard', icon: 'monitoring', href: 'ai-dashboard.html', src: 'ai-dashboard.html',
     note: 'Ask-about-your-platform chips. Each now carries its own scripted transcript (intentReplies keyed by intent id) narrating the metric it answers; the dashboard beside the chat is a static read-out, so these are answer-only (no page side-effect).',
     chips: [
-      { i: 'spend_rise',    label: 'Why did spend rise this period?',    t: true, l: false },
-      { i: 'top_model',     label: 'Which model drives the most tokens?', t: true, l: false },
-      { i: 'guardrails',    label: 'Show guardrail activity',            t: true, l: false },
-      { i: 'top_users',     label: 'Top users by consumption',           t: true, l: false },
-      { i: 'stale_sources', label: 'Any stale data sources?',           t: true, l: false },
+      { i: 'spend_rise',    label: 'Why did spend rise this period?',    t: true, l: false, does: 'Answer-only — narrates why spend rose this period. Dashboard is a static readout.' },
+      { i: 'top_model',     label: 'Which model drives the most tokens?', t: true, l: false, does: 'Answer-only — narrates which model drives the most tokens.' },
+      { i: 'guardrails',    label: 'Show guardrail activity',            t: true, l: false, does: 'Answer-only — narrates guardrail activity.' },
+      { i: 'top_users',     label: 'Top users by consumption',           t: true, l: false, does: 'Answer-only — narrates top users by consumption.' },
+      { i: 'stale_sources', label: 'Any stale data sources?',           t: true, l: false, does: 'Answer-only — narrates whether any data sources are stale.' },
     ],
   },
 ];
@@ -2236,39 +2664,40 @@ function intentAuditStats() {
   return s;
 }
 
-function intentChipRow(c) {
-  const status = intentChipStatus(c);
-  const meta = INTENT_STATUS_META[status];
-  return `
-    <li class="mi-int-chip" data-int-row data-status="${esc(status)}">
-      <span class="mi-int-chip-name">
-        <span class="mi-int-chip-dot mi-int-dot--${esc(status)}" title="${esc(meta.label)}"><span class="material-symbols-outlined">${esc(meta.icon)}</span></span>
-        <span class="mi-int-chip-label">${esc(c.label)}</span>
-        <code class="mi-int-chip-id">${esc(c.i)}</code>
-      </span>
-      <span class="mi-int-badges">
-        <span class="mi-int-badge ${c.t ? 'is-ok' : 'is-no'}"><span class="material-symbols-outlined">${c.t ? 'check' : 'close'}</span>Transcript</span>
-        <span class="mi-int-badge ${c.l ? 'is-ok' : 'is-no'}"><span class="material-symbols-outlined">${c.l ? 'check' : 'close'}</span>Logic</span>
-      </span>
-    </li>`;
+function allIntentRows() {
+  const rows = [];
+  INTENT_AUDIT.forEach((surf) => {
+    surf.chips.forEach((c) => {
+      rows.push({
+        ...c,
+        surface: surf.label,
+        href: surf.href,
+        src: surf.src,
+        icon: surf.icon,
+        status: intentChipStatus(c),
+      });
+    });
+  });
+  return rows;
 }
 
-function intentSurfaceBlock(surf) {
-  const wired = surf.chips.filter((c) => intentChipStatus(c) === 'wired').length;
-  const gaps = surf.chips.length - wired;
+function intentChipRow(c) {
+  const meta = INTENT_STATUS_META[c.status];
+  const search = `${c.label} ${c.i} ${c.surface} ${c.does || ''} ${c.status}`.toLowerCase();
   return `
-    <article class="mi-int-surface" data-int-surface data-has-gap="${gaps > 0 ? '1' : '0'}">
-      <header class="mi-int-shead">
-        <span class="mi-int-sic"><span class="material-symbols-outlined">${esc(surf.icon)}</span></span>
-        <div class="mi-int-stitles">
-          <a class="mi-int-sname" href="${esc(surf.href)}">${esc(surf.label)}<span class="material-symbols-outlined">north_east</span></a>
-          <span class="mi-int-ssrc"><code>${esc(surf.src)}</code></span>
-        </div>
-        <span class="mi-int-scount ${gaps ? 'has-gap' : 'all-wired'}">${wired}/${surf.chips.length} wired</span>
-      </header>
-      ${surf.note ? `<p class="mi-int-snote"><span class="material-symbols-outlined">info</span>${esc(surf.note)}</p>` : ''}
-      <ul class="mi-int-chiplist">${surf.chips.map(intentChipRow).join('')}</ul>
-    </article>`;
+    <div class="mi-int-trow" data-int-row data-status="${esc(c.status)}" data-search="${esc(search)}">
+      <span class="mi-int-td mi-int-td--chip">
+        <span class="mi-int-chip-dot mi-int-dot--${esc(c.status)}" title="${esc(meta.label)}"><span class="material-symbols-outlined">${esc(meta.icon)}</span></span>
+        <span class="mi-int-chip-label">${esc(c.label)}</span>
+      </span>
+      <span class="mi-int-td"><code class="mi-int-chip-id">${esc(c.i)}</code></span>
+      <span class="mi-int-td mi-int-td--surf">
+        <a class="mi-int-sname" href="${esc(c.href)}">${esc(c.surface)}</a>
+      </span>
+      <span class="mi-int-td mi-int-td--flag">${c.t ? 'Yes' : 'No'}</span>
+      <span class="mi-int-td mi-int-td--flag">${c.l ? 'Yes' : 'No'}</span>
+      <span class="mi-int-td mi-int-td--does">${esc(c.does || (c.l ? 'Runs the matching on-page control.' : 'Answer-only — posts a transcript, no page action.'))}</span>
+    </div>`;
 }
 
 /* The "call it out" panel — every chip that is missing a half, grouped by
@@ -2320,16 +2749,17 @@ function intentGapCallout(stats) {
 function renderIntentAudit() {
   const stats = intentAuditStats();
   return `
-    <section class="mi-module" id="mi-intents">
+    <section class="mi-module is-collapsed" id="mi-intents">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
-          <h2 class="mi-module-title">Intent Chips</h2>
+          <h2 class="mi-module-title">Intent Chip Logic</h2>
           <p class="mi-module-lede">Every WISEcodeAI dock ships one-tap <strong>intent chips</strong> on its welcome screen. A chip
             is only fully wired when it carries both halves — its own <strong>transcript</strong> (a scripted reply) and its own
-            <strong>logic</strong> (an <code>onIntent</code> page action). This audit checks all <strong>${stats.chips} chips</strong>
-            across <strong>${stats.surfaces} surfaces</strong>, hand-verified against each dock config, and calls out any chip
-            missing a half.</p>
+            <strong>logic</strong> (an <code>onIntent</code> page action). This table lists all <strong>${stats.chips} chips</strong>
+            across <strong>${stats.surfaces} surfaces</strong> with the exact side-effect each one runs. Click a column header to
+            sort. Filter tiles and search narrow the same list.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-intents', 'Intent Chip Logic')}
         ${moduleControlsHTML('mi-intents')}
       </header>
 
@@ -2358,10 +2788,26 @@ function renderIntentAudit() {
 
       ${intentGapCallout(stats)}
 
-      <div class="mi-int-surfaces">
-        ${INTENT_AUDIT.map(intentSurfaceBlock).join('')}
-        <div class="mi-int-empty" id="mi-int-empty" hidden>No chips match this filter.</div>
+      <div class="mi-toolbar">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="mi-search" id="mi-int-search" placeholder="Search chips by name, intent, surface or logic…" aria-label="Search intent chips" autocomplete="off" />
+        </div>
+        <div class="mi-tbl-count"><span id="mi-int-shown">${stats.chips}</span> of ${stats.chips} chips</div>
       </div>
+
+      <div class="mi-int-table" id="mi-int-table" style="--mi-int-cols: minmax(180px, 1.3fr) 140px minmax(140px, 1fr) 88px 72px minmax(240px, 2.2fr)">
+        <div class="mi-int-thead">
+          <span class="mi-int-th">Chip</span>
+          <span class="mi-int-th">Intent</span>
+          <span class="mi-int-th">Surface</span>
+          <span class="mi-int-th">Transcript</span>
+          <span class="mi-int-th">Logic</span>
+          <span class="mi-int-th">What it does</span>
+        </div>
+        ${allIntentRows().map(intentChipRow).join('')}
+      </div>
+      <div class="mi-int-empty" id="mi-int-empty" hidden>No chips match this filter.</div>
     </section>`;
 }
 
@@ -2370,19 +2816,23 @@ function wireIntentAudit(root) {
   if (!mod) return;
   const stats = mod.querySelector('.mi-int-stats');
   const empty = mod.querySelector('#mi-int-empty');
+  const search = mod.querySelector('#mi-int-search');
+  const shownEl = mod.querySelector('#mi-int-shown');
+  let filter = 'all';
+  let q = '';
 
-  const apply = (filter) => {
+  const apply = (nextFilter) => {
+    if (nextFilter) filter = nextFilter;
+    q = (search?.value || '').trim().toLowerCase();
     let shown = 0;
-    mod.querySelectorAll('[data-int-surface]').forEach((surf) => {
-      let surfShown = 0;
-      surf.querySelectorAll('[data-int-row]').forEach((row) => {
-        const vis = filter === 'all' || row.getAttribute('data-status') === filter;
-        row.hidden = !vis;
-        if (vis) surfShown++;
-      });
-      surf.hidden = surfShown === 0;
-      shown += surfShown;
+    mod.querySelectorAll('[data-int-row]').forEach((row) => {
+      const statusOk = filter === 'all' || row.getAttribute('data-status') === filter;
+      const searchOk = !q || (row.getAttribute('data-search') || '').includes(q);
+      const vis = statusOk && searchOk;
+      row.hidden = !vis;
+      if (vis) shown++;
     });
+    if (shownEl) shownEl.textContent = String(shown);
     if (empty) empty.hidden = shown !== 0;
     mod.querySelectorAll('[data-int-filter]').forEach((b) => {
       const on = b.getAttribute('data-int-filter') === filter;
@@ -2398,14 +2848,18 @@ function wireIntentAudit(root) {
       apply(btn.getAttribute('data-int-filter'));
     });
   }
+  search?.addEventListener('input', () => apply());
   apply('all');
 }
 
 /* ------------------------------------------------------------------ */
-/* Reasoning Trace — the anatomy of a WISEcodeAI "thinking" trace.      */
+/* Streaming Trace — the anatomy of a WISEcodeAI "thinking" trace.     */
 /*                                                                     */
-/* Every WISEcodeAI turn streams a live trace while it works. It has two  */
-/* moving parts, named here:                                            */
+/* Every WISEcodeAI turn streams a live trace while it works. It has    */
+/* three moving parts, named here:                                      */
+/*   • the HELIX — the DNA rail from js/trace-helix.js (the same rope   */
+/*     the live chat draws). It twists while thinking, then freezes     */
+/*     with green base-pair dots aligned to each completed step.        */
 /*   • MAIN SECTIONS — the milestone keys the trace walks through, one   */
 /*     on screen at a time (Reading → Gathering → Cross-checking →       */
 /*     Composing). Each lands into the summary with the m:ss it took.    */
@@ -2451,33 +2905,33 @@ const TRACE_MILESTONES = [
   },
 ];
 
-const TRACE_STRAND = '<div class="sc-trace-strand" aria-hidden="true"></div>';
-
-function renderReasoningTrace() {
+function renderStreamingTrace() {
   const sections = TRACE_MILESTONES.length;
   return `
-    <section class="mi-module" id="mi-trace">
+    <section class="mi-module is-collapsed" id="mi-trace">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
-          <h2 class="mi-module-title">Reasoning Trace</h2>
-          <p class="mi-module-lede">The "thinking" trace every WISEcodeAI turn streams while it works, shown here with its two moving
-            parts named. The <strong>main sections</strong> are the ${sections} milestones the trace walks through —
-            <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the <strong>glob</strong> of
-            subdued narration streams in line by line. On this page the glob is <strong>always a haiku</strong> (5·7·5).
-            Rendered live with the same <code>.sc-trace</code> classes the chat uses.</p>
+          <h2 class="mi-module-title">Streaming Trace</h2>
+          <p class="mi-module-lede">The "thinking" trace every WISEcodeAI turn streams while it works, shown here with its
+            three moving parts named. The <strong>helix</strong> is the DNA rail that twists on the left — the same
+            animation the live chat draws. The <strong>main sections</strong> are the ${sections} milestones the trace
+            walks through — <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the
+            <strong>glob</strong> of subdued narration streams in line by line. On this page the glob is
+            <strong>always a haiku</strong> (5·7·5). Rendered live with the same <code>.sc-trace</code> classes the chat uses.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-trace', 'Streaming Trace')}
         ${moduleControlsHTML('mi-trace')}
       </header>
 
       <div class="mi-trace">
         <div class="mi-trace-card">
-          <div class="sc-trace" data-open="1" id="mi-trace-live">
-            <button type="button" class="sc-trace-head" aria-expanded="true">
+          <div class="sc-trace" data-open="0" id="mi-trace-live">
+            <button type="button" class="sc-trace-head" aria-expanded="false">
               <span class="sc-trace-title">Thinking</span>
               <span class="sc-trace-timer" aria-hidden="true">0:00</span>
               <span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>
             </button>
-            <div class="sc-trace-body">${TRACE_STRAND}</div>
+            <div class="sc-trace-body">${TRACE_STRAND_MARKUP}</div>
           </div>
         </div>
 
@@ -2486,6 +2940,11 @@ function renderReasoningTrace() {
             <span class="material-symbols-outlined">replay</span><span data-trace-run-label>Replay trace</span>
           </button>
           <ul class="mi-trace-legend">
+            <li class="mi-trace-leg">
+              <span class="mi-trace-leg-swatch mi-trace-leg-swatch--helix" aria-hidden="true"></span>
+              <span><strong>Helix</strong> — the DNA rail that twists while thinking, then freezes with green
+                base-pair dots aligned to each completed step.</span>
+            </li>
             <li class="mi-trace-leg">
               <span class="mi-trace-leg-swatch mi-trace-leg-swatch--key" aria-hidden="true"></span>
               <span><strong>Main section</strong> — the milestone the trace is on. One shows at a time, then lands into
@@ -2502,7 +2961,7 @@ function renderReasoningTrace() {
     </section>`;
 }
 
-function wireReasoningTrace(root) {
+function wireStreamingTrace(root) {
   const mod = root.querySelector('#mi-trace');
   if (!mod) return;
   const trace = mod.querySelector('#mi-trace-live');
@@ -2524,6 +2983,12 @@ function wireReasoningTrace(root) {
   /* A run token — bumping it cancels any timers still queued from a prior run,
      so hammering Replay never leaves two traces streaming over each other. */
   let token = 0;
+  let helix = null;
+  let started = false;
+
+  const killHelix = () => {
+    if (helix) { helix.destroy(); helix = null; }
+  };
 
   /* The header collapses the whole trace (live glob or final summary) and back,
      exactly like the real one. */
@@ -2531,32 +2996,57 @@ function wireReasoningTrace(root) {
     const open = trace.getAttribute('data-open') === '1';
     trace.setAttribute('data-open', open ? '0' : '1');
     head.setAttribute('aria-expanded', open ? 'false' : 'true');
+    if (helix) helix.redraw();
   });
+
+  const stepsHtml = (landmarks, revealed) => TRACE_STRAND_MARKUP
+    + `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step${revealed ? ' is-revealed' : ''}"><span class="sc-trace-step-key">${esc(l.key)}</span>`
+      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
 
   const finish = (landmarks, elapsed, myToken) => {
     if (myToken !== token) return;
     const total = landmarks.length ? landmarks[landmarks.length - 1].time : fmtClock(elapsed);
-    bodyEl.innerHTML = TRACE_STRAND + `<ul class="sc-trace-steps">${landmarks.map((l) =>
-      `<li class="sc-trace-step is-revealed"><span class="sc-trace-step-key">${esc(l.key)}</span>`
-      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
+    bodyEl.innerHTML = stepsHtml(landmarks, reduced);
     titleEl.textContent = `Worked for ${total}`;
     timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
     trace.classList.add('is-complete');
     runBtn.disabled = false;
     if (runLabel) runLabel.textContent = 'Replay trace';
+    if (!helix) helix = makeTraceHelix(bodyEl, { prefersReducedMotion: reduced });
+    helix.freezeAligned(measureTraceRungCentres(bodyEl));
+    if (reduced) {
+      helix.setGreen(landmarks.length);
+      return;
+    }
+    /* Sweep the strand green from the top, one dot at a time — same cadence as
+       the live chat. */
+    const stepEls = Array.from(bodyEl.querySelectorAll('.sc-trace-step'));
+    stepEls.forEach((li, i) => {
+      setTimeout(() => {
+        if (myToken !== token) return;
+        helix.setGreen(i + 1);
+        li.classList.add('is-revealed');
+      }, 160 + i * 420);
+    });
   };
 
   const run = () => {
     const myToken = ++token;
+    started = true;
+    killHelix();
     const steps = TRACE_MILESTONES.map((m) => ({ key: pick(m.keys), haiku: pick(m.haiku) }));
     trace.classList.remove('is-complete');
     trace.setAttribute('data-open', '1');
     head.setAttribute('aria-expanded', 'true');
     titleEl.textContent = 'Thinking';
     timerEl.textContent = '0:00';
-    bodyEl.innerHTML = TRACE_STRAND;
+    bodyEl.innerHTML = TRACE_STRAND_MARKUP;
     runBtn.disabled = true;
     if (runLabel) runLabel.textContent = 'Thinking…';
+
+    helix = makeTraceHelix(bodyEl, { prefersReducedMotion: reduced });
+    helix.startLive();
 
     const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     const now = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - start;
@@ -2615,7 +3105,774 @@ function wireReasoningTrace(root) {
   };
 
   runBtn.addEventListener('click', run);
-  run();
+
+  /* Don't spin the helix while the accordion is closed (height 0). Start the
+     first run the moment the section opens; Replay always runs immediately. */
+  const startWhenOpen = () => {
+    if (started || mod.classList.contains('is-collapsed')) return;
+    run();
+  };
+  startWhenOpen();
+  new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion & Resize — every animation and drag/resize interaction       */
+/*                                                                     */
+/* A live catalog of how things move in the app: count-ups, chart      */
+/* replay, word-by-word streaming, gold chip shimmer, chip fly-in,     */
+/* the welcome helix, the thinking helix, and accordion open — plus    */
+/* the four drag/resize systems (module splitter, width tiers,         */
+/* reorder, drag-to-file). Each card explains the rule and runs the    */
+/* real behaviour (or a faithful mini of it) so you can try it here.   */
+/* ------------------------------------------------------------------ */
+
+function motionShimmer(label) {
+  return String(label).split('').map((ch, i) =>
+    ch === ' '
+      ? '<span class="sc-ask-sp"> </span>'
+      : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
+  ).join('');
+}
+
+const MOTION_ITEMS = [
+  {
+    id: 'countup', group: 'anim', icon: 'counter_1', title: 'Count-up',
+    src: 'js/count-up-all.js',
+    used: 'Every scorecard numeral — Overview, Portfolio, Admin, this page',
+    lede: 'Any number that moves from 0 to a value animates a count-up (~1400ms, ease-out cubic). Click a card to replay. Hero counts ramp quickly and settle. Driven by <code>js/count-up-all.js</code> — never an ad-hoc counter.',
+    demo: `
+      <div class="mi-motion-stats" role="group" aria-label="Count-up demo — click a card to replay">
+        <button type="button" class="mi-stat">
+          <span class="mi-stat-num">128</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Claimed</span><span class="material-symbols-outlined">inventory_2</span></span>
+        </button>
+        <button type="button" class="mi-stat">
+          <span class="mi-stat-num">54.2%</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Non-UPF</span><span class="material-symbols-outlined">verified</span></span>
+        </button>
+        <button type="button" class="mi-stat">
+          <span class="mi-stat-num">1,204</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Foods</span><span class="material-symbols-outlined">nutrition</span></span>
+        </button>
+      </div>
+      <p class="mi-motion-hint">Click a card to replay its count-up.</p>`,
+  },
+  {
+    id: 'charts', group: 'anim', icon: 'bar_chart', title: 'Chart replay',
+    src: 'pages/analytics-types.html · .adm-bar-fill',
+    used: 'Analytics Types, Non-UPF Dashboard, Overview, Reports, Comparison',
+    lede: 'Charts animate in on load. Tapping a chart re-runs its entrance — bars grow from zero, and any count-up on the card replays with them. Same easing as count-up: <code>cubic-bezier(0.22, 1, 0.36, 1)</code>.',
+    demo: `
+      <div class="adm-chart-card mi-motion-chart" data-motion-chart tabindex="0" role="button" aria-label="Replay chart animation">
+        <h4 class="adm-chart-title">Processing spectrum</h4>
+        <div class="adm-chart-body">
+          <div class="adm-bars" style="height:140px">
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="72" style="height:72%;background:var(--sec-green)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="48" style="height:48%;background:var(--ter-amber)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="34" style="height:34%;background:var(--sec-red)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="mi-motion-hint">Click the chart to replay the grow-in.</p>`,
+  },
+  {
+    id: 'stream', group: 'anim', icon: 'text_ad', title: 'Word-by-word streaming',
+    src: 'js/wiseai-chat.js · typeInLine',
+    used: 'WISEcodeAI welcome heading, Streaming Trace glob, in-conversation replies',
+    lede: 'Copy lands one word at a time — the welcome heading, the thinking-trace glob, and (when enabled) assistant replies. Reduced motion shows the line whole. Replay to watch it type.',
+    demo: `
+      <div class="mi-motion-stream" data-motion-stream>
+        <p class="mi-motion-stream-line" data-stream-out></p>
+        <button type="button" class="mi-trace-run" data-stream-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay stream</span>
+        </button>
+      </div>`,
+  },
+  {
+    id: 'shimmer', group: 'anim', icon: 'auto_awesome', title: 'Gold chip shimmer',
+    src: '.sc-ask-ch · .ws-intent-chip--askhelp',
+    used: '“What can I ask?” chip and the gold link under the composer',
+    lede: 'The chip icon is gold. The label splits into per-letter spans so a staggered gold shimmer rides across the glyphs — the same animation on the below-input “What can I ask?” link.',
+    demo: `
+      <div class="sc-reply-chips" style="margin:0">
+        <button type="button" class="chip ws-intent-chip ws-intent-chip--askhelp" aria-label="What can I ask?">
+          <span class="material-symbols-outlined">help</span>
+          <span class="sc-ask-shimmer" aria-hidden="true">${motionShimmer('What can I ask?')}</span>
+        </button>
+        <button type="button" class="chip ws-intent-chip">
+          <span class="material-symbols-outlined">inventory_2</span>Open portfolio
+        </button>
+      </div>
+      <p class="mi-motion-hint">The gold chip shimmers continuously. The navy chip is the default intent face.</p>`,
+  },
+  {
+    id: 'flyin', group: 'anim', icon: 'keyboard_double_arrow_left', title: 'Chip fly-in',
+    src: 'js/wiseai-chat.js · primeRevealFromRight',
+    used: 'WISEcodeAI welcome chips — they land after the heading types in',
+    lede: 'Intent chips fly in from the right and land, left-to-right, after the welcome copy has typed. Replay to watch the stagger.',
+    demo: `
+      <div class="mi-motion-fly" data-motion-fly>
+        <div class="ws-chips mi-motion-fly-row" role="list" aria-label="Quick actions">
+          <button type="button" class="chip ws-intent-chip" data-fly-chip><span class="material-symbols-outlined">fact_check</span>Verify ingredients</button>
+          <button type="button" class="chip ws-intent-chip" data-fly-chip><span class="material-symbols-outlined">compare</span>Compare two products</button>
+          <button type="button" class="chip ws-intent-chip" data-fly-chip><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+        </div>
+        <button type="button" class="mi-trace-run" data-fly-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay fly-in</span>
+        </button>
+      </div>`,
+  },
+  {
+    id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
+    src: 'js/wiseai-chat.js · createHelixBgAnim',
+    used: 'Every chat welcome — ON by default at 20% opacity',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; hover a circle for its card. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    demo: `
+      <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
+        <div class="mi-motion-helix-stage" data-helix-body></div>
+        <div class="mi-motion-helix-bar">
+          <button type="button" class="mi-trace-run" data-helix-pp aria-pressed="false">
+            <span class="material-symbols-outlined" data-helix-pp-ic>pause</span>
+            <span data-helix-pp-label>Pause helix</span>
+          </button>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Opacity</span>
+            <input type="range" class="sc-bganim-opacity" data-helix-opacity min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
+            <span class="sc-bganim-opacity-val" data-helix-opacity-val>20%</span>
+          </label>
+        </div>
+      </div>`,
+  },
+  {
+    id: 'tracehelix', group: 'anim', icon: 'psychology', title: 'Thinking helix',
+    src: 'js/trace-helix.js · Streaming Trace',
+    used: 'Every WISEcodeAI turn while it works',
+    lede: 'The DNA rail on the left of the thinking trace — twists while working, then freezes with green base-pair dots on each completed step. The full anatomy (helix + milestones + haiku glob) lives in the <strong>Streaming Trace</strong> section above.',
+    demo: `
+      <button type="button" class="mi-trace-run" data-jump-trace>
+        <span class="material-symbols-outlined">play_arrow</span><span>Open Streaming Trace</span>
+      </button>
+      <p class="mi-motion-hint">Jumps to the live helix + haiku glob demo and replays it.</p>`,
+  },
+  {
+    id: 'accordion', group: 'anim', icon: 'expand_more', title: 'Accordion &amp; panel open',
+    src: '.mi-acc · panelBounceLeft / Right',
+    used: 'This page’s sections · side panels (History, NFP, Compare, Settings)',
+    lede: 'Accordions collapse to the title row; the chevron rotates. Side panels bounce in from the edge they opened from (<code>panelBounceLeft</code> / <code>panelBounceRight</code>, 0.56s). Reduced motion skips both.',
+    demo: `
+      <div class="mi-motion-acc" data-motion-acc>
+        <button type="button" class="mi-motion-acc-head" aria-expanded="false">
+          <span class="material-symbols-outlined mi-motion-acc-chevron">expand_more</span>
+          <span class="mi-motion-acc-title">Example section</span>
+        </button>
+        <div class="mi-motion-acc-body" hidden>
+          <p>This is the same collapse pattern as the sections on this page — title row only when closed, body when open. Side panels elsewhere use the bounce-in keyframes instead of a height collapse.</p>
+        </div>
+      </div>`,
+  },
+  {
+    id: 'splitter', group: 'drag', icon: 'width_normal', title: 'Module drag-resize', wide: true,
+    src: 'js/pane-resize.js',
+    used: 'Every #modules-row page — hover the seam between two modules',
+    lede: 'Nothing shows at rest. Hover the edge between two panes and a grip fades in. Drag to preview any width; on release, modules with a width changer <strong>snap to the nearest of four tiers</strong> (single / double / triple / fill). Modules without a width changer keep a free-form width. Double-click a handle to reset. Navigation is never resized.',
+    demo: `
+      <div class="mi-motion-split" data-motion-split>
+        <div class="mi-motion-pane" data-split-pane="a" style="flex: 1 1 46%">
+          <span class="mi-motion-pane-label">Chat</span>
+          <span class="mi-motion-pane-w" data-split-w>46%</span>
+        </div>
+        <div class="mi-motion-split-hit" data-split-hit title="Drag to resize · double-click to reset">
+          <span class="mi-motion-split-grip" aria-hidden="true"></span>
+        </div>
+        <div class="mi-motion-pane" data-split-pane="b" style="flex: 1 1 54%">
+          <span class="mi-motion-pane-label">History</span>
+          <span class="mi-motion-pane-w" data-split-w>54%</span>
+        </div>
+      </div>
+      <p class="mi-motion-hint">Hover the seam, drag to resize. Double-click the grip to reset. This mini does not snap — the live modules do.</p>`,
+  },
+  {
+    id: 'width', group: 'drag', icon: 'width_wide', title: 'Width tiers',
+    src: 'js/pane-width.js · .panel-width-toggle-btn',
+    used: 'Every module ⋯ / width button except Navigation and the minimized History rail',
+    lede: 'One control, four rest states: <strong>single → double → triple → fill</strong>, then back. Fill absorbs leftover row space. Drag-resize is only a preview — release snaps to the closest tier by driving this same button.',
+    demo: `
+      <div class="mi-motion-width" data-motion-width>
+        <div class="mi-motion-width-row">
+          <div class="mi-motion-pane mi-motion-width-pane" data-width-pane>
+            <span class="mi-motion-pane-label">Module</span>
+            <span class="mi-motion-pane-w" data-width-label>single</span>
+          </div>
+          <div class="mi-motion-pane mi-motion-width-rest">
+            <span class="mi-motion-pane-label">Neighbour</span>
+          </div>
+        </div>
+        <button type="button" class="panel-width-toggle-btn" data-width-btn aria-pressed="false" title="Width (single) — tap to widen" aria-label="Demo module width">
+          <span class="material-symbols-outlined">width_normal</span>
+        </button>
+      </div>
+      <p class="mi-motion-hint">Tap the width icon to cycle single → double → triple → fill.</p>`,
+  },
+  {
+    id: 'reorder', group: 'drag', icon: 'drag_indicator', title: 'Drag to reorder',
+    src: 'js/organizations-flow.js · HTML5 drag-and-drop',
+    used: 'Organizations metric cards · Conversation Library card order',
+    lede: 'Cards with a grip are draggable. Drop on another card to swap order. The live Organizations board persists the order; this demo is in-session only.',
+    demo: `
+      <div class="mi-motion-reorder" data-motion-reorder>
+        <div class="mi-motion-tile" draggable="true" data-reorder-id="portfolio"><span class="material-symbols-outlined mi-motion-grip">drag_indicator</span>Portfolio</div>
+        <div class="mi-motion-tile" draggable="true" data-reorder-id="compare"><span class="material-symbols-outlined mi-motion-grip">drag_indicator</span>Comparison</div>
+        <div class="mi-motion-tile" draggable="true" data-reorder-id="verify"><span class="material-symbols-outlined mi-motion-grip">drag_indicator</span>Verification</div>
+        <div class="mi-motion-tile" draggable="true" data-reorder-id="reports"><span class="material-symbols-outlined mi-motion-grip">drag_indicator</span>Reports</div>
+      </div>
+      <p class="mi-motion-hint">Drag a card onto another to reorder.</p>`,
+  },
+  {
+    id: 'file', group: 'drag', icon: 'create_new_folder', title: 'Drag to file',
+    src: 'pages/conversation-library.html · js/chat-history.js',
+    used: 'Conversation Library (drop a card on a folder / unfile tile) · History (drop a chat on a project or the ungrouped zone)',
+    lede: 'Drag a conversation onto an existing folder (Library) or project (History) to file it. While a filed card is dragging, a dashed “Remove from folder” tile appears. History also accepts a drop on the ungrouped zone to unfile. Dropping one Library card on another founds a new folder — that is the next card.',
+    demo: `
+      <div class="mi-motion-file" data-motion-file>
+        <div class="mi-motion-file-cards">
+          <div class="mi-motion-tile" draggable="true" data-file-id="oat">Oat milk comparison</div>
+          <div class="mi-motion-tile" draggable="true" data-file-id="upf">UPF report</div>
+        </div>
+        <div class="mi-motion-file-folders">
+          <div class="mi-motion-folder" data-folder="Reports" data-folder-base="3" style="--fld:#2F6DF6">
+            <span class="mi-motion-folder-num">3</span>
+            <span class="mi-motion-folder-label"><span class="mi-motion-folder-dot"></span>Reports</span>
+          </div>
+          <div class="mi-motion-folder" data-folder="Chats" data-folder-base="2" style="--fld:#12B981">
+            <span class="mi-motion-folder-num">2</span>
+            <span class="mi-motion-folder-label"><span class="mi-motion-folder-dot"></span>Chats</span>
+          </div>
+          <div class="mi-motion-folder mi-motion-folder--unfile" data-folder="" hidden><span class="material-symbols-outlined">folder_off</span>Remove from folder</div>
+        </div>
+      </div>
+      <p class="mi-motion-hint">Drop a card on a folder. Drag a filed card to “Remove from folder” to unfile it.</p>`,
+  },
+  {
+    id: 'found', group: 'drag', icon: 'create_new_folder', title: 'Drag to found a folder', wide: true,
+    src: 'pages/conversation-library.html · createFolder',
+    used: 'WISEcodeAI Library — drop one card onto another to start a folder. History creates projects with the New project button, not card-on-card.',
+    lede: 'The missing Library gesture: drop one item on another and a folder is founded holding both. The new tile opens an inline name field (and keeps the color swatch). Drop more cards onto that folder to file them. This is how folders get created in the Library — not only via the dashed New folder tile.',
+    demo: `
+      <div class="mi-motion-found" data-motion-found>
+        <div class="mi-motion-found-cards">
+          <div class="mi-motion-tile" draggable="true" data-found-id="oat">Oat milk comparison</div>
+          <div class="mi-motion-tile" draggable="true" data-found-id="upf">UPF report</div>
+          <div class="mi-motion-tile" draggable="true" data-found-id="gras">GRAS review</div>
+        </div>
+        <div class="mi-motion-found-folders" data-found-folders></div>
+      </div>
+      <p class="mi-motion-hint">Drop one card onto another to found a folder. Name it, then drop more cards onto the folder to file them.</p>`,
+  },
+];
+
+function motionCard(item) {
+  const search = `${item.title} ${item.src} ${item.used} ${item.group}`.toLowerCase();
+  return `
+    <article class="mi-motion-card${item.wide ? ' mi-motion-card--wide' : ''}" data-motion-card data-motion-group="${esc(item.group)}" data-search="${esc(search)}">
+      <header class="mi-motion-card-head">
+        <span class="material-symbols-outlined" aria-hidden="true">${esc(item.icon)}</span>
+        <div class="mi-motion-card-head-text">
+          <h3 class="mi-motion-card-title">${item.title}</h3>
+          <code class="mi-motion-card-src">${esc(item.src)}</code>
+        </div>
+        ${readyToggleHTML(motionReadyId(item), item.title, { level: 'item', parent: 'mi-motion' })}
+      </header>
+      <p class="mi-motion-card-lede">${item.lede}</p>
+      <div class="mi-motion-stage">${item.demo}</div>
+      <div class="mi-motion-used"><span class="mi-motion-used-label">Used in</span><span>${esc(item.used)}</span></div>
+    </article>`;
+}
+
+function renderMotion() {
+  const animN = MOTION_ITEMS.filter((i) => i.group === 'anim').length;
+  const dragN = MOTION_ITEMS.filter((i) => i.group === 'drag').length;
+  return `
+    <section class="mi-module is-collapsed" id="mi-motion">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Motion &amp; Resize</h2>
+          <p class="mi-module-lede">Every animation and every drag/resize interaction in the app — explained and
+            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, both helixes, and accordion
+            open sit next to the module splitter, the four width tiers, drag-to-reorder, drag-to-file, and
+            drag-to-found-a-folder (Library card-on-card).
+            All of it honors <code>prefers-reduced-motion</code>.</p>
+        </div>
+        ${moduleReadyToggleHTML('mi-motion', 'Motion & Resize')}
+        ${moduleControlsHTML('mi-motion')}
+      </header>
+
+      <div class="dsc-conventions" aria-label="Motion conventions">
+        <div class="dsc-conv-head">
+          <span class="material-symbols-outlined">animation</span>
+          <div>
+            <div class="dsc-conv-title">How motion works</div>
+            <div class="dsc-conv-sub">The shared rules every animation and drag interaction below follows.</div>
+          </div>
+        </div>
+        <div class="dsc-conv-grid">
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">motion_photos_off</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Reduced motion</div>
+              <p class="dsc-conv-item-desc">Every animation is gated on <code>prefers-reduced-motion</code> (and the in-app Reduce motion preference). Reduced = land at the end state, no loop, no stagger.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">replay</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Click to replay</div>
+              <p class="dsc-conv-item-desc">Scorecards and charts re-run on click. Streaming, fly-in, and the thinking helix have an explicit Replay. Nothing is one-shot.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">width_wide</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Four-tier snap</div>
+              <p class="dsc-conv-item-desc">A module with a width changer may only <em>rest</em> at single, double, triple, or fill. Drag is a live preview; release snaps to the closest tier by driving the module’s own width button.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">drag_indicator</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Hover, then drag</div>
+              <p class="dsc-conv-item-desc">Resize handles are invisible at rest. Hover the seam between two modules and the grip fades in. Reorder and file use an explicit grip or a whole-card drag.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mi-stats" id="mi-motion-stats" role="group" aria-label="Filter motion examples">
+        <button type="button" class="mi-stat is-active" data-motion-filter="all" aria-pressed="true">
+          <span class="mi-stat-num">${MOTION_ITEMS.length}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">All</span><span class="material-symbols-outlined">animation</span></span>
+        </button>
+        <button type="button" class="mi-stat" data-motion-filter="anim" aria-pressed="false">
+          <span class="mi-stat-num">${animN}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Animations</span><span class="material-symbols-outlined">auto_awesome</span></span>
+        </button>
+        <button type="button" class="mi-stat" data-motion-filter="drag" aria-pressed="false">
+          <span class="mi-stat-num">${dragN}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Drag &amp; resize</span><span class="material-symbols-outlined">drag_indicator</span></span>
+        </button>
+      </div>
+
+      <div class="mi-motion-grid" id="mi-motion-grid">
+        ${MOTION_ITEMS.map(motionCard).join('')}
+      </div>
+    </section>`;
+}
+
+function wireMotion(root) {
+  const mod = root.querySelector('#mi-motion');
+  if (!mod) return;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Filter tiles ---- */
+  const applyFilter = (filter) => {
+    mod.querySelectorAll('[data-motion-card]').forEach((card) => {
+      card.hidden = filter !== 'all' && card.getAttribute('data-motion-group') !== filter;
+    });
+    mod.querySelectorAll('[data-motion-filter]').forEach((b) => {
+      const on = b.getAttribute('data-motion-filter') === filter;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  mod.querySelector('#mi-motion-stats')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-motion-filter]');
+    if (!btn) return;
+    applyFilter(btn.getAttribute('data-motion-filter'));
+  });
+
+  /* ---- Chart replay ---- */
+  const replayChart = (card) => {
+    card.querySelectorAll('.adm-bar-fill').forEach((bar) => {
+      const h = bar.getAttribute('data-h') || '50';
+      bar.style.transition = 'none';
+      bar.style.height = '0%';
+      void bar.offsetHeight;
+      bar.style.transition = reduced ? 'none' : 'height 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+      bar.style.height = h + '%';
+    });
+  };
+  mod.querySelectorAll('[data-motion-chart]').forEach((card) => {
+    const run = () => replayChart(card);
+    card.addEventListener('click', run);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(); }
+    });
+  });
+
+  /* ---- Word-by-word stream ---- */
+  const STREAM_COPY = 'Every WISEcodeAI turn streams its answer one word at a time, then the timestamp and chips land after the line.';
+  const streamOut = mod.querySelector('[data-stream-out]');
+  const streamRun = mod.querySelector('[data-stream-run]');
+  let streamTimer = 0;
+  const runStream = () => {
+    if (!streamOut) return;
+    clearTimeout(streamTimer);
+    const words = STREAM_COPY.split(/\s+/);
+    if (reduced) { streamOut.textContent = STREAM_COPY; return; }
+    streamOut.textContent = '';
+    let i = 0;
+    const tick = () => {
+      if (i >= words.length) return;
+      streamOut.textContent += (i ? ' ' : '') + words[i];
+      i += 1;
+      streamTimer = setTimeout(tick, 48);
+    };
+    tick();
+  };
+  streamRun?.addEventListener('click', runStream);
+
+  /* ---- Chip fly-in ---- */
+  const flyChips = Array.from(mod.querySelectorAll('[data-fly-chip]'));
+  const runFly = () => {
+    flyChips.forEach((chip, i) => {
+      chip.classList.remove('is-in');
+      chip.style.transition = 'none';
+      chip.style.opacity = '0';
+      chip.style.transform = 'translateX(30px)';
+      void chip.offsetWidth;
+      if (reduced) {
+        chip.style.opacity = '1';
+        chip.style.transform = 'none';
+        chip.classList.add('is-in');
+        return;
+      }
+      chip.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+      setTimeout(() => {
+        chip.style.opacity = '1';
+        chip.style.transform = 'none';
+        chip.classList.add('is-in');
+      }, 80 + i * 90);
+    });
+  };
+  mod.querySelector('[data-fly-run]')?.addEventListener('click', runFly);
+
+  /* ---- Welcome helix ---- */
+  const helixHost = mod.querySelector('[data-motion-helix]');
+  const helixBody = mod.querySelector('[data-helix-body]');
+  const helixRange = mod.querySelector('[data-helix-opacity]');
+  const helixVal = mod.querySelector('[data-helix-opacity-val]');
+  const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  const readHelixPct = () => {
+    try {
+      const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
+      if (!isNaN(s)) return Math.max(10, Math.min(100, s));
+    } catch (_) { /* ignore */ }
+    return 20;
+  };
+  let helixPct = readHelixPct();
+  const paintHelixOpacity = (pct, persist) => {
+    helixPct = Math.max(10, Math.min(100, pct));
+    if (helixRange) helixRange.value = String(helixPct);
+    if (helixVal) helixVal.textContent = helixPct + '%';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_OPACITY_KEY, String(helixPct)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: helixPct / 100 } })); } catch (_) { /* ignore */ }
+    }
+    if (reduced && helix) helix.start();
+  };
+  paintHelixOpacity(helixPct, false);
+  let helixPaused = false;
+  let helix = null;
+  if (helixHost && helixBody) {
+    helix = createHelixBgAnim({
+      host: helixHost,
+      getBody: () => helixBody,
+      getOpacity: () => helixPct / 100,
+      reducedMotion: reduced,
+      isOn: () => !mod.classList.contains('is-collapsed'),
+      isPaused: () => helixPaused,
+    });
+  }
+  helixRange?.addEventListener('input', () => {
+    paintHelixOpacity(parseInt(helixRange.value, 10) || 20, true);
+  });
+  document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
+    const v = e && e.detail && e.detail.opacity;
+    if (typeof v !== 'number') return;
+    paintHelixOpacity(Math.round(v * 100), false);
+  });
+  const ppBtn = mod.querySelector('[data-helix-pp]');
+  const syncHelixPp = () => {
+    if (!ppBtn) return;
+    ppBtn.setAttribute('aria-pressed', helixPaused ? 'true' : 'false');
+    const ic = ppBtn.querySelector('[data-helix-pp-ic]');
+    const lab = ppBtn.querySelector('[data-helix-pp-label]');
+    if (ic) ic.textContent = helixPaused ? 'play_arrow' : 'pause';
+    if (lab) lab.textContent = helixPaused ? 'Play helix' : 'Pause helix';
+  };
+  ppBtn?.addEventListener('click', () => {
+    helixPaused = !helixPaused;
+    if (helix) { if (helixPaused) helix.pause(); else helix.resume(); }
+    syncHelixPp();
+  });
+
+  /* ---- Jump to Streaming Trace ---- */
+  mod.querySelector('[data-jump-trace]')?.addEventListener('click', () => {
+    expandAccordionSection(root, 'mi-trace');
+    root.querySelector('#mi-trace [data-trace-run]')?.click();
+    document.getElementById('mi-trace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* ---- Mini accordion ---- */
+  const accHead = mod.querySelector('[data-motion-acc] .mi-motion-acc-head');
+  const accBody = mod.querySelector('[data-motion-acc] .mi-motion-acc-body');
+  accHead?.addEventListener('click', () => {
+    const open = accHead.getAttribute('aria-expanded') === 'true';
+    accHead.setAttribute('aria-expanded', open ? 'false' : 'true');
+    if (accBody) accBody.hidden = open;
+  });
+
+  /* ---- Splitter ---- */
+  const split = mod.querySelector('[data-motion-split]');
+  if (split) {
+    const hit = split.querySelector('[data-split-hit]');
+    const a = split.querySelector('[data-split-pane="a"]');
+    const b = split.querySelector('[data-split-pane="b"]');
+    const labels = split.querySelectorAll('[data-split-w]');
+    const setPct = (pct) => {
+      const left = Math.max(22, Math.min(78, pct));
+      a.style.flex = `1 1 ${left}%`;
+      b.style.flex = `1 1 ${100 - left}%`;
+      if (labels[0]) labels[0].textContent = Math.round(left) + '%';
+      if (labels[1]) labels[1].textContent = Math.round(100 - left) + '%';
+    };
+    let dragging = false;
+    const onMove = (e) => {
+      if (!dragging) return;
+      const r = split.getBoundingClientRect();
+      setPct(((e.clientX - r.left) / r.width) * 100);
+    };
+    const onUp = () => {
+      dragging = false;
+      split.classList.remove('is-dragging');
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    hit?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      split.classList.add('is-dragging');
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+    hit?.addEventListener('dblclick', () => setPct(46));
+  }
+
+  /* ---- Width tiers ---- */
+  const widthPane = mod.querySelector('[data-width-pane]');
+  const widthBtn = mod.querySelector('[data-width-btn]');
+  const widthLab = mod.querySelector('[data-width-label]');
+  const TIER_NAMES = ['single', 'double', 'triple', 'fill'];
+  let widthTier = 0;
+  const applyWidth = () => {
+    if (window.WPaneWidth) {
+      window.WPaneWidth.applyClasses(widthPane, widthTier, 'panel');
+      window.WPaneWidth.syncButton(widthBtn, widthTier);
+    } else if (widthPane) {
+      widthPane.classList.toggle('panel-wide', widthTier >= 1);
+      widthPane.classList.toggle('panel-triple', widthTier >= 2);
+      widthPane.classList.toggle('panel-fill', widthTier >= 3);
+    }
+    if (widthLab) widthLab.textContent = TIER_NAMES[widthTier];
+  };
+  widthBtn?.addEventListener('click', () => {
+    widthTier = (widthTier + 1) % 4;
+    applyWidth();
+  });
+
+  /* ---- Reorder ---- */
+  const reorder = mod.querySelector('[data-motion-reorder]');
+  if (reorder) {
+    let dragEl = null;
+    reorder.addEventListener('dragstart', (e) => {
+      const tile = e.target.closest('[data-reorder-id]');
+      if (!tile) return;
+      dragEl = tile;
+      tile.classList.add('is-dragging');
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tile.dataset.reorderId); }
+    });
+    reorder.addEventListener('dragover', (e) => {
+      if (!dragEl) return;
+      const tile = e.target.closest('[data-reorder-id]');
+      if (!tile || tile === dragEl) return;
+      e.preventDefault();
+      const mid = tile.getBoundingClientRect().left + tile.offsetWidth / 2;
+      if (e.clientX < mid) reorder.insertBefore(dragEl, tile);
+      else reorder.insertBefore(dragEl, tile.nextSibling);
+    });
+    reorder.addEventListener('dragend', () => {
+      dragEl?.classList.remove('is-dragging');
+      dragEl = null;
+    });
+  }
+
+  /* ---- Drag to file ---- */
+  const fileHost = mod.querySelector('[data-motion-file]');
+  if (fileHost) {
+    const unfile = fileHost.querySelector('.mi-motion-folder--unfile');
+    let fileId = null;
+    const filed = {};
+    const folderTiles = fileHost.querySelectorAll('.mi-motion-folder[data-folder]:not(.mi-motion-folder--unfile)');
+    const updateCounts = () => {
+      folderTiles.forEach((tile) => {
+        const base = Number(tile.dataset.folderBase || 0);
+        const extra = Object.values(filed).filter((v) => v === tile.getAttribute('data-folder')).length;
+        const numEl = tile.querySelector('.mi-motion-folder-num');
+        if (numEl) numEl.textContent = String(base + extra);
+      });
+    };
+    const paintChip = (card) => {
+      const id = card.dataset.fileId;
+      let chip = card.querySelector('.mi-motion-file-chip');
+      if (filed[id]) {
+        if (!chip) {
+          chip = document.createElement('span');
+          chip.className = 'mi-motion-file-chip';
+          card.appendChild(chip);
+        }
+        chip.textContent = filed[id];
+      } else if (chip) {
+        chip.remove();
+      }
+    };
+    fileHost.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('[data-file-id]');
+      if (!card) return;
+      fileId = card.dataset.fileId;
+      card.classList.add('is-dragging');
+      if (unfile) unfile.hidden = !filed[fileId];
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', fileId); }
+    });
+    fileHost.addEventListener('dragover', (e) => {
+      if (!fileId) return;
+      const folder = e.target.closest('[data-folder]');
+      if (!folder) return;
+      e.preventDefault();
+      fileHost.querySelectorAll('.is-drop-target').forEach((el) => el.classList.remove('is-drop-target'));
+      folder.classList.add('is-drop-target');
+    });
+    fileHost.addEventListener('drop', (e) => {
+      const folder = e.target.closest('[data-folder]');
+      if (!fileId || !folder) return;
+      e.preventDefault();
+      const name = folder.getAttribute('data-folder');
+      if (name) filed[fileId] = name;
+      else delete filed[fileId];
+      const card = fileHost.querySelector(`[data-file-id="${fileId}"]`);
+      if (card) paintChip(card);
+      updateCounts();
+    });
+    fileHost.addEventListener('dragend', () => {
+      fileId = null;
+      if (unfile) unfile.hidden = true;
+      fileHost.querySelectorAll('.is-dragging, .is-drop-target').forEach((el) => el.classList.remove('is-dragging', 'is-drop-target'));
+    });
+  }
+
+  /* ---- Drag to found a folder (Library card-on-card) ---- */
+  const foundHost = mod.querySelector('[data-motion-found]');
+  if (foundHost) {
+    const cardsWrap = foundHost.querySelector('.mi-motion-found-cards');
+    const foldersWrap = foundHost.querySelector('[data-found-folders]');
+    let foundId = null;
+    let folderN = 0;
+    const membership = {};
+    const FOUND_COLORS = ['#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#2F6DF6', '#12B981'];
+    const clearTargets = () => foundHost.querySelectorAll('.is-drop-target').forEach((el) => el.classList.remove('is-drop-target'));
+    const hideIfFiled = (id) => {
+      const card = cardsWrap.querySelector(`[data-found-id="${id}"]`);
+      if (card) card.hidden = !!membership[id];
+    };
+    foundHost.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('[data-found-id]');
+      if (!card || card.hidden) return;
+      foundId = card.dataset.foundId;
+      card.classList.add('is-dragging');
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', foundId); }
+    });
+    foundHost.addEventListener('dragover', (e) => {
+      if (!foundId) return;
+      const card = e.target.closest('[data-found-id]');
+      const folder = e.target.closest('[data-found-folder]');
+      if (card && card.dataset.foundId !== foundId && !card.hidden) {
+        e.preventDefault();
+        clearTargets();
+        card.classList.add('is-drop-target');
+      } else if (folder) {
+        e.preventDefault();
+        clearTargets();
+        folder.classList.add('is-drop-target');
+      }
+    });
+    foundHost.addEventListener('drop', (e) => {
+      if (!foundId) return;
+      const card = e.target.closest('[data-found-id]');
+      const folder = e.target.closest('[data-found-folder]');
+      e.preventDefault();
+      if (card && card.dataset.foundId !== foundId && !card.hidden) {
+        folderN += 1;
+        const fid = `f${folderN}`;
+        membership[foundId] = fid;
+        membership[card.dataset.foundId] = fid;
+        hideIfFiled(foundId);
+        hideIfFiled(card.dataset.foundId);
+        const tile = document.createElement('div');
+        tile.className = 'mi-motion-folder mi-motion-found-folder';
+        tile.setAttribute('data-found-folder', fid);
+        tile.style.setProperty('--fld', FOUND_COLORS[(folderN - 1) % FOUND_COLORS.length]);
+        tile.innerHTML = `<span class="mi-motion-folder-num">2</span><span class="mi-motion-folder-label"><span class="mi-motion-folder-dot"></span><input type="text" class="mi-motion-found-name" value="New folder" aria-label="Folder name" maxlength="40"></span>`;
+        foldersWrap.appendChild(tile);
+        const input = tile.querySelector('.mi-motion-found-name');
+        input?.focus();
+        input?.select();
+      } else if (folder) {
+        const fid = folder.getAttribute('data-found-folder');
+        membership[foundId] = fid;
+        hideIfFiled(foundId);
+        const n = Object.values(membership).filter((v) => v === fid).length;
+        const numEl = folder.querySelector('.mi-motion-folder-num');
+        if (numEl) numEl.textContent = String(n);
+      }
+    });
+    foundHost.addEventListener('dragend', () => {
+      foundId = null;
+      foundHost.querySelectorAll('.is-dragging').forEach((el) => el.classList.remove('is-dragging'));
+      clearTargets();
+    });
+  }
+
+  /* ---- Replay all (used by the ⋯ menu) ---- */
+  const replayAll = () => {
+    mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
+    runStream();
+    runFly();
+    mod.querySelectorAll('.mi-motion-stats .mi-stat').forEach((card) => card.click());
+  };
+  mod.__motionReplayAll = replayAll;
+
+  /* Don't spin the helix or fire entrance motion while the accordion is closed. */
+  const startWhenOpen = () => {
+    if (mod.classList.contains('is-collapsed')) {
+      if (helix) helix.stop();
+      return;
+    }
+    runStream();
+    runFly();
+    mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
+    if (helix) helix.start();
+  };
+  startWhenOpen();
+  new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
 }
 
 /* ------------------------------------------------------------------ */
@@ -2766,7 +4023,8 @@ function moduleStyles() {
       scroll-snap-align: start; flex: 0 0 auto; width: var(--pane-w);
       display: flex; flex-direction: column; gap: 10px;
     }
-    .mi-pane-head { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+    .mi-pane-head { display: flex; align-items: center; gap: 8px; padding: 0 2px; text-decoration: none; color: inherit; }
+    a.mi-pane-head:hover .mi-pane-name { color: var(--primary-ink, var(--primary)); }
     .mi-pane-ic { font-size: 20px !important; color: var(--primary); flex: 0 0 auto; }
     html.dark .mi-pane-ic { color: var(--primary-bright, #93C5FD); }
     .mi-pane-name {
@@ -2794,12 +4052,14 @@ function moduleStyles() {
       transform: scale(var(--pane-scale)); transform-origin: top left;
       pointer-events: none;
     }
+    .mi-pane-hit { position: absolute; inset: 0; z-index: 2; text-decoration: none; }
     .mi-pane-open {
-      position: absolute; top: 10px; right: 10px; z-index: 2;
+      position: absolute; top: 10px; right: 10px; z-index: 3;
       display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px;
       background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text);
       box-shadow: var(--shadow-1); font-size: 16px !important;
       opacity: 0; transform: translateY(-4px); transition: opacity 0.15s ease, transform 0.15s ease;
+      pointer-events: none;
     }
     .mi-pane-viewport:hover .mi-pane-open { opacity: 1; transform: translateY(0); }
 
@@ -2817,6 +4077,14 @@ function moduleStyles() {
       margin: 2px 2px 0; font-size: 0.75rem; line-height: 1.35; color: var(--text-muted);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
+    .mi-tpane-src {
+      display: inline-flex; align-items: center; gap: 4px; margin: 0 2px;
+      font-size: 0.75rem; font-weight: 700; line-height: 1.3;
+      color: var(--primary-ink, var(--primary)); text-decoration: none;
+    }
+    .mi-tpane-src:hover { text-decoration: underline; }
+    html.dark .mi-tpane-src { color: var(--primary-bright, #93C5FD); }
+    .mi-tpane-src .material-symbols-outlined { font-size: 15px !important; }
     /* While a pane is still resolving its table, show a soft shimmer so an
        empty-looking frame reads as "loading", not "broken". */
     .mi-tpane .mi-pane-viewport::after {
@@ -2862,19 +4130,6 @@ function moduleStyles() {
     }
 
     /* ---- Accordion: every module section collapses from its own header ---- */
-    /* Single expand/collapse-all toggle — lives to the right of the hero lede. */
-    .mi-acc-toggle {
-      flex: 0 0 auto; align-self: center;
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 38px; height: 38px; border-radius: 50%;
-      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-    }
-    .mi-acc-toggle:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
-    .mi-acc-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .mi-acc-toggle .material-symbols-outlined { font-size: 20px !important; }
-
     /* Turn the module header into a toggle bar. The whole header is clickable
        except its trailing ⋯ controls cluster. */
     .mi-module.mi-acc { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 22px; }
@@ -2886,9 +4141,12 @@ function moduleStyles() {
       transition: transform 0.2s ease, color 0.15s ease;
     }
     .mi-module.mi-acc > .mi-module-head:hover .mi-acc-chevron { color: var(--primary); }
-    .mi-module.is-collapsed > .mi-module-head { margin-bottom: 0; }
-    .mi-module.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); }
-    .mi-module.is-collapsed > .mi-acc-body { display: none; }
+    .mi-module.is-collapsed > .mi-module-head { margin-bottom: 0; align-items: center; }
+    .mi-module.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); align-self: center; margin-top: 0; }
+    /* Closed = title row only. Hide the lede and everything under the header
+       (including before JS wraps it in .mi-acc-body) so sections never flash open. */
+    .mi-module.is-collapsed .mi-module-lede { display: none; }
+    .mi-module.is-collapsed > :not(.mi-module-head) { display: none; }
     .mi-module.mi-acc > .mi-module-head:focus-visible {
       outline: none; border-radius: 12px;
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
@@ -2974,7 +4232,7 @@ function moduleStyles() {
     }
     .mi-pane--broken .mi-pane-viewport:hover { transform: none; box-shadow: var(--shadow-1); }
     .mi-pane-broken {
-      position: absolute; inset: 0; z-index: 3;
+      position: absolute; inset: 0; z-index: 4;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
       background: color-mix(in srgb, var(--surface) 92%, transparent);
       color: var(--ter-red-text, #b91c1c);
@@ -3108,6 +4366,8 @@ function moduleStyles() {
     .ii-tag.is-icons { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
     html.dark .ii-tag.is-icons { color: var(--primary-bright, #93C5FD); }
     .ii-tag.is-symbols { background: var(--surface-2); color: var(--text-muted); }
+    .ii-tag.is-group { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary-ink, var(--primary)); }
+    html.dark .ii-tag.is-group { color: var(--primary-bright, #93C5FD); }
     .ii-count {
       display: inline-flex; align-items: center; gap: 2px; margin-left: auto;
       font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle);
@@ -3131,8 +4391,9 @@ function moduleStyles() {
       word-break: break-all;
     }
     .ii-place-line { color: var(--primary-ink, var(--primary)); }
-    .ii-place-label { font-size: 0.6875rem; color: var(--text); text-align: right; flex: 0 0 auto; max-width: 45%; }
+    .ii-place-label { font-size: 0.6875rem; color: var(--text); text-align: right; flex: 0 0 auto; max-width: 48%; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; }
     .ii-place-empty { color: var(--text-subtle); }
+    .ii-place-group { font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
 
     /* ---- Design System ---- */
     .ds-block { margin-top: 26px; }
@@ -3305,8 +4566,17 @@ function moduleStyles() {
     .dsc-demo .topbar-profile { position: relative; top: auto; right: auto; transform: none; }
     .dsc-demo .topbar-profile:hover { transform: scale(1.04); }
     .dsc-demo .topbar-profile.has-dot::after { top: -1px; right: -1px; }
+    .dsc-demo .adm-avatar,
+    .dsc-demo .adm-avatar--photo,
+    .dsc-demo .topbar-profile { border-radius: 50%; }
+    .dsc-demo .dash-btn-row { align-self: stretch; align-items: center; }
     .dsc-demo .dash-text-link { margin-top: 0; }
     .dsc-demo .fl-input-wrap { width: 100%; }
+    .dsc-demo .sc-input-row { width: 100%; align-self: stretch; }
+    /* Composer popovers open upward out of the dashed stage — don't clip them. */
+    .dsc-card:has([data-wise-composer]) { overflow: visible; }
+    .dsc-demo .ws-scorecards { flex-wrap: wrap; overflow: visible; padding: 0; gap: 10px; }
+    .dsc-demo .ws-scorecard { flex: 1 1 220px; min-width: 200px; max-width: 280px; }
     .dsc-demo .mi-search-inline { width: 100%; }
     /* New in-situ components: render the popovers/menus/modal inline + inert. */
     .dsc-demo .adm-filter-pop { position: static; margin-top: 10px; width: 100%; box-shadow: none; }
@@ -3317,22 +4587,38 @@ function moduleStyles() {
     .dsc-demo .adm-bar-fill,
     .dsc-demo .adm-vrow-bar span { transition: none; }
 
+    /* Download affordance (e.g. the Charts & graphs design-rules .md). */
+    .dsc-download-row { padding: 0 16px 4px; }
+    a.dsc-download { text-decoration: none; }
+    a.dsc-download .material-symbols-outlined { font-size: 18px !important; }
+
     /* Labeled sub-groups inside a demo (e.g. large vs small intent chips). */
     .dsc-sub { display: flex; flex-direction: column; gap: 8px; width: 100%; }
     .dsc-sub-label {
       font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--text-subtle);
     }
-
-    /* The small reply-chip size + its variants live in pages/auth.css
-       (the .sc-reply-chips spec), which this page doesn't load. Mirror the
-       exact spec here so the "small" chips render true to the app. */
-    .dsc-demo .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .dsc-demo .sc-reply-chips .chip {
-      font-weight: 500; padding: 5px 11px; font-size: var(--fs-label);
-      line-height: 1.25; text-align: left; max-width: 100%;
+    /* Scorecard variants: the live 8-col / 4-col grids would squash a 4-up
+       demo, so the library stage uses auto-fit. Claim demo is two columns. */
+    .dsc-demo .adm-vf-stats { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .dsc-demo .dash-score-band { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); width: 100%; }
+    .dsc-demo .dsc-claim-demo {
+      grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+      width: 100%;
+      padding: 22px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md, 16px);
+      box-shadow: var(--shadow-card);
     }
-    .dsc-demo .sc-reply-chips .chip .material-symbols-outlined { font-size: 13px !important; }
+    html.dark .dsc-demo .dsc-claim-demo { background: var(--surface); }
+    .dsc-card[data-comp-name="Scorecards"] .dsc-demo { gap: 22px; align-items: stretch; }
+
+    /* Reply-chip variants (match / dive / selected). Size is locked at 28px
+       on the shared .chip rule in wise.css — do not re-inflate padding here. */
+    .dsc-demo .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dsc-demo .sc-reply-chips .chip { text-align: left; max-width: 100%; }
+    .dsc-demo .sc-reply-chips .chip .material-symbols-outlined { align-self: center; flex-shrink: 0; }
     .dsc-demo .sc-reply-chips .chip--match {
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
       background: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -3370,6 +4656,18 @@ function moduleStyles() {
     html.dark .dsc-demo .wtp-more { color: var(--primary-bright, #93C5FD); }
     .dsc-demo .wtp-more:hover { text-decoration: underline; }
     .dsc-demo .wtp-more .material-symbols-outlined { font-size: 16px !important; }
+    .dsc-demo .adm-table-card { overflow-x: auto; }
+    .dsc-demo .adm-table { min-width: 760px; }
+    .dsc-demo .dsc-score {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-weight: 800; letter-spacing: -0.02em;
+    }
+    .dsc-demo .dsc-amt { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .dsc-demo .dsc-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; letter-spacing: 0.01em; }
+    .dsc-demo .dsc-gs { display: inline-flex; align-items: center; gap: 0; color: var(--ter-amber, #C9A227); }
+    .dsc-demo .dsc-gs .material-symbols-outlined { font-size: 16px !important; line-height: 1; }
+    .dsc-demo .dsc-gs-on { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
+    .dsc-demo .dsc-gs-off { color: var(--border-strong); font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 
     /* Static tooltip bubble in the Tooltip demo — mirrors the dark #lir-tooltip. */
     .dsc-tip {
@@ -3605,9 +4903,53 @@ function moduleStyles() {
     html.dark .mi-int-badge.is-ok { color: #4ADE80; }
     .mi-int-badge.is-no { color: #B91C1C; background: rgba(239,68,68,0.10); border-color: transparent; }
     html.dark .mi-int-badge.is-no { color: #F87171; }
-    .mi-int-empty { grid-column: 1 / -1; padding: 26px; text-align: center; color: var(--text-subtle); font-size: 0.85rem; }
+    .mi-int-empty { padding: 26px; text-align: center; color: var(--text-subtle); font-size: 0.85rem; }
 
-    /* ---- Reasoning Trace anatomy ---- */
+    .mi-int-table {
+      display: flex; flex-direction: column; width: 100%;
+      border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
+      box-shadow: var(--shadow-1); overflow: hidden;
+    }
+    .mi-int-thead, .mi-int-trow {
+      display: grid; grid-template-columns: var(--mi-int-cols);
+      gap: 12px; align-items: start;
+    }
+    .mi-int-thead {
+      padding: 11px 16px; border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .mi-int-th {
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .mi-int-trow {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .mi-int-trow:last-child { border-bottom: 0; }
+    .mi-int-trow:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    .mi-int-trow[hidden] { display: none; }
+    .mi-int-td { font-size: 0.8rem; color: var(--text); min-width: 0; }
+    .mi-int-td--chip { display: flex; align-items: flex-start; gap: 8px; }
+    .mi-int-td--chip .mi-int-chip-label { white-space: normal; overflow: visible; text-overflow: unset; font-weight: 700; }
+    .mi-int-td--surf .mi-int-sname { font-size: 0.78rem; font-weight: 600; }
+    .mi-int-td--flag { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .mi-int-trow .mi-int-td--flag:nth-child(4) { color: #15803D; }
+    .mi-int-trow .mi-int-td--flag:nth-child(5) { color: #15803D; }
+    .mi-int-trow[data-status="talk"] .mi-int-td--flag:nth-child(5),
+    .mi-int-trow[data-status="act"] .mi-int-td--flag:nth-child(4),
+    .mi-int-trow[data-status="none"] .mi-int-td--flag { color: #B91C1C; }
+    html.dark .mi-int-trow .mi-int-td--flag:nth-child(4),
+    html.dark .mi-int-trow .mi-int-td--flag:nth-child(5) { color: #4ADE80; }
+    html.dark .mi-int-trow[data-status="talk"] .mi-int-td--flag:nth-child(5),
+    html.dark .mi-int-trow[data-status="act"] .mi-int-td--flag:nth-child(4),
+    html.dark .mi-int-trow[data-status="none"] .mi-int-td--flag { color: #F87171; }
+    .mi-int-td--does { font-size: 0.76rem; line-height: 1.45; color: var(--text-muted); }
+    @media (max-width: 820px) {
+      .mi-int-table { overflow-x: auto; }
+      .mi-int-thead, .mi-int-trow { min-width: 760px; }
+    }
+
+    /* ---- Streaming Trace anatomy ---- */
     .mi-trace { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 20px; align-items: start; }
     @media (max-width: 720px) { .mi-trace { grid-template-columns: 1fr; } }
     .mi-trace-card {
@@ -3615,13 +4957,48 @@ function moduleStyles() {
       border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2);
     }
     html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
-    /* The .sc-trace body reserves a 30px left gutter for the live DNA helix the
-       chat draws. That helix is a chat-only widget, so here we fill the gutter
-       with a quiet vertical strand instead of leaving it blank. */
-    .mi-trace .sc-trace-strand { left: 11px; width: 2px; border-radius: 2px; opacity: 0.55;
-      background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 42%, transparent), color-mix(in srgb, var(--primary) 8%, transparent)); }
-    .mi-trace .sc-trace.is-complete .sc-trace-strand {
-      background: linear-gradient(to bottom, color-mix(in srgb, #22C55E 55%, transparent), color-mix(in srgb, #22C55E 12%, transparent)); }
+    /* Dev Ready sits in the module header next to the ⋯ cluster. Don't let a
+       click on it collapse/expand the accordion. */
+    .mi-module-head .dsc-ready {
+      padding: 0; flex: 0 0 auto; align-self: flex-start; margin-top: 4px;
+    }
+    .mi-module.is-collapsed > .mi-module-head .dsc-ready { align-self: center; margin-top: 0; }
+
+    /* ---- Dev Ready hierarchy — progress pill, gated state, child toggles ---- */
+    /* Module toggles carry a "k/n ready" pill; keep the pill + switch on one row. */
+    .dsc-ready { gap: 10px; }
+    .dsc-ready-progress {
+      display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em;
+      color: var(--text-muted); white-space: nowrap; line-height: 1;
+    }
+    .dsc-ready-progress .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+    .dsc-ready-progress.is-complete { color: var(--sec-green, #32A966); }
+    @keyframes dsc-nudge {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    .dsc-ready-progress.nudge { animation: dsc-nudge 0.28s ease; }
+    @media (prefers-reduced-motion: reduce) { .dsc-ready-progress.nudge { animation: none; } }
+    /* Gated module switch — visibly not-yet-available (its parts aren't all done). */
+    .dsc-ready .dash-brand-toggle.is-gated { opacity: 0.5; cursor: not-allowed; }
+    .dsc-ready .dash-brand-toggle.is-gated:hover { box-shadow: none; transform: none; }
+
+    /* Lower-level (item) toggles that sit inline in a card / section head. */
+    .mi-motion-card-head .dsc-ready--item,
+    .mi-dir-head .dsc-ready--item,
+    .ds-group-head .dsc-ready--item,
+    .ds-block-head .dsc-ready--item {
+      padding: 0; margin-left: auto; flex: 0 0 auto; align-self: flex-start;
+    }
+    .mi-dir-head .dsc-ready--item,
+    .ds-group-head .dsc-ready--item,
+    .ds-block-head .dsc-ready--item { align-self: center; }
+    /* The directory count badge no longer needs to push to the far right — the
+       toggle owns the right edge now. */
+    .mi-dir-head .mi-dir-count { margin-right: 0; }
+    .ds-group-head { display: flex; align-items: center; gap: 10px; }
 
     .mi-trace-side { display: flex; flex-direction: column; gap: 14px; }
     .mi-trace-run {
@@ -3644,6 +5021,438 @@ function moduleStyles() {
     .mi-trace-leg-swatch--key { background: var(--ter-amber, #FFC434); }
     .mi-trace-leg-swatch--glob { background: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff); }
     html.dark .mi-trace-leg-swatch--glob { background: #93B2DC; }
+    .mi-trace-leg-swatch--helix {
+      background: linear-gradient(135deg, var(--primary, #25507C) 0%, var(--ter-amber, #FFC434) 55%, #12b76a 100%);
+    }
+    html.dark .mi-trace-leg-swatch--helix {
+      background: linear-gradient(135deg, #AEC8ED 0%, #FFC434 55%, #3DD68C 100%);
+    }
+
+    /* ---- Motion & Resize ---- */
+    #mi-motion .dsc-conv-head > .material-symbols-outlined {
+      background: none; border-radius: 0; padding: 0;
+    }
+    #mi-motion .dsc-conv-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+    }
+    #mi-motion .dsc-conv-item > .material-symbols-outlined {
+      flex: 0 0 auto; margin-top: 2px; color: var(--primary);
+      font-size: 20px !important;
+    }
+    html.dark #mi-motion .dsc-conv-item > .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
+
+    .mi-motion-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      align-items: start;
+    }
+    .mi-motion-card {
+      display: flex; flex-direction: column;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+      box-shadow: var(--shadow-1); overflow: hidden;
+    }
+    html.dark .mi-motion-card { background: rgba(255,255,255,0.03); }
+    .mi-motion-card--wide { grid-column: 1 / -1; }
+    .mi-motion-card[hidden] { display: none; }
+    .mi-motion-card-head {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 16px 16px 0;
+    }
+    .mi-motion-card-head > .material-symbols-outlined {
+      flex: 0 0 auto; margin-top: 2px; color: var(--primary); font-size: 22px !important;
+    }
+    html.dark .mi-motion-card-head > .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
+    .mi-motion-card-head-text { min-width: 0; }
+    .mi-motion-card-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-motion-card-src {
+      display: block; margin-top: 3px; font-size: 0.625rem; color: var(--text-muted); word-break: break-word;
+    }
+    .mi-motion-card-lede {
+      margin: 8px 16px 0; font-size: 0.78rem; line-height: 1.5; color: var(--text-muted);
+    }
+    .mi-motion-card-lede code { font-size: 0.72rem; }
+    .mi-motion-stage {
+      margin: 12px 12px 0; padding: 16px;
+      border-radius: 12px; border: 1px dashed var(--border-strong);
+      background: var(--surface-2);
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    }
+    html.dark .mi-motion-stage { background: rgba(255,255,255,0.03); }
+    .mi-motion-used {
+      display: flex; align-items: baseline; gap: 8px; padding: 12px 16px 14px;
+      font-size: 0.72rem; color: var(--text-muted); line-height: 1.5;
+    }
+    .mi-motion-used-label {
+      flex: 0 0 auto; font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .mi-motion-hint { margin: 0; font-size: 0.72rem; color: var(--text-subtle); }
+    .mi-motion-stats { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .mi-motion-stats .mi-stat { flex: 1 1 90px; min-width: 90px; }
+
+    .mi-motion-chart { width: 100%; cursor: pointer; }
+    .mi-motion-chart:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+
+    .mi-motion-stream { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    .mi-motion-stream-line {
+      margin: 0; min-height: 3.2em; font-size: 0.88rem; line-height: 1.45; color: var(--text);
+    }
+
+    .mi-motion-fly { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    /* Same row as the chat welcome (.ws-chips): wrap, 10px gap, chips hug
+       their label. Do not use .sc-reply-chips here — that row is the
+       in-conversation indent and stretches pills in this stage. */
+    .mi-motion-fly .ws-chips,
+    .mi-motion-fly-row {
+      display: flex; flex-wrap: wrap; justify-content: flex-start;
+      gap: 10px; width: 100%; max-width: 100%; margin: 0;
+    }
+    .mi-motion-fly .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      box-sizing: border-box; width: max-content; max-width: 100%; flex: 0 0 auto;
+      height: 28px; padding: 0 11px;
+    }
+
+    .mi-motion-helix { position: relative; width: 100%; border-radius: 12px; overflow: hidden; }
+    .mi-motion-helix-stage {
+      position: relative; width: 100%; height: 220px;
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    }
+    html.dark .mi-motion-helix-stage { background: color-mix(in srgb, var(--primary) 16%, var(--surface)); }
+    .mi-motion-helix-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 10px 2px 0;
+    }
+    .mi-motion-helix-opacity {
+      display: flex; align-items: center; gap: 10px; flex: 1 1 180px; min-width: 180px;
+    }
+    .mi-motion-helix-opacity-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); white-space: nowrap;
+    }
+    .mi-motion-helix-opacity .sc-bganim-opacity {
+      flex: 1 1 auto; min-width: 72px; height: 4px; cursor: pointer;
+      accent-color: var(--primary);
+    }
+    .mi-motion-helix-opacity .sc-bganim-opacity-val {
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      width: 34px; text-align: right; font-variant-numeric: tabular-nums;
+    }
+
+    .mi-motion-acc {
+      width: 100%; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+    }
+    .mi-motion-acc-head {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 12px 14px; border: 0; background: transparent; cursor: pointer;
+      font: inherit; color: inherit; text-align: left;
+    }
+    .mi-motion-acc-head:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .mi-motion-acc-chevron {
+      font-size: 22px !important; color: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+    .mi-motion-acc-head[aria-expanded="false"] .mi-motion-acc-chevron { transform: rotate(-90deg); }
+    .mi-motion-acc-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.98rem; font-weight: 800;
+    }
+    .mi-motion-acc-body { padding: 0 14px 14px; font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); }
+    .mi-motion-acc-body p { margin: 0; }
+    @media (prefers-reduced-motion: reduce) { .mi-motion-acc-chevron { transition: none; } }
+
+    .mi-motion-split {
+      position: relative; display: flex; width: 100%; height: 120px;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: var(--surface);
+    }
+    .mi-motion-pane {
+      min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+      gap: 4px; padding: 14px 16px;
+      background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+    }
+    .mi-motion-pane + .mi-motion-pane,
+    .mi-motion-split-hit + .mi-motion-pane {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 10%, var(--surface));
+    }
+    .mi-motion-pane-label { font-size: 0.72rem; font-weight: 700; color: var(--text); }
+    .mi-motion-pane-w {
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 0.78rem; font-weight: 700; color: var(--primary);
+    }
+    html.dark .mi-motion-pane-w { color: var(--primary-bright, #93C5FD); }
+    .mi-motion-split-hit {
+      flex: 0 0 16px; position: relative; z-index: 1; cursor: col-resize;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mi-motion-split-grip {
+      width: 6px; height: 40px; border-radius: 6px;
+      background: rgba(16,24,32,.78); border: 1px solid rgba(255,255,255,.6);
+      box-shadow: 0 2px 10px rgba(0,0,0,.45);
+      opacity: 0; transform: scaleY(.5);
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+    .mi-motion-split:hover .mi-motion-split-grip,
+    .mi-motion-split.is-dragging .mi-motion-split-grip { opacity: 1; transform: scaleY(1); }
+    html.dark .mi-motion-split-grip { background: rgba(230,236,244,.88); border-color: rgba(16,24,32,.35); }
+
+    .mi-motion-width { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%; }
+    .mi-motion-width-row {
+      display: flex; width: 100%; height: 88px;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .mi-motion-width-pane { flex: 1 1 34%; transition: flex-basis 0.22s ease; }
+    .mi-motion-width-pane.panel-wide { flex-basis: 48%; }
+    .mi-motion-width-pane.panel-triple { flex-basis: 62%; }
+    .mi-motion-width-pane.panel-fill { flex-grow: 1000; flex-basis: auto; }
+    .mi-motion-width-rest { flex: 1 1 40%; }
+    @media (prefers-reduced-motion: reduce) { .mi-motion-width-pane { transition: none; } }
+
+    .mi-motion-reorder, .mi-motion-file-cards { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .mi-motion-file { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    .mi-motion-tile {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-size: 0.8rem; font-weight: 700; color: var(--text);
+      cursor: grab; user-select: none;
+    }
+    .mi-motion-tile.is-dragging { opacity: 0.4; }
+    .mi-motion-grip { font-size: 18px !important; color: var(--text-muted); }
+
+    /* Folder tiles mirror the Conversation Library folders row: a score card
+       dressed as a manila folder — a protruding colored tab, the count on top,
+       and a colored dot + name below. Folder color comes from --fld. */
+    .mi-motion-file-folders, .mi-motion-found-folders {
+      display: flex; flex-wrap: wrap; gap: 10px; width: 100%; padding-top: 8px;
+    }
+    .mi-motion-folder {
+      position: relative; box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      min-width: 132px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: color-mix(in srgb, var(--fld, var(--primary)) 6%, var(--surface));
+      box-shadow: var(--shadow-1);
+      font-size: 0.8rem; font-weight: 700; color: var(--text);
+      text-align: center; cursor: default; user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    html.dark .mi-motion-folder { background: color-mix(in srgb, var(--fld, var(--primary)) 13%, #1A2339); }
+    .mi-motion-folder::before {
+      content: ""; position: absolute; top: -7px; left: 16px;
+      width: 44px; height: 9px; background: var(--fld, var(--primary));
+      border-radius: 6px 6px 0 0; clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
+    }
+    .mi-motion-folder-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .mi-motion-folder-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .mi-motion-folder-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--fld, var(--primary)); flex: 0 0 auto; }
+    .mi-motion-folder.is-drop-target {
+      border-color: var(--fld, var(--primary));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--fld, var(--primary)) 26%, transparent);
+    }
+
+    /* Drag-only "Remove from folder" tile — dashed, muted, no tab or count. */
+    .mi-motion-folder--unfile {
+      flex-direction: row; gap: 6px; min-width: 0; padding: 10px 12px;
+      background: transparent; box-shadow: none; border-style: dashed;
+      color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+    html.dark .mi-motion-folder--unfile { color: var(--primary-bright, #93C5FD); background: transparent; }
+    .mi-motion-folder--unfile::before { display: none; }
+    .mi-motion-folder--unfile .material-symbols-outlined { font-size: 20px !important; color: currentColor; }
+    .mi-motion-folder--unfile.is-drop-target { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+    .mi-motion-file-chip {
+      margin-left: 4px; padding: 1px 7px; border-radius: 999px;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.04em;
+      background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary);
+    }
+    html.dark .mi-motion-file-chip { color: var(--primary-bright, #93C5FD); }
+    .mi-motion-found { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    .mi-motion-found-cards { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .mi-motion-tile.is-drop-target {
+      border-color: var(--primary); border-style: dashed;
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    }
+    .mi-motion-found-name {
+      min-width: 84px; max-width: 150px; height: 24px; padding: 0 6px;
+      border: 1px solid var(--fld, var(--primary)); border-radius: 6px;
+      background: var(--surface); color: var(--text); font: inherit; font-size: 0.76rem; font-weight: 700; text-align: center;
+    }
+    html.dark .mi-motion-found-name { background: rgba(255,255,255,0.06); }
+
+    /* ---- History / Library / Reports demos (page-scoped classes, restaged) ---- */
+    .dsc-wch {
+      width: 100%; max-width: 420px;
+      padding: 8px 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md, 16px);
+      box-shadow: var(--shadow-card);
+    }
+    .dsc-demo .wch-item { position: relative; padding: 9px 14px; border-radius: 10px; cursor: pointer; margin: 2px 0; }
+    .dsc-demo .wch-item:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+    .dsc-demo .wch-item.wch-active { background: color-mix(in srgb, var(--primary) 16%, transparent); outline: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+    .dsc-demo .wch-item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dsc-demo .wch-item-meta { font-size: 11px; opacity: .62; margin-top: 2px; }
+    .dsc-demo .wch-fork-badge {
+      display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+      margin-right: 5px; width: 17px; height: 17px; border-radius: 50%;
+      background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary-ink, var(--primary));
+    }
+    .dsc-demo .wch-fork-badge .material-symbols-outlined { font-size: 12px; }
+    .dsc-demo .wch-item-actions {
+      position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+      display: none; align-items: center; gap: 3px; padding: 3px; border-radius: 999px;
+      background: var(--surface); box-shadow: var(--shadow-card);
+    }
+    .dsc-demo .wch-item:hover .wch-item-actions, .dsc-demo .wch-item:focus-within .wch-item-actions { display: flex; }
+    .dsc-demo .wch-iact {
+      width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent;
+      color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .7;
+    }
+    .dsc-demo .wch-iact:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: 1; }
+    .dsc-demo .wch-iact .material-symbols-outlined { font-size: 16px; }
+    .dsc-demo .wch-drag-handle { cursor: grab; }
+    .dsc-demo .wch-projects-head { display: flex; align-items: center; gap: 6px; padding: 8px 4px 4px; }
+    .dsc-demo .wch-projects-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .5; flex: 1; }
+    .dsc-demo .wch-proj-add {
+      width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent;
+      color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .7;
+    }
+    .dsc-demo .wch-proj-add:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: 1; color: var(--primary); }
+    .dsc-demo .wch-proj-add .material-symbols-outlined { font-size: 18px; }
+    .dsc-demo .wch-project { border-radius: 10px; margin: 1px 0; }
+    .dsc-demo .wch-project.wch-drop-on { background: color-mix(in srgb, var(--primary) 14%, transparent); outline: 1px dashed color-mix(in srgb, var(--primary) 55%, transparent); }
+    .dsc-demo .wch-project-head { display: flex; align-items: center; gap: 6px; padding: 8px 6px; border-radius: 10px; }
+    .dsc-demo .wch-proj-toggle { width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .7; }
+    .dsc-demo .wch-proj-toggle .material-symbols-outlined { font-size: 18px; }
+    .dsc-demo .wch-proj-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+    .dsc-demo .wch-proj-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dsc-demo .wch-proj-count { font-size: 11px; font-weight: 600; opacity: .55; padding: 0 4px; font-variant-numeric: tabular-nums; }
+    .dsc-demo .wch-project-body { padding-left: 8px; }
+    .dsc-demo .wch-project-empty { font-size: 11px; opacity: .5; padding: 4px 12px 8px 20px; }
+    .dsc-demo .wch-proj-edit { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 6px; }
+    .dsc-demo .wch-proj-edit-input {
+      flex: 1; min-width: 0; height: 30px; box-sizing: border-box; padding: 0 10px; border-radius: 8px;
+      font: inherit; font-size: 13px; color: inherit; outline: none;
+      background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid var(--primary);
+    }
+    .dsc-demo .wch-proj-swatches { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding: 2px 2px 2px 17px; }
+    .dsc-demo .wch-proj-swatch { flex: 0 0 auto; width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%; background: currentColor; cursor: pointer; }
+    .dsc-demo .wch-proj-swatch.is-sel { outline: 2px solid currentColor; outline-offset: 2px; }
+
+    .dsc-lib-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); width: 100%; }
+    .dsc-demo .lib-card {
+      display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit;
+      border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-1);
+    }
+    .dsc-demo a.lib-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); border-color: color-mix(in srgb, var(--primary) 32%, var(--border)); }
+    .dsc-demo .lib-thumb { position: relative; height: 110px; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+    .dsc-demo .lib-thumb.pad { padding: 12px 14px; }
+    .dsc-demo .lib-bars { display: flex; align-items: flex-end; gap: 7px; height: 100%; }
+    .dsc-demo .lib-bars i { flex: 1; border-radius: 3px 3px 0 0; display: block; }
+    .dsc-demo .lib-bars i.g { background: color-mix(in srgb, var(--sec-green) 75%, transparent); }
+    .dsc-demo .lib-bars i.b { background: color-mix(in srgb, var(--ter-amber) 82%, transparent); }
+    .dsc-demo .lib-bars i.p { background: color-mix(in srgb, var(--primary) 60%, transparent); }
+    .dsc-demo .lib-chatprev { display: flex; flex-direction: column; gap: 7px; height: 100%; overflow: hidden; }
+    .dsc-demo .lib-bubble {
+      max-width: 88%; padding: 6px 9px; border-radius: 10px;
+      font-size: 0.6875rem; line-height: 1.35; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .dsc-demo .lib-bubble.me { align-self: flex-end; background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text); border-color: transparent; }
+    .dsc-demo .lib-bubble.ai { align-self: flex-start; }
+    .dsc-demo .lib-clip { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .dsc-demo .lib-thumb-badge {
+      position: absolute; top: 9px; left: 10px; display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 999px; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--text-muted); border: 1px solid var(--border);
+    }
+    .dsc-demo .lib-thumb-badge .material-symbols-outlined { font-size: 12px !important; }
+    .dsc-demo .lib-cbody { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 13px; flex: 1; }
+    .dsc-demo .lib-cname { font-size: 0.875rem; font-weight: 700; line-height: 1.3; color: var(--text); }
+    .dsc-demo .lib-shared { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-subtle); }
+    .dsc-demo .lib-shared .material-symbols-outlined { font-size: 14px !important; }
+    .dsc-demo .lib-cfoot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .dsc-demo .lib-date { font-size: 0.75rem; color: var(--text-subtle); }
+    .dsc-demo .lib-counts { display: inline-flex; gap: 8px; }
+    .dsc-demo .lib-count { display: inline-flex; align-items: center; gap: 3px; font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .dsc-demo .lib-count .material-symbols-outlined { font-size: 14px !important; }
+
+    .dsc-lib-folders { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; width: 100%; padding-top: 10px; }
+    .dsc-demo .lib-stat {
+      min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer;
+    }
+    .dsc-demo .lib-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+    .dsc-demo .lib-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
+    .dsc-demo .lib-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .dsc-demo .lib-fstat[data-folder-id] { position: relative; background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 6%, var(--surface)); }
+    .dsc-demo .lib-fstat[data-folder-id]::before {
+      content: ""; position: absolute; top: -7px; left: 14px; width: 36px; height: 8px; border-radius: 4px 4px 0 0;
+      background: var(--lib-folder-color, var(--primary));
+    }
+    .dsc-demo .lib-fdot { width: 9px; height: 9px; border-radius: 50%; background: var(--lib-folder-color, var(--primary)); flex: 0 0 auto; }
+    .dsc-demo .lib-fstat-add, .dsc-demo .lib-fstat-unfile {
+      border-style: dashed; color: var(--text-muted); background: transparent; box-shadow: none;
+    }
+    .dsc-demo .lib-fstat-add .material-symbols-outlined, .dsc-demo .lib-fstat-unfile .material-symbols-outlined { font-size: 22px; color: var(--primary); }
+    .dsc-demo .lib-fstat.is-editing { padding: 10px 8px; }
+    .dsc-demo .lib-fstat-edit { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+    .dsc-demo .lib-folder-edit-input {
+      width: 100%; height: 28px; padding: 0 8px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700;
+      color: var(--text); background: var(--surface); border: 1px solid var(--lib-folder-color, var(--primary));
+    }
+    .dsc-demo .lib-folder-swatches { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .dsc-demo .lib-folder-swatch { width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%; background: currentColor; cursor: pointer; }
+    .dsc-demo .lib-folder-swatch.is-sel { outline: 2px solid currentColor; outline-offset: 2px; }
+
+    .dsc-rp-row { display: flex; flex-wrap: wrap; gap: 16px; width: 100%; }
+    .dsc-demo .rp-card {
+      position: relative; display: flex; flex-direction: column; flex: 1 1 220px; max-width: 280px; min-height: 248px;
+      border-radius: 18px; overflow: hidden; border: 1px solid var(--border); background: var(--surface);
+      box-shadow: var(--shadow-1); text-decoration: none; color: inherit;
+    }
+    .dsc-demo a.rp-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); }
+    .dsc-demo .rp-poster {
+      --acc: #3f4d61; position: relative; height: 110px; overflow: hidden;
+      background:
+        radial-gradient(135% 130% at 82% -25%, color-mix(in srgb, var(--acc) 62%, transparent), transparent 60%),
+        linear-gradient(150deg, color-mix(in srgb, var(--acc) 34%, #0b1a29), #091522 80%);
+    }
+    .dsc-demo .rp-poster.tone-upf { --acc: #25507C; }
+    .dsc-demo .rp-poster.tone-action { --acc: #b8862b; }
+    .dsc-demo .rp-poster.tone-locked { --acc: #3a465a; }
+    .dsc-demo .rp-poster-icon { position: absolute; top: 14px; left: 16px; background: none; border: 0; color: #fff; }
+    .dsc-demo .rp-poster-icon .material-symbols-outlined { font-size: 30px !important; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45)); }
+    .dsc-demo .rp-badge {
+      position: absolute; top: 17px; right: 16px; display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase;
+      color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.22);
+    }
+    .dsc-demo .rp-badge .material-symbols-outlined { font-size: 12px !important; }
+    .dsc-demo .rp-poster-open {
+      position: absolute; right: 14px; bottom: 12px; width: 30px; height: 30px; border-radius: 999px;
+      display: grid; place-items: center; background: #fff; color: #0b1a29; opacity: 0;
+    }
+    .dsc-demo a.rp-card:hover .rp-poster-open { opacity: 1; }
+    .dsc-demo .rp-poster-open .material-symbols-outlined { font-size: 18px !important; }
+    .dsc-demo .rp-body { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 16px; flex: 1; }
+    .dsc-demo .rp-name { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); line-height: 1.2; }
+    .dsc-demo .rp-desc { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-muted); }
+    .dsc-demo .rp-foot { margin-top: auto; padding-top: 10px; display: flex; justify-content: flex-end; }
+    .dsc-demo .rp-view { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 700; color: var(--primary); }
+    html.dark .dsc-demo .rp-view { color: var(--primary-bright, var(--primary)); }
+    .dsc-demo .rp-view .material-symbols-outlined { font-size: 17px !important; }
+    .dsc-demo .rp-waitlist { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); }
+    .dsc-demo .rp-waitlist .material-symbols-outlined { font-size: 15px !important; }
+    .dsc-demo .rp-card.is-locked { background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); }
+    .dsc-demo .rp-card.is-locked .rp-name { color: var(--text-muted); }
   </style>`;
 }
 
@@ -3655,24 +5464,23 @@ let hostEl = null;
 
 export function renderAllModules(mainEl) {
   hostEl = mainEl;
+  buildDevReadyTree();
   mainEl.innerHTML = `
     ${moduleStyles()}
     <div class="mi-wrap">
       <header class="mi-hero">
         <div class="mi-hero-text">
           <h1 class="mi-hero-title">All Modules</h1>
-          <p class="mi-hero-lede">Every module, component, icon and design token in the WISE app — indexed, rendered live, and one tap away.</p>
+          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away.</p>
         </div>
-        <button type="button" class="mi-acc-toggle" data-acc-toggle data-state="expand" aria-label="Expand all sections" title="Expand all sections">
-          <span class="material-symbols-outlined">unfold_more</span>
-        </button>
       </header>
       ${renderSectionNav()}
       ${renderCodebase()}
       ${renderDirectory()}
       ${renderTableGallery()}
       ${renderIntentAudit()}
-      ${renderReasoningTrace()}
+      ${renderStreamingTrace()}
+      ${renderMotion()}
       ${renderIconInventory()}
       ${renderDesignSystem()}
       ${renderComponentLibrary()}
@@ -3687,10 +5495,12 @@ export function renderAllModules(mainEl) {
   wireTableGallery(mainEl);
   wireRailFrames(mainEl);
   wireIntentAudit(mainEl);
-  wireReasoningTrace(mainEl);
+  wireStreamingTrace(mainEl);
+  wireMotion(mainEl);
   wireIconInventory(mainEl);
   wireDesignSystem(mainEl);
   wireComponentLibrary(mainEl);
+  wireDevReady(mainEl);
   wireModuleControls(mainEl);
   wireLinkValidation(mainEl);
 }
@@ -3703,45 +5513,16 @@ export function renderAllModules(mainEl) {
 /* the toggle (adding a chevron + a11y) and wrap everything after it   */
 /* in a collapsible .mi-acc-body, so no per-section render function    */
 /* changes. Clicks on the header's trailing ⋯ controls never toggle.  */
-/* State is per-section and remembered across visits; the very first   */
-/* load opens collapsed so the page reads as a high-level index.       */
+/* Every load starts fully collapsed — a high-level index. Expanded    */
+/* state is in-session only and is not restored on the next visit.     */
+/* Clicks on the header's trailing ⋯ controls (and the Dev Ready       */
+/* toggle, when present) never expand or collapse the section.         */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-trace', 'mi-icons', 'mi-design', 'mi-components'];
-const ACC_STATE_KEY = 'mi-acc-collapsed';
-
-function readAccState() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(ACC_STATE_KEY));
-    return Array.isArray(arr) ? new Set(arr) : null;
-  } catch (e) { return null; }
-}
-
-function writeAccState(root) {
-  try {
-    const collapsed = ACC_SECTION_IDS.filter((id) => root.querySelector('#' + id)?.classList.contains('is-collapsed'));
-    localStorage.setItem(ACC_STATE_KEY, JSON.stringify(collapsed));
-  } catch (e) { /* storage unavailable */ }
-}
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-trace', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
 
 function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-  writeAccState(root);
-  syncAccToggle(root);
-}
-
-/* Keep the single hero toggle in step with the sections: if anything is
-   collapsed the next tap expands all, otherwise it collapses all. */
-function syncAccToggle(root) {
-  const btn = (root || document).querySelector('[data-acc-toggle]');
-  if (!btn) return;
-  const anyCollapsed = ACC_SECTION_IDS.some((id) => (root || document).querySelector('#' + id)?.classList.contains('is-collapsed'));
-  const label = anyCollapsed ? 'Expand all sections' : 'Collapse all sections';
-  btn.dataset.state = anyCollapsed ? 'expand' : 'collapse';
-  btn.setAttribute('aria-label', label);
-  btn.setAttribute('title', label);
-  const ic = btn.querySelector('.material-symbols-outlined');
-  if (ic) ic.textContent = anyCollapsed ? 'unfold_more' : 'unfold_less';
 }
 
 /* Open a section (used when the quick-nav or a WISEcodeAI chip jumps to it). */
@@ -3750,12 +5531,9 @@ function expandAccordionSection(root, id) {
   if (!sec || !sec.classList.contains('is-collapsed')) return;
   sec.classList.remove('is-collapsed');
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', 'true');
-  writeAccState(root || document);
-  syncAccToggle(root || document);
 }
 
 function setupAccordion(root) {
-  const saved = readAccState(); // null → first ever load
   ACC_SECTION_IDS.forEach((id) => {
     const sec = root.querySelector('#' + id);
     if (!sec || sec.classList.contains('mi-acc')) return;
@@ -3776,34 +5554,22 @@ function setupAccordion(root) {
     head.setAttribute('tabindex', '0');
     head.setAttribute('aria-controls', body.id);
 
-    const collapsed = saved ? saved.has(id) : true;
-    sec.classList.toggle('is-collapsed', collapsed);
-    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    /* Closed on every load — expanded state is in-session only. */
+    sec.classList.add('is-collapsed');
+    head.setAttribute('aria-expanded', 'false');
 
     const toggle = (e) => {
-      if (e.target.closest('.panel-controls')) return; // let the ⋯ menu work
+      if (e.target.closest('.panel-controls, .dsc-ready')) return; // let the ⋯ menu and Dev Ready toggle work
       setSectionCollapsed(root, sec, !sec.classList.contains('is-collapsed'));
     };
     head.addEventListener('click', toggle);
     head.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
-      if (e.target.closest('.panel-controls')) return;
+      if (e.target.closest('.panel-controls, .dsc-ready')) return;
       e.preventDefault();
       toggle(e);
     });
   });
-
-  const toggleBtn = root.querySelector('[data-acc-toggle]');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      const collapse = toggleBtn.dataset.state === 'collapse';
-      ACC_SECTION_IDS.forEach((id) => {
-        const sec = root.querySelector('#' + id);
-        if (sec) setSectionCollapsed(root, sec, collapse);
-      });
-    });
-  }
-  syncAccToggle(root);
 }
 
 /* ------------------------------------------------------------------ */
@@ -3826,8 +5592,9 @@ function renderSectionNav() {
     { id: 'mi-code', icon: 'code', num: fmtNum(CODE_STATS?.now?.total), label: 'Lines of code', sub: `${fmtNum(CODE_STATS?.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
-    { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chips', sub: 'Transcript + logic audit' },
-    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Reasoning glob, in haiku' },
+    { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
+    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Live helix + haiku glob' },
+    { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || 0, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
     { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
@@ -3879,7 +5646,7 @@ function runModuleAction(root, action) {
     case 'dir-clear': clearInput('#mi-dir-search'); click('#mi-dir-stats [data-area="all"]'); break;
     case 'ii-name': click('[data-ii-sort="name"]'); break;
     case 'ii-count': click('[data-ii-sort="count"]'); break;
-    case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); break;
+    case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); click('[data-ii-group="all"]'); break;
     case 'ds-type': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-typography')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'ds-colors': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-colors')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'ds-jump': expandAccordionSection(root, 'mi-design'); root.querySelector('#mi-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
@@ -3890,9 +5657,18 @@ function runModuleAction(root, action) {
     case 'int-all': click('#mi-intents [data-int-filter="all"]'); break;
     case 'int-talk': click('#mi-intents [data-int-filter="talk"]'); break;
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
+    case 'int-clear': clearInput('#mi-int-search'); click('#mi-intents [data-int-filter="all"]'); break;
     case 'tbl-clear': clearInput('#mi-tbl-search'); break;
     case 'tbl-start': root.querySelector('#mi-tbl-track')?.scrollTo({ left: 0, behavior: 'smooth' }); break;
     case 'trace-replay': expandAccordionSection(root, 'mi-trace'); click('#mi-trace [data-trace-run]'); break;
+    case 'motion-replay': {
+      expandAccordionSection(root, 'mi-motion');
+      const motion = root.querySelector('#mi-motion');
+      if (motion && typeof motion.__motionReplayAll === 'function') motion.__motionReplayAll();
+      break;
+    }
+    case 'motion-anim': expandAccordionSection(root, 'mi-motion'); click('#mi-motion [data-motion-filter="anim"]'); break;
+    case 'motion-drag': expandAccordionSection(root, 'mi-motion'); click('#mi-motion [data-motion-filter="drag"]'); break;
   }
 }
 
@@ -4006,16 +5782,17 @@ function setPaneBroken(pane, broken) {
   pane.classList.toggle('mi-pane--broken', broken);
   const frame = pane.querySelector('.mi-pane-frame');
   const viewport = pane.querySelector('.mi-pane-viewport');
+  const links = pane.querySelectorAll('a[href]');
   if (broken) {
     if (frame) frame.removeAttribute('src');
     if (viewport && !viewport.querySelector('.mi-pane-broken')) {
       viewport.insertAdjacentHTML('beforeend',
         '<span class="mi-pane-broken"><span class="material-symbols-outlined">link_off</span>Unavailable · 404</span>');
     }
-    viewport?.addEventListener('click', preventBrokenNav);
+    links.forEach((a) => a.addEventListener('click', preventBrokenNav));
   } else {
     pane.querySelector('.mi-pane-broken')?.remove();
-    viewport?.removeEventListener('click', preventBrokenNav);
+    links.forEach((a) => a.removeEventListener('click', preventBrokenNav));
     /* A pane that was marked broken had its iframe src stripped — restore it
        on recovery, or the pane stays blank forever even though the page is
        back. (previewSrc re-tags the URL so embedded-preview guards hold.) */
@@ -4786,7 +6563,7 @@ function wireIconInventory(root) {
   if (!grid) return;
 
   const cards = Array.from(grid.querySelectorAll('[data-icon-card]'));
-  const state = { q: '', fam: 'all', sort: 'name' };
+  const state = { q: '', fam: 'all', group: 'all', sort: 'name' };
 
   const applySort = () => {
     const sorted = cards.slice().sort((a, b) => {
@@ -4803,7 +6580,8 @@ function wireIconInventory(root) {
     cards.forEach((c) => {
       const matchQ = !state.q || c.dataset.search.indexOf(state.q) !== -1;
       const matchF = state.fam === 'all' || c.dataset.fam.split(' ').includes(state.fam);
-      const vis = matchQ && matchF;
+      const matchG = state.group === 'all' || (c.dataset.groups || '').split(' ').includes(state.group);
+      const vis = matchQ && matchF && matchG;
       c.hidden = !vis;
       if (vis) shown++;
     });
@@ -4832,6 +6610,19 @@ function wireIconInventory(root) {
     btn.addEventListener('click', () => {
       state.fam = btn.dataset.iiFam;
       root.querySelectorAll('[data-ii-fam]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      applyFilter();
+    });
+  });
+
+  root.querySelectorAll('[data-ii-group]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      state.group = btn.dataset.iiGroup;
+      root.querySelectorAll('[data-ii-group]').forEach((b) => {
         const on = b === btn;
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -4943,6 +6734,12 @@ function wireComponentLibrary(root) {
     });
   }
 
+  /* Live-wire the stacked composer demo so the attach menu and database
+     selector behave like the canonical chat module. */
+  root.querySelectorAll('.dsc-demo [data-wise-composer]').forEach((rail) => {
+    wireChatComposer(rail);
+  });
+
   /* Demo switches (brand toggle, admin popover switch) flip on click so their
      on/off states can be inspected live. Purely local — no persistence. */
   root.querySelectorAll('[data-demo-switch]').forEach((btn) => {
@@ -4952,26 +6749,100 @@ function wireComponentLibrary(root) {
     });
   });
 
-  /* Dev Ready — per-component status, persisted in localStorage. Off by default. */
+}
+
+/* ------------------------------------------------------------------ */
+/* Dev Ready wiring — hierarchical, persisted in localStorage.         */
+/*                                                                     */
+/* Every toggle (module OR item) shares this one handler. A lower-level */
+/* item toggles freely; flipping one recomputes its parent module so   */
+/* the "k/n ready" pill and the parent's gate stay honest. A module    */
+/* that owns children can only be switched on once all of them are     */
+/* ready — and if a child is later switched off, the parent is forced  */
+/* back off, because a higher-level component is only ready for dev     */
+/* when all of its parts are.                                          */
+/* ------------------------------------------------------------------ */
+function wireDevReady(root) {
+  const moduleBtn = (moduleId) =>
+    Array.from(root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]'))
+      .find((b) => b.dataset.readyId === moduleId);
+  const progressPill = (moduleId) =>
+    Array.from(root.querySelectorAll('[data-ready-progress-for]'))
+      .find((p) => p.getAttribute('data-ready-progress-for') === moduleId);
+
+  /* Recompute a parent module's progress pill + gate from its children. */
+  function refreshParent(moduleId) {
+    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    if (!kids.length) return;
+    const map = loadDscReadyMap();
+    const { ready, total } = readyChildStats(moduleId, map);
+    const complete = ready === total;
+
+    const pill = progressPill(moduleId);
+    if (pill) {
+      pill.classList.toggle('is-complete', complete);
+      const count = pill.querySelector('.dsc-ready-count');
+      if (count) count.textContent = ready + '/' + total;
+      const ic = pill.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = complete ? 'task_alt' : 'radio_button_unchecked';
+      pill.setAttribute('title', ready + ' of ' + total + ' parts Dev Ready');
+    }
+
+    const btn = moduleBtn(moduleId);
+    if (!btn) return;
+    btn.classList.toggle('is-gated', !complete);
+    if (!complete) {
+      /* A parent can never rest "on" while a part is unfinished. */
+      if (map[moduleId]) { delete map[moduleId]; saveDscReadyMap(map); }
+      btn.classList.remove('is-on');
+      btn.setAttribute('aria-checked', 'false');
+      btn.setAttribute('aria-disabled', 'true');
+      btn.title = 'All ' + total + ' parts must be Dev Ready first — ' + ready + '/' + total + ' done';
+    } else {
+      btn.removeAttribute('aria-disabled');
+      const on = map[moduleId] === true;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      btn.title = on ? 'Ready for dev' : 'Mark this module ready for dev';
+    }
+  }
+
   root.querySelectorAll('[data-dsc-ready]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.compName;
-      if (!name) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.readyId;
+      if (!id) return;
+      const level = btn.dataset.readyLevel || 'item';
+
+      /* A gated module can't be turned on — nudge the progress pill instead. */
+      if (level === 'module' && btn.classList.contains('is-gated')) {
+        const pill = progressPill(id);
+        if (pill) { pill.classList.remove('nudge'); void pill.offsetWidth; pill.classList.add('nudge'); }
+        return;
+      }
+
       const next = btn.getAttribute('aria-checked') !== 'true';
       btn.setAttribute('aria-checked', next ? 'true' : 'false');
       btn.classList.toggle('is-on', next);
       const map = loadDscReadyMap();
-      if (next) map[name] = true;
-      else delete map[name];
+      if (next) map[id] = true; else delete map[id];
       saveDscReadyMap(map);
+
+      /* A flipped child re-scores its parent. */
+      const parent = btn.dataset.readyParent;
+      if (parent) refreshParent(parent);
     });
   });
+
+  /* Initial pass so every parent reflects its stored children (and can never
+     start "on" while a part is still unfinished). */
+  Object.keys(DEV_READY_CHILDREN).forEach(refreshParent);
 }
 
 /* WISEcodeAI dock config for this page — a light welcome that points at the four
    modules and can jump to any of them. */
 export const ALL_MODULES_WISEAI = {
-  sub: 'Your app’s codebase stats, module map, icon inventory, design system and component library.',
+  sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, and motion catalog.',
   chipsFlow: 'wrap',
   intents: [
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
@@ -4981,6 +6852,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
     { intent: 'components', label: 'Jump to the Component Library', icon: 'widgets' },
+    { intent: 'motion', label: 'Show animations & resize', icon: 'animation' },
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
@@ -4990,12 +6862,13 @@ export const ALL_MODULES_WISEAI = {
     intents: () => {
       const s = intentAuditStats();
       return s.gaps
-        ? `I audited all <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong>: <strong>${s.wired} are fully wired</strong> (transcript + logic), while <strong>${s.gaps} are missing a half</strong> — ${s.talk} need logic, ${s.act} need their own transcript${s.none ? `, ${s.none} are fully unwired` : ''}. The <strong>Intent Chips</strong> module calls each one out.`
-        : `All <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong> are fully wired — every one carries both its own transcript and its own logic. See the <strong>Intent Chips</strong> module.`;
+        ? `I audited all <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong>: <strong>${s.wired} are fully wired</strong> (transcript + logic), while <strong>${s.gaps} are missing a half</strong> — ${s.talk} need logic, ${s.act} need their own transcript${s.none ? `, ${s.none} are fully unwired` : ''}. The <strong>Intent Chip Logic</strong> module calls each one out.`
+        : `All <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong> are fully wired — every one carries both its own transcript and its own logic. See the <strong>Intent Chip Logic</strong> module.`;
     },
-    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used anywhere, with its variant, usage count, label, and exact placements.',
+    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with variant, usage count, label, and exact placements.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
+    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion open, plus the module splitter, four width tiers, drag-to-reorder and drag-to-file — each running live.`,
     counts: `There are <strong>${ICON_INVENTORY?.totalUniqueIcons || 0} unique icons</strong> across <strong>${ICON_INVENTORY?.totalUses || 0} placements</strong> in the app.`,
   },
   onIntent: (intent) => {
@@ -5018,6 +6891,7 @@ export const ALL_MODULES_WISEAI = {
       : intent === 'tables' ? 'mi-tables'
       : intent === 'design' ? 'mi-design'
       : intent === 'components' ? 'mi-components'
+      : intent === 'motion' ? 'mi-motion'
       : null;
     if (id) {
       expandAccordionSection(document, id);

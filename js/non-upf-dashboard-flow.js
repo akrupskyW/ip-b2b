@@ -321,7 +321,7 @@ function theadHtml() {
 }
 
 function thumbHtml(p) {
-  return `<span class="adm-avatar adm-avatar--round adm-avatar--photo adm-avatar--lg">` +
+  return `<span class="adm-avatar adm-avatar--round adm-avatar--photo">` +
     `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">` +
     `<span class="material-symbols-outlined" style="display:none;font-size:18px">${esc(p.icon || 'lunch_dining')}</span></span>`;
 }

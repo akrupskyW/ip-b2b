@@ -218,6 +218,12 @@ body {
 @media (min-width: 1280px) {
   body { padding: 0.75rem 0 var(--modules-bottom-pad); }
 }
+/* Canonical app shell inset (wiseai.html): even 12px frame on all sides so the
+   primary nav never glues to the window edge. Pages without the integrated
+   shell keep the legacy top/bottom-only padding above. */
+body:has(.menu-brand-integrated) {
+  padding: var(--modules-bottom-pad, 12px);
+}
 
 #agent-shell-wrap {
   flex: 1 1 0%;
@@ -1431,8 +1437,10 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   grid-area: modules;
   flex: unset;
   min-height: 0;
-  padding-left: 0;
-  margin-top: 8px;
+  /* Match the nav column height exactly (wiseai.html): no leftover 8px top gap,
+     and a 2px shadow gutter so module card shadows aren't clipped hard. */
+  margin-top: 0;
+  padding: 0 2px;
 }
 #modules-row > * {
   height: 100%;
@@ -1710,6 +1718,34 @@ html.dark #menu-panel .menu-inner {
   margin-bottom: var(--shell-topbar-gap);
   box-sizing: border-box;
   background: transparent;
+}
+/* Vertical nav (non-pivot): pin the brand strip to --panel-header-h (60px) and
+   drop the extra gap under the logo so module headlines line up with the owl —
+   same spacing as wiseai.html on every page. Pivot keeps the rules above. */
+#agent-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar,
+#chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar {
+  min-height: var(--panel-header-h);
+  margin-bottom: 0;
+}
+#agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar,
+#chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar {
+  height: var(--panel-header-h);
+  min-height: var(--panel-header-h);
+  max-height: var(--panel-header-h);
+  margin-bottom: 0;
+}
+#agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+#agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a,
+#chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+#chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug,
+#chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
+  transform: translateY(16px);
 }
 .menu-brand-bar .topbar-menu-toggle {
   position: relative !important;
@@ -2308,6 +2344,9 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   font-size: var(--fs-ui);
   font-weight: 600;
   letter-spacing: 0.01em;
+  /* Beat Tailwind Preflight's body line-height so icon rows stay 36px tall on
+     pages that load the CDN (product-portfolio / product-comparison). */
+  line-height: normal;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 .menu-nav-item:hover,
@@ -2873,6 +2912,8 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
   justify-content: center;
   align-items: center;
   width: 100%;
+  /* Default rail brand height; shell-scoped rules above pin non-pivot to
+     --panel-header-h (60px) so this only applies outside those wraps. */
   height: var(--shell-topbar-h);
   min-height: var(--shell-topbar-h);
   max-height: var(--shell-topbar-h);
@@ -4889,15 +4930,18 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary-ink, var(--primary)); }
 
 .chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-  /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
-     chips and the input field share one surface color, light and dark. */
+  display: inline-flex; align-items: center; gap: 6px;
+  box-sizing: border-box; height: 28px; padding: 0 11px;
+  /* One size app-wide: the 28px in-conversation reply chip. Same blue tint as
+     the composer (.fl-input-wrap, 10% primary) so chips and the input share
+     one surface color, light and dark. */
   background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
-  font-size: var(--fs-ui); font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  font-size: var(--fs-label); font-weight: 500; line-height: 1; color: var(--text-muted); cursor: pointer; font-family: inherit;
+  white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
-.chip .material-symbols-outlined { font-size: 14px !important; }
+.chip .material-symbols-outlined { font-size: 13px !important; }
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
    primary choice among the reply chips. Reuses the app-wide `chip-primary`
@@ -4909,10 +4953,9 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-/* Tighter top/bottom padding (label size unchanged); glyphs match the top-bar
-   navigation icons (#left-icon-rail .lir-btn = 20px). */
-.ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
-.ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
+/* Welcome / shortcut intent chips share the same 28px .chip size. Gold
+   leading glyph; the trailing .ws-lock badge keeps its own colours. */
+.ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
 /* Leading intent glyph always reads in brand blue (the trailing .ws-lock badge
    keeps its own resting/hover colours; the amber ask-help variant overrides via
    higher specificity). */
@@ -5661,7 +5704,7 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 .sc-typing-status { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
 .sc-typing-label { font-size: 0.6875rem; font-weight: 500; color: var(--text-subtle); font-style: italic; }
 
-/* ===== Reasoning trace — WISEcodeAI "thinking out loud" =====================
+/* ===== Streaming trace — WISEcodeAI "thinking out loud" =====================
    The behind-the-scenes narration a turn streams BEFORE its answer lands. A
    collapsible block hung off the owl avatar with a live m:ss stopwatch. Only ONE
    milestone shows at a time: its 1–3 word key + a big GLOB of subdued, italic
@@ -7165,6 +7208,9 @@ html.dark .dash-bignum { color: var(--text); }
   align-items: center;
   gap: 4px;
   margin-top: 10px;
+  /* Report-style text links always sit on the trailing edge of their row. */
+  margin-left: auto;
+  align-self: flex-end;
   padding: 0;
   background: none;
   border: none;
@@ -7176,12 +7222,22 @@ html.dark .dash-bignum { color: var(--text); }
   transition: color 0.15s ease;
 }
 html.dark .dash-text-link { color: var(--primary-bright); }
-.dash-text-link .material-symbols-outlined { font-size: 16px; }
+.dash-text-link .material-symbols-outlined {
+  font-size: 16px;
+  transition: transform 0.15s ease;
+}
 .dash-text-link:hover { color: var(--primary-bright); text-decoration: none; }
+.dash-text-link:hover .material-symbols-outlined { transform: translate(2px, -2px); }
 html.dark .dash-text-link:hover { color: #fff; }
 /* Align under a .dash-btn above: matches the button's border (1px) + padding
    (15px) and icon/text gap (7px) so the icon lines up with the button's icon. */
-.dash-text-link--indent { padding-left: 16px; gap: 7px; }
+.dash-text-link--indent {
+  padding-left: 16px;
+  gap: 7px;
+  margin-left: 0;
+  align-self: flex-start;
+}
+.dash-text-link--indent:hover .material-symbols-outlined { transform: none; }
 
 .dash-progress-pct .dash-bignum { font-size: 5rem; }
 .dash-bar {
@@ -10968,10 +11024,10 @@ html.dark .adm-menu-item--danger { color: #FF9E96; }
 /* Select-style filter control. */
 .adm-field { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
 .adm-field-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
-.adm-select { height: 42px; box-sizing: border-box; padding: 0 34px 0 14px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+.adm-select { height: 42px; box-sizing: border-box; padding: 0 34px 0 16px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 html.dark .adm-select { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
 .adm-select:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.adm-input { height: 42px; box-sizing: border-box; padding: 0 14px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; outline: none; }
+.adm-input { height: 42px; box-sizing: border-box; padding: 0 16px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); outline: none; }
 html.dark .adm-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
 .adm-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
@@ -10995,10 +11051,16 @@ html.dark .adm-btn--good { color: #6FE0A0; }
 .adm-btn--sm .material-symbols-outlined { font-size: 14px; }
 
 /* Round icon-only action button (row actions rail). */
-.adm-icon-btn { width: 34px; height: 34px; flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
-html.dark .adm-icon-btn { background: rgba(255,255,255,0.04); }
-.adm-icon-btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-3, var(--surface-2)); }
-.adm-icon-btn .material-symbols-outlined { font-size: 17px; }
+.adm-icon-btn {
+  width: 30px; height: 30px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+}
+html.dark .adm-icon-btn { background: transparent; }
+.adm-icon-btn:hover { color: var(--text); background: var(--surface-2); }
+html.dark .adm-icon-btn:hover { background: rgba(255,255,255,0.06); }
+.adm-icon-btn .material-symbols-outlined { font-size: 18px; }
 .adm-icon-btn--primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .adm-icon-btn--primary:hover { filter: brightness(1.08); color: #fff; }
 .adm-icon-btn--danger:hover { color: var(--sec-red); border-color: var(--sec-red-10); background: var(--sec-red-10); }
@@ -11071,11 +11133,26 @@ html.dark .adm-td--num.is-hot { color: #93C5FD; }
 
 /* Company / user identity cell — initials avatar + name + subtitle. */
 .adm-idcell { display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
-.adm-avatar { width: 34px; height: 34px; flex: none; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em; color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 12%, var(--surface-2)); border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent); text-transform: uppercase; }
-.adm-avatar--round { border-radius: 50%; }
-.adm-avatar--photo { padding: 0; overflow: hidden; background: var(--surface-2); border-color: var(--border); }
-.adm-avatar--photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.adm-avatar--lg { width: 40px; height: 40px; }
+/* Avatars are circles only — never a square or rounded-square, any size. */
+.adm-avatar,
+.adm-avatar--round,
+.adm-avatar--lg,
+.adm-avatar--photo {
+  border-radius: 50%;
+}
+.adm-avatar {
+  width: 34px; height: 34px; flex: none; aspect-ratio: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em;
+  color: var(--primary-ink, var(--primary));
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  text-transform: uppercase;
+}
+.adm-avatar--photo { padding: 0; background: var(--surface-2); border-color: var(--border); }
+.adm-avatar--photo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+/* --lg is a leftover alias: one circle size app-wide (34px), matching .topbar-profile. */
 .adm-idcell-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .adm-idcell-name { font-size: 0.86rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .adm-idcell-name a { color: var(--primary); text-decoration: none; }
@@ -11136,10 +11213,19 @@ html.dark .adm-filter-head-title .material-symbols-outlined { color: #6FE0A0; }
 
 /* Per-row three-dot (kebab) menu — collapses the row's actions into a popover. */
 .adm-rowmenu { display: inline-flex; position: relative; }
-.adm-rowmenu-btn { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
-html.dark .adm-rowmenu-btn { background: rgba(255,255,255,0.04); }
-.adm-rowmenu-btn:hover, .adm-rowmenu.is-open .adm-rowmenu-btn { color: var(--text); border-color: var(--border-strong); background: var(--surface-3, var(--surface-2)); }
-.adm-rowmenu-btn .material-symbols-outlined { font-size: 19px; }
+/* Bare kebab — circular hit target only. No fill, no stroke (matches
+   .pf-rowmenu-btn). A visible circle behind the glyph is not the table action. */
+.adm-rowmenu-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+  cursor: pointer; overflow: hidden;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+html.dark .adm-rowmenu-btn { background: transparent; }
+.adm-rowmenu-btn:hover, .adm-rowmenu.is-open .adm-rowmenu-btn { color: var(--text); background: var(--surface-2); }
+html.dark .adm-rowmenu-btn:hover, html.dark .adm-rowmenu.is-open .adm-rowmenu-btn { background: rgba(255,255,255,0.06); }
+.adm-rowmenu-btn .material-symbols-outlined { font-size: 18px; }
 .adm-rowmenu-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
 .adm-rowmenu-pop[hidden] { display: none; }
 .adm-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
@@ -11687,7 +11773,14 @@ button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--sha
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
-.dash-stars-pager .dash-text-link { display: inline-flex; align-items: center; gap: 2px; }
+.dash-stars-pager .dash-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0;
+  align-self: auto;
+}
+.dash-stars-pager .dash-text-link:hover .material-symbols-outlined { transform: none; }
 .dash-stars-pager .dash-text-link[disabled] { opacity: 0.4; pointer-events: none; }
 .dash-stars-pager-info { font-size: 0.78rem; color: var(--text-subtle); }
 

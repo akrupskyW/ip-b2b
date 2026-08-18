@@ -25,6 +25,38 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ All Modules — shell spacing matches wiseai.html ═══════════
+       The shared wise.css body rule leaves 0 horizontal padding and a shorter
+       --shell-topbar-h brand strip, so the primary nav sat flush to the window
+       edge and looked squeezed vs. the rest of the app. Copy the canonical
+       chat-shell insets (12px all sides, 60px brand bar, owl nudge). */
+    html, body { height: 100%; margin: 0; }
+    body[data-nav-id="all-modules"] {
+      padding: var(--modules-bottom-pad, 12px);
+    }
+    #agent-shell-wrap { flex: 1 1 0%; min-height: 0; width: 100%; overflow: visible; }
+    #agent-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      /* Match the nav module's height exactly (cancels wise.css margin-top: 8px). */
+      margin-top: 0;
+      padding: 0 2px;
+    }
+
+    /* Nav brand strip height — same pin as wiseai.html / reformulation / studio-ai. */
+    #agent-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    /* Drop the owl so it lines up with the headlines of the modules to the right. */
+    #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
+  </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
 <body data-nav-id="all-modules" data-adm-page data-default-dock="left">

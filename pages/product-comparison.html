@@ -232,7 +232,7 @@
        chooses) — it never re-flows into a stacked top card. Only the modules
        themselves stack, and only below the portrait-tablet breakpoint (560px).
        This keeps the chat and agent/portfolio pages on one responsive grammar. */
-    /* Top bar row hidden — brand + profile live in the nav panel (agent-page.css). */
+    /* Top bar row hidden — brand + profile live in the nav panel (wise.css). */
     #topbar-row {
       display: none !important;
       visibility: hidden !important;
@@ -242,58 +242,10 @@
       padding: 0 !important;
       overflow: hidden !important;
       pointer-events: none !important;
-      position: relative;
-      align-items: center;
-      justify-content: flex-start;
-      /* The menu toggle + wordmark now live in the nav panel's brand strip, so
-         the rail starts at the left edge; the right side reserves room for the
-         Appearance control and the absolutely-positioned profile avatar. */
-      padding: 0 calc(1.5rem + 34px + 16px + 34px + 12px) 0 14px;
-      flex-shrink: 0;
     }
-    /* Menu collapse toggle — sits to the LEFT of the logo. Positioned so the icon
-       center lands on the same vertical column as the icons inside the agents
-       module below (modules-row 8px pad + header 18px pad + 13px half-icon = 39px). */
-    .topbar-menu-toggle {
-      position: absolute !important;
-      left: 19px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 11;
-      width: 40px !important;
-      height: auto !important;
-      min-height: 46px !important;
-      border-radius: 8px !important;
-      background: transparent !important;
-      color: var(--text-muted) !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: stretch !important;
-      justify-content: center !important;
-      gap: 2px !important;
-      padding: 5px 0 4px !important;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-    .topbar-menu-toggle:hover {
-      background: transparent !important;
-      color: var(--primary-ink, var(--primary)) !important;
-    }
-    .topbar-menu-toggle.lir-active {
-      background: transparent !important;
-      color: var(--primary-ink, var(--primary)) !important;
-      box-shadow: none !important;
-    }
-    .topbar-menu-toggle .material-symbols-outlined,
-    .topbar-menu-toggle .material-symbols-outlined {
-      font-size: 20px !important;
-      line-height: 1 !important;
-      display: block !important;
-      text-align: center !important;
-    }
-    /* Profile avatar — outline ring + initials; primary only when popover is open. */
+    /* Profile avatar — outline ring + initials; primary only when popover is open.
+       (Collapse toggle styling lives in wise.css on .menu-brand-bar — do not
+       re-absolutely-position .topbar-menu-toggle here or the rail chevron drifts.) */
     .topbar-profile {
       position: absolute;
       right: 1.5rem;
@@ -1928,14 +1880,10 @@
     /* Compact in-chat chips: they sit in a narrow chat column, so keep them
        tight and left-aligned — never full-width blocks with centred text. */
     .sc-reply-chips .chip {
-      font-weight: 500;
-      padding: 5px 11px;
-      font-size: var(--fs-label);
-      line-height: 1.25;
       text-align: left;
       max-width: 100%;
     }
-    .sc-reply-chips .chip .material-symbols-outlined { font-size: 15px !important; align-self: center; flex-shrink: 0; }
+    .sc-reply-chips .chip .material-symbols-outlined { align-self: center; flex-shrink: 0; }
     /* "Likely match" chips in the Add brand/product prompt read a touch warmer
        so the closest matches stand out from the rest of the deep-bench list. */
     .sc-reply-chips .chip--match {
@@ -5109,16 +5057,20 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
-      /* Same blue tint as the composer (.fl-input-wrap, 10% primary) so intent
-         chips and the input field share one surface color. */
+      box-sizing: border-box;
+      height: 28px;
+      padding: 0 11px;
+      /* One size app-wide: the 28px in-conversation reply chip. Same blue tint
+         as the composer so chips and the input share one surface color. */
       background: color-mix(in srgb, var(--primary) 10%, #fff);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill);
-      font-size: var(--fs-ui);
+      font-size: var(--fs-label);
       font-weight: 500;
+      line-height: 1;
       color: var(--text-muted);
       cursor: pointer;
+      white-space: nowrap;
       transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
     .chip:hover {
@@ -5126,6 +5078,7 @@
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
       color: var(--text);
     }
+    .chip .material-symbols-outlined { font-size: 13px !important; }
     .chip.chip-primary {
       background: var(--primary);
       border-color: var(--primary);
@@ -5144,9 +5097,6 @@
       border-color: var(--border-strong);
       color: var(--text-muted);
       font-weight: 500;
-      /* Tighter top/bottom padding; label size unchanged. */
-      padding-top: 4px;
-      padding-bottom: 4px;
     }
     /* Dark mode: the composer's brightened brand-blue tint (matches
        html.dark .fl-input-wrap) — needed here because the two-class
@@ -5156,8 +5106,6 @@
       background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
       border-color: var(--primary);
     }
-    /* Match the top-bar navigation glyphs (#left-icon-rail .lir-btn = 20px). */
-    .ws-intent-chip .material-symbols-outlined { font-size: 16px !important; }
     .ws-intent-chip:hover,
     .ws-intent-chip.chip-primary:hover {
       background: color-mix(in srgb, var(--primary) 16%, #fff);

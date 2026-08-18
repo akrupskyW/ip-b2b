@@ -319,10 +319,6 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
     }
 
-    /* Section label above the folders row (mirrors .lib-stats-label). */
-    .lib-folders-head { display: flex; align-items: center; gap: 6px; margin: 16px 2px 0; }
-    .lib-folders-head-label { flex: 1; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
-
     /* The folders row — a fluid grid so the tiles stretch to fill the row and
        reflow at any module width (auto-fit stretches; the type/scope rows use
        fixed column counts, but folders are dynamic so they flow). The top
@@ -348,8 +344,14 @@
       border-radius: 6px 6px 0 0;
       clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
     }
-    .lib-fstat[data-folder-id] { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 6%, var(--surface-2)); }
-    html.dark .lib-fstat[data-folder-id] { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 13%, rgba(255,255,255,0.04)); }
+    /* The border stroke around a folder tile matches its tab color. */
+    .lib-fstat[data-folder-id],
+    .lib-fstat.is-editing {
+      background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 6%, var(--surface-2));
+      border-color: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 60%, var(--border));
+    }
+    html.dark .lib-fstat[data-folder-id],
+    html.dark .lib-fstat.is-editing { background: color-mix(in srgb, var(--lib-folder-color, var(--primary)) 13%, rgba(255,255,255,0.04)); }
     .lib-fstat .lib-stat-label { gap: 6px; }
     .lib-fdot { width: 9px; height: 9px; border-radius: 50%; background: var(--lib-folder-color, var(--primary)); flex: 0 0 auto; }
     .lib-fstat.is-active {
@@ -381,6 +383,19 @@
       border-style: dashed;
       color: var(--text-muted);
       box-shadow: none;
+    }
+    /* New-folder creation surfaces (the dashed "New folder" tile + the inline
+       creation editor) use the same light-blue tint as the AI chat module and
+       the scorecards. */
+    .lib-fstat-add,
+    .lib-fstat.is-editing.lib-fstat-creating {
+      background: color-mix(in srgb, var(--primary) 5%, #fff);
+      border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
+    }
+    html.dark .lib-fstat-add,
+    html.dark .lib-fstat.is-editing.lib-fstat-creating {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+      border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, var(--border));
     }
     .lib-fstat-add .material-symbols-outlined,
     .lib-fstat-unfile .material-symbols-outlined { font-size: 22px !important; color: var(--text-subtle); }
@@ -640,9 +655,8 @@
                    rendered by JS into #lib-folders-row; the trailing "New
                    folder" tile and the drag-only "Remove from folder" tile are
                    part of the same row. -->
-              <div class="lib-folders-head">
-                <span class="lib-folders-head-label">Folders</span>
-              </div>
+              <div class="lib-board-divider"></div>
+
               <div class="lib-stats-wrap">
                 <div class="lib-stats-row lib-row-folders" id="lib-folders-row" role="group" aria-label="Folders"></div>
               </div>
@@ -1198,7 +1212,7 @@
         /* Leading tile: the "New folder" creator sits at the FAR LEFT. While
            creating, it becomes the inline editor in place. */
         if (creatingFolder) {
-          html += '<div class="lib-stat lib-fstat is-editing" style="--lib-folder-color:' +
+          html += '<div class="lib-stat lib-fstat is-editing lib-fstat-creating" style="--lib-folder-color:' +
             (pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length]) + '">' + folderEditHtml(null) + '</div>';
         } else {
           html += '<button type="button" class="lib-stat lib-fstat lib-fstat-add" id="lib-folders-add" title="New folder" aria-label="New folder">' +
