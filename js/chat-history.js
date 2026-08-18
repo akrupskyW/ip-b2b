@@ -73,6 +73,43 @@
       '.wch-fork-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-fork-badge .material-symbols-outlined{font-size:12px;}',
       '.wch-item-meta{font-size:11px;opacity:.62;margin-top:2px;}',
+      /* ── Live (streaming) conversation row ──────────────────────────────────
+         A conversation that is actively generating a response. A pulsing dot
+         precedes the title and a single-line preview beneath streams the answer
+         one line at a time (word-by-word), so several chats can be seen running
+         at once. */
+      '.wch-live-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;background:#12B981;box-shadow:0 0 0 0 rgba(18,185,129,0.28);animation:wchLive 2.6s ease-in-out infinite;}',
+      '@keyframes wchLive{0%{box-shadow:0 0 0 0 rgba(18,185,129,0.28);opacity:.75}50%{box-shadow:0 0 0 5px rgba(18,185,129,0);opacity:1}100%{box-shadow:0 0 0 0 rgba(18,185,129,0);opacity:.75}}',
+      /* Preview stays 11px and always reserves two lines of height (min-height =
+         2 × line-height) so the row never grows or jumps as the streamed line
+         wraps from one line to two; it clamps at two. */
+      '.wch-item-stream{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;min-width:0;margin-top:3px;font-size:11px;line-height:1.32;min-height:2.64em;opacity:.62;overflow:hidden;}',
+      '.wch-stream-text{display:inline;min-width:0;}',
+      /* Each streamed word simply fades in (opacity only) as it lands, so the
+         line builds up left to right — no blur, no movement. */
+      '.wch-stream-word{display:inline-block;opacity:0;animation:wchWordIn .5s ease forwards;}',
+      '@keyframes wchWordIn{from{opacity:0}to{opacity:1}}',
+      /* Gentle, fully-eased caret — no hard on/off flicker. */
+      '.wch-stream-caret{display:inline-block;width:2px;height:10px;margin-left:3px;vertical-align:middle;border-radius:1px;background:var(--primary-ink,var(--primary,#2F6DF6));opacity:.55;animation:wchCaret 1.5s ease-in-out infinite;}',
+      '@keyframes wchCaret{0%,100%{opacity:.12}50%{opacity:.7}}',
+      '@media (prefers-reduced-motion:reduce){.wch-live-dot{animation:none;}.wch-stream-caret{animation:none;}.wch-stream-word{animation:none;opacity:1;filter:none;transform:none;}}',
+      /* ── Row hover info card ────────────────────────────────────────────────
+         The timestamp + message count (and fork / MCP lineage) no longer clutter
+         the row — they surface in this floating card on hover. It anchors ABOVE
+         the row (falling back to the RIGHT when there is no room above), never
+         directly below, per the popover conventions, and is legible in both
+         light and dark mode. */
+      '.wch-info{position:fixed;z-index:90;min-width:196px;max-width:264px;padding:12px 14px;border-radius:14px;pointer-events:none;',
+        'opacity:0;transform:translateY(5px) scale(.97);transform-origin:top left;transition:opacity .14s ease,transform .14s ease;',
+        'background:var(--card,var(--surface,#0F1830));color:var(--text,#C5CFD7);border:1px solid rgba(255,255,255,0.12);box-shadow:0 18px 44px rgba(0,0,0,0.46);}',
+      'html:not(.dark) .wch-info{background:#fff;color:#1F2733;border-color:rgba(0,0,0,0.09);box-shadow:0 18px 44px rgba(20,30,60,0.18);}',
+      '.wch-info.is-vis{opacity:1;transform:none;}',
+      '.wch-info-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:700;font-size:13.5px;line-height:1.26;letter-spacing:-.01em;margin-bottom:9px;}',
+      '.wch-info-row{display:flex;align-items:center;gap:9px;font-size:12px;line-height:1.5;opacity:.82;}',
+      '.wch-info-row + .wch-info-row{margin-top:4px;}',
+      '.wch-info-row .material-symbols-outlined{font-size:16px;opacity:.66;flex:0 0 auto;}',
+      '.wch-info-row.is-live{opacity:1;color:#12B981;font-weight:600;}',
+      '.wch-info-row.is-live .material-symbols-outlined{opacity:1;color:#12B981;}',
       '.wch-del{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
       '.wch-item:hover .wch-del{display:flex;}',
       '.wch-del:hover{background:rgba(255,255,255,0.12);opacity:1;}',
@@ -172,7 +209,7 @@
       '.wch-sidebar.wch-rail .wch-proj-dot{width:12px;height:12px;}',
       '.wch-sidebar.wch-rail .wch-project-body{padding-left:0;}',
       '.wch-sidebar.wch-rail .wch-item{padding:0;margin:4px auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
-      '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
+      '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-item-stream,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
       '.wch-sidebar.wch-rail .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;}',
       '.wch-sidebar.wch-rail .wch-item.wch-active::before{opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       /* Minimized rail: never reveal the maximized-panel hover controls (per-chat
@@ -557,7 +594,13 @@
           html: s.html || '',
           count: s.count || 0,
           ts: s.ts || (Date.now() - (i + 1) * 3600000),
-          mcp: s.mcp === true
+          mcp: s.mcp === true,
+          /* A live (currently-streaming) conversation, with the lines its answer
+             is streaming through shown one at a time on the row. */
+          live: s.live === true,
+          streamLines: Array.isArray(s.streamLines) ? s.streamLines : null,
+          usedIntents: Array.isArray(s.usedIntents) ? s.usedIntents.slice() : null,
+          nextIntents: Array.isArray(s.nextIntents) ? s.nextIntents.slice() : null
         };
       });
       seeded = true;
@@ -669,7 +712,7 @@
       if (!storageKey) return;
       /* Strip the transient search cache so it never bloats the store. */
       var clean = items.map(function (it) {
-        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null, mcp: it.mcp === true, projectId: it.projectId || null };
+        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null, mcp: it.mcp === true, projectId: it.projectId || null, live: it.live === true, streamLines: Array.isArray(it.streamLines) ? it.streamLines : null, usedIntents: Array.isArray(it.usedIntents) ? it.usedIntents : null, nextIntents: Array.isArray(it.nextIntents) ? it.nextIntents : null };
       });
       var cleanProjects = projects.map(function (p) {
         return { id: p.id, name: p.name, color: p.color, ts: p.ts, collapsed: p.collapsed === true };
@@ -746,22 +789,20 @@
       render();
     }
 
-    /* Row subtitle. When the row already sits under a day-group header the day
-       label is redundant, so `omitDay` drops it (leaving time + message count). */
-    function metaFor(item, omitDay) {
-      var msgs = item.count === 1 ? '1 message' : item.count + ' messages';
-      var parts = [];
-      if (item.fork) parts.push('Forked');
-      if (!omitDay) parts.push(dayLabel(item.ts));
-      parts.push(timeLabel(item.ts));
-      parts.push(msgs);
-      return parts.join(' · ');
-    }
-
     /* ── Public actions ── */
     /* Save the current transcript into history. No-op on an empty thread or when
        nothing has changed since the last save. Updates the active thread in place
        (so editing a restored conversation doesn't spawn a duplicate). */
+    function applyMeta(item) {
+      if (!item || typeof opts.getMeta !== 'function') return item;
+      var extra = null;
+      try { extra = opts.getMeta(); } catch (_) { extra = null; }
+      if (!extra || typeof extra !== 'object') return item;
+      if (Array.isArray(extra.usedIntents)) item.usedIntents = extra.usedIntents.slice();
+      if (Array.isArray(extra.nextIntents)) item.nextIntents = extra.nextIntents.slice();
+      return item;
+    }
+
     function saveCurrent() {
       var html = getHTML();
       var count = countMessages();
@@ -771,12 +812,17 @@
         var existing = null;
         for (var i = 0; i < items.length; i++) { if (items[i].id === activeId) { existing = items[i]; break; } }
         if (existing) {
-          if (existing.html === html) return existing; /* unchanged */
+          if (existing.html === html) {
+            applyMeta(existing);
+            writeStore();
+            return existing;
+          }
           existing.html = html;
           existing._search = null; /* transcript changed → rebuild search text */
           existing.count = count;
           existing.ts = Date.now();
           existing.title = deriveTitle();
+          applyMeta(existing);
           items = items.filter(function (x) { return x.id !== activeId; });
           items.unshift(existing);
           writeStore();
@@ -784,7 +830,7 @@
         }
       }
 
-      if (items[0] && items[0].html === html) { activeId = items[0].id; return items[0]; }
+      if (items[0] && items[0].html === html) { activeId = items[0].id; applyMeta(items[0]); writeStore(); return items[0]; }
 
       var item = {
         id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -794,6 +840,7 @@
         ts: Date.now(),
         projectId: pendingProjectId || null
       };
+      applyMeta(item);
       pendingProjectId = null;
       items.unshift(item);
       if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
@@ -817,8 +864,11 @@
         ts: Date.now(),
         fork: data.fork || null,
         mcp: data.mcp === true,
-        projectId: data.projectId || null
+        projectId: data.projectId || null,
+        usedIntents: Array.isArray(data.usedIntents) ? data.usedIntents.slice() : null,
+        nextIntents: Array.isArray(data.nextIntents) ? data.nextIntents.slice() : null
       };
+      applyMeta(item);
       items.unshift(item);
       if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
       writeStore();
@@ -901,9 +951,16 @@
       var mcpBadge = it.mcp
         ? '<span class="wch-mcp-badge" title="Used the MCP server"><span class="material-symbols-outlined">dns</span></span>'
         : '';
-      return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '"' + (railMode ? ' data-tip="' + esc(it.title) + '"' : '') + '>' +
-        '<div class="wch-item-title">' + forkBadge + mcpBadge + esc(it.title) + '</div>' +
-        '<div class="wch-item-meta">' + esc(metaFor(it, omitDay)) + '</div>' +
+      var liveDot = it.live ? '<span class="wch-live-dot" aria-hidden="true"></span>' : '';
+      /* The timestamp + message count intentionally no longer render on the row —
+         they live in the hover info card (see openInfoPopover). A live thread
+         instead shows a single streaming line beneath its title. */
+      var streamLine = it.live
+        ? '<div class="wch-item-stream"><span class="wch-stream-text"></span><span class="wch-stream-caret" aria-hidden="true"></span></div>'
+        : '';
+      return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + (it.live ? ' wch-item-live' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '"' + (railMode ? ' data-tip="' + esc(it.title) + '"' : '') + '>' +
+        '<div class="wch-item-title">' + liveDot + forkBadge + mcpBadge + esc(it.title) + '</div>' +
+        streamLine +
         '<div class="wch-item-actions">' +
           '<button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project" data-wch-drag="' + esc(it.id) + '"><span class="material-symbols-outlined">drag_indicator</span></button>' +
           '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-symbols-outlined">drive_file_move</span></button>' +
@@ -1018,7 +1075,173 @@
         wireEditSwatches(editInput.closest('.wch-proj-edit'));
         try { editInput.focus(); editInput.select(); } catch (_) {}
       }
+
+      /* (Re)start the line-by-line streamer on every live row. The DOM is rebuilt
+         on each render, so old streamers self-stop (their node is detached) and
+         fresh ones take over here. */
+      if (!railMode) {
+        var liveIdx = 0;
+        listEl.querySelectorAll('.wch-item-live').forEach(function (row) {
+          var it = findItem(row.getAttribute('data-wch-id'));
+          var textEl = row.querySelector('.wch-stream-text');
+          if (it && textEl) startStream(textEl, streamLinesFor(it), streamTiming(liveIdx++));
+        });
+      }
     }
+
+    /* ── Live conversation streamer ─────────────────────────────────────────
+       Reveals one line at a time, word-by-word, then clears and streams the
+       next — mirroring the chat's streaming feel while keeping the row to a
+       single visible line. Self-stops once its element leaves the DOM. */
+    function findItem(id) {
+      for (var i = 0; i < items.length; i++) { if (items[i].id === id) return items[i]; }
+      return null;
+    }
+    var DEFAULT_STREAM_LINES = [
+      'Searching the catalog for matching products…',
+      'Cross-referencing verified nutrition data…',
+      'Scoring each option for gut & immune health…',
+      'Drafting the side-by-side comparison…'
+    ];
+    function streamLinesFor(it) {
+      return (it && Array.isArray(it.streamLines) && it.streamLines.length) ? it.streamLines : DEFAULT_STREAM_LINES;
+    }
+    /* Distinct, deliberately slow cadences per concurrent live row so no two
+       chats stream in lock-step. Each row draws a base word speed and a between-
+       line pause from its own range, plus a random start offset so they never
+       begin (or clear) together. Beyond these ranges, every single word and
+       pause is re-jittered in startStream, so even two rows on the same profile
+       drift apart. Cycles if there are more live rows than presets. */
+    var STREAM_TIMINGS = [
+      { wordMin: 130, wordVar: 220, pauseMin: 1600, pauseVar: 1600, startMax: 900 },
+      { wordMin: 220, wordVar: 320, pauseMin: 2600, pauseVar: 2400, startMax: 2200 },
+      { wordMin: 170, wordVar: 260, pauseMin: 2000, pauseVar: 2000, startMax: 1500 }
+    ];
+    function streamTiming(i) { return STREAM_TIMINGS[i % STREAM_TIMINGS.length]; }
+    function rand(min, span) { return min + Math.random() * span; }
+    function startStream(textEl, lines, t) {
+      if (!textEl || !lines || !lines.length) return;
+      t = t || STREAM_TIMINGS[0];
+      var idx = 0;
+      function typeLine() {
+        if (!textEl.isConnected) return;
+        var words = String(lines[idx % lines.length]).split(' ');
+        var w = 0;
+        textEl.textContent = '';
+        (function step() {
+          if (!textEl.isConnected) return;
+          if (w >= words.length) {
+            idx++;
+            /* Randomized between-line "thinking" pause, occasionally much longer
+               so the rhythm never feels metronomic. */
+            var pause = rand(t.pauseMin, t.pauseVar);
+            if (Math.random() < 0.22) pause += rand(900, 1600);
+            setTimeout(function () { if (textEl.isConnected) { textEl.textContent = ''; typeLine(); } }, pause);
+            return;
+          }
+          /* Append each word in its own span so it can ease in (fade + blur +
+             rise) rather than snapping on. */
+          if (w) textEl.appendChild(document.createTextNode(' '));
+          var span = document.createElement('span');
+          span.className = 'wch-stream-word';
+          span.textContent = words[w];
+          textEl.appendChild(span);
+          w++;
+          /* Per-word jitter, with the odd long hitch mid-line. */
+          var d = rand(t.wordMin, t.wordVar);
+          if (Math.random() < 0.16) d += rand(300, 700);
+          setTimeout(step, d);
+        })();
+      }
+      /* Random stagger on the very first keystroke so concurrent rows are out of
+         phase from the start. */
+      setTimeout(function () { if (textEl.isConnected) typeLine(); }, Math.random() * (t.startMax || 0));
+    }
+
+    /* ── Row hover info card (timestamp · message count · lineage) ──────────── */
+    var infoEl = null;
+    var infoTimer = null;
+    var infoForId = null;
+    function ensureInfoEl() {
+      if (infoEl) return;
+      infoEl = document.createElement('div');
+      infoEl.className = 'wch-info';
+      infoEl.setAttribute('aria-hidden', 'true');
+      (document.body || document.documentElement).appendChild(infoEl);
+    }
+    function infoHtml(it) {
+      var when = dayLabel(it.ts) + ' · ' + timeLabel(it.ts);
+      var msgs = (it.count === 1) ? '1 message' : (it.count || 0) + ' messages';
+      var h = '<div class="wch-info-title">' + esc(it.title) + '</div>';
+      if (it.live) {
+        h += '<div class="wch-info-row is-live"><span class="material-symbols-outlined">bolt</span><span>Responding now…</span></div>';
+      }
+      h += '<div class="wch-info-row"><span class="material-symbols-outlined">schedule</span><span>' + esc(when) + '</span></div>';
+      h += '<div class="wch-info-row"><span class="material-symbols-outlined">forum</span><span>' + esc(msgs) + '</span></div>';
+      if (it.fork) {
+        h += '<div class="wch-info-row"><span class="material-symbols-outlined">alt_route</span><span>Forked from ' + esc(it.fork.from || 'a conversation') + '</span></div>';
+      }
+      if (it.mcp) {
+        h += '<div class="wch-info-row"><span class="material-symbols-outlined">dns</span><span>Used the MCP server</span></div>';
+      }
+      return h;
+    }
+    function placeInfo(row) {
+      var r = row.getBoundingClientRect();
+      var pw = infoEl.offsetWidth, ph = infoEl.offsetHeight, m = 8;
+      var left, top;
+      if (r.top - ph - 8 >= m) {
+        /* Preferred: floated just above the row, left-aligned. */
+        left = r.left;
+        top = r.top - ph - 8;
+        infoEl.style.transformOrigin = 'top left';
+      } else {
+        /* No room above → sit to the RIGHT of the row, vertically centred
+           (never directly below, per the popover conventions). */
+        left = r.right + 10;
+        top = r.top + r.height / 2 - ph / 2;
+        infoEl.style.transformOrigin = 'left center';
+      }
+      left = Math.max(m, Math.min(left, window.innerWidth - pw - m));
+      top = Math.max(m, Math.min(top, window.innerHeight - ph - m));
+      infoEl.style.left = Math.round(left) + 'px';
+      infoEl.style.top = Math.round(top) + 'px';
+    }
+    function showInfo(row) {
+      if (railMode) return;
+      var id = row.getAttribute('data-wch-id');
+      if (!id) return;
+      var it = findItem(id);
+      if (!it) return;
+      ensureInfoEl();
+      infoForId = id;
+      infoEl.innerHTML = infoHtml(it);
+      infoEl.classList.remove('is-vis');
+      placeInfo(row);
+      void infoEl.offsetWidth;                 /* reflow so the enter transition plays */
+      infoEl.classList.add('is-vis');
+    }
+    function hideInfo() {
+      clearTimeout(infoTimer);
+      infoForId = null;
+      if (infoEl) infoEl.classList.remove('is-vis');
+    }
+    listEl.addEventListener('mouseover', function (e) {
+      var row = e.target.closest('.wch-item[data-wch-id]');
+      if (!row || railMode) return;
+      if (row.getAttribute('data-wch-id') === infoForId) return;
+      clearTimeout(infoTimer);
+      infoTimer = setTimeout(function () { showInfo(row); }, 240);
+    });
+    listEl.addEventListener('mouseout', function (e) {
+      var row = e.target.closest('.wch-item[data-wch-id]');
+      if (!row) return;
+      if (e.relatedTarget && row.contains(e.relatedTarget)) return;
+      hideInfo();
+    });
+    listEl.addEventListener('scroll', hideInfo, true);
+    window.addEventListener('scroll', hideInfo, true);
+    window.addEventListener('resize', hideInfo);
 
     /* ── Inline project name editor (create + rename) ── */
     function commitEdit(input, save) {
@@ -1121,6 +1344,7 @@
     }
     function openPopover(html, anchor) {
       closePopover();
+      hideInfo();
       popEl = document.createElement('div');
       popEl.className = 'wch-pop';
       popEl.__anchor = anchor || null;

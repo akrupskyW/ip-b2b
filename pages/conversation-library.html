@@ -338,11 +338,10 @@
        Remove utility tiles stay plain). */
     .lib-fstat[data-folder-id]::before,
     .lib-fstat.is-editing::before {
-      content: ""; position: absolute; top: -7px; left: 16px;
-      width: 44px; height: 9px;
+      content: ""; position: absolute; top: -9px; left: 0;
+      width: 44px; height: 14px;
       background: var(--lib-folder-color, var(--primary));
-      border-radius: 6px 6px 0 0;
-      clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
+      clip-path: path("M 2 0 L 32 0 L 44 8 L 6 8 Q 0 8 0 14 L 0 2 Q 0 0 2 0 Z");
     }
     /* The border stroke around a folder tile matches its tab color. */
     .lib-fstat[data-folder-id],

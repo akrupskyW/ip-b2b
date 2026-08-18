@@ -882,6 +882,23 @@
     .wa-detail-sub { font-size: 12px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
     .wa-chiplist { display: flex; flex-wrap: wrap; gap: 6px; }
     .wa-ing-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 26%, transparent); color: var(--sec-red-text); }
+    /* Static chips in a detail pane — same 28px family as .chip, no pointer. */
+    .wa-chiplist > .chip { cursor: default; }
+    .wa-chiplist > .chip:hover { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); }
+    html.dark .wa-chiplist > .chip:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+
+    /* NOVA group rows — status lives in the numbered circle, never a left stripe. */
+    .wa-nova-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .wa-nova-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+    .wa-nova-n {
+      display: inline-flex; align-items: center; justify-content: center;
+      box-sizing: border-box; width: 28px; height: 28px; flex: 0 0 auto;
+      border-radius: 50%; color: #fff; background: var(--nova-tone);
+      font-size: var(--fs-label); font-weight: 700; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .wa-nova-name { font-weight: 700; font-size: 12.5px; color: var(--text); }
+    .wa-nova-desc { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); margin-top: 2px; }
 
     /* ── Footnote citations (in-transcript) ──────────────────────────────────
        Superscript numbered markers rendered proper-footnote style. A group like
@@ -4948,26 +4965,25 @@
        WISEcode UPF markers) so the chip always opens something actionable. */
     function upfEvalView() {
       const tiers = [
-        { n: 1, tone: 'var(--sec-green)',        name: 'Unprocessed / minimally processed', desc: 'Whole foods \u2014 the edible parts of plants and animals, with nothing or almost nothing added.' },
-        { n: 2, tone: 'var(--ter-amber)',        name: 'Processed culinary ingredients',     desc: 'Oils, butter, sugar and salt pressed or refined from Group 1 foods.' },
-        { n: 3, tone: 'var(--sec-orange, #D27326)', name: 'Processed foods',                   desc: 'Group 1 foods with Group 2 ingredients added \u2014 canned vegetables, cured meats, fresh bread.' },
-        { n: 4, tone: 'var(--sec-red)',          name: 'Ultra-processed (UPF)',              desc: 'Industrial formulations built mostly from extracted substances plus cosmetic additives.' },
+        { n: 1, tone: 'var(--sec-green)', name: 'Unprocessed / minimally processed', desc: 'Whole foods \u2014 the edible parts of plants and animals, with nothing or almost nothing added.' },
+        { n: 2, tone: 'color-mix(in srgb, var(--ter-amber) 62%, #8a5a00)', name: 'Processed culinary ingredients', desc: 'Oils, butter, sugar and salt pressed or refined from Group 1 foods.' },
+        { n: 3, tone: '#D27326', name: 'Processed foods', desc: 'Group 1 foods with Group 2 ingredients added \u2014 canned vegetables, cured meats, fresh bread.' },
+        { n: 4, tone: 'var(--sec-red)', name: 'Ultra-processed (UPF)', desc: 'Industrial formulations built mostly from extracted substances plus cosmetic additives.' },
       ];
       const markers = ['Added & free sugars', 'Refined / interesterified oils', 'Protein isolates', 'Emulsifiers', 'Artificial colors', 'Non-caloric sweeteners', 'Flavor enhancers', 'Thickeners & stabilizers', 'Bulking & anti-caking agents', 'Glazing & firming agents'];
       return `
         <div class="wa-block">
           <div class="wa-notice"><span class="material-symbols-outlined">science</span><span>Paste an ingredient list into the chat and I\u2019ll classify it live. Here\u2019s the framework I use \u2014 <strong>WISEcode UPF</strong>, built on the NOVA scale.</span></div>
           <p class="wa-detail-sub" style="margin-top:16px">The four NOVA groups</p>
-          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <div class="wa-nova-list">
             ${tiers.map((t) => `
-              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-left:3px solid ${t.tone};border-radius:8px">
-                <span style="font-weight:800;color:${t.tone};font-size:13px;min-width:16px">${t.n}</span>
-                <div><div style="font-weight:700;font-size:12.5px;color:var(--text)">${esc(t.name)}</div><div style="font-size:11.5px;line-height:1.5;color:var(--text-muted);margin-top:2px">${esc(t.desc)}</div></div>
+              <div class="wa-nova-row">
+                <span class="wa-nova-n" style="--nova-tone:${t.tone}">${t.n}</span>
+                <div><div class="wa-nova-name">${esc(t.name)}</div><div class="wa-nova-desc">${esc(t.desc)}</div></div>
               </div>`).join('')}
           </div>
           <p class="wa-detail-sub" style="margin-top:16px">UPF markers I scan for (Group 4 signals)</p>
-          <div class="wa-chiplist">${markers.map((m) => `<span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">flag</span>${esc(m)}</span>`).join('')}</div>
-          <div class="wa-table-foot"><span class="material-symbols-outlined">info</span>A single Group 4 marker is usually enough to classify a product as ultra-processed. Paste a list and I\u2019ll show exactly which markers it trips.</div>
+          <div class="wa-chiplist">${markers.map((m) => `<span class="chip"><span class="material-symbols-outlined">flag</span>${esc(m)}</span>`).join('')}</div>
         </div>`;
     }
 
@@ -6296,12 +6312,43 @@
            same verbatim replies the live transcript uses. Bump
            historySeedVersion whenever the seed below changes so every browser
            re-seeds to the latest on next load (clears saved threads there). */
-        historySeedVersion: 3,
+        historySeedVersion: 6,
         historySeed: [
           {
+            /* A conversation that is still running — it streams its answer one
+               line at a time on the History row while you work in another chat,
+               showing that several conversations can be in flight at once. */
+            title: 'Compare oat-milk brands for gut health',
+            msAgo: 1 * 60000,
+            mcp: true,
+            live: true,
+            streamLines: [
+              'Scanning 14 oat-milk products in the catalog\u2026',
+              'Cross-referencing added sugars, oils & gums\u2026',
+              'Oatly Barista leads on gut-health score\u2026',
+              'Flagging 3 brands with seed-oil emulsifiers\u2026',
+              'Building the side-by-side comparison\u2026',
+            ],
+            nextIntents: ['compare', 'spider', 'report'],
+            turns: [
+              { role: 'you', text: 'Compare the top oat-milk brands for gut health' },
+              { role: 'wiseai', text: 'On it — pulling the oat-milk products and scoring each for gut health now.' },
+            ],
+          },
+          {
+            /* A second conversation also mid-stream — proves several chats can
+               be generating at once, each revealing one line at a time. */
             title: 'If I identified as a cat\u2026',
             msAgo: 12 * 60000,
             mcp: true,
+            live: true,
+            streamLines: [
+              'Matching feline dietary needs to the catalog\u2026',
+              'Prioritizing taurine, protein & moisture\u2026',
+              'Ranking wet foods above kibble for hydration\u2026',
+              'Assembling a day of cat-safe meals\u2026',
+            ],
+            nextIntents: ['catnutrients', 'compare'],
             turns: [
               { role: 'you', text: 'If I told you that I identified as a cat, what type of food would you feed me?' },
               { role: 'wiseai', html: INTENT_REPLIES.cat },
@@ -6313,6 +6360,7 @@
             title: 'Build me a gut-healthy brisket recipe',
             msAgo: 40 * 60000,
             mcp: true,
+            nextIntents: ['redochart', 'report'],
             turns: [
               { role: 'you', text: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
               { role: 'wiseai', html: INTENT_REPLIES.brisket },
@@ -6322,6 +6370,7 @@
             title: 'What\u2019s the worst food in our database?',
             msAgo: 2 * 3600000,
             mcp: true,
+            nextIntents: ['cupcake', 'spider'],
             turns: [
               { role: 'you', text: 'What\u2019s the worst food in our database?' },
               { role: 'wiseai', html: INTENT_REPLIES.worst },
@@ -6333,6 +6382,7 @@
             title: 'Best chocolate chip cookie with the least chocolate',
             daysAgo: 1,
             mcp: false,
+            nextIntents: ['report', 'compare'],
             turns: [
               { role: 'you', text: 'Best chocolate chip cookie with the least chocolate' },
               { role: 'wiseai', html: INTENT_REPLIES.cookie },
@@ -6344,6 +6394,7 @@
             title: 'Is this ingredient list ultra-processed?',
             daysAgo: 4,
             mcp: true,
+            nextIntents: ['spider', 'compare', 'worst'],
             turns: [
               { role: 'you', text: 'Is this ingredient list ultra-processed?' },
               { role: 'wiseai', html: INTENT_REPLIES.upf },

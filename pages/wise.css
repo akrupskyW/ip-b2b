@@ -1798,9 +1798,11 @@ html.dark #menu-panel .menu-inner {
   margin-left: 1px;
 }
 
-/* Navigation header — hidden when the brand strip carries the logo. */
+/* Navigation header — hidden when the brand strip carries the logo. Tight
+   top/bottom air so the expanded list sits close to the brand strip + footer. */
 .menu-brand-integrated #menu-panel .menu-panel-body {
-  padding-top: 9px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .menu-panel-header {
@@ -2960,7 +2962,9 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
   padding: 2px 0 !important;
 }
 .menu-brand-integrated #menu-panel.mp-rail .menu-panel-body {
-  padding: calc(9px + 32px) 5px 10px;
+  /* 32px keeps the first icon clear of the toggle floated below the logo;
+     the extra top air + the bottom air are trimmed to tighten the rail. */
+  padding: calc(3px + 32px) 5px 6px;
 }
 /* Collapsed to the bare icon rail, the body must NOT reserve a right-side
    scrollbar gutter: that space (which appears whenever the OS shows scrollbars

@@ -1391,7 +1391,7 @@ export function injectChatExtras() {
        carries the owl instead. */
     .sc-bganim-live .ws-logo-wrap { display: none; }
 
-    /* "Style" segment (Helix / Stamp) — the second row under the Background
+    /* "Style" segment (Helix / Orbit) — the second row under the Background
        animation toggle that picks WHICH ambient field runs. Mirrors the streaming
        "detail" segment; dims + locks with the toggle like the opacity row. */
     .sc-bganim-style { display: flex; align-items: center; gap: 10px;
@@ -1400,68 +1400,6 @@ export function injectChatExtras() {
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
     .sc-bganim-style .sc-stream-seg { margin-left: auto; }
     .sc-bganim-style.is-disabled { opacity: .45; pointer-events: none; }
-
-    /* ── Embossed logo "stamp" background field ──────────────────────────────
-       The alternate Background-animation style: one oversized WISE owl bug
-       pressed into the chat card from the TOP-RIGHT corner (mirrors the report
-       hero watermark in analytics-types.html — .rpt-hero-bug). It rides behind
-       the welcome copy at the same low z as the helix canvas, tinted a hair off
-       the module surface so it mostly melts into the background — then BREATHES:
-       the deboss depth + tint swell in and out so the mark surfaces and recedes,
-       "blending until it doesn't". */
-    .sc-stamp-layer { position: absolute; inset: 0; z-index: 1; overflow: hidden;
-      pointer-events: none; opacity: 0; transition: opacity .55s ease; }
-    .sc-stamp-live .sc-stamp-layer { opacity: 1; }
-    /* Repeated class boosts specificity over page-level opaque welcome washes
-       (same trick as .sc-bganim-live above), so the stamp shows through the
-       welcome/tint skins in every theme. */
-    .sc-stamp-live.sc-stamp-live.sc-stamp-live .sc-welcome,
-    .sc-stamp-live.sc-stamp-live.sc-stamp-live #welcome-screen { background: transparent !important; }
-    /* The stamp carries the brand mark, so the centre owl/pulse logo steps aside
-       (as it does under the live helix). */
-    .sc-stamp-live .ws-logo-wrap { display: none; }
-    .sc-stamp-bug {
-      position: absolute; top: 0; right: 0;
-      width: min(1180px, 150%); height: auto;
-      transform: translate(24%, -22%) rotate(-16deg);
-      transform-origin: top right;
-      /* Tinted a hair off the card surface so the mark reads as pressed into the
-         same material; --sc-stamp-peak (set from the shared opacity slider)
-         scales how far it surfaces at the peak of each breath. */
-      color: color-mix(in srgb, var(--primary) 15%, var(--surface));
-      filter: drop-shadow(0 1.5px 0 rgba(255, 255, 255, 0.14));
-      opacity: 0;
-      animation: scStampBreathe 8s ease-in-out infinite;
-      will-change: opacity, filter;
-    }
-    .sc-stamp-bug svg { display: block; width: 100%; height: auto; }
-    /* Dark card: press the mark into the navy with a bright-accent tint and a dark
-       engrave shadow (a white highlight would glow rather than recess on navy). */
-    html.dark .sc-stamp-bug {
-      color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, #1A2339);
-      filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, 0.4));
-    }
-    /* Blue chat surface (chat-tint) repaints the card — match the stamp tint to it. */
-    html.chat-tint:not(.dark) .sc-stamp-bug { color: color-mix(in srgb, var(--primary) 17%, #fff); }
-    html.dark.chat-tint .sc-stamp-bug { color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 20%, #1A2339); }
-    /* Breathe: opacity dips near-invisible (blends into the card) then swells to
-       the peak while the engrave shadow deepens — the "insetness comes and goes". */
-    @keyframes scStampBreathe {
-      0%, 100% { opacity: calc(var(--sc-stamp-peak, 0.5) * 0.1);
-        filter: drop-shadow(0 0.5px 0 rgba(255, 255, 255, 0.06)); }
-      50% { opacity: var(--sc-stamp-peak, 0.5);
-        filter: drop-shadow(0 2px 1px rgba(255, 255, 255, 0.22)) drop-shadow(0 -1.5px 0 rgba(0, 0, 0, 0.12)); }
-    }
-    @keyframes scStampBreatheDark {
-      0%, 100% { opacity: calc(var(--sc-stamp-peak, 0.5) * 0.1);
-        filter: drop-shadow(0 0.5px 0 rgba(0, 0, 0, 0.18)); }
-      50% { opacity: var(--sc-stamp-peak, 0.5);
-        filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45)) drop-shadow(0 -1.5px 0 rgba(255, 255, 255, 0.06)); }
-    }
-    html.dark .sc-stamp-bug { animation-name: scStampBreatheDark; }
-    @media (prefers-reduced-motion: reduce) {
-      .sc-stamp-bug { animation: none; opacity: calc(var(--sc-stamp-peak, 0.5) * 0.6); }
-    }
 
     /* ── Grouped, two-column three-dot menu ──────────────────────────────────
        The chat "More options" popover runs a long list of controls. Rather than
@@ -2254,79 +2192,15 @@ export function createHelixBgAnim(cfg) {
   return { start, stop, pause, resume };
 }
 
-/* ------------------------------------------------------------------ */
-/* Welcome "Background animation" — embossed logo STAMP (shared)       */
-/* ------------------------------------------------------------------ */
-/* The alternate Background-animation style. Rather than the DNA/RNA helix
-   canvas, this presses a single oversized WISE owl bug into the chat card from
-   the top-right corner (mirroring the report-hero watermark in
-   analytics-types.html) and breathes it in and out: the mark blends into the
-   card surface, then surfaces as an engraved stamp, then recedes again. It's a
-   pure CSS/DOM overlay (no canvas, no rAF) so it stays cheap and matches the
-   helix engine's { start, stop, pause, resume } surface, letting the shared
-   controller swap the two styles behind one facade. cfg mirrors
-   createHelixBgAnim: { host, getBody, getOpacity, reducedMotion, isOn, isPaused }. */
-export function createStampBgAnim(cfg) {
-  const host = cfg.host;
-  const getBody = cfg.getBody;
-  const getOpacity = typeof cfg.getOpacity === 'function' ? cfg.getOpacity : () => 0.2;
-  const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
-  const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
-  let layer = null, bug = null;
-
-  function ensure() {
-    if (layer) return;
-    const body = getBody();
-    if (!body) return;
-    layer = document.createElement('div');
-    layer.className = 'sc-stamp-layer';
-    layer.setAttribute('aria-hidden', 'true');
-    bug = document.createElement('div');
-    bug.className = 'sc-stamp-bug';
-    bug.innerHTML = OWL_BUG;
-    layer.appendChild(bug);
-    body.insertBefore(layer, body.firstChild);
-  }
-
-  /* Map the shared 0.1–1 opacity slider to the breath's PEAK opacity. The mark is
-     meant to mostly melt into the card and only surface at the peak of each
-     breath, so we lift the slider value (a touch over 2×, capped at 1) — the
-     20% default reads as a ~0.5 peak that dips to near-invisible at the trough. */
-  function applyOpacity() {
-    if (!bug) return;
-    const o = Math.max(0.1, Math.min(1, getOpacity()));
-    bug.style.setProperty('--sc-stamp-peak', String(Math.min(1, o * 2.5)));
-  }
-  function applyPaused() {
-    if (bug) bug.style.animationPlayState = isPaused() ? 'paused' : 'running';
-  }
-
-  function start() {
-    if (!isOn() || typeof document === 'undefined') return;
-    ensure();
-    if (!layer) return;
-    applyOpacity();
-    host.classList.add('sc-stamp-live');
-    applyPaused();
-  }
-  function stop() {
-    host.classList.remove('sc-stamp-live');
-  }
-  function pause() { if (bug) bug.style.animationPlayState = 'paused'; }
-  function resume() { if (bug) bug.style.animationPlayState = 'running'; }
-
-  return { start, stop, pause, resume, redraw: applyOpacity };
-}
-
-/* Third ambient style: the owl "orbit" constellation. Unlike helix/stamp this
+/* Third ambient style: the owl "orbit" constellation. Unlike helix this
    engine paints nothing itself — the owl-centered node web is the welcome
    screen's own decoration (js/welcome-orbit.js auto-enhances every
-   `.ws-logo-wrap`). That web is only ever HIDDEN by the helix/stamp live classes
-   (which set `.ws-logo-wrap { display:none }`); so "running" the orbit just means
-   leaving the owl visible — i.e. adding NEITHER of those classes. We still tag
+   `.ws-logo-wrap`). That web is only ever HIDDEN by the helix live class
+   (which sets `.ws-logo-wrap { display:none }`); so "running" the orbit just means
+   leaving the owl visible — i.e. not adding that class. We still tag
    the host with `sc-orbit-live` so the choice reads back and any future styling
    can hook it. start() is effectively a no-op beyond that; the facade's stop()
-   (which tears down the helix/stamp engines) is what reveals the owl again. */
+   (which tears down the helix engine) is what reveals the owl again. */
 export function createOrbitBgAnim(cfg) {
   const host = cfg.host;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
@@ -3029,6 +2903,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return list.concat({ intent: ASK_HELP_INTENT, label: askHelpLabel, icon: 'help', ask: askHelpLabel });
   };
   intents = withAskHelpChip(intents);
+  /* The chip set the welcome (and a brand-new conversation) should return to.
+     History restore may swap `intents` to a follow-up subset for that thread;
+     Start-new / setIntents keep this session catalog separate so a restored
+     chat never permanently replaces the surface's own prompts. */
+  let sessionIntents = intents.slice();
+  const intentCatalog = new Map();
+  function catalogize(list) {
+    (list || []).forEach((c) => { if (c && c.intent) intentCatalog.set(c.intent, c); });
+  }
+  catalogize(intents);
 
   /* ── "Open module" narration ──────────────────────────────────────────────
      Any WISEcodeAI reply that narrates opening a companion module ("Opened the
@@ -3312,14 +3196,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgAnimPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
-  /* Which background-animation STYLE runs — the food-DNA 'helix' (default) or the
-     embossed logo 'stamp'. Shared APP-WIDE (one key, broadcast on
+  /* Which background-animation STYLE runs — the food-DNA 'helix' (default) or
+     the owl 'orbit'. Shared APP-WIDE (one key, broadcast on
      wise:chat-bg-anim-style) so every mounted chat's segment + live field follow
-     the one shared choice. */
+     the one shared choice. A leftover 'stamp' preference (removed) falls back
+     to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'stamp', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'orbit'];
   let bgAnimStyle = 'helix';
-  try { const s = localStorage.getItem(BGANIM_STYLE_KEY); if (BGANIM_STYLES.includes(s)) bgAnimStyle = s; } catch (_) {}
+  try {
+    const s = localStorage.getItem(BGANIM_STYLE_KEY);
+    if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
+    else if (BGANIM_STYLES.includes(s)) bgAnimStyle = s;
+  } catch (_) {}
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
      shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
      broadcast on the wise:chat-stream-level event) so every mounted chat module
@@ -3417,7 +3306,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <span class="sc-bganim-style-label">Style</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">
               <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="true" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>
-              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="stamp" role="radio" aria-checked="false" title="Embossed logo stamp" aria-label="Embossed logo stamp">Stamp</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
             </div>
           </div>
@@ -3640,8 +3528,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      reply, and detach it while the user is typing / WISEcodeAI is thinking. */
   const inlineChips = opts.inlineChips === true;
   let ichipsEl = null;
-  function parkInlineChips() {
-    if (!inlineChips || !messages) return;
+  function parkInlineChips(force) {
+    if ((!inlineChips && !force) || !messages) return;
     if (!ichipsEl) {
       ichipsEl = document.createElement('div');
       ichipsEl.className = 'sc-inline-chips ws-chips';
@@ -5491,10 +5379,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      fade. The canvas is created lazily the first time the animation is turned on,
      lives behind the welcome content (which goes transparent while live), and is
      torn down to a cleared, faded layer the instant the transcript advances. */
-  /* The welcome-only ambient field. Two styles share one facade so all the
+  /* The welcome-only ambient field. Helix and orbit share one facade so all the
      start/stop/pause/resume call sites below stay style-agnostic: the DNA/RNA
      product 'helix' (createHelixBgAnim — the SAME engine every other chat
-     surface uses) and the embossed logo 'stamp' (createStampBgAnim). Each engine
+     surface uses) and the owl orbit (createOrbitBgAnim). Each engine
      is built lazily the first time its style runs; switching style stops the old
      field and (if the welcome is up) starts the new one in its place. */
   const bgAnimCommon = {
@@ -5508,9 +5396,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const bgAnimEngines = {};
   const bgAnimEngine = (style) => {
     if (!bgAnimEngines[style]) {
-      bgAnimEngines[style] = style === 'stamp'
-        ? createStampBgAnim(bgAnimCommon)
-        : style === 'orbit'
+      bgAnimEngines[style] = style === 'orbit'
           ? createOrbitBgAnim(bgAnimCommon)
           : createHelixBgAnim(bgAnimCommon);
     }
@@ -5527,7 +5413,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     setStyle(style) {
       if (!BGANIM_STYLES.includes(style) || style === bgAnimStyle) return;
       const live = rootEl.classList.contains('sc-bganim-live')
-        || rootEl.classList.contains('sc-stamp-live')
         || rootEl.classList.contains('sc-orbit-live');
       this.stop();
       bgAnimStyle = style;
@@ -5547,7 +5432,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* The opacity slider (below the toggle) dims + locks while the animation is off. */
     const detail = rootEl.querySelector('.sc-bganim-detail');
     if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
-    /* The style segment (Helix / Stamp) reflects the shared choice and stays
+    /* The style segment (Helix / Orbit) reflects the shared choice and stays
        ALWAYS interactive — even when the field is off — so it reads as a real,
        discoverable choice (picking a style turns the animation on, below). */
     const styleRow = rootEl.querySelector('.sc-bganim-style');
@@ -5626,7 +5511,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     syncBgAnimMenu();
     applyBgAnimPaused();
   });
-  /* Style segment (Helix / Stamp) — pick which ambient field runs. Persist +
+  /* Style segment (Helix / Orbit) — pick which ambient field runs. Persist +
      broadcast so every mounted chat swaps in lockstep; setStyle() hot-swaps a
      live field so the change is visible immediately without leaving the welcome. */
   document.addEventListener('wise:chat-bg-anim-style', (e) => {
@@ -5879,8 +5764,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (messages) messages.innerHTML = '';
     clearAttachments();
     closeAgents();
-    /* A brand-new conversation gets a clean chip set — nothing is spent yet. */
-    if (usedIntents.size) { usedIntents.clear(); renderChips(); }
+    detachInlineChips();
+    /* A brand-new conversation returns to the session's own chips — not the
+       follow-up subset a restored History thread may have swapped in. */
+    intents = sessionIntents.slice();
+    usedIntents.clear();
+    renderChips();
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
@@ -5967,6 +5856,106 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
   }
+  /* ── History restore: persist the transcript + park follow-up intents ────
+     Selecting a saved thread must keep that conversation on screen (welcome
+     stays hidden) AND offer the next possible intents for THAT chat — not the
+     welcome's full chip set. Spent chips from the thread stay dimmed; leftover
+     related prompts trail the last turn as inline chips. */
+  const HISTORY_CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+  const HISTORY_STOP = new Set(['the','and','for','with','this','that','from','what','whats','how','you','your','our','was','would','about','into','then','than','just','more','tell','show','make','made','best','least']);
+  const HISTORY_WEAK = new Set(['food','foods','list','database','recipe','chart','report']);
+  function historyTokens(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter((w) => w.length > 2 && !HISTORY_STOP.has(w));
+  }
+  function historyPlain(html) {
+    try {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html || '';
+      tmp.querySelectorAll('.sc-line-meta, .sc-fb-wrap, .sc-inline-chips').forEach((n) => n.remove());
+      return (tmp.textContent || '').replace(/\s+/g, ' ').trim();
+    } catch (_) { return ''; }
+  }
+  function historyUserLines(html) {
+    try {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html || '';
+      return Array.from(tmp.querySelectorAll('.sc-line-you')).map((n) => {
+        const body = n.querySelector('.sc-line-body') || n;
+        const clone = body.cloneNode(true);
+        clone.querySelectorAll('.sc-line-meta').forEach((m) => m.remove());
+        return (clone.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      }).filter(Boolean);
+    } catch (_) { return []; }
+  }
+  function chipByIntentId(id) {
+    if (!id) return null;
+    return intentCatalog.get(id) || sessionIntents.find((c) => c && c.intent === id)
+      || intents.find((c) => c && c.intent === id) || null;
+  }
+  function inferUsedIntents(html) {
+    const users = historyUserLines(html);
+    const used = [];
+    sessionIntents.forEach((c) => {
+      if (!c || !c.intent || HISTORY_CONTROL.has(c.intent)) return;
+      const ask = String(c.ask || c.label || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (!ask) return;
+      if (users.some((t) => t === ask || t.includes(ask) || (t.length > 18 && ask.includes(t)))) used.push(c.intent);
+    });
+    return used;
+  }
+  function scoreChipAgainst(tokens, chip) {
+    if (!chip) return 0;
+    const words = historyTokens((chip.ask || '') + ' ' + (chip.label || '') + ' ' + (chip.intent || ''));
+    let n = 0;
+    let strong = false;
+    words.forEach((w) => {
+      if (!tokens.has(w)) return;
+      if (HISTORY_WEAK.has(w)) n += 0.5;
+      else { n += 1; strong = true; }
+    });
+    return strong ? n : 0;
+  }
+  function resolveFollowupIntents(item, html, title) {
+    const named = Array.isArray(item && item.nextIntents) ? item.nextIntents : null;
+    if (named && named.length) {
+      return named.map((n) => (n && typeof n === 'object') ? n : chipByIntentId(n))
+        .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent));
+    }
+    const corpus = historyTokens((title || '') + ' ' + historyPlain(html));
+    const bag = new Set(corpus);
+    return sessionIntents
+      .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent))
+      .map((c) => ({ c, s: scoreChipAgainst(bag, c) }))
+      .filter((x) => x.s >= 1)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 5)
+      .map((x) => x.c);
+  }
+  function applyHistoryRestore(item) {
+    item = item || {};
+    const html = (messages && messages.innerHTML) || item.html || '';
+    usedIntents.clear();
+    const savedUsed = Array.isArray(item.usedIntents) && item.usedIntents.length
+      ? item.usedIntents
+      : inferUsedIntents(html);
+    savedUsed.forEach((id) => { if (id && id !== ASK_HELP_INTENT) usedIntents.add(id); });
+    const follow = resolveFollowupIntents(item, html, item.title || '');
+    /* Follow-ups for THIS thread only. An empty related set still keeps the
+       standing "What can I ask?" chip so the transcript isn't a dead end. */
+    intents = withAskHelpChip(follow);
+    catalogize(intents);
+    renderChips();
+    parkInlineChips(true);
+    if (ichipsEl && !prefersReducedMotion) {
+      const chips = Array.from(ichipsEl.children);
+      chips.forEach(primeRevealFromRight);
+      revealStaggered(chips, 110, 55, scrollToEnd);
+    } else {
+      scrollToEnd();
+    }
+  }
+
   /* Convert opts.historySeed — [{ title, turns, daysAgo?, msAgo? }] — into the
      store items the history sidebar seeds itself with on first mount. */
   const historySeed = Array.isArray(opts.historySeed) ? opts.historySeed.filter(Boolean) : null;
@@ -5986,6 +5975,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         count: turns.length,
         ts,
         mcp: conv.mcp === true,
+        /* A currently-streaming conversation: the row shows a pulsing live dot
+           and streams `streamLines` one at a time (several chats can run at
+           once). */
+        live: conv.live === true,
+        streamLines: Array.isArray(conv.streamLines) ? conv.streamLines : null,
+        usedIntents: Array.isArray(conv.usedIntents) ? conv.usedIntents.slice() : null,
+        nextIntents: Array.isArray(conv.nextIntents) ? conv.nextIntents.slice() : null,
       };
     });
   }
@@ -6020,8 +6016,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       breakoutStartHidden: opts.historyBreakoutHidden === true,
       mcpFilter: opts.historyMcpFilter === true,
       onNew: () => reset(),
-      /* Keep a broken-out Turns module in sync when a saved thread is restored. */
-      onRestore: () => refreshDockedTurns(),
+      /* Persist the restored transcript and park follow-up intents for that
+         thread; keep a broken-out Turns module in sync. */
+      onRestore: (item) => { applyHistoryRestore(item); refreshDockedTurns(); },
+      getMeta: () => ({
+        usedIntents: Array.from(usedIntents),
+        nextIntents: intents
+          .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent))
+          .map((c) => c.intent),
+      }),
       stripSelectors: ['.sc-inline-chips', '.sc-line-typing', '.sc-line-trace'],
       setHTML: (html) => {
         messages.innerHTML = html || '';
@@ -6034,7 +6037,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         welcome?.classList.add('sc-hidden');
         if (welcome) welcome.style.display = '';
         closeAgents();
-        if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
+        rootEl.classList.add('sc-conversing');
+        if (persistChips) { requestAnimationFrame(refreshPersistChips); }
         scrollToEnd();
         refreshDockedTurns();
       },
@@ -6555,7 +6559,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        and repaint any reduced-motion still frame (the live rAF loop self-updates). */
     if (!bgAnimOpacityUserSet) {
       syncBgAnimMenu();
-      if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-stamp-live'))) bgAnim.start();
+      if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-orbit-live'))) bgAnim.start();
     }
   };
   rootEl.addEventListener('click', (e) => {
@@ -6974,7 +6978,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgAnimOn } })); } catch (_) {}
     }
     else if (action === 'bg-anim-style') {
-      /* Pick the ambient field's style (helix · stamp). Keep the menu open so the
+      /* Pick the ambient field's style (helix · orbit). Keep the menu open so the
          segment selection reads back immediately; persist + broadcast so the
          wise:chat-bg-anim-style listener swaps the live field here and on every
          sibling chat. */
@@ -6985,7 +6989,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: if the field was
-           off, turn it on now so choosing "Stamp" (or "Helix") isn't a dead
+           off, turn it on now so choosing "Orbit" (or "Helix") isn't a dead
            control. Broadcast so every sibling chat + this menu's switch follow. */
         if (!bgAnimOn) {
           bgAnimOn = true;
@@ -7137,7 +7141,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   function setIntents(newIntents, newReplies) {
     /* Re-append the "What can I ask?" chip so it survives contextual swaps. */
-    if (Array.isArray(newIntents)) intents = withAskHelpChip(newIntents.slice());
+    if (Array.isArray(newIntents)) {
+      intents = withAskHelpChip(newIntents.slice());
+      sessionIntents = intents.slice();
+      catalogize(intents);
+    }
     if (newReplies && typeof newReplies === 'object') {
       intentReplies = Object.assign({}, intentReplies || {}, newReplies);
     }
@@ -7344,19 +7352,22 @@ export function wireStandardChatMenu(cfg = {}) {
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
   const effOpacity = () => (bgUserSet ? bgOpacity : 0.20);
-  /* Background-animation STYLE (helix · stamp) — shared app-wide, same key/event
-     as the mounted module so every surface swaps in lockstep. */
+  /* Background-animation STYLE (helix · orbit) — shared app-wide, same key/event
+     as the mounted module so every surface swaps in lockstep. A leftover 'stamp'
+     preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'stamp', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'orbit'];
   let bgStyle = 'helix';
-  try { const s = localStorage.getItem(BGANIM_STYLE_KEY); if (BGANIM_STYLES.includes(s)) bgStyle = s; } catch (_) {}
+  try {
+    const s = localStorage.getItem(BGANIM_STYLE_KEY);
+    if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
+    else if (BGANIM_STYLES.includes(s)) bgStyle = s;
+  } catch (_) {}
   /* Inline chats copied the menu markup before the Style row existed; inject it
      (before the playback row) so every hand-rolled surface gains the segment too,
-     keeping the whole app's chat menus identical. All THREE ambient styles ship
-     here: helix · stamp · orbit. */
+     keeping the whole app's chat menus identical. Helix and orbit ship here. */
   const bgStyleSegHtml = ''
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
-    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="stamp" role="radio" aria-checked="false" title="Embossed logo stamp" aria-label="Embossed logo stamp">Stamp</button>'
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>';
   const existingStyleRow = q('.sc-bganim-style');
   if (!existingStyleRow) {
@@ -7371,12 +7382,13 @@ export function wireStandardChatMenu(cfg = {}) {
         + '</div></div>';
       anchor.insertAdjacentHTML(playbackRow ? 'beforebegin' : 'afterend', styleHtml);
     }
-  } else if (!existingStyleRow.querySelector('[data-style="orbit"]')) {
-    /* Older markup with only helix/stamp — add the Orbit segment so every
-       surface offers all three. */
-    const seg = existingStyleRow.querySelector('.sc-stream-seg');
-    if (seg) seg.insertAdjacentHTML('beforeend',
-      '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>');
+  } else {
+    existingStyleRow.querySelectorAll('[data-style="stamp"]').forEach((el) => el.remove());
+    if (!existingStyleRow.querySelector('[data-style="orbit"]')) {
+      const seg = existingStyleRow.querySelector('.sc-stream-seg');
+      if (seg) seg.insertAdjacentHTML('beforeend',
+        '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>');
+    }
   }
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl
@@ -7397,9 +7409,7 @@ export function wireStandardChatMenu(cfg = {}) {
         isOn: () => bgOn,
         isPaused: () => bgPaused,
       };
-      bgEngines[style] = style === 'stamp'
-        ? createStampBgAnim(common)
-        : style === 'orbit'
+      bgEngines[style] = style === 'orbit'
           ? createOrbitBgAnim(common)
           : createHelixBgAnim(common);
     }
@@ -7506,7 +7516,7 @@ export function wireStandardChatMenu(cfg = {}) {
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: turn the field on
-           if it was off so "Stamp" (or "Helix") isn't a dead control. */
+           if it was off so "Orbit" (or "Helix") isn't a dead control. */
         if (!bgOn) {
           bgOn = true;
           try { localStorage.setItem(BGANIM_KEY, '1'); } catch (_) {}

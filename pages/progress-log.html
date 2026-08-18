@@ -127,6 +127,14 @@
     }
     html.dark .pl-select { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .pl-select:hover { color: var(--text); border-color: var(--primary); }
+    /* View toggle — canonical segmented control (mirrors .rf-basis). */
+    .pl-seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 9999px; flex: 0 0 auto; }
+    html.dark .pl-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pl-seg-btn { display: inline-flex; align-items: center; gap: 5px; font-family: inherit; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 9999px; padding: 6px 12px; cursor: pointer; transition: background .16s, color .16s; }
+    .pl-seg-btn:hover:not(.is-active) { color: var(--text); }
+    .pl-seg-btn.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+    html.dark .pl-seg-btn.is-active { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .pl-seg-btn .material-symbols-outlined { font-size: 15px; }
 
     /* ── Scorecards — the canonical clickable stat card (mirrors .rf-stat).
        Summary cards are read-outs; category cards double as list filters.
@@ -184,11 +192,28 @@
     }
     html.dark .pl-tally-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
     .pl-tally-pill .material-symbols-outlined { font-size: 13px; }
+    /* Per-day "copy the whole day" control — bare icon, circular hover only
+       (no rounded-square backdrop, per the icon rule). */
+    .pl-day-copy {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    .pl-day-copy:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .pl-day-copy:hover { background: rgba(255,255,255,0.08); }
+    .pl-day-copy:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .pl-day-copy.is-copied { color: var(--sec-green); }
+    .pl-day-copy .material-symbols-outlined { font-size: 16px; }
     .pl-collapse-ic { transition: transform .2s; color: var(--text-subtle); }
     .pl-day.is-collapsed .pl-collapse-ic { transform: rotate(-90deg); }
     .pl-day.is-collapsed .pl-day-body { display: none; }
 
-    .pl-day-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    /* Rows (default) vs cards view — toggled by a class on #pl-timeline. */
+    .pl-day-body { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    #pl-timeline.pl-view-cards .pl-day-body { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    /* In rows view each page spans the row and its category columns flow across it. */
+    #pl-timeline.pl-view-rows .pl-pcard-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 22px; align-items: start; }
 
     /* ── Page card ── */
     .pl-pcard { padding: 16px 16px 6px; border-radius: var(--r-md, 16px); background: var(--surface-2); border: 1px solid var(--border); }
@@ -284,6 +309,10 @@
               <button type="button" class="pl-search-clear" id="pl-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>
             </div>
             <select class="pl-select" id="pl-page-filter" aria-label="Filter by page"></select>
+            <div class="pl-seg" id="pl-view-toggle" role="group" aria-label="View as rows or cards">
+              <button type="button" class="pl-seg-btn is-active" data-view="rows" aria-pressed="true" title="View as rows"><span class="material-symbols-outlined" aria-hidden="true">table_rows</span>Rows</button>
+              <button type="button" class="pl-seg-btn" data-view="cards" aria-pressed="false" title="View as cards"><span class="material-symbols-outlined" aria-hidden="true">grid_view</span>Cards</button>
+            </div>
           </div>
           <!-- Read-out summary scorecards -->
           <div class="pl-stats" id="pl-summary" aria-label="Summary"></div>
@@ -441,7 +470,6 @@
       const CATS = [
         { id: 'components',   label: 'Components',   icon: 'widgets' },
         { id: 'features',     label: 'Features',     icon: 'bolt' },
-        { id: 'logic',        label: 'Logic',        icon: 'code' },
         { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
         { id: 'changes',      label: 'Changes',      icon: 'edit' },
         { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
@@ -454,7 +482,7 @@
       const LOG = [
         {
           date: '2026-08-17', rel: 'Monday',
-          summary: 'Dev-handoff catalog on All Modules, deeper View Product, and project-wide conventions + lint tooling.',
+          summary: 'Dev-handoff catalog on All Modules, deeper View Product, a full set of admin-gated Appearance & chat controls to explore, and project-wide conventions + lint tooling.',
           entries: [
             { page: 'All Modules', path: 'all-modules.html',
               components: ['Dev-ready component catalog: buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, composer', 'Typography + design-token specimens', 'Icon inventory browser', 'Motion catalog + streaming-trace demo'],
@@ -465,7 +493,31 @@
               ux: ['Refined ingredient & score tooltips'],
               improvements: ['Wired into the real product photo library'] },
             { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: [
+                'Admin-gated chat three-dot controls, shared by every chat module across the app',
+                'Turns — inspect every turn and fork a new conversation from any point',
+                'Overview cards toggle — show or hide the welcome scorecards',
+                'Intent-chips toggle — show or hide the suggested-question chips',
+                'Compact spacing for a denser transcript',
+                'Brand AI text — recolor the assistant’s replies in the brand ink, app-wide',
+                'Input glow — a living sheen stroke that travels the composer',
+                'Background animation with an opacity slider and three styles (Helix · Stamp · Orbit)',
+                'Response-streaming detail (Full · Steps · Final)',
+                'History & Projects drawer plus a Connect-a-data-source panel',
+              ],
               improvements: ['Refined chat behavior and response pacing'] },
+            { page: 'Appearance & Admin', path: '(appearance popover · every page)',
+              features: [
+                'Admin-gated controls in the shared Appearance popover — badged and identical on every page',
+                'Pivot Navigation — swing the nav rail up into a horizontal top bar',
+                'Blue chat surface — tint the chat pane in the brand blue',
+                'Activity strip — a landmark rail pinned to the chat’s left or right edge',
+                'Jam strip — an in-popover music player with transport, a live equalizer, and a track picker',
+                'Crawl · Walk · Run — step the whole experience between guided and expert',
+                'Module spacing — set the gap between modules (S · M · L · XL)',
+                'Full bleed — take nav, chat, and right modules edge-to-edge, with live color pickers, preset themes, and right-module behavior (Drawer · Flat · Hidden)',
+              ],
+              ux: ['Admin destinations grouped in the popover: Accessibility review (with a live pass/warn/fail verdict), All modules, and this Progress log'] },
             { page: 'Platform-wide', path: '(all pages)',
               logic: ['Normalized topbar + appearance controls so every page renders identical header/theme controls', 'Lint tooling for JavaScript, CSS, and HTML'],
               components: ['Cursor rules: canonical page structure, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines'],
@@ -561,6 +613,7 @@
       let catFilter = null;
       let pageFilter = '__all';
       let searchTerm = '';
+      let view = 'rows'; // 'rows' (default) | 'cards'
       const collapsed = new Set();
 
       /* ── Renderers ── */
@@ -649,12 +702,14 @@
               </div>
               ${entry.isNew ? '<span class="pl-pcard-new"><span class="material-symbols-outlined">fiber_new</span>New</span>' : ''}
             </div>
-            ${blocks}
+            <div class="pl-pcard-cats">${blocks}</div>
           </article>`;
       }
 
       function renderTimeline() {
         const root = document.getElementById('pl-timeline');
+        root.classList.toggle('pl-view-rows', view === 'rows');
+        root.classList.toggle('pl-view-cards', view === 'cards');
         let html = '';
         let visible = 0;
         LOG.forEach((day) => {
@@ -674,7 +729,7 @@
                   <div class="pl-day-date">${fmtDate(day.date)} <span class="pl-day-rel">${day.rel}</span></div>
                   <div class="pl-day-summary">${esc(day.summary)}</div>
                 </div>
-                <div class="pl-day-tally">${tallyPills}<span class="material-symbols-outlined pl-collapse-ic" aria-hidden="true">expand_more</span></div>
+                <div class="pl-day-tally">${tallyPills}<button type="button" class="pl-day-copy" data-copy-day="${day.date}" title="Copy this day's work" aria-label="Copy ${esc(fmtDate(day.date))}'s work"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span></button><span class="material-symbols-outlined pl-collapse-ic" aria-hidden="true">expand_more</span></div>
               </div>
               <div class="pl-day-body">${cards.join('')}</div>
             </section>`;
@@ -737,6 +792,17 @@
       });
       document.getElementById('pl-search-clear').addEventListener('click', () => { setSearch(''); searchInput.focus(); });
       document.getElementById('pl-page-filter').addEventListener('change', (e) => { pageFilter = e.target.value; renderTimeline(); });
+      document.getElementById('pl-view-toggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view]');
+        if (!btn) return;
+        view = btn.dataset.view;
+        document.querySelectorAll('#pl-view-toggle .pl-seg-btn').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderTimeline();
+      });
       /* Category scorecards are single-select filters: tap to isolate, tap the
          active one again to clear back to all. */
       document.getElementById('pl-cat-stats').addEventListener('click', (e) => {
@@ -748,8 +814,77 @@
       });
       const timelineEl = document.getElementById('pl-timeline');
       function toggleDay(head) { const key = head.dataset.day; if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key); renderTimeline(); }
-      timelineEl.addEventListener('click', (e) => { const head = e.target.closest('[data-day]'); if (head) toggleDay(head); });
-      timelineEl.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const head = e.target.closest('[data-day]'); if (!head) return; e.preventDefault(); toggleDay(head); });
+
+      /* ── Copy a full day's work ──
+         Builds a plain-text digest of EVERY page + category for the day (ignores
+         the board's filters — "copy all in a day's work" means the whole day). */
+      function dayPlainText(day) {
+        const lines = [`${fmtDate(day.date)} (${day.rel})`, day.summary, ''];
+        day.entries.forEach((e) => {
+          lines.push(`${e.page} — ${e.path}${e.isNew ? ' (NEW)' : ''}`);
+          CATS.forEach((c) => {
+            const arr = e[c.id];
+            if (Array.isArray(arr) && arr.length) {
+              lines.push(`  ${c.label}:`);
+              arr.forEach((t) => lines.push(`    - ${t}`));
+            }
+          });
+          lines.push('');
+        });
+        return lines.join('\n').trim() + '\n';
+      }
+      function flashCopy(btn) {
+        if (!btn) return;
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (btn.dataset.flashing) return;
+        btn.dataset.flashing = '1';
+        btn.classList.add('is-copied');
+        const prevIc = ic ? ic.textContent : '';
+        const prevTitle = btn.title;
+        if (ic) ic.textContent = 'check';
+        btn.title = 'Copied!';
+        setTimeout(() => {
+          btn.classList.remove('is-copied');
+          if (ic) ic.textContent = prevIc;
+          btn.title = prevTitle;
+          delete btn.dataset.flashing;
+        }, 1200);
+      }
+      function copyText(text, done) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+            return;
+          }
+        } catch (_) {}
+        fallbackCopy(text, done);
+      }
+      function fallbackCopy(text, done) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.top = '-1000px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        } catch (_) {}
+        done();
+      }
+      function copyDay(iso, btn) {
+        const day = LOG.find((d) => d.date === iso);
+        if (!day) return;
+        copyText(dayPlainText(day), () => flashCopy(btn));
+      }
+
+      timelineEl.addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('[data-copy-day]');
+        if (copyBtn) { e.stopPropagation(); copyDay(copyBtn.dataset.copyDay, copyBtn); return; }
+        const head = e.target.closest('[data-day]'); if (head) toggleDay(head);
+      });
+      timelineEl.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const head = e.target.closest('[data-day]'); if (!head) return; if (e.target.closest('[data-copy-day]')) return; e.preventDefault(); toggleDay(head); });
 
       /* ── Width toggle — canonical four-step cycle via the shared pane-width helper ── */
       const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
@@ -874,6 +1009,25 @@
         intentReplies: INTENT_REPLIES,
         reply: (text) => reply(text),
       });
+
+      /* History & Projects entry in the chat's three-dot menu — parity with
+         wiseai.html / reformulation.html (the shared module wires data-sc="history"
+         to open/view the sticky History drawer). Without this the top-right menu
+         is missing its History functionality. */
+      const plMorePop = document.getElementById('pl-chat').querySelector('.topbar-popover');
+      if (plMorePop && !plMorePop.querySelector('[data-sc="history"]')) {
+        const hb = document.createElement('button');
+        hb.type = 'button';
+        hb.className = 'topbar-menu-item sc-mcp-item';
+        hb.setAttribute('data-sc', 'history');
+        hb.setAttribute('role', 'menuitemcheckbox');
+        hb.setAttribute('aria-checked', 'false');
+        hb.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span>';
+        const hd = document.createElement('div');
+        hd.className = 'topbar-menu-divider';
+        plMorePop.insertBefore(hd, plMorePop.firstChild);
+        plMorePop.insertBefore(hb, hd);
+      }
     })();
   </script>
   <script src="../js/table-pagination.js" defer></script>
