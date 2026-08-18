@@ -11566,9 +11566,9 @@
     }
     function confirmSignOut() {
       closeSignOutModal();
-      /* Clear the session, then return to the sign-in screen. */
+      if (typeof window.performSignOut === 'function') { window.performSignOut(); return; }
       if (window.WiseAuth) { WiseAuth.logout(); window.location.href = WiseAuth.loginUrl(); }
-      else { window.location.href = 'login.html'; }
+      else { try { localStorage.removeItem('wise-auth'); } catch (e) {} window.location.href = 'login.html'; }
     }
 
     function addTeamMember(memberId) {

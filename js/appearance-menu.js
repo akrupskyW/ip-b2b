@@ -557,6 +557,47 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
   `;
 }
 
+/* Clear the `wise-auth` session and go to the sign-in screen. Login pages
+   bounce already-authed visitors back into the app (`bounceIfAuthed`), so a
+   Sign-out click that only navigates to login.html looks like it does nothing.
+   Works with or without `js/auth.js` loaded — many shells only ship the guard. */
+export function performSignOut() {
+  try { window.WiseAuth?.logout?.(); } catch (_) {}
+  try { localStorage.removeItem('wise-auth'); } catch (_) {}
+  let url = 'login.html';
+  try {
+    if (window.WiseAuth && typeof window.WiseAuth.loginUrl === 'function') {
+      url = window.WiseAuth.loginUrl();
+    } else if (location.pathname.indexOf('/pages/') === -1) {
+      url = 'pages/login.html';
+    }
+  } catch (_) {}
+  window.location.href = url;
+}
+
+/* Avatar-menu Sign out is a `data-pop-action` row whose click is handled
+   (or swallowed) by each shell's popover bubble listener. Same pattern as
+   topbar.js's colorblind-type picker: intercept in CAPTURE so every page
+   signs out identically, even when a shell only does `location.href = login`. */
+function wireSignOut() {
+  if (typeof document === 'undefined' || document.__wiseSignOutBound) return;
+  document.__wiseSignOutBound = true;
+  if (typeof window !== 'undefined') window.performSignOut = performSignOut;
+  document.addEventListener(
+    'click',
+    (e) => {
+      const item = e.target?.closest?.('[data-pop-action="signout"]');
+      if (!item) return;
+      e.stopPropagation();
+      e.preventDefault();
+      performSignOut();
+    },
+    true
+  );
+}
+
+if (typeof document !== 'undefined') wireSignOut();
+
 /* ------------------------------------------------------------------ */
 /* Shared Appearance popover click handling                            */
 /* ------------------------------------------------------------------ */

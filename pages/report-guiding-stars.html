@@ -765,7 +765,7 @@
           const invoices = ev.target.closest('[data-pop-action="invoices"]');
           if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
-          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); window.performSignOut(); return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
           closePopover();
         });

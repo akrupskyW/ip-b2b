@@ -1191,13 +1191,8 @@
       border-radius: 12px; cursor: pointer; font-family: inherit;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, max-width .35s ease;
     }
-    /* The chip's top row: thumbnail(s) + title. Room is kept at the right for the
-       floating expand / collapse control that rides the chip's top-right corner. */
-    .sc-surface-head { display: flex; align-items: center; gap: 10px; padding-right: 28px; }
-    /* Expanding the output happens WITHIN the chip: the same bordered container
-       widens to give the chart room and reveals the full output beneath its head
-       row, rather than dropping a separate panel outside the chip. */
-    .sc-surface-card:has(.sc-surface-expand.is-open) { max-width: min(560px, 100%); cursor: default; }
+    /* The chip's top row: thumbnail(s) + title. */
+    .sc-surface-head { display: flex; align-items: center; gap: 10px; }
     /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
     html.dark .sc-surface-card { background: #1A2339; }
     html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
@@ -1238,11 +1233,7 @@
     html.dark .sc-surface-ver { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 16%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 32%, transparent); }
     .sc-surface-ver-count { font-weight: 600; opacity: .85; }
 
-    /* ── Surface chip meta row (timestamp + version + inline-expand) ──
-       The timestamp and version no longer sit inside the chip; they float to the
-       LEFT of the turn's meta row underneath it, directly left-aligned, next to a
-       simple (background-less) control that expands the full output inline in the
-       transcript. */
+    /* ── Surface chip meta (timestamp + version live in the turn's ⋯ menu) ── */
     .sc-surface-slot { display: block; }
     .sc-surface-metabar { display: inline-flex; align-items: center; gap: 8px; }
     .sc-surface-ver-num {
@@ -1256,44 +1247,30 @@
       font-size: 11px; font-weight: 600; letter-spacing: .02em;
       color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
-    /* Inline-expand control — a circular icon button floated to the chip's
-       TOP-RIGHT; it toggles the output open/closed inside the chip and stays put
-       in both states so it reads as the chip's own expand/collapse handle. */
-    .sc-surface-expand-btn {
-      position: absolute; top: 5px; right: 5px; z-index: 2;
+
+    /* ── Chart takeover (inside the right sticky output module) ───────────────
+       Each chart block in an artifact pane wears a top-right icon that puts its
+       host sticky module at fill width so it takes over the modules row. Inline
+       expand inside the transcript chip is intentionally gone. */
+    .wa-pane-body > .wa-block:has(> .wa-chart-card) { position: relative; }
+    .wa-chart-takeover-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 4;
       display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; padding: 0; border-radius: 50%;
+      width: 28px; height: 28px; padding: 0; border-radius: 50%;
       border: 1px solid var(--border); background: var(--surface); color: var(--text-subtle);
       box-shadow: 0 1px 3px rgba(15,30,55,0.12);
-      cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, top .2s ease, bottom .2s ease;
+      cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+      opacity: .72;
     }
-    html.dark .sc-surface-expand-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-    .sc-surface-expand-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
-    .sc-surface-expand-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .sc-surface-expand-btn .material-symbols-outlined { font-size: 15px !important; }
-    html.dark .sc-surface-expand-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
-    /* Once expanded, the control becomes a COLLAPSE handle and drops to the
-       chip's bottom-right — you read the chart all the way down, then close it
-       right where your eye lands at the bottom instead of scrolling back up. */
-    .sc-surface-card:has(.sc-surface-expand.is-open) .sc-surface-expand-btn { top: auto; bottom: 5px; }
-    /* Collapsible inline output — a smooth height reveal using the grid 0fr→1fr
-       trick (animatable, unlike auto height). Lives inside the chip, so its
-       reveal grows the chip itself. */
-    .sc-surface-expand { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
-    .sc-surface-expand.is-open { grid-template-rows: 1fr; }
-    .sc-surface-expand-inner {
-      overflow: hidden; min-height: 0; opacity: 0; transform: translateY(-4px);
-      transition: opacity .3s ease .05s, transform .3s ease .05s;
-    }
-    .sc-surface-expand.is-open .sc-surface-expand-inner { opacity: 1; transform: none; }
-    .sc-surface-expand-pad {
-      margin-top: 8px; padding-top: 12px; overflow: hidden;
-      border-top: 1px solid var(--border);
-    }
-    .sc-surface-expand-pad > * { margin: 0 !important; }
-    @media (prefers-reduced-motion: reduce) {
-      .sc-surface-expand, .sc-surface-expand-inner { transition: none; }
-    }
+    .wa-pane-body > .wa-block:has(> .wa-chart-card):hover .wa-chart-takeover-btn,
+    .wa-chart-takeover-btn:focus-visible { opacity: 1; }
+    html.dark .wa-chart-takeover-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .wa-chart-takeover-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
+    .wa-chart-takeover-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .wa-chart-takeover-btn .material-symbols-outlined { font-size: 16px !important; }
+    html.dark .wa-chart-takeover-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
+    .wa-chart-takeover-btn.is-on { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); opacity: 1; }
+    html.dark .wa-chart-takeover-btn.is-on { color: var(--primary-bright, #8B9FAF); }
 
     /* ═══════════ Versioned output — stacked thumbnails ═══════════
        When an output has been redone, its chip shows every version as a
@@ -1310,8 +1287,8 @@
     /* Newest version is emphasized: full opacity + brand ring, the rest recede. */
     .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
     .sc-surface-stack .sc-surface-thumb.is-latest { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
-    /* The version currently mirrored into the chip's inline expansion / pane gets
-       a stronger ring so the stack, the expanded output and the pane all agree. */
+    /* The version currently mirrored into the pane gets a stronger ring so the
+       stack and the pane agree. */
     .sc-surface-stack .sc-surface-thumb.is-active { z-index: 3; border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb { margin-left: -10px; }
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
@@ -3285,7 +3262,7 @@
           const invoices = ev.target.closest('[data-pop-action="invoices"]');
           if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
           const signout = ev.target.closest('[data-pop-action="signout"]');
-          if (signout && pop.contains(signout)) { ev.stopPropagation(); location.href = 'login.html'; return; }
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); window.performSignOut(); return; }
           if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
           closePopover();
         });
@@ -3543,6 +3520,7 @@
         }
       }
       updatePaneVer(dest);
+      ensureChartTakeoverBtns(paneBody[dest]);
     }
 
     /* ── Pane carousel: horizontal thumbnail rail + one-at-a-time output ──
@@ -3981,6 +3959,7 @@
         applyPaneWidth(el, next);
         syncPaneWidthBtn(btn, next);
         recomputeSoloPaneWidth();
+        syncChartTakeoverBtns(which);
       });
     });
     /* The Guiding Stars view is an admin-gated toggle that lives in the module's
@@ -5703,10 +5682,8 @@
 
       /* The timestamp + version no longer live inside the chip — they render in
          the turn's meta row below it (see decorateSurfaceMeta). The chip keeps
-         only the thumbnail + title, and carries a collapsible inline copy of the
-         full output that the meta row's expand control reveals in place. */
-      const expandInner = String(previewHtml == null ? '' : previewHtml).replace(/\sid="[^"]*"/g, '');
-
+         only the thumbnail + title; charts no longer expand inline here — use
+         the takeover icon on the chart in the right sticky module instead. */
       return `<div class="sc-surface-slot">
           <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
             <div class="sc-surface-head">
@@ -5714,10 +5691,6 @@
               <div class="sc-surface-body">
                 <div class="sc-surface-title">${esc(title)}</div>
               </div>
-            </div>
-            <button type="button" class="sc-surface-expand-btn" data-expand-toggle="${blockId}" aria-controls="expand-${blockId}" aria-expanded="false" aria-label="Expand chart inline" data-tip="Expand inline" title="Expand inline"><span class="material-symbols-outlined">open_in_full</span></button>
-            <div class="sc-surface-expand" id="expand-${blockId}" role="region" aria-label="${esc(title)} — expanded inline">
-              <div class="sc-surface-expand-inner"><div class="sc-surface-expand-pad">${expandInner}</div></div>
             </div>
           </div>
         </div>`;
@@ -5730,8 +5703,7 @@
     /* The timestamp + version live INSIDE the turn's three-dot ("more") menu —
        the same collapsed popover that already carries the wall-clock stamp. Drop
        the version number in right after the time so both read together when the
-       menu is opened. The inline-expand control now floats on the chip itself
-       (see surfaceCardHtml), so nothing is added to the visible meta row. */
+       menu is opened. */
     function decorateSurfaceMeta(line, o) {
       if (!line) return;
       const metaEl = line.querySelector('.sc-line-meta');
@@ -5959,19 +5931,62 @@
       } else {
         openPane(e.which, { title: e.title, meta: e.meta, html: e.html });
       }
+      return dest;
     }
 
-    /* Mirror a chosen version into the chip itself: swap the chip's inline
-       expanded output (the copy revealed beneath the head row) to that version
-       and flag its thumbnail as active in the stack — so switching versions up in
-       the chip also switches the output shown at the bottom of the chip, not just
-       the pane on the right. */
-    function syncSurfaceExpand(blockId, entry) {
+    /* Put a right sticky output module at fill width so it takes over the row. */
+    function takeoverPane(which) {
+      const dest = mergedMode ? 'unified' : which;
+      const el = paneEl[dest];
+      if (!el) return;
+      if (!el.classList.contains('is-open')) el.classList.add('is-open');
+      const atFill = paneWidthTier(el) >= 3;
+      const next = atFill ? 0 : 3;
+      applyPaneWidth(el, next);
+      const wb = document.querySelector(`[data-pane-width="${dest}"]`);
+      if (wb) syncPaneWidthBtn(wb, next);
+      recomputeSoloPaneWidth();
+      syncChartTakeoverBtns(dest);
+    }
+
+    /* Top-right open_in_full control on every chart block inside a pane. */
+    function ensureChartTakeoverBtns(root) {
+      if (!root) return;
+      root.querySelectorAll('.wa-block:has(> .wa-chart-card)').forEach((block) => {
+        if (block.querySelector(':scope > .wa-chart-takeover-btn')) return;
+        const pane = block.closest('.wa-pane');
+        const which = pane?.id === 'wa-visuals' ? 'visuals'
+          : pane?.id === 'wa-results' ? 'results'
+          : pane?.id === 'wa-unified' ? 'unified'
+          : (block.dataset.origin || 'visuals');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wa-chart-takeover-btn';
+        btn.setAttribute('data-pane-takeover', which);
+        btn.setAttribute('aria-label', 'Expand output module to fill the screen');
+        btn.title = 'Expand module';
+        btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
+        block.insertBefore(btn, block.firstChild);
+      });
+      ['results', 'visuals', 'unified'].forEach(syncChartTakeoverBtns);
+    }
+
+    function syncChartTakeoverBtns(which) {
+      const el = paneEl[which];
+      if (!el) return;
+      const on = paneWidthTier(el) >= 3;
+      el.querySelectorAll('.wa-chart-takeover-btn').forEach((btn) => {
+        btn.classList.toggle('is-on', on);
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = on ? 'close_fullscreen' : 'open_in_full';
+        btn.title = on ? 'Restore module width' : 'Expand module';
+        btn.setAttribute('aria-label', on ? 'Restore output module width' : 'Expand output module to fill the screen');
+      });
+    }
+
+    /* Flag the active version thumbnail in the stack so the chip and pane agree. */
+    function syncSurfaceVersionThumbs(blockId, entry) {
       if (!entry) return;
-      const pad = document.querySelector(`#expand-${blockId} .sc-surface-expand-pad`);
-      if (pad) {
-        pad.innerHTML = String(entry.previewHtml == null ? '' : entry.previewHtml).replace(/\sid="[^"]*"/g, '');
-      }
       document.querySelectorAll(`.sc-surface-thumb[data-surface-ver="${blockId}"]`).forEach((t) => {
         t.classList.toggle('is-active', Number(t.getAttribute('data-ver')) === entry.version);
       });
@@ -5991,8 +6006,7 @@
       const entry = list[idx];
       const count = list.length;
       const verText = `${verLabel(entry.version)}${count > 1 ? ` · ${count} versions` : ''}`;
-      /* Keep the chip's own inline expansion in lock-step with the pane. */
-      syncSurfaceExpand(blockId, entry);
+      syncSurfaceVersionThumbs(blockId, entry);
       const dest = mergedMode ? 'unified' : e.which;
       const pane = paneEl[dest];
       const body = paneBody[dest];
@@ -6030,6 +6044,7 @@
       updatePaneVer(dest);
       /* Remember the shown version so a later card-body tap reopens the same one. */
       SURFACED[blockId].html = tagged;
+      ensureChartTakeoverBtns(body);
     }
 
     /* When a turn surfaces data, open/refresh the right panes shortly after the
@@ -6571,22 +6586,6 @@
       host.addEventListener('click', (e) => {
         const cite = e.target.closest('[data-cat-ref]');
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
-        /* The meta-row expand control reveals/hides the full output inline in
-           the transcript (a smooth grid-row height animation). The transcript is
-           NOT scrolled — you clicked the control at its position, so you stay put
-           and the output grows in beneath it; scroll on from there yourself. */
-        const expToggle = e.target.closest('[data-expand-toggle]');
-        if (expToggle) {
-          e.preventDefault();
-          const panel = document.getElementById('expand-' + expToggle.getAttribute('data-expand-toggle'));
-          if (panel) {
-            const open = panel.classList.toggle('is-open');
-            expToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            const ic = expToggle.querySelector('.material-symbols-outlined');
-            if (ic) ic.textContent = open ? 'close_fullscreen' : 'open_in_full';
-          }
-          return;
-        }
         /* A specific version thumbnail in the stack opens THAT version on the
            right (checked before the whole-card handler so tapping a version
            doesn't just reopen the latest). */
@@ -6596,20 +6595,12 @@
           openSurfaceVersion(verThumb.getAttribute('data-surface-ver'), Number(verThumb.getAttribute('data-ver')));
           return;
         }
-        /* Clicks inside the chip's inline expanded output shouldn't re-open the
-           pane — the content lives within the chip now, so let it be read /
-           interacted with in place. */
-        if (e.target.closest('.sc-surface-expand')) return;
         const card = e.target.closest('.sc-surface-card[data-surface]');
         if (!card) return;
         reopenSurface(card.getAttribute('data-surface'));
       });
       host.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
-        /* The floating expand control is a real <button> nested in the chip — let
-           its native Enter/Space fire the click (toggle) without ALSO reopening
-           the whole card here. */
-        if (e.target.closest('[data-expand-toggle]')) return;
         const cite = e.target.closest('[data-cat-ref]');
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const verThumb = e.target.closest('.sc-surface-thumb[data-surface-ver]');
@@ -6622,6 +6613,15 @@
         if (!card) return;
         e.preventDefault();
         reopenSurface(card.getAttribute('data-surface'));
+      });
+
+      /* Chart takeover icons live in the right sticky panes (not the transcript). */
+      document.getElementById('modules-row')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-pane-takeover]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        takeoverPane(btn.getAttribute('data-pane-takeover'));
       });
 
       /* History is toggled from the chat's own three-dot menu — inject the entry

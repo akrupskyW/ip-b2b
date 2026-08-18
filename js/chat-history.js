@@ -67,34 +67,25 @@
       '.wch-new:hover{filter:brightness(1.06);}',
       '.wch-new .material-symbols-outlined{font-size:20px;}',
       '.wch-list{flex:1;overflow-y:auto;padding:2px 8px 12px;}',
-      '.wch-item{position:relative;padding:9px 34px 9px 12px;border-radius:10px;cursor:pointer;margin:2px 0;}',
-      '.wch-item:hover{background:rgba(255,255,255,0.06);}',
-      'html:not(.dark) .wch-item:hover{background:rgba(20,40,80,0.05);}',
-      '.wch-item.wch-active{background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);outline:1px solid color-mix(in srgb,var(--primary,#2F6DF6) 40%,transparent);}',
-      '.wch-item-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      /* ── Chat color dot ─────────────────────────────────────────────────────
+         Every conversation has a colored circle. A rounded progress ring
+         (same language as the transcript’s in-progress owl) wraps it. Live
+         rows spin that ring and pulse the fill in brand blue. */
+      '.wch-item{position:relative;display:flex;align-items:center;padding:4px 14px 4px 12px;border-radius:10px;cursor:pointer;margin:0;}',
+      '.wch-item.wch-active .wch-item-title{font-weight:700;}',
+      '.wch-item-title{flex:1;min-width:0;font-size:12px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-fork-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--primary,#2F6DF6) 16%,transparent);color:var(--primary-ink,var(--primary,#2F6DF6));}',
       '.wch-fork-badge .material-symbols-outlined{font-size:12px;}',
       '.wch-item-meta{font-size:11px;opacity:.62;margin-top:2px;}',
-      /* ── Live (streaming) conversation row ──────────────────────────────────
-         A conversation that is actively generating a response. A pulsing dot
-         precedes the title and a single-line preview beneath streams the answer
-         one line at a time (word-by-word), so several chats can be seen running
-         at once. */
-      '.wch-live-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;background:#12B981;box-shadow:0 0 0 0 rgba(18,185,129,0.28);animation:wchLive 2.6s ease-in-out infinite;position:relative;z-index:2;}',
-      '@keyframes wchLive{0%{box-shadow:0 0 0 0 rgba(18,185,129,0.28);opacity:.75}50%{box-shadow:0 0 0 5px rgba(18,185,129,0);opacity:1}100%{box-shadow:0 0 0 0 rgba(18,185,129,0);opacity:.75}}',
-      /* Preview stays 11px and always reserves two lines of height (min-height =
-         2 × line-height) so the row never grows or jumps as the streamed line
-         wraps from one line to two; it clamps at two. */
-      '.wch-item-stream{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;min-width:0;margin-top:3px;font-size:11px;line-height:1.32;min-height:2.64em;opacity:.62;overflow:hidden;}',
-      '.wch-stream-text{display:inline;min-width:0;}',
-      /* Each streamed word simply fades in (opacity only) as it lands, so the
-         line builds up left to right — no blur, no movement. */
-      '.wch-stream-word{display:inline-block;opacity:0;animation:wchWordIn .5s ease forwards;}',
-      '@keyframes wchWordIn{from{opacity:0}to{opacity:1}}',
-      /* Gentle, fully-eased caret — no hard on/off flicker. */
-      '.wch-stream-caret{display:inline-block;width:2px;height:10px;margin-left:3px;vertical-align:middle;border-radius:1px;background:var(--primary-ink,var(--primary,#2F6DF6));opacity:.55;animation:wchCaret 1.5s ease-in-out infinite;}',
-      '@keyframes wchCaret{0%,100%{opacity:.12}50%{opacity:.7}}',
-      '@media (prefers-reduced-motion:reduce){.wch-live-dot{animation:none;}.wch-stream-caret{animation:none;}.wch-stream-word{animation:none;opacity:1;filter:none;transform:none;}}',
+      /* Colored chat circle + rounded progress ring (matches the transcript’s
+         in-progress owl: .sc-line-typing .sc-avatar-wiseai::after). */
+      '.wch-chat-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-right:10px;vertical-align:middle;background:currentColor;position:relative;z-index:2;}',
+      '.wch-chat-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;box-sizing:border-box;pointer-events:none;border:2px solid color-mix(in srgb,var(--text-subtle,#8B9FAF) 28%,transparent);}',
+      '.wch-chat-dot.wch-live-dot{color:var(--primary,#2F6DF6);box-shadow:0 0 0 0 color-mix(in srgb,var(--primary,#2F6DF6) 28%,transparent);animation:wchLive 2.6s ease-in-out infinite;}',
+      '.wch-chat-dot.wch-live-dot::after{border:2px solid color-mix(in srgb,#8CB8FF 26%,transparent);border-top-color:#8CB8FF;animation:wchSpin .8s linear infinite;}',
+      '@keyframes wchSpin{to{transform:rotate(360deg);}}',
+      '@keyframes wchLive{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary,#2F6DF6) 28%,transparent);opacity:.75}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--primary,#2F6DF6) 0%,transparent);opacity:1}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary,#2F6DF6) 0%,transparent);opacity:.75}}',
+      '@media (prefers-reduced-motion:reduce){.wch-live-dot{animation:none;opacity:1;}.wch-chat-dot.wch-live-dot::after{animation:none;}}',
       /* ── Row hover info card ────────────────────────────────────────────────
          The timestamp + message count (and fork / MCP lineage) no longer clutter
          the row — they surface in this floating card on hover. It anchors ABOVE
@@ -209,13 +200,15 @@
       '.wch-sidebar.wch-rail .wch-proj-name,.wch-sidebar.wch-rail .wch-proj-count,.wch-sidebar.wch-rail .wch-proj-menu{display:none;}',
       '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:8px 0;gap:0;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle{display:flex;width:22px;height:22px;}',
-      '.wch-sidebar.wch-rail .wch-proj-toggle::after{display:none;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle .material-symbols-outlined{font-size:20px;}',
       '.wch-sidebar.wch-rail .wch-project-body{padding-left:0;}',
-      '.wch-sidebar.wch-rail .wch-project-body::before,.wch-sidebar.wch-rail .wch-project-body > .wch-item::before,.wch-sidebar.wch-rail .wch-project-body > .wch-project-empty::before,.wch-sidebar.wch-rail .wch-project-body > .wch-proj-edit::before{display:none;}',
+      /* Hide the tree spine / empty-row ticks only. Nested chats still need
+         ::before — that’s the rail’s forum glyph. Elbows are already gated
+         behind :not(.wch-rail), so they never apply here. */
+      '.wch-sidebar.wch-rail .wch-project-body::before,.wch-sidebar.wch-rail .wch-project-body > .wch-project-empty::before,.wch-sidebar.wch-rail .wch-project-body > .wch-proj-edit::before{display:none;}',
       '.wch-sidebar.wch-rail .wch-item{padding:0;margin:4px auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
-      '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-item-stream,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
-      '.wch-sidebar.wch-rail .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;}',
+      '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-chat-dot,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
+      '.wch-sidebar.wch-rail .wch-item::before,.wch-sidebar.wch-rail .wch-project-body > .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;display:block;width:19px;height:19px;font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 20;}',
       '.wch-sidebar.wch-rail .wch-item.wch-active::before{opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       /* Minimized rail: never reveal the maximized-panel hover controls (per-chat
          move/delete actions, the project three-dot menu). A rail click maximizes
@@ -241,8 +234,6 @@
       '.wch-drag-handle{cursor:grab;}',
       '.wch-drag-handle:active{cursor:grabbing;}',
       '.wch-item:has(.wch-drag-handle:hover){background:color-mix(in srgb,var(--primary,#2F6DF6) 12%,transparent);outline:1px solid color-mix(in srgb,var(--primary,#2F6DF6) 40%,transparent);}',
-      /* Let the title stretch nearly edge-to-edge; the hover actions overlay it. */
-      '.wch-item{padding-right:14px;}',
       /* Projects section header + add button. */
       '.wch-projects{margin:2px 0 4px;}',
       '.wch-projects-head{display:flex;align-items:center;gap:6px;padding:12px 8px 4px 12px;}',
@@ -251,36 +242,35 @@
       '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
       '.wch-proj-add .material-symbols-outlined{font-size:18px;}',
-      /* A single project block — same row language as Library's folder panel
+      /* A single project block — copied from Library's folder panel
          (.lib-fp-folder): colored folder / folder_open icon + name + count +
-         hover ⋯. Nested chats indent under a tree spine. */
-      '.wch-project{position:relative;border-radius:10px;margin:1px 0;overflow:visible;}',
+         hover ⋯. Nested chats indent under a straight tick tree. */
+      '.wch-project{position:relative;margin:1px 0;overflow:visible;}',
       '.wch-project.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 55%,transparent);}',
-      '.wch-project-head{position:relative;z-index:1;display:flex;align-items:center;gap:6px;padding:8px 34px 8px 6px;border-radius:10px;cursor:pointer;}',
-      '.wch-project-head:hover{background:rgba(255,255,255,0.06);}',
-      'html:not(.dark) .wch-project-head:hover{background:rgba(20,40,80,0.05);}',
-      '.wch-proj-toggle{position:relative;z-index:2;width:22px;height:22px;flex:0 0 auto;border:0;border-radius:0;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
-      /* Opaque plug so the spine meets the folder midpoint without showing through the glyph. */
-      '.wch-proj-toggle::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:14px;transform:translate(-50%,-50%);background:currentColor;pointer-events:none;}',
-      '.wch-proj-toggle .material-symbols-outlined{position:relative;z-index:1;font-size:18px;line-height:1;font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 20;}',
+      '.wch-project-head{position:relative;z-index:2;display:flex;align-items:center;gap:6px;padding:8px 34px 8px 6px;border-radius:0;cursor:pointer;}',
+      '.wch-project-head:hover,.wch-project-head:focus,.wch-project-head:focus-visible{background:transparent;outline:none;}',
+      'html:not(.dark) .wch-project-head:hover{background:transparent;}',
+      '.wch-proj-toggle{position:relative;z-index:3;width:22px;height:22px;flex:0 0 auto;border:0;border-radius:50%;background:var(--wch-tree-bg);color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
+      '.wch-proj-toggle .material-symbols-outlined{font-size:18px;line-height:1;font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 20;}',
       '.wch-proj-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:currentColor;}',
-      '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-proj-count{flex:0 0 auto;font-size:11px;font-weight:600;opacity:.55;padding:0 4px;}',
       '.wch-proj-menu{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
-      '.wch-project-head:hover .wch-proj-menu,.wch-project-head:focus-within .wch-proj-menu{display:flex;}',
-      '.wch-proj-menu:hover{background:rgba(255,255,255,0.12);opacity:1;}',
-      'html:not(.dark) .wch-proj-menu:hover{background:rgba(0,0,0,0.08);}',
+      '.wch-project-head:hover .wch-proj-menu,.wch-project-head:focus-within .wch-proj-menu,.wch-proj-menu.is-open{display:flex;}',
+      '.wch-proj-menu:hover{background:rgba(0,0,0,0.08);opacity:1;}',
+      'html.dark .wch-proj-menu:hover{background:rgba(255,255,255,0.12);}',
+      '.wch-proj-menu.is-open{opacity:1;box-shadow:0 0 0 2px var(--primary,#2F6DF6);}',
       '.wch-proj-menu .material-symbols-outlined{font-size:16px;}',
-      /* Tree lines — a spine sized to the last child’s elbow (--wch-tree-end,
-         set after render) plus an L-elbow drawn as one bordered corner so the
-         angle always meets. No background-mask: that was covering the join. */
-      '.wch-project-body{position:relative;padding-left:22px;--wch-tree-end:16px;--wch-tree-radius:8px;}',
+      /* Tree lines — a spine from the folder, plus a rounded L-elbow on every
+         child. The elbow is a quarter-circle whose horizontal is measured to
+         the live-dot (see layoutProjectTrees) so the line runs into that
+         circle, which paints on top. Folder icons sit above the lines
+         (z-index + circular --wch-tree-bg mask). */
+      '.wch-project-body{position:relative;z-index:0;padding-left:22px;--wch-tree-end:16px;--wch-tree-radius:10px;}',
       '.wch-project.wch-collapsed .wch-project-body{display:none;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty)::before{content:"";position:absolute;z-index:0;left:16px;top:-19px;width:1px;height:calc(19px + var(--wch-tree-end) - var(--wch-tree-radius));background:var(--wch-tree);pointer-events:none;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty)::before{content:"";position:absolute;z-index:0;left:16px;top:-11px;width:1px;height:calc(11px + var(--wch-tree-end) - var(--wch-tree-radius) + 1px);background:var(--wch-tree);pointer-events:none;}',
       '.wch-project-body > .wch-item,.wch-project-body > .wch-project-empty,.wch-project-body > .wch-proj-edit{position:relative;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-item::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{content:"";position:absolute;z-index:0;left:-6px;width:var(--wch-elbow-w,18px);top:0;height:var(--wch-elbow-h,16px);border:0;border-left:1px solid var(--wch-tree);border-bottom:1px solid var(--wch-tree);border-bottom-left-radius:var(--wch-tree-radius);box-sizing:border-box;background:transparent;pointer-events:none;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before{height:12px;width:18px;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{height:18px;width:18px;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-item::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{content:"";position:absolute;z-index:0;left:-6px;width:var(--wch-elbow-w,22px);height:calc(var(--wch-tree-radius) + 6px);top:calc(var(--wch-elbow-h,16px) - var(--wch-tree-radius) - 6px);border:0;border-left:1px solid var(--wch-tree);border-bottom:1px solid var(--wch-tree);border-bottom-left-radius:var(--wch-tree-radius);box-sizing:border-box;background:transparent;pointer-events:none;}',
       '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
       /* Inline name editor (create + rename). */
       '.wch-proj-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px 6px 8px;}',
@@ -590,8 +580,10 @@
     var railMode = !!stored.rail;
     /* Transient project-editing UI state (never persisted). */
     var editingProjectId = null;   /* project row shown as an inline name input */
+    var editingItemId = null;      /* conversation row shown as an inline name input */
     var creatingProject = false;   /* the "new project" inline input is shown */
     var editingColor = null;       /* pending dot color picked while editing (applied on save) */
+    var CHAT_COLOR = '#12B981';    /* default chat-dot color (matches the live pulse) */
     var pendingMoveItemId = null;  /* chat awaiting a project pick from the popover */
     /* When a new conversation is started from a project's menu, remember that
        project so the thread is auto-filed into it the moment it's first saved
@@ -616,6 +608,8 @@
           /* A live (currently-streaming) conversation, with the lines its answer
              is streaming through shown one at a time on the row. */
           live: s.live === true,
+          color: s.color || CHAT_COLOR,
+          customTitle: s.customTitle === true,
           streamLines: Array.isArray(s.streamLines) ? s.streamLines : null,
           usedIntents: Array.isArray(s.usedIntents) ? s.usedIntents.slice() : null,
           nextIntents: Array.isArray(s.nextIntents) ? s.nextIntents.slice() : null
@@ -730,7 +724,7 @@
       if (!storageKey) return;
       /* Strip the transient search cache so it never bloats the store. */
       var clean = items.map(function (it) {
-        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null, mcp: it.mcp === true, projectId: it.projectId || null, live: it.live === true, streamLines: Array.isArray(it.streamLines) ? it.streamLines : null, usedIntents: Array.isArray(it.usedIntents) ? it.usedIntents : null, nextIntents: Array.isArray(it.nextIntents) ? it.nextIntents : null };
+        return { id: it.id, title: it.title, html: it.html, count: it.count, ts: it.ts, fork: it.fork || null, mcp: it.mcp === true, projectId: it.projectId || null, live: it.live === true, color: it.color || CHAT_COLOR, customTitle: it.customTitle === true, streamLines: Array.isArray(it.streamLines) ? it.streamLines : null, usedIntents: Array.isArray(it.usedIntents) ? it.usedIntents : null, nextIntents: Array.isArray(it.nextIntents) ? it.nextIntents : null };
       });
       var cleanProjects = projects.map(function (p) {
         return { id: p.id, name: p.name, color: p.color, ts: p.ts, collapsed: p.collapsed === true };
@@ -839,7 +833,7 @@
           existing._search = null; /* transcript changed → rebuild search text */
           existing.count = count;
           existing.ts = Date.now();
-          existing.title = deriveTitle();
+          if (!existing.customTitle) existing.title = deriveTitle();
           applyMeta(existing);
           items = items.filter(function (x) { return x.id !== activeId; });
           items.unshift(existing);
@@ -856,7 +850,8 @@
         html: html,
         count: count,
         ts: Date.now(),
-        projectId: pendingProjectId || null
+        projectId: pendingProjectId || null,
+        color: CHAT_COLOR
       };
       applyMeta(item);
       pendingProjectId = null;
@@ -883,6 +878,7 @@
         fork: data.fork || null,
         mcp: data.mcp === true,
         projectId: data.projectId || null,
+        color: data.color || CHAT_COLOR,
         usedIntents: Array.isArray(data.usedIntents) ? data.usedIntents.slice() : null,
         nextIntents: Array.isArray(data.nextIntents) ? data.nextIntents.slice() : null
       };
@@ -941,8 +937,24 @@
     function remove(id) {
       items = items.filter(function (x) { return x.id !== id; });
       if (activeId === id) activeId = null;
+      if (editingItemId === id) editingItemId = null;
       writeStore();
       render();
+    }
+
+    /* UPDATE — rename (and optionally recolor) a conversation. A custom title
+       sticks across later auto-saves so streaming/new turns don't overwrite it. */
+    function renameItem(id, name, color) {
+      var it = findItem(id);
+      if (!it) return;
+      var next = (name || '').trim();
+      if (next) {
+        it.title = next;
+        it.customTitle = true;
+        it._search = null;
+      }
+      if (color) it.color = color;
+      writeStore();
     }
 
     /* Lower-cased, whitespace-collapsed "title + transcript text" used for
@@ -969,21 +981,32 @@
       var mcpBadge = it.mcp
         ? '<span class="wch-mcp-badge" title="Used the MCP server"><span class="material-symbols-outlined">dns</span></span>'
         : '';
-      var liveDot = it.live ? '<span class="wch-live-dot" aria-hidden="true"></span>' : '';
-      /* The timestamp + message count intentionally no longer render on the row —
-         they live in the hover info card (see openInfoPopover). A live thread
-         instead shows a single streaming line beneath its title. */
-      var streamLine = it.live
-        ? '<div class="wch-item-stream"><span class="wch-stream-text"></span><span class="wch-stream-caret" aria-hidden="true"></span></div>'
-        : '';
+      var color = it.color || CHAT_COLOR;
+      var chatDot = '<span class="wch-chat-dot' + (it.live ? ' wch-live-dot' : '') + '"' + (it.live ? '' : ' style="color:' + esc(color) + '"') + ' aria-hidden="true"></span>';
       return '<div class="wch-item' + (it.id === activeId ? ' wch-active' : '') + (it.live ? ' wch-item-live' : '') + '" role="listitem" tabindex="0" draggable="true" data-wch-id="' + esc(it.id) + '"' + (railMode ? ' data-tip="' + esc(it.title) + '"' : '') + '>' +
-        '<div class="wch-item-title">' + liveDot + forkBadge + mcpBadge + esc(it.title) + '</div>' +
-        streamLine +
+        chatDot +
+        '<div class="wch-item-title">' + forkBadge + mcpBadge + esc(it.title) + '</div>' +
         '<div class="wch-item-actions">' +
           '<button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project" data-wch-drag="' + esc(it.id) + '"><span class="material-symbols-outlined">drag_indicator</span></button>' +
+          '<button type="button" class="wch-iact" title="Rename" aria-label="Rename conversation" data-wch-rename="' + esc(it.id) + '"><span class="material-symbols-outlined">edit</span></button>' +
           '<button type="button" class="wch-iact" title="Move to project" aria-label="Move to project" data-wch-move="' + esc(it.id) + '"><span class="material-symbols-outlined">drive_file_move</span></button>' +
           '<button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation" data-wch-del="' + esc(it.id) + '"><span class="material-symbols-outlined">delete_outline</span></button>' +
         '</div>' +
+      '</div>';
+    }
+
+    /* Inline name + color editor for a conversation — same row language as
+       renaming a project (dot + input + swatches). */
+    function itemEditRowHtml(it) {
+      var cur = editingColor || it.color || CHAT_COLOR;
+      var swatches = '';
+      PROJ_COLORS.forEach(function (c) {
+        swatches += '<button type="button" class="wch-proj-swatch' + (c === cur ? ' is-sel' : '') + '" data-proj-swatch="' + esc(c) + '" style="color:' + esc(c) + '" title="Chat color" aria-label="Set chat color"></button>';
+      });
+      return '<div class="wch-proj-edit" data-item-edit="' + esc(it.id) + '">' +
+        '<span class="wch-proj-dot" style="color:' + esc(cur) + '"></span>' +
+        '<input type="text" class="wch-proj-edit-input" maxlength="60" placeholder="Conversation name…" value="' + esc(it.title || '') + '">' +
+        '<div class="wch-proj-swatches">' + swatches + '</div>' +
       '</div>';
     }
 
@@ -1003,8 +1026,9 @@
       '</div>';
     }
 
-    /* Size each project’s tree spine and L-elbows. Elbows are measured to the
-       live-dot (or title) center so the horizontal runs into that circle. */
+    /* Size each project’s spine and elbows. The horizontal is measured to the
+       live-dot’s center (falling back to the title) so it runs into that
+       circle; the last child’s L-elbow uses the same Y for its rounded corner. */
     function layoutProjectTrees() {
       if (railMode) return;
       listEl.querySelectorAll('.wch-project-body').forEach(function (body) {
@@ -1012,25 +1036,22 @@
         var i;
         for (i = 0; i < kids.length; i++) {
           var el = kids[i];
-          if (!el.classList.contains('wch-item')) continue;
-          var target = el.querySelector('.wch-live-dot') || el.querySelector('.wch-item-title');
+          var target = el.querySelector('.wch-chat-dot') || el.querySelector('.wch-proj-dot') || el.querySelector('.wch-item-title');
           if (!target) continue;
           var elRect = el.getBoundingClientRect();
           var tRect = target.getBoundingClientRect();
           if (!elRect.height || !tRect.height) continue;
           var y = tRect.top + tRect.height / 2 - elRect.top;
-          var w = tRect.left + tRect.width / 2 - (elRect.left - 6) + 3;
+          /* Run the stroke to the far side of the live-dot so it reads as going
+             into the circle; the opaque dot paints over the last pixels. */
+          var w = tRect.left + tRect.width - 1 - (elRect.left - 6);
           if (y > 4) el.style.setProperty('--wch-elbow-h', Math.round(y) + 'px');
           if (w > 10) el.style.setProperty('--wch-elbow-w', Math.round(w) + 'px');
         }
         var last = body.lastElementChild;
         if (!last) return;
         var elbow = parseFloat(getComputedStyle(last).getPropertyValue('--wch-elbow-h'));
-        if (!elbow) {
-          elbow = 16;
-          if (last.classList.contains('wch-project-empty')) elbow = 12;
-          else if (last.classList.contains('wch-proj-edit')) elbow = 18;
-        }
+        if (!elbow) elbow = Math.max(1, Math.round(last.offsetHeight / 2));
         body.style.setProperty('--wch-tree-end', (last.offsetTop + elbow) + 'px');
       });
     }
@@ -1077,7 +1098,7 @@
         if (!show.length) {
           html += '<div class="wch-project-empty">' + (filtering ? 'No matches here.' : 'Empty — drag a chat here, or use a chat’s move button.') + '</div>';
         } else {
-          show.forEach(function (it) { html += itemHtml(it); });
+          show.forEach(function (it) { html += (editingItemId === it.id && !railMode) ? itemEditRowHtml(it) : itemHtml(it); });
         }
         html += '</div></div>';
       });
@@ -1090,7 +1111,7 @@
       ungrouped.forEach(function (it) {
         var g = dayLabel(it.ts);
         if (g !== lastGroup) { ungroupedHtml += '<div class="wch-group">' + esc(g) + '</div>'; lastGroup = g; }
-        ungroupedHtml += itemHtml(it, true);
+        ungroupedHtml += (editingItemId === it.id && !railMode) ? itemEditRowHtml(it) : itemHtml(it, true);
       });
 
       if (!items.length) {
@@ -1117,6 +1138,7 @@
 
       listEl.innerHTML = html;
       layoutProjectTrees();
+      requestAnimationFrame(layoutProjectTrees);
 
       /* Focus any open inline name editor (create / rename). */
       var editInput = listEl.querySelector('.wch-proj-edit-input');
@@ -1125,87 +1147,11 @@
         wireEditSwatches(editInput.closest('.wch-proj-edit'));
         try { editInput.focus(); editInput.select(); } catch (_) {}
       }
-
-      /* (Re)start the line-by-line streamer on every live row. The DOM is rebuilt
-         on each render, so old streamers self-stop (their node is detached) and
-         fresh ones take over here. */
-      if (!railMode) {
-        var liveIdx = 0;
-        listEl.querySelectorAll('.wch-item-live').forEach(function (row) {
-          var it = findItem(row.getAttribute('data-wch-id'));
-          var textEl = row.querySelector('.wch-stream-text');
-          if (it && textEl) startStream(textEl, streamLinesFor(it), streamTiming(liveIdx++));
-        });
-      }
     }
 
-    /* ── Live conversation streamer ─────────────────────────────────────────
-       Reveals one line at a time, word-by-word, then clears and streams the
-       next — mirroring the chat's streaming feel while keeping the row to a
-       single visible line. Self-stops once its element leaves the DOM. */
     function findItem(id) {
       for (var i = 0; i < items.length; i++) { if (items[i].id === id) return items[i]; }
       return null;
-    }
-    var DEFAULT_STREAM_LINES = [
-      'Searching the catalog for matching products…',
-      'Cross-referencing verified nutrition data…',
-      'Scoring each option for gut & immune health…',
-      'Drafting the side-by-side comparison…'
-    ];
-    function streamLinesFor(it) {
-      return (it && Array.isArray(it.streamLines) && it.streamLines.length) ? it.streamLines : DEFAULT_STREAM_LINES;
-    }
-    /* Distinct, deliberately slow cadences per concurrent live row so no two
-       chats stream in lock-step. Each row draws a base word speed and a between-
-       line pause from its own range, plus a random start offset so they never
-       begin (or clear) together. Beyond these ranges, every single word and
-       pause is re-jittered in startStream, so even two rows on the same profile
-       drift apart. Cycles if there are more live rows than presets. */
-    var STREAM_TIMINGS = [
-      { wordMin: 130, wordVar: 220, pauseMin: 1600, pauseVar: 1600, startMax: 900 },
-      { wordMin: 220, wordVar: 320, pauseMin: 2600, pauseVar: 2400, startMax: 2200 },
-      { wordMin: 170, wordVar: 260, pauseMin: 2000, pauseVar: 2000, startMax: 1500 }
-    ];
-    function streamTiming(i) { return STREAM_TIMINGS[i % STREAM_TIMINGS.length]; }
-    function rand(min, span) { return min + Math.random() * span; }
-    function startStream(textEl, lines, t) {
-      if (!textEl || !lines || !lines.length) return;
-      t = t || STREAM_TIMINGS[0];
-      var idx = 0;
-      function typeLine() {
-        if (!textEl.isConnected) return;
-        var words = String(lines[idx % lines.length]).split(' ');
-        var w = 0;
-        textEl.textContent = '';
-        (function step() {
-          if (!textEl.isConnected) return;
-          if (w >= words.length) {
-            idx++;
-            /* Randomized between-line "thinking" pause, occasionally much longer
-               so the rhythm never feels metronomic. */
-            var pause = rand(t.pauseMin, t.pauseVar);
-            if (Math.random() < 0.22) pause += rand(900, 1600);
-            setTimeout(function () { if (textEl.isConnected) { textEl.textContent = ''; typeLine(); } }, pause);
-            return;
-          }
-          /* Append each word in its own span so it can ease in (fade + blur +
-             rise) rather than snapping on. */
-          if (w) textEl.appendChild(document.createTextNode(' '));
-          var span = document.createElement('span');
-          span.className = 'wch-stream-word';
-          span.textContent = words[w];
-          textEl.appendChild(span);
-          w++;
-          /* Per-word jitter, with the odd long hitch mid-line. */
-          var d = rand(t.wordMin, t.wordVar);
-          if (Math.random() < 0.16) d += rand(300, 700);
-          setTimeout(step, d);
-        })();
-      }
-      /* Random stagger on the very first keystroke so concurrent rows are out of
-         phase from the start. */
-      setTimeout(function () { if (textEl.isConnected) typeLine(); }, Math.random() * (t.startMax || 0));
     }
 
     /* ── Row hover info card (timestamp · message count · lineage) ──────────── */
@@ -1304,6 +1250,14 @@
       if (!input || input._done) return;
       input._done = true;
       var row = input.closest('.wch-proj-edit');
+      var itemTarget = row ? row.getAttribute('data-item-edit') : null;
+      if (itemTarget) {
+        editingItemId = null;
+        if (save) renameItem(itemTarget, input.value, editingColor);
+        editingColor = null;
+        render();
+        return;
+      }
       var target = row ? row.getAttribute('data-proj-edit') : 'new';
       var val = input.value;
       if (target === 'new') {
@@ -1347,6 +1301,7 @@
     function startCreateProject() {
       closePopover();
       editingProjectId = null;
+      editingItemId = null;
       creatingProject = true;
       editingColor = null;
       /* Projects live at the top of the list — make sure they're in view. */
@@ -1356,8 +1311,18 @@
     function startRenameProject(id) {
       closePopover();
       creatingProject = false;
+      editingItemId = null;
       editingProjectId = id;
       editingColor = (findProject(id) || {}).color || null;
+      render();
+    }
+    function startRenameItem(id) {
+      closePopover();
+      hideInfo();
+      creatingProject = false;
+      editingProjectId = null;
+      editingItemId = id;
+      editingColor = (findItem(id) || {}).color || CHAT_COLOR;
       render();
     }
 
@@ -1481,6 +1446,7 @@
       if (!it) return;
       var h = '<div class="wch-pop-head">' + esc(it.title) + '</div>' +
         '<button type="button" class="wch-pop-item" data-open-chat="' + esc(itemId) + '"><span class="material-symbols-outlined">forum</span><span class="wch-pop-name">Open conversation</span></button>' +
+        '<button type="button" class="wch-pop-item" data-rename-chat="' + esc(itemId) + '"><span class="material-symbols-outlined">edit</span><span class="wch-pop-name">Rename</span></button>' +
         '<div class="wch-pop-div"></div>' +
         '<div class="wch-pop-head">Move to project</div><div class="wch-pop-list">';
       if (!projects.length) {
@@ -1519,6 +1485,8 @@
       }
       var oc = e.target.closest('[data-open-chat]');
       if (oc) { e.preventDefault(); var ocId = oc.getAttribute('data-open-chat'); closePopover(); restore(ocId); return; }
+      var rc = e.target.closest('[data-rename-chat]');
+      if (rc) { e.preventDefault(); var rcId = rc.getAttribute('data-rename-chat'); closePopover(); startRenameItem(rcId); return; }
       var dc = e.target.closest('[data-del-chat]');
       if (dc) { e.preventDefault(); var dcId = dc.getAttribute('data-del-chat'); closePopover(); remove(dcId); return; }
       var mv = e.target.closest('[data-move]');
@@ -1937,6 +1905,9 @@
       /* The drag handle is a drag affordance only — a plain click on it should
          not open/restore the conversation. */
       if (e.target.closest('[data-wch-drag]')) { e.stopPropagation(); return; }
+      /* Rename + recolor a chat (same inline editor as folders) */
+      var rn = e.target.closest('[data-wch-rename]');
+      if (rn) { e.stopPropagation(); startRenameItem(rn.getAttribute('data-wch-rename')); return; }
       /* Move a chat to a project */
       var mv = e.target.closest('[data-wch-move]');
       if (mv) { e.stopPropagation(); openMovePopover(mv.getAttribute('data-wch-move'), mv); return; }
@@ -1990,6 +1961,7 @@
       /* Projects (chat grouping) CRUD, exposed for host integrations. */
       createProject: function (name, color) { var p = createProject(name, color); render(); return p; },
       renameProject: function (id, name, color) { renameProject(id, name, color); render(); },
+      renameItem: function (id, name, color) { renameItem(id, name, color); render(); },
       deleteProject: deleteProject,
       moveToProject: moveToProject,
       listProjects: function () { return projects.map(function (p) { return { id: p.id, name: p.name, color: p.color, count: projectItems(p.id).length }; }); }

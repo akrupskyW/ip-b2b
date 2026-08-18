@@ -21,7 +21,7 @@ import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountWISEcodeAIDock, setWISEcodeAIDockPosition, wiseaiDockMode, writeWISEcodeAIDockState, isWISEcodeAIClosed, restartWISEcodeAIChat, setWISEcodeAICollapsed } from './wiseai-dock.js';
-import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from './appearance-menu.js';
+import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody, performSignOut } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
 import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply, isBrandCompareActive, isStarsViewActive, toggleBrandCompare, toggleStarsView } from './dashboard-home.js';
@@ -1654,8 +1654,7 @@ function openAvatarPopover(anchor) {
     if (signoutItem && pop.contains(signoutItem)) {
       ev.stopPropagation();
       closeAvatarPopover();
-      try { localStorage.removeItem('wise-auth'); } catch (e) {}
-      window.location.href = 'login.html';
+      performSignOut();
       return;
     }
     /* Each remaining menu row now opens its own module page. The Alerts quick

@@ -106,6 +106,14 @@
 
   function logout() { safeRemove(AUTH_KEY); }
 
+  /* Clear the session and send the user to the sign-in screen. Used by the
+     avatar / user-menu "Sign out" row. Login pages bounce already-authed
+     visitors back into the app, so skipping logout looks like a no-op. */
+  function signOut() {
+    logout();
+    location.href = loginUrl();
+  }
+
   function inPages() { return location.pathname.indexOf('/pages/') !== -1; }
 
   function currentPage() {
@@ -144,6 +152,7 @@
     login: login,
     signup: signup,
     logout: logout,
+    signOut: signOut,
     requireAuth: requireAuth,
     isAuthPage: isAuthPage,
     loginUrl: loginUrl,
